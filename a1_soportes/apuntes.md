@@ -1,85 +1,106 @@
-# Creación del proyecto AdminSefar
-
+# Proyecto AdminSefar
 ##### Versión: **Laravel Framework 8.31.0**
+#
 
-## Crear proyecto
+# Paso a paso del desarrollo del proyecto
 1. Ejecutar: $ **laravel new sefar --jet**
 	##### **Nota**: Seleccionamos livewire y en	**Will your application use teams? (yes/no) [no]:**
 	##### Responder **no**
+1. Ejecutar: $ **npm install**
+1. Ejecutar: $ **npm run dev**
 
-### Commit 1:
-- Ejecutar: $ **git init**
-- Ejecutar: $ **git add .**
-- Ejecutar: $ **git commit -m "Proyecto en blanco"**
-#
+	### Commit 1:
+	+ Ejecutar: $ **git init**
+	+ Ejecutar: $ **git add .**
+	+ Ejecutar: $ **git commit -m "Proyecto en blanco"**
+	# ---
 
-## Crear un dominio local
+	## Crear un dominio local
 1. Agregar el siguiente código al final del archivo **C:\Windows\System32\drivers\etc\hosts**
->
-    # Host virtual para el proyecto Sistema de Historia Clínica en Laravel (Lado del cliente) 
-    127.0.0.1	sefar.test
-##### **Nota**: Editar con el block de notas en modo de administrador.
+	>
+		# Host virtual para el proyecto Sistema de Historia Clínica en Laravel (Lado del cliente) 
+		127.0.0.1	sefar.test
+	##### **Nota**: Editar con el block de notas en modo de administrador.
 
-2. Agregar el siguiente código al final del archivo **C:\xampp\apache\conf\extra\httpd-vhosts.conf**
->
-    # Host virtual para el proyecto Sistema Sefar (Lado del servidor)
-    <VirtualHost *:80>
-        DocumentRoot "C:\xampp\htdocs\sefar\public"
-        ServerName sefar.test
-    </VirtualHost>
-##### **Nota**: En el archivo **C:\xampp\apache\conf\httpd.conf** las línea:
->
-        Include conf/extra/httpd-vhosts.conf
-y
->
-        LoadModule rewrite_module modules/mod_rewrite.so		
-no deben estar comentada con #.
+1. Agregar el siguiente código al final del archivo **C:\xampp\apache\conf\extra\httpd-vhosts.conf**
+	>
+		# Host virtual para el proyecto Sistema Sefar (Lado del servidor)
+		<VirtualHost *:80>
+			DocumentRoot "C:\xampp\htdocs\sefar\public"
+			ServerName sefar.test
+		</VirtualHost>
+	##### **Nota**: En el archivo **C:\xampp\apache\conf\httpd.conf** las líneas:
+	>
+		Include conf/extra/httpd-vhosts.conf
+	y
+	>
+		LoadModule rewrite_module modules/mod_rewrite.so		
+	no deben estar comentada con #.
 
-3. Reiniciar el servidor Apache.
-#
+1. Reiniciar el servidor Apache.
+	# ---
 
-## Ajustes iniciales
-***. Ejecutar: $ npm install
-***. Ejecutar: $ npm run dev
-***. Crear: bd sefar en MySQL.
-	Juego de caracters: utf8_general_ci
-***. Configurar: .env con bd sefar
-	***
-	DB_CONNECTION=mysql
-	DB_HOST=127.0.0.1
-	DB_PORT=3306
-	DB_DATABASE=sefar
-	DB_USERNAME=root
-	DB_PASSWORD=
-	***
+	## Ajustes iniciales
+1. Crear: bd **sefar** en **MySQL**.
+	##### Juego de caracters: **utf8_general_ci**
+1. Configurar: **.env** con bd **sefar**
+	>
+		***
+		DB_CONNECTION=mysql
+		DB_HOST=127.0.0.1
+		DB_PORT=3306
+		DB_DATABASE=sefar
+		DB_USERNAME=root
+		DB_PASSWORD=
+		***
 
-***. Agregar campos a la migración de tabla users: passport
-	***
-    public function up()
-    {
-        Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-			$table->string('passport')->nullable()->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
-            $table->rememberToken();
-            $table->foreignId('current_team_id')->nullable();
-            $table->text('profile_photo_path')->nullable();
-            $table->timestamps();
-        });
-    }
-	***
-***. Ejecutar: $ php artisan migrate
-***. Configurar Jetstream en: config\jetstream.php
-***. Para personalizar aún más Jetstream:
-	- $ php artisan vendor:publish
-	- Seleccionar: Tag: jetstream-views
-	- Para que se agreguen componentes que no estaban:
-		+ Ejecutar: $ npm install
-		+ Ejecutar: $ npm run dev
-***. Modificar la ruta de inicio en routes\web.php
+1. Agregar el campo **passport** a la migración de tabla **users**: 
+	>
+		***
+		public function up()
+		{
+			Schema::create('users', function (Blueprint $table) {
+				$table->id();
+				$table->string('name');
+				$table->string('email')->unique();
+				$table->string('passport')->nullable()->unique();
+				$table->timestamp('email_verified_at')->nullable();
+				$table->string('password');
+				$table->rememberToken();
+				$table->foreignId('current_team_id')->nullable();
+				$table->text('profile_photo_path')->nullable();
+				$table->timestamps();
+			});
+		}
+		***
+
+1. Ejecutar: $ **php artisan migrate**
+1. Configurar Jetstream en: **config\jetstream.php**
+	>
+		***
+		'features' => [
+			// Features::termsAndPrivacyPolicy(),
+			Features::profilePhotos(),
+			// Features::api(),
+			// Features::teams(['invitations' => true]),
+			Features::accountDeletion(),
+		],
+		***
+	**Nota**: Para personalizar aún más Jetstream:
+	+ Ejecutar: $ **php artisan vendor:publish**
+		- Seleccionar: **Tag: jetstream-views**
+	+ Para que se agreguen componentes que no estaban:
+		- Ejecutar: $ npm install
+		- Ejecutar: $ npm run dev
+	
+	### Commit 2:
+	+ Ejecutar: $ **git add .**
+	+ Ejecutar: $ **git commit -m "Ajustes iniciales"**
+	# ---
+
+
+
+1. Modificar la ruta de inicio en **routes\web.php**
 	Route::get('/', function () {
 		return view('auth.login');
 	});
@@ -97,9 +118,7 @@ no deben estar comentada con #.
 	***
 	***
 
-Commit 2:
-***. Ejecutar: $ git add .
-***. Ejecutar: $ git commit -m "Ajustes iniciales"
+
 
 Laravel-permission
 ==================
