@@ -1,4 +1,5 @@
 # Proyecto AdminSefar
+##### https://laravel.com/docs/8.x
 ##### Versión: **Laravel Framework 8.31.0**
 #
 
@@ -99,8 +100,7 @@
 	# ---
 
 	# Laravel-permission
-	
-	https://spatie.be/docs/laravel-permission/v4/introduction
+	#### Documentación: https://spatie.be/docs/laravel-permission/v4/introduction
 
 1. Ejecutar: $ **composer require spatie/laravel-permission**
 1. Ejecutar: $ **php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"**
@@ -114,10 +114,62 @@
 
 	### Commit 3:
 	+ Ejecutar: $ **git add .**
-	+ Ejecutar: $ **git commit -m "Roles y permisos"**
+	+ Ejecutar: $ **git commit -m "Laravel-permission"**
 	# ---
 
+	# Integrar plantilla AdminLTE
+	#### Documentación: https://github.com/jeroennoten/Laravel-AdminLTE
+	##### Plantilla: https://adminlte.io/themes/v3/index.html
 
+1. Integrar AdminLTE: $ **composer require jeroennoten/laravel-adminlte**
+1. Ejecutar: $ **php artisan adminlte:install**
+1. Crear: **resources\views\layouts\demoAdminLTE.blade.php**
+	>
+		@extends('adminlte::page')
+
+		@section('title', 'Demo')
+
+		@section('content_header')
+			<h1>Demo</h1>
+		@stop
+
+		@section('content')
+			<p>Demo.</p>
+		@stop
+
+		@section('css')
+			<link rel="stylesheet" href="/css/admin_custom.css">
+		@stop
+
+		@section('js')
+		
+		@stop
+
+	**Nota**: Se recomienda insertar ruta en **routes\web.php** para probar vistas:
+	>
+		// Para probar vistas
+		Route::get('/pruebas', function () {
+			return view('layouts.demoAdminLTE');
+		});
+
+	### Commit 4:
+	+ Ejecutar: $ **git add .**
+	+ Ejecutar: $ **git commit -m "Instalación Plantilla AdminLTE"**
+
+
+***. Adaptar la configuración del archivo config\adminlte.php al proyecto.
+	Nota: Los icons se pueden buscar en https://fontawesome.com/icons
+	También se recomienda visitar: https://www.youtube.com/playlist?list=PLZ2ovOgdI-kWTCkbH749Ukvq7FMz5ahpP
+
+***. Configurar a español: config\app.php
+
+
+
+
+
+
+
+1. Pasar AdminLTE a español: $ **php artisan adminlte:install --only=translations**
 
 
 1. Modificar la ruta de inicio en **routes\web.php**
@@ -142,47 +194,7 @@
 
 
 
-Insertar plantilla AdminLTE
-===========================
-URL: https://github.com/jeroennoten/Laravel-AdminLTE
 
-***. Ejecutar: $ composer require jeroennoten/laravel-adminlte
-***. Ejecutar: $ php artisan adminlte:install
-***. Ejecutar: $ php artisan adminlte:install --only=translations
-***. Configurar a español: config\app.php
-***. Crear: resources\views\layouts\demoAdminLTE.blade.php
-	@extends('adminlte::page')
-
-	@section('title', 'Demo')
-
-	@section('content_header')
-		<h1>Demo</h1>
-	@stop
-
-	@section('content')
-		<p>Demo.</p>
-	@stop
-
-	@section('css')
-		<link rel="stylesheet" href="/css/admin_custom.css">
-	@stop
-
-	@section('js')
-		<script> console.log('Hi!'); </script>
-	@stop
-
-	NOTA: Se recomienda insertar ruta en routes\web.php para probar vistas:
-	// Para probar vistas
-	Route::get('/pruebas', function () {
-		return view('layouts.demoAdminLTE');
-	});
-***. Adaptar la configuración del archivo config\adminlte.php al proyecto.
-	Nota: Los icons se pueden buscar en https://fontawesome.com/icons
-	También se recomienda visitar: https://www.youtube.com/playlist?list=PLZ2ovOgdI-kWTCkbH749Ukvq7FMz5ahpP
-
-Commit 4:
-***. Ejecutar: $ git add .
-***. Ejecutar: $ git commit -m "Instalación Plantilla AdminLTE"
 
 Traducir el proyecto al español
 ===============================
@@ -308,36 +320,36 @@ Registro cliente
 
 # RUTAS
 >
-	Method      URI                                 Name
-	======		===									====
-	GET|HEAD    /                                    
-	GET|HEAD    api/user
-	GET|HEAD    dashboard                           dashboard
-	GET|HEAD    forgot-password                     password.request
-	POST        forgot-password                     password.email  
-	GET|HEAD    livewire/livewire.js    
-	GET|HEAD    livewire/livewire.js.map
-	POST        livewire/message/{name}             livewire.message
-	GET|HEAD    livewire/preview-file/{filename}    livewire.preview-file
-	POST        livewire/upload-file                livewire.upload-file
-	POST        login 
-	GET|HEAD    login                               login
-	POST        logout                              logout
-	GET|HEAD    register                            register 
-	POST        register
-	POST        reset-password                      password.update
-	GET|HEAD    reset-password/{token}              password.reset
-	GET|HEAD    anctum/csrf-cookie
-	POST        two-factor-challenge
-	GET|HEAD    two-factor-challenge                two-factor.login
-	GET|HEAD    user/confirm-password               password.confirm 
-	POST        user/confirm-password
-	GET|HEAD    user/confirmed-password-status      password.confirmation
-	PUT         user/password                       user-password.update 
-	GET|HEAD    user/profile                        profile.show
-	PUT         user/profile-information            user-profile-information.update
-	DELETE      user/two-factor-authentication
-	POST        user/two-factor-authentication
-	GET|HEAD    user/two-factor-qr-code 
-	POST        user/two-factor-recovery-codes 
-	GET|HEAD    user/two-factor-recovery-codes
+	Method      URI                               Name
+	======		===								  ====
+	GET|HEAD | / 
+	GET|HEAD | api/user 
+	GET|HEAD | dashboard                        | dashboard  
+	GET|HEAD | forgot-password                  | password.request   
+	POST     | forgot-password                  | password.email   
+	GET|HEAD | livewire/livewire.js             |                           
+	GET|HEAD | livewire/livewire.js.map         |    
+	POST     | livewire/message/{name}          | livewire.message         
+	GET|HEAD | livewire/preview-file/{filename} | livewire.preview-file    
+	POST     | livewire/upload-file             | livewire.upload-file        
+	POST     | login                            |                                 
+	GET|HEAD | login                            | login                       
+	POST     | logout                           | logout                      
+	GET|HEAD | register                         | register                   
+	POST     | register                         |                               
+	POST     | reset-password                   | password.update             
+	GET|HEAD | reset-password/{token}           | password.reset                 
+	GET|HEAD | sanctum/csrf-cookie              |                                
+	POST     | two-factor-challenge             |                           
+	GET|HEAD | two-factor-challenge             | two-factor.login            
+	GET|HEAD | user/confirm-password            | password.confirm            
+	POST     | user/confirm-password            |                                 
+	GET|HEAD | user/confirmed-password-status   | password.confirmation           
+	PUT      | user/password                    | user-password.update            
+	GET|HEAD | user/profile                     | profile.show                    
+	PUT      | user/profile-information         | user-profile-information.update
+	DELETE   | user/two-factor-authentication   |                                 
+	POST     | user/two-factor-authentication   |                                 
+	GET|HEAD | user/two-factor-qr-code          |                                
+	POST     | user/two-factor-recovery-codes   |                                 
+	GET|HEAD | user/two-factor-recovery-codes   |  
