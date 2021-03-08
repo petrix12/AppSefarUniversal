@@ -98,6 +98,26 @@
 	+ Ejecutar: $ **git commit -m "Ajustes iniciales"**
 	# ---
 
+	# Laravel-permission
+	
+	https://spatie.be/docs/laravel-permission/v4/introduction
+
+1. Ejecutar: $ **composer require spatie/laravel-permission**
+1. Ejecutar: $ **php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"**
+1. Ejecutar: $ **php artisan migrate**
+1. Añadir a la cabecera del modelo **User**:
+	>
+		use Spatie\Permission\Traits\HasRoles;
+1. Añadir dentro de la clase del modelo **User**:
+	>
+		use HasRoles;
+
+	### Commit 3:
+	+ Ejecutar: $ **git add .**
+	+ Ejecutar: $ **git commit -m "Roles y permisos"**
+	# ---
+
+
 
 
 1. Modificar la ruta de inicio en **routes\web.php**
@@ -120,21 +140,7 @@
 
 
 
-Laravel-permission
-==================
-URL: https://spatie.be/docs/laravel-permission/v4/introduction
 
-***. Ejecutar: $ composer require spatie/laravel-permission
-***. Ejecutar: $ php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
-***. Ejecutar: $ php artisan migrate
-***. Añadir a la cabecera del modelo User: 
-	use Spatie\Permission\Traits\HasRoles;
-***. Añadir dentro de la clase del modelo User:
-	use HasRoles;
-
-Commit 3:
-***. Ejecutar: $ git add .
-***. Ejecutar: $ git commit -m "Roles y permisos"
 
 Insertar plantilla AdminLTE
 ===========================
@@ -296,3 +302,42 @@ Registro cliente
 	***
 ***. Crear controlador Registro: $ php artisan make:controller RegistroController
 ***. Crear ruta en routes\web.php
+
+
+
+
+# RUTAS
+>
+	Method      URI                                 Name
+	======		===									====
+	GET|HEAD    /                                    
+	GET|HEAD    api/user
+	GET|HEAD    dashboard                           dashboard
+	GET|HEAD    forgot-password                     password.request
+	POST        forgot-password                     password.email  
+	GET|HEAD    livewire/livewire.js    
+	GET|HEAD    livewire/livewire.js.map
+	POST        livewire/message/{name}             livewire.message
+	GET|HEAD    livewire/preview-file/{filename}    livewire.preview-file
+	POST        livewire/upload-file                livewire.upload-file
+	POST        login 
+	GET|HEAD    login                               login
+	POST        logout                              logout
+	GET|HEAD    register                            register 
+	POST        register
+	POST        reset-password                      password.update
+	GET|HEAD    reset-password/{token}              password.reset
+	GET|HEAD    anctum/csrf-cookie
+	POST        two-factor-challenge
+	GET|HEAD    two-factor-challenge                two-factor.login
+	GET|HEAD    user/confirm-password               password.confirm 
+	POST        user/confirm-password
+	GET|HEAD    user/confirmed-password-status      password.confirmation
+	PUT         user/password                       user-password.update 
+	GET|HEAD    user/profile                        profile.show
+	PUT         user/profile-information            user-profile-information.update
+	DELETE      user/two-factor-authentication
+	POST        user/two-factor-authentication
+	GET|HEAD    user/two-factor-qr-code 
+	POST        user/two-factor-recovery-codes 
+	GET|HEAD    user/two-factor-recovery-codes

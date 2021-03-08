@@ -1,0 +1,105 @@
+
+| Domain | Method   | URI                              | Name                            | Action
+                                            | Middleware                                                |
++--------+----------+----------------------------------+---------------------------------+---------------------------------------------------------------------------------+-----------------------------------------------------------+
+|        | GET|HEAD | /                                |                                 | Closure
+                                            | web                                                       |
+|        | GET|HEAD | api/user                         |                                 | Closure
+                                            | api                                                       |
+|        |          |                                  |                                 |
+                                            | App\Http\Middleware\Authenticate:sanctum                  |
+|        | GET|HEAD | dashboard                        | dashboard                       | Closure
+                                            | web                                                       |
+|        |          |                                  |                                 |
+                                            | App\Http\Middleware\Authenticate:sanctum                  |
+|        |          |                                  |                                 |
+                                            | Illuminate\Auth\Middleware\EnsureEmailIsVerified          |
+|        | GET|HEAD | forgot-password                  | password.request                | Laravel\Fortify\Http\Controllers\PasswordResetLinkController@create             | web                                                       |
+|        |          |                                  |                                 |
+                                            | App\Http\Middleware\RedirectIfAuthenticated               |
+|        | POST     | forgot-password                  | password.email                  | Laravel\Fortify\Http\Controllers\PasswordResetLinkController@store              | web                                                       |
+|        |          |                                  |                                 |
+                                            | App\Http\Middleware\RedirectIfAuthenticated               |
+|        | GET|HEAD | livewire/livewire.js             |                                 | Livewire\Controllers\LivewireJavaScriptAssets@source                            |                                                           |
+|        | GET|HEAD | livewire/livewire.js.map         |                                 | Livewire\Controllers\LivewireJavaScriptAssets@maps                              |                                                           |
+|        | POST     | livewire/message/{name}          | livewire.message                | Livewire\Controllers\HttpConnectionHandler                                      | web                                                       |
+|        | GET|HEAD | livewire/preview-file/{filename} | livewire.preview-file           | Livewire\Controllers\FilePreviewHandler@handle                                  | web                                                       |
+|        | POST     | livewire/upload-file             | livewire.upload-file            | Livewire\Controllers\FileUploadHandler@handle                                   | web                                                       |
+|        |          |                                  |                                 |
+                                            | Illuminate\Routing\Middleware\ThrottleRequests:60,1       |
+|        | POST     | login                            |                                 | Laravel\Fortify\Http\Controllers\AuthenticatedSessionController@store           | web                                                       |
+|        |          |                                  |                                 |
+                                            | App\Http\Middleware\RedirectIfAuthenticated               |
+|        |          |                                  |                                 |
+                                            | Illuminate\Routing\Middleware\ThrottleRequests:login      |
+|        | GET|HEAD | login                            | login                           | Laravel\Fortify\Http\Controllers\AuthenticatedSessionController@create          | web                                                       |
+|        |          |                                  |                                 |
+                                            | App\Http\Middleware\RedirectIfAuthenticated               |
+|        | POST     | logout                           | logout                          | Laravel\Fortify\Http\Controllers\AuthenticatedSessionController@destroy         | web                                                       |
+|        | GET|HEAD | register                         | register                        | Laravel\Fortify\Http\Controllers\RegisteredUserController@create                | web                                                       |
+|        |          |                                  |                                 |
+                                            | App\Http\Middleware\RedirectIfAuthenticated               |
+|        | POST     | register                         |                                 | Laravel\Fortify\Http\Controllers\RegisteredUserController@store                 | web                                                       |
+|        |          |                                  |                                 |
+                                            | App\Http\Middleware\RedirectIfAuthenticated               |
+|        | POST     | reset-password                   | password.update                 | Laravel\Fortify\Http\Controllers\NewPasswordController@store                    | web                                                       |
+|        |          |                                  |                                 |
+                                            | App\Http\Middleware\RedirectIfAuthenticated               |
+|        | GET|HEAD | reset-password/{token}           | password.reset                  | Laravel\Fortify\Http\Controllers\NewPasswordController@create                   | web                                                       |
+|        |          |                                  |                                 |
+                                            | App\Http\Middleware\RedirectIfAuthenticated               |
+|        | GET|HEAD | sanctum/csrf-cookie              |                                 | Laravel\Sanctum\Http\Controllers\CsrfCookieController@show                      | web                                                       |
+|        | POST     | two-factor-challenge             |                                 | Laravel\Fortify\Http\Controllers\TwoFactorAuthenticatedSessionController@store  | web                                                       |
+|        |          |                                  |                                 |
+                                            | App\Http\Middleware\RedirectIfAuthenticated               |
+|        |          |                                  |                                 |
+                                            | Illuminate\Routing\Middleware\ThrottleRequests:two-factor |
+|        | GET|HEAD | two-factor-challenge             | two-factor.login                | Laravel\Fortify\Http\Controllers\TwoFactorAuthenticatedSessionController@create | web                                                       |
+|        |          |                                  |                                 |
+                                            | App\Http\Middleware\RedirectIfAuthenticated               |
+|        | GET|HEAD | user/confirm-password            | password.confirm                | Laravel\Fortify\Http\Controllers\ConfirmablePasswordController@show             | web                                                       |
+|        |          |                                  |                                 |
+                                            | App\Http\Middleware\Authenticate                          |
+|        | POST     | user/confirm-password            |                                 | Laravel\Fortify\Http\Controllers\ConfirmablePasswordController@store            | web                                                       |
+|        |          |                                  |                                 |
+                                            | App\Http\Middleware\Authenticate                          |
+|        | GET|HEAD | user/confirmed-password-status   | password.confirmation           | Laravel\Fortify\Http\Controllers\ConfirmedPasswordStatusController@show         | web                                                       |
+|        |          |                                  |                                 |
+                                            | App\Http\Middleware\Authenticate                          |
+|        | PUT      | user/password                    | user-password.update            | Laravel\Fortify\Http\Controllers\PasswordController@update                      | web                                                       |
+|        |          |                                  |                                 |
+                                            | App\Http\Middleware\Authenticate                          |
+|        | GET|HEAD | user/profile                     | profile.show                    | Laravel\Jetstream\Http\Controllers\Livewire\UserProfileController@show          | web                                                       |
+|        |          |                                  |                                 |
+                                            | App\Http\Middleware\Authenticate                          |
+|        |          |                                  |                                 |
+                                            | Illuminate\Auth\Middleware\EnsureEmailIsVerified          |
+|        | PUT      | user/profile-information         | user-profile-information.update | Laravel\Fortify\Http\Controllers\ProfileInformationController@update            | web                                                       |
+|        |          |                                  |                                 |
+                                            | App\Http\Middleware\Authenticate                          |
+|        | DELETE   | user/two-factor-authentication   |                                 | Laravel\Fortify\Http\Controllers\TwoFactorAuthenticationController@destroy      | web                                                       |
+|        |          |                                  |                                 |
+                                            | App\Http\Middleware\Authenticate                          |
+|        |          |                                  |                                 |
+                                            | Illuminate\Auth\Middleware\RequirePassword                |
+|        | POST     | user/two-factor-authentication   |                                 | Laravel\Fortify\Http\Controllers\TwoFactorAuthenticationController@store        | web                                                       |
+|        |          |                                  |                                 |
+                                            | App\Http\Middleware\Authenticate                          |
+|        |          |                                  |                                 |
+                                            | Illuminate\Auth\Middleware\RequirePassword                |
+|        | GET|HEAD | user/two-factor-qr-code          |                                 | Laravel\Fortify\Http\Controllers\TwoFactorQrCodeController@show                 | web                                                       |
+|        |          |                                  |                                 |
+                                            | App\Http\Middleware\Authenticate                          |
+|        |          |                                  |                                 |
+                                            | Illuminate\Auth\Middleware\RequirePassword                |
+|        | POST     | user/two-factor-recovery-codes   |                                 | Laravel\Fortify\Http\Controllers\RecoveryCodeController@store                   | web                                                       |
+|        |          |                                  |                                 |
+                                            | App\Http\Middleware\Authenticate                          |
+|        |          |                                  |                                 |
+                                            | Illuminate\Auth\Middleware\RequirePassword                |
+|        | GET|HEAD | user/two-factor-recovery-codes   |                                 | Laravel\Fortify\Http\Controllers\RecoveryCodeController@index                   | web                                                       |
+|        |          |                                  |                                 |
+                                            | App\Http\Middleware\Authenticate                          |
+|        |          |                                  |                                 |
+                                            | Illuminate\Auth\Middleware\RequirePassword                |
++--------+----------+----------------------------------+---------------------------------+---------------------------------------------------------------------------------+-----------------------------------------------------------+
