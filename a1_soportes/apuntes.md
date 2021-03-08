@@ -16,6 +16,8 @@
 	+ Ejecutar: $ **git commit -m "Proyecto en blanco"**
 	# ---
 
+
+
 	## Crear un dominio local
 1. Agregar el siguiente código al final del archivo **C:\Windows\System32\drivers\etc\hosts**
 	>
@@ -40,6 +42,8 @@
 
 1. Reiniciar el servidor Apache.
 	# ---
+
+
 
 	## Ajustes iniciales
 1. Crear: bd **sefar** en **MySQL**.
@@ -99,6 +103,8 @@
 	+ Ejecutar: $ **git commit -m "Ajustes iniciales"**
 	# ---
 
+
+
 	## Laravel-permission
 	##### Documentación: https://spatie.be/docs/laravel-permission/v4/introduction
 
@@ -116,6 +122,8 @@
 	+ Ejecutar: $ **git add .**
 	+ Ejecutar: $ **git commit -m "Laravel-permission"**
 	# ---
+
+
 
 	## Plantilla AdminLTE
 	##### Documentación: https://github.com/jeroennoten/Laravel-AdminLTE
@@ -157,6 +165,8 @@
 	+ Ejecutar: $ **git commit -m "Instalación Plantilla AdminLTE"**
 	# ---
 
+
+
 	## Adaptación del proyecto al español
 	##### https://github.com/laravel-lang/lang
 	##### https://github.com/jeroennoten/Laravel-AdminLTE/wiki/Translations
@@ -168,8 +178,8 @@
 	+ $ composer require laraveles/spanish
     + $ php artisan laraveles:install-lang
 
-1. Realizar todas las traducciones necesarios en: **resources\lang\es.json**
-1. Configurar a español: **config\app.php**
+1. Realizar todas las traducciones necesarios en **resources\lang\es.json**
+1. Configurar a español **config\app.php**
 	>
 		***
 		'locale' => 'es',
@@ -177,23 +187,50 @@
 
 	### Commit 5:
 	+ Ejecutar: $ **git add .**
-	+ Ejecutar: $ git commit -m "Traducción al español"
+	+ Ejecutar: $ **git commit -m "Adaptación al español"**
+	# ---
+
+
+	## Seeders para prueba de roles y permisos
+1. Crear seeder para roles: $ **php artisan make:seeder RoleSeeder**
+1. Añadir a cabecera de **database\seeders\RoleSeeder.php**
+	>
+		use Spatie\Permission\Models\Role;
+		use Spatie\Permission\Models\Permission;
+1. Modificar el método **run** de **database\seeders\RoleSeeder.php**
+	>
+		***
+		***
+1. Crear seeder para usuarios: $ **php artisan make:seeder UserSeeder**
+1. Añadir a cabecera de **database\seeders\UserSeeder.php**
+	>
+		use App\Models\User;
+
+1. Modificar el método **run** de **database\seeders\UserSeeder.php**
+	>
+		***
+		***
+1. Modificar el método run **database\seeders\DatabaseSeeder.php**
+	>
+		***
+		***
+1. Ejecutar: $ **php artisan migrate:fresh --seed**
+	##### Nota: Para correr los seeder sin resetear la base de datos:
+	+ Ejecutar: $ **php artisan db:seed**
+
+Commit 6:
+***. Ejecutar: $ git add .
+***. Ejecutar: $ git commit -m "Seeder Roles, Permisos y Usuarios"
 
 
 
 
-***. Adaptar la configuración del archivo config\adminlte.php al proyecto.
+
+
+	## Personalizar el proyecto
+1. Adaptar la configuración del archivo config\adminlte.php al proyecto.
 	Nota: Los icons se pueden buscar en https://fontawesome.com/icons
 	También se recomienda visitar: https://www.youtube.com/playlist?list=PLZ2ovOgdI-kWTCkbH749Ukvq7FMz5ahpP
-
-
-
-
-
-
-
-
-
 
 
 
@@ -216,44 +253,6 @@
 	***
 
 
-
-
-
-
-
-
-
-Seeders para prueba de roles y permisos
-=======================================
-***. Ejecutar: $ php artisan make:seeder RoleSeeder
-***. Añadir a cabecera de: database\seeders\RoleSeeder.php
-	use Spatie\Permission\Models\Role;
-	use Spatie\Permission\Models\Permission;
-***. Ejecutar: $ php artisan make:seeder UserSeeder
-***. Añadir a cabecera de: database\seeders\UserSeeder.php
-	use App\Models\User;
-***. Modificar el método run de: database\seeders\UserSeeder.php
-	***
-	***
-***. Modificar el método run de: database\seeders\RoleSeeder.php
-    public function run()
-    {
-		***
-		***
-    }
-***. Modificar el método run: database\seeders\DatabaseSeeder.php
-    public function run()
-    {
-        ***
-		***
-    }
-***. Ejecutar: $ php artisan migrate:fresh --seed
-	Nota: Para correr los seeder sin resetera la bd:
-		- Ejecutar: $ php artisan db:seed
-
-Commit 6:
-***. Ejecutar: $ git add .
-***. Ejecutar: $ git commit -m "Seeder Roles, Permisos y Usuarios"
 
 CRUD Permisos con Liveware
 ==========================
