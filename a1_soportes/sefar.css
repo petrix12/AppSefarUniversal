@@ -1,0 +1,39 @@
+/* Color de fondo rojo Sefar */
+.cfrSefar{
+	background-color:rgb(121,22,15) !important;
+}
+
+/* Color de fondo amarillo Sefar */
+.cfaSefar{
+	background-color:rgb(247,176,52) !important;
+}
+
+/* Color de fondo verde Sefar */
+.cfvSefar{
+	background-color:rgb(22,43,27) !important;
+}
+
+/* Color de fondo gris Sefar */
+.cfgSefar{
+	background-color:rgb(63,61,61) !important;
+}
+
+/* Color de texto rojo Sefar */
+.ctrSefar{
+	color:rgb(121,22,15) !important;
+}
+
+/* Color de texto amarillo Sefar */
+.ctaSefar{
+	color:rgb(247,176,52) !important;
+}
+
+/* Color de texto verde Sefar */
+.ctvSefar{
+	color:rgb(22,43,27) !important;
+}
+
+/* Color de texto gris Sefar */
+.ctgSefar{
+	color:rgb(63,61,61) !important;
+}

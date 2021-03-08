@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <title>Prueba de envío de parámetros</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Prueba de envío de parámetros</h2>
+        <p>Carga genealógicas</p>
+        <form class="form-inline" action="http://sefar.test/registro" method ="get">
+            <fieldset>
+                <legend>Datos Clientes</legend>
+                <div class="form-group">
+                    <label class="sr-only" for="pasaporte">Pasaporte:</label>
+                    <input type="text" class="form-control" id="pasaporte" name="pasaporte" placeholder="Pasaporte" value="1234567">
+                </div>
+                <div class="form-group">
+                    <label class="sr-only" for="nombres">Nombre:</label>
+                    <input type="text" class="form-control" id="nombres" name="nombres" placeholder="Nombres" value="Primera Prueba">
+                </div>
+                <div class="form-group">
+                    <label class="sr-only" for="apellidos">Apellidos:</label>
+                    <input type="text" class="form-control" id="apellidos" name="apellidos" placeholder="Apellidos" value="Borrar Delete">
+                </div>
+                <div class="form-group">
+                    <label class="sr-only" for="email">e-mail:</label>
+                    <input type="email" class="form-control" id="email" name="email" placeholder="e-mail" value="primera.borrar@gmail.com">
+                </div>
+                <hr/>
+                <div class="form-group">
+                    <label class="sr-only" for="fnacimiento">Fecha de nacimiento:</label>
+                    <input type="date" class="form-control" id="fnacimiento" name="fnacimiento" placeholder="Fecha de nacimiento" value="1977-11-03">
+                </div>
+                <div class="form-group">
+                    <label class="sr-only" for="cnacimiento">Ciudad de nacimiento:</label>
+                    <input type="text" class="form-control" id="cnacimiento" name="cnacimiento" placeholder="Ciudad de nacimiento" value="Falcón">
+                </div>
+                <div class="form-group">
+                    <label class="sr-only" for="pnacimiento">País de nacimiento:</label>
+                    <input type="text" class="form-control" id="pnacimiento" name="pnacimiento" placeholder="País de nacimiento" value="Venezuela">
+                </div>
+                <div class="form-group">
+                    <label for="sexo">Sexo:</label>
+                    <select class="form-control" id="sexo" name="sexo">
+                        <option>FEMENINO</option>
+                        <option selected>MASCULINO</option>
+                    </select>
+                </div>
+                <hr/>
+                <legend>Datos Familiar</legend>
+                <div class="form-group">
+                    <label class="sr-only" for="nombre_f">Nombre del familiar:</label>
+                    <input type="text" class="form-control" id="nombre_f" name="nombre_f" placeholder="Nombre del familiar" value="Carla Pérez">
+                </div>
+                <div class="form-group">
+                    <label class="sr-only" for="pasaporte_f">Pasaporte del familiar:</label>
+                    <input type="text" class="form-control" id="pasaporte_f" name="pasaporte_f" placeholder="Pasaporte del familiar" value="5555555">
+                </div>
+                <hr/>
+                <button type="submit" class="btn btn-default">Enviar</button>
+            <fieldset>
+        </form>
+    </div>
+</body>
+
+</html>
