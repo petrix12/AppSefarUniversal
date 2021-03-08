@@ -99,8 +99,8 @@
 	+ Ejecutar: $ **git commit -m "Ajustes iniciales"**
 	# ---
 
-	# Laravel-permission
-	#### Documentación: https://spatie.be/docs/laravel-permission/v4/introduction
+	## Laravel-permission
+	##### Documentación: https://spatie.be/docs/laravel-permission/v4/introduction
 
 1. Ejecutar: $ **composer require spatie/laravel-permission**
 1. Ejecutar: $ **php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"**
@@ -117,8 +117,8 @@
 	+ Ejecutar: $ **git commit -m "Laravel-permission"**
 	# ---
 
-	# Integrar plantilla AdminLTE
-	#### Documentación: https://github.com/jeroennoten/Laravel-AdminLTE
+	## Plantilla AdminLTE
+	##### Documentación: https://github.com/jeroennoten/Laravel-AdminLTE
 	##### Plantilla: https://adminlte.io/themes/v3/index.html
 
 1. Integrar AdminLTE: $ **composer require jeroennoten/laravel-adminlte**
@@ -145,7 +145,7 @@
 		
 		@stop
 
-	**Nota**: Se recomienda insertar ruta en **routes\web.php** para probar vistas:
+	##### **Nota**: Se recomienda insertar ruta en **routes\web.php** para probar vistas:
 	>
 		// Para probar vistas
 		Route::get('/pruebas', function () {
@@ -155,13 +155,37 @@
 	### Commit 4:
 	+ Ejecutar: $ **git add .**
 	+ Ejecutar: $ **git commit -m "Instalación Plantilla AdminLTE"**
+	# ---
+
+	## Adaptación del proyecto al español
+	##### https://github.com/laravel-lang/lang
+	##### https://github.com/jeroennoten/Laravel-AdminLTE/wiki/Translations
+
+1. Pasar AdminLTE a español: $ **php artisan adminlte:install --only=translations**
+1. Pasar Laravel a español: $ **composer require laravel-lang/lang:~7.0**
+1. Copiar directorio: **vendor\laravel-lang\lang\src\es** y pegarlo en: **resources\lang**
+	##### **Nota**: También esta la opción:
+	+ $ composer require laraveles/spanish
+    + $ php artisan laraveles:install-lang
+
+1. Realizar todas las traducciones necesarios en: **resources\lang\es.json**
+1. Configurar a español: **config\app.php**
+	>
+		***
+		'locale' => 'es',
+		***
+
+	### Commit 5:
+	+ Ejecutar: $ **git add .**
+	+ Ejecutar: $ git commit -m "Traducción al español"
+
+
 
 
 ***. Adaptar la configuración del archivo config\adminlte.php al proyecto.
 	Nota: Los icons se pueden buscar en https://fontawesome.com/icons
 	También se recomienda visitar: https://www.youtube.com/playlist?list=PLZ2ovOgdI-kWTCkbH749Ukvq7FMz5ahpP
 
-***. Configurar a español: config\app.php
 
 
 
@@ -169,7 +193,8 @@
 
 
 
-1. Pasar AdminLTE a español: $ **php artisan adminlte:install --only=translations**
+
+
 
 
 1. Modificar la ruta de inicio en **routes\web.php**
@@ -196,21 +221,7 @@
 
 
 
-Traducir el proyecto al español
-===============================
-URL: https://github.com/laravel-lang/lang
-***. Ejecutar: $ composer require laravel-lang/lang:~7.0
-***. Copiar directorio: vendor\laravel-lang\lang\src\es
-    y pegarlo en: resources\lang
-	Nota: También esta la opción:
-		- $ composer require laraveles/spanish
-    	- $ php artisan laraveles:install-lang
-***. Realizar todas las traducciones necesarios en:
-	resources\lang\es.json
 
-Commit 5:
-***. Ejecutar: $ git add .
-***. Ejecutar: $ git commit -m "Traducción al español"
 
 Seeders para prueba de roles y permisos
 =======================================
