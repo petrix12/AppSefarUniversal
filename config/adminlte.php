@@ -14,9 +14,9 @@ return [
     |
     */
 
-    'title' => 'AdminLTE 3',
+    'title' => '',
     'title_prefix' => '',
-    'title_postfix' => '',
+    'title_postfix' => '| Sefar Universal',
 
     /*
     |--------------------------------------------------------------------------
@@ -45,12 +45,12 @@ return [
     |
     */
 
-    'logo' => '<b>Admin</b>LTE',
-    'logo_img' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
+    'logo' => '<b>sefar</b>',
+    'logo_img' => 'vendor/adminlte/dist/img/LogoSefar.png',
     'logo_img_class' => 'brand-image img-circle elevation-3',
     'logo_img_xl' => null,
     'logo_img_xl_class' => 'brand-image-xs',
-    'logo_img_alt' => 'AdminLTE',
+    'logo_img_alt' => 'Sefar Universal',
 
     /*
     |--------------------------------------------------------------------------
@@ -65,11 +65,12 @@ return [
     */
 
     'usermenu_enabled' => true,
-    'usermenu_header' => false,
-    'usermenu_header_class' => 'bg-primary',
+    'usermenu_header' => true,
+    /* 'usermenu_header_class' => 'bg-info', */
+    'usermenu_header_class' => 'cfaSefar',
     'usermenu_image' => false,
-    'usermenu_desc' => false,
-    'usermenu_profile_url' => false,
+    'usermenu_desc' => true,
+    'usermenu_profile_url' => true,
 
     /*
     |--------------------------------------------------------------------------
@@ -85,8 +86,8 @@ return [
 
     'layout_topnav' => null,
     'layout_boxed' => null,
-    'layout_fixed_sidebar' => null,
-    'layout_fixed_navbar' => null,
+    'layout_fixed_sidebar' => true,
+    'layout_fixed_navbar' => true,
     'layout_fixed_footer' => null,
 
     /*
@@ -121,8 +122,8 @@ return [
     */
 
     'classes_body' => '',
-    'classes_brand' => '',
-    'classes_brand_text' => '',
+    'classes_brand' => 'bg-white',
+    'classes_brand_text' => 'ctrSefar',
     'classes_content_wrapper' => '',
     'classes_content_header' => '',
     'classes_content' => '',
@@ -167,7 +168,7 @@ return [
     */
 
     'right_sidebar' => false,
-    'right_sidebar_icon' => 'fas fa-cogs',
+    'right_sidebar_icon' => 'fas fa-bars',
     'right_sidebar_theme' => 'dark',
     'right_sidebar_slide' => true,
     'right_sidebar_push' => true,
@@ -187,12 +188,12 @@ return [
     */
 
     'use_route_url' => false,
-    'dashboard_url' => 'home',
+    'dashboard_url' => '/',
     'logout_url' => 'logout',
     'login_url' => 'login',
     'register_url' => 'register',
-    'password_reset_url' => 'password/reset',
-    'password_email_url' => 'password/email',
+    'password_reset_url' => 'reset-password',
+    'password_email_url' => '' /* 'password/email' */,
     'profile_url' => false,
 
     /*
@@ -226,20 +227,65 @@ return [
     'menu' => [
         [
             'text' => 'search',
-            'search' => true,
+            'search' => false,
             'topnav' => true,
         ],
+        /* [
+            'text' => 'Al lado de search',
+            'url' => '#',
+            'topnav' => true,
+        ], */
+        /* [
+            'text' => 'Al lado derecho',
+            'url' => '#',
+            'topnav_right' => true,
+        ], */
+        /* [
+            'text' => 'Dentro de usuario',
+            'url' => '#',
+            'topnav_user' => true,
+        ], */
         [
             'text' => 'blog',
             'url'  => 'admin/blog',
-            'can'  => 'manage-blog',
+            'can'  => 'definir',
         ],
         [
-            'text'        => 'pages',
-            'url'         => 'admin/pages',
-            'icon'        => 'far fa-fw fa-file',
-            'label'       => 4,
-            'label_color' => 'success',
+            'text'        => 'Panel Administrativo',
+            'route'       => 'inicio',
+            'icon'        => 'fas fa-tachometer-alt',
+            'icon_color'  => 'yellow',
+            /* 'label'       => 1,
+            'label_color' => 'success', */
+            'can'  => 'administrador',
+        ],
+        [
+            'text'        => 'Accesos',
+            'icon'        => 'fas fa-address-card',
+            'icon_color'  => 'yellow',
+            'submenu' => [
+                [
+                    'text'          => 'Usuarios',
+                    'icon'          => 'far fa-address-card',
+                    'icon_color'    => 'white',
+                    'url'           => 'users',
+                    'can'           => 'crud.users.index',
+                ],
+                [
+                    'text'          => 'Roles',
+                    'icon'          => 'far fa-check-square',
+                    'icon_color'    => 'white',
+                    'url'           => '#',
+                    'can'           => 'crud.roles.index',
+                ],
+                [
+                    'text'          => 'Permisos',
+                    'icon'          => 'fas fa-check-double',
+                    'icon_color'    => 'white',
+                    'url'           => 'permissions',
+                    'can'           => 'crud.permissions.index',
+                ],
+            ],
         ],
         ['header' => 'account_settings'],
         [

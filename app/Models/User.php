@@ -10,6 +10,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Support\Facades\Auth;
 
 class User extends Authenticatable
 {
@@ -60,4 +61,24 @@ class User extends Authenticatable
     protected $appends = [
         'profile_photo_url',
     ];
+
+    // Permite incorporar una imagen de usuario
+    // Se debe configurar en config\adminlte.php: 'usermenu_image' => true,
+    public function adminlte_image(){
+        //return 'https://picsum.photos/300/300'; /* Retorna una imagen aleatoria*/
+        
+        return Auth::user()->profile_photo_url;
+    }
+
+    // Permite incorporar alguna descripción del usuario
+    // Se debe configurar en config\adminlte.php: 'usermenu_desc' => ' => true,
+    public function adminlte_desc(){
+        return 'Aquí la información';
+    }
+
+    // Permite incorporar el perfil
+    // Se debe configurar en config\adminlte.php: 'usermenu_profile_url' => true,
+    public function adminlte_profile_url(){
+        return 'user/profile';
+    }
 }

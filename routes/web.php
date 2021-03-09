@@ -2,10 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 
-// Home
+// Vista inicio
 Route::get('/', function () {
-    return view('welcome');
-});
+    return view('inicio');
+})->name('inicio')->middleware('auth');
 
 Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
     return view('dashboard');

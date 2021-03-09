@@ -1,7 +1,8 @@
 <x-guest-layout>
     <x-jet-authentication-card>
         <x-slot name="logo">
-            <x-jet-authentication-card-logo />
+            {{-- <x-jet-authentication-card-logo /> --}}
+            @include('layouts.logos.logo')
         </x-slot>
 
         <x-jet-validation-errors class="mb-4" />
@@ -27,7 +28,7 @@
             </div>
 
             <div class="flex items-center justify-end mt-4">
-                <x-jet-button>
+                <x-jet-button class="cfrSefar">
                     {{ __('Reset Password') }}
                 </x-jet-button>
             </div>

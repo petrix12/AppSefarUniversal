@@ -16,7 +16,7 @@
 	+ Ejecutar: $ **git commit -m "Proyecto en blanco"**
 	# ---
 
-
+	## ************	+++ ************
 
 	## Crear un dominio local
 1. Agregar el siguiente código al final del archivo **C:\Windows\System32\drivers\etc\hosts**
@@ -43,7 +43,7 @@
 1. Reiniciar el servidor Apache.
 	# ---
 
-
+	## ************	+++ ************
 
 	## Ajustes iniciales
 1. Crear: bd **sefar** en **MySQL**.
@@ -103,7 +103,7 @@
 	+ Ejecutar: $ **git commit -m "Ajustes iniciales"**
 	# ---
 
-
+	## ************	+++ ************
 
 	## Laravel-permission
 	##### Documentación: https://spatie.be/docs/laravel-permission/v4/introduction
@@ -123,7 +123,7 @@
 	+ Ejecutar: $ **git commit -m "Laravel-permission"**
 	# ---
 
-
+	## ************	+++ ************
 
 	## Plantilla AdminLTE
 	##### Documentación: https://github.com/jeroennoten/Laravel-AdminLTE
@@ -165,7 +165,7 @@
 	+ Ejecutar: $ **git commit -m "Instalación Plantilla AdminLTE"**
 	# ---
 
-
+	## ************	+++ ************
 
 	## Adaptación del proyecto al español
 	##### https://github.com/laravel-lang/lang
@@ -179,6 +179,9 @@
     + $ php artisan laraveles:install-lang
 
 1. Realizar todas las traducciones necesarios en **resources\lang\es.json**
+	>
+		***
+		***
 1. Configurar a español **config\app.php**
 	>
 		***
@@ -215,44 +218,116 @@
 		***
 		***
 1. Ejecutar: $ **php artisan migrate:fresh --seed**
-	##### Nota: Para correr los seeder sin resetear la base de datos:
+	##### **Nota**: Para correr los seeder sin resetear la base de datos:
 	+ Ejecutar: $ **php artisan db:seed**
 
-Commit 6:
-***. Ejecutar: $ git add .
-***. Ejecutar: $ git commit -m "Seeder Roles, Permisos y Usuarios"
+	### Commit 6:
+	+ Ejecutar: $ **git add .**
+	+ Ejecutar: $ **git commit -m "Seeder Roles, Permisos y Usuarios"**
+	# ---
 
-
-
-
-
+	## ************	+++ ************
 
 	## Personalizar el proyecto
-1. Adaptar la configuración del archivo config\adminlte.php al proyecto.
-	Nota: Los icons se pueden buscar en https://fontawesome.com/icons
-	También se recomienda visitar: https://www.youtube.com/playlist?list=PLZ2ovOgdI-kWTCkbH749Ukvq7FMz5ahpP
+1. Agregar a la cabecera del modelo **User**:
+	>
+		use Illuminate\Support\Facades\Auth;
+1. Agregar los siguientes métodos a la clase **User**:
+	>
+		// Permite incorporar una imagen de usuario
+		// Se debe configurar en config\adminlte.php: 'usermenu_image' => true,
+		public function adminlte_image(){
+			//return 'https://picsum.photos/300/300'; /* Retorna una imagen aleatoria*/
+			return Auth::user()->profile_photo_url;
+		}
 
+		// Permite incorporar alguna descripción del usuario
+		// Se debe configurar en config\adminlte.php: 'usermenu_desc' => ' => true,
+		public function adminlte_desc(){
+			return 'Aquí la información';
+		}
 
-
+		// Permite incorporar el perfil
+		// Se debe configurar en config\adminlte.php: 'usermenu_profile_url' => true,
+		public function adminlte_profile_url(){
+			return 'user/profile';
+		}
+1. Adaptar la configuración del archivo **config\adminlte.php** al proyecto.
+	##### **Iconos**: https://fontawesome.com/icons
+	##### **Tutorial**: https://www.youtube.com/playlist?list=PLZ2ovOgdI-kWTCkbH749Ukvq7FMz5ahpP
+	>
+		***
+		***
+1. Crear archivo de estilos propios del proyecto **public\css\sefar.css**
+	>
+		***
+		***
+1. Agregar los estilos **public\css\sefar.css** en la sección del estilos de los archivos **archivo resources\views\layouts\guest.blade.php** y **resources\views\layouts\app.blade.php**
+	>
+		<link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
+1. Ubicar un fabicon de la empresa, darle el nombre de **favicon.ico** y pegarlo en:
+	+ public\
+1. Ubicar un logo de la empresa, darle el nombre de **LogoSefar.png** y pegarlo en:
+	+ public\vendor\adminlte\dist\img\
+1. Crear **resources\views\layouts\logos\logo_sm.blade.php**
+	>
+		<img src="{{ asset('vendor\adminlte\dist\img\LogoSefar.png') }}" alt="Logo Sefar" width="50" height="50">
+1. Crear **resources\views\layouts\logos\logo.blade.php**
+	>
+		<img src="{{ asset('vendor\adminlte\dist\img\LogoSefar.png') }}" alt="Logo Sefar" width="100" height="100">
+1. Crear vista **resources\views\inicio.blade.php** para la ruta **inicio**
+	>
+		***
+		***
 1. Modificar la ruta de inicio en **routes\web.php**
-	Route::get('/', function () {
-		return view('auth.login');
-	});
-***. Adaptar todos los archivos resources\views\auth
-	a las características del proyecto
-***. Crear: resources\views\inicio.blade.php
-	***
-	***
-***. Modificar: app\Providers\RouteServiceProvider.php
-	Cambiar:
+	>
+		// Vista inicio
+		Route::get('/', function () {
+			return view('inicio');
+		})->name('inicio')->middleware('auth');
+1. Adaptar todos los **archivos resources\views\auth** a las características del proyecto
+	+ resources\views\auth\confirm-password.blade.php
+		>
+			***
+			***
+	+ resources\views\auth\forgot-password.blade.php
+		>
+			***
+			***
+	+ resources\views\auth\login.blade.php
+		>
+			***
+			***
+	+ resources\views\auth\register.blade.php
+		>
+			***
+			***
+	+ resources\views\auth\reset-password.blade.php
+		>
+			***
+			***
+	+ resources\views\auth\two-factor-challenge.blade.php
+		>
+			***
+			***
+	+ resources\views\auth\verify-email.blade.php
+		>
+			***
+			***
+1. Modificar **app\Providers\RouteServiceProvider.php**
+	#### Cambiar:
+	>
 		public const HOME = '/dashboard';
-	por:
-		public const HOME = '/inicio';
-***. Crear archivo de estilos propios del proyecto: public\css\sefar.css
-	***
-	***
+	#### por:
+	>
+		public const HOME = '/';
 
+	### Commit 7:
+	+ Ejecutar: $ **git add .**
+	+ Ejecutar: $ **git commit -m "Proyecto personalizado"**
+	# ---
 
+	## ************	+++ ************
 
 CRUD Permisos con Liveware
 ==========================
@@ -332,8 +407,8 @@ Registro cliente
 >
 	Method      URI                               Name
 	======		===								  ====
-	GET|HEAD | / 
-	GET|HEAD | api/user 
+	GET|HEAD | / 								| inicio
+	GET|HEAD | api/user 						|
 	GET|HEAD | dashboard                        | dashboard  
 	GET|HEAD | forgot-password                  | password.request   
 	POST     | forgot-password                  | password.email   

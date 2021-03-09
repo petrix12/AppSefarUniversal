@@ -1,7 +1,9 @@
 <x-guest-layout>
     <x-jet-authentication-card>
         <x-slot name="logo">
-            <x-jet-authentication-card-logo />
+            {{-- <x-jet-authentication-card-logo /> --}}
+            {{-- <img src="{{ asset('vendor\adminlte\dist\img\SefarLogo.png') }}" alt="Logo Sefar" width="100" height="100"> --}}
+            @include('layouts.logos.logo')
         </x-slot>
 
         <x-jet-validation-errors class="mb-4" />
@@ -39,7 +41,7 @@
                     </a>
                 @endif
 
-                <x-jet-button class="ml-4">
+                <x-jet-button class="ml-4 cfrSefar">
                     {{ __('Log in') }}
                 </x-jet-button>
             </div>
