@@ -67,7 +67,7 @@ return [
     'usermenu_enabled' => true,
     'usermenu_header' => true,
     /* 'usermenu_header_class' => 'bg-info', */
-    'usermenu_header_class' => 'cfaSefar',
+    'usermenu_header_class' => 'cfrSefar ctaSefar',
     'usermenu_image' => false,
     'usermenu_desc' => true,
     'usermenu_profile_url' => true,
@@ -122,12 +122,12 @@ return [
     */
 
     'classes_body' => '',
-    'classes_brand' => 'bg-white',
-    'classes_brand_text' => 'ctrSefar',
+    'classes_brand' => 'cfrSefar',
+    'classes_brand_text' => 'ct_blanco',
     'classes_content_wrapper' => '',
     'classes_content_header' => '',
     'classes_content' => '',
-    'classes_sidebar' => 'sidebar-dark-primary elevation-4',
+    'classes_sidebar' => 'sidebar-dark-warning elevation-4',
     'classes_sidebar_nav' => '',
     'classes_topnav' => 'navbar-white navbar-light',
     'classes_topnav_nav' => 'navbar-expand',
@@ -248,13 +248,13 @@ return [
         [
             'text' => 'blog',
             'url'  => 'admin/blog',
-            'can'  => 'definir',
+            'can'  => 'no_definido',
         ],
         [
             'text'        => 'Panel Administrativo',
             'route'       => 'inicio',
             'icon'        => 'fas fa-tachometer-alt',
-            'icon_color'  => 'yellow',
+            'icon_color'  => 'white',
             /* 'label'       => 1,
             'label_color' => 'success', */
             'can'  => 'administrador',
@@ -262,7 +262,8 @@ return [
         [
             'text'        => 'Accesos',
             'icon'        => 'fas fa-address-card',
-            'icon_color'  => 'yellow',
+            'icon_color'  => 'white',
+            'can'  => 'administrador',
             'submenu' => [
                 [
                     'text'          => 'Usuarios',
@@ -287,44 +288,56 @@ return [
                 ],
             ],
         ],
-        ['header' => 'account_settings'],
+        [
+            'header' => 'account_settings',
+            'can'  => 'no_definido',
+        ],
         [
             'text' => 'profile',
-            'url'  => 'admin/settings',
+            'url'  => 'user/profile',
             'icon' => 'fas fa-fw fa-user',
+            'can'  => 'no_definido',
         ],
         [
             'text' => 'change_password',
-            'url'  => 'admin/settings',
+            'url'  => 'reset-password',
             'icon' => 'fas fa-fw fa-lock',
+            'can'  => 'no_definido',
         ],
         [
             'text'    => 'multilevel',
             'icon'    => 'fas fa-fw fa-share',
+            'can'  => 'no_definido',
             'submenu' => [
                 [
                     'text' => 'level_one',
                     'url'  => '#',
+                    'can'  => 'no_definido',
                 ],
                 [
                     'text'    => 'level_one',
                     'url'     => '#',
+                    'can'  => 'no_definido',
                     'submenu' => [
                         [
                             'text' => 'level_two',
                             'url'  => '#',
+                            'can'  => 'no_definido',
                         ],
                         [
                             'text'    => 'level_two',
                             'url'     => '#',
+                            'can'  => 'no_definido',
                             'submenu' => [
                                 [
                                     'text' => 'level_three',
                                     'url'  => '#',
+                                    'can'  => 'no_definido',
                                 ],
                                 [
                                     'text' => 'level_three',
                                     'url'  => '#',
+                                    'can'  => 'no_definido',
                                 ],
                             ],
                         ],
@@ -333,24 +346,31 @@ return [
                 [
                     'text' => 'level_one',
                     'url'  => '#',
+                    'can'  => 'no_definido',
                 ],
             ],
         ],
-        ['header' => 'labels'],
+        [
+            'header' => 'labels',
+            'can'  => 'no_definido',
+        ],
         [
             'text'       => 'important',
             'icon_color' => 'red',
             'url'        => '#',
+            'can'  => 'no_definido',
         ],
         [
             'text'       => 'warning',
             'icon_color' => 'yellow',
             'url'        => '#',
+            'can'  => 'no_definido',
         ],
         [
             'text'       => 'information',
             'icon_color' => 'cyan',
             'url'        => '#',
+            'can'  => 'no_definido',
         ],
     ],
 

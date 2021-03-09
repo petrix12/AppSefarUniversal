@@ -52,7 +52,7 @@
         @endif
 
         <div class="flex items-center mt-5">
-            <x-jet-button wire:click="confirmLogout" wire:loading.attr="disabled">
+            <x-jet-button wire:click="confirmLogout" wire:loading.attr="disabled" class="cfrSefar">
                 {{ __('Log Out Other Browser Sessions') }}
             </x-jet-button>
 

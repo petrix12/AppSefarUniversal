@@ -1,3 +1,12 @@
+<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+
+<p align="center">
+<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+</p>
+
 # Proyecto AdminSefar
 ##### https://laravel.com/docs/8.x
 ##### Versión: **Laravel Framework 8.31.0**
@@ -35,10 +44,10 @@
 	##### **Nota**: En el archivo **C:\xampp\apache\conf\httpd.conf** las líneas:
 	>
 		Include conf/extra/httpd-vhosts.conf
-	y
+	##### y
 	>
 		LoadModule rewrite_module modules/mod_rewrite.so		
-	no deben estar comentada con #.
+	##### no deben estar comentada con #.
 
 1. Reiniciar el servidor Apache.
 	# ---
@@ -46,8 +55,8 @@
 	## ************	+++ ************
 
 	## Ajustes iniciales
-1. Crear: bd **sefar** en **MySQL**.
-	##### Juego de caracters: **utf8_general_ci**
+1. Crear: base de datos **sefar** en **MySQL**.
+	##### **Usar**: Juego de caracters: **utf8_general_ci**
 1. Configurar: **.env** con bd **sefar**
 	>
 		***
@@ -329,12 +338,258 @@
 
 	## ************	+++ ************
 
-CRUD Permisos con Liveware
-==========================
-***. Crear grupo de rutas en routes\web.php
-	// Grupo de rutas CRUD
-	Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
-	});
+	## Perfil de usuario
+1. Rediseñar plantilla **resources\views\profile\update-profile-information-form.blade.php**
+	>
+						***
+						@if ($this->user->profile_photo_path)
+							<x-jet-secondary-button type="button" class="mt-2 cfrSefar ctaSefar" wire:click="deleteProfilePhoto">
+								{{ __('Remove Photo') }}
+							</x-jet-secondary-button>
+						@endif
+						***
+				@endif
+				***
+			</x-slot>
+
+			<x-slot name="actions">
+				***
+				<x-jet-button wire:loading.attr="disabled" wire:target="photo" class="cfrSefar">
+					{{ __('Save') }}
+				</x-jet-button>
+			</x-slot>
+		</x-jet-form-section>
+1. Rediseñar plantilla **resources\views\profile\update-password-form.blade.php**
+	>
+				***
+				<x-jet-button class="cfrSefar">
+					{{ __('Save') }}
+				</x-jet-button>
+			</x-slot>
+		</x-jet-form-section>
+1. Rediseñar plantilla **resources\views\profile\two-factor-authentication-form.blade.php**
+	>		
+		***
+		@if (! $this->enabled)
+			<x-jet-confirms-password wire:then="enableTwoFactorAuthentication">
+				<x-jet-button type="button" wire:loading.attr="disabled" class="cfrSefar">
+					{{ __('Enable') }}
+				</x-jet-button>
+			</x-jet-confirms-password>
+		@else
+		***
+1. Rediseñar plantilla **resources\views\profile\logout-other-browser-sessions-form.blade.php**
+	>	
+		***
+        <div class="flex items-center mt-5">
+            <x-jet-button wire:click="confirmLogout" wire:loading.attr="disabled" class="cfrSefar">
+                {{ __('Log Out Other Browser Sessions') }}
+            </x-jet-button>
+
+            <x-jet-action-message class="ml-3" on="loggedOut">
+                {{ __('Done.') }}
+            </x-jet-action-message>
+        </div>
+		***
+1. Rediseñar plantilla **resources\views\navigation-menu.blade.php**
+	>
+		<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
+			<!-- Primary Navigation Menu -->
+			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+				<div class="flex justify-between h-16">
+					<div class="flex">
+						<div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
+							<div class="block px-2 py-4 text-xl ctvSefar">
+								<strong>{{ Auth::user()->name }}</strong>
+							</div>
+						</div>
+					</div>
+
+					<div class="hidden sm:flex sm:items-center sm:ml-6">
+						<!-- Teams Dropdown -->
+						@if (Laravel\Jetstream\Jetstream::hasTeamFeatures())
+							<div class="ml-3 relative">
+								<x-jet-dropdown align="right" width="60">
+									<x-slot name="trigger">
+										<span class="inline-flex rounded-md">
+											<button type="button" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:bg-gray-50 hover:text-gray-700 focus:outline-none focus:bg-gray-50 active:bg-gray-50 transition ease-in-out duration-150">
+												{{ Auth::user()->currentTeam->name }}
+
+												<svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+													<path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+												</svg>
+											</button>
+										</span>
+									</x-slot>
+
+									<x-slot name="content">
+										<div class="w-60">
+											<!-- Team Management -->
+											<div class="block px-4 py-2 text-xs text-gray-400">
+												{{ __('Manage Team') }}
+											</div>
+
+											<!-- Team Settings -->
+											<x-jet-dropdown-link href="{{ route('teams.show', Auth::user()->currentTeam->id) }}">
+												{{ __('Team Settings') }}
+											</x-jet-dropdown-link>
+
+											@can('create', Laravel\Jetstream\Jetstream::newTeamModel())
+												<x-jet-dropdown-link href="{{ route('teams.create') }}">
+													{{ __('Create New Team') }}
+												</x-jet-dropdown-link>
+											@endcan
+
+											<div class="border-t border-gray-100"></div>
+
+											<!-- Team Switcher -->
+											<div class="block px-4 py-2 text-xs text-gray-400">
+												{{ __('Switch Teams') }}
+											</div>
+
+											@foreach (Auth::user()->allTeams() as $team)
+												<x-jet-switchable-team :team="$team" />
+											@endforeach
+										</div>
+									</x-slot>
+								</x-jet-dropdown>
+							</div>
+						@endif
+
+						<!-- Settings Dropdown -->
+						<div class="ml-3 relative">
+							<x-jet-dropdown align="right" width="48">
+								<x-slot name="trigger">
+									@if (Laravel\Jetstream\Jetstream::managesProfilePhotos())
+										<button class="flex text-sm border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300 transition duration-150 ease-in-out">
+											<img class="h-8 w-8 rounded-full object-cover" src="{{ Auth::user()->profile_photo_url }}" alt="{{ Auth::user()->name }}" />
+										</button>
+									@else
+										<span class="inline-flex rounded-md">
+											<button type="button" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+												{{ Auth::user()->name }}
+
+												<svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+													<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+												</svg>
+											</button>
+										</span>
+									@endif
+								</x-slot>
+
+								<x-slot name="content">
+									<div class="border-t border-gray-100"></div>        
+								</x-slot>
+							</x-jet-dropdown>
+						</div>
+					</div>
+
+					<!-- Hamburger -->
+					<div class="-mr-2 flex items-center sm:hidden">
+						<button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
+							<svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+								<path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+								<path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+							</svg>
+						</button>
+					</div>
+				</div>
+			</div>
+
+			<!-- Responsive Navigation Menu -->
+			<div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
+
+				<!-- Responsive Settings Options -->
+				<div class="pt-4 pb-1 border-t border-gray-200">
+					<div class="flex items-center px-4">
+						@if (Laravel\Jetstream\Jetstream::managesProfilePhotos())
+							<div class="flex-shrink-0 mr-3">
+								<img class="h-10 w-10 rounded-full object-cover" src="{{ Auth::user()->profile_photo_url }}" alt="{{ Auth::user()->name }}" />
+							</div>
+						@endif
+
+						<div>
+							<div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
+							<div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</nav>
+1. Rediseñar vista para el perfil de usuario **resources\views\profile\show.blade.php**
+	>
+		@extends('adminlte::page')
+
+		@section('title', 'Usuario')
+
+		@section('content_header')
+			{{-- <h1>Perfil de usuario</h1> --}}
+		@stop
+
+		@section('content')
+		<x-app-layout>
+			<div>
+				<div class="max-w-7xl mx-auto py-10 sm:px-6 lg:px-8">
+					@if (Laravel\Fortify\Features::canUpdateProfileInformation())
+						@livewire('profile.update-profile-information-form')
+
+						<x-jet-section-border />
+					@endif
+
+					@if (Laravel\Fortify\Features::enabled(Laravel\Fortify\Features::updatePasswords()))
+						<div class="mt-10 sm:mt-0">
+							@livewire('profile.update-password-form')
+						</div>
+
+						<x-jet-section-border />
+					@endif
+
+					@if (Laravel\Fortify\Features::canManageTwoFactorAuthentication())
+						<div class="mt-10 sm:mt-0">
+							@livewire('profile.two-factor-authentication-form')
+						</div>
+
+						<x-jet-section-border />
+					@endif
+
+					<div class="mt-10 sm:mt-0">
+						@livewire('profile.logout-other-browser-sessions-form')
+					</div>
+
+					@if (Laravel\Jetstream\Jetstream::hasAccountDeletionFeatures())
+						<x-jet-section-border />
+
+						<div class="mt-10 sm:mt-0">
+							@livewire('profile.delete-user-form')
+						</div>
+					@endif
+				</div>
+			</div>
+		</x-app-layout>
+		@stop
+
+		@section('css')
+			<link rel="stylesheet" href="/css/admin_custom.css">
+		@stop
+
+		@section('js')
+
+		@stop
+
+	### Commit 7:
+	+ Ejecutar: $ **git add .**
+	+ Ejecutar: $ **git commit -m "Perfil de usuario"**
+	# ---
+
+	## CRUD Permisos con Liveware	
+1. Crear grupo de rutas en **routes\web.php**
+	>
+		// Grupo de rutas CRUD
+		Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
+		});
+
+
+************************************		
 ***. Ejecutar: $ php artisan make:model Permission
 ***. Modificar: app\Models\Permission.php
 	***
