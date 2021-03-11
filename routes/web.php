@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\RoleController;
 use Illuminate\Support\Facades\Route;
 
 // Vista inicio
@@ -12,6 +13,8 @@ Route::get('/', function () {
 Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
     Route::resource('permissions', PermissionController::class)->names('permissions')
 			->middleware('can:crud.permissions.index');
+    Route::resource('roles', RoleController::class)->names('roles')
+			->middleware('can:crud.roles.index');
 });
 
 

@@ -276,7 +276,7 @@ return [
                     'text'          => 'Roles',
                     'icon'          => 'far fa-check-square',
                     'icon_color'    => 'white',
-                    'url'           => '#',
+                    'url'           => 'roles',
                     'can'           => 'crud.roles.index',
                 ],
                 [

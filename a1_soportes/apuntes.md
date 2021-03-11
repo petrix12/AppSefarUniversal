@@ -750,7 +750,7 @@
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## CRUD Permisos con Liveware	
-2. Crear grupo de rutas en **routes\web.php**
+1. Crear grupo de rutas en **routes\web.php**
 	>
 		// Grupo de rutas CRUD
 		Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
@@ -818,7 +818,6 @@
 			***
 			***
 
-
 	### Commit 10:
 	+ Ejecutar:
 		>
@@ -832,41 +831,88 @@
 	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
-CRUD Roles con Liveware
-==========================
-***. Ejecutar: $ php artisan make:model Role
-***. Modificar: php artisan make:model Role
-	***
-	***
+	## CRUD Roles con Liveware
+1. Crear modelo Role:
+	>
+		$ php artisan make:model Role
+1. Programar modelo Role: **app\Models\Role.php**
+	>
+		<?php
+
+		namespace App\Models;
+
+		use Illuminate\Database\Eloquent\Factories\HasFactory;
+		use Illuminate\Database\Eloquent\Model;
+
+		class Role extends Model
+		{
+			use HasFactory;
+
+			protected $fillable = [
+				'name',
+			];    
+		}
+1. Crear controlador Role:
+	>
+		$ php artisan make:controller RoleController -r
+1. Programar el controlador Role **app\Http\Controllers\RoleController.php**
+	>
+		***
+		***
+1. Agregar ruta de roles al grupo de rutas CRUD:
+	>
+		Route::resource('roles', RoleController::class)->names('roles')
+			->middleware('can:crud.roles.index');
+	##### Nota: añadir a la cabecera:
+	>
+		use App\Http\Controllers\RoleController;
+1. Crear componente Livewire para Tabla Roles: 
+	>
+		$ php artisan make:livewire crud/roles-table
+1. Programar controlador para la tabla Roles: **app\Http\Livewire\Crud\RolesTable.php**
+	>
+		***
+		***
+1. Diseñar vista para la tabla Roles: **resources\views\livewire\crud\roles-table.blade.php**
+	>
+		***
+		***
+1. Programar controlador Role: **app\Http\Controllers\RoleController.php**
+	>
+		***
+		***
+1. Diseñar las vistas para el CRUD Roles:
+	- resources\views\crud\roles\index.blade.php
+		>
+			***
+			***
+	- resources\views\crud\roles\create.blade.php
+		>
+			***
+			***
+	- resources\views\crud\roles\edit.blade.php
+		>
+			***
+			***
+
+	### Commit 11:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "CRUD Roles"
+
 
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
-CRUD Usuarios con Liveware
-==========================
-***. Ejecutar: $ php artisan make:controller UserController -r
-***. Modificar: app\Http\Controllers\UserController.php
-	***
-	***
-***. Ejecutar: $ php artisan make:livewire users-table
-***. Modificar: resources\views\livewire\users-table.blade.php
-	***
-	***
-***. Crear los archivos para el CRUD Usuarios:
-	- resources\views\crud\users\index.blade.php
-	- resources\views\crud\users\edit.blade.php
-	- resources\views\crud\users\create.blade.php
-***. Modificar: app\Http\Livewire\UsersTable.php
-
-Commit 8:
-***. Ejecutar: $ git add .
-***. Ejecutar: $ git commit -m "CRUD Usuarios"
 
 
-	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
-	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
-	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+
+
+
 
 Registro cliente
 ================
@@ -928,3 +974,16 @@ Registro cliente
 	PUT|PATCH 	| permissions/{permission}         	| crud.permissions.update
 	DELETE    	| permissions/{permission}         	| crud.permissions.destroy 
 	GET|HEAD  	| permissions/{permission}/edit    	| crud.permissions.edit
+
+# RUTAS **ROLES**
+>
+	Method      URI                               	Name
+	======		===								  	====
+	GET|HEAD 	| roles                      		| crud.roles.index 
+	POST     	| roles                      		| crud.roles.store
+	GET|HEAD  	| roles/create               		| crud.roles.create 
+	GET|HEAD  	| roles/{role}         				| crud.roles.show
+	PUT|PATCH 	| roles/{role}         				| crud.roles.update
+	DELETE    	| roles/{role}         				| crud.roles.destroy 
+	GET|HEAD  	| roles/{role}/edit    				| crud.roles.edit
+	 

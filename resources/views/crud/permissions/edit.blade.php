@@ -71,13 +71,13 @@
                                                         <div class="flex items-start">
                                                             <div class="flex items-center h-5">
                                                                 @if ($role->hasPermissionTo($permission->name))
-                                                                <input name="{{ $role->name }}" type="checkbox" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded" checked>
+                                                                <input name="{{ "role" . $role->id }}" type="checkbox" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded" checked>
                                                                 @else
-                                                                <input name="{{ $role->name }}" type="checkbox" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded">    
+                                                                <input name="{{ "role" . $role->id }}" type="checkbox" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded">    
                                                                 @endif
                                                             </div>
                                                             <div class="ml-3 text-sm">
-                                                                <label for="{{ $role->name }}" class="font-medium text-gray-700">{{ $role->name }}</label>
+                                                                <label for="{{ "role" . $role->id }}" class="font-medium text-gray-700">{{ $role->name }}</label>
                                                             </div>
                                                         </div> 
                                                     </div>

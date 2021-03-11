@@ -52,13 +52,13 @@ class PermissionController extends Controller
         // Asignando permisos a roles seleccionados
         $roles = Role::all();
         foreach($roles as $role){
-            if($request->input($role->name)){
+            if($request->input("role" . $role->id)){
                 $roles->find($role->id)->givePermissionTo($permission);
             }
         }
 
         // Mensaje 
-        Alert::success('¡Éxito!', 'Se ha creado un nuevo permiso: ' . $request->name);
+        Alert::success('¡Éxito!', 'Se ha creado el permiso: ' . $request->name);
         
         // Redireccionar a la vista index
         return redirect()->route('crud.permissions.index');
@@ -70,9 +70,10 @@ class PermissionController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show(Permission $permission)
     {
-        //
+        $roles = Role::all();
+        return view('crud.permissions.edit', compact('permission', 'roles'));
     }
 
     /**
@@ -108,7 +109,7 @@ class PermissionController extends Controller
         // Actualizando permisos a roles seleccionados
         $roles = Role::all();
         foreach($roles as $role){
-            if($request->input($role->name)){
+            if($request->input("role" . $role->id)){
                 $roles->find($role->id)->givePermissionTo($permission);
             }else {
                 $roles->find($role->id)->revokePermissionTo($permission);
@@ -116,7 +117,7 @@ class PermissionController extends Controller
         }
 
         // Mensaje 
-        Alert::success('¡Éxito!', 'Se ha actualizado un permiso: ' . $request->name);
+        Alert::success('¡Éxito!', 'Se ha actualizado el permiso a: ' . $request->name);
         
         // Redireccionar a la vista index
         return redirect()->route('crud.permissions.index');
@@ -131,7 +132,6 @@ class PermissionController extends Controller
     public function destroy(Permission $permission)
     {
         $nombre = $permission->name;
-        //dd($permission->id, $permission->name);
         
         $permission->delete();
 

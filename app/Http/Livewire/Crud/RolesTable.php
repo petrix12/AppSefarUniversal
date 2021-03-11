@@ -3,10 +3,10 @@
 namespace App\Http\Livewire\Crud;
 
 use Livewire\WithPagination;
-use App\Models\Permission;
+use App\Models\Role;
 use Livewire\Component;
 
-class PermissionsTable extends Component
+class RolesTable extends Component
 {
     use WithPagination;
 
@@ -17,11 +17,11 @@ class PermissionsTable extends Component
 
     public $search = '';
     public $perPage = '5';
-    
+
     public function render()
     {
-        return view('livewire.crud.permissions-table', [
-            'permissions' => Permission::where('name','LIKE',"%$this->search%")
+        return view('livewire.crud.roles-table', [
+            'roles' => Role::where('name','LIKE',"%$this->search%")
                 ->orderBy('updated_at','DESC')
                 ->paginate($this->perPage)
         ]);
