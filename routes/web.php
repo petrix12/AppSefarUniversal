@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PermissionController;
 use Illuminate\Support\Facades\Route;
 
 // Vista inicio
@@ -9,7 +10,8 @@ Route::get('/', function () {
 
 // Grupo de rutas CRUD
 Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
-    //
+    Route::resource('permissions', PermissionController::class)->names('permissions')
+			->middleware('can:crud.permissions.index');
 });
 
 

@@ -13,19 +13,32 @@
 #
 
 # Paso a paso del desarrollo del proyecto
-1. Ejecutar: $ **laravel new sefar --jet**
+1. Crear proyecto: 
+	>
+		$ laravel new sefar --jet
 	##### **Nota**: Seleccionamos livewire y en	**Will your application use teams? (yes/no) [no]:**
 	##### Responder **no**
-1. Ejecutar: $ **npm install**
-1. Ejecutar: $ **npm run dev**
+1. Ejecutar: 
+	>
+		$ npm install
+1. Ejecutar: 
+	>
+		$ npm run dev
 
 	### Commit 1:
-	+ Ejecutar: $ **git init**
-	+ Ejecutar: $ **git add .**
-	+ Ejecutar: $ **git commit -m "Proyecto en blanco"**
-	# ---
+	+ Crear repositorio: 
+		>
+			$ git init
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "Proyecto en blanco"
 
-	## ************	+++ ************
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## Crear un dominio local
 1. Agregar el siguiente código al final del archivo **C:\Windows\System32\drivers\etc\hosts**
@@ -50,9 +63,10 @@
 	##### no deben estar comentada con #.
 
 1. Reiniciar el servidor Apache.
-	# ---
 
-	## ************	+++ ************
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## Ajustes iniciales
 1. Crear: base de datos **sefar** en **MySQL**.
@@ -88,7 +102,9 @@
 		}
 		***
 
-1. Ejecutar: $ **php artisan migrate**
+1. Ejecutar: 
+	>
+		$ php artisan migrate
 1. Configurar Jetstream en: **config\jetstream.php**
 	>
 		***
@@ -101,25 +117,42 @@
 		],
 		***
 	**Nota**: Para personalizar aún más Jetstream:
-	+ Ejecutar: $ **php artisan vendor:publish**
+	+ Ejecutar: 
+		>
+			$ php artisan vendor:publish
 		- Seleccionar: **Tag: jetstream-views**
 	+ Para que se agreguen componentes que no estaban:
-		- Ejecutar: $ npm install
-		- Ejecutar: $ npm run dev
+		- Ejecutar: 
+			>
+				$ npm install
+		- Ejecutar: 
+			>
+				$ npm run dev
 	
 	### Commit 2:
-	+ Ejecutar: $ **git add .**
-	+ Ejecutar: $ **git commit -m "Ajustes iniciales"**
-	# ---
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "Ajustes iniciales"
 
-	## ************	+++ ************
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## Laravel-permission
 	##### Documentación: https://spatie.be/docs/laravel-permission/v4/introduction
 
-1. Ejecutar: $ **composer require spatie/laravel-permission**
-1. Ejecutar: $ **php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"**
-1. Ejecutar: $ **php artisan migrate**
+1. Ejecutar: 
+	>
+		$ composer require spatie/laravel-permission
+1. Ejecutar: 
+	>
+		$ php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
+1. Ejecutar: 
+	>
+		$ php artisan migrate
 1. Añadir a la cabecera del modelo **User**:
 	>
 		use Spatie\Permission\Traits\HasRoles;
@@ -128,19 +161,28 @@
 		use HasRoles;
 
 	### Commit 3:
-	+ Ejecutar: $ **git add .**
-	+ Ejecutar: $ **git commit -m "Laravel-permission"**
-	# ---
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "Laravel-permission"
 
-	## ************	+++ ************
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## Plantilla AdminLTE
 	##### Documentación: https://github.com/jeroennoten/Laravel-AdminLTE
 	##### Plantilla: https://adminlte.io/themes/v3/index.html
 
-1. Integrar AdminLTE: $ **composer require jeroennoten/laravel-adminlte**
-1. Ejecutar: $ **php artisan adminlte:install**
-1. Crear: **resources\views\layouts\demoAdminLTE.blade.php**
+1. Integrar AdminLTE: 
+	>
+		$ composer require jeroennoten/laravel-adminlte
+1. Ejecutar: 
+	>
+		$ php artisan adminlte:install
+1. Crear plantilla modelo: **resources\views\layouts\demoAdminLTE.blade.php**
 	>
 		@extends('adminlte::page')
 
@@ -174,7 +216,9 @@
 	+ Ejecutar: $ **git commit -m "Instalación Plantilla AdminLTE"**
 	# ---
 
-	## ************	+++ ************
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## Adaptación del proyecto al español
 	##### https://github.com/laravel-lang/lang
@@ -198,13 +242,21 @@
 		***
 
 	### Commit 5:
-	+ Ejecutar: $ **git add .**
-	+ Ejecutar: $ **git commit -m "Adaptación al español"**
-	# ---
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "Adaptación al español"
 
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## Seeders para prueba de roles y permisos
-1. Crear seeder para roles: $ **php artisan make:seeder RoleSeeder**
+1. Crear seeder para roles: 
+	>
+		$ php artisan make:seeder RoleSeeder
 1. Añadir a cabecera de **database\seeders\RoleSeeder.php**
 	>
 		use Spatie\Permission\Models\Role;
@@ -226,16 +278,25 @@
 	>
 		***
 		***
-1. Ejecutar: $ **php artisan migrate:fresh --seed**
+1. Ejecutar: 
+	>
+		$ php artisan migrate:fresh --seed
 	##### **Nota**: Para correr los seeder sin resetear la base de datos:
-	+ Ejecutar: $ **php artisan db:seed**
+	+ Ejecutar: 
+	>
+		$ php artisan db:seed
 
 	### Commit 6:
-	+ Ejecutar: $ **git add .**
-	+ Ejecutar: $ **git commit -m "Seeder Roles, Permisos y Usuarios"**
-	# ---
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "Seeder Roles, Permisos y Usuarios"
 
-	## ************	+++ ************
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## Personalizar el proyecto
 1. Agregar a la cabecera del modelo **User**:
@@ -332,11 +393,16 @@
 		public const HOME = '/';
 
 	### Commit 7:
-	+ Ejecutar: $ **git add .**
-	+ Ejecutar: $ **git commit -m "Proyecto personalizado"**
-	# ---
-
-	## ************	+++ ************
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "Proyecto personalizado"
+	
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## Perfil de usuario
 1. Rediseñar plantilla **resources\views\profile\update-profile-information-form.blade.php**
@@ -576,46 +642,195 @@
 
 		@stop
 
-	### Commit 7:
-	+ Ejecutar: $ **git add .**
-	+ Ejecutar: $ **git commit -m "Perfil de usuario"**
-	# ---
+	### Commit 8:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "Perfil de usuario"
+
+
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+
+	## Integrar Sweetalert
+	##### https://realrashid.github.io/sweet-alert/
+1. Ejecutar: 
+	>
+		$ composer require realrashid/sweet-alert
+1. Agregar a **config\app.php** en **providers**
+	>
+		***
+		'providers' => [
+			***
+			/*
+			* Package Service Providers...
+			*/
+			RealRashid\SweetAlert\SweetAlertServiceProvider::class,
+			***
+		],
+		***
+1. Agregar a **config\app.php** en **aliases**
+	>
+    	***
+		'aliases' => [
+			***
+			'Alert' => RealRashid\SweetAlert\Facades\Alert::class,
+			***
+		],
+		***
+	##### **Nota**: agregar a la cabecer del controlador a utilizar:
+	>
+    	use RealRashid\SweetAlert\Facades\Alert;
+
+	##### **Nota**: insertar en la sección content de resources\views\layouts\app.blade.php
+	>
+		@include('sweetalert::alert', ['cdn' => "https://cdn.jsdelivr.net/npm/sweetalert2@9"])
+		Nota: si falla, reemplazar por: @include('sweetalert::alert')
+
+
+	### Para integrar Sweetalert2
+	##### https://sweetalert2.github.io
+	1. Ejecutar:
+		>
+			$ php artisan adminlte:plugins install
+	1. Modificar en **config\adminlte.php**
+		>
+			***
+			'Sweetalert2' => [
+				'active' => true,   /* Activamos para todas las vistas de la plantilla Sweetalert2 */
+				'files' => [
+					[
+						'type' 		=> 'js',
+						'asset' 	=> true,
+						'location' 	=> 'vendor/sweetalert2/sweetalert2.all.min.js',
+					],
+				],
+			],
+			***
+
+	1. Ejecutar:
+		>
+			$ npm install sweetalert2
+	1. Agregamos la siguiente instrucción al archivo **resources\js\app.js**
+		>
+			window.Swal = require('sweetalert2');	
+	1. Ejecutamos:
+		>
+			$ npm run dev		
+		##### **Nota**: para usarlo:
+		+ Incluir en la vista luego de la sección @section('title', '***')
+			>
+				@section('plugins.Sweetalert2', true)
+		+ Incluir el siguiente script al final de la vista para verificar que esta funcionando:
+			>
+				@section('js')
+					<script>
+						Swal.fire(
+							'Good job!',
+							'You clicked the button!',
+							'success'
+						)
+					</script>
+				@stop
+
+	### Commit 9:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "Integración Sweetalert"
+
+
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## CRUD Permisos con Liveware	
-1. Crear grupo de rutas en **routes\web.php**
+2. Crear grupo de rutas en **routes\web.php**
 	>
 		// Grupo de rutas CRUD
 		Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
 		});
+1. Crear modelo Permission:
+	>
+		$ php artisan make:model Permission
+1. Programar modelo Permission: **app\Models\Permission.php**
+	>
+		<?php
 
+		namespace App\Models;
 
-************************************		
-***. Ejecutar: $ php artisan make:model Permission
-***. Modificar: app\Models\Permission.php
-	***
-	***
-***. Ejecutar: $ php artisan make:controller PermissionController -rr
-***. Modificar: app\Http\Controllers\PermissionController.php
-	***
-	***
-***. Agregar ruta de permisos al grupo de rutas CRUD:
-	Route::resource('permissions', PermissionController::class)->names('permissions')
-		->middleware('can:crud.permissions.index');
-***. Ejecutar: $ php artisan make:livewire permissions-table
-***. Modificar: resources\views\livewire\permissions-table.blade.php
-	***
-	***
-***. Crear los archivos para el CRUD Permisos:
+		use Illuminate\Database\Eloquent\Factories\HasFactory;
+		use Illuminate\Database\Eloquent\Model;
+
+		class Permission extends Model
+		{
+			use HasFactory;
+			
+			protected $fillable = [
+				'name',
+			];
+		}
+1. Crear controlador Permission:
+	>
+		$ php artisan make:controller PermissionController -r
+1. Programar el controlador Permission **app\Http\Controllers\PermissionController.php**
+	>
+		***
+		***
+1. Agregar ruta de permisos al grupo de rutas CRUD:
+	>
+		Route::resource('permissions', PermissionController::class)->names('permissions')
+			->middleware('can:crud.permissions.index');
+	##### Nota: añadir a la cabecera:
+	>
+		use App\Http\Controllers\PermissionController;
+1. Crear componente Livewire para Tabla Permissions: 
+	>
+		$ php artisan make:livewire crud/permissions-table
+1. Programar controlador para la tabla Permissions: **app\Http\Livewire\Crud\PermissionsTable.php**
+	>
+		***
+		***
+1. Diseñar vista para la tabla Permissions: **resources\views\livewire\crud\permissions-table.blade.php**
+	>
+		***
+		***
+1. Programar controlador Permission: **app\Http\Controllers\PermissionController.php**
+	>
+		***
+		***
+1. Diseñar las vistas para el CRUD Permisos:
 	- resources\views\crud\permissions\index.blade.php
-	- resources\views\crud\permissions\edit.blade.php
+		>
+			***
+			***
 	- resources\views\crud\permissions\create.blade.php
-***. Modificar: app\Http\Livewire\PermissionsTable.php
-	***
-	***
+		>
+			***
+			***
+	- resources\views\crud\permissions\edit.blade.php
+		>
+			***
+			***
 
-Commit 7:
-***. Ejecutar: $ git add .
-***. Ejecutar: $ git commit -m "CRUD Permisos"
+
+	### Commit 10:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "CRUD Permisos"
+
+
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 CRUD Roles con Liveware
 ==========================
@@ -624,7 +839,9 @@ CRUD Roles con Liveware
 	***
 	***
 
-
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 CRUD Usuarios con Liveware
 ==========================
@@ -647,6 +864,10 @@ Commit 8:
 ***. Ejecutar: $ git commit -m "CRUD Usuarios"
 
 
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+
 Registro cliente
 ================
 ***. Crear vista Registro: resources\views\auth\registro.blade.php
@@ -656,40 +877,54 @@ Registro cliente
 ***. Crear ruta en routes\web.php
 
 
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
-
-# RUTAS
+# RUTAS **INICIALES**
 >
-	Method      URI                               Name
-	======		===								  ====
-	GET|HEAD | / 								| inicio
-	GET|HEAD | api/user 						|
-	GET|HEAD | dashboard                        | dashboard  
-	GET|HEAD | forgot-password                  | password.request   
-	POST     | forgot-password                  | password.email   
-	GET|HEAD | livewire/livewire.js             |                           
-	GET|HEAD | livewire/livewire.js.map         |    
-	POST     | livewire/message/{name}          | livewire.message         
-	GET|HEAD | livewire/preview-file/{filename} | livewire.preview-file    
-	POST     | livewire/upload-file             | livewire.upload-file        
-	POST     | login                            |                                 
-	GET|HEAD | login                            | login                       
-	POST     | logout                           | logout                      
-	GET|HEAD | register                         | register                   
-	POST     | register                         |                               
-	POST     | reset-password                   | password.update             
-	GET|HEAD | reset-password/{token}           | password.reset                 
-	GET|HEAD | sanctum/csrf-cookie              |                                
-	POST     | two-factor-challenge             |                           
-	GET|HEAD | two-factor-challenge             | two-factor.login            
-	GET|HEAD | user/confirm-password            | password.confirm            
-	POST     | user/confirm-password            |                                 
-	GET|HEAD | user/confirmed-password-status   | password.confirmation           
-	PUT      | user/password                    | user-password.update            
-	GET|HEAD | user/profile                     | profile.show                    
-	PUT      | user/profile-information         | user-profile-information.update
-	DELETE   | user/two-factor-authentication   |                                 
-	POST     | user/two-factor-authentication   |                                 
-	GET|HEAD | user/two-factor-qr-code          |                                
-	POST     | user/two-factor-recovery-codes   |                                 
-	GET|HEAD | user/two-factor-recovery-codes   |  
+	Method      URI                               	Name
+	======		===								  	====
+	GET|HEAD	| / 								| inicio
+	GET|HEAD	| api/user 							|
+	GET|HEAD	| dashboard                        	| dashboard  
+	GET|HEAD 	| forgot-password                  	| password.request   
+	POST     	| forgot-password                  	| password.email   
+	GET|HEAD 	| livewire/livewire.js             	|                           
+	GET|HEAD 	| livewire/livewire.js.map         	|    
+	POST     	| livewire/message/{name}          	| livewire.message         
+	GET|HEAD 	| livewire/preview-file/{filename} 	| livewire.preview-file    
+	POST     	| livewire/upload-file             	| livewire.upload-file        
+	POST     	| login                            	|                                 
+	GET|HEAD 	| login                            	| login                       
+	POST     	| logout                           	| logout                      
+	GET|HEAD 	| register                         	| register                   
+	POST     	| register                         	|                               
+	POST     	| reset-password                   	| password.update             
+	GET|HEAD 	| reset-password/{token}           	| password.reset                 
+	GET|HEAD 	| sanctum/csrf-cookie              	|                                
+	POST     	| two-factor-challenge             	|                           
+	GET|HEAD 	| two-factor-challenge             	| two-factor.login            
+	GET|HEAD 	| user/confirm-password            	| password.confirm            
+	POST     	| user/confirm-password            	|                                 
+	GET|HEAD 	| user/confirmed-password-status   	| password.confirmation           
+	PUT      	| user/password                    	| user-password.update            
+	GET|HEAD 	| user/profile                     	| profile.show                    
+	PUT      	| user/profile-information         	| user-profile-information.update
+	DELETE   	| user/two-factor-authentication   	|                                 
+	POST     	| user/two-factor-authentication   	|                                 
+	GET|HEAD 	| user/two-factor-qr-code          	|                                
+	POST     	| user/two-factor-recovery-codes   	|                                 
+	GET|HEAD 	| user/two-factor-recovery-codes   	|  
+
+# RUTAS **PERMISOS**
+>
+	Method      URI                               	Name
+	======		===								  	====
+	GET|HEAD 	| permissions                      	| crud.permissions.index 
+	POST     	| permissions                      	| crud.permissions.store
+	GET|HEAD  	| permissions/create               	| crud.permissions.create 
+	GET|HEAD  	| permissions/{permission}         	| crud.permissions.show
+	PUT|PATCH 	| permissions/{permission}         	| crud.permissions.update
+	DELETE    	| permissions/{permission}         	| crud.permissions.destroy 
+	GET|HEAD  	| permissions/{permission}/edit    	| crud.permissions.edit
