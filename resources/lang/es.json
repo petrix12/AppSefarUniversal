@@ -72,7 +72,21 @@
     "Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting your account, please download any data or information that you wish to retain.": "Una vez que se elimine su cuenta, todos sus recursos y datos se eliminarán permanentemente. Antes de eliminar su cuenta, descargue cualquier dato o información que desee conservar.",
     "Edit permission": "Editar permiso",
     "Edit": "Editar",
+    "Edit user": "Editar usuario",
     "Remove": "Eliminar",
     "User roles": "Roles de usuarios",
-    "Create role": "Crear rol"
+    "Create role": "Crear rol",
+    "Users": "Usuarios",
+    "Create user": "Crear usuario",
+    "User name": "Nombre del usuario",
+    "Passport": "Pasaporte",
+    "User information": "Información de usuario",
+    "Manage user roles": "Administre los roles del usuario",
+    "Email address": "Correo electrónico",
+    "Users list": "Lista de usuarios",
+    "Create": "Crear",
+    "Create a user and assign them their roles": "Cree un usuario y asignele sus roles",
+    "Role": "Rol",
+    "Permission": "Permiso",
+    "Update": "Actualizar"
 }

@@ -261,27 +261,27 @@ return [
         ],
         [
             'text'        => 'Accesos',
-            'icon'        => 'fas fa-address-card',
+            'icon'        => 'fas fa-key',
             'icon_color'  => 'white',
             'can'  => 'administrador',
             'submenu' => [
                 [
                     'text'          => 'Usuarios',
-                    'icon'          => 'far fa-address-card',
+                    'icon'          => 'fas fa-users',
                     'icon_color'    => 'white',
                     'url'           => 'users',
                     'can'           => 'crud.users.index',
                 ],
                 [
                     'text'          => 'Roles',
-                    'icon'          => 'far fa-check-square',
+                    'icon'          => 'fas fa-user-tag',
                     'icon_color'    => 'white',
                     'url'           => 'roles',
                     'can'           => 'crud.roles.index',
                 ],
                 [
                     'text'          => 'Permisos',
-                    'icon'          => 'fas fa-check-double',
+                    'icon'          => 'fas fa-universal-access',
                     'icon_color'    => 'white',
                     'url'           => 'permissions',
                     'can'           => 'crud.permissions.index',

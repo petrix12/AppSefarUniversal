@@ -58,7 +58,7 @@
                                 ID
                             </th>
                             <th scope="col" class="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('Role name') }}
+                                {{ __('Role') }}
                             </th>
                             @can('crud.roles.edit')
                             <th scope="col" class="px-9 y-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider text-right">

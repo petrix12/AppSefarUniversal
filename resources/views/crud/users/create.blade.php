@@ -1,9 +1,9 @@
 @extends('adminlte::page')
 
-@section('title', $user->name)
+@section('title', 'Crear Permisos')
 
 @section('content_header')
-
+    {{-- <h1><strong>{{ __('Permisos de usuarios') }}</strong></h1> --}}
 @stop
 
 @section('content')
@@ -20,7 +20,7 @@
                                 <div class="bg-gray-50">
                                     <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:py-6 lg:px-8 lg:flex lg:items-center lg:justify-between">
                                         <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-                                            <span class="ctvSefar block text-indigo-600">{{ __('Edit user') }}</span>
+                                            <span class="ctvSefar block text-indigo-600">{{ __('Create user') }}</span>
                                         </h2>
                                         <div class="mt-8 flex lg:mt-0 lg:flex-shrink-0">
                                             <div class="inline-flex rounded-md shadow">
@@ -46,15 +46,18 @@
                 <div class="px-4 sm:px-0">
                     <h3 class="text-lg font-medium leading-6 text-gray-900">{{ __('User information') }}</h3>
                     <p class="mt-1 text-sm text-gray-600">
-                        {{ __('Manage user roles') }}
+                        {{-- {{ __('Administre la información del usuario y asignele sus roles') }} --}}
+                        {{ __('Create a user and assign them their roles') }}
+                    </p>
+                    <p><strong>Nota: </strong>
+                        Al usuario se le asignará la clave inicial de <span style="color:red">sefar2021</span>, 
+                        la cual seberá cambiar a la brevedad posible por medidas de seguridad.
                     </p>
                 </div>
             </div>
             <div class="mt-5 md:mt-0 md:col-span-2">
-                <form action="{{ route('crud.users.update', $user) }}" method="POST">
-
+                <form action="{{ route('crud.users.store') }}" method="POST">
                     @csrf
-                    @method('put')
 
                     <div class="shadow overflow-hidden sm:rounded-md">
                         <div class="px-4 py-5 bg-white sm:p-6">
@@ -66,7 +69,7 @@
                                         name="name" 
                                         id="name"  
                                         class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                                        value="{{ old('name', $user->name) }}"
+                                        value="{{ old('name') }}"
                                     />
                                 </div>
                                 @error('name')
@@ -82,7 +85,7 @@
                                         name="passport" 
                                         id="passport" 
                                         class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                                        value="{{ old('passport', $user->passport) }}"
+                                        value="{{ old('passport') }}"
                                     />
                                 </div>
                                 @error('passport')
@@ -99,7 +102,7 @@
                                         id="email" 
                                         autocomplete="email" 
                                         class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                                        value="{{ old('email', $user->email) }}"
+                                        value="{{ old('email') }}"
                                     />
                                 </div>
                                 @error('email')
@@ -108,7 +111,6 @@
                                     </div>
                                 @enderror
                             </div>
-                            {{-- ROLES --}}
                             <div class="container my-10">
                                 <p class="my-2 block text-sm font-medium text-gray-700"><strong>Roles del usuario:<strong></p>
                                 <div class="grid grid-cols-1 xl:grid-cols-4">
@@ -116,11 +118,7 @@
                                     <div class="col-span-2 sm:col-span-2">     
                                         <div class="flex items-start">
                                             <div class="flex items-center h-5">
-                                                @if ($user->hasRole($role->name))
-                                                <input name="{{ "role" . $role->id }}" type="checkbox" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded" checked>
-                                                @else
                                                 <input name="{{ "role" . $role->id }}" type="checkbox" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                                @endif
                                             </div>
                                             <div class="ml-3 text-sm">
                                                 <label for="{{ "role" . $role->id }}" class="font-medium text-gray-700">{{ $role->name }}</label>
@@ -128,34 +126,12 @@
                                         </div> 
                                     </div>
                                 @endforeach
-                                </div>
                             </div>
-                            {{-- PERMISOS --}}
-                            <div class="container my-10">
-                                <p class="my-2 block text-sm font-medium text-gray-700"><strong>Permisos del usuario:<strong></p>
-                                <div class="grid grid-cols-1 xl:grid-cols-4">
-                                @foreach ($permissions as $permission)
-                                    <div class="col-span-2 sm:col-span-2">     
-                                        <div class="flex items-start">
-                                            <div class="flex items-center h-5">
-                                                @if ($user->hasPermissionTo($permission->name))
-                                                <input name="{{ "permiso" . $permission->id }}" type="checkbox" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded" checked>
-                                                @else
-                                                <input name="{{ "permiso" . $permission->id }}" type="checkbox" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                                @endif
-                                            </div>
-                                            <div class="ml-3 text-sm">
-                                                <label for="{{ "permiso" . $permission->id }}" class="font-medium text-gray-700">{{ $permission->name }}</label>
-                                            </div>
-                                        </div> 
-                                    </div>
-                                @endforeach
-                                </div>
                             </div>
                         </div>
                     <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
                         <button type="submit" class="cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            {{ __('Update') }}
+                            {{ __('Create') }}
                         </button>
                     </div>
                     </div>

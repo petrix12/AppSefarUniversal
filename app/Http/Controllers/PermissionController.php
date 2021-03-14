@@ -46,7 +46,7 @@ class PermissionController extends Controller
             'name' => 'required|max:254'
         ]);
 
-        // almacenando permiso
+        // Creando permiso
         $permission = Permission::create(['name' => $request->name]);
         
         // Asignando permisos a roles seleccionados

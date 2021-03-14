@@ -1,18 +1,12 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
-
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
-
 # Proyecto AdminSefar
 ##### https://laravel.com/docs/8.x
 ##### Versión: **Laravel Framework 8.31.0**
 #
 
 # Paso a paso del desarrollo del proyecto
+***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE I		● ● ● ● ■ ■ ► ► ►**
+***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 1. Crear proyecto: 
 	>
 		$ laravel new sefar --jet
@@ -37,7 +31,7 @@
 			$ git commit -m "Proyecto en blanco"
 
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
-	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE II		● ● ● ● ■ ■ ► ► ►**
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## Crear un dominio local
@@ -65,7 +59,7 @@
 1. Reiniciar el servidor Apache.
 
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
-	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE III		● ● ● ● ■ ■ ► ► ►**
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## Ajustes iniciales
@@ -73,18 +67,18 @@
 	##### **Usar**: Juego de caracters: **utf8_general_ci**
 1. Configurar: **.env** con bd **sefar**
 	>
-		***
+		≡
 		DB_CONNECTION=mysql
 		DB_HOST=127.0.0.1
 		DB_PORT=3306
 		DB_DATABASE=sefar
 		DB_USERNAME=root
 		DB_PASSWORD=
-		***
+		≡
 
 1. Agregar el campo **passport** a la migración de tabla **users**: 
 	>
-		***
+		≡
 		public function up()
 		{
 			Schema::create('users', function (Blueprint $table) {
@@ -100,14 +94,14 @@
 				$table->timestamps();
 			});
 		}
-		***
+		≡
 
 1. Ejecutar: 
 	>
 		$ php artisan migrate
 1. Configurar Jetstream en: **config\jetstream.php**
 	>
-		***
+		≡
 		'features' => [
 			// Features::termsAndPrivacyPolicy(),
 			Features::profilePhotos(),
@@ -115,7 +109,7 @@
 			// Features::teams(['invitations' => true]),
 			Features::accountDeletion(),
 		],
-		***
+		≡
 	**Nota**: Para personalizar aún más Jetstream:
 	+ Ejecutar: 
 		>
@@ -138,7 +132,7 @@
 			$ git commit -m "Ajustes iniciales"
 
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
-	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE IV		● ● ● ● ■ ■ ► ► ►**
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## Laravel-permission
@@ -160,6 +154,44 @@
 	>
 		use HasRoles;
 
+	### **Instrucciones básicas:**
+	+ Crear un rol:
+		>
+			Role::create(['name' => 'admin']);
+	+ Asignar un rol a un usuario:
+		>
+			$user = User::find(1);
+			$user->assignRole('admin');
+	+ Crear un permiso:
+		>
+			Permission::create(['name' => 'universal']);
+	+ Asignar un permiso a un rol:
+		>
+			$role = Role::find(1);
+			$role->givePermissionTo('universal');
+	+ Asignar un permiso a un usuario:
+		>
+			$user = User::find(2);
+			$user->givePermissionTo('universal');
+	+ Revocar permiso a un usuario:
+		>
+			$user->revokePermissionTo('universal');
+	+ Revocar rol a un usuario:
+		>
+			$user->removeRole('writer');
+	+ Conocer si el usuario X tiene el rol “admin”:
+		>
+			$user->hasRole('admin');
+	+ Conocer si el usuario X tiene el permiso “universal”:
+		>
+			$user->hasPermissionTo("universal");
+	+ Lista de roles que posee el usuario X:
+		>
+			$user->getRoleNames();
+	+ Lista de permisos que posee el usuario X:
+		>
+			$user->getAllPermissions();
+
 	### Commit 3:
 	+ Ejecutar:
 		>
@@ -169,7 +201,7 @@
 			$ git commit -m "Laravel-permission"
 
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
-	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE V		● ● ● ● ■ ■ ► ► ►**
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## Plantilla AdminLTE
@@ -214,10 +246,10 @@
 	### Commit 4:
 	+ Ejecutar: $ **git add .**
 	+ Ejecutar: $ **git commit -m "Instalación Plantilla AdminLTE"**
-	# ---
+	
 
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
-	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE VI		● ● ● ● ■ ■ ► ► ►**
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## Adaptación del proyecto al español
@@ -233,13 +265,13 @@
 
 1. Realizar todas las traducciones necesarios en **resources\lang\es.json**
 	>
-		***
-		***
+		≡
+		≡
 1. Configurar a español **config\app.php**
 	>
-		***
+		≡
 		'locale' => 'es',
-		***
+		≡
 
 	### Commit 5:
 	+ Ejecutar:
@@ -250,7 +282,7 @@
 			$ git commit -m "Adaptación al español"
 
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
-	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE VII		● ● ● ● ■ ■ ► ► ►**
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## Seeders para prueba de roles y permisos
@@ -263,8 +295,8 @@
 		use Spatie\Permission\Models\Permission;
 1. Modificar el método **run** de **database\seeders\RoleSeeder.php**
 	>
-		***
-		***
+		≡
+		≡
 1. Crear seeder para usuarios: $ **php artisan make:seeder UserSeeder**
 1. Añadir a cabecera de **database\seeders\UserSeeder.php**
 	>
@@ -272,12 +304,12 @@
 
 1. Modificar el método **run** de **database\seeders\UserSeeder.php**
 	>
-		***
-		***
+		≡
+		≡
 1. Modificar el método run **database\seeders\DatabaseSeeder.php**
 	>
-		***
-		***
+		≡
+		≡
 1. Ejecutar: 
 	>
 		$ php artisan migrate:fresh --seed
@@ -295,7 +327,7 @@
 			$ git commit -m "Seeder Roles, Permisos y Usuarios"
 
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
-	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE VIII		● ● ● ● ■ ■ ► ► ►**
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## Personalizar el proyecto
@@ -326,12 +358,12 @@
 	##### **Iconos**: https://fontawesome.com/icons
 	##### **Tutorial**: https://www.youtube.com/playlist?list=PLZ2ovOgdI-kWTCkbH749Ukvq7FMz5ahpP
 	>
-		***
-		***
+		≡
+		≡
 1. Crear archivo de estilos propios del proyecto **public\css\sefar.css**
 	>
-		***
-		***
+		≡
+		≡
 1. Agregar los estilos **public\css\sefar.css** en la sección del estilos de los archivos **archivo resources\views\layouts\guest.blade.php** y **resources\views\layouts\app.blade.php**
 	>
 		<link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
@@ -347,8 +379,8 @@
 		<img src="{{ asset('vendor\adminlte\dist\img\LogoSefar.png') }}" alt="Logo Sefar" width="100" height="100">
 1. Crear vista **resources\views\inicio.blade.php** para la ruta **inicio**
 	>
-		***
-		***
+		≡
+		≡
 1. Modificar la ruta de inicio en **routes\web.php**
 	>
 		// Vista inicio
@@ -358,32 +390,32 @@
 1. Adaptar todos los **archivos resources\views\auth** a las características del proyecto
 	+ resources\views\auth\confirm-password.blade.php
 		>
-			***
-			***
+			≡
+			≡
 	+ resources\views\auth\forgot-password.blade.php
 		>
-			***
-			***
+			≡
+			≡
 	+ resources\views\auth\login.blade.php
 		>
-			***
-			***
+			≡
+			≡
 	+ resources\views\auth\register.blade.php
 		>
-			***
-			***
+			≡
+			≡
 	+ resources\views\auth\reset-password.blade.php
 		>
-			***
-			***
+			≡
+			≡
 	+ resources\views\auth\two-factor-challenge.blade.php
 		>
-			***
-			***
+			≡
+			≡
 	+ resources\views\auth\verify-email.blade.php
 		>
-			***
-			***
+			≡
+			≡
 1. Modificar **app\Providers\RouteServiceProvider.php**
 	#### Cambiar:
 	>
@@ -401,25 +433,25 @@
 			$ git commit -m "Proyecto personalizado"
 	
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
-	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE IX		● ● ● ● ■ ■ ► ► ►**
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## Perfil de usuario
 1. Rediseñar plantilla **resources\views\profile\update-profile-information-form.blade.php**
 	>
-						***
+						≡
 						@if ($this->user->profile_photo_path)
 							<x-jet-secondary-button type="button" class="mt-2 cfrSefar ctaSefar" wire:click="deleteProfilePhoto">
 								{{ __('Remove Photo') }}
 							</x-jet-secondary-button>
 						@endif
-						***
+						≡
 				@endif
-				***
+				≡
 			</x-slot>
 
 			<x-slot name="actions">
-				***
+				≡
 				<x-jet-button wire:loading.attr="disabled" wire:target="photo" class="cfrSefar">
 					{{ __('Save') }}
 				</x-jet-button>
@@ -427,7 +459,7 @@
 		</x-jet-form-section>
 1. Rediseñar plantilla **resources\views\profile\update-password-form.blade.php**
 	>
-				***
+				≡
 				<x-jet-button class="cfrSefar">
 					{{ __('Save') }}
 				</x-jet-button>
@@ -435,7 +467,7 @@
 		</x-jet-form-section>
 1. Rediseñar plantilla **resources\views\profile\two-factor-authentication-form.blade.php**
 	>		
-		***
+		≡
 		@if (! $this->enabled)
 			<x-jet-confirms-password wire:then="enableTwoFactorAuthentication">
 				<x-jet-button type="button" wire:loading.attr="disabled" class="cfrSefar">
@@ -443,10 +475,10 @@
 				</x-jet-button>
 			</x-jet-confirms-password>
 		@else
-		***
+		≡
 1. Rediseñar plantilla **resources\views\profile\logout-other-browser-sessions-form.blade.php**
 	>	
-		***
+		≡
         <div class="flex items-center mt-5">
             <x-jet-button wire:click="confirmLogout" wire:loading.attr="disabled" class="cfrSefar">
                 {{ __('Log Out Other Browser Sessions') }}
@@ -456,7 +488,7 @@
                 {{ __('Done.') }}
             </x-jet-action-message>
         </div>
-		***
+		≡
 1. Rediseñar plantilla **resources\views\navigation-menu.blade.php**
 	>
 		<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
@@ -652,7 +684,7 @@
 
 
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
-	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE X		● ● ● ● ■ ■ ► ► ►**
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## Integrar Sweetalert
@@ -662,25 +694,25 @@
 		$ composer require realrashid/sweet-alert
 1. Agregar a **config\app.php** en **providers**
 	>
-		***
+		≡
 		'providers' => [
-			***
+			≡
 			/*
 			* Package Service Providers...
 			*/
 			RealRashid\SweetAlert\SweetAlertServiceProvider::class,
-			***
+			≡
 		],
-		***
+		≡
 1. Agregar a **config\app.php** en **aliases**
 	>
-    	***
+    	≡
 		'aliases' => [
-			***
+			≡
 			'Alert' => RealRashid\SweetAlert\Facades\Alert::class,
-			***
+			≡
 		],
-		***
+		≡
 	##### **Nota**: agregar a la cabecer del controlador a utilizar:
 	>
     	use RealRashid\SweetAlert\Facades\Alert;
@@ -698,7 +730,7 @@
 			$ php artisan adminlte:plugins install
 	1. Modificar en **config\adminlte.php**
 		>
-			***
+			≡
 			'Sweetalert2' => [
 				'active' => true,   /* Activamos para todas las vistas de la plantilla Sweetalert2 */
 				'files' => [
@@ -709,7 +741,7 @@
 					],
 				],
 			],
-			***
+			≡
 
 	1. Ejecutar:
 		>
@@ -746,7 +778,7 @@
 
 
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
-	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XI		● ● ● ● ■ ■ ► ► ►**
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## CRUD Permisos con Liveware	
@@ -780,8 +812,8 @@
 		$ php artisan make:controller PermissionController -r
 1. Programar el controlador Permission **app\Http\Controllers\PermissionController.php**
 	>
-		***
-		***
+		≡
+		≡
 1. Agregar ruta de permisos al grupo de rutas CRUD:
 	>
 		Route::resource('permissions', PermissionController::class)->names('permissions')
@@ -794,29 +826,29 @@
 		$ php artisan make:livewire crud/permissions-table
 1. Programar controlador para la tabla Permissions: **app\Http\Livewire\Crud\PermissionsTable.php**
 	>
-		***
-		***
+		≡
+		≡
 1. Diseñar vista para la tabla Permissions: **resources\views\livewire\crud\permissions-table.blade.php**
 	>
-		***
-		***
+		≡
+		≡
 1. Programar controlador Permission: **app\Http\Controllers\PermissionController.php**
 	>
-		***
-		***
+		≡
+		≡
 1. Diseñar las vistas para el CRUD Permisos:
 	- resources\views\crud\permissions\index.blade.php
 		>
-			***
-			***
+			≡
+			≡
 	- resources\views\crud\permissions\create.blade.php
 		>
-			***
-			***
+			≡
+			≡
 	- resources\views\crud\permissions\edit.blade.php
 		>
-			***
-			***
+			≡
+			≡
 
 	### Commit 10:
 	+ Ejecutar:
@@ -828,7 +860,7 @@
 
 
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
-	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XII		● ● ● ● ■ ■ ► ► ►**
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## CRUD Roles con Liveware
@@ -857,8 +889,8 @@
 		$ php artisan make:controller RoleController -r
 1. Programar el controlador Role **app\Http\Controllers\RoleController.php**
 	>
-		***
-		***
+		≡
+		≡
 1. Agregar ruta de roles al grupo de rutas CRUD:
 	>
 		Route::resource('roles', RoleController::class)->names('roles')
@@ -871,29 +903,29 @@
 		$ php artisan make:livewire crud/roles-table
 1. Programar controlador para la tabla Roles: **app\Http\Livewire\Crud\RolesTable.php**
 	>
-		***
-		***
+		≡
+		≡
 1. Diseñar vista para la tabla Roles: **resources\views\livewire\crud\roles-table.blade.php**
 	>
-		***
-		***
+		≡
+		≡
 1. Programar controlador Role: **app\Http\Controllers\RoleController.php**
 	>
-		***
-		***
+		≡
+		≡
 1. Diseñar las vistas para el CRUD Roles:
 	- resources\views\crud\roles\index.blade.php
 		>
-			***
-			***
+			≡
+			≡
 	- resources\views\crud\roles\create.blade.php
 		>
-			***
-			***
+			≡
+			≡
 	- resources\views\crud\roles\edit.blade.php
 		>
-			***
-			***
+			≡
+			≡
 
 	### Commit 11:
 	+ Ejecutar:
@@ -905,10 +937,75 @@
 
 
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
-	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XIII		● ● ● ● ■ ■ ► ► ►**
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
+	## CRUD Usuarios con Liveware
+1. Agregar el campo **passport** como campo de asignación masiva en el modelo **User**: **app\Models\User.php**
+	>
+		≡
+		protected $fillable = [
+			'name',
+			'email',
+			'password',
+			'passport',
+		];
+		≡
+1. Crear controlador User:
+	>
+		$ php artisan make:controller UserController -r
+1. Programar el controlador User **app\Http\Controllers\UserController.php**
+	>
+		≡
+		≡
+1. Agregar ruta de usuarios al grupo de rutas CRUD:
+	>
+		Route::resource('users', UserController::class)->names('users')
+			->middleware('can:crud.users.index');
+	##### Nota: añadir a la cabecera:
+	>
+		use App\Http\Controllers\UserController;
+1. Crear componente Livewire para Tabla Users: 
+	>
+		$ php artisan make:livewire crud/users-table
+1. Programar controlador para la tabla Users: **app\Http\Livewire\Crud\UsersTable.php**
+	>
+		≡
+		≡
+1. Diseñar vista para la tabla Users: **resources\views\livewire\crud\users-table.blade.php**
+	>
+		≡
+		≡
+1. Programar controlador User: **app\Http\Controllers\UserController.php**
+	>
+		≡
+		≡
+1. Diseñar las vistas para el CRUD Usuarios:
+	- resources\views\crud\users\index.blade.php
+		>
+			≡
+			≡
+	- resources\views\crud\users\create.blade.php
+		>
+			≡
+			≡
+	- resources\views\crud\users\edit.blade.php
+		>
+			≡
+			≡
 
+	### Commit 12:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "CRUD Usuarios"
+
+
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XIV		● ● ● ● ■ ■ ► ► ►**
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 
 
@@ -986,4 +1083,16 @@ Registro cliente
 	PUT|PATCH 	| roles/{role}         				| crud.roles.update
 	DELETE    	| roles/{role}         				| crud.roles.destroy 
 	GET|HEAD  	| roles/{role}/edit    				| crud.roles.edit
+	 
+# RUTAS **USUARIOS**
+>
+	Method      URI                               	Name
+	======		===								  	====
+	GET|HEAD 	| users                      		| crud.users.index 
+	POST     	| users                      		| crud.users.store
+	GET|HEAD  	| users/create               		| crud.users.create 
+	GET|HEAD  	| users/{user}         				| crud.users.show
+	PUT|PATCH 	| users/{user}         				| crud.users.update
+	DELETE    	| users/{user}         				| crud.users.destroy 
+	GET|HEAD  	| users/{user}/edit    				| crud.users.edit
 	 
