@@ -191,6 +191,16 @@
 	+ Lista de permisos que posee el usuario X:
 		>
 			$user->getAllPermissions();
+1. Programar el controlador **app\Http\Controllers\Controller.php** para que inicie sesión según el rol asignado al usuario:
+	>
+		≡
+		≡
+1. Modificar ruta raíz:
+	>
+		Route::get('/', [Controller::class, 'index'])->name('inicio')->middleware('auth');
+	##### Nota: añadir a la cabecera:
+	>
+		use App\Http\Controllers\Controller;
 
 	### Commit 3:
 	+ Ejecutar:
@@ -1007,17 +1017,158 @@
 	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XIV		● ● ● ● ■ ■ ► ► ►**
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
+	## Consultar BD Onidex
+1. Agregar las variables de entorno para la conexión a la base de datos **onidex** en **.env**
+	>
+		≡
+		ONIDEX_CONNECTION=mysql
+		ONIDEX_HOST=127.0.0.1
+		ONIDEX_PORT=3306
+		ONIDEX_DATABASE=onidex
+		ONIDEX_USERNAME=root
+		ONIDEX_PASSWORD=
+		≡
+
+1. Agregar a **config\database.php** los parámetros de conexión a la base de datos **onidex**
+	>
+		≡
+	   'connections' => [
+			≡
+			'onidex' => [
+				'driver' => 'mysql',
+				'url' => env('DATABASE_URL'),
+				'host' => env('ONIDEX_HOST', '127.0.0.1'),
+				'port' => env('ONIDEX_PORT', '3306'),
+				'database' => env('ONIDEX_DATABASE', 'forge'),
+				'username' => env('ONIDEX_USERNAME', 'forge'),
+				'password' => env('ONIDEX_PASSWORD', ''),
+				'unix_socket' => env('ONIDEX_SOCKET', ''),
+				'charset' => 'utf8mb4',
+				'collation' => 'utf8mb4_unicode_ci',
+				'prefix' => '',
+				'prefix_indexes' => true,
+				'strict' => true,
+				'engine' => null,
+				'options' => extension_loaded('pdo_mysql') ? array_filter([
+					PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+				]) : [],
+			],		   
+			≡
+		],
+		≡
+	##### **Nota**: No se crearan migraciones debido a que solo se realizaran consultas a una base de datos existente y externa para nuestro proyecto. 
+	##### Para consultar conexiones múltiples en Laravel: https://styde.net/multiples-bases-de-datos-con-laravel-5-y-eloquent
+1. Crear modelo Onidex:
+	>
+		$ php artisan make:model Onidex
+1. Programar modelo Onidex: **app\Models\Onidex.php**
+	>
+		<?php
+
+		namespace App\Models;
+
+		use Illuminate\Database\Eloquent\Factories\HasFactory;
+		use Illuminate\Database\Eloquent\Model;
+
+		class Onidex extends Model
+		{
+			use HasFactory;
+
+			/**
+			* The database connection used by the model.
+			*
+			* @var string
+			*/
+			protected $connection = 'onidex';
+
+			/**
+			* The database table used by the model.
+			*
+			* @var string
+			*/
+			protected $table = 'onidexes';
+		}
+1. Crear controlador Onidex:
+	>
+		$ php artisan make:controller OnidexController
+1. Programar controlador Onidex: app\Http\Controllers\OnidexController.php
+	>
+		≡
+		≡
+1. Crear componente Livewire para Tabla **onidexes**: 
+	>
+		$ php artisan make:livewire consulta/onidexes-table
+1. Programar controlador para la tabla **onidexes**: **app\Http\Livewire\Consulta\OnidexesTable.php**
+	>
+		≡
+		≡
+1. Diseñar vista para la tabla **onidexes**: **resources\views\livewire\crud\users-table.blade.php**
+	>
+		≡
+		≡
+1. Crear y diseñar vista principal Onidex: **resources\views\consultas\onidex\index.blade.php**
+	>
+		≡
+		≡
+1. Crear grupo de rutas para consultas en **routes\web.php**
+	>
+		// Grupo de rutas para Consultas a base de datos
+		Route::group(['middleware' => ['auth'], 'as' => 'consultas.'], function(){
+		});
+1. Agregar rutas **onidex.index** y **onidex.show** en el grupo de rutas para consultas en **routes\web.php**
+	>
+		Route::get('consultaodx', [OnidexController::class, 'index'])->name('onidex.index')
+				->middleware('can:consultas.onidex.index');
+		Route::post('consultaodx', [OnidexController::class, 'show'])->name('onidex.show')
+        		->middleware('can:consultas.onidex.show');	
+	##### Nota: añadir a la cabecera:
+	>
+		use App\Http\Controllers\OnidexController;
+1. Crear y diseñar vista para mostrar registros Onidex: **resources\views\consultas\onidex\show.blade.php**
+	>
+		≡
+		≡
+
+	### Commit 13:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "App Consulta BD Onidex"
+
+
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XV		● ● ● ● ■ ■ ► ► ►**
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 
 
 
-Registro cliente
-================
-***. Crear vista Registro: resources\views\auth\registro.blade.php
-	***
-	***
-***. Crear controlador Registro: $ php artisan make:controller RegistroController
-***. Crear ruta en routes\web.php
+
+	# **********************************************
+	## CRUD Clientes con Liveware
+1. Pendiente
+
+	## CRUD Familiaridad entre Clientes con Liveware
+1. Pendiente
+
+	## CRUD Árbol Clientes con Liveware
+1. Pendiente
+
+	## CRUD Diex con Liveware
+1. Pendiente
+
+	## CRUD Maisanta con Liveware
+1. Pendiente
+
+	## Registro cliente
+1. Crear vista Registro: resources\views\auth\registro.blade.php
+	>
+		***
+		***
+1. Crear controlador Registro: $ php artisan make:controller RegistroController
+1. Crear ruta en routes\web.php
 
 
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
@@ -1095,4 +1246,9 @@ Registro cliente
 	PUT|PATCH 	| users/{user}         				| crud.users.update
 	DELETE    	| users/{user}         				| crud.users.destroy 
 	GET|HEAD  	| users/{user}/edit    				| crud.users.edit
-	 
+
+# RUTAS **ONIDEX**
+
+	Method      URI                               	Name
+	======		===								  	====
+	GET|HEAD  	| consultaodx                      	| consultas.onidex.index

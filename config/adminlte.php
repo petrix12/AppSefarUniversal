@@ -259,6 +259,8 @@ return [
             'label_color' => 'success', */
             'can'  => 'administrador',
         ],
+
+        /* *** ACCESOS *** */
         [
             'text'        => 'Accesos',
             'icon'        => 'fas fa-key',
@@ -288,6 +290,40 @@ return [
                 ],
             ],
         ],
+
+        /* *** REGISTROS ONIDEX, DIEX Y MAISANTA *** */
+        [
+            'text'        => 'Consultas',
+            'icon'        => 'fas fa-search',
+            'icon_color'  => 'white',
+            'can'  => 'consultas.onidex.index',
+            'submenu' => [
+                [
+                    'text'          => 'Registros Onidex',
+                    'icon'          => 'fas fa-id-card',
+                    'icon_color'    => 'white',
+                    /* 'url'           => 'consultaodx', */
+                    'route'         => 'consultas.onidex.index',
+                    'can'           => 'consultas.onidex.index',
+                ],
+                [
+                    'text'          => 'Diex',
+                    'icon'          => 'fas fa-portrait',
+                    'icon_color'    => 'white',
+                    'url'           => 'roles',
+                    'can'           => 'no_definido',
+                ],
+                [
+                    'text'          => 'Maisanta',
+                    'icon'          => 'fas fa-portrait',
+                    'icon_color'    => 'white',
+                    'url'           => 'permissions',
+                    'can'           => 'no_definido',
+                ],
+            ],
+        ],
+
+
         [
             'header' => 'account_settings',
             'can'  => 'no_definido',

@@ -4,7 +4,7 @@
         <div class="flex justify-between h-16">
             <div class="flex">
                 <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
-                    <div class="block px-2 py-4 text-xl ctvSefar">
+                    <div class="block px-2 py-3 text-lg ctvSefar">
                         <strong>{{ Auth::user()->name }}</strong>
                     </div>
                 </div>

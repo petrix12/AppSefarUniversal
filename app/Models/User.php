@@ -74,7 +74,13 @@ class User extends Authenticatable
     // Permite incorporar alguna descripción del usuario
     // Se debe configurar en config\adminlte.php: 'usermenu_desc' => ' => true,
     public function adminlte_desc(){
-        return 'Aquí la información';
+        $role = Auth::user()->getRoleNames();
+        if(count($role)>=1){
+            $nombre_rol = $role[0];
+        }else{
+            $nombre_rol = "Sin rol asignado";
+        }
+        return $nombre_rol;
     }
 
     // Permite incorporar el perfil
