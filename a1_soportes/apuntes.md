@@ -791,6 +791,94 @@
 	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XI		● ● ● ● ■ ■ ► ► ►**
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
+	## Verificación de email con Jetstream
+1. Modificar el archivo **config/fortify.php**
+	>
+		'features' => [
+			Features::registration(),
+			Features::resetPasswords(),
+			Features::emailVerification(),
+			Features::updateProfileInformation(),
+			Features::updatePasswords(),
+			Features::twoFactorAuthentication([
+				'confirmPassword' => true,
+        ]),
+	##### Se descomentó:
+	>
+		// Features::emailVerification(),
+1. En el modelo **User** implementar la interface **MustVerifyEmail**
+	>
+		class User extends Authenticatable implements MustVerifyEmail
+1. Ingresar en Mailtrap (https://mailtrap.io).
+1. Configurar .env con las credenciales de Mailtrap.
+	>
+		MAIL_MAILER=smtp
+		MAIL_HOST=smtp.mailtrap.io
+		MAIL_PORT=2525
+		MAIL_USERNAME=7c67f786972696
+		MAIL_PASSWORD=8f37b2d25228ba
+		MAIL_ENCRYPTION=tls
+1. Modificar variable de entorno en **.env**
+	+ Cambiar **MAIL_FROM_ADDRESS=null** por **MAIL_FROM_ADDRESS=app.web@sefarvzla.com**
+1. Modificar la ruta raiz en **routes\web.php**
+	>
+		Route::get('/', [Controller::class, 'index'])->name('inicio')->middleware(['auth', 'verified']);
+1. Publicar los archivos de las notificaciones:
+	>
+		$ php artisan vendor:publish --tag=laravel-notifications
+	##### Ahora en **resources\views\vendor\notifications\email.blade.php**, ahí podremos editar la plantilla de email.
+1. Para personalizar estilos del email:
+	>
+		$ php artisan vendor:publish --tag=laravel-mail
+	##### Ahora en "resources/views/vendor/mail/html/themes/default.css" podremos personalizar los estilos de CSS.
+1. Modificar el archivo de estilo **resources\views\vendor\mail\html\themes\default.css**
+	>
+		≡
+		.button-primary {
+			background-color: rgb(121,22,15);
+			border-bottom: 8px solid #2d3748;
+			border-left: 18px solid #2d3748;
+			border-right: 18px solid #2d3748;
+			border-top: 8px solid #2d3748;
+		}
+		≡
+		.button-success {
+			background-color: rgb(121,22,15);
+			border-bottom: 8px solid rgb(121,22,15);
+			border-left: 18px solid rgb(121,22,15);
+			border-right: 18px solid rgb(121,22,15);
+			border-top: 8px solid rgb(121,22,15);
+		}
+		≡
+1. Modificar plantilla **resources\views\vendor\mail\html\header.blade.php**
+	>
+		<tr>
+			<td class="header">
+				<a href="{{ $url }}" style="display: inline-block;">
+					@if (trim($slot) === 'Laravel')
+						<img src="https://laravel.com/img/notification-logo.png" class="logo" alt="Laravel Logo">
+					@else
+						<img src="https://app.universalsefar.com/vendor/adminlte/dist/img/LogoSefar.png" alt="Logo Sefar" width="100" height="100">
+						<hr>
+						{{ $slot }}
+					@endif
+				</a>
+			</td>
+		</tr>
+
+	### Commit 10:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "Verificación de email"
+
+
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XII		● ● ● ● ■ ■ ► ► ►**
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+
 	## CRUD Permisos con Liveware	
 1. Crear grupo de rutas en **routes\web.php**
 	>
@@ -1252,3 +1340,13 @@
 	Method      URI                               	Name
 	======		===								  	====
 	GET|HEAD  	| consultaodx                      	| consultas.onidex.index
+
+# Notas de interes
+
+## Regresar a un commit anterior
+1. Ver historia de commit:
+	>
+		$ git log --pretty=oneline
+1. Seleccionar el commit al cual queremos regresar:
+	>
+		$ git reset --hard <commit-id>

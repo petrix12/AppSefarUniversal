@@ -8,7 +8,7 @@ use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 // Vista inicio
-Route::get('/', [Controller::class, 'index'])->name('inicio')->middleware('auth');
+Route::get('/', [Controller::class, 'index'])->name('inicio')->middleware(['auth', 'verified']);
 
 // Grupo de rutas CRUD
 Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
