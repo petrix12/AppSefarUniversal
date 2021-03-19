@@ -53,8 +53,9 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                         <tr>
-                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                - ■ ■ - 
+                            <th scope="col" class="px-3 py-2 text-left text-md font-medium text-gray-500 uppercase tracking-wider">
+                                {{-- - ■ ■ - --}} 
+                                - <i class="fas fa-portrait"></i> -
                             </th>{{-- 
                             <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 ID

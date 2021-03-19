@@ -44,7 +44,7 @@ class UserController extends Controller
         // Validación
         $request->validate([
             'name' => 'required|max:254',
-            'passport' => 'unique:users,passport',
+            'passport' => 'nullable|unique:users,passport',
             'email' => 'required|unique:users,email'
         ]);
 
@@ -54,6 +54,7 @@ class UserController extends Controller
             'email' => $request->email,
             'passport' => $request->passport,
             'password' => bcrypt('sefar2021'),
+            'password_md5' => md5('sefar2021')
         ]);
 
         // Asignando roles seleccionados
@@ -124,6 +125,11 @@ class UserController extends Controller
         $user->name = $request->name;
         $user->email = $request->email;
         $user->passport = $request->passport;
+        if($request->password){
+            $user->password = bcrypt($request->password);
+            $user->password_md5 = md5($request->password);
+        }
+            
         $user->save();
 
         // Actualizando los roles del usuario

@@ -91,7 +91,7 @@
                                     </div>
                                 @enderror
                     
-                                <div class="col-span-6 sm:col-span-4">
+                                <div class="col-span-6 sm:col-span-3">
                                     <label for="email" class="block text-sm font-medium text-gray-700">{{ __('Email address') }}</label>
                                     <input 
                                         type="email" 
@@ -107,6 +107,25 @@
                                         <small style="color:red">*{{ $message }}*</small>
                                     </div>
                                 @enderror
+                    
+                                {{-- <div class="col-span-6 sm:col-span-4">
+                                    <label for="password" class="block text-sm font-medium text-gray-700">{{ __('Update password') }}</label>
+                                    <input 
+                                        type="paswword" 
+                                        name="password" 
+                                        class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                    />
+                                </div> --}}
+                    
+                                <div class="col-span-6 sm:col-span-3">
+                                    <label for="password" class="block text-sm font-medium text-gray-700">{{ __('Change Password') }}</label>
+                                    <input 
+                                        type="password" 
+                                        name="password" 
+                                        id="password" 
+                                        class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                    />
+                                </div>
                             </div>
                             {{-- ROLES --}}
                             <div class="container my-10">

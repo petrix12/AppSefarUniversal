@@ -1,4 +1,4 @@
-# Proyecto AdminSefar
+# Proyecto App Sefar Universal
 ##### https://laravel.com/docs/8.x
 ##### Versión: **Laravel Framework 8.31.0**
 #
@@ -75,8 +75,17 @@
 		DB_USERNAME=root
 		DB_PASSWORD=
 		≡
-
-1. Agregar el campo **passport** a la migración de tabla **users**: 
+1. Establecer juego de caracteres en base de datos en **config\database.php**
+	>
+		≡
+		'connections' => [
+			≡
+			'mysql' => [
+				≡
+				'charset' => 'utf8',
+				'collation' => 'utf8_general_ci',
+				≡
+1. Agregar los campos **user_id**, **passport**, **social_id**, **picture** y **created**  a la migración de tabla **users**: 
 	>
 		≡
 		public function up()
@@ -84,8 +93,15 @@
 			Schema::create('users', function (Blueprint $table) {
 				$table->id();
 				$table->string('name');
-				$table->string('email')->unique();
-				$table->string('passport')->nullable()->unique();
+				$table->string('email',175)->unique();
+
+				$table->string('passport',175)->nullable()->unique();
+				$table->integer('user_id')->nullable();
+				$table->string('social_id')->nullable();
+				$table->string('picture')->nullable();
+				$table->dateTime('created')->nullable();
+				$table->string('password_md5')->nullable();
+
 				$table->timestamp('email_verified_at')->nullable();
 				$table->string('password');
 				$table->rememberToken();
@@ -95,6 +111,8 @@
 			});
 		}
 		≡
+	##### **Nota**: Los campos: **user_id**, **social_id**, **picture** y **created** se incluyeron para mantener compatibilidad con la base de datos existente, se espera poder eliminar estos campos en versiones futuras.
+	## El campo **email** se redujo a **175** carácteres por problemas de compatibilidad al importar tabla a la base de datos del hosting
 
 1. Ejecutar: 
 	>
@@ -792,6 +810,7 @@
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## Verificación de email con Jetstream
+	##### https://dev.to/devscamp/segundo-post-de-prueba-4jf1
 1. Modificar el archivo **config/fortify.php**
 	>
 		'features' => [
@@ -948,7 +967,7 @@
 			≡
 			≡
 
-	### Commit 10:
+	### Commit 11:
 	+ Ejecutar:
 		>
 			$ git add .
@@ -958,7 +977,7 @@
 
 
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
-	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XII		● ● ● ● ■ ■ ► ► ►**
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XIII		● ● ● ● ■ ■ ► ► ►**
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## CRUD Roles con Liveware
@@ -1025,7 +1044,7 @@
 			≡
 			≡
 
-	### Commit 11:
+	### Commit 12:
 	+ Ejecutar:
 		>
 			$ git add .
@@ -1035,7 +1054,7 @@
 
 
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
-	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XIII		● ● ● ● ■ ■ ► ► ►**
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XIV		● ● ● ● ■ ■ ► ► ►**
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## CRUD Usuarios con Liveware
@@ -1092,7 +1111,7 @@
 			≡
 			≡
 
-	### Commit 12:
+	### Commit 13:
 	+ Ejecutar:
 		>
 			$ git add .
@@ -1102,7 +1121,7 @@
 
 
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
-	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XIV		● ● ● ● ■ ■ ► ► ►**
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XV		● ● ● ● ■ ■ ► ► ►**
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 	## Consultar BD Onidex
@@ -1131,8 +1150,8 @@
 				'username' => env('ONIDEX_USERNAME', 'forge'),
 				'password' => env('ONIDEX_PASSWORD', ''),
 				'unix_socket' => env('ONIDEX_SOCKET', ''),
-				'charset' => 'utf8mb4',
-				'collation' => 'utf8mb4_unicode_ci',
+				'charset' => 'utf8',
+				'collation' => 'utf8_general_ci',
 				'prefix' => '',
 				'prefix_indexes' => true,
 				'strict' => true,
@@ -1217,7 +1236,7 @@
 		≡
 		≡
 
-	### Commit 13:
+	### Commit 14:
 	+ Ejecutar:
 		>
 			$ git add .
@@ -1227,7 +1246,7 @@
 
 
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
-	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XV		● ● ● ● ■ ■ ► ► ►**
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XVI		● ● ● ● ■ ■ ► ► ►**
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
 
@@ -1257,6 +1276,77 @@
 		***
 1. Crear controlador Registro: $ php artisan make:controller RegistroController
 1. Crear ruta en routes\web.php
+
+	# ///////////////////////////////////////
+
+	## Subir proyecto local a GitHub
+	##### https://github.com/
+1. Creamos un nuevo repositorio **privado** con el nombre **AppSefarUniversal**
+	##### Las opciones de **Initialize this repository with** las dejamos sin marcar.
+1. 
+
+
+	# ///////////////////////////////////////
+
+
+	## Subir proyecto Laravel al hosting
+1. Copiar el archivo de variables de entorno **.env** y llamarlo **.env.hosting**
+1. Cambiar las siguientes variables de entorno al archivo **.env.hosting**
+	+ Cambiar **APP_ENV=local** por **APP_ENV=production**
+	+ Cambiar **APP_DEBUG=true** por **APP_DEBUG=false**
+	+ Cambiar **APP_URL=http://sefar.test** por **APP_URL=http://app.universalsefar.com**
+	+ Cambiar **DB_USERNAME=root** por **DB_USERNAME=pxvim6av41qx**
+	+ Cambiar **DB_PASSWORD=** por **DB_PASSWORD=Cisco2019!**
+	+ Cambiar **ONIDEX_USERNAME=root** por **ONIDEX_USERNAME=pxvim6av41qx**
+	+ Cambiar **ONIDEX_PASSWORD=** por **ONIDEX_PASSWORD=Cisco2019!**
+	+ Cambiar **MAIL_HOST=smtp.mailtrap.io** por **MAIL_HOST=universalsefar.com**
+	+ Cambiar **MAIL_PORT=2525** por **MAIL_PORT=587**
+	+ Cambiar **MAIL_USERNAME=7c67f786972696** por **MAIL_USERNAME=_mainaccount@universalsefar.com**
+	+ Cambiar **MAIL_PASSWORD=8f37b2d25228ba** por **MAIL_PASSWORD=Cisco2019!**
+	+ Cambiar **MAIL_ENCRYPTION=tls** por **MAIL_ENCRYPTION=null**
+
+1. Copiar carpeta entera del proyecto a cualquier carpeta de tu preferencia.
+	### **Nota**: De ahora en adelante trabajaremos con la copia y dejaremos nuestro proyecto original intacto.
+1. Eliminar carpetas:
+	>
+		.git
+		a1_soportes
+1. Reemplazar **.env.hosting** por **.env**
+1. Ejecutar:
+	> 
+		$ npm run production
+		$ composer dumpautoload
+		$ php artisan key:generate
+1. Modificar **public\index.php**
+	>
+		require __DIR__.'/../vendor/autoload.php';
+	por
+	>
+		require __DIR__.'/laravel/vendor/autoload.php';
+	y
+	>
+		$app = require_once __DIR__.'/../bootstrap/app.php';
+	por
+	> 
+		$app = require_once __DIR__.'/laravel/bootstrap/app.php';
+1. Definir el método **register** de **app\Providers\AppServiceProvider.php**
+	>
+		public function register()
+		{
+			$this->app->bind('path.public', function(){
+				return '/app.universalsefar.com';
+			});
+		}
+1. Crear una carpeta de nombre **laravel**
+1. Pasar todos los archivos y carpetas del proyecto (excepto **public**) a la carpeta **laravel**
+1. Pasar todos los archivos contenidos en la carpeta **public** a la raíz del proyecto y eliminar dicha carpeta.
+1. Comprimir el proyecto en un archivo zip y subirlos al hosting.
+
+
+
+
+	# ///////////////////////////////////////
+
 
 
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
@@ -1341,12 +1431,32 @@
 	======		===								  	====
 	GET|HEAD  	| consultaodx                      	| consultas.onidex.index
 
-# Notas de interes
+#
+# **Notas de interes**
 
 ## Regresar a un commit anterior
-1. Ver historia de commit:
+	1. Ver historia de commit:
+		>
+			$ git log --pretty=oneline
+	1. Seleccionar el commit al cual queremos regresar:
+		>
+			$ git reset --hard <commit-id>
+## Subir proyecto
+1. En el cPanel crear subdominio:
+	+ app.universalsefar.com
+1. Comprimir en zip todos los archivos del proyecto.
+1. Subir el archivo zip al subdomnio del hosting y descomprimir.
+1. Borrar el archivo zip.
+1. En el cPanel ir a Subdominio y en directorio raíz apuntar a la carpeta public
+1. Configurar .env con los parámetros del hosting.
+
+
+GoDaddy
+
+## Para limpiar el cache
+1. Ejecutar:
 	>
-		$ git log --pretty=oneline
-1. Seleccionar el commit al cual queremos regresar:
-	>
-		$ git reset --hard <commit-id>
+		$ php artisan config:cache 
+		$ php artisan cache:clear
+
+https://app.universalsefar.com/consultaodx

@@ -92,5 +92,7 @@
     "Thanks for signing up! Before getting started, could you verify your email address by clicking on the link we just emailed to you? If you didn't receive the email, we will gladly send you another." : "Gracias por registrarte! Antes de comenzar, ¿podría verificar su dirección de correo electrónico haciendo clic en el enlace que le acabamos de enviar? Si no recibió el correo electrónico, con gusto le enviaremos otro.",
     "Resend Verification Email" : "Reenviar email de verificación",
     "A new verification link has been sent to the email address you provided during registration." : "Se ha enviado un nuevo enlace de verificación a la dirección de correo electrónico que proporcionó durante el registro.",
-    "Log Out" : "Salir"
+    "Log Out" : "Salir",
+    "Update password" : "Actualizar contraseña",
+    "Change Password" : "Cambiar contraseña"
 }
