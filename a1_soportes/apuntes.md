@@ -1281,10 +1281,17 @@
 
 	## Subir proyecto local a GitHub
 	##### https://github.com/
-1. Creamos un nuevo repositorio **privado** con el nombre **AppSefarUniversal**
+1. Creamos un nuevo repositorio **privado** con el nombre **AppSefarUniversal** en la página de GitHub.
 	##### Las opciones de **Initialize this repository with** las dejamos sin marcar.
-1. 
+1. Ejecutamos:
+	>
+		$ git remote add origin https://github.com/petrix12/AppSefarUniversal.git
+		$ git push -u origin master
 
+	## Configurar GitHub con el hosting de Godaddy
+1. Seleccionar proyecto en GitHub e ir a **Settings**.
+1. En **Settings** ir a **GitHub Pages**.
+1. 
 
 	# ///////////////////////////////////////
 
