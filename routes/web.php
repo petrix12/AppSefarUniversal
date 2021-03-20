@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\CountryController;
 use App\Http\Controllers\OnidexController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
@@ -18,6 +19,8 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
 			->middleware('can:crud.roles.index');
     Route::resource('users', UserController::class)->names('users')
 			->middleware('can:crud.users.index');
+    Route::resource('countries', CountryController::class)->names('countries')
+            ->middleware('can:crud.countries.index');
 });
 
 // Grupo de rutas para Consultas a base de datos

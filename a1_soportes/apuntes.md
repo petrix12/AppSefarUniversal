@@ -1124,6 +1124,132 @@
 	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XV		● ● ● ● ■ ■ ► ► ►**
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
+	## CRUD Paises
+1. Crear modelo Country junto con su migración y controlador y los métodos para el CRUD.
+	>
+		$ php artisan make:model Country -m -c -r
+1. Preparar migración para la tabla **countries** en **database\migrations\2021_03_08_173429_create_permission_tables.php**
+	>
+		≡
+		public function up()
+		{
+			Schema::create('countries', function (Blueprint $table) {
+				$table->id();
+				$table->string('pais');
+				$table->string('store');
+				$table->timestamps();
+			});
+		}
+		≡
+1. Establecer permisos en los seeders para el CRUD Paises en **database\seeders\RoleSeeder.php**
+	>   
+		≡ 
+		public function run()
+		{
+			≡        
+			Permission::create(['name' => 'crud.countries.index'])->syncRoles($rolAdministrador);
+			Permission::create(['name' => 'crud.countries.create'])->syncRoles($rolAdministrador);
+			Permission::create(['name' => 'crud.countries.edit'])->syncRoles($rolAdministrador);
+			Permission::create(['name' => 'crud.countries.destroy'])->syncRoles($rolAdministrador);
+			≡
+		}
+		≡
+1. 
+1. Establecer el llenado inicial con el seeder de la tabla **countries** en 
+1. Reestablecer base de datos: 
+	>
+		$ php artisan migrate:fresh --seed
+1. Configurar modelo **Country** en **app\Models\Country.php**
+	>
+		≡
+		class Country extends Model
+		{
+			use HasFactory;
+
+			protected $fillable = [
+				'pais',
+				'store',
+			];
+		}
+1. Programar controlador **Country** en **app\Http\Controllers\CountryController.php**
+	>
+		≡
+		≡
+1. Agregar ruta de paises al grupo de rutas CRUD:
+	>
+		Route::resource('countries', CountryController::class)->names('countries')
+				->middleware('can:crud.countries.index');
+	##### Nota: añadir a la cabecera:
+	>
+		use App\Http\Controllers\CountryController;
+
+
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XVI		● ● ● ● ■ ■ ► ► ►**
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+
+	## Seeders para prueba de paises
+1. Crear seeder para countries: 
+	>
+		$ php artisan make:seeder CountrySeeder
+1. Añadir a cabecera de **database\seeders\CountrySeeder.php**
+	>
+		use App\Models\Country;
+1. Modificar el método **run** de **database\seeders\CountrySeeder.php**
+	>
+		≡
+		≡
+1. Añadir al método run de **database\seeders\DatabaseSeeder.php**
+	>
+		public function run()
+		{
+			≡
+			$this->call(CountrySeeder::class);
+		}
+1. Crear directorio **public\imagenes\paises** y guardar la imagenes de los paises iniciales en formato png y en baja resolución.
+1. Ejecutar: 
+	>
+		$ php artisan migrate:fresh --seed
+	##### **Nota**: Para correr los seeder sin resetear la base de datos:
+	+ Ejecutar: 
+	>
+		$ php artisan db:seed
+
+	### Commit 15:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "Seeder Paises
+
+	# ///////////////////////////////////////////////
+
+
+
+	## CRUD Agclientes
+1. Crear modelo Agcliente junto con su migración y controlador y los métodos para el CRUD.
+	>
+		$ php artisan make:model Agcliente -m -c -r
+
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XVI		● ● ● ● ■ ■ ► ► ►**
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+
+	## Almacenamiento de documentos
+1. -----------
+
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XVII		● ● ● ● ■ ■ ► ► ►**
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***	
+
+	## Vistas para árboles genealógicos
+1. -----------
+
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XVIII		● ● ● ● ■ ■ ► ► ►**
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***	
+
 	## Consultar BD Onidex
 1. Agregar las variables de entorno para la conexión a la base de datos **onidex** en **.env**
 	>
@@ -1281,27 +1407,16 @@
 
 	## Subir proyecto local a GitHub
 	##### https://github.com/
-1. Creamos un nuevo repositorio **privado** con el nombre **AppSefarUniversal** en la página de GitHub.
-	##### Las opciones de **Initialize this repository with** las dejamos sin marcar.
-1. Ejecutamos:
-	>
-		$ git remote add origin https://github.com/petrix12/AppSefarUniversal.git
-		$ git push -u origin master
-
-	## Configurar GitHub con el hosting de Godaddy
-1. Seleccionar proyecto en GitHub e ir a **Settings**.
-1. En **Settings** ir a **GitHub Pages**.
-1. 
-
-	# ///////////////////////////////////////
-
-
-	## Subir proyecto Laravel al hosting
+1. Ejecutar:
+	> 
+		$ npm run production
+		$ composer dumpautoload
+		$ php artisan key:generate
 1. Copiar el archivo de variables de entorno **.env** y llamarlo **.env.hosting**
 1. Cambiar las siguientes variables de entorno al archivo **.env.hosting**
 	+ Cambiar **APP_ENV=local** por **APP_ENV=production**
 	+ Cambiar **APP_DEBUG=true** por **APP_DEBUG=false**
-	+ Cambiar **APP_URL=http://sefar.test** por **APP_URL=http://app.universalsefar.com**
+	+ Cambiar **APP_URL=http://sefar.test** por **APP_URL=https://app.universalsefar.com**
 	+ Cambiar **DB_USERNAME=root** por **DB_USERNAME=pxvim6av41qx**
 	+ Cambiar **DB_PASSWORD=** por **DB_PASSWORD=Cisco2019!**
 	+ Cambiar **ONIDEX_USERNAME=root** por **ONIDEX_USERNAME=pxvim6av41qx**
@@ -1311,49 +1426,41 @@
 	+ Cambiar **MAIL_USERNAME=7c67f786972696** por **MAIL_USERNAME=_mainaccount@universalsefar.com**
 	+ Cambiar **MAIL_PASSWORD=8f37b2d25228ba** por **MAIL_PASSWORD=Cisco2019!**
 	+ Cambiar **MAIL_ENCRYPTION=tls** por **MAIL_ENCRYPTION=null**
-
-1. Copiar carpeta entera del proyecto a cualquier carpeta de tu preferencia.
-	### **Nota**: De ahora en adelante trabajaremos con la copia y dejaremos nuestro proyecto original intacto.
-1. Eliminar carpetas:
+1. Creamos un nuevo repositorio **público** con el nombre **AppSefarUniversal** en la página de GitHub.
+	##### Las opciones de **Initialize this repository with** las dejamos sin marcar.
+1. Ejecutamos en local:
 	>
-		.git
-		a1_soportes
-1. Reemplazar **.env.hosting** por **.env**
-1. Ejecutar:
-	> 
-		$ npm run production
-		$ composer dumpautoload
-		$ php artisan key:generate
-1. Modificar **public\index.php**
-	>
-		require __DIR__.'/../vendor/autoload.php';
-	por
-	>
-		require __DIR__.'/laravel/vendor/autoload.php';
-	y
-	>
-		$app = require_once __DIR__.'/../bootstrap/app.php';
-	por
-	> 
-		$app = require_once __DIR__.'/laravel/bootstrap/app.php';
-1. Definir el método **register** de **app\Providers\AppServiceProvider.php**
-	>
-		public function register()
-		{
-			$this->app->bind('path.public', function(){
-				return '/app.universalsefar.com';
-			});
-		}
-1. Crear una carpeta de nombre **laravel**
-1. Pasar todos los archivos y carpetas del proyecto (excepto **public**) a la carpeta **laravel**
-1. Pasar todos los archivos contenidos en la carpeta **public** a la raíz del proyecto y eliminar dicha carpeta.
-1. Comprimir el proyecto en un archivo zip y subirlos al hosting.
+		$ git add .
+		$ git commit -m "Ajustes finales"
+		$ git remote add origin https://github.com/petrix12/AppSefarUniversal.git
+		$ git push -u origin master
 
-
-
-
-	# ///////////////////////////////////////
-
+	## Configurar GitHub con el hosting de GoDaddy
+1. Ingresar al cPanel con https://a2plcpnl0082.prod.iad2.secureserver.net:2083/
+	###### pxvim6av41qx / Cisco2019!
+1. En la sección **ARCHIVOS** ir a **Git™ Version Control**
+1. Crear repositorio ingresando los siguientes parámetros:
+	+ Clone URL: https://github.com/petrix12/AppSefarUniversal.git
+	+ Repository Path: public_html/app.universalsefar.com
+	+ Repository Name: AppSefarUniversal
+1. Copiar del proyecto local a la carpeta del hosting **public_html/app.universalsefar.com** los siguientes directorios:
+	+ node_modules
+	+ public/storage
+	+ vendor
+1. Renombrar el archivo **.env.hosting** a **.env**
+	### **Nota**: De aquí en adelante, cada vez que se realicen cambios en local se deberán seguir los siguientes pasos para que se reflejen en producción:
+	+ En local ejecutar:
+		>
+			$ git add .
+			$ git commit -m "Descripción de los cambios"
+			$ git push -u origin master
+	+ En el cPanel:
+		- Ingresar al cPanel con https://a2plcpnl0082.prod.iad2.secureserver.net:2083/
+			###### pxvim6av41qx / Cisco2019!
+		- En la sección **ARCHIVOS** ir a **Git™ Version Control**.
+		- Administrar el repositorio **AppSefarUniversal**.
+		- Ir a la pestaña **Pull or Deploy**.
+		- Presionar el botón **Update from Remote**.
 
 
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
@@ -1442,28 +1549,15 @@
 # **Notas de interes**
 
 ## Regresar a un commit anterior
-	1. Ver historia de commit:
-		>
-			$ git log --pretty=oneline
-	1. Seleccionar el commit al cual queremos regresar:
-		>
-			$ git reset --hard <commit-id>
-## Subir proyecto
-1. En el cPanel crear subdominio:
-	+ app.universalsefar.com
-1. Comprimir en zip todos los archivos del proyecto.
-1. Subir el archivo zip al subdomnio del hosting y descomprimir.
-1. Borrar el archivo zip.
-1. En el cPanel ir a Subdominio y en directorio raíz apuntar a la carpeta public
-1. Configurar .env con los parámetros del hosting.
-
-
-GoDaddy
+1. Ver historia de commit:
+	>
+		$ git log --pretty=oneline
+1. Seleccionar el commit al cual queremos regresar:
+	>
+		$ git reset --hard <commit-id>
 
 ## Para limpiar el cache
 1. Ejecutar:
 	>
 		$ php artisan config:cache 
 		$ php artisan cache:clear
-
-https://app.universalsefar.com/consultaodx

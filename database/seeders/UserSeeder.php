@@ -14,13 +14,7 @@ class UserSeeder extends Seeder
      */
     public function run()
     {
-        /* User::create([
-            'name' => 'Pedro Bazó',
-            'email' => 'bazo.pedro@gmail.com',
-            'password' => md5('0zfHrmm2')
-        ])->assignRole('Administrador'); */
-
-        // ***************
+        // Usuarios reales
         User::create(['user_id' => '52','name' => 'Pedro Bazó','email' => 'bazo.pedro@gmail.com','password' => '$2y$10$LoJz0JHclvdush.3.0MLjOoBjHwRtgDswAhUFmGmClBQVWTmfFhfW','password_md5' => '$2y$10$LoJz0JHclvdush.3.0MLjOoBjHwRtgDswAhUFmGmClBQVWTmfFhfW','created' => '2021/3/9'])->assignRole('Administrador');
         User::create(['user_id' => '2','name' => 'Pedro Bazo','email' => 'documentalista@sefarvzla.com','password' => 'b82aa3b51060c437c66ddb3d225e7aed','password_md5' => 'b82aa3b51060c437c66ddb3d225e7aed','created' => '2020/5/13'])->assignRole('Administrador');
         User::create(['user_id' => '3','name' => 'Angel Rosales','email' => 'arosales@sefarvzla.com','password' => '71d0e9eca2858092eafe0cb0cbd7f70d','password_md5' => '71d0e9eca2858092eafe0cb0cbd7f70d','created' => '2020/5/13'])->assignRole('Genealogista');
@@ -73,8 +67,7 @@ class UserSeeder extends Seeder
         User::create(['user_id' => '52','name' => 'Rosalba','email' => 'rosalba@gmail.com','password' => 'b82aa3b51060c437c66ddb3d225e7aed','password_md5' => 'b82aa3b51060c437c66ddb3d225e7aed','created' => '2021/3/9'])->assignRole('Genealogista');
                                
 
-        // ***************
-
+        // Usuarios de prueba
         User::create([
             'name' => 'Prueba Genealogista',
             'email' => 'genealogista@gmail.com',
