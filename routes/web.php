@@ -42,6 +42,8 @@ Route::get('/pruebas', function () {
     return view('resources\markdown\terms.md');
 });
 
+
+// RUTAS PARA EL MANTENIMIENTO DE LA APLICACIÓN EN PRODUCCIÓN
 // Ruta para ejecutar en producción: $ php artisan storage:link
 Route::get('storage-link', function(){
     Artisan::call('storage:link');

@@ -54,7 +54,7 @@ class CountryController extends Controller
                 // Añadiendo país
                 Country::create([
                     'pais' => $request->pais,
-                    'store' => 'imagenes\\paises\\' . $fileImg,
+                    'store' => 'imagenes/paises/' . $fileImg,
                 ]);
         
                 // Mensaje 
