@@ -181,6 +181,7 @@ return [
         'time'                  => 'hora',
         'title'                 => 'título',
         'username'              => 'usuario',
-        'year'                  => 'año',
+        'year'                  => 'año', 
+        'store'                 => 'almacenamiento'
     ],
 ];

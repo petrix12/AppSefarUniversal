@@ -82,10 +82,11 @@
                         @foreach ($countries as $country)
                         <tr>   
                             <td class="px-6 py-2 whitespace-nowrap">
-                                <img src="{{ asset($country->store)}}" alt="{{ $country->id }}" width="33" height="25" >
+                                <img src="{{ config('app.url').'/storage/'.$country->store }}" alt="{{ $country->id }}" width="33" height="25" >
                             </td>   
                             <td class="px-6 py-2 whitespace-nowrap">
                                 {{ $country->id }}
+                                {{-- {{ config('app.url').'/storage/'.$country->store }} --}}
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap">
                                 {{ $country->pais }}

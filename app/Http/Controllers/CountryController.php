@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Country;
 use Illuminate\Http\Request;
+use RealRashid\SweetAlert\Facades\Alert;
+use Illuminate\Support\Facades\Storage;
 
 class CountryController extends Controller
 {
@@ -24,7 +26,8 @@ class CountryController extends Controller
      */
     public function create()
     {
-        //
+        $countries = Country::all();
+        return view('crud.countries.create', compact('countries'));
     }
 
     /**
@@ -33,9 +36,37 @@ class CountryController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
+
+
     public function store(Request $request)
     {
-        //
+        // Validación
+        $request->validate([
+            'pais' => 'required|max:100',
+            'file' => 'required'
+        ]);
+
+        // Guardando la imagen del país
+        if($request->hasFile('file')){
+            $fileImg = $request->pais.'.png';
+            /* if(Storage::putFileAs('/imagenes/paises/' , $request->file, $fileImg)){ */
+            if($request->file('file')->storePubliclyAs('public/imagenes/paises',$fileImg)){
+                // Añadiendo país
+                Country::create([
+                    'pais' => $request->pais,
+                    'store' => 'imagenes\\paises\\' . $fileImg,
+                ]);
+        
+                // Mensaje 
+                Alert::success('¡Éxito!', 'Se ha añadido el país: ' . $request->pais);
+                
+                // Redireccionar a la vista index
+                return redirect()->route('crud.countries.index');
+            }
+        }else{
+            Alert::error('¡Error!', 'No se pudo añadir el país');
+            return back();
+        }
     }
 
     /**
@@ -80,6 +111,12 @@ class CountryController extends Controller
      */
     public function destroy(Country $country)
     {
-        //
+        $pais = $country->pais;
+        
+        $country->delete();
+
+        Alert::info('¡Advertencia!', 'Se ha eliminado de la lista el país: ' . $pais);
+
+        return redirect()->route('crud.countries.index');
     }
 }
