@@ -94,5 +94,7 @@
     "A new verification link has been sent to the email address you provided during registration." : "Se ha enviado un nuevo enlace de verificación a la dirección de correo electrónico que proporcionó durante el registro.",
     "Log Out" : "Salir",
     "Update password" : "Actualizar contraseña",
-    "Change Password" : "Cambiar contraseña"
+    "Change Password" : "Cambiar contraseña",
+    "Countries" : "Paises",
+    "Add country" : "Añadir país"
 }

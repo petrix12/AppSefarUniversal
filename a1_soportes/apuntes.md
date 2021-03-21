@@ -1154,8 +1154,6 @@
 			≡
 		}
 		≡
-1. 
-1. Establecer el llenado inicial con el seeder de la tabla **countries** en 
 1. Reestablecer base de datos: 
 	>
 		$ php artisan migrate:fresh --seed
@@ -1171,10 +1169,6 @@
 				'store',
 			];
 		}
-1. Programar controlador **Country** en **app\Http\Controllers\CountryController.php**
-	>
-		≡
-		≡
 1. Agregar ruta de paises al grupo de rutas CRUD:
 	>
 		Route::resource('countries', CountryController::class)->names('countries')
@@ -1182,6 +1176,47 @@
 	##### Nota: añadir a la cabecera:
 	>
 		use App\Http\Controllers\CountryController;
+1. Crear componente Livewire para Tabla Countries: 
+	>
+		$ php artisan make:livewire crud/countries-table
+1. Programar controlador para la tabla Countries: **app\Http\Livewire\Crud\CountriesTable.php**
+	>
+		≡
+		≡
+1. Diseñar vista para la tabla Country: **resources\views\livewire\crud\countries-table.blade.php**
+	>
+		≡
+		≡
+1. Programar controlador Country: **app\Http\Controllers\CountryController.php**
+	>
+		≡
+		≡
+1. Diseñar las vistas para el CRUD Paises:
+	- resources\views\crud\countries\index.blade.php
+		>
+			≡
+			≡
+	- resources\views\crud\countries\create.blade.php
+		>
+			≡
+			≡
+	- resources\views\crud\countries\edit.blade.php
+		>
+			≡
+			≡
+1. Editar **config\adminlte.php** para añadir los menú para ingresar al CRUD Paises.
+	>
+		≡
+		≡
+
+
+	### Commit 13:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "CRUD Paises"
 
 
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
@@ -1221,7 +1256,7 @@
 			$ git add .
 	+ Crear repositorio:
 		>
-			$ git commit -m "Seeder Paises
+			$ git commit -m "Seeder Paises"
 
 	# ///////////////////////////////////////////////
 

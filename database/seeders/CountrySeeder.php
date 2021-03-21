@@ -23,7 +23,6 @@ class CountrySeeder extends Seeder
         Country::create(['pais' => 'Bélgica','store' => 'imagenes\paises\Bélgica.png']);
         Country::create(['pais' => 'Canadá','store' => 'imagenes\paises\Canadá.png']);
         Country::create(['pais' => 'Chile','store' => 'imagenes\paises\Chile.png']);
-        Country::create(['pais' => 'Chile2','store' => 'imagenes\paises\Chile2.png']);
         Country::create(['pais' => 'Colombia','store' => 'imagenes\paises\Colombia.png']);
         Country::create(['pais' => 'Costa Rica','store' => 'imagenes\paises\Costa Rica.png']);
         Country::create(['pais' => 'Cuba','store' => 'imagenes\paises\Cuba.png']);

@@ -323,6 +323,23 @@ return [
             ],
         ],
 
+        /* *** TABLAS GENERALES *** */
+        [
+            'text'        => 'Tablas Generales',
+            'icon'        => 'fas fa-table',
+            'icon_color'  => 'white',
+            'can'  => 'administrador',
+            'submenu' => [
+                [
+                    'text'          => 'Paises',
+                    'icon'          => 'fas fa-flag',
+                    'icon_color'    => 'white',
+                    'route'         => 'crud.countries.index',
+                    'can'           => 'administrador',
+                ],
+            ],
+        ],
+
 
         [
             'header' => 'account_settings',
