@@ -6,6 +6,7 @@ use App\Http\Controllers\OnidexController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
 // Vista inicio
@@ -31,8 +32,6 @@ Route::group(['middleware' => ['auth'], 'as' => 'consultas.'], function(){
         ->middleware('can:consultas.onidex.show');
 });
 
-
-
 Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
     return view('dashboard');
 })->name('dashboard');
@@ -41,4 +40,19 @@ Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
 // Para probar vistas
 Route::get('/pruebas', function () {
     return view('resources\markdown\terms.md');
+});
+
+// Ruta para ejecutar en producción: $ php artisan storage:link
+Route::get('storage-link', function(){
+    Artisan::call('storage:link');
+});
+
+// Ruta para ejecutar en producción: $ php artisan config:cache
+Route::get('config:cache', function(){
+    Artisan::call('config:cache');
+});
+
+// Ruta para ejecutar en producción: $ php artisan cache:clear
+Route::get('cache:clear', function(){
+    Artisan::call('cache:clear');
 });
