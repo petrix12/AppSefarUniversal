@@ -1241,7 +1241,7 @@
 			≡
 			$this->call(CountrySeeder::class);
 		}
-1. Crear directorio **public\imagenes\paises** y guardar la imagenes de los paises iniciales en formato png y en baja resolución.
+1. Crear directorio **storage\app\public\imagenes\paises** y guardar la imagenes de los paises iniciales en formato png y en baja resolución.
 1. Ejecutar: 
 	>
 		$ php artisan migrate:fresh --seed
