@@ -1596,3 +1596,13 @@
 	>
 		$ php artisan config:cache 
 		$ php artisan cache:clear
+
+## Preparando proyecto para producción
+1. Limpiar el caché de la Aplicación.
+ 	$ php artisan cache:clear 
+2. Limpiar las rutas de la Aplicación.
+ 	$ php artisan route:clear  
+3. Limpiar las configuraciones de la Aplicación.
+ 	$ php artisan config:clear 
+4. Limpiar las vistas de la Aplicación.
+ 	$ php artisan view:clear
