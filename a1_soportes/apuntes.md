@@ -1439,6 +1439,53 @@
 1. Crear ruta en routes\web.php
 
 	# ///////////////////////////////////////
+	## Crear rutas de mantenimiento de la aplicación
+1. Agregar las siguientes rutas en **routes\web.php** para poder realizarle mantenimiento a la aplicación cuando se encuentre en producción:
+	>
+		// RUTAS PARA EL MANTENIMIENTO DE LA APLICACIÓN EN PRODUCCIÓN
+		// Ruta para ejecutar en producción: $ php artisan key:generate
+		Route::get('key-generate', function(){
+			Artisan::call('key:generate');
+		});
+
+		// Ruta para ejecutar en producción: $ php artisan storage:link
+		Route::get('storage-link', function(){
+			Artisan::call('storage:link');
+		});
+
+		// Ruta para ejecutar en producción: $ php artisan config:cache
+		Route::get('config-cache', function(){
+			Artisan::call('config:cache');
+		});
+
+		// Ruta para ejecutar en producción: $ php artisan cache:clear
+		Route::get('cache-clear', function(){
+			Artisan::call('cache:clear');
+		});
+
+		// Ruta para ejecutar en producción: $ php artisan route:clear
+		Route::get('route-clear', function(){
+			Artisan::call('route:clear');
+		});
+
+		// Ruta para ejecutar en producción: $ php artisan config:clear
+		Route::get('config-clear', function(){
+			Artisan::call('config:clear');
+		});
+
+		// Ruta para ejecutar en producción: $ php artisan view:clear
+		Route::get('view-clear', function(){
+			Artisan::call('view:clear');
+		});	
+
+	### Commit XX:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "Rutas para mantenimiento de la app"
+
 
 	## Subir proyecto local a GitHub
 	##### https://github.com/
