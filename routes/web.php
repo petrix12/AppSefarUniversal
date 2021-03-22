@@ -50,11 +50,11 @@ Route::get('storage-link', function(){
 });
 
 // Ruta para ejecutar en producción: $ php artisan config:cache
-Route::get('config:cache', function(){
+Route::get('config-cache', function(){
     Artisan::call('config:cache');
 });
 
 // Ruta para ejecutar en producción: $ php artisan cache:clear
-Route::get('cache:clear', function(){
+Route::get('cache-clear', function(){
     Artisan::call('cache:clear');
 });
