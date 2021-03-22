@@ -86,7 +86,7 @@
                             </td>   
                             <td class="px-6 py-2 whitespace-nowrap">
                                 {{ $country->id }}
-                                {{ config('app.url').'/storage/'.$country->store }}
+                                {{-- {{ config('app.url').'/storage/'.$country->store }} --}}
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap">
                                 {{ $country->pais }}
