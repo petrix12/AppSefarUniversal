@@ -23,7 +23,7 @@ class CountriesTable extends Component
         return view('livewire.crud.countries-table', [
             'countries' => Country::where('pais','LIKE',"%$this->search%")
                 ->orWhere('store','LIKE',"%$this->search%")
-                ->orderBy('updated_at','ASC')
+                ->orderBy('pais','ASC')
                 ->paginate($this->perPage)
         ]);
         return view('livewire.crud.countries-table');

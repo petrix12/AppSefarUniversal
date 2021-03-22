@@ -40,8 +40,9 @@
                             <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
                                 {{-- Diseñar formulario - Inicio --}}
                                 <form action="{{ route('crud.countries.store') }}" method="POST" enctype="multipart/form-data">
+
                                     @csrf
-                                    {{-- @method('put') --}}
+                                    
                                     <div class="shadow overflow-hidden sm:rounded-md">
                                         <div class="px-4 py-5 bg-white sm:p-6">
                                             <div class="grid grid-cols-6 gap-6">
@@ -62,11 +63,11 @@
                                                     </label>
                                                 </p>
                                                 
-                                                {{-- @error('file')
+                                                @error('file')
                                                     <div class="col-span-12 sm:col-span-12">
                                                         <small style="color:red">*{{ $message }}*</small>
                                                     </div>
-                                                @enderror --}}
+                                                @enderror
                                             </div>
                                         </div>
                                         <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">

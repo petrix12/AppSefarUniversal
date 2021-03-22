@@ -1124,7 +1124,7 @@
 	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XV		● ● ● ● ■ ■ ► ► ►**
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
-	## CRUD Paises
+	## CRUD Paises con Liveware
 1. Crear modelo Country junto con su migración y controlador y los métodos para el CRUD.
 	>
 		$ php artisan make:model Country -m -c -r
@@ -1486,7 +1486,6 @@
 		>
 			$ git commit -m "Rutas para mantenimiento de la app"
 
-
 	## Subir proyecto local a GitHub
 	##### https://github.com/
 1. Ejecutar:
@@ -1529,6 +1528,12 @@
 	+ Cambiar **MAIL_USERNAME=7c67f786972696** por **MAIL_USERNAME=_mainaccount@universalsefar.com**
 	+ Cambiar **MAIL_PASSWORD=8f37b2d25228ba** por **MAIL_PASSWORD=Cisco2019!**
 	+ Cambiar **MAIL_ENCRYPTION=tls** por **MAIL_ENCRYPTION=null**
+1. Direccionar las siguientes rutas:
+	>
+		https://app.universalsefar.com/storage-link
+	##### Esta acción simula la instrucción artisan **$ php artisan storage:link** para crear un enlace simbólico de public a storage. Verifique que no exista carpeta o acceso directo en **public** con el nombre **storage**, de ser así, elimínelo.
+		https://app.universalsefar.com/config-cache
+	##### Esta acción simula la instrucción artisan **php artisan config:cache** para borrar la caché de la configuración anterior.
 	
 	### **Nota**: De aquí en adelante, cada vez que se realicen cambios en local se deberán seguir los siguientes pasos para que se reflejen en producción:
 	+ En local ejecutar:
