@@ -1494,20 +1494,6 @@
 		$ npm run production
 		$ composer dumpautoload
 		$ php artisan key:generate
-1. Copiar el archivo de variables de entorno **.env** y llamarlo **.env.hosting**
-1. Cambiar las siguientes variables de entorno al archivo **.env.hosting**
-	+ Cambiar **APP_ENV=local** por **APP_ENV=production**
-	+ Cambiar **APP_DEBUG=true** por **APP_DEBUG=false**
-	+ Cambiar **APP_URL=http://sefar.test** por **APP_URL=https://app.universalsefar.com**
-	+ Cambiar **DB_USERNAME=root** por **DB_USERNAME=pxvim6av41qx**
-	+ Cambiar **DB_PASSWORD=** por **DB_PASSWORD=Cisco2019!**
-	+ Cambiar **ONIDEX_USERNAME=root** por **ONIDEX_USERNAME=pxvim6av41qx**
-	+ Cambiar **ONIDEX_PASSWORD=** por **ONIDEX_PASSWORD=Cisco2019!**
-	+ Cambiar **MAIL_HOST=smtp.mailtrap.io** por **MAIL_HOST=universalsefar.com**
-	+ Cambiar **MAIL_PORT=2525** por **MAIL_PORT=587**
-	+ Cambiar **MAIL_USERNAME=7c67f786972696** por **MAIL_USERNAME=_mainaccount@universalsefar.com**
-	+ Cambiar **MAIL_PASSWORD=8f37b2d25228ba** por **MAIL_PASSWORD=Cisco2019!**
-	+ Cambiar **MAIL_ENCRYPTION=tls** por **MAIL_ENCRYPTION=null**
 1. Creamos un nuevo repositorio **público** con el nombre **AppSefarUniversal** en la página de GitHub.
 	##### Las opciones de **Initialize this repository with** las dejamos sin marcar.
 1. Ejecutamos en local:
@@ -1529,7 +1515,21 @@
 	+ node_modules
 	+ public/storage
 	+ vendor
-1. Renombrar el archivo **.env.hosting** a **.env**
+1. Copiar y pegar el archivo **.env** del local al hosting.
+1. Cambiar las siguientes variables de entorno al archivo **.env**
+	+ Cambiar **APP_ENV=local** por **APP_ENV=production**
+	+ Cambiar **APP_DEBUG=true** por **APP_DEBUG=false**
+	+ Cambiar **APP_URL=http://sefar.test** por **APP_URL=https://app.universalsefar.com**
+	+ Cambiar **DB_USERNAME=root** por **DB_USERNAME=pxvim6av41qx**
+	+ Cambiar **DB_PASSWORD=** por **DB_PASSWORD=Cisco2019!**
+	+ Cambiar **ONIDEX_USERNAME=root** por **ONIDEX_USERNAME=pxvim6av41qx**
+	+ Cambiar **ONIDEX_PASSWORD=** por **ONIDEX_PASSWORD=Cisco2019!**
+	+ Cambiar **MAIL_HOST=smtp.mailtrap.io** por **MAIL_HOST=universalsefar.com**
+	+ Cambiar **MAIL_PORT=2525** por **MAIL_PORT=587**
+	+ Cambiar **MAIL_USERNAME=7c67f786972696** por **MAIL_USERNAME=_mainaccount@universalsefar.com**
+	+ Cambiar **MAIL_PASSWORD=8f37b2d25228ba** por **MAIL_PASSWORD=Cisco2019!**
+	+ Cambiar **MAIL_ENCRYPTION=tls** por **MAIL_ENCRYPTION=null**
+	
 	### **Nota**: De aquí en adelante, cada vez que se realicen cambios en local se deberán seguir los siguientes pasos para que se reflejen en producción:
 	+ En local ejecutar:
 		>
