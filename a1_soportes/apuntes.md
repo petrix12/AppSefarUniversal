@@ -1258,11 +1258,7 @@
 		>
 			$ git commit -m "Seeder Paises"
 
-	# ///////////////////////////////////////////////
-
-
-
-	## CRUD Agclientes
+	## CRUD Agclientes con Liveware
 1. Crear modelo Agcliente junto con su migración y controlador y los métodos para el CRUD.
 	>
 		$ php artisan make:model Agcliente -m -c -r
@@ -1270,6 +1266,13 @@
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XVI		● ● ● ● ■ ■ ► ► ►**
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+
+
+
+
+
+
+	# ///////////////////////////////////////////////
 
 	## Almacenamiento de documentos
 1. -----------
