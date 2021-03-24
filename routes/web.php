@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AgclienteController;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\OnidexController;
@@ -22,6 +23,8 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
 			->middleware('can:crud.users.index');
     Route::resource('countries', CountryController::class)->names('countries')
             ->middleware('can:crud.countries.index');
+    Route::resource('agclientes', AgclienteController::class)->names('agclientes')
+            ->middleware('can:crud.agclientes.index');
 });
 
 // Grupo de rutas para Consultas a base de datos
@@ -37,9 +40,11 @@ Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
 })->name('dashboard');
 
 
-// Para probar vistas
-Route::get('/pruebas', function () {
-    return view('resources\markdown\terms.md');
+// Grupo de rutas para realizar pruebas
+Route::group(['middleware' => ['auth'], 'as' => 'test.'], function(){
+    Route::get('flex', function (){
+        return view('pruebas.flex');
+    })->name('flex')->middleware('can:administrador');
 });
 
 

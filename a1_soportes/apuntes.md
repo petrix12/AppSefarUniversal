@@ -1258,10 +1258,170 @@
 		>
 			$ git commit -m "Seeder Paises"
 
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE ---		● ● ● ● ■ ■ ► ► ►**
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+
 	## CRUD Agclientes con Liveware
 1. Crear modelo Agcliente junto con su migración y controlador y los métodos para el CRUD.
 	>
 		$ php artisan make:model Agcliente -m -c -r
+1. Preparar migración para la tabla **agclientes** en **database\migrations\2021_03_23_020633_create_agclientes_table.php**
+	>
+		≡
+		≡
+1. Establecer permisos en los seeders para el CRUD Paises en **database\seeders\RoleSeeder.php**
+	>   
+		≡ 
+		public function run()
+		{
+			≡
+			Permission::create(['name' => 'crud.agclientes.index'])->syncRoles($rolAdministrador, $rolGenealogista);
+			Permission::create(['name' => 'crud.agclientes.create'])->syncRoles($rolAdministrador, $rolGenealogista);
+			Permission::create(['name' => 'crud.agclientes.edit'])->syncRoles($rolAdministrador, $rolGenealogista);
+			Permission::create(['name' => 'crud.agclientes.destroy'])->syncRoles($rolAdministrador);
+			≡
+		}
+		≡
+1. Reestablecer base de datos: 
+	>
+		$ php artisan migrate:fresh --seed	
+1. Configurar modelo **Agcliente** en **app\Models\Agcliente.php**
+	>
+		≡
+		class Country extends Model
+		{
+			use HasFactory;
+
+			protected $fillable = [
+				'IDCliente',
+				'IDPersona',
+				'IDPadre',
+				'IDMadre',
+				'Generacion',
+				'Nombres',
+				'Apellidos',
+				'NPasaporte',
+				'PaisPasaporte',
+				'NDocIdent',
+				'PaisDocIdent',
+				'Sexo',
+				'AnhoNac',
+				'MesNac',
+				'DiaNac',
+				'LugarNac',
+				'PaisNac',
+				'AnhoBtzo',
+				'MesBtzo',
+				'DiaBtzo',
+				'LugarBtzo',
+				'PaisBtzo',
+				'AnhoMatr',
+				'MesMatr',
+				'DiaMatr',
+				'LugarMatr',
+				'PaisMatr',
+				'AnhoDef',
+				'MesDef',
+				'DiaDef',
+				'LugarDef',
+				'PaisDef',
+				'Vive',
+				'Observaciones',
+				'Familiaridad',
+				'NombresF',
+				'ApellidosF',
+				'ParentescoF',
+				'NPasaporteF',
+				'FRegistro',
+				'PNacimiento',
+				'LNacimiento',
+				'Familiares',
+				'Enlace',
+				'FTM',
+				'FUpdate',
+				'Usuario',
+			];
+		}
+1. Agregar ruta de agclientes al grupo de rutas CRUD:
+	>
+		Route::resource('agclientes', AgclienteController::class)->names('agclientes')
+				->middleware('can:crud.agclientes.index');
+	##### Nota: añadir a la cabecera:
+	>
+		use App\Http\Controllers\AgclienteController;
+1. Crear componente Livewire para Tabla Agclientes: 
+	>
+		$ php artisan make:livewire crud/agclientes-table
+1. Programar controlador para la tabla Agclientes: **app\Http\Livewire\Crud\AgclientesTable.php**
+	>
+		≡
+		≡
+1. Diseñar vista para la tabla Agcliente: **resources\views\livewire\crud\agclientes-table.blade.php**
+	>
+		≡
+		≡
+1. Programar controlador Agcliente: **app\Http\Controllers\AgclienteController.php**
+	>
+		≡
+		≡	
+1. Diseñar las vistas para el CRUD Agclientes:
+	- resources\views\crud\agclientes\index.blade.php
+		>
+			≡
+			≡
+	- resources\views\crud\agclientes\create.blade.php
+		>
+			≡
+			≡
+	- resources\views\crud\agclientes\edit.blade.php
+		>
+			≡
+			≡
+1. Editar **config\adminlte.php** para añadir los menú para ingresar al CRUD Agclientes.
+	>
+		≡
+		≡
+
+
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE ---		● ● ● ● ■ ■ ► ► ►**
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+
+	## Seeders para prueba de agclientes
+1. Crear seeder para agclientes: 
+	>
+		$ php artisan make:seeder AgclienteSeeder
+1. Añadir a cabecera de **database\seeders\CountrySeeder.php**
+	>
+		use App\Models\Agcliente;
+1. Modificar el método **run** de **database\seeders\AgclienteSeeder.php**
+	>
+		≡
+		≡
+1. Añadir al método run de **database\seeders\DatabaseSeeder.php**
+	>
+		public function run()
+		{
+			≡
+			$this->call(AgclienteSeeder::class);
+		}
+1. Crear directorio **storage\app\public\imagenes\paises** y guardar la imagenes de los paises iniciales en formato png y en baja resolución.
+1. Ejecutar: 
+	>
+		$ php artisan migrate:fresh --seed
+	##### **Nota**: Para correr los seeder sin resetear la base de datos:
+	+ Ejecutar: 
+	>
+		$ php artisan db:seed
+
+	### Commit 15:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "Seeder Paises"
 
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE XVI		● ● ● ● ■ ■ ► ► ►**
@@ -1661,3 +1821,37 @@
  	$ php artisan config:clear 
 4. Limpiar las vistas de la Aplicación.
  	$ php artisan view:clear
+
+## Crear helper personalizado
+1. Crear helper **app\helper\sefar.php**
+	>
+		≡
+		≡
+1. Modificar **composer.json** para agregar el helper **app\helper\sefar.php**
+	>
+		≡
+		"autoload": {
+			"psr-4": {
+				"App\\": "app/",
+				"Database\\Factories\\": "database/factories/",
+				"Database\\Seeders\\": "database/seeders/"
+			},	
+			"files": [
+				"app/helper/sefar.php"
+			]
+		},
+		≡
+1. Ejecutar:
+	>
+		$ composer dump-autoload
+1. Configurar **config\adminlte.php** para crear un menú para pruebas:
+	>
+		≡
+		≡
+1. Crear archivo de estilo **public\css\prueba_flex.css**
+	>
+		≡
+		≡
+1. Si no se reflejan los cambios ejecutar:
+	>
+		$ php artisan config:cache 

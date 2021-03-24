@@ -259,7 +259,6 @@ return [
             'label_color' => 'success', */
             'can'  => 'administrador',
         ],
-
         /* *** ACCESOS *** */
         [
             'text'        => 'Accesos',
@@ -287,6 +286,37 @@ return [
                     'icon_color'    => 'white',
                     'url'           => 'permissions',
                     'can'           => 'crud.permissions.index',
+                ],
+            ],
+        ],
+
+        /* *** MENÚ PARA GENEALOGISTAS E INVESTIGADORES *** */
+        [
+            'text'        => 'Genealogistas',
+            'icon'        => 'fab fa-pagelines',
+            'icon_color'  => 'white',
+            'can'  => 'genealogista',
+            'submenu' => [
+                [
+                    'text'          => 'Clientes',
+                    'icon'          => 'fas fa-id-card',
+                    'icon_color'    => 'white',
+                    'route'         => '',
+                    'can'           => 'crud.clients.index',
+                ],
+                [
+                    'text'          => 'Clientes y ancestros',
+                    'icon'          => 'fas fa-user-plus',
+                    'icon_color'    => 'white',
+                    'route'         => 'crud.agclientes.index',
+                    'can'           => 'crud.agclientes.index',
+                ],
+                [
+                    'text'          => 'Últimas modificaciones',
+                    'icon'          => 'fas fa-portrait',
+                    'icon_color'    => 'white',
+                    'url'           => 'no_definido',
+                    'can'           => 'no_definido',
                 ],
             ],
         ],
@@ -335,6 +365,23 @@ return [
                     'icon'          => 'fas fa-flag',
                     'icon_color'    => 'white',
                     'route'         => 'crud.countries.index',
+                    'can'           => 'administrador',
+                ],
+            ],
+        ],
+        
+        /* *** PRUEBAS *** */
+        [
+            'text'        => 'Pruebas',
+            'icon'        => 'fas fa-grimace',
+            'icon_color'  => 'yellow',
+            'can'  => 'administrador',
+            'submenu' => [
+                [
+                    'text'          => 'Flex Tailwind',
+                    'icon'          => 'fab fa-buromobelexperte',
+                    'icon_color'    => 'blue',
+                    'url'           => 'flex',
                     'can'           => 'administrador',
                 ],
             ],

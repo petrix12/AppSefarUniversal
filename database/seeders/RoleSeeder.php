@@ -23,6 +23,10 @@ class RoleSeeder extends Seeder
         $rolCliente = Role::create(['name' => 'Cliente']);
 
         Permission::create(['name' => 'administrador'])->syncRoles($rolAdministrador);
+        Permission::create(['name' => 'genealogista'])->syncRoles($rolAdministrador, $rolGenealogista);
+        Permission::create(['name' => 'documentalista'])->syncRoles($rolAdministrador, $rolDocumentalista);
+        Permission::create(['name' => 'produccion'])->syncRoles($rolAdministrador, $rolProduccion);
+        Permission::create(['name' => 'cliente'])->syncRoles($rolAdministrador, $rolCliente);
 
         Permission::create(['name' => 'crud.users.index'])->syncRoles($rolAdministrador);
         Permission::create(['name' => 'crud.users.create'])->syncRoles($rolAdministrador);
@@ -43,6 +47,11 @@ class RoleSeeder extends Seeder
         Permission::create(['name' => 'crud.countries.create'])->syncRoles($rolAdministrador);
         Permission::create(['name' => 'crud.countries.edit'])->syncRoles($rolAdministrador);
         Permission::create(['name' => 'crud.countries.destroy'])->syncRoles($rolAdministrador);
+                
+        Permission::create(['name' => 'crud.agclientes.index'])->syncRoles($rolAdministrador, $rolGenealogista);
+        Permission::create(['name' => 'crud.agclientes.create'])->syncRoles($rolAdministrador, $rolGenealogista);
+        Permission::create(['name' => 'crud.agclientes.edit'])->syncRoles($rolAdministrador, $rolGenealogista);
+        Permission::create(['name' => 'crud.agclientes.destroy'])->syncRoles($rolAdministrador);
 
         Permission::create(['name' => 'consultas.onidex.index'])->syncRoles($rolAdministrador, $rolGenealogista);
         Permission::create(['name' => 'consultas.onidex.show'])->syncRoles($rolAdministrador, $rolGenealogista);
