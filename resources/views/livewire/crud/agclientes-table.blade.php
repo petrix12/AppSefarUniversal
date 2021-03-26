@@ -120,12 +120,12 @@
                             </td>
                             @can('crud.agclientes.edit')
                             <td class="px-2 py-2 whitespace-nowrap text-center font-medium">
-                                {{-- <a href="{{ route('crud.agclientes.edit', $agcliente ) }}" class="mx-12 text-grey-600 hover:text-indigo-900" title="Editar"><i class="fas fa-edit"></i></a> --}}
+                                <a href="{{ route('crud.agclientes.edit', $agcliente ) }}" class="mx-12 text-grey-600 hover:text-indigo-900" title="Editar"><i class="fas fa-edit"></i></a>
                             </td>
                             @endcan
                             @can('crud.agclientes.destroy')
                             <td class="px-2 py-2 whitespace-nowrap text-right font-medium">
-                                {{-- <form action="{{ route('crud.agclientes.destroy', $agcliente) }}" method="POST">
+                                <form action="{{ route('crud.agclientes.destroy', $agcliente) }}" method="POST">
                                     @csrf
                                     @method('delete')
                                     <button 
@@ -133,7 +133,7 @@
                                         class="text-red-600 hover:text-red-900" 
                                         onclick="return confirm('¿Está seguro que desea eliminar este registro?')"><i class="fas fa-trash"></i>
                                     </button>
-                                </form> --}}
+                                </form>
                             </td>
                             @endcan
                         </tr>
