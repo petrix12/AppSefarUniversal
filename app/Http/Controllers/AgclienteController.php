@@ -83,6 +83,12 @@ class AgclienteController extends Controller
      */
     public function destroy(Agcliente $agcliente)
     {
-        //
+        $nombre = $agcliente->Nombres . ' ' . $agcliente->Apellidos;
+        
+        $agcliente->delete();
+
+        Alert::info('¡Advertencia!', 'Se ha eliminado de la lista la persona: ' . $nombre);
+
+        return redirect()->route('crud.agclientes.index');
     }
 }

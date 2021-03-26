@@ -88,8 +88,8 @@
                         @foreach ($agclientes as $agcliente)
                         <tr>   
                             <td class="px-2 py-2 whitespace-nowrap">
-                                @if(!is_null($agcliente->PNacimiento) and (!empty($agcliente->PNacimiento)))
-                                    <img src="{{ config('app.url').'/storage/imagenes/paises/'.$agcliente->PNacimiento .'.png' }}" alt="{{ $agcliente->PNacimiento }}" width="33" height="25" >
+                                @if(!is_null($agcliente->PaisNac) and (!empty($agcliente->PaisNac)))
+                                    <img src="{{ config('app.url').'/storage/imagenes/paises/'.$agcliente->PaisNac .'.png' }}" alt="{{ $agcliente->PaisNac }}" width="33" height="25" >
                                 @else
                                     <i class="fas fa-flag"></i>
                                 @endif
