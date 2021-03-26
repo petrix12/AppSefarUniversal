@@ -85,7 +85,7 @@
                         </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                        {{-- @foreach ($agclientes as $agcliente)
+                        @foreach ($agclientes as $agcliente)
                         <tr>   
                             <td class="px-2 py-2 whitespace-nowrap">
                                 @if(!is_null($agcliente->PNacimiento) and (!empty($agcliente->PNacimiento)))
@@ -101,17 +101,17 @@
                                 {{ $agcliente->LNacimiento }}
                             </td>
                             <td class="px-1 py-2 whitespace-nowrap text-xs text-center">
-                                @if ($agcliente->AnhoNac==0 or is_null($agcliente->AnhoNac))
+                                {{-- @if ($agcliente->AnhoNac==0 or is_null($agcliente->AnhoNac))
                                     <i class="fas fa-question-circle"></i>
                                 @else 
                                     {{ $agcliente->AnhoNac }}   
-                                @endif
+                                @endif --}}
                             </td>
                             <td class="px-1 py-2 whitespace-nowrap text-xs text-center">
                                 {{ $agcliente->IDCliente }}
                             </td>
                             <td class="px-1 py-2 whitespace-nowrap text-xs text-center">
-                                {{ GetPersona($agcliente->IDPersona) }}
+                                {{-- {{ GetPersona($agcliente->IDPersona) }} --}}
                             </td>
                             <td class="px-1 py-2 whitespace-nowrap text-sm text-center">
                                 <a href=""><i class="fas fa-cubes mx-1"></i></a>
@@ -120,12 +120,12 @@
                             </td>
                             @can('crud.agclientes.edit')
                             <td class="px-2 py-2 whitespace-nowrap text-center font-medium">
-                                <a href="{{ route('crud.agclientes.edit', $agcliente ) }}" class="mx-12 text-grey-600 hover:text-indigo-900" title="Editar"><i class="fas fa-edit"></i></a>
+                                {{-- <a href="{{ route('crud.agclientes.edit', $agcliente ) }}" class="mx-12 text-grey-600 hover:text-indigo-900" title="Editar"><i class="fas fa-edit"></i></a> --}}
                             </td>
                             @endcan
                             @can('crud.agclientes.destroy')
                             <td class="px-2 py-2 whitespace-nowrap text-right font-medium">
-                                <form action="{{ route('crud.agclientes.destroy', $agcliente) }}" method="POST">
+                                {{-- <form action="{{ route('crud.agclientes.destroy', $agcliente) }}" method="POST">
                                     @csrf
                                     @method('delete')
                                     <button 
@@ -133,11 +133,11 @@
                                         class="text-red-600 hover:text-red-900" 
                                         onclick="return confirm('¿Está seguro que desea eliminar este registro?')"><i class="fas fa-trash"></i>
                                     </button>
-                                </form>
+                                </form> --}}
                             </td>
                             @endcan
                         </tr>
-                        @endforeach --}}
+                        @endforeach
                         </tbody>
                     </table>
                     <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
