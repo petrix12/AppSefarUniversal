@@ -45,6 +45,11 @@ Route::group(['middleware' => ['auth'], 'as' => 'test.'], function(){
     Route::get('flex', function (){
         return view('pruebas.flex');
     })->name('flex')->middleware('can:administrador');
+
+    Route::get('agclientesp', function (){
+        $agclientes = App\Models\Agcliente::all();
+        return view('pruebas.agclientes', compact('agclientes'));
+    });
 });
 
 

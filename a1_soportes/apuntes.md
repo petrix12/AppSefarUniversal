@@ -1854,4 +1854,16 @@
 		≡
 1. Si no se reflejan los cambios ejecutar:
 	>
-		$ php artisan config:cache 
+		$ php artisan config:cache
+
+## Configuración de conexión a MySQL Hosting
+1. Configuración de **.env**:
+	>
+		≡
+		DB_CONNECTION=mysql
+		DB_HOST=107.180.2.195
+		DB_PORT=3306
+		DB_DATABASE=sefar
+		DB_USERNAME=pxvim6av41qx
+		DB_PASSWORD=Cisco2019!
+		≡
