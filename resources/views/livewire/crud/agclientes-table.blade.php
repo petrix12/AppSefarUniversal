@@ -101,11 +101,11 @@
                                 {{ $agcliente->LNacimiento }}
                             </td>
                             <td class="px-1 py-2 whitespace-nowrap text-xs text-center">
-                                {{-- @if ($agcliente->AnhoNac==0 or is_null($agcliente->AnhoNac))
+                                @if ($agcliente->AnhoNac==0 or is_null($agcliente->AnhoNac))
                                     <i class="fas fa-question-circle"></i>
                                 @else 
                                     {{ $agcliente->AnhoNac }}   
-                                @endif --}}
+                                @endif
                             </td>
                             <td class="px-1 py-2 whitespace-nowrap text-xs text-center">
                                 {{ $agcliente->IDCliente }}
