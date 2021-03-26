@@ -20,7 +20,6 @@
             </div>
         </div>
     </div>
-    {{-- 
     <div class="flex flex-col">
         <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
             <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
@@ -86,7 +85,7 @@
                         </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach ($agclientes as $agcliente)
+                        {{-- @foreach ($agclientes as $agcliente)
                         <tr>   
                             <td class="px-2 py-2 whitespace-nowrap">
                                 @if(!is_null($agcliente->PNacimiento) and (!empty($agcliente->PNacimiento)))
@@ -138,7 +137,7 @@
                             </td>
                             @endcan
                         </tr>
-                        @endforeach
+                        @endforeach --}}
                         </tbody>
                     </table>
                     <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
@@ -152,5 +151,5 @@
                 </div>
             </div>
         </div>
-    </div> --}}
+    </div>
 </div>
