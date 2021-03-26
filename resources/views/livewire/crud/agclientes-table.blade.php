@@ -111,7 +111,7 @@
                                 {{ $agcliente->IDCliente }}
                             </td>
                             <td class="px-1 py-2 whitespace-nowrap text-xs text-center">
-                                {{-- {{ GetPersona($agcliente->IDPersona) }} --}}
+                                {{ GetPersona($agcliente->IDPersona) }}
                             </td>
                             <td class="px-1 py-2 whitespace-nowrap text-sm text-center">
                                 <a href=""><i class="fas fa-cubes mx-1"></i></a>
