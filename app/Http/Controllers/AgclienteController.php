@@ -63,58 +63,57 @@ class AgclienteController extends Controller
         ]);
 
         
-        $PNacimiento = $request->PaisNac;
-        $LNacimiento = $request->LugarNac;
-        $Familiares = $request->Familiaridad;
+        $PNacimiento = trim($request->PaisNac);
+        $LNacimiento = trim($request->LugarNac);
+        $Familiares = trim($request->Familiaridad);
         $Usuario = Auth()->user()->email;
         $Generacion = GetGeneracion($request->IDPersona);
-        $IDPadre = ($request->IDPersona);
+        $IDPadre = GetIDPadre($request->IDPersona);
         $IDMadre = $IDPadre + 1;
         $FUpdate = date('Y-m-d H:i:s');
         
-
         // Creando usuario
         Agcliente::create([
-            'IDCliente' => $request->IDCliente, 
-            'Nombres' => $request->Nombres,
-            'Apellidos' => $request->Apellidos,
+            'IDCliente' => trim($request->IDCliente), 
+            'Nombres' => trim($request->Nombres),
+            'Apellidos' => trim($request->Apellidos),
 
             'IDPersona' => $request->IDPersona,
-            'NPasaporte' => $request->NPasaporte,
+            'NPasaporte' => trim($request->NPasaporte),
             'PaisPasaporte' => $request->PaisPasaporte,
-            'NDocIdent' => $request->NDocIdent,
+            'NDocIdent' => trim($request->NDocIdent),
             'PaisDocIdent' => $request->PaisDocIdent,
             'Sexo' => $request->Sexo,
 
             'AnhoNac' => $request->AnhoNac,
             'MesNac' => $request->MesNac,
             'DiaNac' => $request->DiaNac,
-            'LugarNac' => $request->LugarNac,
+            'LugarNac' => trim($request->LugarNac),
             'PaisNac' => $request->PaisNac,
 
             'AnhoBtzo' => $request->AnhoBtzo,
             'MesBtzo' => $request->MesBtzo,
             'DiaBtzo' => $request->DiaBtzo,
-            'LugarBtzo' => $request->LugarBtzo,
+            'LugarBtzo' => trim($request->LugarBtzo),
             'PaisBtzo' => $request->PaisBtzo,
 
             'AnhoMatr' => $request->AnhoMatr,
             'MesMatr' => $request->MesMatr,
             'DiaMatr' => $request->DiaMatr,
-            'LugarMatr' => $request->LugarMatr,
+            'LugarMatr' => trim($request->LugarMatr),
             'PaisMatr' => $request->PaisMatr,
 
             'AnhoDef' => $request->AnhoDef,
             'MesDef' => $request->MesDef,
             'DiaDef' => $request->DiaDef,
-            'LugarDef' => $request->LugarDef,
+            'LugarDef' => trim($request->LugarDef),
             'PaisDef' => $request->PaisDef,
 
             'Familiaridad' => $request->Familiaridad,
-            'NombresF' => $request->NombresF,
-            'ApellidosF' => $request->ApellidosF,
-            'ParentescoF' => $request->ParentescoF,
-            'NPasaporteF' => $request->NPasaporteF,
+            'NombresF' => trim($request->NombresF),
+            'ApellidosF' => trim($request->ApellidosF),
+            'ParentescoF' => trim($request->ParentescoF),
+            'NPasaporteF' => trim($request->NPasaporteF),
 
             'FRegistro' => $request->FRegistro,
             'Observaciones' => $request->Observaciones,
@@ -145,7 +144,8 @@ class AgclienteController extends Controller
      */
     public function show(Agcliente $agcliente)
     {
-        //
+        $countries = Country::all();
+        return view('crud.agclientes.edit', compact('agcliente','countries'));
     }
 
     /**
@@ -156,7 +156,8 @@ class AgclienteController extends Controller
      */
     public function edit(Agcliente $agcliente)
     {
-        //
+        $countries = Country::all();
+        return view('crud.agclientes.edit', compact('agcliente','countries'));
     }
 
     /**
@@ -168,7 +169,92 @@ class AgclienteController extends Controller
      */
     public function update(Request $request, Agcliente $agcliente)
     {
-        //
+        // Validación
+        $request->validate([
+            'IDCliente' => 'required|unique:agclientes,IDCliente,'.$agcliente->IDCliente.',IDCliente|max:50',
+            'Nombres' => 'required|max:100',
+            'Apellidos' => 'required|max:100',
+            'IDPersona'  => 'required',
+
+            'AnhoNac' => 'nullable|numeric',
+            'MesNac' => 'nullable|numeric',
+            'DiaNac' => 'nullable|numeric',
+
+            'AnhoBtzo' => 'nullable|numeric',
+            'MesBtzo' => 'nullable|numeric',
+            'DiaBtzo' => 'nullable|numeric',
+            
+            'AnhoMatr' => 'nullable|numeric',
+            'MesMatr' => 'nullable|numeric',
+            'DiaMatr' => 'nullable|numeric',
+            
+            'AnhoDef' => 'nullable|numeric',
+            'MesDef' => 'nullable|numeric',
+            'DiaDef' => 'nullable|numeric'
+        ]);
+
+        // Actualizando persona
+        $agcliente->PNacimiento = trim($request->PaisNac);
+        $agcliente->LNacimiento = trim($request->LugarNac);
+        $agcliente->Familiares = trim($request->Familiaridad);
+        $agcliente->Usuario = Auth()->user()->email;
+        $agcliente->Generacion = GetGeneracion($request->IDPersona);
+        $agcliente->IDPadre = GetIDPadre($request->IDPersona);
+        $agcliente->IDMadre = $agcliente->IDPadre + 1;
+        $agcliente->FUpdate = date('Y-m-d H:i:s');
+        
+        $agcliente->IDCliente = trim($request->IDCliente);
+        $agcliente->Nombres = trim($request->Nombres);
+        $agcliente->Apellidos = trim($request->Apellidos);
+
+        $agcliente->IDPersona = $request->IDPersona;
+        $agcliente->NPasaporte = trim($request->NPasaporte);
+        $agcliente->PaisPasaporte = $request->PaisPasaporte;
+        $agcliente->NDocIdent = trim($request->NDocIdent);
+        $agcliente->PaisDocIdent = $request->PaisDocIdent;
+        $agcliente->Sexo = $request->Sexo;
+
+        $agcliente->AnhoNac = $request->AnhoNac;
+        $agcliente->MesNac = $request->MesNac;
+        $agcliente->DiaNac = $request->DiaNac;
+        $agcliente->LugarNac = trim($request->LugarNac);
+        $agcliente->PaisNac = $request->PaisNac;
+
+        $agcliente->AnhoBtzo = $request->AnhoBtzo;
+        $agcliente->MesBtzo = $request->MesBtzo;
+        $agcliente->DiaBtzo = $request->DiaBtzo;
+        $agcliente->LugarBtzo = trim($request->LugarBtzo);
+        $agcliente->PaisBtzo = $request->PaisBtzo;
+
+        $agcliente->AnhoMatr = $request->AnhoMatr;
+        $agcliente->MesMatr = $request->MesMatr;
+        $agcliente->DiaMatr = $request->DiaMatr;
+        $agcliente->LugarMatr = trim($request->LugarMatr);
+        $agcliente->PaisMatr = $request->PaisMatr;
+
+        $agcliente->AnhoDef = $request->AnhoDef;
+        $agcliente->MesDef = $request->MesDef;
+        $agcliente->DiaDef = $request->DiaDef;
+        $agcliente->LugarDef = trim($request->LugarDef);
+        $agcliente->PaisDef = $request->PaisDef;
+
+        $agcliente->Familiaridad = $request->Familiaridad;
+        $agcliente->NombresF = trim($request->NombresF);
+        $agcliente->ApellidosF = trim($request->ApellidosF);
+        $agcliente->ParentescoF = trim($request->ParentescoF);
+        $agcliente->NPasaporteF = trim($request->NPasaporteF);
+
+        $agcliente->FRegistro = $request->FRegistro;
+        $agcliente->Observaciones = $request->Observaciones;
+        $agcliente->Enlace = $request->Enlace;
+
+        $agcliente->save();
+
+        // Mensaje 
+        Alert::success('¡Éxito!', 'Se ha actualizado la información de: ' . $request->Nombres . ' ' . $request->Apellidos);
+        
+        // Redireccionar a la vista index
+        return redirect()->route('crud.agclientes.index');
     }
 
     /**

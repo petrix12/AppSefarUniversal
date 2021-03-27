@@ -1262,6 +1262,14 @@
 	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE ---		● ● ● ● ■ ■ ► ► ►**
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
+	## Vistas de árboles genealógicos
+1. Crear archivos blade para vistas:
+	+ 
+
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE ---		● ● ● ● ■ ■ ► ► ►**
+	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
+	
 	## CRUD Agclientes con Liveware
 1. Crear modelo Agcliente junto con su migración y controlador y los métodos para el CRUD.
 	>
@@ -1383,6 +1391,14 @@
 		≡
 		≡
 
+
+	### Commit --:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "CRUD Agclientes"
 
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 	>	**◄ ◄ ◄ ■ ■ ● ● ● ●		PARTE ---		● ● ● ● ■ ■ ► ► ►**

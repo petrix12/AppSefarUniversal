@@ -49,36 +49,39 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                         <tr>
-                            <th scope="col" class="px-2 py-2 text-left text-md font-medium text-gray-500 uppercase tracking-wider">
+                            <th scope="col" class="px-2 py-2 text-left text-md text-gray-500 uppercase tracking-wider">
                                 <i class="fas fa-globe-americas"></i>
                             </th>
-                            <th scope="col" class="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th scope="col" class="px-1 py-2 text-left text-xs text-gray-500 uppercase tracking-wider">
                                 {{ __('Person') }}
                             </th>
-                            <th scope="col" class="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('Place of birth') }}
+                            <th scope="col" class="px-1 py-2 text-left text-xs text-gray-500 uppercase tracking-wider">
+                                {{-- {{ __('Place of birth') }} --}}
+                                <span title="Lugar de nacimiento">L. Nac.</span>
                             </th>
-                            <th scope="col" class="px-1 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('Year of birth') }}
+                            <th scope="col" class="px-1 py-2 text-center text-xs text-gray-500 uppercase tracking-wider">
+                                {{-- {{ __('Year of birth') }} --}}
+                                <span title="Año de nacimiento">Año Nac.</span>
                             </th>
-                            <th scope="col" class="px-1 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('Client id') }}
+                            <th scope="col" class="px-1 py-2 text-center text-xs text-gray-500 uppercase tracking-wider">
+                                {{-- {{ __('Client id') }} --}}
+                                <span title="ID Cliente">IDC</span>
                             </th>
-                            <th scope="col" class="px-1 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th scope="col" class="px-1 py-2 text-center text-xs text-gray-500 uppercase tracking-wider">
                                 {{ __('Propinquity') }}
                             </th>
-                            <th scope="col" class="px-1 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th scope="col" class="px-1 py-2 text-center text-xs text-gray-500 uppercase tracking-wider">
                                 <span title="Visualizar árbol genealógico">
                                     <i class="fas fa-eye"></i> Vistas
                                 </span>
                             </th>
                             @can('crud.agclientes.edit')
-                            <th scope="col" class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th scope="col" class="py-2 text-center text-xs text-gray-500 uppercase tracking-wider">
                                 {{ __('Edit') }}
                             </th>
                             @endcan
                             @can('crud.agclientes.destroy')
-                            <th scope="col" class="px-2 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th scope="col" class="px-4 py-2 text-center text-xs text-gray-500 uppercase tracking-wider">
                                 {{ __('Remove') }}
                             </th>
                             @endcan
@@ -87,44 +90,44 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                         @foreach ($agclientes as $agcliente)
                         <tr>   
-                            <td class="px-2 py-2 whitespace-nowrap">
+                            <td class="px-2 py-2">
                                 @if(!is_null($agcliente->PaisNac) and (!empty($agcliente->PaisNac)))
                                     <img src="{{ config('app.url').'/storage/imagenes/paises/'.$agcliente->PaisNac .'.png' }}" alt="{{ $agcliente->PaisNac }}" width="33" height="25" >
                                 @else
                                     <i class="fas fa-flag"></i>
                                 @endif
                             </td>   
-                            <td class="px-1 py-2 whitespace-nowrap text-xs">
+                            <td class="px-1 py-2 text-xs">
                                 {{ $agcliente->Nombres . ', ' . $agcliente->Apellidos }}
                             </td>
                             <td class="px-1 py-2 whitespace-nowrap text-xs">
-                                {{ $agcliente->LNacimiento }}
+                                <small>{{ $agcliente->LNacimiento }}</small>
                             </td>
-                            <td class="px-1 py-2 whitespace-nowrap text-xs text-center">
+                            <td class="px-1 py-2 text-xs text-center">
                                 @if ($agcliente->AnhoNac==0 or is_null($agcliente->AnhoNac))
                                     <i class="fas fa-question-circle"></i>
                                 @else 
                                     {{ $agcliente->AnhoNac }}   
                                 @endif
                             </td>
-                            <td class="px-1 py-2 whitespace-nowrap text-xs text-center">
-                                {{ $agcliente->IDCliente }}
+                            <td class="px-1 py-2 text-xs text-center">
+                                <small>{{ $agcliente->IDCliente }}</small>
                             </td>
-                            <td class="px-1 py-2 whitespace-nowrap text-xs text-center">
-                                {{ GetPersona($agcliente->IDPersona) }}
+                            <td class="px-1 py-2 text-xs text-center">
+                                <small>{{ GetPersona($agcliente->IDPersona) }}</small>
                             </td>
-                            <td class="px-1 py-2 whitespace-nowrap text-sm text-center">
+                            <td class="px-1 py-2 text-sm text-center">
                                 <a href=""><i class="fas fa-cubes mx-1"></i></a>
                                 <a href=""><i class="fab fa-pagelines mx-2"></i></a>
                                 <a href=""><i class="fas fa-bezier-curve mx-1"></i></a>
                             </td>
                             @can('crud.agclientes.edit')
-                            <td class="px-2 py-2 whitespace-nowrap text-center font-medium">
+                            <td class="py-2 text-center">
                                 <a href="{{ route('crud.agclientes.edit', $agcliente ) }}" class="mx-12 text-grey-600 hover:text-indigo-900" title="Editar"><i class="fas fa-edit"></i></a>
                             </td>
                             @endcan
                             @can('crud.agclientes.destroy')
-                            <td class="px-2 py-2 whitespace-nowrap text-right font-medium">
+                            <td class="px-4 py-2 text-center">
                                 <form action="{{ route('crud.agclientes.destroy', $agcliente) }}" method="POST">
                                     @csrf
                                     @method('delete')
@@ -141,7 +144,9 @@
                         </tbody>
                     </table>
                     <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-                    {{ $agclientes->links() }}
+                        <div class="container">
+                            {{ $agclientes->links() }}
+                        </div>
                     </div>
                     @else
                     <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6 text-gray-500">
