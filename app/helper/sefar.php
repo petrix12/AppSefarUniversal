@@ -37,3 +37,107 @@
         }
         return $Persona;
     }
+
+    // Obtener persona
+    function GetPersonaInv($IDPersona)
+    {
+        $Persona = '';
+        switch ($IDPersona) {
+            case 'Cliente': $Persona = 1; break;
+            case 'Padre': $Persona = 2; break;
+            case 'Madre': $Persona = 3; break;
+            case 'Abuelo Paterno': $Persona = 4; break;
+            case 'Abuela Paterna': $Persona = 5; break;
+            case 'Abuelo Materno': $Persona = 6; break;
+            case 'Abuela Materna': $Persona = 7; break;
+            case 'Bisabuelo Pat. Pat.': $Persona = 8; break;
+            case 'Bisabuela Pat. Pat.': $Persona = 9; break;
+            case 'Bisabuelo Pat. Mat.': $Persona = 10; break;
+            case 'Bisabuela Pat. Mat.': $Persona = 11; break;
+            case 'Bisabuelo Mat. Pat.': $Persona = 12; break;
+            case 'Bisabuela Mat. Pat.': $Persona = 13; break;
+            case 'Bisabuelo Mat. Mat.': $Persona = 14; break;
+            case 'Bisabuela Mat. Mat.': $Persona = 15; break;
+            case 'Tatarabuelo PPP': $Persona = 16; break;
+            case 'Tatarabuela PPP': $Persona = 17; break;
+            case 'Tatarabuelo PPM': $Persona = 18; break;
+            case 'Tatarabuela PPM': $Persona = 19; break;
+            case 'Tatarabuelo PMP': $Persona = 20; break;
+            case 'Tatarabuela PMP': $Persona = 21; break;
+            case 'Tatarabuelo PMM': $Persona = 22; break;
+            case 'Tatarabuela PMM': $Persona = 23; break;
+            case 'Tatarabuelo MPP': $Persona = 24; break;
+            case 'Tatarabuela MPP': $Persona = 25; break;
+            case 'Tatarabuelo MPM': $Persona = 26; break;
+            case 'Tatarabuela MPM': $Persona = 27; break;
+            case 'Tatarabuelo MMP': $Persona = 28; break;
+            case 'Tatarabuela MMP': $Persona = 29; break;
+            case 'Tatarabuelo MMM': $Persona = 30; break;
+            case 'Tatarabuela MMM': $Persona = 31; break;
+        }
+        return $Persona;
+    }
+
+    // Obtener generación
+    function GetGeneracion($IDPersona)
+    {
+        $Generacion = NULL;
+        switch ($IDPersona) {
+            case 1: $Generacion = 1; break;
+            case 2: $Generacion = 2; break;
+            case 3: $Generacion = 2; break;
+            case 4: $Generacion = 3; break;
+            case 5: $Generacion = 3; break;
+            case 6: $Generacion = 3; break;
+            case 7: $Generacion = 3; break;
+            case 8: $Generacion = 4; break;
+            case 9: $Generacion = 4; break;
+            case 10: $Generacion = 4; break;
+            case 11: $Generacion = 4; break;
+            case 12: $Generacion = 4; break;
+            case 13: $Generacion = 4; break;
+            case 14: $Generacion = 4; break;
+            case 15: $Generacion = 4; break;
+            case 16: $Generacion = 5; break;
+            case 17: $Generacion = 5; break;
+            case 18: $Generacion = 5; break;
+            case 19: $Generacion = 5; break;
+            case 20: $Generacion = 5; break;
+            case 21: $Generacion = 5; break;
+            case 22: $Generacion = 5; break;
+            case 23: $Generacion = 5; break;
+            case 24: $Generacion = 5; break;
+            case 25: $Generacion = 5; break;
+            case 26: $Generacion = 5; break;
+            case 27: $Generacion = 5; break;
+            case 28: $Generacion = 5; break;
+            case 29: $Generacion = 5; break;
+            case 30: $Generacion = 5; break;
+            case 31: $Generacion = 5; break;
+        }
+        return $Generacion;
+    }
+
+    // Obtener IDPadre
+    function GetIDPadre($IDPersona)
+    {
+        $IDPadre = -1;
+        switch ($IDPersona) {
+            case 1:$IDPadre = 2; break;
+            case 2: $IDPadre = 4; break;
+            case 3: $IDPadre = 6; break;
+            case 4: $IDPadre = 8; break;
+            case 5: $IDPadre = 10; break;
+            case 6: $IDPadre = 12; break;
+            case 7: $IDPadre = 14; break;
+            case 8: $IDPadre = 16; break;
+            case 9: $IDPadre = 18; break;
+            case 10: $IDPadre = 20; break;
+            case 11: $IDPadre = 22; break;
+            case 12: $IDPadre = 24; break;
+            case 13: $IDPadre = 26; break;
+            case 14: $IDPadre = 28; break;
+            case 15: $IDPadre = 30; break;
+        }
+        return $IDPadre;
+    }
