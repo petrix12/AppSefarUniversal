@@ -4,6 +4,7 @@ use App\Http\Controllers\AgclienteController;
 use App\Http\Controllers\AlberoController;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\CountryController;
+use App\Http\Controllers\LadoController;
 use App\Http\Controllers\OnidexController;
 use App\Http\Controllers\ParentescoController;
 use App\Http\Controllers\PermissionController;
@@ -29,6 +30,8 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
             ->middleware('can:crud.agclientes.index');
     Route::resource('parentescos', ParentescoController::class)->names('parentescos')
             ->middleware('can:crud.parentescos.index');
+    Route::resource('lados', LadoController::class)->names('lados')
+            ->middleware('can:crud.lados.index');
 });
 
 // Grupo de rutas para Consultas a base de datos

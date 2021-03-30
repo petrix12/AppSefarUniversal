@@ -43,7 +43,7 @@ class ParentescoController extends Controller
         ]);
 
         // Creando parentesco
-        $parentesco = Parentesco::create([
+        Parentesco::create([
             'Parentesco' => $request->Parentesco,
             'Inverso' => $request->Inverso
         ]);

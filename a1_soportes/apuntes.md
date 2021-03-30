@@ -136,7 +136,7 @@
 		}
 		≡
 	##### **Nota**: Los campos: **user_id**, **social_id**, **picture** y **created** se incluyeron para mantener compatibilidad con la base de datos existente, se espera poder eliminar estos campos en versiones futuras.
-	## El campo **email** se redujo a **175** carácteres por problemas de compatibilidad al importar tabla a la base de datos del hosting
+	##### El campo **email** se redujo a **175** carácteres por problemas de compatibilidad al importar tabla a la base de datos del hosting
 
 1. Ejecutar: 
 	>
@@ -1268,7 +1268,7 @@
 1. Crear modelo Parentesco junto con su migración y controlador y los métodos para el CRUD.
 	>
 		$ php artisan make:model Parentesco -m -c -r
-1. Preparar migración para la tabla **parentesco** en **database\migrations\2021_03_30_013140_create_parentescos_table.php**
+1. Preparar migración para la tabla **parentescos** en **database\migrations\2021_03_30_013140_create_parentescos_table.php**
 	>
 		≡
 		public function up()
@@ -1294,14 +1294,13 @@
 			≡
 		}
 		≡
-
 1. Reestablecer base de datos: 
 	>
 		$ php artisan migrate:fresh --seed
 1. Configurar modelo **Parentesco** en **app\Models\Parentesco.php**
 	>
 		≡
-		class Country extends Model
+		class Parentesco extends Model
 		{
 			use HasFactory;
 
@@ -1345,7 +1344,7 @@
 		>
 			≡
 			≡
-1. Editar **config\adminlte.php** para añadir los menú para ingresar al CRUD Paises.
+1. Editar **config\adminlte.php** para añadir los menú para ingresar al CRUD Parentescos.
 	>
 		≡
 		≡
@@ -1360,6 +1359,7 @@
 			$ git commit -m "CRUD Parentescos"
 
 # ___________________________________________________________________
+
 
 
 ## Seeders para cargar los parentescos iniciales
@@ -1397,6 +1397,142 @@
 			$ git commit -m "Seeder Parentescos"
 # ___________________________________________________________________
 
+kjbkjvjkj
+
+
+## CRUD Lado (del parentesco)
+1. Crear modelo Lado junto con su migración y controlador y los métodos para el CRUD.
+	>
+		$ php artisan make:model Lado -m -c -r	
+1. Preparar migración para la tabla **lados** en **database\migrations\2021_03_30_013140_create_parentescos_table.php**
+	>
+		≡
+		public function up()
+		{
+			Schema::create('lados', function (Blueprint $table) {
+				$table->id();
+				$table->string('Lado',15)->unique();
+				$table->string('Significado')->nullable();
+				$table->timestamps();
+			});
+		}
+		≡
+1. Establecer permisos en los seeders para el CRUD Paises en **database\seeders\RoleSeeder.php**
+	>   
+		≡ 
+		public function run()
+		{
+			≡        
+			Permission::create(['name' => 'crud.lados.index'])->syncRoles($rolAdministrador, $rolGenealogista);
+			Permission::create(['name' => 'crud.lados.create'])->syncRoles($rolAdministrador, $rolGenealogista);
+			Permission::create(['name' => 'crud.lados.edit'])->syncRoles($rolAdministrador, $rolGenealogista);
+			Permission::create(['name' => 'crud.lados.destroy'])->syncRoles($rolAdministrador, $rolGenealogista);
+			≡
+		}
+		≡
+1. Reestablecer base de datos: 
+	>
+		$ php artisan migrate:fresh --seed
+1. Configurar modelo **Lado** en **app\Models\Parentesco.php**
+	>
+		≡
+		class Lado extends Model
+		{
+			use HasFactory;
+
+			protected $fillable = [
+				'Lado',
+				'Significado',
+			];
+		}
+1. Agregar ruta de lado al grupo de rutas CRUD:
+	>
+		Route::resource('lados', LadoController::class)->names('lados')
+				->middleware('can:crud.lados.index');
+	##### Nota: añadir a la cabecera:
+	>
+		use App\Http\Controllers\LadoController;
+1. Crear componente Livewire para Tabla Lados: 
+	>
+		$ php artisan make:livewire crud/lados-table
+1. Programar controlador para la tabla Lados: **app\Http\Livewire\Crud\LadosTable.php**
+	>
+		≡
+		≡
+1. Diseñar vista para la tabla Lados: **resources\views\livewire\crud\lados-table.blade.php**
+	>
+		≡
+		≡
+1. Programar controlador Parentesco: **app\Http\Controllers\ParentescoController.php**
+	>
+		≡
+		≡
+1. Diseñar las vistas para el CRUD Lados:
+	- resources\views\crud\lados\index.blade.php
+		>
+			≡
+			≡
+	- resources\views\crud\lados\create.blade.php
+		>
+			≡
+			≡
+	- resources\views\crud\lados\edit.blade.php
+		>
+			≡
+			≡
+1. Editar **config\adminlte.php** para añadir los menú para ingresar al CRUD Lados.
+	>
+		≡
+		≡
+
+
+	### Commit --:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "CRUD Lados"
+
+# ___________________________________________________________________
+
+
+## Seeders para cargar los lados iniciales
+1. Crear seeder para lados: 
+	>
+		$ php artisan make:seeder LadoSeeder
+1. Añadir a cabecera de **database\seeders\LadoSeeder.php**
+	>
+		use App\Models\Lado;
+1. Modificar el método **run** de **database\seeders\LadoSeeder.php**
+	>
+		≡
+		≡
+1. Añadir al método run de **database\seeders\DatabaseSeeder.php**
+	>
+		public function run()
+		{
+			≡
+			$this->call(LadoSeeder::class);
+		}
+1. Ejecutar: 
+	>
+		$ php artisan migrate:fresh --seed
+	##### **Nota**: Para correr los seeder sin resetear la base de datos:
+	+ Ejecutar: 
+	>
+		$ php artisan db:seed
+
+	### Commit --:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "Seeder Lados"
+# ___________________________________________________________________
+
+lkbklblkblkl
 
 ## CRUD Familiares
 1. Crear modelo Family junto con su migración y controlador y los métodos para el CRUD.
