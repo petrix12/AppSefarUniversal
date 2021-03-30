@@ -134,6 +134,7 @@ class AgclienteController extends Controller
         
         // Redireccionar a la vista index
         return redirect()->route('crud.agclientes.index');
+        //return back();
     }
 
     /**

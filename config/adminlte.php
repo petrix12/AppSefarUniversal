@@ -358,7 +358,7 @@ return [
             'text'        => 'Tablas Generales',
             'icon'        => 'fas fa-table',
             'icon_color'  => 'white',
-            'can'  => 'administrador',
+            'can'  => 'genealogista',
             'submenu' => [
                 [
                     'text'          => 'Paises',
@@ -366,6 +366,13 @@ return [
                     'icon_color'    => 'white',
                     'route'         => 'crud.countries.index',
                     'can'           => 'administrador',
+                ],
+                [
+                    'text'          => 'Parentescos',
+                    'icon'          => 'fab fa-first-order',
+                    'icon_color'    => 'white',
+                    'route'         => 'crud.parentescos.index',
+                    'can'           => 'genealogista',
                 ],
             ],
         ],
@@ -380,8 +387,22 @@ return [
                 [
                     'text'          => 'Flex Tailwind',
                     'icon'          => 'fab fa-buromobelexperte',
-                    'icon_color'    => 'blue',
+                    'icon_color'    => 'yellow',
                     'url'           => 'flex',
+                    'can'           => 'administrador',
+                ],
+                [
+                    'text'          => 'MVC Agclientes',
+                    'icon'          => 'fab fa-intercom',
+                    'icon_color'    => 'blue',
+                    'url'           => 'agclientesp',
+                    'can'           => 'administrador',
+                ],
+                [
+                    'text'          => 'Ventana Modal',
+                    'icon'          => 'fas fa-window-restore',
+                    'icon_color'    => 'red',
+                    'url'           => 'vmodal',
                     'can'           => 'administrador',
                 ],
             ],

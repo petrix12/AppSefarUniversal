@@ -12,6 +12,7 @@ class Agcliente extends Model
     protected $table = 'agclientes';
 
     protected $fillable = [
+        'id',
         'IDCliente',
         'IDPersona',
         'IDPadre',

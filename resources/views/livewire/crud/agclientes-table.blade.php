@@ -119,7 +119,7 @@
                             <td class="px-1 py-2 text-sm text-center">
                                 <a href=""><i class="fas fa-cubes mx-1"></i></a>
                                 <a href=""><i class="fab fa-pagelines mx-2"></i></a>
-                                <a href=""><i class="fas fa-bezier-curve mx-1"></i></a>
+                                <a href="{{ route('arboles.albero.index', $agcliente->IDCliente) }}" target="_blank" title="Vista Arbelo"><i class="fas fa-bezier-curve mx-1"></i></a>
                             </td>
                             @can('crud.agclientes.edit')
                             <td class="py-2 text-center">

@@ -54,6 +54,11 @@ class RoleSeeder extends Seeder
         Permission::create(['name' => 'crud.agclientes.destroy'])->syncRoles($rolAdministrador);
 
         Permission::create(['name' => 'consultas.onidex.index'])->syncRoles($rolAdministrador, $rolGenealogista);
-        Permission::create(['name' => 'consultas.onidex.show'])->syncRoles($rolAdministrador, $rolGenealogista);
+        Permission::create(['name' => 'consultas.onidex.show'])->syncRoles($rolAdministrador, $rolGenealogista);  
+              
+        Permission::create(['name' => 'crud.parentescos.index'])->syncRoles($rolAdministrador, $rolGenealogista);
+        Permission::create(['name' => 'crud.parentescos.create'])->syncRoles($rolAdministrador, $rolGenealogista);
+        Permission::create(['name' => 'crud.parentescos.edit'])->syncRoles($rolAdministrador, $rolGenealogista);
+        Permission::create(['name' => 'crud.parentescos.destroy'])->syncRoles($rolAdministrador, $rolGenealogista);
     }
 }

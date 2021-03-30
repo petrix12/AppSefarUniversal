@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\AgclienteController;
+use App\Http\Controllers\AlberoController;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\OnidexController;
+use App\Http\Controllers\ParentescoController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
@@ -25,6 +27,8 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
             ->middleware('can:crud.countries.index');
     Route::resource('agclientes', AgclienteController::class)->names('agclientes')
             ->middleware('can:crud.agclientes.index');
+    Route::resource('parentescos', ParentescoController::class)->names('parentescos')
+            ->middleware('can:crud.parentescos.index');
 });
 
 // Grupo de rutas para Consultas a base de datos
@@ -39,17 +43,29 @@ Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
     return view('dashboard');
 })->name('dashboard');
 
+// Grupo de rutas para vistas de árboles genealógicos pruebas
+Route::group(['middleware' => ['auth'], 'as' => 'arboles.'], function(){
+    Route::get('albero/{IDCliente}', [AlberoController::class, 'arbelo'])->name('albero.index')
+        ->middleware('can:genealogista');
+});
 
 // Grupo de rutas para realizar pruebas
 Route::group(['middleware' => ['auth'], 'as' => 'test.'], function(){
+    // Pruebas con Flex de Tailwind
     Route::get('flex', function (){
         return view('pruebas.flex');
     })->name('flex')->middleware('can:administrador');
 
+    // Pruebas MVC Agcliente
     Route::get('agclientesp', function (){
         $agclientes = App\Models\Agcliente::all();
         return view('pruebas.agclientes', compact('agclientes'));
-    });
+    })->name('agclientesp')->middleware('can:administrador');
+
+    // Pruebas con ventanas modal
+    Route::get('vmodal', function (){
+        return view('pruebas.vmodal');
+    })->name('vmodal')->middleware('can:administrador');
 });
 
 

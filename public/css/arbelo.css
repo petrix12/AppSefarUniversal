@@ -1,0 +1,72 @@
+.caja_persona{
+    border: 1px solid rgb(63, 61, 61);
+    border: 1px solid rgb(63, 61, 61);
+    width: 300px;
+    height: 120px;
+    border-radius: 5px;
+    padding: 0;
+    margin: 0;
+    position: absolute;
+    background: rgb(247, 176, 52);
+    overflow: hidden;
+    float: left;
+}
+
+.editar{
+    float:middle;
+    font-size: 100%;
+    width:100%;
+    line-height:30px;
+    max-height:30px;
+    position:absolute;
+    bottom:0;
+    padding: 3px;
+    text-align: right;
+}
+
+.documentos{
+    float:middle;
+    font-size: 100%;
+    width:100%;
+    line-height:30px;
+    max-height:30px;
+    position:absolute;
+    bottom:0;
+    padding: 3px;
+    text-align: left;
+}
+
+.caja_matrimonio{
+    border: 1px solid rgb(63, 61, 61);
+    border: 1px solid rgb(63, 61, 61);
+    width: 280px;
+    height: 60px;
+    border-radius: 5px;
+    padding: 0;
+    margin: 0;
+    position: absolute;
+    background: rgb(247, 176, 52);
+    overflow: hidden;
+    float: left;
+}
+
+.img_triple_flecha {
+    width: 100px;
+    height: 100px;
+    border-radius: 5px;
+    padding: 0;
+    margin: 0;
+    position: absolute;
+    overflow: hidden;
+    float: left;
+}
+.img_flecha_curva {
+    width: 50px;
+    height: 50px;
+    border-radius: 5px;
+    padding: 0;
+    margin: 0;
+    position: absolute;
+    overflow: hidden;
+    float: left;
+}

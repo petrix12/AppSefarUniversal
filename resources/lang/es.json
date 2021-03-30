@@ -106,5 +106,10 @@
     "Client id": "ID Cliente",
     "Propinquity": "Parentesco",
     "List of clients and ancestors": "Lista de clientes y ancestros",
-    "Edit person": "Editar persona"
+    "Edit person": "Editar persona",
+    "Add propinquity": "Añadir parentesco",
+    "Reverse": "Inverso",
+    "Propinquity list": "Lista de parentescos",
+    "Edit propinquity": "Editar parentesco",
+    "": ""
 }
