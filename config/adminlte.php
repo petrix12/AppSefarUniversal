@@ -312,6 +312,13 @@ return [
                     'can'           => 'crud.agclientes.index',
                 ],
                 [
+                    'text'          => 'Clientes y familiares',
+                    'icon'          => 'fas fa-user-shield',
+                    'icon_color'    => 'white',
+                    'route'         => 'crud.families.index',
+                    'can'           => 'crud.families.index',
+                ],
+                [
                     'text'          => 'Últimas modificaciones',
                     'icon'          => 'fas fa-portrait',
                     'icon_color'    => 'white',

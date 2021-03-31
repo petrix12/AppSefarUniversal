@@ -17,13 +17,13 @@ class CreateFamiliesTable extends Migration
             $table->id();
             $table->string('IDCombinado',175)->unique();
             $table->string('IDCliente',175);
-            $table->string('Cliente');
+            $table->string('Cliente')->nullable();
             $table->string('IDFamiliar');
-            $table->string('Familiar');
-            $table->string('Parentesco');
-            $table->string('Lado');
-            $table->string('Rama');
-            $table->text('Nota');
+            $table->string('Familiar')->nullable();
+            $table->string('Parentesco')->nullable();
+            $table->string('Lado')->nullable();
+            $table->string('Rama')->nullable();
+            $table->text('Nota')->nullable();
             $table->timestamps();
         });
     }

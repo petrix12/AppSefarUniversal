@@ -19,6 +19,7 @@
 	+ Laravel-permission: https://spatie.be/docs/laravel-permission/v4/introduction
 	+ Laravel-AdminLTE: https://github.com/jeroennoten/Laravel-AdminLTE
 	+ Sweetalert: https://realrashid.github.io/sweet-alert/
+	+ Font Awesome: https://fontawesome.com
 1. Descargar XAMPP e instalarlo.
 	##### **Nota**: También se podría instalar un servidor local con Laragon. URL: https://laragon.org
 1. Descargar **Composer** e instalarlo.
@@ -1716,83 +1717,88 @@
 				$table->id();
 				$table->string('IDCombinado',175)->unique();
 				$table->string('IDCliente',175);
-				$table->string('Cliente');
+				$table->string('Cliente')->nullable();
 				$table->string('IDFamiliar');
-				$table->string('Familiar');
-				$table->string('Parentesco');
-				$table->string('Lado');
-				$table->string('Rama');
-				$table->text('Nota');
+				$table->string('Familiar')->nullable();
+				$table->string('Parentesco')->nullable();
+				$table->string('Lado')->nullable();
+				$table->string('Rama')->nullable();
+				$table->text('Nota')->nullable();
 				$table->timestamps();
 			});
 		}
 		≡
-
-hkgkjgkjgkj
 1. Establecer permisos en los seeders para el CRUD Paises en **database\seeders\RoleSeeder.php**
 	>   
 		≡ 
 		public function run()
 		{
 			≡        
-			Permission::create(['name' => 'crud.countries.index'])->syncRoles($rolAdministrador);
-			Permission::create(['name' => 'crud.countries.create'])->syncRoles($rolAdministrador);
-			Permission::create(['name' => 'crud.countries.edit'])->syncRoles($rolAdministrador);
-			Permission::create(['name' => 'crud.countries.destroy'])->syncRoles($rolAdministrador);
+			Permission::create(['name' => 'crud.families.index'])->syncRoles($rolAdministrador, $rolGenealogista);
+			Permission::create(['name' => 'crud.families.create'])->syncRoles($rolAdministrador, $rolGenealogista);
+			Permission::create(['name' => 'crud.families.edit'])->syncRoles($rolAdministrador, $rolGenealogista);
+			Permission::create(['name' => 'crud.families.destroy'])->syncRoles($rolAdministrador);
 			≡
 		}
 		≡
 1. Reestablecer base de datos: 
 	>
 		$ php artisan migrate:fresh --seed
-1. Configurar modelo **Country** en **app\Models\Country.php**
+1. Configurar modelo **Family** en **app\Models\Family.php**
 	>
 		≡
-		class Country extends Model
+		class Family extends Model
 		{
 			use HasFactory;
 
 			protected $fillable = [
-				'pais',
-				'store',
+				'IDCombinado',
+				'IDCliente',
+				'Cliente',
+				'IDFamiliar',
+				'Familiar',
+				'Parentesco',
+				'Lado',
+				'Rama',
+				'Nota'
 			];
 		}
-1. Agregar ruta de paises al grupo de rutas CRUD:
+1. Agregar ruta families al grupo de rutas CRUD:
 	>
-		Route::resource('countries', CountryController::class)->names('countries')
-				->middleware('can:crud.countries.index');
+		Route::resource('families', FamilyController::class)->names('families')
+				->middleware('can:crud.families.index');
 	##### Nota: añadir a la cabecera:
 	>
-		use App\Http\Controllers\CountryController;
-1. Crear componente Livewire para Tabla Countries: 
+		use App\Http\Controllers\FamilyController;
+1. Crear componente Livewire para Tabla Families: 
 	>
-		$ php artisan make:livewire crud/countries-table
-1. Programar controlador para la tabla Countries: **app\Http\Livewire\Crud\CountriesTable.php**
-	>
-		≡
-		≡
-1. Diseñar vista para la tabla Country: **resources\views\livewire\crud\countries-table.blade.php**
+		$ php artisan make:livewire crud/families-table
+1. Programar controlador para la tabla Families: **app\Http\Livewire\Crud\FamiliesTable.php**
 	>
 		≡
 		≡
-1. Programar controlador Country: **app\Http\Controllers\CountryController.php**
+1. Diseñar vista para la tabla Families: **resources\views\livewire\crud\families-table.blade.php**
 	>
 		≡
 		≡
-1. Diseñar las vistas para el CRUD Paises:
-	- resources\views\crud\countries\index.blade.php
+1. Programar controlador Family: **app\Http\Controllers\FamilyController.php**
+	>
+		≡
+		≡
+1. Diseñar las vistas para el CRUD Familiares:
+	- resources\views\crud\families\index.blade.php
 		>
 			≡
 			≡
-	- resources\views\crud\countries\create.blade.php
+	- resources\views\crud\families\create.blade.php
 		>
 			≡
 			≡
-	- resources\views\crud\countries\edit.blade.php
+	- resources\views\crud\families\edit.blade.php
 		>
 			≡
 			≡
-1. Editar **config\adminlte.php** para añadir los menú para ingresar al CRUD Paises.
+1. Editar **config\adminlte.php** para añadir los menú para ingresar al CRUD Familiares.
 	>
 		≡
 		≡
@@ -1804,7 +1810,7 @@ hkgkjgkjgkj
 			$ git add .
 	+ Crear repositorio:
 		>
-			$ git commit -m "CRUD Paises"
+			$ git commit -m "CRUD Familiares"
 
 
 # ___________________________________________________________________

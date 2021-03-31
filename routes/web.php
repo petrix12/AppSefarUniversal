@@ -5,6 +5,7 @@ use App\Http\Controllers\AlberoController;
 use App\Http\Controllers\ConnectionController;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\CountryController;
+use App\Http\Controllers\FamilyController;
 use App\Http\Controllers\LadoController;
 use App\Http\Controllers\OnidexController;
 use App\Http\Controllers\ParentescoController;
@@ -35,6 +36,8 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
             ->middleware('can:crud.lados.index');
     Route::resource('connections', ConnectionController::class)->names('connections')
             ->middleware('can:crud.connections.index');
+    Route::resource('families', FamilyController::class)->names('families')
+            ->middleware('can:crud.families.index');
 });
 
 // Grupo de rutas para Consultas a base de datos

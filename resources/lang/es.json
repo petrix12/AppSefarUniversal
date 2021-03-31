@@ -121,5 +121,11 @@
     "Add connection": "Añadir conexión",
     "Edit connection": "Editar conexión",
     "Connection list": "Lista de conexiones",
+    "Family clients of clients": "Clientes familiares de clientes",
+    "Add family member": "Añadir familiar",
+    "Edit family member": "Editar familiar",
+    "Client": "Cliente",
+    "Family": "Familiar",
+    "Client family client list": "Lista de clientes familiares de clientes",
     "": ""
 }
