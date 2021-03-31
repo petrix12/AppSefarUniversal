@@ -1813,7 +1813,67 @@
 			$ git commit -m "CRUD Familiares"
 
 
-# ___________________________________________________________________
+## ___________________________________________________________________
+
+
+## CRUD Documentos
+1. Crear modelo File junto con su migración y controlador y los métodos para el CRUD.
+	>
+		$ php artisan make:model File -m -c -r
+1. Preparar migración para la tabla **Files** en **database\migrations\2021_03_31_184533_create_files_table.php**
+	>
+		≡
+		public function up()
+		{
+			Schema::create('files', function (Blueprint $table) {
+				$table->id();
+				$table->string('file');                 // Nombre del archivo
+				$table->string('location');             // Ubicación del archivo
+				$table->integer('IDPersona');           // Ubicación del archivo
+				$table->unsignedBigInteger('user_id');  // Relación con los usuarios
+				$table->foreign('user_id')
+					->references('id')
+					->on('users')
+					->onDelete('cascade');
+				$table->timestamps();
+			});
+		}
+		≡		
+1. Establecer permisos en los seeders para el CRUD Documentos en **database\seeders\RoleSeeder.php**
+	>   
+		≡ 
+		public function run()
+		{
+			≡        
+			Permission::create(['name' => 'crud.files.index'])->syncRoles($rolAdministrador, $rolGenealogista,$rolDocumentalista,$rolProduccion,$rolCliente);
+			Permission::create(['name' => 'crud.files.create'])->syncRoles($rolAdministrador, $rolGenealogista,$rolDocumentalista,$rolProduccion,$rolCliente);
+			Permission::create(['name' => 'crud.files.edit'])->syncRoles($rolAdministrador, $rolGenealogista,$rolDocumentalista,$rolProduccion,$rolCliente);
+			Permission::create(['name' => 'crud.files.destroy'])->syncRoles($rolAdministrador);
+			≡
+		}
+		≡
+1. Reestablecer base de datos: 
+	>
+		$ php artisan migrate:fresh --seed
+1. Indicar campos de asignación masiva en el modelo **File** en **app\Models\File.php**
+	>
+		≡
+		class File extends Model
+		{
+			use HasFactory;
+
+			protected $fillable = [
+				'file',
+				'location',
+				'IDPersona',
+				'user_id'
+			];
+
+		}
+
+
+
+## ___________________________________________________________________
 
 
 ## Vista árbol genealógico: **Albero**
