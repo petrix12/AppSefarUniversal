@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Lado;
+use App\Models\Connection;
 use Illuminate\Http\Request;
 use RealRashid\SweetAlert\Facades\Alert;
 
-class LadoController extends Controller
+class ConnectionController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -15,7 +15,7 @@ class LadoController extends Controller
      */
     public function index()
     {
-        return view('crud.lados.index');
+        return view('crud.connections.index');
     }
 
     /**
@@ -25,7 +25,7 @@ class LadoController extends Controller
      */
     public function create()
     {
-        return view('crud.lados.create');
+        return view('crud.connections.create');
     }
 
     /**
@@ -38,86 +38,86 @@ class LadoController extends Controller
     {
         // Validación
         $request->validate([
-            'Lado' => 'required|max:15|unique:lados,Lado',
+            'Conexion' => 'required|max:15|unique:connections,Conexion',
             'Significado' => 'required'
         ]);
 
-        // Creando lado
-        Lado::create([
-            'Lado' => $request->Lado,
+        // Creando connection
+        Connection::create([
+            'Conexion' => $request->Conexion,
             'Significado' => $request->Significado
         ]);
 
         // Mensaje 
-        Alert::success('¡Éxito!', 'Se ha añadido a la lista el lado: ' . $request->Lado);
+        Alert::success('¡Éxito!', 'Se ha añadido a la lista la conexión: ' . $request->Conexion);
         
         // Redireccionar a la vista index
-        return redirect()->route('crud.lados.index');
+        return redirect()->route('crud.connections.index');
     }
 
     /**
      * Display the specified resource.
      *
-     * @param  \App\Models\Lado  $lado
+     * @param  \App\Models\Connection  $connection
      * @return \Illuminate\Http\Response
      */
-    public function show(Lado $lado)
+    public function show(Connection $connection)
     {
-        return view('crud.lados.edit', compact('lado'));
+        return view('crud.connections.edit', compact('connection'));
     }
 
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  \App\Models\Lado  $lado
+     * @param  \App\Models\Connection  $connection
      * @return \Illuminate\Http\Response
      */
-    public function edit(Lado $lado)
+    public function edit(Connection $connection)
     {
-        return view('crud.lados.edit', compact('lado'));
+        return view('crud.connections.edit', compact('connection'));
     }
 
     /**
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Lado  $lado
+     * @param  \App\Models\Connection  $connection
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Lado $lado)
+    public function update(Request $request, Connection $connection)
     {
         // Validación
         $request->validate([
-            'Lado' => 'required|max:15|unique:lados,Lado,'.$lado->Lado.',Lado',
+            'Conexion' => 'required|max:15|unique:connections,Conexion,'.$connection->Conexion.',Conexion',
             'Significado' => 'required'
         ]);
 
         // Acutalizando parentesco
-        $lado->Lado = $request->Lado;
-        $lado->Significado = $request->Significado;
-        $lado->save();
+        $connection->Conexion = $request->Conexion;
+        $connection->Significado = $request->Significado;
+        $connection->save();
 
         // Mensaje 
-        Alert::success('¡Éxito!', 'Se ha actualizado el lado: ' . $request->Lado);
+        Alert::success('¡Éxito!', 'Se ha actualizado la conexión: ' . $request->Conexion);
         
         // Redireccionar a la vista index
-        return redirect()->route('crud.lados.index');
+        return redirect()->route('crud.connections.index');
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\Models\Lado  $lado
+     * @param  \App\Models\Connection  $connection
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Lado $lado)
+    public function destroy(Connection $connection)
     {
-        $nombre = $lado->Lado;
+        $nombre = $connection->Conexion;
         
-        $lado->delete();
+        $connection->delete();
 
         Alert::info('¡Advertencia!', 'Se ha eliminado el registro: ' . $nombre);
 
-        return redirect()->route('crud.lados.index');
+        return redirect()->route('crud.connections.index');
     }
 }

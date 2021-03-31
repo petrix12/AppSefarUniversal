@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AgclienteController;
 use App\Http\Controllers\AlberoController;
+use App\Http\Controllers\ConnectionController;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\LadoController;
@@ -32,6 +33,8 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
             ->middleware('can:crud.parentescos.index');
     Route::resource('lados', LadoController::class)->names('lados')
             ->middleware('can:crud.lados.index');
+    Route::resource('connections', ConnectionController::class)->names('connections')
+            ->middleware('can:crud.connections.index');
 });
 
 // Grupo de rutas para Consultas a base de datos

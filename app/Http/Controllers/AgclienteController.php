@@ -40,7 +40,7 @@ class AgclienteController extends Controller
     {
         // Validación
         $request->validate([
-            'IDCliente' => 'required|unique:agclientes,IDCliente|max:50',
+            'IDCliente' => 'required|max:50',
             'Nombres' => 'required|max:100',
             'Apellidos' => 'required|max:100',
             'IDPersona'  => 'required',
@@ -172,7 +172,7 @@ class AgclienteController extends Controller
     {
         // Validación
         $request->validate([
-            'IDCliente' => 'required|unique:agclientes,IDCliente,'.$agcliente->IDCliente.',IDCliente|max:50',
+            'IDCliente' => 'required|max:50',
             'Nombres' => 'required|max:100',
             'Apellidos' => 'required|max:100',
             'IDPersona'  => 'required',

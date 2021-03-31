@@ -381,13 +381,13 @@ return [
                     'route'         => 'crud.lados.index',
                     'can'           => 'genealogista',
                 ],
-                /* [
+                [
                     'text'          => 'Conexión - Parentesco',
                     'icon'          => 'fas fa-sitemap',
                     'icon_color'    => 'white',
                     'route'         => 'crud.connections.index',
                     'can'           => 'genealogista',
-                ], */
+                ],
             ],
         ],
         

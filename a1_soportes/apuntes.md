@@ -3,7 +3,7 @@
 ##### https://laravel.com/docs/8.x
 ##### Versión: **Laravel Framework 8.31.0**
 
-# ___________________________________________________________________
+## ___________________________________________________________________
 
 
 ## Consideraciones previas
@@ -31,7 +31,7 @@
 	>
 		$ composer global require laravel/installer.				
 
-# ___________________________________________________________________
+## ___________________________________________________________________
 
 
 ## Crear proyecto App Sefar Universal
@@ -58,7 +58,7 @@
 		>
 			$ git commit -m "Proyecto en blanco"
 
-# ___________________________________________________________________
+## ___________________________________________________________________
 
 
 ## Crear un dominio local
@@ -83,7 +83,7 @@
 	##### no deben estar comentada con #.
 1. Reiniciar el servidor Apache.
 
-# ___________________________________________________________________
+## ___________________________________________________________________
 
 
 ## Ajustes iniciales
@@ -173,7 +173,7 @@
 		>
 			$ git commit -m "Ajustes iniciales"
 
-# ___________________________________________________________________
+## ___________________________________________________________________
 
 
 ## Integrar Laravel-permission al proyecto
@@ -251,7 +251,7 @@
 		>
 			$ git commit -m "Laravel-permission"
 
-# ___________________________________________________________________
+## ___________________________________________________________________
 
 
 ## Integrar plantilla AdminLTE
@@ -297,7 +297,7 @@
 	+ Ejecutar: $ **git add .**
 	+ Ejecutar: $ **git commit -m "Instalación Plantilla AdminLTE"**
 	
-# ___________________________________________________________________
+## ___________________________________________________________________
 
 
 ## Adaptación del proyecto al español
@@ -329,7 +329,7 @@
 		>
 			$ git commit -m "Adaptación al español"
 
-# ___________________________________________________________________
+## ___________________________________________________________________
 
 
 ## Seeders para prueba de roles y permisos
@@ -373,7 +373,7 @@
 		>
 			$ git commit -m "Seeder Roles, Permisos y Usuarios"
 
-# ___________________________________________________________________
+## ___________________________________________________________________
 
 
 ## Personalizar el proyecto
@@ -478,7 +478,7 @@
 		>
 			$ git commit -m "Proyecto personalizado"
 	
-# ___________________________________________________________________
+## ___________________________________________________________________
 
 
 ## Perfil de usuario
@@ -727,7 +727,7 @@
 		>
 			$ git commit -m "Perfil de usuario"
 
-# ___________________________________________________________________
+## ___________________________________________________________________
 
 
 ## Integrar Sweetalert
@@ -819,7 +819,7 @@
 		>
 			$ git commit -m "Integración Sweetalert"
 
-# ___________________________________________________________________
+## ___________________________________________________________________
 
 
 ## Verificación de email con Jetstream
@@ -906,7 +906,7 @@
 		>
 			$ git commit -m "Verificación de email"
 
-# ___________________________________________________________________
+## ___________________________________________________________________
 
 
 ## CRUD Permisos
@@ -986,7 +986,7 @@
 		>
 			$ git commit -m "CRUD Permisos"
 
-# ___________________________________________________________________
+## ___________________________________________________________________
 
 
 ## CRUD Roles
@@ -1061,7 +1061,7 @@
 		>
 			$ git commit -m "CRUD Roles"
 
-# ___________________________________________________________________
+## ___________________________________________________________________
 
 
 ## CRUD Usuarios
@@ -1126,7 +1126,7 @@
 		>
 			$ git commit -m "CRUD Usuarios"
 
-# ___________________________________________________________________
+## ___________________________________________________________________
 
 
 ## CRUD Paises
@@ -1223,7 +1223,7 @@
 		>
 			$ git commit -m "CRUD Paises"
 
-# ___________________________________________________________________
+## ___________________________________________________________________
 
 
 ## Seeders para cargar los paises iniciales
@@ -1261,7 +1261,7 @@
 		>
 			$ git commit -m "Seeder Paises"
 
-# ___________________________________________________________________
+## ___________________________________________________________________
 
 
 ## CRUD Parentescos
@@ -1358,7 +1358,7 @@
 		>
 			$ git commit -m "CRUD Parentescos"
 
-# ___________________________________________________________________
+## ___________________________________________________________________
 
 
 
@@ -1395,9 +1395,9 @@
 	+ Crear repositorio:
 		>
 			$ git commit -m "Seeder Parentescos"
-# ___________________________________________________________________
 
-kjbkjvjkj
+## ___________________________________________________________________
+
 
 
 ## CRUD Lado (del parentesco)
@@ -1426,7 +1426,7 @@ kjbkjvjkj
 			Permission::create(['name' => 'crud.lados.index'])->syncRoles($rolAdministrador, $rolGenealogista);
 			Permission::create(['name' => 'crud.lados.create'])->syncRoles($rolAdministrador, $rolGenealogista);
 			Permission::create(['name' => 'crud.lados.edit'])->syncRoles($rolAdministrador, $rolGenealogista);
-			Permission::create(['name' => 'crud.lados.destroy'])->syncRoles($rolAdministrador, $rolGenealogista);
+			Permission::create(['name' => 'crud.lados.destroy'])->syncRoles($rolAdministrador);
 			≡
 		}
 		≡
@@ -1445,7 +1445,7 @@ kjbkjvjkj
 				'Significado',
 			];
 		}
-1. Agregar ruta de lado al grupo de rutas CRUD:
+1. Agregar ruta lados al grupo de rutas CRUD:
 	>
 		Route::resource('lados', LadoController::class)->names('lados')
 				->middleware('can:crud.lados.index');
@@ -1463,7 +1463,7 @@ kjbkjvjkj
 	>
 		≡
 		≡
-1. Programar controlador Parentesco: **app\Http\Controllers\ParentescoController.php**
+1. Programar controlador Lado: **app\Http\Controllers\LadoController.php**
 	>
 		≡
 		≡
@@ -1494,7 +1494,7 @@ kjbkjvjkj
 		>
 			$ git commit -m "CRUD Lados"
 
-# ___________________________________________________________________
+## ___________________________________________________________________
 
 
 ## Seeders para cargar los lados iniciales
@@ -1530,9 +1530,178 @@ kjbkjvjkj
 	+ Crear repositorio:
 		>
 			$ git commit -m "Seeder Lados"
-# ___________________________________________________________________
 
-lkbklblkblkl
+## ___________________________________________________________________
+
+
+
+## CRUD Conexiones (del parentesco)
+1. Crear modelo Connection junto con su migración y controlador y los métodos para el CRUD.
+	>
+		$ php artisan make:model Connection -m -c -r
+1. Preparar migración para la tabla **connections** en **database\migrations\2021_03_31_003009_create_connections_table.php**
+	>
+		≡
+		public function up()
+		{
+			Schema::create('connections', function (Blueprint $table) {
+				$table->id();
+				$table->string('Conexion',15)->unique();
+				$table->string('Significado')->nullable();
+				$table->timestamps();
+			});
+		}
+		≡
+1. Establecer permisos en los seeders para el CRUD Paises en **database\seeders\RoleSeeder.php**
+	>   
+		≡ 
+		public function run()
+		{
+			≡        
+			Permission::create(['name' => 'crud.connections.index'])->syncRoles($rolAdministrador, $rolGenealogista);
+			Permission::create(['name' => 'crud.connections.create'])->syncRoles($rolAdministrador, $rolGenealogista);
+			Permission::create(['name' => 'crud.connections.edit'])->syncRoles($rolAdministrador, $rolGenealogista);
+			Permission::create(['name' => 'crud.connections.destroy'])->syncRoles($rolAdministrador);
+			≡
+		}
+		≡
+1. Reestablecer base de datos: 
+	>
+		$ php artisan migrate:fresh --seed
+1. Configurar modelo **Connection** en **app\Models\Parentesco.php**
+	>
+		≡
+		class Connection extends Model
+		{
+			use HasFactory;
+
+			protected $fillable = [
+				'Conexion',
+				'Significado',
+			];
+		}
+1. Agregar ruta connections al grupo de rutas CRUD:
+	>
+		Route::resource('connections', ConnectionController::class)->names('connections')
+				->middleware('can:crud.connections.index');
+	##### Nota: añadir a la cabecera:
+	>
+		use App\Http\Controllers\ConnectionController;
+1. Crear componente Livewire para Tabla Connections: 
+	>
+		$ php artisan make:livewire crud/connections-table
+1. Programar controlador para la tabla Connections: **resources\views\livewire\crud\connections-table.blade.php**
+	>
+		≡
+		≡
+1. Diseñar vista para la tabla Connections: **resources\views\livewire\crud\connections-table.blade.php**
+	>
+		≡
+		≡
+1. Programar controlador Connection: **app\Http\Controllers\ConnectionController.php**
+	>
+		≡
+		≡
+1. Diseñar las vistas para el CRUD Connections:
+	- resources\views\crud\connections\index.blade.php
+		>
+			≡
+			≡
+	- resources\views\crud\connections\create.blade.php
+		>
+			≡
+			≡
+	- resources\views\crud\connections\edit.blade.php
+		>
+			≡
+			≡
+1. Editar **config\adminlte.php** para añadir los menú para ingresar al CRUD Conexiones.
+	>
+		≡
+		≡
+
+
+	### Commit --:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "CRUD Conexiones"
+
+## ___________________________________________________________________
+
+
+## Seeders para cargar las conexiones iniciales
+1. Crear seeder para conexiones: 
+	>
+		$ php artisan make:seeder ConnectionSeeder
+1. Añadir a cabecera de **database\seeders\ConnectionSeeder.php**
+	>
+		use App\Models\Connection;
+1. Modificar el método **run** de **database\seeders\ConnectionSeeder.php**
+	>
+		public function run()
+		{
+			Connection::create(['Conexion' => 'PM','Significado' => 'Padre y Madre']);
+			Connection::create(['Conexion' => 'P','Significado' => 'Padre']);
+			Connection::create(['Conexion' => 'M','Significado' => 'Madre']);
+			Connection::create(['Conexion' => 'APO','Significado' => 'Abuelo Paterno']);
+			Connection::create(['Conexion' => 'APA','Significado' => 'Abuela Paterna']);
+			Connection::create(['Conexion' => 'AMO','Significado' => 'Abuelo Materno']);
+			Connection::create(['Conexion' => 'AMA','Significado' => 'Abuela Materna']);
+			Connection::create(['Conexion' => 'BPPO','Significado' => 'Bisabuelo PP']);
+			Connection::create(['Conexion' => 'BPPA','Significado' => 'Bisabuela PP']);
+			Connection::create(['Conexion' => 'BPMO','Significado' => 'Bisabuelo PM']);
+			Connection::create(['Conexion' => 'BPMA','Significado' => 'Bisabuela PM']);
+			Connection::create(['Conexion' => 'BMPO','Significado' => 'Bisabuelo MP']);
+			Connection::create(['Conexion' => 'BMPA','Significado' => 'Bisabuela MP']);
+			Connection::create(['Conexion' => 'BMMO','Significado' => 'Bisabuelo MM']);
+			Connection::create(['Conexion' => 'BMMA','Significado' => 'Bisabuela MM']);
+			Connection::create(['Conexion' => 'TPPPO','Significado' => 'Tatarubuelo PPP']);
+			Connection::create(['Conexion' => 'TPPPA','Significado' => 'Tatarubuela PPP']);
+			Connection::create(['Conexion' => 'TPPMO','Significado' => 'Tatarubuelo PPM']);
+			Connection::create(['Conexion' => 'TPPMA','Significado' => 'Tatarubuela PPM']);
+			Connection::create(['Conexion' => 'TPMPO','Significado' => 'Tatarubuelo PMP']);
+			Connection::create(['Conexion' => 'TPMPA','Significado' => 'Tatarubuela PMP']);
+			Connection::create(['Conexion' => 'TPMMO','Significado' => 'Tatarubuelo PMM']);
+			Connection::create(['Conexion' => 'TPMMA','Significado' => 'Tatarubuela PMM']);
+			Connection::create(['Conexion' => 'TMPPO','Significado' => 'Tatarubuelo MPP']);
+			Connection::create(['Conexion' => 'TMPPA','Significado' => 'Tatarubuela MPP']);
+			Connection::create(['Conexion' => 'TMPMO','Significado' => 'Tatarubuelo MPM']);
+			Connection::create(['Conexion' => 'TMPMA','Significado' => 'Tatarubuela MPM']);
+			Connection::create(['Conexion' => 'TMMPO','Significado' => 'Tatarubuelo MMP']);
+			Connection::create(['Conexion' => 'TMMPA','Significado' => 'Tatarubuela MMP']);
+			Connection::create(['Conexion' => 'TMMMO','Significado' => 'Tatarubuelo MMM']);
+			Connection::create(['Conexion' => 'TMMMA','Significado' => 'Tatarubuela MMM']);
+			Connection::create(['Conexion' => 'C','Significado' => 'Cónyuge']);
+			Connection::create(['Conexion' => 'ND','Significado' => 'No determinado']);
+		}
+1. Añadir al método run de **database\seeders\DatabaseSeeder.php**
+	>
+		public function run()
+		{
+			≡
+			$this->call(ConnectionSeeder::class);
+		}
+1. Ejecutar: 
+	>
+		$ php artisan migrate:fresh --seed
+	##### **Nota**: Para correr los seeder sin resetear la base de datos:
+	+ Ejecutar: 
+	>
+		$ php artisan db:seed
+
+	### Commit --:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "Seeder Conexiones"
+
+## ___________________________________________________________________
+
 
 ## CRUD Familiares
 1. Crear modelo Family junto con su migración y controlador y los métodos para el CRUD.
