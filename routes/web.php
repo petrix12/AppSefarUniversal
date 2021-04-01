@@ -11,6 +11,7 @@ use App\Http\Controllers\OnidexController;
 use App\Http\Controllers\ParentescoController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\TFileController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -38,6 +39,8 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
             ->middleware('can:crud.connections.index');
     Route::resource('families', FamilyController::class)->names('families')
             ->middleware('can:crud.families.index');
+    Route::resource('t_files', TFileController::class)->names('t_files')
+            ->middleware('can:crud.t_files.index');
 });
 
 // Grupo de rutas para Consultas a base de datos

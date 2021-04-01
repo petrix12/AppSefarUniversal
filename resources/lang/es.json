@@ -127,5 +127,11 @@
     "Client": "Cliente",
     "Family": "Familiar",
     "Client family client list": "Lista de clientes familiares de clientes",
+    "File types": "Tipos de archivos",
+    "Add file type": "Añadir tipo de documento",
+    "Type": "Tipo",
+    "Notes": "Notas",
+    "Edit file type": "Editar tipo de documento",
+    "File type list": "Lista de tipos de documento",
     "": ""
 }

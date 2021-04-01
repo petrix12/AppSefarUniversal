@@ -1591,7 +1591,7 @@
 1. Crear componente Livewire para Tabla Connections: 
 	>
 		$ php artisan make:livewire crud/connections-table
-1. Programar controlador para la tabla Connections: **resources\views\livewire\crud\connections-table.blade.php**
+1. Programar controlador para la tabla Connections: **app\Http\Livewire\Crud\ConnectionsTable.php**
 	>
 		≡
 		≡
@@ -1816,7 +1816,151 @@
 ## ___________________________________________________________________
 
 
-## CRUD Documentos
+## CRUD Tipos de documentos
+
+1. Crear modelo TFile (tipo de documentos) junto con su migración y controlador y los métodos para el CRUD.
+	>
+		$ php artisan make:model TFile -m -c -r
+1. Preparar migración para la tabla **t_files** en **database\migrations\2021_04_01_143943_create_t_files_table.php**
+	>
+		≡
+		public function up()
+		{
+			Schema::create('t_files', function (Blueprint $table) {
+				$table->id();
+				$table->string('tipo')->unique();
+				$table->string('notas')->nullable();
+				$table->timestamps();
+			});
+		}
+		≡
+1. Establecer permisos en los seeders para el CRUD TFiles en **database\seeders\RoleSeeder.php**
+	>   
+		≡ 
+		public function run()
+		{
+			≡        
+			Permission::create(['name' => 'crud.t_files.index'])->syncRoles($rolAdministrador, $rolGenealogista);
+			Permission::create(['name' => 'crud.t_files.create'])->syncRoles($rolAdministrador, $rolGenealogista);
+			Permission::create(['name' => 'crud.t_files.edit'])->syncRoles($rolAdministrador, $rolGenealogista);
+			Permission::create(['name' => 'crud.t_files.destroy'])->syncRoles($rolAdministrador);
+			≡
+		}
+		≡
+1. Reestablecer base de datos: 
+	>
+		$ php artisan migrate:fresh --seed
+1. Establecer campos de asignación masiva en el modelo **TFile** en **app\Models\TFile.php**
+	>
+		≡
+		class TFile extends Model
+		{
+			use HasFactory;
+
+			protected $fillable = [
+				'tipo',
+				'notas',
+			];
+		}
+1. Agregar ruta t_files al grupo de rutas CRUD:
+	>
+		Route::resource('t_files', TFileController::class)->names('t_files')
+				->middleware('can:crud.t_files.index');
+	##### Nota: añadir a la cabecera:
+	>
+		use App\Http\Controllers\TFileController;
+1. Crear componente Livewire para Tabla TFiles: 
+	>
+		$ php artisan make:livewire crud/t_files-table
+1. Programar controlador para la tabla TFiles: **app\Http\Livewire\Crud\TFilesTable.php**
+	>
+		≡
+		≡
+1. Diseñar vista para la tabla TFiles: **resources\views\livewire\crud\t-files-table.blade.php**
+	>
+		≡
+		≡
+1. Programar controlador TFile: **app\Http\Controllers\TFileController.php**
+	>
+		≡
+		≡
+1. Diseñar las vistas para el CRUD TFiles:
+	- resources\views\crud\t_files\index.blade.php
+		>
+			≡
+			≡
+	- resources\views\crud\t_files\create.blade.php
+		>
+			≡
+			≡
+	- resources\views\crud\t_files\edit.blade.php
+		>
+			≡
+			≡
+1. Editar **config\adminlte.php** para añadir los menú para ingresar al CRUD TFiles.
+	>
+		≡
+		≡
+
+
+	### Commit --:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "CRUD Tipos de documentos"
+
+## ___________________________________________________________________
+
+
+## Seeders para cargar los tipos de documentos iniciales
+1. Crear seeder para tipos de documentos: 
+	>
+		$ php artisan make:seeder TFileSeeder
+1. Añadir a cabecera de **database\seeders\TFileSeeder.php**
+	>
+		use App\Models\TFile;
+1. Modificar el método **run** de **database\seeders\TFileSeeder.php**
+	>
+		public function run()
+		{
+			TFile::create(['tipo' => 'Nacimiento','Notas' => 'Documentos relaciones con los datos de nacimiento de una persona']);
+			TFile::create(['tipo' => 'Bautizo','Notas' => 'Documentos relaciones con los datos de bautizo de una persona']);
+			TFile::create(['tipo' => 'Matrimonio','Notas' => 'Documentos relaciones con los datos de matrimonio de una persona']);
+			TFile::create(['tipo' => 'Defunción','Notas' => 'Documentos relaciones con los datos de defunción de una persona']);
+			TFile::create(['tipo' => 'Identificación','Notas' => 'Documentos relaciones con la identidad de una persona']);
+			TFile::create(['tipo' => 'Filiatorio','Notas' => 'Documentos cuyo fin son expresamente migratorios']);
+			TFile::create(['tipo' => 'Otros','Notas' => 'Otros tipos de documentos']);
+		}
+1. Añadir al método run de **database\seeders\DatabaseSeeder.php**
+	>
+		public function run()
+		{
+			≡
+			$this->call(TFileSeeder::class);
+		}
+1. Ejecutar: 
+	>
+		$ php artisan migrate:fresh --seed
+	##### **Nota**: Para correr los seeder sin resetear la base de datos:
+	+ Ejecutar: 
+	>
+		$ php artisan db:seed
+
+	### Commit --:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "Seeder Tipos de documentos"
+
+## ___________________________________________________________________
+
+
+
+## CRUD Almacenamiento de documentos
 1. Crear modelo File junto con su migración y controlador y los métodos para el CRUD.
 	>
 		$ php artisan make:model File -m -c -r

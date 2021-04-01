@@ -395,6 +395,13 @@ return [
                     'route'         => 'crud.connections.index',
                     'can'           => 'genealogista',
                 ],
+                [
+                    'text'          => 'Tipos de documentos',
+                    'icon'          => 'fas fa-file-alt',
+                    'icon_color'    => 'white',
+                    'route'         => 'crud.t_files.index',
+                    'can'           => 'genealogista',
+                ],
             ],
         ],
         
