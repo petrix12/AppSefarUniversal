@@ -12,6 +12,10 @@ class File extends Model
     protected $fillable = [
         'file',
         'location',
+        'tipo',
+        'propietario',
+        'IDCliente',
+        'notas',
         'IDPersona',
         'user_id'
     ];

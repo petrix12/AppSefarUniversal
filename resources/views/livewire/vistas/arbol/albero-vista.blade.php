@@ -5,7 +5,8 @@
                 Cliente: {{ $agclientes[0]->Nombres.', '.$agclientes[0]->Apellidos.' / '.$agclientes[0]->IDCliente}}
             </h2>
             <p class="mt-2 text-lg leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-                ALBERO GENEALOGICO PER LE RICOSTRUZIONI DI CITTADINANZA
+                {{-- ALBERO GENEALOGICO PER LE RICOSTRUZIONI DI CITTADINANZA --}}
+                ÁRBOL GENEALÓGICO PARA EL ESTUDIO DE OBTENCIÓN DE NACIONALIDAD
             </p>
         </div>
     </div>

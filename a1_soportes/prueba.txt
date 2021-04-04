@@ -1,62 +1,7 @@
+accept="application/pdf, .doc, .docx, .odf"
+accept="audio/*"
+accept="video/*"
+accept="image/png"
+accept="image/*"
 
-Autogenerado
-`id` int(11) NOT NULL,
-`IDPadre` int(11) DEFAULT NULL,
-`IDMadre` int(11) DEFAULT NULL,
-`Generacion` int(11) DEFAULT NULL,
-`PNacimiento` varchar(50) CHARACTER SET utf8 DEFAULT NULL,
-`LNacimiento` varchar(50) CHARACTER SET utf8 DEFAULT NULL,
-`Familiares` varchar(5) CHARACTER SET utf8 DEFAULT NULL,
-`FUpdate` date DEFAULT NULL COMMENT 'Fecha de ultima modificación',
-`Usuario` varchar(50) COLLATE utf8_spanish_ci DEFAULT NULL COMMENT 'Usuario que editó el registro',
-`created_at` timestamp NULL DEFAULT NULL,
-`updated_at` timestamp NULL DEFAULT NULL
-
-Listo
-`Nombres` varchar(100) COLLATE utf8_spanish_ci DEFAULT NULL,
-`Apellidos` varchar(255) COLLATE utf8_spanish_ci DEFAULT NULL,
-`IDCliente` varchar(25) COLLATE utf8_spanish_ci NOT NULL,
-
-`IDPersona` int(11) DEFAULT NULL,
-`NPasaporte` varchar(255) COLLATE utf8_spanish_ci DEFAULT NULL,
-`PaisPasaporte` varchar(255) COLLATE utf8_spanish_ci DEFAULT NULL,
-`NDocIdent` varchar(25) COLLATE utf8_spanish_ci DEFAULT NULL,
-`PaisDocIdent` varchar(25) COLLATE utf8_spanish_ci DEFAULT NULL,
-`Sexo` varchar(12) COLLATE utf8_spanish_ci DEFAULT NULL,
-
-`AnhoNac` int(11) DEFAULT NULL,
-`MesNac` int(11) DEFAULT NULL,
-`DiaNac` int(11) DEFAULT NULL,
-`LugarNac` varchar(255) COLLATE utf8_spanish_ci DEFAULT NULL,
-`PaisNac` varchar(255) COLLATE utf8_spanish_ci DEFAULT NULL,
-
-`AnhoBtzo` int(11) DEFAULT NULL,
-`MesBtzo` int(11) DEFAULT NULL,
-`DiaBtzo` int(11) DEFAULT NULL,
-`LugarBtzo` varchar(255) COLLATE utf8_spanish_ci DEFAULT NULL,
-`PaisBtzo` varchar(255) COLLATE utf8_spanish_ci DEFAULT NULL,
-
-`AnhoMatr` int(11) DEFAULT NULL,
-`MesMatr` int(11) DEFAULT NULL,
-`DiaMatr` int(11) DEFAULT NULL,
-`LugarMatr` varchar(255) COLLATE utf8_spanish_ci DEFAULT NULL,
-`PaisMatr` varchar(255) COLLATE utf8_spanish_ci DEFAULT NULL,
-
-`Anho` int(11) DEFAULT NULL,
-`MesDef` int(11) DEFAULT NULL,
-`DiaDef` int(11) DEFAULT NULL,
-`LugarDef` varchar(255) COLLATE utf8_spanish_ci DEFAULT NULL,
-`PaisDef` varchar(255) COLLATE utf8_spanish_ci DEFAULT NULL,
-`Vive` varchar(5) COLLATE utf8_spanish_ci DEFAULT NULL,
-
-`Familiaridad` text COLLATE utf8_spanish_ci,
-`NombresF` varchar(255) COLLATE utf8_spanish_ci DEFAULT NULL,
-`ApellidosF` varchar(255) COLLATE utf8_spanish_ci DEFAULT NULL,
-`ParentescoF` varchar(255) COLLATE utf8_spanish_ci DEFAULT NULL,
-`NPasaporteF` varchar(50) COLLATE utf8_spanish_ci DEFAULT NULL,
-
-`FRegistro` date DEFAULT NULL,
-`FTM` varchar(5) CHARACTER SET utf8 DEFAULT NULL,
-`Observaciones` text COLLATE utf8_spanish_ci,
-`Enlace` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
 

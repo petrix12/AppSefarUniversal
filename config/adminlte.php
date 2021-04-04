@@ -289,6 +289,14 @@ return [
                 ],
             ],
         ],
+        
+        [
+            'text'          => 'Documentos',
+            'icon'          => 'fas fa-passport',
+            'icon_color'    => 'white',
+            'route'         => 'crud.files.index',
+            'can'           => 'crud.files.index',
+        ],
 
         /* *** MENÚ PARA GENEALOGISTAS E INVESTIGADORES *** */
         [

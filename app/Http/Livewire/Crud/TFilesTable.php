@@ -30,6 +30,6 @@ class TFilesTable extends Component
     public function clear(){
         $this->search = '';
         $this->page = 1;
-        $this->perPage = '5';
+        $this->perPage = '10';
     }
 }

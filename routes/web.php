@@ -6,6 +6,7 @@ use App\Http\Controllers\ConnectionController;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\FamilyController;
+use App\Http\Controllers\FileController;
 use App\Http\Controllers\LadoController;
 use App\Http\Controllers\OnidexController;
 use App\Http\Controllers\ParentescoController;
@@ -41,6 +42,8 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
             ->middleware('can:crud.families.index');
     Route::resource('t_files', TFileController::class)->names('t_files')
             ->middleware('can:crud.t_files.index');
+    Route::resource('files', FileController::class)->names('files')
+            ->middleware('can:crud.files.index');
 });
 
 // Grupo de rutas para Consultas a base de datos

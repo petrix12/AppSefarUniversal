@@ -1902,7 +1902,6 @@
 		≡
 		≡
 
-
 	### Commit --:
 	+ Ejecutar:
 		>
@@ -1959,7 +1958,6 @@
 ## ___________________________________________________________________
 
 
-
 ## CRUD Almacenamiento de documentos
 1. Crear modelo File junto con su migración y controlador y los métodos para el CRUD.
 	>
@@ -1971,10 +1969,14 @@
 		{
 			Schema::create('files', function (Blueprint $table) {
 				$table->id();
-				$table->string('file');                 // Nombre del archivo
-				$table->string('location');             // Ubicación del archivo
-				$table->integer('IDPersona');           // Ubicación del archivo
-				$table->unsignedBigInteger('user_id');  // Relación con los usuarios
+				$table->string('file');                     // Nombre del archivo
+				$table->string('location');                 // Ubicación del archivo
+				$table->string('tipo')->nullable();         // Tipo de documento
+				$table->string('propietario')->nullable();  // Nombre del propietario del documento
+				$table->string('IDCliente')->nullable();    // IDCliente del propietario del documento
+				$table->string('notas')->nullable();        // Notas
+				$table->integer('IDPersona');               // ID de persona
+				$table->unsignedBigInteger('user_id');      // Relación con los usuarios
 				$table->foreign('user_id')
 					->references('id')
 					->on('users')
@@ -2009,13 +2011,62 @@
 			protected $fillable = [
 				'file',
 				'location',
+				'tipo',
+				'propietario',
+				'IDCliente',
+				'notas',
 				'IDPersona',
 				'user_id'
 			];
 
 		}
+1. Agregar ruta files al grupo de rutas CRUD:
+	>
+		Route::resource('files', FileController::class)->names('files')
+				->middleware('can:crud.files.index');
+	##### Nota: añadir a la cabecera:
+	>
+		use App\Http\Controllers\FileController;
+1. Crear componente Livewire para Tabla Files: 
+	>
+		$ php artisan make:livewire crud/files-table
+1. Programar controlador para la tabla Files: **app\Http\Livewire\Crud\FilesTable.php**
+	>
+		≡
+		≡
+1. Diseñar vista para la tabla Files: **resources\views\livewire\crud\files-table.blade.php**
+	>
+		≡
+		≡
+1. Programar controlador File: **app\Http\Controllers\FileController.php**
+	>
+		≡
+		≡
+1. Diseñar las vistas para el CRUD Files:
+	- resources\views\crud\files\index.blade.php
+		>
+			≡
+			≡
+	- resources\views\crud\files\create.blade.php
+		>
+			≡
+			≡
+	- resources\views\crud\files\edit.blade.php
+		>
+			≡
+			≡
+1. Editar **config\adminlte.php** para añadir los menú para ingresar al CRUD Files.
+	>
+		≡
+		≡
 
-
+	### Commit --:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "CRUD Almacenamiento de documentos"
 
 ## ___________________________________________________________________
 

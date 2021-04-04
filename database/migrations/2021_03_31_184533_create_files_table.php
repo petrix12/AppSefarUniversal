@@ -15,10 +15,14 @@ class CreateFilesTable extends Migration
     {
         Schema::create('files', function (Blueprint $table) {
             $table->id();
-            $table->string('file');                 // Nombre del archivo
-            $table->string('location');             // Ubicación del archivo
-            $table->integer('IDPersona');           // Ubicación del archivo
-            $table->unsignedBigInteger('user_id');  // Relación con los usuarios
+            $table->string('file');                     // Nombre del archivo
+            $table->string('location');                 // Ubicación del archivo
+            $table->string('tipo')->nullable();         // Tipo de documento
+            $table->string('propietario')->nullable();  // Nombre del propietario del documento
+            $table->string('IDCliente')->nullable();    // IDCliente del propietario del documento
+            $table->string('notas')->nullable();        // Notas
+            $table->integer('IDPersona');               // ID de persona
+            $table->unsignedBigInteger('user_id');      // Relación con los usuarios
             $table->foreign('user_id')
                 ->references('id')
                 ->on('users')
