@@ -1,5 +1,8 @@
 <?php
 // Obtener persona
+
+use App\Models\Agcliente;
+
 function GetPersona($IDPersona){
     $Persona = null;
     switch ($IDPersona) {
@@ -282,4 +285,19 @@ function GetVidaCompleta($agclientes, $IDPersona){
     }catch(Exception $e){
         return null;
     }
+}
+
+function AddPersona($IDCliente, $IDPersona){
+    $Sexo = $IDPersona % 2 ? 'F' : 'M';
+    $agcliente = Agcliente::create([
+        'IDCliente' => $IDCliente,
+        'IDPersona' => $IDPersona,
+        'Sexo' => $Sexo,
+        'IDPadre' => GetIDPadre($IDPersona),
+        'IDMadre' => GetIDPadre($IDPersona) + 1,
+        'Generacion' => GetGeneracion($IDPersona),
+        'FUpdate' => date('Y-m-d H:i:s'),
+        'Usuario' => Auth()->user()->email,  
+    ]);
+    return $agcliente;
 }

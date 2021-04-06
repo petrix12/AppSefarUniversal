@@ -13,6 +13,7 @@ use App\Http\Controllers\ParentescoController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TFileController;
+use App\Http\Controllers\TreeController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -61,6 +62,8 @@ Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
 // Grupo de rutas para vistas de árboles genealógicos pruebas
 Route::group(['middleware' => ['auth'], 'as' => 'arboles.'], function(){
     Route::get('albero/{IDCliente}', [AlberoController::class, 'arbelo'])->name('albero.index')
+        ->middleware('can:genealogista');
+    Route::get('tree/{IDCliente}', [TreeController::class, 'tree'])->name('tree.index')
         ->middleware('can:genealogista');
 });
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Agcliente;
 use App\Models\Country;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 use RealRashid\SweetAlert\Facades\Alert;
 
 class AgclienteController extends Controller
@@ -38,6 +39,15 @@ class AgclienteController extends Controller
      */
     public function store(Request $request)
     {
+        // Validación de persona duplicada
+        $persona = Agcliente::where('IDCliente','LIKE',$request->IDCliente)
+            ->where('IDPersona','LIKE',$request->IDPersona)
+            ->get();
+        if($persona->count()>0){
+            Alert::error('¡Warning!', 'La persona que intenta añadir ya existe');
+            return back();
+        }
+
         // Validación
         $request->validate([
             'IDCliente' => 'required|max:50',
@@ -133,8 +143,11 @@ class AgclienteController extends Controller
         Alert::success('¡Éxito!', 'Se ha añadido a la lista: ' . $request->Nombres . ' ' . $request->Apellidos);
         
         // Redireccionar a la vista index
-        return redirect()->route('crud.agclientes.index');
+        //return redirect()->route('crud.agclientes.index');
         //return back();
+
+        // Redireccionar a la vista que invocó este método
+        return redirect($request->urlPrevia);
     }
 
     /**
@@ -169,7 +182,7 @@ class AgclienteController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, Agcliente $agcliente)
-    {
+    { 
         // Validación
         $request->validate([
             'IDCliente' => 'required|max:50',
@@ -254,8 +267,8 @@ class AgclienteController extends Controller
         // Mensaje 
         Alert::success('¡Éxito!', 'Se ha actualizado la información de: ' . $request->Nombres . ' ' . $request->Apellidos);
         
-        // Redireccionar a la vista index
-        return redirect()->route('crud.agclientes.index');
+        // Redireccionar a la vista que invocó este método
+        return redirect($request->urlPrevia);
     }
 
     /**

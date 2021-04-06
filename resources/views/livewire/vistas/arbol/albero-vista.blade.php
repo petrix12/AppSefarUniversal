@@ -10,7 +10,7 @@
             </p>
         </div>
     </div>
-    <div class="container">
+    <div class="container overflow-x-scroll">
         <div class="flex justify-between">
             <div class="px-4 py-2 m-2">
                 {{-- LÍNEA GENEALÓGICA --}}
@@ -32,23 +32,21 @@
                 {{-- FAMILIARES --}}
                 <div class="justify-center">
                     <label for="Familiares" class="px-3 block text-sm font-medium text-gray-700" title="Familiares en el proceso">Familiares</label>
-                    <select style="width:250px" name="Familiares" class="w-44 mt-1 block py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        <option value="16">Tatarabuelos PPP</option>
-                        <option value="18">Tatarabuelos PPM</option>
-                        <option value="20">Tatarabuelos PMP</option>
-                        <option value="22">Tatarabuelos PMM</option>
-                        <option value="24">Tatarabuelos MPP</option>
-                        <option value="26">Tatarabuelos MPM</option>
-                        <option value="28">Tatarabuelos MMP</option>
-                        <option value="30">Tatarabuelos MMM</option>
+                    <select wire:model="IDFamiliar" style="width:450px" name="Familiares" class="w-44 mt-1 block py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="{{ null }}">-</option>
+                        @foreach ($families as $family)
+                            <option value="{{ $family->IDFamiliar }}">{{ $family->Familiar.' - '.$family->Parentesco }}</option>
+                        @endforeach
                     </select>
+                    @if($IDFamiliar)
                     <div class="pt-2">
                         <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
-                            <button class="cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <a href="{{ route('arboles.albero.index', $IDFamiliar) }}" target="_blank" class="cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                 Ir a familiar seleccionado
-                            </button>
+                            </a>
                         </div>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -61,12 +59,17 @@
                 $IDTatarabuelo = $LineaGenealogica;
                 $idT = GetID($agclientes,$IDTatarabuelo);
             @endphp
-            
             @if ($idT)
                 <h1 class="text-center font-bold text-sm pt-1 ctvSefar" title="Editar">
                     <a href="{{ route('crud.agclientes.edit', $idT ) }}">{{ GetPersona($IDTatarabuelo) }}</a>
                 </h1>
             @else
+                {{-- <h1 class="text-center font-bold text-sm pt-1 text-red" title="Añadir">
+                    @php
+                        $idTC = AddPersona($agclientes[0]->IDCliente,$IDTatarabuelo);
+                    @endphp
+                    <a href="{{ route('crud.agclientes.edit', $idTC ) }}">{{ GetPersona($IDTatarabuelo) }}</a>
+                </h1> --}}
                 <h1 class="text-center font-bold text-sm pt-1 text-red" title="Añadir">
                     <a href="{{ route('crud.agclientes.create') }}">{{ GetPersona($IDTatarabuelo) }}</a>
                 </h1>
@@ -102,9 +105,15 @@
                     <a href="{{ route('crud.agclientes.edit', $idTa ) }}">{{ GetPersona($IDTatarabuela) }}</a>
                 </h1>
             @else
+            <h1 class="text-center font-bold text-sm pt-1 text-red" title="Añadir">
+                {{-- @php
+                    $idTaC = AddPersona($agclientes[0]->IDCliente,$IDTatarabuela);
+                @endphp
+                <a href="{{ route('crud.agclientes.edit', $idTaC ) }}">{{ GetPersona($IDTatarabuela) }}</a> --}}
                 <h1 class="text-center font-bold text-sm pt-1 text-red" title="Añadir">
                     <a href="{{ route('crud.agclientes.create') }}">{{ GetPersona($IDTatarabuela) }}</a>
                 </h1>
+            </h1>
             @endif
             
             <p class="text-center text-sm ctrSefar">{{ GetNombres($agclientes,$IDTatarabuela) }}</p>

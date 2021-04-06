@@ -2079,7 +2079,7 @@
 	>
 		≡
 		≡
-1. Crear la vista Albero **
+1. Crear la vista Albero **resources\views\arboles\arbelo.blade.php**
 	>
 		≡
 		≡
@@ -2104,18 +2104,59 @@
 	>
 		≡
 		≡
-
-
-1. Diseñar vista para la tabla Agcliente: **resources\views\livewire\crud\agclientes-table.blade.php**
+1. Diseñar vista livewire para la tabla Albero: **resources\views\livewire\crud\arbelo-table.blade.php**
 	>
 		≡
 		≡
-1. Programar controlador Agcliente: **app\Http\Controllers\AgclienteController.php**
+
+# ___________________________________________________________________
+
+*************************************
+
+## ___________________________________________________________________
+
+
+## Vista árbol genealógico: **Horizontal**
+1. Crear controlador Tree:
+	>
+		$ php artisan make:controller TreeController
+1. Programar controlador Tree en **app\Http\Controllers\TreeController.php**
+	>
+		≡
+		≡
+1. Crear la vista Tree **resources\views\arboles\tree.blade.php**
+	>
+		≡
+		≡
+1. Agregar la ruta para la vista Tree en el grupo de rutas de árboles.
+	>
+		// Grupo de rutas para vistas de árboles genealógicos pruebas
+		Route::group(['middleware' => ['auth'], 'as' => 'arboles.'], function(){
+			≡
+			Route::get('tree/{IDCliente}', [TreeController::class, 'tree'])->name('tree.index')
+				->middleware('can:genealogista');
+		});
+	##### Nota: añadir a la cabecera:
+	>
+		use App\Http\Controllers\TreeController;
+1. Crear componente Livewire para la vista Tree: 
+	>
+		$ php artisan make:livewire vistas/arbol/tree-vista
+1. Programar controlador para la vista Tree: **app\Http\Livewire\Vistas\Arbol\TreeVista.php**
+	>
+		≡
+		≡
+1. Crear archivo de estilo para diagramar el árbol en **public\css\tree.css**
+	>
+		≡
+		≡
+1. Diseñar vista livewire para la tabla Trees: **resources\views\livewire\crud\agclientes-table.blade.php**
 	>
 		≡
 		≡	
 
-# ___________________________________________________________________
+*************************************
+
 
 	
 ## CRUD Agclientes

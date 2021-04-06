@@ -39,7 +39,17 @@
                                 <form action="{{ route('crud.agclientes.store') }}" method="POST">
 
                                     @csrf
-                                    
+                                    {{-- RUTA QUE LO INVOCA --}}
+                                    <input type="hidden" name="urlPrevia" value="{{ redirect()->getUrlGenerator()->previous() }}">
+                                    @php
+                                        $url = url()->previous();
+                                        if(strpos($url, '/albero/')){
+                                            $urlPartes = parse_url($url);
+                                            $IDCliente = str_replace('/albero/','',$urlPartes["path"]);
+                                        }else{
+                                            $IDCliente = null;
+                                        }
+                                    @endphp
                                     <div class="shadow overflow-hidden sm:rounded-md">
                                             <div class="container">
                                                 {{-- Fila 1: Datos principales --}}
@@ -47,7 +57,7 @@
                                                     <div class="px-1 py-2 m-2 flex">    {{-- IDCliente --}}
                                                         <div>
                                                             <label for="IDCliente" class="block text-sm font-medium text-gray-700">ID Cliente</label>
-                                                            <input value="{{ old('IDCliente') }}" type="text" name="IDCliente" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                                            <input value="{{ old('IDCliente', $IDCliente) }}" type="text" name="IDCliente" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                                             @error('IDCliente')
                                                                 <small style="color:red">*{{ $message }}*</small>
                                                             @enderror

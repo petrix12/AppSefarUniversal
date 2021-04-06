@@ -40,6 +40,9 @@
 
                                     @csrf
                                     @method('put')
+
+                                    {{-- RUTA QUE LO INVOCA --}}
+                                    <input type="hidden" name="urlPrevia" value="{{ redirect()->getUrlGenerator()->previous() }}">
                                     
                                     <div class="shadow overflow-hidden sm:rounded-md">
                                             <div class="container">

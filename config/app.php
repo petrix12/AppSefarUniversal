@@ -234,4 +234,6 @@ return [
 
     ],
 
+    'tmp' => env('VAR_TMP', null),
+
 ];
