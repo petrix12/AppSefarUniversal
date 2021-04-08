@@ -246,6 +246,16 @@ function GetFechaMatr($agclientes, $IDPersona){
     }
 }
 
+// Obtener datos de matrimonio de la persona IDPersona
+function GetDatosMatrimonio($agclientes, $IDPersona){
+    $matrimonio = "Matrimonio: ";
+    $lugar = GetLugarMatr($agclientes,$IDPersona);
+    $matrimonio = $matrimonio . $lugar . ' ';
+    $fecha = GetFechaMatr($agclientes,$IDPersona);
+    $matrimonio = $matrimonio . $fecha;
+    return $matrimonio;
+}
+
 // Obtener años de vida de la persona IDPersona
 function GetVida($agclientes, $IDPersona){
     try{

@@ -12,15 +12,17 @@ body{background-image: url("images/fondo.jpg");}
 .nombres{float:middle; font-size: 80%; width:100%; position:absolute; top:25%; font-family:Arial; text-align: center; font-weight: bold;}
 .apellidos{float:middle; font-size: 80%; width:100%; position:absolute; top:40%; font-family:Arial; text-align: center; font-weight: bold;}
 .texto{float:middle; font-size: 70%; width:100%; position:absolute; top:56%; font-family:Arial; text-align: center;}
+.text-abuelo{float:middle; font-size: 65%; width:100%; position:absolute; top:58%; font-family:Arial; text-align: center;}
 .nacimiento{float:middle; font-size: 75%; width:100%; position:absolute; top:69%; font-family:Arial; text-align: center; font-weight: bold;}
-.nom-abuelo{float:middle; font-size: 85%; width:100%; position:absolute; top: 26px; font-family:Arial; text-align: center; font-weight: bold;}
-.ape-abuelo{float:middle; font-size: 85%; width:100%; position:absolute; top: 43px; font-family:Arial; text-align: center; font-weight: bold;}
+.nac-abuelo{float:middle; font-size: 70%; width:100%; position:absolute; top:69%; font-family:Arial; text-align: center; font-weight: bold;}
+.nom-abuelo{float:middle; font-size: 75%; width:100%; position:absolute; top: 25px; font-family:Arial; text-align: center; font-weight: bold;}
+.ape-abuelo{float:middle; font-size: 75%; width:100%; position:absolute; top: 42px; font-family:Arial; text-align: center; font-weight: bold;}
 .nom-bisabuelo{float:middle; font-size: 70%; width:100%; position:absolute; top: 15px; font-family:Arial; text-align: center; font-weight: bold;}
 .ape-bisabuelo{float:middle; font-size: 70%; width:100%; position:absolute; top: 28px; font-family:Arial; text-align: center; font-weight: bold;}
 .nom-tatarabuelos{float:middle; font-size: 60%; width:100%; position:absolute; top: 0%; font-family:Arial; text-align: center; font-weight: bold;}
 .ape-tatarabuelos{float:middle; font-size: 60%; width:100%; position:absolute; bottom: 0%; font-family:Arial; text-align: center; font-weight: bold;}
 .vida{float:middle; font-size: 75%; width:100%; position:absolute; bottom:1%; font-family:Arial; text-align: center; font-weight: bold;}
-.vid-abuelo{float:middle; font-size: 70%; width:100%; position:absolute; bottom: 23px; font-family:Arial; text-align: center; font-weight: bold;}
+.vid-abuelo{float:middle; font-size: 70%; width:100%; position:absolute; bottom: 1%; font-family:Arial; text-align: center; font-weight: bold;}
 .vid-bisabuelo{float:middle; font-size: 70%; width:100%; position:absolute; bottom: 0px; font-family:Arial; text-align: center; font-weight: bold;}
 .father-branch{position:absolute;z-index:0}
 .mother-branch{position:absolute;z-index:0}
@@ -46,8 +48,7 @@ body{background-image: url("images/fondo.jpg");}
 }
 
 .caja_abuelos{
-    border: 1px solid #870021;
-    border: 1px solid #68011A;
+    border: 1px solid rgb(22,43,27);
     width: 250px;
     height: 100px;
     border-radius: 5px;
@@ -76,9 +77,8 @@ body{background-image: url("images/fondo.jpg");}
 }
 
 .caja_tatarabuelos{
-    border: 1px solid #870021;
-    border: 1px solid #68011A;
-    width: 250px;
+    border: 1px solid rgb(22,43,27);
+    width: 230px;
     height: 25px;
     border-radius: 5px;
     padding: 0;
@@ -122,7 +122,7 @@ body{background-image: url("images/fondo.jpg");}
     top:0;
     color:#FFF5EE;
     font-family:Arial;
-    background-color: #870021;
+    background-color: rgb(22,43,27);
     letter-spacing:.15em;
     text-align: center;
     font-weight: bold;
@@ -138,7 +138,7 @@ body{background-image: url("images/fondo.jpg");}
     top:0;
     color:#FFF5EE;
     font-family:Arial;
-    background-color: #870021;
+    background-color: rgb(22,43,27);
     letter-spacing:.15em;
     text-align: center;
     font-weight: bold;

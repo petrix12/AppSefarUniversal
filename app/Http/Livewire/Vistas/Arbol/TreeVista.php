@@ -12,6 +12,7 @@ class TreeVista extends Component
     public $LineaGenealogica = 16;
     public $IDCliente;
     public $IDFamiliar;
+    public $Modo=1;
 
     public function render()
     {
