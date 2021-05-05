@@ -177,7 +177,7 @@
                         </div>
                         <!-- Contenido-->
                         <div class="flex w-full h-auto py-10 px-2 justify-center items-center bg-gray-200 rounded text-center text-gray-500">
-                            <a href="{{ asset('doc/vsc.jpg') }}" target="_blank">Prueba</a>
+                            <a href="{{ asset('doc/P104828027/Cliente/Acuerdo Meza Gil Jesús Enrique.pdf') }}" target="_blank">Prueba</a>
                             
                         </div>
                         <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
