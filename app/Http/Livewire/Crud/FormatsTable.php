@@ -2,11 +2,11 @@
 
 namespace App\Http\Livewire\Crud;
 
+use App\Models\Format;
 use Livewire\WithPagination;
-use App\Models\Country;
 use Livewire\Component;
 
-class CountriesTable extends Component
+class FormatsTable extends Component
 {
     use WithPagination;
 
@@ -20,13 +20,12 @@ class CountriesTable extends Component
     
     public function render()
     {
-        return view('livewire.crud.countries-table', [
-            'countries' => Country::where('pais','LIKE',"%$this->search%")
-                ->orWhere('store','LIKE',"%$this->search%")
-                ->orderBy('pais','ASC')
+        return view('livewire.crud.formats-table', [
+            'formats' => Format::where('formato','LIKE',"%$this->search%")
+                ->orWhere('ubicacion','LIKE',"%$this->search%")
+                ->orderBy('formato','ASC')
                 ->paginate($this->perPage)
         ]);
-        //return view('livewire.crud.countries-table');
     }
 
     public function clear(){

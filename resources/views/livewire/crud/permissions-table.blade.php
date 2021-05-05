@@ -46,7 +46,7 @@
                             </select>
                         </div>
                         @if ($search !== '')
-                        <button wire:click="clear" class="py-1 px-2 mt-1 ml-2 border border-transparent rounded-md border border-transparent rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"><i class="far fa-window-close"></i></button>
+                        <button wire:click="clear" class="py-1 px-2 mt-1 ml-2 border border-transparent rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"><i class="far fa-window-close"></i></button>
                         @endif
                     </div>
                     @if ($permissions->count())
@@ -60,12 +60,12 @@
                                 {{ __('Permission') }}
                             </th>
                             @can('crud.permissions.edit')
-                            <th scope="col" class="px-9 y-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider text-right">
+                            <th scope="col" class="px-9 y-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">
                                 {{ __('Edit') }}
                             </th>
                             @endcan
                             @can('crud.permissions.destroy')
-                            <th scope="col" class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider text-right">
+                            <th scope="col" class="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">
                                 {{ __('Remove') }}
                             </th>
                             @endcan

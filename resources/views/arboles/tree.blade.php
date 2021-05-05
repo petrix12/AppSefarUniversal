@@ -19,7 +19,31 @@
 @stop
 
 @section('css')
-    <link rel="stylesheet" href="/css/tree.css">
+    <link rel="stylesheet" href="{{ asset('css\tree.css') }}">
+    <link rel="stylesheet" href="{{ asset('css\cdn_tailwind.css') }}">
+    <link rel="stylesheet" href="{{ asset('css\sefar.css') }}">
+    <style>
+        dialog[open] {
+            animation: appear .15s cubic-bezier(0, 1.8, 1, 1.8);
+        }
+    
+        dialog::backdrop {
+            background: linear-gradient(45deg, rgba(121, 22, 15, 0.5), rgba(63, 61, 61, 0.5));
+            backdrop-filter: blur(3px);
+        }
+        
+        @keyframes appear {
+            from {
+                opacity: 0;
+                transform: translateX(-3rem);
+            }
+    
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        } 
+    </style>
 @stop
 
 @section('js')

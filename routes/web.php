@@ -7,7 +7,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\FamilyController;
 use App\Http\Controllers\FileController;
+use App\Http\Controllers\FormatController;
 use App\Http\Controllers\LadoController;
+use App\Http\Controllers\LibraryController;
+use App\Http\Controllers\OlivoController;
 use App\Http\Controllers\OnidexController;
 use App\Http\Controllers\ParentescoController;
 use App\Http\Controllers\PermissionController;
@@ -45,6 +48,10 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
             ->middleware('can:crud.t_files.index');
     Route::resource('files', FileController::class)->names('files')
             ->middleware('can:crud.files.index');
+    Route::resource('libraries', LibraryController::class)->names('libraries')
+            ->middleware('can:crud.libraries.index');
+    Route::resource('formats', FormatController::class)->names('formats')
+            ->middleware('can:crud.formats.index');
 });
 
 // Grupo de rutas para Consultas a base de datos
@@ -59,11 +66,13 @@ Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
     return view('dashboard');
 })->name('dashboard');
 
-// Grupo de rutas para vistas de árboles genealógicos pruebas
+// Grupo de rutas para vistas de árboles genealógicos
 Route::group(['middleware' => ['auth'], 'as' => 'arboles.'], function(){
     Route::get('albero/{IDCliente}', [AlberoController::class, 'arbelo'])->name('albero.index')
         ->middleware('can:genealogista');
     Route::get('tree/{IDCliente}', [TreeController::class, 'tree'])->name('tree.index')
+        ->middleware('can:genealogista');
+    Route::get('olivo/{IDCliente}', [OlivoController::class, 'olivo'])->name('olivo.index')
         ->middleware('can:genealogista');
 });
 

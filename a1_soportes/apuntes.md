@@ -18,8 +18,9 @@
 	+ Mailtrap: https://mailtrap.io
 	+ Laravel-permission: https://spatie.be/docs/laravel-permission/v4/introduction
 	+ Laravel-AdminLTE: https://github.com/jeroennoten/Laravel-AdminLTE
-	+ Sweetalert: https://realrashid.github.io/sweet-alert/
+	+ Sweetalert: https://realrashid.github.io/sweet-alert
 	+ Font Awesome: https://fontawesome.com
+	+ Visual Studio Code: https://code.visualstudio.com
 1. Descargar XAMPP e instalarlo.
 	##### **Nota**: También se podría instalar un servidor local con Laragon. URL: https://laragon.org
 1. Descargar **Composer** e instalarlo.
@@ -65,7 +66,7 @@
 ## Crear un dominio local
 1. Agregar el siguiente código al final del archivo **C:\Windows\System32\drivers\etc\hosts**
 	>
-		# Host virtual para el proyecto Sistema de Historia Clínica en Laravel (Lado del cliente) 
+		# Host virtual para el proyecto App Sefar en Laravel (Lado del cliente) 
 		127.0.0.1	sefar.test
 	##### **Nota**: Editar con el block de notas en modo de administrador.
 1. Agregar el siguiente código al final del archivo **C:\xampp\apache\conf\extra\httpd-vhosts.conf**
@@ -138,7 +139,6 @@
 		≡
 	##### **Nota**: Los campos: **user_id**, **social_id**, **picture** y **created** se incluyeron para mantener compatibilidad con la base de datos existente, se espera poder eliminar estos campos en versiones futuras.
 	##### El campo **email** se redujo a **175** carácteres por problemas de compatibilidad al importar tabla a la base de datos del hosting
-
 1. Ejecutar: 
 	>
 		$ php artisan migrate
@@ -1265,6 +1265,141 @@
 ## ___________________________________________________________________
 
 
+## CRUD Formatos (extensiones de archivos)
+1. Crear modelo Format junto con su migración y controlador y los métodos para el CRUD.
+	>
+		$ php artisan make:model Format -m -c -r
+1. Preparar migración para la tabla **formats** en **database\migrations\2021_04_12_190642_create_formats_table.php**
+	>
+		≡
+		public function up()
+		{
+			Schema::create('formats', function (Blueprint $table) {
+				$table->id();
+				$table->string('formato');
+				$table->string('ubicacion');
+				$table->timestamps();
+			});
+		}
+		≡
+1. Establecer permisos en los seeders para el CRUD Formatos en **database\seeders\RoleSeeder.php**
+	>   
+		≡ 
+		public function run()
+		{
+			≡        
+			Permission::create(['name' => 'crud.formats.index'])->syncRoles($rolAdministrador);
+			Permission::create(['name' => 'crud.formats.create'])->syncRoles($rolAdministrador);
+			Permission::create(['name' => 'crud.formats.edit'])->syncRoles($rolAdministrador);
+			Permission::create(['name' => 'crud.formats.destroy'])->syncRoles($rolAdministrador);
+			≡
+		}
+		≡
+1. Reestablecer base de datos: 
+	>
+		$ php artisan migrate:fresh --seed
+1. Configurar modelo **Format** en **app\Models\Format.php**
+	>
+		≡
+		class Format extends Model
+		{
+			use HasFactory;
+
+			protected $fillable = [
+				'formato',
+				'ubicacion',
+			];
+		}
+1. Agregar ruta de formatos al grupo de rutas CRUD:
+	>
+		Route::resource('formats', FormatController::class)->names('formats')
+				->middleware('can:crud.formats.index');
+	##### Nota: añadir a la cabecera:
+	>
+		use App\Http\Controllers\FormatController;
+1. Crear componente Livewire para Tabla Formats: 
+	>
+		$ php artisan make:livewire crud/formats-table
+1. Programar controlador para la tabla Formats: **app\Http\Livewire\Crud\FormatsTable.php**
+	>
+		≡
+		≡
+1. Diseñar vista para la tabla Formats: **resources\views\livewire\crud\formats-table.blade.php**
+	>
+		≡
+		≡
+1. Programar controlador Formats: **app\Http\Controllers\FormatController.php**
+	>
+		≡
+		≡
+1. Diseñar las vistas para el CRUD Formatos:
+	- resources\views\crud\formats\index.blade.php
+		>
+			≡
+			≡
+	- resources\views\crud\formats\create.blade.php
+		>
+			≡
+			≡
+	- resources\views\crud\formats\edit.blade.php
+		>
+			≡
+			≡
+1. Editar **config\adminlte.php** para añadir los menú para ingresar al CRUD Formatos.
+	>
+		≡
+		≡
+
+
+	### Commit --:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "CRUD Formatos"
+
+## ___________________________________________________________________
+
+
+## Seeders para cargar los formatos iniciales
+1. Crear seeder para formats: 
+	>
+		$ php artisan make:seeder FormatSeeder
+1. Añadir a cabecera de **database\seeders\FormatSeeder.php**
+	>
+		use App\Models\Format;
+1. Modificar el método **run** de **database\seeders\FormatSeeder.php**
+	>
+		≡
+		≡
+1. Añadir al método run de **database\seeders\DatabaseSeeder.php**
+	>
+		public function run()
+		{
+			≡
+			$this->call(FormatSeeder::class);
+		}
+1. Crear directorio **storage\app\public\imagenes\formatos** y guardar la imagenes de los formatos iniciales en formato png y en baja resolución.
+1. Ejecutar: 
+	>
+		$ php artisan migrate:fresh --seed
+	##### **Nota**: Para correr los seeder sin resetear la base de datos:
+	+ Ejecutar: 
+	>
+		$ php artisan db:seed
+
+	### Commit --:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "Seeder Formatos"
+
+## ___________________________________________________________________
+
+
 ## CRUD Parentescos
 1. Crear modelo Parentesco junto con su migración y controlador y los métodos para el CRUD.
 	>
@@ -2068,7 +2203,165 @@
 		>
 			$ git commit -m "CRUD Almacenamiento de documentos"
 
+
+
+
+
 ## ___________________________________________________________________
+
+
+## CRUD Biblioteca
+1. Crear modelo Library junto con su migración y controlador y los métodos para el CRUD.
+	>
+		$ php artisan make:model Library -m -c -r
+1. Preparar migración para la tabla **libraries** en **database\migrations\2021_04_11_155101_create_libraries_table.php**
+	>
+		≡
+		public function up()
+		{
+			Schema::create('libraries', function (Blueprint $table) {
+				$table->id();
+				$table->string('documento')->unique();              // Nombre del documento
+				$table->string('formato',12)->nullable();           // Formato del documento
+				$table->string('tipo',45)->nullable();              // Tipo del documento
+				$table->string('fuente')->nullable();               // Fuente del documento
+				$table->string('origen')->nullable();               // Origen del documento
+				$table->string('ubicacion')->nullable();            // Ubicación actual del documento
+				$table->string('ubicacion_ant')->nullable();        // Ubicación anterior del documento
+				$table->text('busqueda')->nullable();               // Palabras que faciliten la búsqueda del documento
+				$table->text('notas')->nullable();                  // Notas para el documento
+				$table->string('enlace')->nullable();               // Enlace o url del documento
+				$table->string('anho_ini',11)->nullable();          // Año inicial al que hacer referencia el documento
+				$table->string('anho_fin',11)->nullable();          // Año final al que hacer referencia el documento
+				$table->string('pais')->nullable();                 // País al que hacer referencia el documento
+				$table->string('ciudad',150)->nullable();           // Ciudad al que hacer referencia el documento
+				$table->dateTime('FIncorporacion')->nullable();     // Fecha de incorporación
+				$table->string('responsabilidad',150)->nullable();  // Mención de responsabilidad
+				$table->string('edicion',150)->nullable();          // Edición del documento
+				$table->string('editorial',150)->nullable();        // Editorial, ciudad
+				$table->integer('anho_publicacion')->nullable();    // Año de publicación
+				$table->string('no_vol',50)->nullable();            // Número y volumen
+				$table->string('coleccion',100)->nullable();        // Colección
+				$table->string('colacion',50)->nullable();          // Colación
+				$table->string('isbn',50)->nullable();              // ISBN o ISSN
+				$table->string('serie',50)->nullable();             // Serie
+				$table->string('no_clasificacion',50)->nullable();  // Número de clasificación
+				$table->string('titulo_revista')->nullable();       // Título de la revista
+				$table->text('resumen')->nullable();                // Resumen del documento
+				$table->string('caratula_url')->nullable();         // Ubicación de la caratula
+            	$table->string('usuario')->nullable();              // Nombre o email del usuario que creo el documento
+				$table->timestamps();
+			});
+		}
+		≡
+1. Establecer permisos en los seeders para el CRUD Biblioteca en **database\seeders\RoleSeeder.php**
+	>   
+		≡ 
+		public function run()
+		{
+			≡        
+			Permission::create(['name' => 'crud.libraries.index'])->syncRoles($rolAdministrador,$rolGenealogista,$rolDocumentalista);
+			Permission::create(['name' => 'crud.libraries.create'])->syncRoles($rolAdministrador,$rolGenealogista,$rolDocumentalista);
+			Permission::create(['name' => 'crud.libraries.edit'])->syncRoles($rolAdministrador,$rolGenealogista,$rolDocumentalista);
+			Permission::create(['name' => 'crud.libraries.destroy'])->syncRoles($rolAdministrador);
+			≡
+		}
+		≡
+1. Reestablecer base de datos: 
+	>
+		$ php artisan migrate:fresh --seed
+1. Configurar modelo **Library** en **app\Models\Library.php**
+	>
+		≡
+		class Library extends Model
+		{
+			use HasFactory;
+
+			protected $fillable = [
+				'documento',
+				'formato',
+				'tipo',
+				'fuente',
+				'origen',
+				'ubicacion',
+				'ubicacion_ant',
+				'busqueda',
+				'notas',
+				'enlace',
+				'anho_ini', 
+				'anho_fin',
+				'pais',
+				'ciudad',
+				'FIncorporacion',
+				'responsabilidad',
+				'edicion',
+				'editorial',
+				'anho_publicacion',
+				'no_vol',
+				'coleccion',
+				'colacion',
+				'isbn',
+				'serie',
+				'no_clasificacion',
+				'titulo_revista',
+				'resumen',
+				'caratula_url',
+        		'usuario'
+			];
+		}
+1. Agregar ruta de paises al grupo de rutas CRUD:
+	>
+		Route::resource('libraries', LibraryController::class)->names('libraries')
+				->middleware('can:crud.libraries.index');
+	##### Nota: añadir a la cabecera:
+	>
+		use App\Http\Controllers\LibraryController;
+1. Crear componente Livewire para Tabla Libraries: 
+	>
+		$ php artisan make:livewire crud/libraries-table
+1. Programar controlador para la tabla Libraries: **app\Http\Livewire\Crud\LibrariesTable.php**
+	>
+		≡
+		≡
+1. Diseñar vista para la tabla Libraries: **resources\views\livewire\crud\libraries-table.blade.php**
+	>
+		≡
+		≡
+1. Programar controlador Library: **app\Http\Controllers\LibraryController.php**
+	>
+		≡
+		≡
+1. Diseñar las vistas para el CRUD Paises:
+	- resources\views\crud\libraries\index.blade.php
+		>
+			≡
+			≡
+	- resources\views\crud\libraries\create.blade.php
+		>
+			≡
+			≡
+	- resources\views\crud\libraries\edit.blade.php
+		>
+			≡
+			≡
+
+
+1. Editar **config\adminlte.php** para añadir los menú para ingresar al CRUD Biblioteca.
+	>
+		≡
+		≡
+
+
+	### Commit --:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "CRUD Biblioteca"
+
+
+******************************************************
 
 
 ## Vista árbol genealógico: **Albero**
@@ -2085,7 +2378,7 @@
 		≡
 1. Crear grupo de rutas para las vistas de árboles y agregar la ruta para la vista Albero.
 	>
-		// Grupo de rutas para vistas de árboles genealógicos pruebas
+		// Grupo de rutas para vistas de árboles genealógicos
 		Route::group(['middleware' => ['auth'], 'as' => 'arboles.'], function(){
 			Route::get('albero', [AlberoController::class, 'arbelo'])->name('albero.index')
 				->middleware('can:genealogista');
@@ -2134,7 +2427,7 @@
 		≡
 1. Agregar la ruta para la vista Tree en el grupo de rutas de árboles.
 	>
-		// Grupo de rutas para vistas de árboles genealógicos pruebas
+		// Grupo de rutas para vistas de árboles genealógicos
 		Route::group(['middleware' => ['auth'], 'as' => 'arboles.'], function(){
 			≡
 			Route::get('tree/{IDCliente}', [TreeController::class, 'tree'])->name('tree.index')
@@ -2154,7 +2447,7 @@
 	>
 		≡
 		≡
-1. Diseñar vista livewire para la tabla Trees: **resources\views\livewire\crud\agclientes-table.blade.php**
+1. Diseñar vista livewire para la tabla Trees: **resources\views\livewire\vistas\arbol\tree-vista.blade.php**
 	>
 		≡
 		≡	
@@ -2168,6 +2461,58 @@
 			$ git commit -m "Vista Tree"
 
 
+## ___________________________________________________________________
+
+
+## Vista árbol genealógico: **Vertical**
+1. Crear controlador Olivo:
+	>
+		$ php artisan make:controller OlivoController
+1. Programar controlador Tree en **app\Http\Controllers\OlivoController.php**
+	>
+		≡
+		≡
+1. Crear la vista Olivo **resources\views\arboles\olivo.blade.php**
+	>
+		≡
+		≡
+1. Agregar la ruta para la vista Olivo en el grupo de rutas de árboles.
+	>
+		// Grupo de rutas para vistas de árboles genealógicos
+		Route::group(['middleware' => ['auth'], 'as' => 'arboles.'], function(){
+			≡
+			Route::get('olivo/{IDCliente}', [OlivoController::class, 'olivo'])->name('olivo.index')
+				->middleware('can:genealogista');
+		});
+	##### Nota: añadir a la cabecera:
+	>
+		use App\Http\Controllers\OlivoController;
+1. Crear componente Livewire para la vista Olivo: 
+	>
+		$ php artisan make:livewire vistas/arbol/olivo-vista
+1. Programar controlador para la vista Olivo: **app\Http\Livewire\Vistas\Arbol\OlivoVista.php**
+	>
+		≡
+		≡
+1. Crear archivo de estilo para diagramar el árbol en **public\css\olivo.css**
+	>
+		≡
+		≡
+1. Diseñar vista livewire para la tabla Olivos: **resources\views\livewire\vistas\arbol\olivo-vista.blade.php**
+	>
+		≡
+		≡	
+
+	### Commit --:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "Vista Olivo"
+
+
+*********************************************************
 	
 ## CRUD Agclientes
 1. Crear modelo Agcliente junto con su migración y controlador y los métodos para el CRUD.
@@ -2299,7 +2644,7 @@
 		>
 			$ git commit -m "CRUD Agclientes"
 
-# ___________________________________________________________________
+## ___________________________________________________________________
 
 
 ## Seeders para prueba de agclientes
@@ -2338,7 +2683,7 @@
 			$ git commit -m "Seeder Paises"
 
 
-# ___________________________________________________________________
+## ___________________________________________________________________
 
 
 ## Consultar BD Onidex
@@ -2461,7 +2806,7 @@
 		>
 			$ git commit -m "App Consulta BD Onidex"
 
-# ___________________________________________________________________
+## ___________________________________________________________________
 
 
 
@@ -2763,4 +3108,31 @@
 + Verde: R:22 G:43 B:27
 + Amarillo: R:247 G:176 B:52
 + Gris: R:63 G:61 B:61
+
+## Crear enlace simbólico en Windows 10
++ Ejecutar **C:\Windows\System32\cmd.exe como administrador**
++ $ Mklink/D C:\xampp\htdocs\sefar\public\doc C:\xampp\htdocs\universalsefar.com\documentos 
+	###### Mklink /D "ruta donde queremos crear el enlace" "ruta de origen de archivos"
+
+
+## Crear enlace simbólico en el hosting
++ En el cPanel ir a **Trabajos de cron**.
++ Ir a **Añadir nuevo trabajo de cron** y luego **Configuración común**, y seleccionar **Una vez por mínuto(* * * * *)**.
++ En **Comando:** escribir:
+	* ln -s /home/pxvim6av41qx/public_html/app.universalsefar.com/public/doc /home/pxvim6av41qx/public_html/documentos
++ Presionar **Añadir nuevo trabajo de cron** y esperar a que se ejecute la tarea.
++ Borrar tarea una vez creado el enlace en **Trabajos de cron actuales**.
+
+
+
+
+
+ 
+ (/home/pxvim6av41qx
+public_html/app.universalsefar.com/public
+
+public_html/documentos
+
+ln -s /path/to/laravel/storage/app/public /path/to/public/storage
+
 

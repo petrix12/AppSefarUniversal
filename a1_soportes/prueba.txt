@@ -1,7 +1,29 @@
-accept="application/pdf, .doc, .docx, .odf"
-accept="audio/*"
-accept="video/*"
-accept="image/png"
-accept="image/*"
-
+				'',
+				'',
+				'',
+				'',
+				'',
+				'',
+				'',
+				'',
+				'',
+				'',
+				'', 
+				'',
+				'pais',
+				'ciudad',
+				'FIncorporacion',
+				'responsabilidad',
+				'edicion',
+				'editorial',
+				'anho_publicacion',
+				'no_vol',
+				'coleccion',
+				'colacion',
+				'isbn',
+				'serie',
+				'no_clasificacion',
+				'titulo_revista',
+				'resumen',
+				'caratula_url'
 

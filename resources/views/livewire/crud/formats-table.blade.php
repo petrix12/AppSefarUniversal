@@ -7,13 +7,13 @@
                 <div class="bg-gray-50">
                     <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:py-6 lg:px-8 lg:flex lg:items-center lg:justify-between">
                         <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-                            <span class="ctvSefar block text-indigo-600">{{ __('Countries') }}</span>
+                            <span class="ctvSefar block text-indigo-600">{{ __('Formats') }}</span>
                         </h2>
-                        @can('crud.countries.create')
+                        @can('crud.formats.create')
                         <div class="mt-8 flex lg:mt-0 lg:flex-shrink-0">
                             <div class="inline-flex rounded-md shadow">
-                                <a href="{{ route('crud.countries.create') }}" class="cfrSefar inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                                    {{ __('Add country') }}
+                                <a href="{{ route('crud.formats.create') }}" class="cfrSefar inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                                    {{ __('Add format') }}
                                 </a>
                             </div>
                         </div>
@@ -50,28 +50,28 @@
                         <button wire:click="clear" class="py-1 px-2 mt-1 ml-2 border border-transparent rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"><i class="far fa-window-close"></i></button>
                         @endif
                     </div>
-                    @if ($countries->count())
+                    @if ($formats->count())
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                         <tr>
                             <th scope="col" class="px-9 py-2 text-left text-md font-medium text-gray-500 uppercase tracking-wider">
-                                <i class="fas fa-globe-americas"></i>
+                                <i class="fas fa-print"></i>
                             </th>
                             <th scope="col" class="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 ID
                             </th>
                             <th scope="col" class="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('Country') }}
+                                {{ __('Format') }}
                             </th>
                             <th scope="col" class="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 {{ __('Storage') }}
                             </th>
-                            @can('crud.roles.edit')
+                            @can('crud.formats.edit')
                             <th scope="col" class="px-9 y-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">
                                 {{ __('Edit') }}
                             </th>
                             @endcan
-                            @can('crud.roles.destroy')
+                            @can('crud.formats.destroy')
                             <th scope="col" class="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">
                                 {{ __('Remove') }}
                             </th>
@@ -79,35 +79,34 @@
                         </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach ($countries as $country)
+                        @foreach ($formats as $format)
                         <tr>   
                             <td class="px-6 py-2 whitespace-nowrap">
-                                <img src="{{ config('app.url').'/storage/'.$country->store }}" alt="{{ $country->id }}" width="33" height="25" >
+                                <img src="{{ config('app.url').'/storage/'.$format->ubicacion }}" alt="{{ $format->formato }}" width="33" height="25" >
                             </td>   
                             <td class="px-6 py-2 whitespace-nowrap">
-                                {{ $country->id }}
-                                {{-- {{ config('app.url').'/storage/'.$country->store }} --}}
+                                {{ $format->id }}
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap">
-                                {{ $country->pais }}
+                                {{ $format->formato }}
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap">
-                                {{ $country->store }}
+                                {{ $format->ubicacion }}
                             </td>
-                            @can('crud.countries.edit')
+                            @can('crud.formats.edit')
                             <td class="py-2 whitespace-nowrap text-right font-medium">
-                                <a href="{{ route('crud.countries.edit', $country) }}" class="mx-12 text-grey-600 hover:text-indigo-900" title="Editar"><i class="fas fa-edit"></i></a>
+                                <a href="{{ route('crud.formats.edit', $format) }}" class="mx-12 text-grey-600 hover:text-indigo-900" title="Editar"><i class="fas fa-edit"></i></a>
                             </td>
                             @endcan
-                            @can('crud.countries.destroy')
+                            @can('crud.formats.destroy')
                             <td class="px-3 py-2 whitespace-nowrap text-right font-medium">
-                                <form action="{{ route('crud.countries.destroy', $country) }}" method="POST">
+                                <form action="{{ route('crud.formats.destroy', $format) }}" method="POST">
                                     @csrf
                                     @method('delete')
                                     <button 
                                         type="submit" 
                                         class="text-red-600 hover:text-red-900" 
-                                        onclick="return confirm('¿Está seguro que desea eliminar el país?')"><i class="fas fa-trash"></i>
+                                        onclick="return confirm('¿Está seguro que desea eliminar el formato?')"><i class="fas fa-trash"></i>
                                     </button>
                                 </form>
                             </td>
@@ -117,7 +116,7 @@
                         </tbody>
                     </table>
                     <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-                    {{ $countries->links() }}
+                    {{ $formats->links() }}
                     </div>
                     @else
                     <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6 text-gray-500">

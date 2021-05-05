@@ -368,6 +368,23 @@ return [
             ],
         ],
 
+        /* *** MENÚ PARA DOCUMENTALISTAS *** */
+        [
+            'text'        => 'Control de documentos',
+            'icon'        => 'fas fa-file-import',
+            'icon_color'  => 'white',
+            'can'  => 'documentalista',
+            'submenu' => [
+                [
+                    'text'          => 'Biblioteca',
+                    'icon'          => 'fas fa-book-reader',
+                    'icon_color'    => 'white',
+                    'route'         => 'crud.libraries.index',
+                    'can'           => 'crud.libraries.index',
+                ],
+            ],
+        ],
+
         /* *** TABLAS GENERALES *** */
         [
             'text'        => 'Tablas Generales',
@@ -409,6 +426,13 @@ return [
                     'icon_color'    => 'white',
                     'route'         => 'crud.t_files.index',
                     'can'           => 'genealogista',
+                ],
+                [
+                    'text'          => 'Tipos de formatos',
+                    'icon'          => 'fas fa-print',
+                    'icon_color'    => 'white',
+                    'route'         => 'crud.formats.index',
+                    'can'           => 'administrador',
                 ],
             ],
         ],

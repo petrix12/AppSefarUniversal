@@ -311,3 +311,25 @@ function AddPersona($IDCliente, $IDPersona){
     ]);
     return $agcliente;
 }
+
+// Contenido de la caja de persona para la cajas de la vista Olivo
+function GetBoxPerson($agclientes, $IDPersona): string{
+    $contenido = '
+        <p class="text-xs underline" title="'.GetDatosMatrimonio($agclientes,$IDPersona).'">'.GetPersona($IDPersona).'</p>
+        <p class="text-xs font-bold">'.GetNombres($agclientes, $IDPersona).'</p>
+        <p class="text-xs font-bold">'.GetApellidos($agclientes, $IDPersona).'</p>
+    ';
+    /* 
+    <p class="text-xs font-bold">{{ GetNombres($agclientes,1) }}</p>
+    <p class="text-xs font-bold">{{ GetApellidos($agclientes,1) }}</p>
+    @php
+        $mostraLN = GetLugarNac($agclientes,1);
+    @endphp
+    <p class="text-xs">{{ $mostraLN = GetLugarNac($agclientes,1) }}</p>
+    @if ($mostraLN)
+        <p class="text-xs">Lugar de nacimiento</p>    
+    @endif
+    */
+    //return $contenido;
+    return GetPersona($IDPersona);
+}
