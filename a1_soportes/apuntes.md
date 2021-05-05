@@ -3119,9 +3119,14 @@
 + En el cPanel ir a **Trabajos de cron**.
 + Ir a **Añadir nuevo trabajo de cron** y luego **Configuración común**, y seleccionar **Una vez por mínuto(* * * * *)**.
 + En **Comando:** escribir:
-	* ln -s /home/pxvim6av41qx/public_html/app.universalsefar.com/public/doc /home/pxvim6av41qx/public_html/documentos
+	* ln -s /home/pxvim6av41qx/public_html/documentos /home/pxvim6av41qx/public_html/app.universalsefar.com/public/doc
 + Presionar **Añadir nuevo trabajo de cron** y esperar a que se ejecute la tarea.
 + Borrar tarea una vez creado el enlace en **Trabajos de cron actuales**.
+
+
+
+
+cp -R /home/pxvim6av41qx/public_html/documentos /home/pxvim6av41qx/public_html/app.universalsefar.com/storage/app/public/documentos
 
 
 
