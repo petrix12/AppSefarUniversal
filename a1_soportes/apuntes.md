@@ -2413,6 +2413,23 @@
 ## ___________________________________________________________________
 
 
+## Creación de enlaces simbólicos (symbolic link)
+1. Crear enlace simbólico en Windows 10
+	+ Ejecutar **C:\Windows\System32\cmd.exe como administrador**
+	+ $ Mklink/D C:\xampp\htdocs\sefar\public\doc C:\xampp\htdocs\universalsefar.com\documentos 
+		###### Mklink /D "ruta donde queremos crear el enlace" "ruta de origen de archivos"
+1. Crear enlace simbólico en el hosting
+	+ En el cPanel ir a **Trabajos de cron**.
+	+ Ir a **Añadir nuevo trabajo de cron** y luego **Configuración común**, y seleccionar **Una vez por mínuto(* * * * *)**.
+	+ En **Comando:** escribir:
+		* ln -s /home/pxvim6av41qx/public_html/documentos /home/pxvim6av41qx/public_html/app.universalsefar.com/public/doc
+	+ Presionar **Añadir nuevo trabajo de cron** y esperar a que se ejecute la tarea.
+	+ Borrar tarea una vez creado el enlace en **Trabajos de cron actuales**.
+
+
+## ___________________________________________________________________
+
+
 ## Vista árbol genealógico: **Horizontal**
 1. Crear controlador Tree:
 	>
@@ -3109,35 +3126,9 @@
 + Amarillo: R:247 G:176 B:52
 + Gris: R:63 G:61 B:61
 
-## Crear enlace simbólico en Windows 10
-+ Ejecutar **C:\Windows\System32\cmd.exe como administrador**
-+ $ Mklink/D C:\xampp\htdocs\sefar\public\doc C:\xampp\htdocs\universalsefar.com\documentos 
-	###### Mklink /D "ruta donde queremos crear el enlace" "ruta de origen de archivos"
-
-
-## Crear enlace simbólico en el hosting
-+ En el cPanel ir a **Trabajos de cron**.
-+ Ir a **Añadir nuevo trabajo de cron** y luego **Configuración común**, y seleccionar **Una vez por mínuto(* * * * *)**.
-+ En **Comando:** escribir:
-	* ln -s /home/pxvim6av41qx/public_html/documentos /home/pxvim6av41qx/public_html/app.universalsefar.com/public/doc
-+ Presionar **Añadir nuevo trabajo de cron** y esperar a que se ejecute la tarea.
-+ Borrar tarea una vez creado el enlace en **Trabajos de cron actuales**.
 
 
 
 
-cp -R /home/pxvim6av41qx/public_html/documentos /home/pxvim6av41qx/public_html/app.universalsefar.com/storage/app/public/documentos
-
-
-
-
-
- 
- (/home/pxvim6av41qx
-public_html/app.universalsefar.com/public
-
-public_html/documentos
-
-ln -s /path/to/laravel/storage/app/public /path/to/public/storage
 
 

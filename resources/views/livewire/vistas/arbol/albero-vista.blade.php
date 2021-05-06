@@ -82,14 +82,11 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDTatarabuelo) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDTatarabuelo) }}">{{ GetVida($agclientes,$IDTatarabuelo) }}</p>
-
-            {{--  --}}
-            <span class="editar">
+                    
+            {{-- <span class="editar">
                 <i class="fas fa-user-edit"></i>
-            </span>
-            <span class="documentos">
-                <i class="fas fa-cloud-upload-alt"></i>
-            </span>
+            </span> --}}
+            {{ mostrarDocumentos($agclientes,$IDTatarabuelo,'albero') }}
         </div>
         
         {{-- TATARABUELA --}}
@@ -123,6 +120,7 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDTatarabuela) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDTatarabuela) }}">{{ GetVida($agclientes,$IDTatarabuela) }}</p>
+            {{ mostrarDocumentos($agclientes,$IDTatarabuela,'albero') }}
         </div>
 
         {{-- matrimonio --}}
@@ -161,6 +159,7 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDBisabuelo) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDBisabuelo) }}">{{ GetVida($agclientes,$IDBisabuelo) }}</p>
+            {{ mostrarDocumentos($agclientes,$IDBisabuelo,'albero') }}
         </div>
         
         {{-- BISABUELA --}}
@@ -188,6 +187,7 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDBisabuela) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDBisabuela) }}">{{ GetVida($agclientes,$IDBisabuela) }}</p>
+            {{ mostrarDocumentos($agclientes,$IDBisabuela,'albero') }}
         </div>
 
         {{-- matrimonio --}}
@@ -226,6 +226,7 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDAbuelo) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDAbuelo) }}">{{ GetVida($agclientes,$IDAbuelo) }}</p>
+            {{ mostrarDocumentos($agclientes,$IDAbuelo,'albero') }}
         </div>
         
         {{-- ABUELA --}}
@@ -253,6 +254,7 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDAbuela) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDAbuela) }}">{{ GetVida($agclientes,$IDAbuela) }}</p>
+            {{ mostrarDocumentos($agclientes,$IDAbuela,'albero') }}
         </div>
 
         {{-- matrimonio --}}
@@ -291,6 +293,7 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDPadre) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDPadre) }}">{{ GetVida($agclientes,$IDPadre) }}</p>
+            {{ mostrarDocumentos($agclientes,$IDPadre,'albero') }}
         </div>
         
         {{-- MADRE --}}
@@ -318,6 +321,7 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDMadre) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDMadre) }}">{{ GetVida($agclientes,$IDMadre) }}</p>
+            {{ mostrarDocumentos($agclientes,$IDMadre,'albero') }}
         </div>
 
         {{-- matrimonio --}}
@@ -356,6 +360,7 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDSolicitante) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDSolicitante) }}">{{ GetVida($agclientes,$IDSolicitante) }}</p>
+            {{ mostrarDocumentos($agclientes,$IDSolicitante,'albero') }}
         </div>
         
         {{-- CÓNYUGUE --}}
@@ -382,6 +387,7 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDConyugue) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDConyugue) }}">{{ GetVida($agclientes,$IDConyugue) }}</p>
+            {{ mostrarDocumentos($agclientes,$IDConyugue,'albero') }}
         </div>
 
         {{-- matrimonio --}}
