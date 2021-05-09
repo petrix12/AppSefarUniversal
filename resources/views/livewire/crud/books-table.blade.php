@@ -5,13 +5,13 @@
                 <div class="bg-gray-50">
                     <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:py-6 lg:px-8 lg:flex lg:items-center lg:justify-between">
                         <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-                            <span class="ctvSefar block text-indigo-600">{{ __('Documents control') }}</span>
+                            <span class="ctvSefar block text-indigo-600">{{ __('Books') }}</span>
                         </h2>
-                        @can('crud.agclientes.create')
+                        @can('crud.books.create')
                         <div class="mt-8 flex lg:mt-0 lg:flex-shrink-0">
                             <div class="inline-flex rounded-md shadow">
-                                <a href="{{ route('crud.libraries.create') }}" class="cfrSefar inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                                    {{ __('Add document') }}
+                                <a href="{{ route('crud.books.create') }}" class="cfrSefar inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                                    {{ __('Add book') }}
                                 </a>
                             </div>
                         </div>
@@ -46,31 +46,34 @@
                         <button wire:click="clear" class="py-1 px-2 mt-1 ml-2 border border-transparent rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"><i class="far fa-window-close"></i></button>
                         @endif
                     </div>
-                    @if ($libraries->count())
+                    @if ($books->count())
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                         <tr>
-                            <th scope="col" class="px-2 py-2 text-center text-gray-500 uppercase tracking-wider">
-                                <i class="fas fa-copy" title="Caratula o portada del documento"></i>
+                            <th scope="col" class="px-2 py-2 text-left text-xs text-gray-500 uppercase tracking-wider">
+                                ID
+                            </th>
+                            <th scope="col" class="px-2 py-2 text-left text-xs text-gray-500 uppercase tracking-wider">
+                                {{ __('Title') }}
                             </th>
                             <th scope="col" class="px-1 py-2 text-left text-xs text-gray-500 uppercase tracking-wider">
-                                {{ __('Document') }}
+                                {{ __('Author') }}
                             </th>
-                            <th scope="col" class="py-2 text-center text-gray-500">
-                                <i class="fas fa-align-justify" title="Formato del documento"></i>
+                            <th scope="col" class="px-1 py-2 text-center text-xs text-gray-500 uppercase tracking-wider" title="Año de pubicación">
+                                {{ __('Year') }}
                             </th>
                             <th scope="col" class="px-1 py-2 text-center text-xs text-gray-500 uppercase tracking-wider">
-                                {{ __('Type') }}
+                                {{ __('Edition') }}
                             </th>
                             <th scope="col" class="px-1 py-2 text-center text-gray-500 uppercase tracking-wider">
                                 <i class="fas fa-eye"></i>
                             </th>
-                            @can('crud.libraries.edit')
+                            @can('crud.books.edit')
                             <th scope="col" class="py-2 text-center text-xs text-gray-500 uppercase tracking-wider">
                                 {{ __('Edit') }}
                             </th>
                             @endcan
-                            @can('crud.libraries.destroy')
+                            @can('crud.books.destroy')
                             <th scope="col" class="px-4 py-2 text-center text-xs text-gray-500 uppercase tracking-wider">
                                 {{ __('Remove') }}
                             </th>
@@ -78,43 +81,47 @@
                         </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach ($libraries as $library)
-                        <tr>   
-                            <td class="px-2 py-2">
-                                <div class="flex-shrink-0 h-10 w-10">
-                                    @if($library->caratula_url)
-                                        <img class="h-9 w-9 rounded-full" src="{{ $library->caratula_url }}" alt="">
-                                    @else
-                                        <img class="h-9 w-9 rounded-full" src="{{ asset('vendor\adminlte\dist\img\LogoSefar_sm.png') }}" alt="">
-                                    @endif
+                        @foreach ($books as $book)
+                        <tr>
+                            <td class="px-2 py-2 text-xs text-left text-gray-400">
+                                <div class="w-4">
+                                    {{ $book->id }}
+                                </div>
+                            </td>
+                            <td class="px-2 py-2 text-xs text-left">
+                                <div class="w-56">
+                                    {{ $book->titulo }}
                                 </div>
                             </td>   
                             <td class="px-1 py-2 text-xs">
-                                <div class="w-64">
-                                    {{ $library->documento }}
+                                <div class="w-48">
+                                    {{ $book->autor }}
                                 </div>
                             </td>
-                            <td class="py-2 text-center">
-                                <img class="h-9 w-8" src="{{ config('app.url').'/storage/imagenes/formatos/'.$library->formato.'.png' }}" alt="{{ $library->formato }}">
+                            <td class="py-2 text-center text-xs">
+                                <div class="w-12">
+                                    {{ $book->fecha ?  date("Y",strtotime($book->fecha)) : '-' }}
+                                </div>
                             </td>
                             <td class="px-1 py-2 text-xs text-center">
-                                {{ $library->tipo }}
-                            </td>
+                                <div class="w-32">
+                                    {{ $book->edicion }}
+                                </div></td></td>
                             <td class="px-1 py-2 text-center">
-                                @if ($library->enlace)
-                                    <a href="{{ $library->enlace }}" target="_blank" title="Ver documento"><i class="fab fa-google-drive"></i></a>
+                                @if ($book->enlace)
+                                    <a href="{{ $book->enlace }}" target="_blank" title="Ver documento"><i class="fab fa-google-drive"></i></a>
                                 @else
                                     <i class="fab fa-google-drive text-gray-500" title="No tiene enlace asignado"></i>
                                 @endif
                             </td>
-                            @can('crud.libraries.edit')
+                            @can('crud.books.edit')
                             <td class="py-2 text-center">
-                                <a href="{{ route('crud.libraries.edit', $library ) }}" class="mx-12 text-grey-600 hover:text-indigo-900" title="Editar"><i class="fas fa-edit"></i></a>
+                                <a href="{{ route('crud.books.edit', $book ) }}" class="mx-12 text-grey-600 hover:text-indigo-900" title="Editar"><i class="fas fa-edit"></i></a>
                             </td>
                             @endcan
-                            @can('crud.libraries.destroy')
+                            @can('crud.books.destroy')
                             <td class="px-4 py-2 text-center">
-                                <form action="{{ route('crud.libraries.destroy', $library) }}" method="POST">
+                                <form action="{{ route('crud.books.destroy', $book) }}" method="POST">
                                     @csrf
                                     @method('delete')
                                     <button 
@@ -131,7 +138,7 @@
                     </table>
                     <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
                         <div class="container">
-                            {{ $libraries->links() }}
+                            {{ $books->links() }}
                         </div>
                     </div>
                     @else

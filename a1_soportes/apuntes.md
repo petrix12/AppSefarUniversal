@@ -2210,6 +2210,169 @@
 ## ___________________________________________________________________
 
 
+## CRUD Libros
+1. Crear modelo Book junto con su migración y controlador y los métodos para el CRUD.
+	>
+		$ php artisan make:model Book -m -c -r
+1. Preparar migración para la tabla **books** en **database\migrations\2021_05_08_140616_create_books_table.php**
+	>
+		≡
+		public function up()
+		{
+			Schema::create('books', function (Blueprint $table) {
+				$table->id();
+				$table->string('id_bd',4)->nullable();      // id correspondiente en la tabla bd
+				$table->string('titulo');
+				$table->string('subtitulo')->nullable();
+				$table->string('autor')->nullable();
+				$table->string('editorial')->nullable();    // Ciudad / Editorial
+				$table->string('coleccion')->nullable();    // Colección, Serie, Número
+				$table->date('fecha')->nullable();      	// Fecha de edición
+				$table->string('edicion')->nullable();      // Número de edición
+				$table->string('paginacion')->nullable();
+				$table->string('isbn')->nullable();
+				$table->text('notas')->nullable();
+				$table->string('enlace');                   // Enlace o url del documento
+				$table->text('claves')->nullable();         // Palabras claves
+				$table->string('catalogador')->nullable();  // Nombre o email del usuario que creo el documento
+				$table->timestamps();
+			});
+		}
+		≡
+1. Establecer permisos en los seeders para el CRUD Books en **database\seeders\RoleSeeder.php**
+	>   
+		≡ 
+		public function run()
+		{
+			≡        
+			Permission::create(['name' => 'crud.books.index'])->syncRoles($rolAdministrador,$rolGenealogista,$rolDocumentalista);
+			Permission::create(['name' => 'crud.books.create'])->syncRoles($rolAdministrador,$rolGenealogista,$rolDocumentalista);
+			Permission::create(['name' => 'crud.books.edit'])->syncRoles($rolAdministrador,$rolGenealogista,$rolDocumentalista);
+			Permission::create(['name' => 'crud.books.destroy'])->syncRoles($rolAdministrador);
+			≡
+		}
+		≡
+1. Reestablecer base de datos: 
+	>
+		$ php artisan migrate:fresh --seed
+1. En phpMyAdmin pasar datos de la tabla existente bd a la nueva tabla books:
+	+ Migrar campos:
+	>
+		INSERT INTO books(
+			books.id_bd, 
+			books.titulo,
+			books.autor,
+			books.editorial,
+			books.coleccion,
+			books.edicion,
+			books.paginacion,
+			books.isbn,
+			books.notas,
+			books.enlace,
+			books.claves
+		)
+		SELECT 
+			bd.id,
+			bd.documento,
+			bd.responsabilidad,
+			bd.editorial,
+			bd.coleccion,
+			bd.edicion,
+			bd.colacion,
+			bd.isbn,
+			bd.notas,
+			bd.enlace,
+			bd.busqueda
+		FROM  bd
+	+ Actualizar fecha de publicación con el año:
+	>
+		UPDATE `books` SET `fecha`='[anho_publicacion]/1/1' WHERE `id_bd` LIKE '1'
+	###### Formula en Excel:
+	###### ="UPDATE `books` SET `fecha`='"&T2&"/1/1' WHERE `id_bd` LIKE '"&A2&"';" (Fila 2)
+	###### Donde: T[i]: anho_publicacion y A[i]: id
+	+ Actualizar campos **created_at** y **updated_at** con la fecha actual:
+	>
+		UPDATE `books` SET `created_at` = CURRENT_TIMESTAMP;
+		UPDATE `books` SET `updated_at` = CURRENT_TIMESTAMP;
+1. Establecer campos de asignación masiva en el modelo **Book** en **app\Models\Book.php**
+	>
+		≡
+		class Book extends Model
+		{
+			use HasFactory;
+
+			protected $fillable = [
+				'titulo',
+				'subtitulo',
+				'autor',
+				'editorial',
+				'coleccion',
+				'fecha',
+				'edicion',
+				'paginacion',
+				'isbn',
+				'notas',
+				'enlace',
+				'claves',
+				'catalogador',
+			];
+		}
+1. Agregar ruta books al grupo de rutas CRUD:
+	>
+		Route::resource('books', BookController::class)->names('books')
+				->middleware('can:crud.books.index');
+	##### Nota: añadir a la cabecera:
+	>
+		use App\Http\Controllers\BookController;
+1. Crear componente Livewire para Tabla Books: 
+	>
+		$ php artisan make:livewire crud/books-table
+1. Programar controlador para la tabla Books: **app\Http\Livewire\Crud\BookTable.php**
+	>
+		≡
+		≡
+1. Diseñar vista para la tabla Books: **resources\views\livewire\crud\books-table.blade.php**
+	>
+		≡
+		≡
+1. Programar controlador Book: **app\Http\Controllers\BookController.php**
+	>
+		≡
+		≡
+1. Diseñar las vistas para el CRUD Books:
+	- resources\views\crud\books\index.blade.php
+		>
+			≡
+			≡
+	- resources\views\crud\books\create.blade.php
+		>
+			≡
+			≡
+	- resources\views\crud\books\edit.blade.php
+		>
+			≡
+			≡
+1. Editar **config\adminlte.php** para añadir los menú para ingresar al CRUD Books.
+	>
+		≡
+		≡
+
+	### Commit --:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "CRUD Libros"
+
+## ___________________________________________________________________
+
+
+
+
+## ********************
+
+
 ## CRUD Biblioteca
 1. Crear modelo Library junto con su migración y controlador y los métodos para el CRUD.
 	>
@@ -2969,7 +3132,7 @@
 	>	◄ ◄ ◄ ■ ■ ■ ► ► ►
 	***	***	***	***	***	***	***	*** ***	***	***	***	***	***	***	***
 
-# RUTAS **INICIALES**
+## RUTAS **INICIALES**
 >
 	Method      URI                               	Name
 	======		===								  	====
@@ -3005,7 +3168,7 @@
 	POST     	| user/two-factor-recovery-codes   	|                                 
 	GET|HEAD 	| user/two-factor-recovery-codes   	|  
 
-# RUTAS **PERMISOS**
+## RUTAS **PERMISOS**
 >
 	Method      URI                               	Name
 	======		===								  	====
@@ -3017,7 +3180,7 @@
 	DELETE    	| permissions/{permission}         	| crud.permissions.destroy 
 	GET|HEAD  	| permissions/{permission}/edit    	| crud.permissions.edit
 
-# RUTAS **ROLES**
+## RUTAS **ROLES**
 >
 	Method      URI                               	Name
 	======		===								  	====
@@ -3029,7 +3192,7 @@
 	DELETE    	| roles/{role}         				| crud.roles.destroy 
 	GET|HEAD  	| roles/{role}/edit    				| crud.roles.edit
 	 
-# RUTAS **USUARIOS**
+## RUTAS **USUARIOS**
 >
 	Method      URI                               	Name
 	======		===								  	====
@@ -3041,7 +3204,7 @@
 	DELETE    	| users/{user}         				| crud.users.destroy 
 	GET|HEAD  	| users/{user}/edit    				| crud.users.edit
 
-# RUTAS **ONIDEX**
+## RUTAS **ONIDEX**
 
 	Method      URI                               	Name
 	======		===								  	====

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AgclienteController;
 use App\Http\Controllers\AlberoController;
+use App\Http\Controllers\BookController;
 use App\Http\Controllers\ConnectionController;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\CountryController;
@@ -52,6 +53,8 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
             ->middleware('can:crud.libraries.index');
     Route::resource('formats', FormatController::class)->names('formats')
             ->middleware('can:crud.formats.index');
+    Route::resource('books', BookController::class)->names('books')
+            ->middleware('can:crud.books.index');
 });
 
 // Grupo de rutas para Consultas a base de datos
