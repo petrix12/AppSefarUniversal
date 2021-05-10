@@ -104,7 +104,7 @@
                                                     <div class="px-1 py-2 m-2 flex-1">    {{-- fecha --}}
                                                         <div>
                                                             <label for="fecha" class="block text-sm font-medium text-gray-700">Fecha de publicación</label>
-                                                            <input value="{{ old('fecha') }}" type="date" name="fecha" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                                            <input value="{{ old('fecha') }}" type="text" name="fecha" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                                         </div>
                                                     </div>
 
@@ -143,7 +143,7 @@
                                                 <div class="md:flex ms:flex-wrap">
                                                     <div class="px-1 py-2 m-2 flex-1">    {{-- claves --}}
                                                         <div>
-                                                            <label for="claves" class="block text-sm font-medium text-gray-700" title="Palabras claves para búsqueda">Palabras claves para búsqueda</label>
+                                                            <label for="claves" class="block text-sm font-medium text-gray-700" title="Palabras claves para búsqueda">Palabras clave</label>
                                                             <textarea name="claves" rows="3" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mt-1 block w-full sm:text-sm border-gray-300 rounded-md" placeholder="Escriba aquí palabras claves">{{ old('claves') }}</textarea>
                                                         </div>
                                                     </div>

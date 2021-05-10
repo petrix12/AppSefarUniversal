@@ -21,7 +21,7 @@ class CreateBooksTable extends Migration
             $table->string('autor')->nullable();
             $table->string('editorial')->nullable();    // Ciudad / Editorial
             $table->string('coleccion')->nullable();    // Colección, Serie, Número
-            $table->date('fecha')->nullable();          // Fecha de edición
+            $table->string('fecha')->nullable();        // Fecha de edición
             $table->string('edicion')->nullable();      // Número de edición
             $table->string('paginacion')->nullable();
             $table->string('isbn')->nullable();

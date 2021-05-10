@@ -100,7 +100,8 @@
                             </td>
                             <td class="py-2 text-center text-xs">
                                 <div class="w-12">
-                                    {{ $book->fecha ?  date("Y",strtotime($book->fecha)) : '-' }}
+                                    {{-- {{ $book->fecha ?  date("Y",strtotime($book->fecha)) : '-' }} --}}
+                                    {{ $book->fecha }}
                                 </div>
                             </td>
                             <td class="px-1 py-2 text-xs text-center">
