@@ -27,13 +27,25 @@
 .documentos{
     float:middle;
     font-size: 100%;
-    width:100%;
+    width:10%;
     line-height:30px;
     max-height:30px;
     position:absolute;
     bottom:0;
     padding: 3px;
     text-align: left;
+}
+
+.cargar_doc{
+    float:middle;
+    font-size: 100%;
+    width:98%;
+    line-height:30px;
+    max-height:30px;
+    position:absolute;
+    bottom:0;
+    padding: 3px;
+    text-align: right;
 }
 
 .caja_matrimonio{

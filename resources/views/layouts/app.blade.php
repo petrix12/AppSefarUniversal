@@ -6,7 +6,7 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <link rel="shortcut icon" href="{{ asset('favicon.ico') }}"> 
 
-        {{-- Inicio --}}
+        {{-- Inicio - Personalización URL --}}
         <meta property="fb:app_id" content="APPID">
         <meta data-react-helmet="true" property="og:url" content="https://app.universalsefar.com/"/>
         <meta data-react-helmet="true" property="og:type" content="website"/>
@@ -20,7 +20,7 @@
         <meta data-react-helmet="true" property="twitter:image" content="https://app.universalsefar.com/vendor/adminlte/dist/img/LogoSefar.png" />
         <meta data-react-helmet="true" property="twitter:card" content="summary" />
         <meta data-react-helmet="true" name="robots" content="noindex, nofollow" />
-        {{-- Fin --}}
+        {{-- Fin - Personalización URL --}}
 
         <title>{{ config('app.name', 'Laravel') }}</title>
 

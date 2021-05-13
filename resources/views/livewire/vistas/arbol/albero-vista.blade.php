@@ -1,3 +1,5 @@
+@include('layouts.formularios.ver_doc')
+@include('layouts.formularios.cargar_doc')
 <div>
     <div class="p-2 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="lg:text-center">
@@ -360,6 +362,7 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDSolicitante) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDSolicitante) }}">{{ GetVida($agclientes,$IDSolicitante) }}</p>
+            {{ cargarDocumentos($agclientes,$IDSolicitante,$errors) }}
             {{ mostrarDocumentos($agclientes,$IDSolicitante,'albero') }}
         </div>
         

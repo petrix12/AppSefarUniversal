@@ -41,91 +41,90 @@
                                     @csrf
                                     
                                     <div class="shadow overflow-hidden sm:rounded-md">
-                                            <div class="container">
-                                                {{-- Fila 1: Documento --}}
-                                                <div class="md:flex ms:flex-wrap">
-                                                    <div class="px-1 py-2 m-2 flex-1">    {{-- nfile --}}
-                                                        <div>
-                                                            <label for="nfile" class="block text-sm font-medium text-gray-700">Nombre del documento</label>
-                                                            <input value="{{ old('nfile') }}" type="text" name="nfile" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                                                            @error('nfile')
-                                                                <small style="color:red">*{{ $message }}*</small>
-                                                            @enderror
-                                                        </div>
-                                                    </div>
-
-                                                    @can('administrar.documentos')
-                                                    <div class="px-1 py-2 m-2 flex-1">    {{-- IDCliente --}}
-                                                        <div>
-                                                            <label for="IDCliente" class="block text-sm font-medium text-gray-700" title="ID de cliente a quien pertenece el documento">ID Cliente</label>
-                                                            <input value="{{ old('IDCliente') }}" type="text" name="IDCliente" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                                                            @error('IDCliente')
-                                                                <small style="color:red">*{{ $message }}*</small>
-                                                            @enderror
-                                                        </div>
-                                                    </div>
-                                                    @endcan
-
-                                                    <div class="px-1 py-2 m-2 flex-1">    {{-- tipo --}}
-                                                        <div>
-                                                            <label for="tipo" class="block text-sm font-medium text-gray-700" title="Tipo de documento">Tipo de documento</label>
-                                                            <select name="tipo" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                                                <option></option>
-                                                                @foreach ($t_files as $t_file)
-                                                                    @if (old('tipo') == $t_file->tipo)
-                                                                        <option selected>{{ $t_file->tipo }}</option>
-                                                                    @else
-                                                                        <option>{{ $t_file->tipo }}</option> 
-                                                                    @endif
-                                                                @endforeach
-                                                            </select>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="px-1 py-2 m-2 flex-1">    {{-- IDPersona --}}
-                                                        <div>
-                                                            <label for="IDPersona" class="block text-sm font-medium text-gray-700">Persona</label>
-                                                            <select name="IDPersona" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                                                @for ($i = 1; $i <=31; $i++)
-                                                                    @if ( old('IDPersona') == $i)
-                                                                        <option value="{{ $i }}" selected>{{ GetPersona($i) }}</option>  
-                                                                    @else
-                                                                        <option value="{{ $i }}">{{ GetPersona($i) }}</option>    
-                                                                    @endif
-                                                                @endfor
-                                                            </select>
-                                                            @error('IDPersona')
-                                                                <small style="color:red">*{{ $message }}*</small>
-                                                            @enderror
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                
-                                                {{-- Fila 2: Archivo --}}
-                                                <div class="md:flex ms:flex-wrap">
-                                                    <div class="px-1 py-2 m-2 flex-1">    {{-- file --}}
-                                                        <div>
-                                                            <input id="file" type="file" name="file" style="display: none"
-                                                                accept="application/pdf, .doc, .docx, .odf, .xls, .xlsx, .ppt, .pptx, .txt,image/*"
-                                                                {{-- accept="image/png" --}}
-                                                            />
-                                                            <label for="file" class="cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white">
-                                                                <i class="fas fa-upload mr-2"></i> archivo
-                                                            </label>
-                                                            @error('file')
-                                                                <small style="color:red">*{{ $message }}*</small>
-                                                            @enderror
-                                                        </div>
+                                        <div class="container">
+                                            {{-- Fila 1: Documento --}}
+                                            <div class="md:flex ms:flex-wrap">
+                                                <div class="px-1 py-2 m-2 flex-1">    {{-- nfile --}}
+                                                    <div>
+                                                        <label for="nfile" class="block text-sm font-medium text-gray-700">Nombre del documento</label>
+                                                        <input value="{{ old('nfile') }}" type="text" name="nfile" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                                        @error('nfile')
+                                                            <small style="color:red">*{{ $message }}*</small>
+                                                        @enderror
                                                     </div>
                                                 </div>
 
-                                                {{-- Fila 3: Notas --}}
-                                                <div class="md:flex ms:flex-wrap">
-                                                    <div class="px-1 py-2 m-2 flex-1">    {{-- notas --}}
-                                                        <div>
-                                                            <label for="notas" class="block text-sm font-medium text-gray-700" title="Notas">Notas</label>
-                                                            <textarea name="notas" rows="4" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mt-1 block w-full sm:text-sm border-gray-300 rounded-md" placeholder="Notas...">{{ old('notas') }}</textarea>
-                                                        </div>
+                                                @can('administrar.documentos')
+                                                <div class="px-1 py-2 m-2 flex-1">    {{-- IDCliente --}}
+                                                    <div>
+                                                        <label for="IDCliente" class="block text-sm font-medium text-gray-700" title="ID de cliente a quien pertenece el documento">ID Cliente</label>
+                                                        <input value="{{ old('IDCliente') }}" type="text" name="IDCliente" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                                        @error('IDCliente')
+                                                            <small style="color:red">*{{ $message }}*</small>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+                                                @endcan
+
+                                                <div class="px-1 py-2 m-2 flex-1">    {{-- tipo --}}
+                                                    <div>
+                                                        <label for="tipo" class="block text-sm font-medium text-gray-700" title="Tipo de documento">Tipo de documento</label>
+                                                        <select name="tipo" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                                            <option></option>
+                                                            @foreach ($t_files as $t_file)
+                                                                @if (old('tipo') == $t_file->tipo)
+                                                                    <option selected>{{ $t_file->tipo }}</option>
+                                                                @else
+                                                                    <option>{{ $t_file->tipo }}</option> 
+                                                                @endif
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <div class="px-1 py-2 m-2 flex-1">    {{-- IDPersona --}}
+                                                    <div>
+                                                        <label for="IDPersona" class="block text-sm font-medium text-gray-700">Persona</label>
+                                                        <select name="IDPersona" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                                            @for ($i = 1; $i <=31; $i++)
+                                                                @if ( old('IDPersona') == $i)
+                                                                    <option value="{{ $i }}" selected>{{ GetPersona($i) }}</option>  
+                                                                @else
+                                                                    <option value="{{ $i }}">{{ GetPersona($i) }}</option>    
+                                                                @endif
+                                                            @endfor
+                                                        </select>
+                                                        @error('IDPersona')
+                                                            <small style="color:red">*{{ $message }}*</small>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {{-- Fila 2: Archivo --}}
+                                            <div class="md:flex ms:flex-wrap">
+                                                <div class="px-1 py-2 m-2 flex-1">    {{-- file --}}
+                                                    <div>
+                                                        <input id="file" type="file" name="file" style="display: none"
+                                                            accept="application/pdf, .doc, .docx, .odf, .xls, .xlsx, .ppt, .pptx, .txt,image/*"
+                                                            {{-- accept="image/png" --}}
+                                                        />
+                                                        <label for="file" class="cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white">
+                                                            <i class="fas fa-upload mr-2"></i> archivo
+                                                        </label>
+                                                        @error('file')
+                                                            <small style="color:red">*{{ $message }}*</small>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {{-- Fila 3: Notas --}}
+                                            <div class="md:flex ms:flex-wrap">
+                                                <div class="px-1 py-2 m-2 flex-1">    {{-- notas --}}
+                                                    <div>
+                                                        <label for="notas" class="block text-sm font-medium text-gray-700" title="Notas">Notas</label>
+                                                        <textarea name="notas" rows="4" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mt-1 block w-full sm:text-sm border-gray-300 rounded-md" placeholder="Notas...">{{ old('notas') }}</textarea>
                                                     </div>
                                                 </div>
                                             </div>

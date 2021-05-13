@@ -1,3 +1,5 @@
+@include('layouts.formularios.ver_doc')
+@include('layouts.formularios.cargar_doc')
 <div>
     <div class="p-2 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="lg:text-center">
@@ -168,6 +170,8 @@
                 @endif
                 <span class="vida" title="{{ GetVidaCompleta($agclientes,1) }}">{{ GetVida($agclientes,1) }}</span>
                 {{ mostrarDocumentos($agclientes,1) }}
+                {{ cargarDocumentos($agclientes,1,$errors) }}
+                
             </div>
 
             <!-- *** PADRES *** -->

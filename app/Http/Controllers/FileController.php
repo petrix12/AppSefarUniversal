@@ -117,7 +117,12 @@ class FileController extends Controller
 
         // Ubicación del documento
         $anho = date('Y');
-        $location = str_replace('.','','public/documentos/'.$anho.'/'.$user_id.'/'.GetPersona($request->IDPersona));
+        if($request->Origen == "arbol"){
+            //$carpeta = 'doc/P'.$pasaporte.'/'.$persona.'/';
+            $location = str_replace('.','','public/doc/P'.$IDCliente.'/'.GetPersona($request->IDPersona));
+        }else{
+            $location = str_replace('.','','public/documentos/'.$anho.'/'.$user_id.'/'.GetPersona($request->IDPersona));
+        }
         
         // Guarda el archivo en el servidor y registra el archivo en la tabla files 
         if($request->hasFile('file')){
@@ -145,7 +150,11 @@ class FileController extends Controller
                 Alert::success('¡Éxito!', 'Se ha añadido el documento: ' . $fileName);
                 
                 // Redireccionar a la vista index
-                return redirect()->route('crud.files.index');
+                if($request->Origen == "arbol"){
+                    return back();
+                }else{
+                    return redirect()->route('crud.files.index');
+                }
             }
         }else{
             Alert::error('¡Error!', 'No se pudo añadir el archivo');

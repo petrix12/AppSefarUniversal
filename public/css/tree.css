@@ -10,7 +10,8 @@ body{background-image: url("images/fondo.jpg");}
 .m-img-i{padding: 0; margin: 0; position: absolute; overflow: hidden; right: 0px; top: 1px; border: none;}
 .m-img-i-bis{padding: 0; margin: 0; position: absolute; overflow: hidden; right: 2px; top: 17px; border: none;}
 .nombres{float:middle; font-size: 80%; width:100%; position:absolute; top:25%; font-family:Arial; text-align: center; font-weight: bold;}
-.folder{float:middle; font-size: 80%; width:100%; position:absolute; bottom: 1px; left: 5px;font-family:Arial; text-align: left; font-weight: bold;}
+.folder{float:middle; font-size: 80%; width:10%; position:absolute; bottom: 1px; left: 5px;font-family:Arial; text-align: left; font-weight: bold;}
+.cargar_doc{float:middle; font-size: 80%; width:10%; position:absolute; bottom: 1px; right: 5px;font-family:Arial; text-align: right; font-weight: bold;}
 .apellidos{float:middle; font-size: 80%; width:100%; position:absolute; top:40%; font-family:Arial; text-align: center; font-weight: bold;}
 .texto{float:middle; font-size: 70%; width:100%; position:absolute; top:56%; font-family:Arial; text-align: center;}
 .text-abuelo{float:middle; font-size: 65%; width:100%; position:absolute; top:58%; font-family:Arial; text-align: center;}
