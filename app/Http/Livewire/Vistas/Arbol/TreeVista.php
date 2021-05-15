@@ -19,7 +19,7 @@ class TreeVista extends Component
     {
         $agclientes = Agcliente::where('IDCliente','LIKE',"%$this->IDCliente%")->get();
         $families = Family::where('IDCliente','LIKE',"%$this->IDCliente%")->get();
-        $t_files = TFile::all();
-        return view('livewire.vistas.arbol.tree-vista', compact('agclientes', 'families', 't_files'));
+        /* $t_files = TFile::all(); */
+        return view('livewire.vistas.arbol.tree-vista', compact('agclientes', 'families'/* , 't_files' */));
     }
 }

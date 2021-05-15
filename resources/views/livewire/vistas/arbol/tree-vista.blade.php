@@ -1,5 +1,5 @@
 @include('layouts.formularios.ver_doc')
-@include('layouts.formularios.cargar_doc')
+{{-- @include('layouts.formularios.cargar_doc') --}}
 <div>
     <div class="p-2 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="lg:text-center">
@@ -170,7 +170,7 @@
                 @endif
                 <span class="vida" title="{{ GetVidaCompleta($agclientes,1) }}">{{ GetVida($agclientes,1) }}</span>
                 {{ mostrarDocumentos($agclientes,1) }}
-                {{ cargarDocumentos($agclientes,1,$errors) }}
+                {{-- {{ cargarDocumentos($agclientes,1,$errors) }} --}}
                 
             </div>
 
@@ -186,7 +186,7 @@
                 @endif
                 <span class="vida" title="{{ GetVidaCompleta($agclientes,$i) }}">{{ GetVida($agclientes,$i) }}</span>
                 {{ mostrarDocumentos($agclientes,$i) }}
-                {{ cargarDocumentos($agclientes,$i,$errors) }}
+                {{-- {{ cargarDocumentos($agclientes,$i,$errors) }} --}}
             </div>
             @endfor
             <div class="link father-branch" style="opacity: 1 !important; left: 80px; top: 145px; width: 20px; height: 120px;">
@@ -210,7 +210,7 @@
                 @endif
                 <span class="vid-abuelo" title="{{ GetVidaCompleta($agclientes,$i) }}">{{ GetVida($agclientes,$i) }}</span>
                 {{ mostrarDocumentos($agclientes,$i) }}
-                {{ cargarDocumentos($agclientes,$i,$errors) }}
+                {{-- {{ cargarDocumentos($agclientes,$i,$errors) }} --}}
             </div>
             @if ($i % 2 == 0)
             <div class="link father-branch" style="opacity: 1 !important; left: 370px; top: {{ 75 + ($i-4)*140 }}px; width: 20px; height: 50px;">
@@ -232,7 +232,7 @@
                 <span class="ape-bisabuelo" title="Lugar de nacimiento: {{  GetLugarNac($agclientes,$i) }}">{{ GetApellidos($agclientes,$i) }}</span>
                 <span class="vid-bisabuelo" title="{{ GetVidaCompleta($agclientes,$i) }}">{{ GetVida($agclientes,$i) }}</span>
                 {{ mostrarDocumentos($agclientes,$i) }}
-                {{ cargarDocumentos($agclientes,$i,$errors) }}
+                {{-- {{ cargarDocumentos($agclientes,$i,$errors) }} --}}
             </div>
             @if ($i % 2 == 0)
             <div class="link father-branch" style="opacity: 1 !important; left: 640px; top: {{40 + ($i-8)*70}}px; width: 20px; height: 30px;">
@@ -252,7 +252,7 @@
                 <span class="nom-tatarabuelos" title="{{ GetPersona($i) }} - {{ GetDatosMatrimonio($agclientes,$i) }}">{{ GetNombres($agclientes,$i) }}</span>
                 <span class="ape-tatarabuelos" title="{{ $vida }}">{{ GetApellidos($agclientes,$i) }}</span>
                 {{ mostrarDocumentos($agclientes,$i) }}
-                {{ cargarDocumentos($agclientes,$i,$errors) }}
+                {{-- {{ cargarDocumentos($agclientes,$i,$errors) }} --}}
             </div>
             @if ($i % 2 == 0)
             <div class="link father-branch" style="opacity: 1 !important; left: 910px; top: {{22 + ($i-16)*35}}px; width: 20px; height: 12.5px;">
