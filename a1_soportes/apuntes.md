@@ -3296,6 +3296,12 @@
 + Amarillo: R:247 G:176 B:52
 + Gris: R:63 G:61 B:61
 
+## Tablas a reponer al restaurar base de datos:
++ agclientes
++ books
++ families
++ libraries
+
 
 
 

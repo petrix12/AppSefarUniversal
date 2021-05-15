@@ -51,8 +51,10 @@ class FileController extends Controller
         }
       
         // Filtrar extensiones
+        $IDPersona = $request->IDPersona;
         $abortar = false;
-        switch ($request->file->getClientOriginalExtension()) {
+        /* switch ($request->input("file" . $IDPersona)->getClientOriginalExtension()) { */
+        switch ($request->file2->getClientOriginalExtension()) {
             case 'exe':
                 $abortar = true;
                 break;

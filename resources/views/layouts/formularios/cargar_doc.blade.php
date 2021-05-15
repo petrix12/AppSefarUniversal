@@ -1,6 +1,7 @@
 <?php
 // Cargar documentos 
-function cargarDocumentos($agclientes, $IDPersona, $errors){
+function cargarDocumentos($agclientes, $IDPersona, $errors){return null;}
+function cargarDocumentos2($agclientes, $IDPersona, $errors){
     try{
         $pasaporte = $agclientes->where('IDPersona',1)->first()->IDCliente;
     }catch(Exception $e){
@@ -51,10 +52,10 @@ function cargarDocumentos($agclientes, $IDPersona, $errors){
                         <div class="md:flex ms:flex-wrap">
                             <div class="px-1 py-2 m-2 flex-1">    {{-- file --}}
                                 <div>
-                                    <input id="file" type="file" name="file" style="display: none"
+                                    <input id="<?php echo 'file'.$IDPersona;?>" type="file" name="<?php echo 'file'.$IDPersona;?>" style="display: none"
                                         accept="application/pdf, .doc, .docx, .odf, .xls, .xlsx, .ppt, .pptx, .txt,image/*"
                                     />
-                                    <label for="file" class="cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white">
+                                    <label for="<?php echo 'file'.$IDPersona;?>" class="cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white">
                                         <i class="fas fa-upload mr-2"></i> archivo
                                     </label>
                                     @error('file')

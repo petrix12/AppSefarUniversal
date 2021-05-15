@@ -186,6 +186,7 @@
                 @endif
                 <span class="vida" title="{{ GetVidaCompleta($agclientes,$i) }}">{{ GetVida($agclientes,$i) }}</span>
                 {{ mostrarDocumentos($agclientes,$i) }}
+                {{ cargarDocumentos($agclientes,$i,$errors) }}
             </div>
             @endfor
             <div class="link father-branch" style="opacity: 1 !important; left: 80px; top: 145px; width: 20px; height: 120px;">
@@ -209,6 +210,7 @@
                 @endif
                 <span class="vid-abuelo" title="{{ GetVidaCompleta($agclientes,$i) }}">{{ GetVida($agclientes,$i) }}</span>
                 {{ mostrarDocumentos($agclientes,$i) }}
+                {{ cargarDocumentos($agclientes,$i,$errors) }}
             </div>
             @if ($i % 2 == 0)
             <div class="link father-branch" style="opacity: 1 !important; left: 370px; top: {{ 75 + ($i-4)*140 }}px; width: 20px; height: 50px;">
@@ -230,6 +232,7 @@
                 <span class="ape-bisabuelo" title="Lugar de nacimiento: {{  GetLugarNac($agclientes,$i) }}">{{ GetApellidos($agclientes,$i) }}</span>
                 <span class="vid-bisabuelo" title="{{ GetVidaCompleta($agclientes,$i) }}">{{ GetVida($agclientes,$i) }}</span>
                 {{ mostrarDocumentos($agclientes,$i) }}
+                {{ cargarDocumentos($agclientes,$i,$errors) }}
             </div>
             @if ($i % 2 == 0)
             <div class="link father-branch" style="opacity: 1 !important; left: 640px; top: {{40 + ($i-8)*70}}px; width: 20px; height: 30px;">
@@ -249,6 +252,7 @@
                 <span class="nom-tatarabuelos" title="{{ GetPersona($i) }} - {{ GetDatosMatrimonio($agclientes,$i) }}">{{ GetNombres($agclientes,$i) }}</span>
                 <span class="ape-tatarabuelos" title="{{ $vida }}">{{ GetApellidos($agclientes,$i) }}</span>
                 {{ mostrarDocumentos($agclientes,$i) }}
+                {{ cargarDocumentos($agclientes,$i,$errors) }}
             </div>
             @if ($i % 2 == 0)
             <div class="link father-branch" style="opacity: 1 !important; left: 910px; top: {{22 + ($i-16)*35}}px; width: 20px; height: 12.5px;">
