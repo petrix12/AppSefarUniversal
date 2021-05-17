@@ -62,6 +62,7 @@
                 @endif
                 <span class="vida" title="{{ GetVidaCompleta($agclientes,1) }}">{{ GetVida($agclientes,1) }}</span>
                 {{ mostrarDocumentos($agclientes,1) }}
+                <x-cargar-doc :agclientes='$agclientes' :id='1'/>
             </div>
 
             <!-- *** PADRES *** -->
@@ -76,6 +77,7 @@
                 @endif
                 <span class="vida" title="{{ GetVidaCompleta($agclientes,$i) }}">{{ GetVida($agclientes,$i) }}</span>
                 {{ mostrarDocumentos($agclientes,$i) }}
+                <x-cargar-doc :agclientes='$agclientes' :id='$i'/>
             </div>
             <div class="link father-branch" style="opacity: 1 !important; left: 80px; top: {{ 584 + ($i -2)*520 }}px; width: 70px; height: 402px;">
                 <span class="first"></span>
@@ -95,6 +97,7 @@
                 @endif
                 <span class="vida" title="{{ GetVidaCompleta($agclientes,$i) }}">{{ GetVida($agclientes,$i) }}</span>
                 {{ mostrarDocumentos($agclientes,$i) }}
+                <x-cargar-doc :agclientes='$agclientes' :id='$i'/>
             </div>
             <div class="link father-branch" style="opacity: 1 !important; left: 290px; top: {{ ($i <= 5) ? (324 + ($i-4)*260) : (844 + ($i-4)*260) }}px; width: 50px; height: 142px;">
                 <span class="first"></span>
@@ -114,6 +117,7 @@
                 @endif
                 <span class="vida" title="{{ GetVidaCompleta($agclientes,$i) }}">{{ GetVida($agclientes,$i) }}</span>
                 {{ mostrarDocumentos($agclientes,$i) }}
+                <x-cargar-doc :agclientes='$agclientes' :id='$i'/>
             </div>
             @if ($i % 2 == 0)
             <div class="link father-branch" style="opacity: 1 !important; left: 320px; top: {{135 + ($i-8)*260}}px; width: 80px; height: 71px;">
@@ -139,6 +143,7 @@
                 @endif
                 <span class="vida" title="{{ GetVidaCompleta($agclientes,$i) }}">{{ GetVida($agclientes,$i) }}</span>
                 {{ mostrarDocumentos($agclientes,$i) }}
+                <x-cargar-doc :agclientes='$agclientes' :id='$i'/>
             </div>
             @if ($i % 2 == 0)
             <div class="link father-branch" style="opacity: 1 !important; left: 670px; top: {{70 + ($i-16)*130}}px; width: 35px; height: 60px;">
@@ -170,8 +175,7 @@
                 @endif
                 <span class="vida" title="{{ GetVidaCompleta($agclientes,1) }}">{{ GetVida($agclientes,1) }}</span>
                 {{ mostrarDocumentos($agclientes,1) }}
-                {{-- {{ cargarDocumentos($agclientes,1,$errors) }} --}}
-                
+                <x-cargar-doc :agclientes='$agclientes' :id='1'/>
             </div>
 
             <!-- *** PADRES *** -->
@@ -186,7 +190,7 @@
                 @endif
                 <span class="vida" title="{{ GetVidaCompleta($agclientes,$i) }}">{{ GetVida($agclientes,$i) }}</span>
                 {{ mostrarDocumentos($agclientes,$i) }}
-                {{-- {{ cargarDocumentos($agclientes,$i,$errors) }} --}}
+                <x-cargar-doc :agclientes='$agclientes' :id='$i'/>
             </div>
             @endfor
             <div class="link father-branch" style="opacity: 1 !important; left: 80px; top: 145px; width: 20px; height: 120px;">
@@ -210,7 +214,7 @@
                 @endif
                 <span class="vid-abuelo" title="{{ GetVidaCompleta($agclientes,$i) }}">{{ GetVida($agclientes,$i) }}</span>
                 {{ mostrarDocumentos($agclientes,$i) }}
-                {{-- {{ cargarDocumentos($agclientes,$i,$errors) }} --}}
+                <x-cargar-doc :agclientes='$agclientes' :id='$i'/>
             </div>
             @if ($i % 2 == 0)
             <div class="link father-branch" style="opacity: 1 !important; left: 370px; top: {{ 75 + ($i-4)*140 }}px; width: 20px; height: 50px;">
@@ -232,7 +236,7 @@
                 <span class="ape-bisabuelo" title="Lugar de nacimiento: {{  GetLugarNac($agclientes,$i) }}">{{ GetApellidos($agclientes,$i) }}</span>
                 <span class="vid-bisabuelo" title="{{ GetVidaCompleta($agclientes,$i) }}">{{ GetVida($agclientes,$i) }}</span>
                 {{ mostrarDocumentos($agclientes,$i) }}
-                {{-- {{ cargarDocumentos($agclientes,$i,$errors) }} --}}
+                <x-cargar-doc :agclientes='$agclientes' :id='$i'/>
             </div>
             @if ($i % 2 == 0)
             <div class="link father-branch" style="opacity: 1 !important; left: 640px; top: {{40 + ($i-8)*70}}px; width: 20px; height: 30px;">
@@ -252,7 +256,7 @@
                 <span class="nom-tatarabuelos" title="{{ GetPersona($i) }} - {{ GetDatosMatrimonio($agclientes,$i) }}">{{ GetNombres($agclientes,$i) }}</span>
                 <span class="ape-tatarabuelos" title="{{ $vida }}">{{ GetApellidos($agclientes,$i) }}</span>
                 {{ mostrarDocumentos($agclientes,$i) }}
-                {{-- {{ cargarDocumentos($agclientes,$i,$errors) }} --}}
+                <x-cargar-doc :agclientes='$agclientes' :id='$i'/>
             </div>
             @if ($i % 2 == 0)
             <div class="link father-branch" style="opacity: 1 !important; left: 910px; top: {{22 + ($i-16)*35}}px; width: 20px; height: 12.5px;">

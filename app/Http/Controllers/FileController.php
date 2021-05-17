@@ -51,10 +51,8 @@ class FileController extends Controller
         }
       
         // Filtrar extensiones
-        $IDPersona = $request->IDPersona;
         $abortar = false;
-        /* switch ($request->input("file" . $IDPersona)->getClientOriginalExtension()) { */
-        switch ($request->file2->getClientOriginalExtension()) {
+        switch ($request->file->getClientOriginalExtension()) {
             case 'exe':
                 $abortar = true;
                 break;
@@ -121,7 +119,8 @@ class FileController extends Controller
         $anho = date('Y');
         if($request->Origen == "arbol"){
             //$carpeta = 'doc/P'.$pasaporte.'/'.$persona.'/';
-            $location = str_replace('.','','public/doc/P'.$IDCliente.'/'.GetPersona($request->IDPersona));
+            /* $location = str_replace('.','','public/doc/P'.$IDCliente.'/'.GetPersona($request->IDPersona)); */
+            $location = 'public/doc/P'.$IDCliente.'/'.GetPersona($request->IDPersona);
         }else{
             $location = str_replace('.','','public/documentos/'.$anho.'/'.$user_id.'/'.GetPersona($request->IDPersona));
         }

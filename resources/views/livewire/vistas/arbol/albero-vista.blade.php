@@ -1,5 +1,4 @@
 @include('layouts.formularios.ver_doc')
-@include('layouts.formularios.cargar_doc')
 <div>
     <div class="p-2 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="lg:text-center">
@@ -88,6 +87,7 @@
             {{-- <span class="editar">
                 <i class="fas fa-user-edit"></i>
             </span> --}}
+            <x-cargar-doc :agclientes='$agclientes' :id='$IDTatarabuelo'/>
             {{ mostrarDocumentos($agclientes,$IDTatarabuelo,'albero') }}
         </div>
         
@@ -122,6 +122,7 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDTatarabuela) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDTatarabuela) }}">{{ GetVida($agclientes,$IDTatarabuela) }}</p>
+            <x-cargar-doc :agclientes='$agclientes' :id='$IDTatarabuela'/>
             {{ mostrarDocumentos($agclientes,$IDTatarabuela,'albero') }}
         </div>
 
@@ -161,6 +162,7 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDBisabuelo) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDBisabuelo) }}">{{ GetVida($agclientes,$IDBisabuelo) }}</p>
+            <x-cargar-doc :agclientes='$agclientes' :id='$IDBisabuelo'/>
             {{ mostrarDocumentos($agclientes,$IDBisabuelo,'albero') }}
         </div>
         
@@ -189,6 +191,7 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDBisabuela) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDBisabuela) }}">{{ GetVida($agclientes,$IDBisabuela) }}</p>
+            <x-cargar-doc :agclientes='$agclientes' :id='$IDBisabuela'/>
             {{ mostrarDocumentos($agclientes,$IDBisabuela,'albero') }}
         </div>
 
@@ -228,6 +231,7 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDAbuelo) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDAbuelo) }}">{{ GetVida($agclientes,$IDAbuelo) }}</p>
+            <x-cargar-doc :agclientes='$agclientes' :id='$IDAbuelo'/>
             {{ mostrarDocumentos($agclientes,$IDAbuelo,'albero') }}
         </div>
         
@@ -256,6 +260,7 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDAbuela) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDAbuela) }}">{{ GetVida($agclientes,$IDAbuela) }}</p>
+            <x-cargar-doc :agclientes='$agclientes' :id='$IDAbuela'/>
             {{ mostrarDocumentos($agclientes,$IDAbuela,'albero') }}
         </div>
 
@@ -295,6 +300,7 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDPadre) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDPadre) }}">{{ GetVida($agclientes,$IDPadre) }}</p>
+            <x-cargar-doc :agclientes='$agclientes' :id='$IDPadre'/>
             {{ mostrarDocumentos($agclientes,$IDPadre,'albero') }}
         </div>
         
@@ -323,6 +329,7 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDMadre) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDMadre) }}">{{ GetVida($agclientes,$IDMadre) }}</p>
+            <x-cargar-doc :agclientes='$agclientes' :id='$IDMadre'/>
             {{ mostrarDocumentos($agclientes,$IDMadre,'albero') }}
         </div>
 
@@ -362,7 +369,7 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDSolicitante) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDSolicitante) }}">{{ GetVida($agclientes,$IDSolicitante) }}</p>
-            {{ cargarDocumentos($agclientes,$IDSolicitante,$errors) }}
+            <x-cargar-doc :agclientes='$agclientes' :id='$IDSolicitante'/>
             {{ mostrarDocumentos($agclientes,$IDSolicitante,'albero') }}
         </div>
         
@@ -390,6 +397,7 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDConyugue) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDConyugue) }}">{{ GetVida($agclientes,$IDConyugue) }}</p>
+            {{-- <x-cargar-doc :agclientes='$agclientes' :id='$IDConyugue'/> --}}
             {{ mostrarDocumentos($agclientes,$IDConyugue,'albero') }}
         </div>
 
