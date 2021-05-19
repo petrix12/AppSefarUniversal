@@ -212,6 +212,15 @@ function GetApellidos($agclientes, $IDPersona){
     }
 }
 
+// Obtener campo Familiares de la persona IDPersona
+function GetFamiliares($agclientes, $IDPersona){
+    try{
+        return $agclientes->where('IDPersona',$IDPersona)->first()->Familiares;
+    }catch(Exception $e){
+        return null;
+    }
+}
+
 // Obtener sexo de la persona IDPersona
 function GetSexo($agclientes, $IDPersona){
     try{

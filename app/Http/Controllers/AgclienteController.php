@@ -82,9 +82,7 @@ class AgclienteController extends Controller
         $IDPadre = GetIDPadre($request->IDPersona);
         $IDMadre = $IDPadre + 1;
         $FUpdate = date('Y-m-d H:i:s');
-        if(! $Origen){
-           $Familiares = trim($request->Familiaridad); 
-        }
+        $Familiares = trim($request->Familiaridad);
 
         // Creando usuario
         Agcliente::create([

@@ -10,6 +10,7 @@
     $IDCliente = $agclientes->where('IDPersona',1)->first()->IDCliente;
     $nombre = GetNombres($agclientes,$id) . ' ' . GetApellidos($agclientes,$id);
     $Sexo = GetSexo($agclientes,$id);
+    $Familiares = GetFamiliares($agclientes,$id);
 
     $Nombres = GetNombres($agclientes,$id);
     $Apellidos = GetApellidos($agclientes,$id);
