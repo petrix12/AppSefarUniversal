@@ -3,6 +3,7 @@
 namespace App\Http\Livewire\Vistas\Arbol;
 
 use App\Models\Agcliente;
+use App\Models\Country;
 use App\Models\Family;
 use App\Models\TFile;
 use Livewire\Component;
@@ -19,7 +20,8 @@ class TreeVista extends Component
     {
         $agclientes = Agcliente::where('IDCliente','LIKE',"%$this->IDCliente%")->get();
         $families = Family::where('IDCliente','LIKE',"%$this->IDCliente%")->get();
+        $countries = Country::all();
         /* $t_files = TFile::all(); */
-        return view('livewire.vistas.arbol.tree-vista', compact('agclientes', 'families'/* , 't_files' */));
+        return view('livewire.vistas.arbol.tree-vista', compact('agclientes', 'families', 'countries'/* , 't_files' */));
     }
 }

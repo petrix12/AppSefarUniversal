@@ -212,6 +212,55 @@ function GetApellidos($agclientes, $IDPersona){
     }
 }
 
+// Obtener sexo de la persona IDPersona
+function GetSexo($agclientes, $IDPersona){
+    try{
+        if($IDPersona){
+            return $agclientes->where('IDPersona',$IDPersona)->first()->Sexo;
+        }else{
+            return $IDPersona % 2 ? "F" : "M";
+        }
+    }catch(Exception $e){
+        return null;
+    }
+}
+
+// Obtener observaciones de la persona IDPersona
+function GetObservaciones($agclientes, $IDPersona){
+    try{
+        return $agclientes->where('IDPersona',$IDPersona)->first()->Observaciones;
+    }catch(Exception $e){
+        return null;
+    }
+}
+
+// Obtener año de nacimiento de la persona IDPersona
+function GetAnhoNac($agclientes, $IDPersona){
+    try{
+        return $agclientes->where('IDPersona',$IDPersona)->first()->AnhoNac;
+    }catch(Exception $e){
+        return null;
+    }
+}
+
+// Obtener mes de nacimiento de la persona IDPersona
+function GetMesNac($agclientes, $IDPersona){
+    try{
+        return $agclientes->where('IDPersona',$IDPersona)->first()->MesNac;
+    }catch(Exception $e){
+        return null;
+    }
+}
+
+// Obtener día de nacimiento de la persona IDPersona
+function GetDiaNac($agclientes, $IDPersona){
+    try{
+        return $agclientes->where('IDPersona',$IDPersona)->first()->DiaNac;
+    }catch(Exception $e){
+        return null;
+    }
+}
+
 // Obtener lugar de nacimiento de la persona IDPersona
 function GetLugarNac($agclientes, $IDPersona){
     try{
@@ -221,10 +270,145 @@ function GetLugarNac($agclientes, $IDPersona){
     }
 }
 
+// Obtener país de nacimiento de la persona IDPersona
+function GetPaisNac($agclientes, $IDPersona){
+    try{
+        return $agclientes->where('IDPersona',$IDPersona)->first()->PaisNac;
+    }catch(Exception $e){
+        return null;
+    }
+}
+
+// Obtener año de bautizo de la persona IDPersona
+function GetAnhoBtzo($agclientes, $IDPersona){
+    try{
+        return $agclientes->where('IDPersona',$IDPersona)->first()->AnhoBtzo;
+    }catch(Exception $e){
+        return null;
+    }
+}
+
+// Obtener mes de bautizo de la persona IDPersona
+function GetMesBtzo($agclientes, $IDPersona){
+    try{
+        return $agclientes->where('IDPersona',$IDPersona)->first()->MesBtzo;
+    }catch(Exception $e){
+        return null;
+    }
+}
+
+// Obtener día de bautizo de la persona IDPersona
+function GetDiaBtzo($agclientes, $IDPersona){
+    try{
+        return $agclientes->where('IDPersona',$IDPersona)->first()->DiaBtzo;
+    }catch(Exception $e){
+        return null;
+    }
+}
+
+// Obtener lugar de bautizo de la persona IDPersona
+function GetLugarBtzo($agclientes, $IDPersona){
+    try{
+        return $agclientes->where('IDPersona',$IDPersona)->first()->LugarBtzo;
+    }catch(Exception $e){
+        return null;
+    }
+}
+
+// Obtener país de bautizo de la persona IDPersona
+function GetPaisBtzo($agclientes, $IDPersona){
+    try{
+        return $agclientes->where('IDPersona',$IDPersona)->first()->PaisBtzo;
+    }catch(Exception $e){
+        return null;
+    }
+}
+
+// Obtener año de matrimonio de la persona IDPersona
+function GetAnhoMatr($agclientes, $IDPersona){
+    try{
+        return $agclientes->where('IDPersona',$IDPersona)->first()->AnhoMatr;
+    }catch(Exception $e){
+        return null;
+    }
+}
+
+// Obtener mes de matrimonio de la persona IDPersona
+function GetMesMatr($agclientes, $IDPersona){
+    try{
+        return $agclientes->where('IDPersona',$IDPersona)->first()->MesMatr;
+    }catch(Exception $e){
+        return null;
+    }
+}
+
+// Obtener día de matrimonio de la persona IDPersona
+function GetDiaMatr($agclientes, $IDPersona){
+    try{
+        return $agclientes->where('IDPersona',$IDPersona)->first()->DiaMatr;
+    }catch(Exception $e){
+        return null;
+    }
+}
+
 // Obtener lugar de matrimonio de la persona IDPersona
 function GetLugarMatr($agclientes, $IDPersona){
     try{
         return $agclientes->where('IDPersona',$IDPersona)->first()->LugarMatr;
+    }catch(Exception $e){
+        return null;
+    }
+}
+
+// Obtener país de matrimonio de la persona IDPersona
+function GetPaisMatr($agclientes, $IDPersona){
+    try{
+        return $agclientes->where('IDPersona',$IDPersona)->first()->PaisMatr;
+    }catch(Exception $e){
+        return null;
+    }
+}
+
+// Obtener año de defunción de la persona IDPersona
+function GetAnhoDef($agclientes, $IDPersona){
+    try{
+        return $agclientes->where('IDPersona',$IDPersona)->first()->AnhoDef;
+    }catch(Exception $e){
+        return null;
+    }
+}
+
+// Obtener mes de defunción de la persona IDPersona
+function GetMesDef($agclientes, $IDPersona){
+    try{
+        return $agclientes->where('IDPersona',$IDPersona)->first()->MesDef;
+    }catch(Exception $e){
+        return null;
+    }
+}
+
+// Obtener día de defunción de la persona IDPersona
+function GetDiaDef($agclientes, $IDPersona){
+    try{
+        return $agclientes->where('IDPersona',$IDPersona)->first()->DiaDef;
+    }catch(Exception $e){
+        return null;
+    }
+}
+
+// Obtener lugar de defunción de la persona IDPersona
+function GetLugarDef($agclientes, $IDPersona){
+    try{
+        return $agclientes->where('IDPersona',$IDPersona)->first()->LugarDef;
+    }catch(Exception $e){
+        return null;
+    }
+}
+
+// Obtener país de defunción de la persona IDPersona
+function GetPaisDef($agclientes, $IDPersona){
+    try{
+        return $agclientes->where('IDPersona',$IDPersona)->first()->PaisDef;
     }catch(Exception $e){
         return null;
     }

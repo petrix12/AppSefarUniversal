@@ -47,7 +47,7 @@ class AgclienteController extends Controller
             Alert::error('¡Warning!', 'La persona que intenta añadir ya existe');
             return back();
         }
-
+        
         // Validación
         $request->validate([
             'IDCliente' => 'required|max:50',
@@ -72,16 +72,20 @@ class AgclienteController extends Controller
             'DiaDef' => 'nullable|numeric'
         ]);
 
-        
+        // Determinar quien llamó a este método
+        $Origen = $request->Origen;
+
         $PNacimiento = trim($request->PaisNac);
         $LNacimiento = trim($request->LugarNac);
-        $Familiares = trim($request->Familiaridad);
         $Usuario = Auth()->user()->email;
         $Generacion = GetGeneracion($request->IDPersona);
         $IDPadre = GetIDPadre($request->IDPersona);
         $IDMadre = $IDPadre + 1;
         $FUpdate = date('Y-m-d H:i:s');
-        
+        if(! $Origen){
+           $Familiares = trim($request->Familiaridad); 
+        }
+
         // Creando usuario
         Agcliente::create([
             'IDCliente' => trim($request->IDCliente), 
@@ -141,10 +145,11 @@ class AgclienteController extends Controller
 
         // Mensaje 
         Alert::success('¡Éxito!', 'Se ha añadido a la lista: ' . $request->Nombres . ' ' . $request->Apellidos);
-        
         // Redireccionar a la vista index
         //return redirect()->route('crud.agclientes.index');
-        //return back();
+        if($Origen == "arbol"){
+            return back();
+        }
 
         // Redireccionar a la vista que invocó este método
         return redirect($request->urlPrevia);
@@ -182,7 +187,7 @@ class AgclienteController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, Agcliente $agcliente)
-    { 
+    {
         // Validación
         $request->validate([
             'IDCliente' => 'required|max:50',
@@ -207,10 +212,12 @@ class AgclienteController extends Controller
             'DiaDef' => 'nullable|numeric'
         ]);
 
+        // Determinar quien llamó a este método
+        $Origen = $request->Origen;
+
         // Actualizando persona
         $agcliente->PNacimiento = trim($request->PaisNac);
         $agcliente->LNacimiento = trim($request->LugarNac);
-        $agcliente->Familiares = trim($request->Familiaridad);
         $agcliente->Usuario = Auth()->user()->email;
         $agcliente->Generacion = GetGeneracion($request->IDPersona);
         $agcliente->IDPadre = GetIDPadre($request->IDPersona);
@@ -222,10 +229,6 @@ class AgclienteController extends Controller
         $agcliente->Apellidos = trim($request->Apellidos);
 
         $agcliente->IDPersona = $request->IDPersona;
-        $agcliente->NPasaporte = trim($request->NPasaporte);
-        $agcliente->PaisPasaporte = $request->PaisPasaporte;
-        $agcliente->NDocIdent = trim($request->NDocIdent);
-        $agcliente->PaisDocIdent = $request->PaisDocIdent;
         $agcliente->Sexo = $request->Sexo;
 
         $agcliente->AnhoNac = $request->AnhoNac;
@@ -252,21 +255,35 @@ class AgclienteController extends Controller
         $agcliente->LugarDef = trim($request->LugarDef);
         $agcliente->PaisDef = $request->PaisDef;
 
-        $agcliente->Familiaridad = $request->Familiaridad;
-        $agcliente->NombresF = trim($request->NombresF);
-        $agcliente->ApellidosF = trim($request->ApellidosF);
-        $agcliente->ParentescoF = trim($request->ParentescoF);
-        $agcliente->NPasaporteF = trim($request->NPasaporteF);
-
-        $agcliente->FRegistro = $request->FRegistro;
         $agcliente->Observaciones = $request->Observaciones;
-        $agcliente->Enlace = $request->Enlace;
+
+        if(! $Origen){
+            $agcliente->Familiares = trim($request->Familiaridad);
+            $agcliente->NPasaporte = trim($request->NPasaporte);
+            $agcliente->PaisPasaporte = $request->PaisPasaporte;
+            $agcliente->NDocIdent = trim($request->NDocIdent);
+            $agcliente->PaisDocIdent = $request->PaisDocIdent;
+
+            $agcliente->Familiaridad = $request->Familiaridad;
+            $agcliente->NombresF = trim($request->NombresF);
+            $agcliente->ApellidosF = trim($request->ApellidosF);
+            $agcliente->ParentescoF = trim($request->ParentescoF);
+            $agcliente->NPasaporteF = trim($request->NPasaporteF);
+
+            $agcliente->FRegistro = $request->FRegistro;
+            $agcliente->Enlace = $request->Enlace;
+        }
 
         $agcliente->save();
 
         // Mensaje 
         Alert::success('¡Éxito!', 'Se ha actualizado la información de: ' . $request->Nombres . ' ' . $request->Apellidos);
         
+        // Si a este método lo llamó una vista árbol: lo retorna
+        if($Origen == "arbol"){
+            return back();
+        }
+
         // Redireccionar a la vista que invocó este método
         return redirect($request->urlPrevia);
     }

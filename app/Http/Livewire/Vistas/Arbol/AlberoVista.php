@@ -3,6 +3,7 @@
 namespace App\Http\Livewire\Vistas\Arbol;
 
 use App\Models\Agcliente;
+use App\Models\Country;
 use App\Models\Family;
 use Livewire\Component;
 use Illuminate\Http\Request;
@@ -21,6 +22,7 @@ class AlberoVista extends Component
     {
         $agclientes = Agcliente::where('IDCliente','LIKE',"%$this->IDCliente%")->get();
         $families = Family::where('IDCliente','LIKE',"%$this->IDCliente%")->get();
-        return view('livewire.vistas.arbol.albero-vista', compact('agclientes', 'families'));
+        $countries = Country::all();
+        return view('livewire.vistas.arbol.albero-vista', compact('agclientes', 'families','countries'));
     }
 }

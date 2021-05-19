@@ -2521,11 +2521,14 @@
 
 ******************************************************
 
-## Creación de formularios modales para vistas de árboles
-1. Creación de **resources\views\layouts\formularios\ver_doc.blade.php** para ver documentos cargados.
+## Componentes de formularios modales para vistas de árboles
+1. Creación de **resources\views\components\editar-persona.blade.php** para la edición de personas en el árbol.
 	>
 		***
-1. Creación de **resources\views\layouts\formularios\cargar_doc.blade.php** para la carga de documentos.
+1. Creación de **resources\views\components\ver-doc.blade.php** para ver documentos cargados.
+	>
+		***
+1. Creación de **resources\views\components\cargar-doc.blade.php** para la carga de documentos.
 	>
 		***
 
@@ -3285,10 +3288,12 @@
 		DB_CONNECTION=mysql
 		DB_HOST=107.180.2.195
 		DB_PORT=3306
-		DB_DATABASE=sefar
+		DB_DATABASE=universalsefar
 		DB_USERNAME=pxvim6av41qx
-		DB_PASSWORD=Cisco2019!
+		DB_PASSWORD="L5=Rj#8lW}YuK"
 		≡
+	IP pública:
+	+ https://www.cual-es-mi-ip.net
 
 ## Colores Sefar:
 + Rojo: R:121 G:22 B:15
@@ -3301,8 +3306,6 @@
 + books
 + families
 + libraries
-
-
 
 
 

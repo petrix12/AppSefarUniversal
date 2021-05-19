@@ -1,4 +1,3 @@
-@include('layouts.formularios.ver_doc')
 <div>
     <div class="p-2 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="lg:text-center">
@@ -65,12 +64,6 @@
                     <a href="{{ route('crud.agclientes.edit', $idT ) }}">{{ GetPersona($IDTatarabuelo) }}</a>
                 </h1>
             @else
-                {{-- <h1 class="text-center font-bold text-sm pt-1 text-red" title="Añadir">
-                    @php
-                        $idTC = AddPersona($agclientes[0]->IDCliente,$IDTatarabuelo);
-                    @endphp
-                    <a href="{{ route('crud.agclientes.edit', $idTC ) }}">{{ GetPersona($IDTatarabuelo) }}</a>
-                </h1> --}}
                 <h1 class="text-center font-bold text-sm pt-1 text-red" title="Añadir">
                     <a href="{{ route('crud.agclientes.create') }}">{{ GetPersona($IDTatarabuelo) }}</a>
                 </h1>
@@ -83,12 +76,10 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDTatarabuelo) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDTatarabuelo) }}">{{ GetVida($agclientes,$IDTatarabuelo) }}</p>
-                    
-            {{-- <span class="editar">
-                <i class="fas fa-user-edit"></i>
-            </span> --}}
+                 
+            <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDTatarabuelo'/></span>
             <x-cargar-doc :agclientes='$agclientes' :id='$IDTatarabuelo'/>
-            {{ mostrarDocumentos($agclientes,$IDTatarabuelo,'albero') }}
+            <x-ver-doc :agclientes='$agclientes' :id='$IDTatarabuelo'/>
         </div>
         
         {{-- TATARABUELA --}}
@@ -105,10 +96,6 @@
                 </h1>
             @else
             <h1 class="text-center font-bold text-sm pt-1 text-red" title="Añadir">
-                {{-- @php
-                    $idTaC = AddPersona($agclientes[0]->IDCliente,$IDTatarabuela);
-                @endphp
-                <a href="{{ route('crud.agclientes.edit', $idTaC ) }}">{{ GetPersona($IDTatarabuela) }}</a> --}}
                 <h1 class="text-center font-bold text-sm pt-1 text-red" title="Añadir">
                     <a href="{{ route('crud.agclientes.create') }}">{{ GetPersona($IDTatarabuela) }}</a>
                 </h1>
@@ -122,8 +109,9 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDTatarabuela) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDTatarabuela) }}">{{ GetVida($agclientes,$IDTatarabuela) }}</p>
+            <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDTatarabuela'/></span>
             <x-cargar-doc :agclientes='$agclientes' :id='$IDTatarabuela'/>
-            {{ mostrarDocumentos($agclientes,$IDTatarabuela,'albero') }}
+            <x-ver-doc :agclientes='$agclientes' :id='$IDTatarabuela'/>
         </div>
 
         {{-- matrimonio --}}
@@ -162,8 +150,9 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDBisabuelo) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDBisabuelo) }}">{{ GetVida($agclientes,$IDBisabuelo) }}</p>
+            <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDBisabuelo'/></span>
             <x-cargar-doc :agclientes='$agclientes' :id='$IDBisabuelo'/>
-            {{ mostrarDocumentos($agclientes,$IDBisabuelo,'albero') }}
+            <x-ver-doc :agclientes='$agclientes' :id='$IDBisabuelo'/>
         </div>
         
         {{-- BISABUELA --}}
@@ -191,8 +180,9 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDBisabuela) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDBisabuela) }}">{{ GetVida($agclientes,$IDBisabuela) }}</p>
+            <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDBisabuela'/></span>
             <x-cargar-doc :agclientes='$agclientes' :id='$IDBisabuela'/>
-            {{ mostrarDocumentos($agclientes,$IDBisabuela,'albero') }}
+            <x-ver-doc :agclientes='$agclientes' :id='$IDBisabuela'/>
         </div>
 
         {{-- matrimonio --}}
@@ -231,8 +221,9 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDAbuelo) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDAbuelo) }}">{{ GetVida($agclientes,$IDAbuelo) }}</p>
+            <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDAbuelo'/></span>
             <x-cargar-doc :agclientes='$agclientes' :id='$IDAbuelo'/>
-            {{ mostrarDocumentos($agclientes,$IDAbuelo,'albero') }}
+            <x-ver-doc :agclientes='$agclientes' :id='$IDAbuelo'/>
         </div>
         
         {{-- ABUELA --}}
@@ -260,8 +251,9 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDAbuela) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDAbuela) }}">{{ GetVida($agclientes,$IDAbuela) }}</p>
+            <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDAbuela'/></span>
             <x-cargar-doc :agclientes='$agclientes' :id='$IDAbuela'/>
-            {{ mostrarDocumentos($agclientes,$IDAbuela,'albero') }}
+            <x-ver-doc :agclientes='$agclientes' :id='$IDAbuela'/>
         </div>
 
         {{-- matrimonio --}}
@@ -300,8 +292,9 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDPadre) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDPadre) }}">{{ GetVida($agclientes,$IDPadre) }}</p>
+            <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDPadre'/></span>
             <x-cargar-doc :agclientes='$agclientes' :id='$IDPadre'/>
-            {{ mostrarDocumentos($agclientes,$IDPadre,'albero') }}
+            <x-ver-doc :agclientes='$agclientes' :id='$IDPadre'/>
         </div>
         
         {{-- MADRE --}}
@@ -329,8 +322,9 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDMadre) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDMadre) }}">{{ GetVida($agclientes,$IDMadre) }}</p>
+            <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDMadre'/></span>
             <x-cargar-doc :agclientes='$agclientes' :id='$IDMadre'/>
-            {{ mostrarDocumentos($agclientes,$IDMadre,'albero') }}
+            <x-ver-doc :agclientes='$agclientes' :id='$IDMadre'/>
         </div>
 
         {{-- matrimonio --}}
@@ -369,8 +363,9 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDSolicitante) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDSolicitante) }}">{{ GetVida($agclientes,$IDSolicitante) }}</p>
+            <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDSolicitante'/></span>
             <x-cargar-doc :agclientes='$agclientes' :id='$IDSolicitante'/>
-            {{ mostrarDocumentos($agclientes,$IDSolicitante,'albero') }}
+            <x-ver-doc :agclientes='$agclientes' :id='$IDSolicitante'/>
         </div>
         
         {{-- CÓNYUGUE --}}
@@ -397,8 +392,9 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDConyugue) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDConyugue) }}">{{ GetVida($agclientes,$IDConyugue) }}</p>
-            {{-- <x-cargar-doc :agclientes='$agclientes' :id='$IDConyugue'/> --}}
-            {{ mostrarDocumentos($agclientes,$IDConyugue,'albero') }}
+            {{-- <span class="editar"><x-editar-persona :agclientes='$agclientes' :id='$IDConyugue'/></span> --}}
+            {{-- <x-cargar-doc :agclientes='$agclientes' :countries='$countries' :id='$IDConyugue'/> --}}
+            {{-- <x-ver-doc :agclientes='$agclientes' :id='$IDConyugue'/> --}}
         </div>
 
         {{-- matrimonio --}}
