@@ -52,7 +52,7 @@ class BookController extends Controller
        
         // Creando documento
         Book::create([
-            'titulo' => trim($request->titulo),
+            'titulo' => trim(str_replace(',','-',$request->titulo)),
             'subtitulo' => trim($request->subtitulo),
             'autor' => trim($request->autor),
             'editorial' => trim($request->editorial),
@@ -119,7 +119,7 @@ class BookController extends Controller
         ]);
 
         // Actualizando documento
-        $book->titulo = trim($request->titulo);
+        $book->titulo = trim(str_replace(',','-',$request->titulo));
         $book->subtitulo = trim($request->subtitulo);
         $book->autor = trim($request->autor);
         $book->editorial = trim($request->editorial);
