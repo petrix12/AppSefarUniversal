@@ -87,14 +87,12 @@ class CreateNewUser implements CreatesNewUsers
             Mail::to($user->email)->send($mail_cliente);
             // Enviar un correo al equipo se Sefar indicando que se ha registrado un cliente
             $mail_sefar = new RegistroSefar($user);
-            Mail::to([
-                'pedro.bazo@gmail.com',
-                'gerenciait@sefarvzla.com',
-                'egonzalez@sefarvzla.com',
-                'analisisgenealogico@sefarvzla.com',
-                'asistentedeproduccion@sefarvzla.com',
-                'organizacionrrhh@sefarvzla.com'
-            ])->send($mail_sefar);
+            Mail::to(['pedro.bazo@gmail.com'])->send($mail_sefar);
+            Mail::to(['gerenciait@sefarvzla.com'])->send($mail_sefar);
+            Mail::to(['egonzalez@sefarvzla.com'])->send($mail_sefar);
+            Mail::to(['analisisgenealogico@sefarvzla.com'])->send($mail_sefar);
+            Mail::to(['asistentedeproduccion@sefarvzla.com'])->send($mail_sefar);
+            Mail::to(['organizacionrrhh@sefarvzla.com'])->send($mail_sefar);
             return $user->assignRole('Cliente');
         }else{
             return $user;
