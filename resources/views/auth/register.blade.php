@@ -1,3 +1,57 @@
+<?php
+    // Captura de parámetros del JotForm
+    if (!empty($_GET['pasaporte'])){
+        $passport = trim($_GET['pasaporte']);
+        $rol = 'cliente';
+    }else{
+        $passport = null;
+        $rol = null;
+    }
+    if (!empty($_GET['apellidos'])) $apellidos = $_GET['apellidos']; else $apellidos = null;
+    if (!empty($_GET['email'])) $email = $_GET['email']; else $email = null;
+    if (!empty($_GET['fnacimiento'])) $fnacimiento = $_GET['fnacimiento']; else $fnacimiento = null;
+    if (!empty($_GET['cnacimiento'])) $cnacimiento = $_GET['cnacimiento']; else $cnacimiento = null;
+    if (!empty($_GET['pnacimiento'])) $pnacimiento = $_GET['pnacimiento']; else $pnacimiento = null;
+    if (!empty($_GET['sexo'])) $sexo = $_GET['sexo']; else $sexo = null;
+    if (!empty($_GET['nombre_f'])) $nombre_f = $_GET['nombre_f']; else $nombre_f = null;
+    if (!empty($_GET['pasaporte_f'])) $pasaporte_f = $_GET['pasaporte_f']; else $pasaporte_f = null;
+
+    $name = null;
+    if (!empty($_GET['nombres'])){
+        if(is_null($apellidos)){
+            $name = $_GET['nombres'];
+        } else {
+            $name = $_GET['nombres'].' '.$_GET['apellidos'];
+        }
+        $nombres = $_GET['nombres'];
+    }else{
+        $nombres = null;
+    }
+
+    switch ($sexo) {
+        case "FEMENINO":
+            $sexo = 'F';
+            break;
+        case "FEMENINO / FEMALE":
+            $sexo = 'F';
+            break;
+        case "MASCULINO":
+            $sexo = 'M';
+            break;
+        case "MASCULINO / MALE":
+            $sexo = 'M';
+            break;
+        case "OTROS":
+            $sexo = 'O';
+            break;    
+    }
+    // Familiares
+    $Familiares = is_null($nombre_f) ? NULL : 'Si';
+    // Fecha de nacimiento
+    $AnhoNac = date("Y", strtotime($fnacimiento));
+    $MesNac = date("m", strtotime($fnacimiento));
+    $DiaNac = date("d", strtotime($fnacimiento));
+?>
 <x-guest-layout>
     <x-jet-authentication-card>
         <x-slot name="logo">
@@ -10,15 +64,34 @@
         <form method="POST" action="{{ route('register') }}">
             @csrf
 
+            {{-- Campos ocultos --}}
+            <input type="hidden" name="nombres" value="{{ $nombres }}" />
+            <input type="hidden" name="apellidos" value="{{ $apellidos }}" />
+            <input type="hidden" name="fnacimiento" value="{{ $fnacimiento }}" />
+            <input type="hidden" name="cnacimiento" value="{{ $cnacimiento }}" />
+            <input type="hidden" name="pnacimiento" value="{{ $pnacimiento }}" />
+            <input type="hidden" name="sexo" value="{{ $sexo }}" />
+            <input type="hidden" name="nombre_f" value="{{ $nombre_f }}" />
+            <input type="hidden" name="pasaporte_f" value="{{ $pasaporte_f }}" />
+            <input type="hidden" name="rol" value="{{ $rol }}" />
             <div>
                 <x-jet-label for="name" value="{{ __('Name') }}" />
-                <x-jet-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autofocus autocomplete="name" />
+                <x-jet-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name',$name)" required autofocus autocomplete="name" />
             </div>
 
             <div class="mt-4">
                 <x-jet-label for="email" value="{{ __('Email') }}" />
-                <x-jet-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required />
+                <x-jet-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email',$email)" required />
             </div>
+
+            @if ($rol == 'cliente')
+            <div class="mt-4">
+                <x-jet-label for="passport" value="{{ __('Passport') }}" />
+                <x-jet-input id="passport" class="block mt-1 w-full" type="text" name="passport" :value="old('passport',$passport)" required />
+            </div>
+            @else
+            <input type="hidden" name="passport" value="{{ $passport }}" />
+            @endif
 
             <div class="mt-4">
                 <x-jet-label for="password" value="{{ __('Password') }}" />

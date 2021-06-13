@@ -2718,9 +2718,9 @@
 		public function run()
 		{
 			≡
-			Permission::create(['name' => 'crud.agclientes.index'])->syncRoles($rolAdministrador, $rolGenealogista);
-			Permission::create(['name' => 'crud.agclientes.create'])->syncRoles($rolAdministrador, $rolGenealogista);
-			Permission::create(['name' => 'crud.agclientes.edit'])->syncRoles($rolAdministrador, $rolGenealogista);
+			Permission::create(['name' => 'crud.agclientes.index'])->syncRoles($rolAdministrador, $rolGenealogista, $rolCliente);
+			Permission::create(['name' => 'crud.agclientes.create'])->syncRoles($rolAdministrador, $rolGenealogista, $rolCliente);
+			Permission::create(['name' => 'crud.agclientes.edit'])->syncRoles($rolAdministrador, $rolGenealogista, $rolCliente);
 			Permission::create(['name' => 'crud.agclientes.destroy'])->syncRoles($rolAdministrador);
 			≡
 		}
@@ -2999,10 +2999,341 @@
 ## ___________________________________________________________________
 
 
+## Registro de clientes
+1. Crear controlador para capturar parámetros GET:
+	>
+		$ php artisan make:controller GetController
+1. Archivo de prueba (resources\views\pruebas\registro.blade.php) para el traspaso de cliente de **JotForm** a **app.universalsefar.com**:
+	>
+		@extends('adminlte::page')
+
+		@section('title', 'Prueba Agclientes')
+
+		@section('content_header')
+			<h1>Generar enlace para registrar cliente</h1>
+		@stop
+
+		@section('content')
+		<x-app-layout>
+			<form action="{{ route('test.capturar_parametros_get') }}" method ="GET">
+				<div class="shadow overflow-hidden sm:rounded-md">
+					<div class="container">
+						<p class="my-2 ml-2 text-bold text-blue-600">Datos Clientes:</p>
+						<div class="md:flex ms:flex-wrap">
+							<div class="px-1 py-2 m-2 flex-1">    {{-- pasaporte --}}
+								<div>
+									<label for="pasaporte" class="block text-sm font-medium text-gray-700">Pasaporte</label>
+									<input value="1234567{{-- {{ old('pasaporte', $pasaporte) }} --}}" type="text" name="pasaporte" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+								</div>
+							</div>
+
+							<div class="px-1 py-2 m-2 flex-1">    {{-- nombres --}}
+								<div>
+									<label for="nombres" class="block text-sm font-medium text-gray-700">Nombres</label>
+									<input value="Fulanito{{-- {{ old('nombres') }} --}}" type="text" name="nombres" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+								</div>
+							</div>
+
+							<div class="px-1 py-2 m-2 flex-1">    {{-- apellidos --}}
+								<div>
+									<label for="apellidos" class="block text-sm font-medium text-gray-700">Apellidos</label>
+									<input value="Detal y Borrar{{-- {{ old('apellidos') }} --}}" type="text" name="apellidos" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+								</div>
+							</div>
+
+							<div class="px-1 py-2 m-2 flex-1">    {{-- email --}}
+								<div>
+									<label for="email" class="block text-sm font-medium text-gray-700">e-mail</label>
+									<input value="delete.borrar@gmail.com{{-- {{ old('email') }} --}}" type="email" name="email" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+								</div>
+							</div>
+						</div>
+						<div class="md:flex ms:flex-wrap">
+							<div class="px-1 py-2 m-2 flex">    {{-- fnacimiento --}}
+								<div>
+									<label for="fnacimiento" class="block text-sm font-medium text-gray-700" title="Fecha de registro">Fecha de nacimiento</label>
+									<input value="1977-11-03{{-- {{ old('fnacimiento') }} --}}" type="date" name="fnacimiento" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+								</div>
+							</div>
+
+							<div class="px-1 py-2 m-2 flex-1">    {{-- cnacimiento --}}
+								<div>
+									<label for="cnacimiento" class="block text-sm font-medium text-gray-700">Ciudad de nacimiento</label>
+									<input value="Punto Fijo{{-- {{ old('cnacimiento') }} --}}" type="text" name="cnacimiento" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+								</div>
+							</div>
+
+							<div class="px-1 py-2 m-2 flex-1">    {{-- pnacimiento --}}
+								<div>
+									<label for="pnacimiento" class="block text-sm font-medium text-gray-700" title="País de nacimiento">País Nac.</label>
+									<select name="pnacimiento" autocomplete="country" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+										<option></option>
+										@foreach ($countries as $country)
+											@if ('Venezuela'/* old('pnacimiento') */ == $country->pais)
+												<option selected>{{ $country->pais }}</option>
+											@else
+												<option>{{ $country->pais }}</option> 
+											@endif
+										@endforeach
+									</select>
+								</div>
+							</div>
+
+							<div class="px-1 py-2 m-2 flex-1">    {{-- sexo --}}
+								<div>
+									<label for="sexo" class="block text-sm font-medium text-gray-700" title="Sexo">Sexo</label>
+									<select name="sexo" autocomplete="on" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+										<option></option>
+										@if ("F"/* old('sexo') */ == "M")
+											<option title="Masculino" selected>M</option>
+										@else
+											<option title="Masculino">M</option>
+										@endif
+										
+										@if ("F"/* old('sexo') */ == "F")
+											<option title="Masculino" selected>F</option>
+										@else
+											<option title="Masculino">F</option>
+										@endif
+									</select>
+								</div>
+							</div>
+						</div>
+
+						<p class="my-2 ml-2 text-bold text-blue-800">Datos Familiar:</p>
+						<div class="md:flex ms:flex-wrap">
+							<div class="px-1 py-2 m-2 flex">    {{-- pasaporte_f --}}
+								<div>
+									<label for="pasaporte_f" class="block text-sm font-medium text-gray-700">Pasaporte del familiar</label>
+									<input value="5555555{{-- {{ old('pasaporte_f', $pasaporte_f) }} --}}" type="text" name="pasaporte_f" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+								</div>
+							</div>
+
+							<div class="px-1 py-2 m-2 flex-1">    {{-- nombre_f --}}
+								<div>
+									<label for="nombre_f" class="block text-sm font-medium text-gray-700">Nombres y apellidos del familiar</label>
+									<input value="Perensejo Borrar{{-- {{ old('nombre_f') }} --}}" type="text" name="nombre_f" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
+						<button type="submit" class="cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+							Generar URL
+						</button>
+					</div>
+				</div>
+			</form>
+		</x-app-layout>
+		@stop
+
+		@section('css')
+			<link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
+		@stop
+
+		@section('js')
+
+		@stop
+1. Crear rutas para la prueba de registros de clientes y captura de parámetros get en el grupo para realizar pruebas del archivo de rutas **routes\web.php**:
+	>
+		// Grupo de rutas para realizar pruebas
+		Route::group(['middleware' => ['auth'], 'as' => 'test.'], function(){
+			≡
+			// Generar enlaces para registrar clientes
+			Route::get('registro', [App\Http\Controllers\GetController::class, 'registro'])->name('registro')->middleware('can:administrador');
+
+			// Capturar parámetros get 
+			Route::get('capturar_parametros_get', [App\Http\Controllers\GetController::class, 'capturar_parametros_get'])->name('capturar_parametros_get')->middleware('can:administrador');
+		});
+1. Programar controlador **app\Http\Controllers\GetController.php**:
+	>
+		<?php
+
+		namespace App\Http\Controllers;
+
+		use App\Models\Country;
+		use Illuminate\Http\Request;
+		use RealRashid\SweetAlert\Facades\Alert;
+
+		class GetController extends Controller
+		{
+			public function registro(){
+				$countries = Country::all();
+				return view('pruebas.registro', compact('countries'));
+			}
+
+			public function capturar_parametros_get(Request $request){
+				$parametros = substr($request->fullUrl(), 41);
+				Alert::info('Enlaces para registrar cliente', '
+					<small>
+						<p><strong>http://sefar.test/register</strong>'.$parametros.'</p>
+						<br><hr><br>
+						<p><strong>https://app.universalsefar.com/register</strong>'.$parametros.'</p>
+					</small>'
+				)->toHtml()->persistent(true);
+				return back();
+			}
+		}
+1. Modificar el archivo de configuración **config\adminlte.php** para incluir ruta:
+	>
+		<?php
+
+		return [
+			≡
+			'menu' => [
+				≡
+				/* *** PRUEBAS *** */
+				[
+					'text'        => 'Pruebas',
+					'icon'        => 'fas fa-grimace',
+					'icon_color'  => 'yellow',
+					'can'  => 'administrador',
+					'submenu' => [
+						≡
+						[
+							'text'          => 'Enlace para registro',
+							'icon'          => 'fas fa-user-circle',
+							'icon_color'    => 'green',
+							'url'           => 'registro',
+							'can'           => 'administrador',
+						],
+					],
+				],
+				≡
+			],
+			≡
+		];
+1. Modificar vista **resources\views\auth\register.blade.php**:
+	>
+		***
+1. Modificar método create del controlador **app\Actions\Fortify\CreateNewUser.php**:
+	>
+		***
+	Incluir la biblioteca:
+	>
+		use RealRashid\SweetAlert\Facades\Alert;
+1. Agregar el campo **email_verified_at** a la variable $fillable del modelo **User** app\Models\User.php
+	>
+		protected $fillable = [
+			'name',
+			'email',
+			'password',
+			'password_md5',
+			'passport',
+			'email_verified_at',
+		];
+1. Adaptar controlador **app\Http\Controllers\Controller.php** para administrar la vista de clientes:
+	>
+		***
+1. Configurar **config\adminlte.php** para el menú de los clientes:
+	>
+		***
+1. Crear controlador para administrar las vistas de clientes:
+	>
+		$ php artisan make:controller ClienteController
+1. Crear grupo de rutas para vistas de clientes en **routes\web.php**:
+	>
+		***
+1. Modificar la vista resources\views\livewire\vistas\arbol\tree-vista.blade.php:
+	>
+		≡
+		<div class="container overflow-x-scroll">
+			<div class="flex justify-between">
+				<div class="px-4 py-2 m-2">
+					{{-- ÁRBOL EXPANDIDO O COMPACTO --}}
+					<div class="text-left">
+						<label for="Modo" class="px-3 block text-sm font-medium text-gray-700" title="Indicar línea genealógica">Modo</label>
+						<select wire:model="Modo" name="Modo"class="w-44 mt-1 block py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+							<option value="0">Expandido</option>
+							<option value="1">Compacto</option>
+						</select>
+					</div>
+				</div>
+				@can('genealogista')
+				<div class="px-4 py-2 m-2">
+					{{-- FAMILIARES --}}
+					<div class="justify-center">
+						<label for="Familiares" class="px-3 block text-sm font-medium text-gray-700" title="Familiares en el proceso">Familiares</label>
+						<select wire:model="IDFamiliar" style="width:450px" name="Familiares" class="w-44 mt-1 block py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+							<option value="{{ null }}">-</option>
+							@foreach ($families as $family)
+								<option value="{{ $family->IDFamiliar }}">{{ $family->Familiar.' - '.$family->Parentesco }}</option>
+							@endforeach
+						</select>
+						@if($IDFamiliar)
+						<div class="pt-2">
+							<div class="px-4 py-3 bg-gray-50 text-left sm:px-6">
+								<a href="{{ route('arboles.tree.index', $IDFamiliar) }}" target="_blank" class="cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+									Ir a familiar seleccionado
+								</a>
+							</div>
+						</div>
+						@endif
+					</div>
+				</div>
+				@endcan
+			</div>
+		</div>
+		≡
+1. Crear un **maillable** para notificar registros y carga de árbol tanto al cliente como a Sefar:
+    >
+        $ php artisan make:mail RegistroCliente
+		$ php artisan make:mail RegistroSefar
+        $ php artisan make:mail CargaCliente
+		$ php artisan make:mail CargaSefar
+1. Programar el método **build** de los archivos controladores de los maillables:
+	+ **app\Mail\CargaCliente.php**:
+		>
+			***
+	+ **app\Mail\CargaSefar.php**:
+		>
+			***
+	+ **app\Mail\RegistroCliente.php**:
+		>
+			***
+	+ **app\Mail\RegistroSefar.php**:
+		>
+			***
+	En todos los archivos incluir en la clase la variable publica:
+	>
+		public $user;
+	En todos los archivos programar el método **__construct**:
+	>
+		public function __construct(User $user)
+		{
+			$this->user = $user;
+		}	
+	En todos los archivos importar el modelo **User**:
+		>
+			use App\Models\User;
+
+1. Diseñar las vistas respectivas para los correos de notificación:
+	+ **resources\views\mail\carga-cliente.blade.php**:
+		>
+			***
+	+ **resources\views\mail\carga-sefar.blade.php**:
+		>
+			***
+	+ **resources\views\mail\registro-cliente.blade.php**:
+		>
+			***
+	+ **resources\views\mail\registro-sefar.blade.php**:
+		>
+			***
+	### Commit --:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "Carga de clientes"
 
 
 
-	# **********************************************
+
+# **********************************************
+## Pendientes:
+1. Pendiente
 	## CRUD Clientes con Liveware
 1. Pendiente
 
@@ -3016,9 +3347,7 @@
 1. Pendiente
 
 	## CRUD Maisanta con Liveware
-1. Pendiente
 
-	## Registro cliente
 1. Crear vista Registro: resources\views\auth\registro.blade.php
 	>
 		***
@@ -3116,6 +3445,29 @@
 	+ Cambiar **MAIL_USERNAME=7c67f786972696** por **MAIL_USERNAME=_mainaccount@universalsefar.com**
 	+ Cambiar **MAIL_PASSWORD=8f37b2d25228ba** por **MAIL_PASSWORD=Cisco2019!**
 	+ Cambiar **MAIL_ENCRYPTION=tls** por **MAIL_ENCRYPTION=null**
+1. Para configurar Laravel (AppSefar) con Gmail (info@sefarvzla.com)
+	>
+		MAIL_MAILER=smtp
+		MAIL_HOST=smtp.gmail.com
+		MAIL_PORT=465
+		MAIL_USERNAME=info@sefarvzla.com
+		MAIL_PASSWORD=tmizoofcenmauman
+		MAIL_ENCRYPTION=ssl
+		MAIL_FROM_ADDRESS=info@sefarvzla.com
+		MAIL_FROM_NAME="${APP_NAME}"
+
+		MAIL_MAILER=smtp
+		MAIL_HOST=smtp.gmail.com
+		MAIL_PORT=465
+		MAIL_USERNAME=info@sefarvzla.com
+		MAIL_PASSWORD=tmizoofcenmauman
+		MAIL_ENCRYPTION=ssl
+		MAIL_FROM_ADDRESS=info@sefarvzla.com
+		MAIL_FROM_NAME="${APP_NAME}"
+		
+	Luego direccionar
+	>
+		https://app.universalsefar.com/config-clear
 1. Direccionar las siguientes rutas:
 	>
 		https://app.universalsefar.com/storage-link

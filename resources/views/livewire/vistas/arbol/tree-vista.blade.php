@@ -21,6 +21,7 @@
                     </select>
                 </div>
             </div>
+            @can('genealogista')
             <div class="px-4 py-2 m-2">
                 {{-- FAMILIARES --}}
                 <div class="justify-center">
@@ -42,6 +43,7 @@
                     @endif
                 </div>
             </div>
+            @endcan
         </div>
     </div>
     

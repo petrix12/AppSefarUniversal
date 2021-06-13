@@ -442,6 +442,37 @@ return [
                 ],
             ],
         ],
+
+        /* *** CLIENTES *** */
+        [
+            'text'        => 'Menú de opciones',
+            'icon'        => 'fas fa-caret-square-down',
+            'icon_color'  => 'blue',
+            'can'  => 'cliente',
+            'submenu' => [
+                [
+                    'text'          => 'Cargar árbol',
+                    'icon'          => 'fas fa-sitemap',
+                    'icon_color'    => 'yellow',
+                    'route'         => 'clientes.tree',
+                    'can'           => 'cliente',
+                ],
+                [
+                    'text'          => 'Perfil de usuario',
+                    'icon'          => 'fas fa-user-cog',
+                    'icon_color'    => 'yellow',
+                    'url'           => 'user/profile',
+                    'can'           => 'cliente',
+                ],
+            ],
+        ],
+        [
+            'text'          => 'Finalizar carga',
+            'icon'          => 'fas fa-sign-out-alt',
+            'icon_color'    => 'blue',
+            'route'         => 'clientes.salir',
+            'can'           => 'cliente',
+        ],
         
         /* *** PRUEBAS *** */
         [
@@ -469,6 +500,13 @@ return [
                     'icon'          => 'fas fa-window-restore',
                     'icon_color'    => 'red',
                     'url'           => 'vmodal',
+                    'can'           => 'administrador',
+                ],
+                [
+                    'text'          => 'Enlace para registro',
+                    'icon'          => 'fas fa-user-circle',
+                    'icon_color'    => 'green',
+                    'url'           => 'registro',
                     'can'           => 'administrador',
                 ],
             ],

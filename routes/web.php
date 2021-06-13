@@ -3,6 +3,7 @@
 use App\Http\Controllers\AgclienteController;
 use App\Http\Controllers\AlberoController;
 use App\Http\Controllers\BookController;
+use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\ConnectionController;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\CountryController;
@@ -79,6 +80,14 @@ Route::group(['middleware' => ['auth'], 'as' => 'arboles.'], function(){
         ->middleware('can:genealogista');
 });
 
+// Grupo de rutas para vistas de clientes
+Route::group(['middleware' => ['auth'], 'as' => 'clientes.'], function(){
+    Route::get('tree', [ClienteController::class, 'tree'])->name('tree')
+        ->middleware('can:cliente');
+    Route::get('salir', [ClienteController::class, 'salir'])->name('salir')
+        ->middleware('can:cliente');
+});
+
 // Grupo de rutas para realizar pruebas
 Route::group(['middleware' => ['auth'], 'as' => 'test.'], function(){
     // Pruebas con Flex de Tailwind
@@ -96,6 +105,12 @@ Route::group(['middleware' => ['auth'], 'as' => 'test.'], function(){
     Route::get('vmodal', function (){
         return view('pruebas.vmodal');
     })->name('vmodal')->middleware('can:administrador');
+
+    // Generar enlaces para registrar clientes
+    Route::get('registro', [App\Http\Controllers\GetController::class, 'registro'])->name('registro')->middleware('can:administrador');
+
+    // Capturar parámetros get 
+    Route::get('capturar_parametros_get', [App\Http\Controllers\GetController::class, 'capturar_parametros_get'])->name('capturar_parametros_get')->middleware('can:administrador');
 });
 
 

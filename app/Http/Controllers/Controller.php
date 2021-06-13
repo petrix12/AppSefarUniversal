@@ -25,6 +25,11 @@ class Controller extends BaseController
         if(Auth::user()->hasRole('Genealogista')){
             return view('consultas.onidex.index');
         }
+
+        if(Auth::user()->hasRole('Cliente')){
+            $IDCliente = Auth::user()->passport;
+            return view('arboles.tree', compact('IDCliente'));
+        }
         
         return view('inicio');
     }
