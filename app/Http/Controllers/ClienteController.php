@@ -22,11 +22,18 @@ class ClienteController extends Controller
 
         // Envía un correo al equipo de Sefar
         $mail_sefar = new CargaSefar(Auth::user());
-        Mail::to(['pedro.bazo@gmail.com'])->send($mail_sefar);
+        Mail::to([
+            'pedro.bazo@sefarvzla.com',
+            'gerenciait@sefarvzla.com',
+            'egonzalez@sefarvzla.com',
+            'analisisgenealogico@sefarvzla.com',
+            'asistentedeproduccion@sefarvzla.com',
+        ])->send($mail_sefar);
+        /* Mail::to(['pedro.bazo@gmail.com'])->send($mail_sefar);
         Mail::to(['gerenciait@sefarvzla.com'])->send($mail_sefar);
         Mail::to(['egonzalez@sefarvzla.com'])->send($mail_sefar);
         Mail::to(['analisisgenealogico@sefarvzla.com'])->send($mail_sefar);
-        Mail::to(['asistentedeproduccion@sefarvzla.com'])->send($mail_sefar);
+        Mail::to(['asistentedeproduccion@sefarvzla.com'])->send($mail_sefar); */
         /* Mail::to(['organizacionrrhh@sefarvzla.com'])->send($mail_sefar); */
 
         // Realiza logout de la aplicación
