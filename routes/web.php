@@ -12,6 +12,7 @@ use App\Http\Controllers\FileController;
 use App\Http\Controllers\FormatController;
 use App\Http\Controllers\LadoController;
 use App\Http\Controllers\LibraryController;
+use App\Http\Controllers\MiscelaneoController;
 use App\Http\Controllers\OlivoController;
 use App\Http\Controllers\OnidexController;
 use App\Http\Controllers\ParentescoController;
@@ -56,6 +57,8 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
             ->middleware('can:crud.formats.index');
     Route::resource('books', BookController::class)->names('books')
             ->middleware('can:crud.books.index');
+    Route::resource('miscelaneos', MiscelaneoController::class)->names('miscelaneos')
+            ->middleware('can:crud.miscelaneos.index');
 });
 
 // Grupo de rutas para Consultas a base de datos

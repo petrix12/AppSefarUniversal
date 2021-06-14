@@ -388,6 +388,13 @@ return [
                     'route'         => 'crud.books.index',
                     'can'           => 'crud.books.index',
                 ],
+                [
+                    'text'          => 'Miscelaneos',
+                    'icon'          => 'fas fa-file',
+                    'icon_color'    => 'white',
+                    'route'         => 'crud.miscelaneos.index',
+                    'can'           => 'crud.miscelaneos.index',
+                ],
             ],
         ],
 

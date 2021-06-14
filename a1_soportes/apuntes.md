@@ -2367,6 +2367,138 @@
 
 ## ___________________________________________________________________
 
+***********************************************
+
+## CRUD Miscelaneos
+1. Crear modelo Miscelaneo junto con su migración y controlador y los métodos para el CRUD.
+	>
+		$ php artisan make:model Miscelaneo -m -c -r
+1. Preparar migración para la tabla **miscelaneos** en **database\migrations\2021_06_13_204842_create_miscelaneos_table.php**
+	>
+		≡
+		public function up()
+		{
+			Schema::create('miscelaneos', function (Blueprint $table) {
+				$table->id();
+				$table->string('id_bd',4)->nullable();      // id correspondiente en la tabla bd
+				$table->string('titulo');                   // Título
+				$table->string('autor')->nullable();        // Autor(es)
+				$table->string('publicado')->nullable();    // Publicado en
+				$table->string('editorial')->nullable();    // Ciudad / Editorial
+				$table->string('volumen')->nullable();      // Año / Número / Volumen
+				$table->string('paginacion')->nullable();   // Paginación
+				$table->string('isbn')->nullable();         // ISBN / ISSN
+				$table->text('claves')->nullable();         // Palabras claves
+				$table->string('enlace');                   // Enlace o url del documento
+				$table->text('notas')->nullable();          // Notas
+				$table->string('material')->nullable();     // Tipo de material:    - Artículo de publicación periódica
+															//                      - Capítulo de libro
+															//                      - Material genealógico
+															//                      - Informes de Sefar
+															//                      - Otros
+				$table->string('catalogador')->nullable();  // Nombre o email del usuario que creo el documento
+				$table->timestamps();
+			});
+		}
+		≡
+
+1. Establecer permisos en los seeders para el CRUD Miscelaneos en **database\seeders\RoleSeeder.php**
+	>   
+		≡ 
+		public function run()
+		{
+			≡        
+			Permission::create(['name' => 'crud.miscelaneos.index'])->syncRoles($rolAdministrador,$rolGenealogista,$rolDocumentalista);
+			Permission::create(['name' => 'crud.miscelaneos.create'])->syncRoles($rolAdministrador,$rolGenealogista,$rolDocumentalista);
+			Permission::create(['name' => 'crud.miscelaneos.edit'])->syncRoles($rolAdministrador,$rolGenealogista,$rolDocumentalista);
+			Permission::create(['name' => 'crud.miscelaneos.destroy'])->syncRoles($rolAdministrador);
+			≡
+		}
+		≡
+1. Reestablecer base de datos: 
+	>
+		$ php artisan migrate:fresh --seed		
+1. Establecer campos de asignación masiva en el modelo **Miscelaneo** en **app\Models\Miscelaneo.php**
+	>
+		≡
+		class Miscelaneo extends Model
+		{
+			use HasFactory;
+
+			protected $fillable = [
+				'titulo',
+				'autor',
+				'publicado',
+				'editorial',
+				'volumen',
+				'paginacion',
+				'isbn',
+				'notas',
+				'enlace',
+				'claves',
+				'material',
+				'catalogador',
+			];
+		}
+1. Agregar ruta miscelaneos al grupo de rutas CRUD:
+	>
+		Route::resource('miscelaneos', MiscelaneoController::class)->names('miscelaneos')
+				->middleware('can:crud.miscelaneos.index');
+	##### Nota: añadir a la cabecera:
+	>
+		use App\Http\Controllers\MiscelaneoController;
+1. Crear componente Livewire para Tabla Miscelaneos: 
+	>
+		$ php artisan make:livewire crud/miscelaneos-table
+1. Programar controlador para la tabla Miscelaneos: **app\Http\Livewire\Crud\MiscelaneosTable.php**
+	>
+		≡
+		≡
+1. Diseñar vista para la tabla Miscelaneos: **resources\views\livewire\crud\miscelaneos-table.blade.php**
+	>
+		≡
+		≡
+1. Programar controlador Miscelaneo: **app\Http\Controllers\MiscelaneoController.php**
+	>
+		≡
+		≡
+
+
+
+1. Diseñar las vistas para el CRUD Miscelaneos:
+	- resources\views\crud\miscelaneos\index.blade.php
+		>
+			≡
+			≡
+	- resources\views\crud\miscelaneos\create.blade.php
+		>
+			≡
+			≡
+	- resources\views\crud\miscelaneos\edit.blade.php
+		>
+			≡
+			≡
+
+
+
+1. Editar **config\adminlte.php** para añadir los menú para ingresar al CRUD Miscelaneos.
+	>
+		≡
+		≡
+
+	### Commit --:
+	+ Ejecutar:
+		>
+			$ git add .
+	+ Crear repositorio:
+		>
+			$ git commit -m "CRUD Miscelaneos"
+
+## ___________________________________________________________________
+
+
+
+***********************************************
 
 ## CRUD Biblioteca
 1. Crear modelo Library junto con su migración y controlador y los métodos para el CRUD.
@@ -3334,19 +3466,15 @@
 # **********************************************
 ## Pendientes:
 1. Pendiente
-	## CRUD Clientes con Liveware
+
+## CRUD Clientes con Liveware
 1. Pendiente
 
-	## CRUD Familiaridad entre Clientes con Liveware
+
+## CRUD Diex con Liveware
 1. Pendiente
 
-	## CRUD Árbol Clientes con Liveware
-1. Pendiente
-
-	## CRUD Diex con Liveware
-1. Pendiente
-
-	## CRUD Maisanta con Liveware
+## CRUD Maisanta con Liveware
 
 1. Crear vista Registro: resources\views\auth\registro.blade.php
 	>
@@ -3355,8 +3483,8 @@
 1. Crear controlador Registro: $ php artisan make:controller RegistroController
 1. Crear ruta en routes\web.php
 
-	# ///////////////////////////////////////
-	## Crear rutas de mantenimiento de la aplicación
+# ///////////////////////////////////////
+## Crear rutas de mantenimiento de la aplicación
 1. Agregar las siguientes rutas en **routes\web.php** para poder realizarle mantenimiento a la aplicación cuando se encuentre en producción:
 	>
 		// RUTAS PARA EL MANTENIMIENTO DE LA APLICACIÓN EN PRODUCCIÓN
@@ -3403,7 +3531,7 @@
 		>
 			$ git commit -m "Rutas para mantenimiento de la app"
 
-	## Subir proyecto local a GitHub
+## Subir proyecto local a GitHub
 	##### https://github.com/
 1. Ejecutar:
 	> 
@@ -3419,7 +3547,7 @@
 		$ git remote add origin https://github.com/petrix12/AppSefarUniversal.git
 		$ git push -u origin master
 
-	## Configurar GitHub con el hosting de GoDaddy
+## Configurar GitHub con el hosting de GoDaddy
 1. Ingresar al cPanel con https://a2plcpnl0082.prod.iad2.secureserver.net:2083/
 	###### pxvim6av41qx / Cisco2019!
 1. En la sección **ARCHIVOS** ir a **Git™ Version Control**

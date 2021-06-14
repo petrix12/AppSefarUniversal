@@ -95,12 +95,6 @@ class CreateNewUser implements CreatesNewUsers
                 'asistentedeproduccion@sefarvzla.com',
                 'organizacionrrhh@sefarvzla.com'
             ])->send($mail_sefar);
-            /* Mail::to(['pedro.bazo@gmail.com'])->send($mail_sefar);
-            Mail::to(['gerenciait@sefarvzla.com'])->send($mail_sefar);
-            Mail::to(['egonzalez@sefarvzla.com'])->send($mail_sefar);
-            Mail::to(['analisisgenealogico@sefarvzla.com'])->send($mail_sefar);
-            Mail::to(['asistentedeproduccion@sefarvzla.com'])->send($mail_sefar);
-            Mail::to(['organizacionrrhh@sefarvzla.com'])->send($mail_sefar); */
             return $user->assignRole('Cliente');
         }else{
             return $user;

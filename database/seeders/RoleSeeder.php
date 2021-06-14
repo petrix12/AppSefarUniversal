@@ -102,5 +102,10 @@ class RoleSeeder extends Seeder
         Permission::create(['name' => 'crud.books.create'])->syncRoles($rolAdministrador,$rolGenealogista,$rolDocumentalista);
         Permission::create(['name' => 'crud.books.edit'])->syncRoles($rolAdministrador,$rolGenealogista,$rolDocumentalista);
         Permission::create(['name' => 'crud.books.destroy'])->syncRoles($rolAdministrador);
+
+        Permission::create(['name' => 'crud.miscelaneos.index'])->syncRoles($rolAdministrador,$rolGenealogista,$rolDocumentalista);
+        Permission::create(['name' => 'crud.miscelaneos.create'])->syncRoles($rolAdministrador,$rolGenealogista,$rolDocumentalista);
+        Permission::create(['name' => 'crud.miscelaneos.edit'])->syncRoles($rolAdministrador,$rolGenealogista,$rolDocumentalista);
+        Permission::create(['name' => 'crud.miscelaneos.destroy'])->syncRoles($rolAdministrador);
     }
 }
