@@ -9,99 +9,147 @@
 @section('content')
 <x-app-layout>
     @include('pruebas.instructivo')
-<div class="py-12 bg-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="lg:text-center">
-        <h2 class="text-base text-indigo-600 font-semibold tracking-wide uppercase">Transactions</h2>
-        <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-        A better way to send money
-        </p>
-        <p class="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
-        Lorem ipsum dolor sit amet consect adipisicing elit. Possimus magnam voluptatum cupiditate veritatis in accusamus quisquam.
-        </p>
+    <div class="py-12 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h1 class="text-2xl font-bold">FAVOR VERIFICAR LA SIGUIENTE INFORMACIÓN</h1>
+            <hr class="mt-2 mb-6">
+            <form action="{{ route('clientes.procesar') }}" method ="POST">
+                @csrf
+                <input type="hidden" name="rol" value="Cliente" />
+                <div class="shadow overflow-hidden sm:rounded-md">
+                    <div class="container">
+                        <p class="my-2 ml-2 text-bold text-blue-600">Datos Clientes:</p>
+                        <div class="md:flex ms:flex-wrap">
+                            <div class="px-1 py-2 m-2 flex-1">    {{-- passport --}}
+                                <div>
+                                    <label for="passport" class="block text-sm font-medium text-gray-700">Pasaporte</label>
+                                    <input value="{{ old('passport', $user->passport) }}" type="text" name="passport" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                                @error('passport')
+                                    <strong class="text-xs text-red-500">{{ $message }}</strong>
+                                @enderror
+                            </div>
+        
+                            <div class="px-1 py-2 m-2 flex-1">    {{-- nombres --}}
+                                <div>
+                                    <label for="nombres" class="block text-sm font-medium text-gray-700">Nombres</label>
+                                    <input value="{{ old('nombres', $user->name) }}" type="text" name="nombres" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                                @error('nombres')
+                                    <strong class="text-xs text-red-500">{{ $message }}</strong>
+                                @enderror
+                            </div>
+        
+                            <div class="px-1 py-2 m-2 flex-1">    {{-- apellidos --}}
+                                <div>
+                                    <label for="apellidos" class="block text-sm font-medium text-gray-700">Apellidos</label>
+                                    <input value="{{ old('apellidos') }}" type="text" name="apellidos" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                                @error('apellidos')
+                                    <strong class="text-xs text-red-500">{{ $message }}</strong>
+                                @enderror
+                            </div>
+        
+                            <div class="px-1 py-2 m-2 flex-1">    {{-- email --}}
+                                <div>
+                                    <label for="email" class="block text-sm font-medium text-gray-700">e-mail</label>
+                                    <input value="{{ old('email', $user->email) }}" type="email" name="email" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                                @error('email')
+                                    <strong class="text-xs text-red-500">{{ $message }}</strong>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="md:flex ms:flex-wrap">
+                            <div class="px-1 py-2 m-2 flex">    {{-- fnacimiento --}}
+                                <div>
+                                    <label for="fnacimiento" class="block text-sm font-medium text-gray-700" title="Fecha de registro">Fecha de nacimiento</label>
+                                    <input value="{{ old('fnacimiento') }}" type="date" name="fnacimiento" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                                @error('fnacimiento')
+                                    <strong class="text-xs text-red-500">{{ $message }}</strong>
+                                @enderror
+                            </div>
+        
+                            <div class="px-1 py-2 m-2 flex-1">    {{-- cnacimiento --}}
+                                <div>
+                                    <label for="cnacimiento" class="block text-sm font-medium text-gray-700">Ciudad de nacimiento</label>
+                                    <input value="{{ old('cnacimiento') }}" type="text" name="cnacimiento" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                                @error('cnacimiento')
+                                    <strong class="text-xs text-red-500">{{ $message }}</strong>
+                                @enderror
+                            </div>
+        
+                            <div class="px-1 py-2 m-2 flex-1">    {{-- pnacimiento --}}
+                                <div>
+                                    <label for="pnacimiento" class="block text-sm font-medium text-gray-700" title="País de nacimiento">País Nac.</label>
+                                    <select name="pnacimiento" autocomplete="country" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <option></option>
+                                        @foreach ($countries as $country)
+                                            @if (old('pnacimiento') == $country->pais)
+                                                <option selected>{{ $country->pais }}</option>
+                                            @else
+                                                <option>{{ $country->pais }}</option> 
+                                            @endif
+                                        @endforeach
+                                    </select>
+                                </div>
+                                @error('pnacimiento')
+                                    <strong class="text-xs text-red-500">{{ $message }}</strong>
+                                @enderror
+                            </div>
+        
+                            <div class="px-1 py-2 m-2 flex-1">    {{-- sexo --}}
+                                <div>
+                                    <label for="sexo" class="block text-sm font-medium text-gray-700" title="Sexo">Sexo</label>
+                                    <select name="sexo" autocomplete="on" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <option></option>
+                                        @if (old('sexo') == "M")
+                                            <option title="Masculino" selected>M</option>
+                                        @else
+                                            <option title="Masculino">M</option>
+                                        @endif
+                                        
+                                        @if (old('sexo') == "F")
+                                            <option title="Masculino" selected>F</option>
+                                        @else
+                                            <option title="Masculino">F</option>
+                                        @endif
+                                    </select>
+                                </div>
+                                @error('sexo')
+                                    <strong class="text-xs text-red-500">{{ $message }}</strong>
+                                @enderror
+                            </div>
+                        </div>
+        
+                        <p class="my-2 ml-2 text-bold text-blue-800">Datos Familiar:</p>
+                        <div class="md:flex ms:flex-wrap">
+                            <div class="px-1 py-2 m-2 flex">    {{-- pasaporte_f --}}
+                                <div>
+                                    <label for="pasaporte_f" class="block text-sm font-medium text-gray-700">Pasaporte del familiar</label>
+                                    <input value="{{ old('pasaporte_f') }}" type="text" name="pasaporte_f" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                            </div>
+        
+                            <div class="px-1 py-2 m-2 flex-1">    {{-- nombre_f --}}
+                                <div>
+                                    <label for="nombre_f" class="block text-sm font-medium text-gray-700">Nombres y apellidos del familiar</label>
+                                    <input value="{{ old('nombre_f') }}" type="text" name="nombre_f" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
+                        <button type="submit" class="cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Enviar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
-
-    <div class="mt-10">
-        <dl class="space-y-10 md:space-y-0 md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-10">
-        <div class="flex">
-            <div class="flex-shrink-0">
-            <div class="flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
-                <!-- Heroicon name: outline/globe-alt -->
-                <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                </svg>
-            </div>
-            </div>
-            <div class="ml-4">
-            <dt class="text-lg leading-6 font-medium text-gray-900">
-                Competitive exchange rates
-            </dt>
-            <dd class="mt-2 text-base text-gray-500">
-                Lorem ipsum, dolor sit amet consectetur adipisicing elit. Maiores impedit perferendis suscipit eaque, iste dolor cupiditate blanditiis ratione.
-            </dd>
-            </div>
-        </div>
-
-        <div class="flex">
-            <div class="flex-shrink-0">
-            <div class="flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
-                <!-- Heroicon name: outline/scale -->
-                <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-                </svg>
-            </div>
-            </div>
-            <div class="ml-4">
-            <dt class="text-lg leading-6 font-medium text-gray-900">
-                No hidden fees
-            </dt>
-            <dd class="mt-2 text-base text-gray-500">
-                Lorem ipsum, dolor sit amet consectetur adipisicing elit. Maiores impedit perferendis suscipit eaque, iste dolor cupiditate blanditiis ratione.
-            </dd>
-            </div>
-        </div>
-
-        <div class="flex">
-            <div class="flex-shrink-0">
-            <div class="flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
-                <!-- Heroicon name: outline/lightning-bolt -->
-                <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-            </div>
-            </div>
-            <div class="ml-4">
-            <dt class="text-lg leading-6 font-medium text-gray-900">
-                Transfers are instant
-            </dt>
-            <dd class="mt-2 text-base text-gray-500">
-                Lorem ipsum, dolor sit amet consectetur adipisicing elit. Maiores impedit perferendis suscipit eaque, iste dolor cupiditate blanditiis ratione.
-            </dd>
-            </div>
-        </div>
-
-        <div class="flex">
-            <div class="flex-shrink-0">
-            <div class="flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
-                <!-- Heroicon name: outline/annotation -->
-                <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                </svg>
-            </div>
-            </div>
-            <div class="ml-4">
-            <dt class="text-lg leading-6 font-medium text-gray-900">
-                Mobile notifications
-            </dt>
-            <dd class="mt-2 text-base text-gray-500">
-                Lorem ipsum, dolor sit amet consectetur adipisicing elit. Maiores impedit perferendis suscipit eaque, iste dolor cupiditate blanditiis ratione.
-            </dd>
-            </div>
-        </div>
-        </dl>
-    </div>
-    </div>
-</div>
 </x-app-layout>
 @stop
 

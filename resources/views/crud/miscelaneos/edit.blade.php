@@ -111,7 +111,7 @@
 
                                                     <div class="px-1 py-2 m-2 flex-1">    {{-- editorial --}}
                                                         <div>
-                                                            <label for="editorial" class="block text-sm font-medium text-gray-700">Ciudad / Editorial</label>
+                                                            <label for="editorial" class="block text-sm font-medium text-gray-700">Ciudad / Responsable editorial</label>
                                                             <input value="{{ old('editorial', $miscelaneo->editorial) }}" type="text" name="editorial" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                                             @error('editorial')
                                                                 <small style="color:red">*{{ $message }}*</small>
@@ -121,7 +121,7 @@
 
                                                     <div class="px-1 py-2 m-2 flex-1">    {{-- publicado --}}
                                                         <div>
-                                                            <label for="publicado" class="block text-sm font-medium text-gray-700">Lugar de publicación</label>
+                                                            <label for="publicado" class="block text-sm font-medium text-gray-700">Publicado en</label>
                                                             <input value="{{ old('publicado', $miscelaneo->publicado) }}" type="text" name="publicado" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                                             @error('publicado')
                                                                 <small style="color:red">*{{ $message }}*</small>

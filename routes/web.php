@@ -89,6 +89,7 @@ Route::group(['middleware' => ['auth'], 'as' => 'clientes.'], function(){
         ->middleware('can:cliente');
     Route::get('salir', [ClienteController::class, 'salir'])->name('salir')
         ->middleware('can:cliente');
+    Route::post('procesar', [ClienteController::class, 'procesar'])->name('procesar');
 });
 
 // Grupo de rutas para realizar pruebas

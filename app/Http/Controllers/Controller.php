@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Country;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
@@ -30,7 +31,11 @@ class Controller extends BaseController
             $IDCliente = Auth::user()->passport;
             return view('arboles.tree', compact('IDCliente'));
         }
+
+        $countries = Country::where('pais','!=','aanull')
+                        ->orderBy('pais','ASC')->get();
+        $user = Auth()->user();
         
-        return view('inicio');
+        return view('inicio', compact('countries', 'user'));
     }
 }

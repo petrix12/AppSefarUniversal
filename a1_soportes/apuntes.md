@@ -482,6 +482,15 @@
 ## ___________________________________________________________________
 
 
+## Instalar Laravel Collective para facilitar el uso de formularios
+##### https://laravelcollective.com/docs/6.x/html
+1. Instalar Laravel Collective:
+    >
+        $ composer require laravelcollective/html
+
+
+## ___________________________________________________________________    
+
 ## Perfil de usuario
 1. Rediseñar plantilla **resources\views\profile\update-profile-information-form.blade.php**
 	>
@@ -2367,7 +2376,6 @@
 
 ## ___________________________________________________________________
 
-***********************************************
 
 ## CRUD Miscelaneos
 1. Crear modelo Miscelaneo junto con su migración y controlador y los métodos para el CRUD.
@@ -2462,9 +2470,6 @@
 	>
 		≡
 		≡
-
-
-
 1. Diseñar las vistas para el CRUD Miscelaneos:
 	- resources\views\crud\miscelaneos\index.blade.php
 		>
@@ -2478,9 +2483,6 @@
 		>
 			≡
 			≡
-
-
-
 1. Editar **config\adminlte.php** para añadir los menú para ingresar al CRUD Miscelaneos.
 	>
 		≡
@@ -2496,9 +2498,6 @@
 
 ## ___________________________________________________________________
 
-
-
-***********************************************
 
 ## CRUD Biblioteca
 1. Crear modelo Library junto con su migración y controlador y los métodos para el CRUD.
@@ -3452,6 +3451,14 @@
 	+ **resources\views\mail\registro-sefar.blade.php**:
 		>
 			***
+1. Rediseñar la vista **resources\views\inicio.blade.php**:
+	>
+		***
+1. Crear método **procesar** en el controlador **app\Http\Controllers\ClienteController.php**:
+	>
+		***
+
+
 	### Commit --:
 	+ Ejecutar:
 		>
@@ -3561,18 +3568,36 @@
 	+ vendor
 1. Copiar y pegar el archivo **.env** del local al hosting.
 1. Cambiar las siguientes variables de entorno al archivo **.env**
-	+ Cambiar **APP_ENV=local** por **APP_ENV=production**
-	+ Cambiar **APP_DEBUG=true** por **APP_DEBUG=false**
-	+ Cambiar **APP_URL=http://sefar.test** por **APP_URL=https://app.universalsefar.com**
-	+ Cambiar **DB_USERNAME=root** por **DB_USERNAME=pxvim6av41qx**
-	+ Cambiar **DB_PASSWORD=** por **DB_PASSWORD=Cisco2019!**
-	+ Cambiar **ONIDEX_USERNAME=root** por **ONIDEX_USERNAME=pxvim6av41qx**
-	+ Cambiar **ONIDEX_PASSWORD=** por **ONIDEX_PASSWORD=Cisco2019!**
-	+ Cambiar **MAIL_HOST=smtp.mailtrap.io** por **MAIL_HOST=universalsefar.com**
-	+ Cambiar **MAIL_PORT=2525** por **MAIL_PORT=587**
-	+ Cambiar **MAIL_USERNAME=7c67f786972696** por **MAIL_USERNAME=_mainaccount@universalsefar.com**
-	+ Cambiar **MAIL_PASSWORD=8f37b2d25228ba** por **MAIL_PASSWORD=Cisco2019!**
-	+ Cambiar **MAIL_ENCRYPTION=tls** por **MAIL_ENCRYPTION=null**
+	>
+		APP_NAME="App Sefar Universal"
+		APP_ENV=production
+		APP_KEY=base64:LsfuS5WhYfAe/FWDLdrzXFWacnFB4EgNIHBHo8ZzOSk=
+		APP_DEBUG=false
+		APP_URL=https://app.universalsefar.com
+
+		DB_CONNECTION=mysql
+		DB_HOST=127.0.0.1
+		DB_PORT=3306
+		DB_DATABASE=sefar
+		DB_USERNAME=pxvim6av41qx
+		DB_PASSWORD="L5=Rj#8lW}YuK"
+
+		ONIDEX_CONNECTION=mysql
+		ONIDEX_HOST=127.0.0.1
+		ONIDEX_PORT=3306
+		ONIDEX_DATABASE=onidex
+		ONIDEX_USERNAME=pxvim6av41qx
+		ONIDEX_PASSWORD="L5=Rj#8lW}YuK"
+
+		MAIL_MAILER=smtp
+		MAIL_HOST=universalsefar.com
+		MAIL_PORT=587
+		MAIL_USERNAME=app@universalsefar.com
+		MAIL_PASSWORD=Madrid2021!
+		MAIL_ENCRYPTION=null
+		MAIL_FROM_ADDRESS=app@universalsefar.com
+		MAIL_FROM_NAME="${APP_NAME}"
+
 1. Para configurar Laravel (AppSefar) con Gmail (info@sefarvzla.com)
 	>
 		MAIL_MAILER=smtp

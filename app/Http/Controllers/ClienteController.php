@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Mail\CargaCliente;
 use App\Mail\CargaSefar;
+use App\Models\Agcliente;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -36,5 +37,61 @@ class ClienteController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         return redirect('/');
+    }
+
+    public function procesar(Request $request){
+        //$user = Auth()->user();
+        // Validación
+        $request->validate([
+            'passport' => 'required|min:6|unique:users,passport,'.$user->id,
+            'nombres' => 'required',
+            'apellidos' => 'required',
+            'email' => 'email|required|unique:users,email,'.$user->id,
+            'fnacimiento' => 'required',
+            'cnacimiento' => 'required',
+            'pnacimiento' => 'required',
+            'sexo' => 'required'
+        ]);
+
+        // Actualizar usuario
+        /* $user->name = trim($request->nombres) . ' ' . trim($request->apellidos);
+        $user->email = $request->email;
+        $user->passport = trim($request->passport);      
+        $user->save(); */
+
+        // Verificar si el usuario esta registrado en agclientes
+        //$agcliente = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',1)->get();
+        // Si no existe crea el árbol del cliente
+        /* $fnacimiento = $request->fnacimiento;
+        $fnacimiento_entero = strtotime($fnacimiento);
+        if(!$agcliente[0]){
+            Agcliente::create([
+                'IDCliente' => trim($user->passport),
+                'IDPersona' => 1,
+                'Nombres' => trim($request->nombres),
+                'Apellidos' => trim($request->apellidos),
+                'NPasaporte' => trim($user->passport),
+                'Sexo' => trim($request->sexo),
+                'AnhoNac' => date("Y", $fnacimiento_entero),
+                'MesNac' => date("m", $fnacimiento_entero),
+                'DiaNac' => date("d", $fnacimiento_entero),
+                'LugarNac' => trim($request->cnacimiento),
+                'PaisNac' => trim($request->pnacimiento),
+                'NombresF' => trim($request->nombre_f),
+                'NPasaporteF' => trim($request->pasaporte_f),
+                'FRegistro' => date('Y-m-d H:i:s'),
+                'PNacimiento' => trim($request->pnacimiento),
+                'LNacimiento' => trim($request->cnacimiento),
+                'FUpdate' => date('Y-m-d H:i:s'),
+                'Usuario' => trim($request->email),
+            ]);
+        } */
+
+        // Asignar rol de cliente
+        //$user->assignRole('Cliente');
+
+        /* $IDCliente = Auth::user()->passport;
+        return view('arboles.tree', compact('IDCliente')); */
+        return "asadas";
     }
 }
