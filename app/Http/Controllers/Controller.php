@@ -27,6 +27,14 @@ class Controller extends BaseController
             return view('consultas.onidex.index');
         }
 
+        if(Auth::user()->hasRole('Produccion')){
+            return view('crud.agclientes.index');
+        }
+
+        if(Auth::user()->hasRole('Documentalista')){
+            return view('crud.miscelaneos.index');
+        }
+
         if(Auth::user()->hasRole('Cliente')){
             $IDCliente = Auth::user()->passport;
             return view('arboles.tree', compact('IDCliente'));

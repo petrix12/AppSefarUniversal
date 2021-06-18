@@ -302,7 +302,7 @@ return [
             'text'        => 'Genealogistas',
             'icon'        => 'fab fa-pagelines',
             'icon_color'  => 'white',
-            'can'  => 'genealogista',
+            'can'  => ['genealogista', 'produccion'],
             'submenu' => [
                 [
                     'text'          => 'Clientes',
