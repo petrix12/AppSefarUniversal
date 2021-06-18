@@ -24,7 +24,7 @@ class Controller extends BaseController
         }
 
         if(Auth::user()->hasRole('Genealogista')){
-            return view('consultas.onidex.index');
+            return view('crud.agclientes.index');
         }
 
         if(Auth::user()->hasRole('Produccion')){
