@@ -41,7 +41,7 @@ class ClienteController extends Controller
     }
 
     public function procesar(Request $request){
-        //$user = Auth()->user();
+        $user = Auth()->user();
         // Validación
         $request->validate([
             'passport' => 'required|min:6|unique:users,passport,'.$user->id,
@@ -55,17 +55,17 @@ class ClienteController extends Controller
         ]);
 
         // Actualizar usuario
-        /* $user->name = trim($request->nombres) . ' ' . trim($request->apellidos);
+        $user->name = trim($request->nombres) . ' ' . trim($request->apellidos);
         $user->email = $request->email;
         $user->passport = trim($request->passport);      
-        $user->save(); */
+        $user->save();
 
         // Verificar si el usuario esta registrado en agclientes
-        //$agcliente = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',1)->get();
-        // Si no existe crea el árbol del cliente
-        /* $fnacimiento = $request->fnacimiento;
-        $fnacimiento_entero = strtotime($fnacimiento);
-        if(!$agcliente[0]){
+        $agcliente = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',1)->count();
+        if($agcliente == 0){
+            // Si no existe crea el árbol del cliente
+            $fnacimiento = $request->fnacimiento;
+            $fnacimiento_entero = strtotime($fnacimiento);
             Agcliente::create([
                 'IDCliente' => trim($user->passport),
                 'IDPersona' => 1,
@@ -86,13 +86,11 @@ class ClienteController extends Controller
                 'FUpdate' => date('Y-m-d H:i:s'),
                 'Usuario' => trim($request->email),
             ]);
-        } */
+        }
 
         // Asignar rol de cliente
-        //$user->assignRole('Cliente');
-
-        /* $IDCliente = Auth::user()->passport;
-        return view('arboles.tree', compact('IDCliente')); */
-        return "asadas";
+        $user->assignRole('Cliente');
+        
+        return redirect()->route('clientes.tree', $user->passport);
     }
 }
