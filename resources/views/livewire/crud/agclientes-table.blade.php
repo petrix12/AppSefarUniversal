@@ -1,4 +1,5 @@
-<div><div class="flex flex-col">
+<div>
+    <div class="flex flex-col">
         <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
             <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
                 <div class="bg-gray-50">
@@ -19,6 +20,16 @@
                 </div>
             </div>
         </div>
+        <div class="px-4 py-2 m-2">
+            {{-- SOLO CLIENTES --}}
+            <div class="flex justify-end items-center">
+                <label for="solo_clientes" class="px-3 block text-sm font-medium text-gray-700" title="Ver solo clientes">Ver</label>
+                <select wire:model="solo_clientes" name="solo_clientes"class="w-44 mt-1 block py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <option value="{{ true }}">Solo clientes</option>
+                    <option value="{{ false }}">Clientes y ancestros</option>
+                </select>
+            </div>
+        </div>
     </div>
     <div class="flex flex-col">
         <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
@@ -26,6 +37,7 @@
                 <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
                     <div class="flex bg-white px-4 py-3 sm:px-6">
                         <input 
+                            wire:keydown="limpiar_page" 
                             wire:model="search"
                             type="text" 
                             placeholder="Buscar..." 
@@ -53,6 +65,9 @@
                                 <i class="fas fa-globe-americas"></i>
                             </th>
                             <th scope="col" class="px-1 py-2 text-left text-xs text-gray-500 uppercase tracking-wider">
+                                <span title="Fecha de registro">F. Registro</span>
+                            </th>
+                            <th scope="col" class="px-1 py-2 text-left text-xs text-gray-500 uppercase tracking-wider">
                                 {{ __('Person') }}
                             </th>
                             <th scope="col" class="px-1 py-2 text-left text-xs text-gray-500 uppercase tracking-wider">
@@ -67,9 +82,11 @@
                                 {{-- {{ __('Client id') }} --}}
                                 <span title="ID Cliente">IDC</span>
                             </th>
+                            @if (!$solo_clientes)
                             <th scope="col" class="px-1 py-2 text-center text-xs text-gray-500 uppercase tracking-wider">
                                 {{ __('Propinquity') }}
                             </th>
+                            @endif
                             <th scope="col" class="px-1 py-2 text-center text-xs text-gray-500 uppercase tracking-wider">
                                 <span title="Visualizar árbol genealógico">
                                     <i class="fas fa-eye"></i> Vistas
@@ -77,12 +94,7 @@
                             </th>
                             @can('crud.agclientes.edit')
                             <th scope="col" class="py-2 text-center text-xs text-gray-500 uppercase tracking-wider">
-                                {{ __('Edit') }}
-                            </th>
-                            @endcan
-                            @can('crud.agclientes.destroy')
-                            <th scope="col" class="px-4 py-2 text-center text-xs text-gray-500 uppercase tracking-wider">
-                                {{ __('Remove') }}
+                                Acción
                             </th>
                             @endcan
                         </tr>
@@ -98,10 +110,17 @@
                                 @endif
                             </td>   
                             <td class="px-1 py-2 text-xs">
-                                {{ $agcliente->Nombres . ', ' . $agcliente->Apellidos }}
+                                @if ($agcliente->FRegistro)
+                                    {{ $agcliente->FRegistro }}
+                                @else
+                                    <i class="far fa-calendar-times"></i>
+                                @endif    
+                            </td>
+                            <td class="px-1 py-2 text-xs">
+                                <span title="{{ $agcliente->Nombres . ', ' . $agcliente->Apellidos }}">{{ Str::limit($agcliente->Nombres . ', ' . $agcliente->Apellidos, 30) }}</span>
                             </td>
                             <td class="px-1 py-2 whitespace-nowrap text-xs">
-                                <small>{{ $agcliente->LNacimiento }}</small>
+                                <small title="{{ $agcliente->LNacimiento }}">{{ Str::limit($agcliente->LNacimiento, 15) }}</small>
                             </td>
                             <td class="px-1 py-2 text-xs text-center">
                                 @if ($agcliente->AnhoNac==0 or is_null($agcliente->AnhoNac))
@@ -110,24 +129,25 @@
                                     {{ $agcliente->AnhoNac }}   
                                 @endif
                             </td>
-                            <td class="px-1 py-2 text-xs text-center">
+                            <td class="px-1 py-2 text-sm text-center">
                                 <small>{{ $agcliente->IDCliente }}</small>
                             </td>
+                            @if (!$solo_clientes)
                             <td class="px-1 py-2 text-xs text-center">
                                 <small>{{ GetPersona($agcliente->IDPersona) }}</small>
-                            </td>
+                            </td>   
+                            @endif
                             <td class="px-1 py-2 text-sm text-center">
                                 {{-- <a href="{{ route('arboles.olivo.index', $agcliente->IDCliente) }}" target="_blank" title="Vista Vertical"><i class="fas fa-cubes mx-1"></i></a> --}}
                                 <a href="{{ route('arboles.tree.index', $agcliente->IDCliente) }}" target="_blank" title="Vista Horizontal"><i class="fab fa-pagelines mx-2"></i></a>
                                 <a href="{{ route('arboles.albero.index', $agcliente->IDCliente) }}" target="_blank" title="Vista Lineal"><i class="fas fa-bezier-curve mx-1"></i></a>
                             </td>
-                            @can('crud.agclientes.edit')
-                            <td class="py-2 text-center">
-                                <a href="{{ route('crud.agclientes.edit', $agcliente ) }}" class="mx-12 text-grey-600 hover:text-indigo-900" title="Editar"><i class="fas fa-edit"></i></a>
-                            </td>
-                            @endcan
-                            @can('crud.agclientes.destroy')
-                            <td class="px-4 py-2 text-center">
+                            
+                            <td class="flex px-4 py-2 text-center">
+                                @can('crud.agclientes.edit')
+                                    <a href="{{ route('crud.agclientes.edit', $agcliente ) }}" class="mx-12 text-grey-600 hover:text-indigo-900" title="Editar"><i class="fas fa-edit"></i></a>
+                                @endcan
+                                @can('crud.agclientes.destroy')
                                 <form action="{{ route('crud.agclientes.destroy', $agcliente) }}" method="POST">
                                     @csrf
                                     @method('delete')
@@ -137,8 +157,9 @@
                                         onclick="return confirm('¿Está seguro que desea eliminar este registro?')"><i class="fas fa-trash"></i>
                                     </button>
                                 </form>
+                                @endcan
                             </td>
-                            @endcan
+                            
                         </tr>
                         @endforeach
                         </tbody>

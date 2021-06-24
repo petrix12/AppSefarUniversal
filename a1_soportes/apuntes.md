@@ -2911,6 +2911,7 @@
 				'LNacimiento',
 				'Familiares',
 				'Enlace',
+				'referido',
 				'FTM',
 				'FUpdate',
 				'Usuario',
@@ -3466,6 +3467,11 @@
 	+ Crear repositorio:
 		>
 			$ git commit -m "Carga de clientes"
+
+
+## Página Traviesoevans
+###### traviesoevans@gmail.com / sefar2021
+1. 
 
 
 

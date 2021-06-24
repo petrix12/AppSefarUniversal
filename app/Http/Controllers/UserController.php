@@ -54,7 +54,8 @@ class UserController extends Controller
             'email' => $request->email,
             'passport' => $request->passport,
             'password' => bcrypt('sefar2021'),
-            'password_md5' => md5('sefar2021')
+            'password_md5' => md5('sefar2021'),
+            'email_verified_at' => date('Y-m-d H:i:s')
         ]);
 
         // Asignando roles seleccionados

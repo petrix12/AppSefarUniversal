@@ -21,6 +21,7 @@ class RoleSeeder extends Seeder
         $rolDocumentalista = Role::create(['name' => 'Documentalista']);
         $rolProduccion = Role::create(['name' => 'Produccion']);
         $rolCliente = Role::create(['name' => 'Cliente']);
+        Role::create(['name' => 'Traviesoevans']);
 
         Permission::create(['name' => 'administrador'])->syncRoles($rolAdministrador);
         Permission::create(['name' => 'genealogista'])->syncRoles($rolAdministrador, $rolGenealogista);

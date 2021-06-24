@@ -35,6 +35,10 @@ class Controller extends BaseController
             return view('crud.miscelaneos.index');
         }
 
+        if(Auth::user()->hasRole('Traviesoevans')){
+            return view('crud.agclientes.index');
+        }
+
         if(Auth::user()->hasRole('Cliente')){
             $IDCliente = Auth::user()->passport;
             return view('arboles.tree', compact('IDCliente'));

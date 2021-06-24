@@ -48,6 +48,9 @@
                     <p class="mt-1 text-sm text-gray-600">
                         {{ __('Manage user roles') }}
                     </p>
+                    <div class="flex-shrink-0 h-52 w-52 mt-4">
+                        <img class="h-52 w-52 rounded-full" src="{{ $user->profile_photo_url }}" alt="">
+                    </div>
                 </div>
             </div>
             <div class="mt-5 md:mt-0 md:col-span-2">

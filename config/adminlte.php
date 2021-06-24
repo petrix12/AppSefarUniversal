@@ -403,7 +403,7 @@ return [
             'text'        => 'Tablas Generales',
             'icon'        => 'fas fa-table',
             'icon_color'  => 'white',
-            'can'  => 'genealogista',
+            'can'  => 'administrador',
             'submenu' => [
                 [
                     'text'          => 'Paises',
@@ -417,28 +417,28 @@ return [
                     'icon'          => 'fab fa-first-order',
                     'icon_color'    => 'white',
                     'route'         => 'crud.parentescos.index',
-                    'can'           => 'genealogista',
+                    'can'           => 'administrador',
                 ],
                 [
                     'text'          => 'Lado - Parentesco',
                     'icon'          => 'fas fa-fingerprint',
                     'icon_color'    => 'white',
                     'route'         => 'crud.lados.index',
-                    'can'           => 'genealogista',
+                    'can'           => 'administrador',
                 ],
                 [
                     'text'          => 'Conexión - Parentesco',
                     'icon'          => 'fas fa-sitemap',
                     'icon_color'    => 'white',
                     'route'         => 'crud.connections.index',
-                    'can'           => 'genealogista',
+                    'can'           => 'administrador',
                 ],
                 [
                     'text'          => 'Tipos de documentos',
                     'icon'          => 'fas fa-file-alt',
                     'icon_color'    => 'white',
                     'route'         => 'crud.t_files.index',
-                    'can'           => 'genealogista',
+                    'can'           => 'administrador',
                 ],
                 [
                     'text'          => 'Tipos de formatos',

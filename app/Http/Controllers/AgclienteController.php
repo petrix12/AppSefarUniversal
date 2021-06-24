@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Agcliente;
 use App\Models\Country;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 use RealRashid\SweetAlert\Facades\Alert;
@@ -84,8 +85,8 @@ class AgclienteController extends Controller
         $FUpdate = date('Y-m-d H:i:s');
         $Familiares = trim($request->Familiaridad);
 
-        // Creando usuario
-        Agcliente::create([
+        // Creando persona en agcliente
+        $agcliente = Agcliente::create([
             'IDCliente' => trim($request->IDCliente), 
             'Nombres' => trim($request->Nombres),
             'Apellidos' => trim($request->Apellidos),
@@ -130,6 +131,7 @@ class AgclienteController extends Controller
             'FRegistro' => $request->FRegistro,
             'Observaciones' => $request->Observaciones,
             'Enlace' => $request->Enlace,
+            'referido' => Auth()->user()->getRoleNames()[0],
 
             'PNacimiento' => $PNacimiento,
             'IDPadre' => $IDPadre,
@@ -140,6 +142,18 @@ class AgclienteController extends Controller
             'FUpdate' => $FUpdate,
             'Usuario' => $Usuario,  
         ]);
+
+        // Verifica si el usuario existe, y si no lo crea
+        $exite_user = User::where('passport','LIKE',$request->IDCliente)->count();
+        if($exite_user == 0){
+            // Creando usuario
+            User::create([
+                'name' => trim($request->Nombres) . ' ' . trim($request->Apellidos),
+                'email' => 'correo' . $agcliente->id . '@' . strtolower(Auth()->user()->getRoleNames()[0]) . '.aux',
+                'password' => bcrypt('sefar2021'),
+                'passport' => $request->IDCliente,
+            ])->assignRole('Cliente');        
+        }
 
         // Mensaje 
         Alert::success('¡Éxito!', 'Se ha añadido a la lista: ' . $request->Nombres . ' ' . $request->Apellidos);
