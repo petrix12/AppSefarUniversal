@@ -435,7 +435,7 @@
                                                     <div class="px-1 py-2 m-2 flex">    {{-- FRegistro --}}
                                                         <div>
                                                             <label for="FRegistro" class="block text-sm font-medium text-gray-700" title="Fecha de registro">Fecha de registro</label>
-                                                            <input value="{{ old('FRegistro') }}" type="date" name="FRegistro" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                                            <input value="{{ old('FRegistro', date("Y-m-d")) }}" type="date" name="FRegistro" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                                         </div>
                                                     </div>
 

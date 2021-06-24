@@ -28,7 +28,7 @@ class AgclienteController extends Controller
      */
     public function create()
     {
-        $countries = Country::all();
+        $countries = Country::where('pais', '!=', 'aanull')->orderBy('pais', 'ASC')->get();
         return view('crud.agclientes.create', compact('countries'));
     }
 
@@ -187,7 +187,7 @@ class AgclienteController extends Controller
      */
     public function edit(Agcliente $agcliente)
     {
-        $countries = Country::all();
+        $countries = Country::where('pais', '!=', 'aanull')->orderBy('pais', 'ASC')->get();
         return view('crud.agclientes.edit', compact('agcliente','countries'));
     }
 
