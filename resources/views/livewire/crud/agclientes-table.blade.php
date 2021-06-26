@@ -22,12 +22,24 @@
         </div>
         <div class="px-4 py-2 m-2">
             {{-- SOLO CLIENTES --}}
-            <div class="flex justify-end items-center">
-                <label for="solo_clientes" class="px-3 block text-sm font-medium text-gray-700" title="Ver solo clientes">Ver</label>
-                <select wire:model="solo_clientes" name="solo_clientes"class="w-44 mt-1 block py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                    <option value="{{ true }}">Solo clientes</option>
-                    <option value="{{ false }}">Clientes y ancestros</option>
-                </select>
+            <div class="flex justify-between items-center">
+                <div>
+                    <label for="solo_clientes" class="px-3 block text-sm font-medium text-gray-700" title="Ver solo clientes">Ver</label>
+                    <select wire:model="solo_clientes" name="solo_clientes"class="w-44 mt-1 block py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="{{ true }}">Solo clientes</option>
+                        <option value="{{ false }}">Clientes y ancestros</option>
+                    </select>
+                </div>
+                <div>
+                    <label wire:click="forma_ordenar" for="ordenar" class="px-3 block text-sm font-medium text-gray-700" title="Haga clic aquí para invertir el orden">Ordenar por</label>
+                    <select wire:model="ordenar" name="ordenar"class="w-44 mt-1 block py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="FRegistro">Fecha de registro</option>
+                        <option value="IDCliente">ID Cliente</option>
+                        <option value="Apellidos">Apellidos</option>
+                        <option value="AnhoNac">Año de nacimiento</option>
+                        <option value="AnhoDef">Año de defunción</option>
+                    </select>
+                </div>
             </div>
         </div>
     </div>

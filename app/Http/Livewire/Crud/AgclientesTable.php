@@ -18,6 +18,8 @@ class AgclientesTable extends Component
     public $search = '';
     public $perPage = '15';
     public $solo_clientes = true;
+    public $ordenar = 'FRegistro';
+    public $asc = 'DESC';
     
     public function render()
     {
@@ -47,7 +49,7 @@ class AgclientesTable extends Component
                 ->orWhere('referido','LIKE',"%$this->search%")
                 ->rol()
                 ->clientes($this->solo_clientes)
-                ->orderBy('FRegistro','DESC')
+                ->orderBy($this->ordenar,$this->asc)
                 ->orderBy('IDPersona','ASC')
                 ->paginate($this->perPage);
        
@@ -62,5 +64,9 @@ class AgclientesTable extends Component
 
     public function limpiar_page(){
         $this->reset('page');
+    }
+
+    public function forma_ordenar(){
+        $this->asc == 'ASC' ? $this->asc = 'DESC' : $this->asc = 'ASC';
     }
 }
