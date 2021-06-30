@@ -95,7 +95,8 @@ class CreateNewUser implements CreatesNewUsers
                 'asistentedeproduccion@sefarvzla.com',
                 'arosales@sefarvzla.com',
                 'czanella@sefarvzla.com',
-                'organizacionrrhh@sefarvzla.com'
+                'organizacionrrhh@sefarvzla.com',
+                'gcuriel@sefarvzla.com'
             ])->send($mail_sefar);
             return $user->assignRole('Cliente');
         }else{

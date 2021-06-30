@@ -31,6 +31,7 @@ class ClienteController extends Controller
             'analisisgenealogico@sefarvzla.com',
             'arosales@sefarvzla.com',
             'asistentedeproduccion@sefarvzla.com',
+            'gcuriel@sefarvzla.com'
             /* 'organizacionrrhh@sefarvzla.com' */
         ])->send($mail_sefar);
 
