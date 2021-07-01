@@ -32,7 +32,7 @@ class RegistroSefar extends Mailable
     public function build()
     {
         return $this->view('mail.registro-sefar')
-            ->subject('EL CLIENTE ' . strtoupper($this->user->name) . ' (ID: ' . 
+            ->subject(strtoupper($this->user->name) . ' (ID: ' . 
                 strtoupper($this->user->passport) . ') SE HA REGISTRADO EN App Sefar Universal');
     }
 }

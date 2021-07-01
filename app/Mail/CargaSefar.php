@@ -32,7 +32,7 @@ class CargaSefar extends Mailable
     public function build()
     {
         return $this->view('mail.carga-sefar')
-            ->subject('EL CLIENTE ' . strtoupper($this->user->name) . ' (ID: ' . 
+            ->subject(strtoupper($this->user->name) . ' (ID: ' . 
                 strtoupper($this->user->passport) . ') HA ACTUALIZADO SU CARGA GENEALÓGICA');
     }
 }

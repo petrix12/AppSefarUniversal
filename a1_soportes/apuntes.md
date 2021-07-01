@@ -3819,6 +3819,10 @@
 + libraries
 
 
+## Incluir destinatarios en las notificaciones:
+1. Archivos a modificar para incluir destinatarios en las notificaciones:
+	+ Registro: app\Actions\Fortify\CreateNewUser.php
+	+ Actualización: app\Http\Controllers\ClienteController.php
 
 
 
