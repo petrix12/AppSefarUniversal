@@ -134,7 +134,7 @@
                                                 <div class="md:flex ms:flex-wrap">
                                                     <div class="px-1 py-2 m-2 flex-1">    {{-- volumen --}}
                                                         <div>
-                                                            <label for="volumen" class="block text-sm font-medium text-gray-700">Año / Número / Volumen</label>
+                                                            <label for="volumen" class="block text-sm font-medium text-gray-700">Fecha de publicación / Año / Número / Volumen</label>
                                                             <input value="{{ old('volumen', $miscelaneo->volumen) }}" type="text" name="volumen" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                                             @error('volumen')
                                                                 <small style="color:red">*{{ $message }}*</small>
