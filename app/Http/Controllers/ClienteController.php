@@ -27,7 +27,7 @@ class ClienteController extends Controller
             'pedro.bazo@sefarvzla.com',
             'czanella@sefarvzla.com',
             'gerenciait@sefarvzla.com',
-            'egonzalez@sefarvzla.com',
+            /* 'egonzalez@sefarvzla.com', */
             'analisisgenealogico@sefarvzla.com',
             'arosales@sefarvzla.com',
             'asistentedeproduccion@sefarvzla.com',

@@ -3824,5 +3824,19 @@
 	+ Registro: app\Actions\Fortify\CreateNewUser.php
 	+ Actualización: app\Http\Controllers\ClienteController.php
 
+## Crear modelo:
+1. Diferentes formas para crear modelos:
+	+ Crear solo el modelo
+		- $ php artisan make:model Model
+	+ Crear el modelo con migración:
+		- $ php artisan make:model Model -m
+	+ Crear el modelo con migración y controlador:
+		- $ php artisan make:model Model -mc
+	+ Crear el modelo con migración, controlador y seeder:
+		- $ php artisan make:model Model -mcs
+	+ Crear el modelo con migración, controlador, seeder y factory:
+		- $ php artisan make:model Model -mcsf
+	+ Crear el modelo con migración con todo:
+		- $ php artisan make:model Model -a
 
 

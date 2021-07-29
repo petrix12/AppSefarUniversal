@@ -90,7 +90,7 @@ class CreateNewUser implements CreatesNewUsers
             Mail::to([
                 'pedro.bazo@sefarvzla.com',
                 'gerenciait@sefarvzla.com',
-                'egonzalez@sefarvzla.com',
+                /* 'egonzalez@sefarvzla.com', */
                 'analisisgenealogico@sefarvzla.com',
                 'asistentedeproduccion@sefarvzla.com',
                 'arosales@sefarvzla.com',
