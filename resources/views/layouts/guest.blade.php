@@ -10,6 +10,20 @@
         <!-- Fonts -->
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap">
 
+        <meta property="fb:app_id" content="APPID">
+        <meta data-react-helmet="true" property="og:url" content="https://app.universalsefar.com/"/>
+        <meta data-react-helmet="true" property="og:type" content="website"/>
+        <meta data-react-helmet="true" property="og:title" content="Sefar Universal | Tus antepasados te quieren libre."/>
+        <meta data-react-helmet="true" property="og:description" content="Abogados y genealogistas expertos en inmigración. Conseguimos tu pasaporte español, portugues e italiano, para que seas libre, trascendiendo fronteras."/>
+
+        <meta data-react-helmet="true" property="og:image" content="https://app.universalsefar.com/vendor/adminlte/dist/img/LogoSefar.png" />
+        <meta data-react-helmet="true" property="twitter:title" content="Sefar Universal | Tus antepasados te quieren libre."/>
+        <meta data-react-helmet="true" property="twitter:description" content="Abogados y genealogistas expertos en inmigración. Conseguimos tu pasaporte español, portugues e italiano, para que seas libre, trascendiendo fronteras."/>
+        <meta data-react-helmet="true" property="twitter:image:src" content="https://app.universalsefar.com/vendor/adminlte/dist/img/LogoSefar.png" />
+        <meta data-react-helmet="true" property="twitter:image" content="https://app.universalsefar.com/vendor/adminlte/dist/img/LogoSefar.png" />
+        <meta data-react-helmet="true" property="twitter:card" content="summary" />
+        <meta data-react-helmet="true" name="robots" content="noindex, nofollow" />
+        
         <!-- Styles -->
         <link rel="stylesheet" href="{{ mix('css/app.css') }}">
         <link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
