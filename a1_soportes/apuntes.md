@@ -3731,7 +3731,7 @@
 	======		===								  	====
 	GET|HEAD  	| consultaodx                      	| consultas.onidex.index
 
-#
+
 # **Notas de interes**
 
 ## Regresar a un commit anterior
@@ -3839,4 +3839,646 @@
 	+ Crear el modelo con migración con todo:
 		- $ php artisan make:model Model -a
 
+## Clonar el repositorio AppSefarUniversal desde GitHub
+1. Clonar repositorio en local:
+	+ $ git clone https://github.com/petrix12/AppSefarUniversal.git
+	**Nota 1**: En mi caso el repositorio lo clonaré en **C:\xampp\htdocs** y luego cambiaré el nombre de **AppSefarUniversal** a **sefar**.
+	**Nota 2**: Para este ejercicio se está utilizando **XAMPP** como entorno de desarrollo, en caso de utilizar otro entorno como **Laragon** o **WAMPServer** realizar las modificaciones correspondiente a cada caso.
+2. Ejecutar una terminal en el proyecto recién creado y ejecutar los siguientes comandos desde esa ruta.
+3. Instalar dependencias de **PHP** y **NPM**:
+	+ $ composer install
+	+ $ npm install
+	**Nota**: en caso de presentarse vulnerabilidades ejecutar (**Revisar esta solución más a fonndo**):
+	+ $ npm install -g npm@latest		(para actualizar NPM)
+	+ $ npm cache clean --force			(borrar la cache de NPM)
+	+ $ npm set audit false				(desactivar las auditorias de NPM)
+4. En caso de no tener creada las bases de datos **sefar** y **onidex** en MySQL, entonces proceder a crearlas (juego de caracteres a utilizar para ambas: **utf8_general_ci**) y seguir los siguientes pasos:
+	+ $ php artisan migrate:fresh --seed
+	+ Importar a la base de datos **sefar** en local la estructura de la tabla **agclientes** desde la base de datos **sefar** del servidor de producción ya que esta tabla no se creará. En caso de querer traerte el proyecto completo entonces exportarla con sus datos.
+	+ Importar a la base de datos **onidex** en local la estructura de la tabla **agclientes** desde la base de datos **sefar** del servidor de producción ya que esta tabla no se creará. En caso de querer traerte el proyecto completo entonces exportarla con sus datos.
+5. Copiar la siguiente ruta de acceso relativa del servidor de producción al local:
+	+ storage\app\public
+	**Nota**: en caso de pretender instalar el proyecto vacio, entonces traerse solo la estructura de directorios.
+6. En caso de no tener un host virtual creado para nuestro proyecto, seguir los siguientes pasos:
+	1. Ejecutar el bloc de notas como administrador.
+    2. Abrir el archivo: **C:\Windows\System32\drivers\etc\hosts**.
+    3. En la parte final del archivo escribir:
+		```
+		127.0.0.1     sefar.test
+		```
+    4. Guardar y cerrar.
+    5. Editar con el bloc de notas el archivo: **C:\xampp\apache\conf\extra\httpd-vhosts.conf**.
+    6. Ir al final del archivo y anexar lo siguiente:
+        + Si nunca has creado un virtual host agregar:
+			```conf
+			<VirtualHost *>
+				DocumentRoot "C:\xampp\htdocs"
+				ServerName localhost
+			</VirtualHost>
+			```
+			**Nota**: Esta estructura se agregará una única vez.
+        + Luego agregar:
+			```conf
+			<VirtualHost *>
+			DocumentRoot "C:\xampp\htdocs\sefar\public"
+			ServerName sefar.test
+			<Directory "C:\xampp\htdocs\sefar\public">
+				Options All
+				AllowOverride All
+				Require all granted
+			</Directory>
+			</VirtualHost>
+        	```
+    7. Guardar y cerrar.
+    8. Apagar y encender el servidor Apache.
+    **Nota 1**: ahora podemos ejecutar nuestro proyecto en el navegador introduciendo la siguiente dirección: http://sefar.test
+    **Nota 2**: En caso de que no funcione el enlace, cambiar en el archivo **C:\xampp\apache\conf\extra\httpd-vhosts.conf** el segmento de código **<VirtualHost \*>** por **<VirtualHost *:80>**.
+7. Crear el archivo de variables de entorno **.env** en la raíz del proyecto:
+	```
+	APP_NAME="App Sefar Universal"
+	APP_ENV=local
+	APP_KEY=
+	APP_DEBUG=true
+	APP_URL=http://sefar.test
 
+	LOG_CHANNEL=stack
+	LOG_LEVEL=debug
+
+	DB_CONNECTION=mysql
+	DB_HOST=127.0.0.1
+	DB_PORT=3306
+	DB_DATABASE=sefar
+	DB_USERNAME=root
+	DB_PASSWORD=
+
+	ONIDEX_CONNECTION=mysql
+	ONIDEX_HOST=127.0.0.1
+	ONIDEX_PORT=3306
+	ONIDEX_DATABASE=onidex
+	ONIDEX_USERNAME=root
+	ONIDEX_PASSWORD=
+
+	BROADCAST_DRIVER=log
+	CACHE_DRIVER=file
+	QUEUE_CONNECTION=sync
+	SESSION_DRIVER=database
+	SESSION_LIFETIME=120
+
+	MEMCACHED_HOST=127.0.0.1
+
+	REDIS_HOST=127.0.0.1
+	REDIS_PASSWORD=null
+	REDIS_PORT=6379
+
+	MAIL_MAILER=smtp
+	MAIL_HOST=smtp.mailtrap.io
+	MAIL_PORT=2525
+	MAIL_USERNAME=7c67f786972696
+	MAIL_PASSWORD=8f37b2d25228ba
+	MAIL_ENCRYPTION=tls
+	MAIL_FROM_ADDRESS=app.web@sefarvzla.com
+	MAIL_FROM_NAME="${APP_NAME}"
+
+	AWS_ACCESS_KEY_ID=
+	AWS_SECRET_ACCESS_KEY=
+	AWS_DEFAULT_REGION=us-east-1
+	AWS_BUCKET=
+
+	PUSHER_APP_ID=
+	PUSHER_APP_KEY=
+	PUSHER_APP_SECRET=
+	PUSHER_APP_CLUSTER=mt1
+
+	MIX_PUSHER_APP_KEY="${PUSHER_APP_KEY}"
+	MIX_PUSHER_APP_CLUSTER="${PUSHER_APP_CLUSTER}"
+
+	VAR_TMP='inicial'
+	```
+7. Generar clave para la variable de entorno **APP_KEY**:
+	+ $ php artisan key:generate
+8. Generar acceso directo (enlace simbólico) de public a storage:
+	+ $ php artisan storage:link
+
+## Deploy de App Sefar Universal en AWS:
+###  Lanzar instancia en EC2:
+1. Ir a https://aws.amazon.com/es
+2. Ir a **Mi cuenta** > **Consola de administración de AWS** e iniciar sesión.
+3. Ir al servicio **EC2** y dar clic en **Instancias New**.
+4. Dar clic en el botón de **Lanzar instancia**.
+5. Seleccionar:
+    + Ubuntu Server 18.04 LTS (HVM), SSD Volume Type - ami-0747bdcabd34c712a (64 bits x86) / ami-08353a25e80beea3e (64 bits Arm)
+6. Seleccionar el de tipo t2.2xlarge.
+7. Dar clic en el botón **Siguiente: Página Configuración de los detalles de la instancia**.
+8. Dejar todo como está y dar clic en el botón **Siguiente: Adición de almacenamiento**.
+9. Establecer **Tamaño (GiB)** en **120**.
+10. Dar clic en el botón **Siguiente: Agregar etiquetas**.
+11. Dejar todo como está y dar clic en el botón **Siguiente: Página Configure Security Group**.
+12. Ajustar parámetros:
+    + Dejar regla: **SSH**
+    + Añadir regla: **HTTP**
+    + Añadir regla: **HTTPS**
+    + Para la regla **SSH** establecer **Origen** como **Mi IP**
+    + Para las reglas **HTTP** y **HTTPS** establecer **Origen** como **Cualquier lugar**
+13. Dar clic en el botón **Revisar y lanzar**.
+14. Dejar todo como está y dar clic en el botón **Lanzar**.
+15. En el cuadro de diálogo para claves seleccionar **Crear un nuevo par de claves**.
+	+ Nombre del par de claves: **appsefar**.
+	+ Dar clic en el botón: Descargar par de claves
+    **Nota**: Guardar en un lugar seguro y evitar que se suba a GitHub, en este caso lo guardaré en la raíz de la carpeta del proyecto, y editaremos el archivo .**gitignore** para evitar que se incluya en los repositorios:
+	```
+	/node_modules
+	/public/hot
+	/public/storage
+	/storage/*.key
+	/vendor
+	/a1_soportes
+	.env
+	.env.backup
+	.phpunit.result.cache
+	docker-compose.override.yml
+	Homestead.json
+	Homestead.yaml
+	npm-debug.log
+	yarn-error.log
+	appsefar.pem
+	```
+16. Dar clic en el botón **Lanzar instancias**.
+	**Nota**: Para revisar la nueva instancia se le puede dar clic en el botón **Ver instancias**.
+  
+### Conectar con la instancia AWS appsefar vía SSH:
+1. Para los sistemas operativos Mac o Linux ejecutar:
+   + $ chmod 400 appsefar.pem
+2. Para el sistema operativo Windows:
+   + Ubicar el archivo **appsefar.pem** en disco, presionar sobre el el botón derecho y dar clic en **Propiedades**.
+   + Seleccionar la pestaña de **Seguridad**.
+   + Presionar el botón: **Opciones avanzadas**.
+   + Presionar el botón: **Deshabilitar herencia**.
+   + Dar clic: **Quitar todos los permisos heredados de este objeto**.
+   + Copiar el nombre del **Propietario** que está entre los paréntesis del usuario (Pedro Bazo).
+   + Presionar el botón: **Agregar**.
+   + Dar clic: **Seleccionar una entidad de seguridad**.
+   + En **Escriba el nombre de objeto para seleccionar** escribrir el nombre copiado en los pasos anteriores.
+   + Presionar el botón: **Comprobar nombres**.
+   + Presionar el botón: **Aceptar**.
+   + Verificar que los permisos que tienen que estar habilitados son:
+     - Lectura y ejecución
+     - Lectura
+   + Presionar el botón: **Aceptar** (Cuadro de diálog: **Entrada de permiso para appsefar.com**).
+   + Presionar el botón: **Aceptar** (Cuadro de diálog: **Configuración de seguridad avanzada para appsefar.pem**).
+   + Presionar el botón: **Aceptar** (Cuadro de diálog: **Propiedades: appsefar.pem**).
+3. En el navegador ingresar a la instancias presionando abajo de **ID de la instancia** y dar clic en el botón **Conectar**.
+4. Ir a **Cliente SSH** y copiar el comando de ejemplo: **ssh -i "appsefar.pem" ubuntu@ec2-3-239-101-245.compute-1.amazonaws.com**.
+5. En local ejecutar (en la ruta que se encuentre el archivo **appsefar.pem**):
+    + $ ssh -i "appsefar.pem" ubuntu@ec2-3-239-101-245.compute-1.amazonaws.com
+	+ A la pregunta: Are you sure you want to continue connecting (yes/no/[fingerprint])?
+      - Respondemos: yes
+    **Nota**: Con esta acción hemos ingresado en el servidor de AWS.
+
+### Configurar nuestro servidor
+1. En la terminal del servidor de AWS:
+    + Actualizar servidor:
+        - $ sudo apt-get update
+        - $ sudo apt-get upgrade
+        - Cuando pregunte: Do you want to continue? [Y/n]
+            * Responder: y
+	+ Actualizar nuevamente el servidor:
+        - $ sudo apt-get update
+    + Configurar entorno para ejecutar Laravel:
+        - $ sudo apt-get install software-properties-common
+        - $ sudo add-apt-repository ppa:ondrej/php
+        - Cuando pregunte: Press [ENTER] to continue or Ctrl-c to cancel adding it.
+            * Presionamos ENTER.
+        - Actualizar nuevamente el servidor:
+            * $ sudo apt-get update
+        - Instalar php:
+            * $ sudo apt-get install php7.4
+            * Cuando pregunte: Do you want to continue? [Y/n]
+                * Responder: y
+        - Instalar el servidor apache:
+            * $ sudo apt-get install apache2
+            * $ sudo apt-get install libapache2-mod-php7.4
+        	**Nota**: para ver la versión de php:
+              * $ php -v
+        - Para saber los modulos instalados en php:
+            * $ php -m
+            * Resultados:
+				```
+				[PHP Modules]
+				calendar
+				Core
+				ctype
+				date
+				exif
+				FFI
+				fileinfo
+				filter
+				ftp
+				gettext
+				hash
+				iconv
+				json
+				libxml
+				openssl
+				pcntl
+				pcre
+				PDO
+				Phar
+				posix
+				readline
+				Reflection
+				session
+				shmop
+				sockets
+				sodium
+				SPL
+				standard
+				sysvmsg
+				sysvsem
+				sysvshm
+				tokenizer
+				Zend OPcache
+				zlib
+
+				[Zend Modules]
+				Zend OPcache			
+				```
+            **Nota**: Constrastar contra https://laravel.com/docs/8.x/deployment#server-requirements y verificar cuales son necesarias.
+        - Instalar extensiones de php necesarias para Laravel:
+            * $ sudo apt-get install php7.4-bcmath
+            * $ sudo apt-get install php7.4-mbstring
+                * En: Do you want to continue? [Y/n]
+                    Responder: y
+            * $ sudo apt-get install php7.4-xml
+        - Instalar paquetes que necesitaremos más adelante:
+            * $ sudo apt-get install unzip
+            * $ sudo apt-get install php7.4-zip
+                * En: Do you want to continue? [Y/n]
+                    Responder: y
+            * $ sudo apt-get install php7.4-mysql
+            * $ sudo apt-get install php7.4-curl
+2. En el navegador:
+    + Ir: **Servicios** > **EC2** > **Recursos** > **Instancias**.
+    + Seleccionar nuestra instancia en ejecución.
+    + Ubicar: Dirección IPv4 pública: **3.239.101.245**.
+    **Nota**: esta será la dirección de nuestro sitio web.
+3. En la terminal del servidor de AWS:
+    + Reiniciar el servidor apache:
+        * $ sudo service apache2 restart
+		**Nota**: Para verificar que no tengamos ningún error:
+        * $ sudo service apache2 status
+    + Habilitar el modulo rewrite
+        * $ sudo a2enmod rewrite
+    + Reiniciar el servidor apache:
+        * $ sudo service apache2 restart
+    + Definir punto de acceso a nuestra aplicación web:
+        * Ingresar a la ruta: /var/www/html
+            - $ cd /var/www/html
+            **Nota**: para ver los archivos contenidos en una ruta:
+            - $ ls
+        * Editar el archivo index.html:
+            - $ sudo nano index.html
+            - Cambiar la etiqueta title del head por:
+				```html
+                <title>App Sefar</title>
+				```
+            - Para guardar, presionar:
+                + Ctrl + X
+                + y
+                + ENTER
+        * Editar archivo de configuración de punto de acceso:
+            - $ sudo nano /etc/apache2/sites-enabled/000-default.conf
+            - Cambiar línea:
+				```
+             	DocumentRoot /var/www/html
+				```
+                Por:
+				```
+            	DocumentRoot /var/www/AppSefarUniversal/public
+				```
+            - Para guardar, presionar:
+                + Ctrl + X
+                + y
+                + ENTER
+    + Reiniciar el servidor apache:
+        * $ sudo service apache2 restart
+
+### Instalación de Composer
+1. Copiar de la página: https://getcomposer.org/download, el bloque de **Command-line installation**:
+	```
+	php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+	php -r "if (hash_file('sha384', 'composer-setup.php') === '756890a4488ce9024fc62c56153228907f1545c228516cbf63f885e036d37e9a59d27d63f46af1d4d07ee0f76181c7d3') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
+	php composer-setup.php
+	php -r "unlink('composer-setup.php');"
+	```
+2. En la terminal del servidor de AWS pegar las líneas de comandos que acabamos de copiar y presionar ENTER.
+3. Realizar la instalación global de composer:
+    + $ sudo mv composer.phar /usr/local/bin/composer
+    **Nota 1**: Este comando se encuentra en https://getcomposer.org/doc/00-intro.md
+    **Nota 2**: Para comprobar que tenemos instalado composer, ejecutar:
+    + $ composer
+
+### Clonar repositorio de GitHUb App Sefar:
+1. Ir a la ruta **/var/www**:
+    + $ cd /var/www
+2. Clonar el repositorio del proyecto:
+    + $ sudo git clone https://github.com/petrix12/AppSefarUniversal.git
+3. Ir a la ruta **/var/www/AppSefarUniversal**:
+    + $ cd /var/www/AppSefarUniversal
+4. Para poder instalar las dependencias de **Composer**, ejecutar:
+    + $ sudo chown -R ubuntu:www-data .
+5. Ejecutar permisos para la carpeta de laravel:
+    + $ chmod -R 755 .
+    + $ chmod -R 777 ./storage
+6. Instalar composer:
+    + $ composer install
+7. Crear el archivo **.env** a partir de **.env.example**:
+    + $ cp .env.example .env
+<!-- 8. Generar llave del proyecto:
+    + $ php artisan key:generate -->
+9. Instalar NodeJs:
+    + $ sudo apt install nodejs
+        * Do you want to continue? [Y/n]
+            Responder: y
+10. Para ver la versión de NodeJs:
+    + $ nodejs -v
+11. Actualizar NodeJs:
+    + $ curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+12. Ejecutar:
+    + $ sudo apt-get install -y nodejs
+	**Nota**: Para ver la versión de npm:
+    + $ npm -v
+13. Ejecutar:
+    + $ npm install
+    + $ npm run dev
+
+### Crear base de datos
+1. En la página de AWS buscar el servicio **RDS** (https://console.aws.amazon.com/rds/home?region=us-east-1):
+    + Dar clic en el botón: **Crear base de datos**.
+    + En **Elegir un método de creación de base de datos**:
+        * Seleccionar la opción: **Creación estándar**.
+    + En **Opciones del motor**:
+        * Seleccionar la opción: **MySQL**.
+        * Seleccionar la versión: **MySQL 8.0.23**.
+    + En **Plantillas**:
+        * Seleccionar la opción: **Producción**.
+    + En **Configuración** > **Identificador de instancias de bases de datos**:
+        * Escribir: appsefar-db
+    + En **Configuración** > **Configuración de credenciales** > **Nombre de usuario maestro**:
+        * Escribir: appsefar_usr
+    + En **Configuración** > **Configuración de credenciales** > **Generación automática de contraseña**: Seleccionar.
+    + En **Conectividad** > **Acceso público**: Seleccionar **Si**.
+    + En **Configuración adicional** > **Opciones de base de datos** > **Nombre de base de datos inicial**:
+        * Escribir: appsefar_db
+    + Presionar botón: **Crear base de datos**.
+    + Cuando finalice la creación de la base de datos, presionar el botón: **View credential details** y anotar credenciales en un lugar seguro.
+
+### Editar los "Security Group"
+1. En la página de AWS seleccionar la base de datos **appsefar-db**: **Amazon RDS** > **Databases**.
+2. Seleccionar **Conectividad y seguridad** > **Seguridad** > **Grupos de seguridad de la VPC** > **default (sg-09f6e23a)**.
+3. Seleccionar **Grupos de seguridad** > **ID del grupo de seguridad** > **sg-09f6e23a**.
+4. Seleccionar **Reglas de entrada** y presionar botón **Edit inbound rules**.
+5. Presionar el botón **Agregar regla** y seleccionar el tipo **MySQL/Aurora** y seleccionar como origen **Mi IP**.
+6. Presionar botón **Guardar reglas**.
+
+### Conectar base de datos de AWS con local MySQL Workbench
+1. En caso de no tener instalado **MySQL Workbench**:
+	+ Ir a https://www.mysql.com/products/workbench
+	+ Presionar el botón **Download Now »**.
+	+ En la siguiente página presionar el botón **Download** y luego en el enlace **No thanks, just start my download**.
+	+ Instalar **MySQL Workbench**.
+2. En **MySQL Workbench**:
+    + Seleccionar **Database** > **Manage Connections...**.
+    + En el cuadro de diálogo **Manage Server Connections** suministrar la siguiente información:
+        * Presionar botón: New
+        * Connection Name: appsefar
+        * Hostname: appsefar-db.cgfry9dn7zav.us-east-1.rds.amazonaws.com
+        	**Nota**: Es el punto de enlace que aparece en la página de AWS: **RDS** > **Databases** > **appsefar-db**.
+        * Port: 3306
+        * Username: appsefar_usr
+        * Password: ************
+    + Presionar botón: **Test Connection** para comprobar el estado de la conección.
+    + Presionar botón: **Close**.
+    + Seleccionar **Database** > **Connect to Database**.
+    + En el cuadro de diálogo **Connect to Database** seleccionamos la conección **appsefar** y presionamos el botón **OK**.
+
+### Configuración de credenciales en Laravel
+1. En la terminal de AWS ir a la ruta **/var/www/AppSefarUniversal**:
+    + $ cd /var/www/AppSefarUniversal
+2. En la terminal de AWS editar el archivo **.env**:
+    + $ nano .env
+3. Modificar los siguientes parámetros en el archivo **.env**:
+	```
+	APP_NAME="App Sefar Universal"
+	APP_ENV=production
+	APP_KEY=
+	APP_DEBUG=false
+	APP_URL=http://3.239.101.245
+
+	LOG_LEVEL=debug
+
+	DB_CONNECTION=mysql
+	DB_HOST=appsefar-db.cgfry9dn7zav.us-east-1.rds.amazonaws.com
+	DB_PORT=3306
+	DB_DATABASE=appsefar_db
+	DB_USERNAME=appsefar_usr
+	DB_PASSWORD=4x82JCU67qOxaevDDlpK
+
+	ONIDEX_CONNECTION=mysql
+	ONIDEX_HOST=107.180.2.195
+	ONIDEX_PORT=3306
+	ONIDEX_DATABASE=onidex
+	ONIDEX_USERNAME=pxvim6av41qx
+	ONIDEX_PASSWORD="L5=Rj#8lW}YuK"
+
+	BROADCAST_DRIVER=log
+	CACHE_DRIVER=file
+	QUEUE_CONNECTION=sync
+	SESSION_DRIVER=database
+	SESSION_LIFETIME=120
+
+	MEMCACHED_HOST=127.0.0.1
+
+	REDIS_HOST=127.0.0.1
+	REDIS_PASSWORD=null
+	REDIS_PORT=6379
+
+	MAIL_DRIVER=smtp
+	MAIL_HOST=smtp.gmail.com
+	MAIL_PORT=587
+	MAIL_USERNAME=info@sefarvzla.com
+	MAIL_PASSWORD=nofuievtqkdfxszn
+	MAIL_ENCRYPTION=tls
+	MAIL_FROM_ADDRESS=info@sefarvzla.com
+	MAIL_FROM_NAME="${APP_NAME}"
+
+	AWS_ACCESS_KEY_ID=
+	AWS_SECRET_ACCESS_KEY=
+	AWS_DEFAULT_REGION=eu-west-1
+	AWS_BUCKET=
+
+	PUSHER_APP_ID=
+	PUSHER_APP_KEY=
+	PUSHER_APP_SECRET=
+	PUSHER_APP_CLUSTER=mt1
+
+	MIX_PUSHER_APP_KEY="${PUSHER_APP_KEY}"
+	MIX_PUSHER_APP_CLUSTER="${PUSHER_APP_CLUSTER}"
+	```
+	**Nota 1**: Luego que se configure el nombre del dominio correspondiente cambiar la variable de entorno:
+		```
+		APP_URL=http://3.239.101.245
+		```
+		Por:
+		```
+		APP_URL=https://app.universalsefar.com
+		```
+	**Nota 2**: El valor de la variable de entorno **DB_HOST** proviene de la página de AWS en: **RDS** > **Databases** > **appsefar-db** en **Conectividad y seguridad** -> **Punto de enlace y puerto** -> **Punto de enlace**.
+	**Nota 3**: Los valores de las variables de entorno correspondiente a **MAIL_** están configurados con la cuenta de **info@sefarvzla.com**, también se podría configurar con una cuenta de **AWS**.
+4. Para guardar el archivo **.env**:
+    + $ Ctrl + X
+    + $ y
+    + $ ENTER
+5. Generar llave del proyecto:
+    + $ php artisan key:generate
+6. Para verificar que podemos establecer una conexión con la base de datos, ir a la terminal AWS y ejecutar:
+    + $ php artisan tinker
+    + >>> DB::connection()->getPdo();
+    **Nota**: si el resultado de la ejecución es parecida a la que se muestra a continuación es que logramos establecer la conexión:
+	```json
+	=> PDO {#4731
+		inTransaction: false,
+		attributes: {
+		CASE: NATURAL,
+		ERRMODE: EXCEPTION,
+		AUTOCOMMIT: 1,
+		PERSISTENT: false,
+		DRIVER_NAME: "mysql",
+		SERVER_INFO: "Uptime: 104373  Threads: 6  Questions: 488396  Slow queries: 0  Opens: 337  Flush tables: 3  Open tables: 238  Queries per second avg: 4.679",
+		ORACLE_NULLS: NATURAL,
+		CLIENT_VERSION: "mysqlnd 7.4.22",
+		SERVER_VERSION: "8.0.23",
+		STATEMENT_CLASS: [
+			"PDOStatement",
+		],
+		EMULATE_PREPARES: 0,
+		CONNECTION_STATUS: "appsefar-db.cgfry9dn7zav.us-east-1.rds.amazonaws.com via TCP/IP",
+		DEFAULT_FETCH_MODE: BOTH,
+		},
+	}	
+	```
+7. Salir de tinker:
+    + >>> Ctrl + C
+11. Ejecutar las migraciones en la terminal de AWS:
+    + $ php artisan migrate
+		+ Do you really wish to run this command? (yes/no) [no]: yes
+
+### Fix: Configuración del servidor
+1. Ingresar al archivo de configuración de apache en la terminal de AWS:
+    + $ sudo nano /etc/apache2/apache2.conf
+
+sudo nano /etc/apache2/sites-available/000-default.conf
+2. Comentar las siguientes líneas con #:
+	```
+	# User ${APACHE_RUN_USER}
+	# Group ${APACHE_RUN_GROUP}
+	```
+3. A continuación agregar las líneas:
+	```
+	User ubuntu
+	Group ubuntu
+	```
+4. Cambiar el siguiente bloque de códgio:
+	```
+	<Directory />
+			Options FollowSymLinks
+			AllowOverride None
+			Require all denied
+	</Directory>
+
+	<Directory /usr/share>
+			AllowOverride None
+			Require all granted
+	</Directory>
+
+	<Directory /var/www/>
+			Options Indexes FollowSymLinks
+			AllowOverride None
+			Require all granted
+	</Directory>
+	```
+    Por:
+	```
+	<Directory />
+			Options FollowSymLinks
+			AllowOverride All
+			Require all denied
+	</Directory>
+
+	<Directory /usr/share>
+			AllowOverride All
+			Require all granted
+	</Directory>
+
+	<Directory /var/www/>
+			Options Indexes FollowSymLinks
+			AllowOverride All
+			Require all granted
+	</Directory>
+	```
+5. Para guardar los cambios:
+    + $ Ctrl + X
+    + $ y
+    + $ ENTER
+6. Habilitar modo rewrite:
+    + $ sudo a2enmod rewrite
+7. Reiniciar el servidor de apache:
+    + $ sudo service apache2 restart
+8. Para ver el estatus del servidor apache:
+    + $ sudo service apache2 status
+
+### Permitir acceso a base de datos onidex en servidor GoDaddy:
+1. Ingresar al cPanel de GoDaddy:
+	+ https://a2plcpnl0082.prod.iad2.secureserver.net:2083
+	+ Introducir las credenciales
+2. Dentro del cPanel ir a **BASES DE DATOS** > **MySQL remoto®**.
+3. En **Añadir anfitrión de acceso** introducir los siguientes valores:
+	+ Anfitrión (se permite el comodín %): **3.239.101.245**
+	+ Comment (optional): **AWS appsefar**
+4. Presionar el botón **Añadir anfitrión**.
+
+### Configurar FileZilla con nuestra instancia EC2:
+**URL**: https://filezilla-project.org
+1. Ejecutar FileZilla e ir a **Edición** > **Opciones...**.
+2. En el cuadro de diálogo **Opciones** en **Selecciones página:** ir a **Conexión** > **SFTP**.
+3. Luego en el panel de **Claves privadas:** presionar el botón **Añadir archivo de clave...**.
+4. Ubicar el archivo de credenciales **appsefar.pem** y presionar el botón **Abrir**.
+5. Presionar el botón **Aceptar** para salir del cuadro de diálogo **Opciones**.
+6. Ir a **Archivo** > **Gestor de sitios...**.
+7. En el cuadro de diálogo **Gestor de sitios** presionar el botón **Nuevo sitio** nombrarlo **AWS App Sefar** e intruducir los siguientes parámetros:
+	+ Protocolo: SFTP - SSH File Transfer Protocol
+	+ Servidor: 3.239.101.245
+	+ Modo de acceso: Interactivo
+	+ Usuario: ubuntu
+		**Nota 1**: Posibles nombres de usuarios según el sistema operativo en EC-2:
+		+ Amazon Linux: ec2-user
+		+ RHEL5: root o ec2-user.
+		+ Ubuntu: ubuntu
+		+ SUSE Linux: root . Para 
+		+ Debian: admin. 
+		+ Otros: consulte el proveedor de AMI.
+		**Nota 2**: FileZilla determinará automáticamente la clave. No se necesitará especificarla después de haberla importardo.
+8. Presionar el botón **Conectar**.
+
+### Ejemplo de registro de un cliente con parámetros GET:
+   + http://3.239.101.245/register?nombre=Detal%20y%20Borrar&cnacimiento=Punto%20Fijo&email=delete.borrar33%40gmail.com&fnacimiento=1977-11-03&nombre_f=Perensejo%20Borrar&nombres=Fulanito&pasaporte=1234567999&pasaporte_f=5555555&pnacimiento=Venezuela&sexo=M
+
+### Actualizar proyecto en AWS desde GitHub:
++ ssh -i "appsefar.pem" ubuntu@ec2-3-239-101-245.compute-1.amazonaws.com
++ cd /var/www
++ sudo git ******
+
+### Puntos finales para finalizar la migración de GoDaddy a AWS:
+1. Migrar todos los registros de todas las tablas de GoDaddy a la instacia de MySQL de AWS.
+2. Copiar archivos varios.
+3. Copiar documentos.
+4. Transferir nombre de dominio de GoDaddy a AWS.
