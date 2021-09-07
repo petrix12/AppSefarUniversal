@@ -15,6 +15,7 @@
     if (!empty($_GET['sexo'])) $sexo = $_GET['sexo']; else $sexo = null;
     if (!empty($_GET['nombre_f'])) $nombre_f = $_GET['nombre_f']; else $nombre_f = null;
     if (!empty($_GET['pasaporte_f'])) $pasaporte_f = $_GET['pasaporte_f']; else $pasaporte_f = null;
+    if (!empty($_GET['referido'])) $referido = $_GET['referido']; else $referido = null;
 
     $name = null;
     if (!empty($_GET['nombres'])){
@@ -74,6 +75,7 @@
             <input type="hidden" name="nombre_f" value="{{ $nombre_f }}" />
             <input type="hidden" name="pasaporte_f" value="{{ $pasaporte_f }}" />
             <input type="hidden" name="rol" value="{{ $rol }}" />
+            <input type="hidden" name="referido" value="{{ $referido }}" />
             <div>
                 <x-jet-label for="name" value="{{ __('Name') }}" />
                 <x-jet-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name',$name)" required autofocus autocomplete="name" />

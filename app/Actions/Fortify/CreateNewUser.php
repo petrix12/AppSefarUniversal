@@ -35,27 +35,32 @@ class CreateNewUser implements CreatesNewUsers
         if($rol == 'cliente'){
             $user = User::where('passport','LIKE',$passport)->get();
             if(empty($user[0]->passport)){
-                // Incluir al cliente en la tabla agclientes
-                Agcliente::create([
-                    'IDCliente' => trim($input['passport']),
-                    'IDPersona' => 1,
-                    'Nombres' => trim($input['nombres']),
-                    'Apellidos' => trim($input['apellidos']),
-                    'NPasaporte' => trim($input['passport']),
-                    'Sexo' => trim($input['sexo']),
-                    'AnhoNac' => date("Y", $fnacimiento_entero),
-                    'MesNac' => date("m", $fnacimiento_entero),
-                    'DiaNac' => date("d", $fnacimiento_entero),
-                    'LugarNac' => trim($input['cnacimiento']),
-                    'PaisNac' => trim($input['pnacimiento']),
-                    'NombresF' => trim($input['nombre_f']),
-                    'NPasaporteF' => trim($input['pasaporte_f']),
-                    'FRegistro' => date('Y-m-d H:i:s'),
-                    'PNacimiento' => trim($input['pnacimiento']),
-                    'LNacimiento' => trim($input['cnacimiento']),
-                    'FUpdate' => date('Y-m-d H:i:s'),
-                    'Usuario' => trim($input['email']),
-                ]);
+                // Verificar si el usuario esta registrado en agclientes
+                $agcliente_v = Agcliente::where('IDCliente',trim($passport))->where('IDPersona',1)->count();
+                if($agcliente_v == 0){
+                    // Incluir al cliente en la tabla agclientes
+                    Agcliente::create([
+                        'IDCliente' => trim($input['passport']),
+                        'IDPersona' => 1,
+                        'Nombres' => trim($input['nombres']),
+                        'Apellidos' => trim($input['apellidos']),
+                        'NPasaporte' => trim($input['passport']),
+                        'Sexo' => trim($input['sexo']),
+                        'AnhoNac' => date("Y", $fnacimiento_entero),
+                        'MesNac' => date("m", $fnacimiento_entero),
+                        'DiaNac' => date("d", $fnacimiento_entero),
+                        'LugarNac' => trim($input['cnacimiento']),
+                        'PaisNac' => trim($input['pnacimiento']),
+                        'NombresF' => trim($input['nombre_f']),
+                        'NPasaporteF' => trim($input['pasaporte_f']),
+                        'FRegistro' => date('Y-m-d H:i:s'),
+                        'PNacimiento' => trim($input['pnacimiento']),
+                        'LNacimiento' => trim($input['cnacimiento']),
+                        'FUpdate' => date('Y-m-d H:i:s'),
+                        'referido' => trim($input['referido']),
+                        'Usuario' => trim($input['email']),
+                    ]);
+                }
             }
             Validator::make($input, [
                 'name' => ['required', 'string', 'max:255'],

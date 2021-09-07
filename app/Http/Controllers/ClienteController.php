@@ -86,12 +86,17 @@ class ClienteController extends Controller
                 'PNacimiento' => trim($request->pnacimiento),
                 'LNacimiento' => trim($request->cnacimiento),
                 'FUpdate' => date('Y-m-d H:i:s'),
+                'referido' => trim($request->referido),
                 'Usuario' => trim($request->email),
             ]);
         }
 
         // Asignar rol de cliente
         $user->assignRole('Cliente');
+        // Asignar rol Traviesoenvans si corresponde
+        if($request->referido == "Travieso Evans"){
+            $user->assignRole('Traviesoevans');
+        }
         
         return redirect()->route('clientes.tree', $user->passport);
     }
