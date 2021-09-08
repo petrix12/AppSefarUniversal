@@ -9,7 +9,7 @@ class TreeController extends Controller
 {
     public function tree($IDCliente){
         if(Auth()->user()->hasRole('Traviesoevans')){
-            $autorizado = Agcliente::where('referido','LIKE','Traviesoevans')
+            $autorizado = Agcliente::where('referido','LIKE','Travieso Evans')
                 ->where('IDCliente','LIKE',$IDCliente)
                 ->count();
             if($autorizado == 0){
