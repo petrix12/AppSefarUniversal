@@ -93,10 +93,6 @@ class ClienteController extends Controller
 
         // Asignar rol de cliente
         $user->assignRole('Cliente');
-        // Asignar rol Traviesoenvans si corresponde
-        if($request->referido == "Travieso Evans"){
-            $user->assignRole('Traviesoevans');
-        }
         
         return redirect()->route('clientes.tree', $user->passport);
     }

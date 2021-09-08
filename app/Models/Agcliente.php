@@ -92,7 +92,7 @@ class Agcliente extends Model
     // Filtro para clientes referidos
     public function scopeRol($query){
         if(Auth()->user()->hasRole('Traviesoevans')){
-            return $query->where('referido','Traviesoevans');
+            return $query->where('referido','Travieso Evans');
         }
     }
 
