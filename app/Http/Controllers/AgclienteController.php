@@ -85,6 +85,10 @@ class AgclienteController extends Controller
         $FUpdate = date('Y-m-d H:i:s');
         $Familiares = trim($request->Familiaridad);
 
+        $referido = Auth()->user()->getRoleNames()[0];
+        if($referido == "Traviesoevans"){
+            $referido = "Travieso Evans";
+        }
         // Creando persona en agcliente
         $agcliente = Agcliente::create([
             'IDCliente' => trim($request->IDCliente), 
@@ -131,7 +135,7 @@ class AgclienteController extends Controller
             'FRegistro' => $request->FRegistro,
             'Observaciones' => $request->Observaciones,
             'Enlace' => $request->Enlace,
-            'referido' => Auth()->user()->getRoleNames()[0],
+            'referido' => $referido,
 
             'PNacimiento' => $PNacimiento,
             'IDPadre' => $IDPadre,
