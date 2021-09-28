@@ -8,8 +8,18 @@ use Illuminate\Http\Request;
 class TreeController extends Controller
 {
     public function tree($IDCliente){
+        // Si el usuario tiene el rol Traviesoevans
         if(Auth()->user()->hasRole('Traviesoevans')){
             $autorizado = Agcliente::where('referido','LIKE','Travieso Evans')
+                ->where('IDCliente','LIKE',$IDCliente)
+                ->count();
+            if($autorizado == 0){
+                return view('crud.agclientes.index');
+            }
+        }
+        // Si el usuario tiene el rol Vargassequera
+        if(Auth()->user()->hasRole('Vargassequera')){
+            $autorizado = Agcliente::where('referido','LIKE','Patricia Vargas Sequera')
                 ->where('IDCliente','LIKE',$IDCliente)
                 ->count();
             if($autorizado == 0){

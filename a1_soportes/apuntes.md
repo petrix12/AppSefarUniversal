@@ -3488,13 +3488,188 @@
 			$ git commit -m "Carga de clientes"
 
 
-## Página Traviesoevans
+## Módulo Traviesoevans
 ###### traviesoevans@gmail.com / sefar2021
 **Tutorial**: https://www.youtube.com/watch?v=Z8Oh2O6GueQ
-1. 
+1. Crear rol **Traviesoevans**.
+2. Otorgarle los siguientes permisos al rol **Traviesoevans**:
+	+ genealogista
+	+ crud.agclientes.index
+	+ crud.agclientes.create
+	+ crud.agclientes.edit
+	+ crud.agclientes.destroy
+	+ crud.files.index
+	+ crud.files.create
+	+ crud.files.edit
+3. Modificar modelo **app\Models\Agcliente.php**:
+	```php
+	≡
+	class Agcliente extends Model
+	{
+		≡
+		// Filtro de búsqueda
+		public function scopeBuscar($query, $search){
+			≡
+		}
 
+		// Filtro para clientes referidos
+		public function scopeRol($query){
+        	// Clientes con el rol Traviesoevans
+			if(Auth()->user()->hasRole('Traviesoevans')){
+				return $query->where('referido','Travieso Evans');
+			}
+		}
 
+		// Filtro para ver solo clientes
+		public function scopeClientes($query, $solo_clientes){
+			≡
+		}
+	}
+	```
+4. Modificar controlador **app\Http\Controllers\TreeController.php**:
+	```php
+	≡
+	class TreeController extends Controller
+	{
+		public function tree($IDCliente){
+			// Si el usuario tiene el rol Traviesoevans
+			if(Auth()->user()->hasRole('Traviesoevans')){
+				$autorizado = Agcliente::where('referido','LIKE','Travieso Evans')
+					->where('IDCliente','LIKE',$IDCliente)
+					->count();
+				if($autorizado == 0){
+					return view('crud.agclientes.index');
+				}
+			}
+			$existe = Agcliente::where('IDCliente','LIKE',$IDCliente)->where('IDPersona',1)->get();
+			≡
+		}
+	}
+	```
+5. Modificar el método **store** del controlador **app\Http\Controllers\AgclienteController.php**:
+	```php
+    public function store(Request $request)
+    {
+        ≡
+        $referido = Auth()->user()->getRoleNames()[0];
+        if($referido == "Traviesoevans"){
+            $referido = "Travieso Evans";
+        }
+        // Creando persona en agcliente
+        ≡
+    }
+	```
+6. Modificar el método **index** del conrolador **app\Http\Controllers\Controller.php**:
+	```php
+    public function index(){
+        ≡
+        if(Auth::user()->hasRole('Documentalista')){
+            return view('crud.miscelaneos.index');
+        }
 
+        if(Auth::user()->hasRole('Traviesoevans')){
+            return view('crud.agclientes.index');
+        }
+        ≡
+    }
+	```
+7. mm
+
+## Módulo Patricia Vargas Sequera
+1. Crear rol **Vargassequera**.
+2. Otorgarle los siguientes permisos al rol **Vargassequera**:
+	+ genealogista
+	+ crud.agclientes.index
+	+ crud.agclientes.create
+	+ crud.agclientes.edit
+	+ crud.agclientes.destroy
+	+ crud.files.index
+	+ crud.files.create
+	+ crud.files.edit
+3. Modificar modelo **app\Models\Agcliente.php**:
+	```php
+	≡
+	class Agcliente extends Model
+	{
+		≡
+		// Filtro de búsqueda
+		public function scopeBuscar($query, $search){
+			≡
+		}
+
+		// Filtro para clientes referidos
+		public function scopeRol($query){
+        	// Clientes con el rol Traviesoevans
+			≡
+			// Clientes con el rol Vargassequera
+			if(Auth()->user()->hasRole('Vargassequera')){
+				return $query->where('referido','Patricia Vargas Sequera');
+			}
+		}
+
+		// Filtro para ver solo clientes
+		public function scopeClientes($query, $solo_clientes){
+			≡
+		}
+	}
+	```
+4. Modificar controlador **app\Http\Controllers\TreeController.php**:
+	```php
+	≡
+	class TreeController extends Controller
+	{
+		public function tree($IDCliente){
+			// Si el usuario tiene el rol Traviesoevans
+			≡
+			// Si el usuario tiene el rol Vargassequera
+			if(Auth()->user()->hasRole('Vargassequera')){
+				$autorizado = Agcliente::where('referido','LIKE','Patricia Vargas Sequera')
+					->where('IDCliente','LIKE',$IDCliente)
+					->count();
+				if($autorizado == 0){
+					return view('crud.agclientes.index');
+				}
+			}
+			$existe = Agcliente::where('IDCliente','LIKE',$IDCliente)->where('IDPersona',1)->get();
+			≡
+		}
+	}
+	```
+5. Modificar el método **store** del controlador **app\Http\Controllers\AgclienteController.php**:
+	```php
+    public function store(Request $request)
+    {
+        ≡
+        $referido = Auth()->user()->getRoleNames()[0];
+        if($referido == "Traviesoevans"){
+            $referido = "Travieso Evans";
+        }
+        if($referido == "Vargassequera"){
+            $referido = "Patricia Vargas Sequera";
+        }
+        // Creando persona en agcliente
+        ≡
+    }
+	```
+6. Modificar el método **index** del conrolador **app\Http\Controllers\Controller.php**:
+	```php
+    public function index(){
+        ≡
+        if(Auth::user()->hasRole('Traviesoevans')){
+            return view('crud.agclientes.index');
+        }
+
+        if(Auth::user()->hasRole('Vargassequera')){
+            return view('crud.agclientes.index');
+        }
+        ≡
+    }
+	```
+7. mm
+
+	≡
+	```php
+	```
 
 # **********************************************
 ## Pendientes:
