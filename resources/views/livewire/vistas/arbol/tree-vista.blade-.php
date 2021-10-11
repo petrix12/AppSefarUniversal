@@ -272,7 +272,16 @@
             @for ($i = 16; $i <=31; $i++)
             <div class="caja_tatarabuelos" style="top: {{ 10 + ($i-16)*35 }}px; left: 930px;" title="{{ $vida = GetVidaCompleta($agclientes,$i) }}">
                 <span class="nom-tatarabuelos" title="{{ GetPersona($i) }} - {{ GetDatosMatrimonio($agclientes,$i) }}">
-                    <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ Str::limit(GetNombres($agclientes,$i), 30) }}
+                    <button type="button" data-toggle="modal" data-target="#exampleModal{{$i}}">
+                        <span title="Editar persona">
+                            @if (existePer($agclientes,$i))
+                                <i class="fas fa-user-edit text-red-500 hover:text-red-200"></i>
+                            @else
+                                <i class="fas fa-user-plus text-gray-500 hover:text-blue-500"></i>
+                            @endif
+                        </span>
+                    </button>
+                    {{-- <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ Str::limit(GetNombres($agclientes,$i), 30) }} --}}
                 </span>
                 <span class="ape-tatarabuelos" title="{{ $vida }}">{{ Str::limit(GetApellidos($agclientes,$i), 30) }}</span>
                 <x-ver-doc :agclientes='$agclientes' :id='$i'/>
@@ -293,29 +302,28 @@
     </div>
     @endif
 
-    <!-- Button trigger modal -->
-    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal">
-        Launch demo modal
-    </button>
-    
-    <!-- Modal -->
-    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-            </div>
-            <div class="modal-body">
-            ...
-            </div>
-            <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            <button type="button" class="btn btn-primary">Save changes</button>
+
+
+    @for ($i = 1; $i < 31; $i++)
+        <!-- Modal -->
+        <div class="modal fade" id="exampleModal{{$i}}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                    ...
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary">Save changes</button>
+                    </div>
+                </div>
             </div>
         </div>
-        </div>
-    </div>
+    @endfor
 </div>
