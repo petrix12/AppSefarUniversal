@@ -4013,6 +4013,9 @@
 + families
 + libraries
 
+## Para publicar y personalizar páginas de errores http. 
++ $ php artisan vendor:publish --tag=laravel-errors
++ **Nota**: las vistas para manejar los errores se ubicaran en **resources\views\errors**.
 
 ## Incluir destinatarios en las notificaciones:
 1. Archivos a modificar para incluir destinatarios en las notificaciones:

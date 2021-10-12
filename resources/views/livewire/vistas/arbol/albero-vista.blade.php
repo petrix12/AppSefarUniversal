@@ -77,7 +77,8 @@
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDTatarabuelo) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDTatarabuelo) }}">{{ GetVida($agclientes,$IDTatarabuelo) }}</p>
                  
-            <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDTatarabuelo'/></span>
+            {{-- <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDTatarabuelo'/></span> --}}
+            <span class="editar"><x-editar-persona-i-v2 :agclientes='$agclientes' :countries='$countries' :id='$IDTatarabuelo'/></span>
             <x-cargar-doc :agclientes='$agclientes' :id='$IDTatarabuelo'/>
             <x-ver-doc :agclientes='$agclientes' :id='$IDTatarabuelo'/>
         </div>
@@ -109,7 +110,8 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDTatarabuela) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDTatarabuela) }}">{{ GetVida($agclientes,$IDTatarabuela) }}</p>
-            <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDTatarabuela'/></span>
+            {{-- <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDTatarabuela'/></span> --}}
+            <span class="editar"><x-editar-persona-i-v2 :agclientes='$agclientes' :countries='$countries' :id='$IDTatarabuela'/></span>
             <x-cargar-doc :agclientes='$agclientes' :id='$IDTatarabuela'/>
             <x-ver-doc :agclientes='$agclientes' :id='$IDTatarabuela'/>
         </div>
@@ -150,7 +152,8 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDBisabuelo) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDBisabuelo) }}">{{ GetVida($agclientes,$IDBisabuelo) }}</p>
-            <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDBisabuelo'/></span>
+            {{-- <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDBisabuelo'/></span> --}}
+            <span class="editar"><x-editar-persona-i-v2 :agclientes='$agclientes' :countries='$countries' :id='$IDBisabuelo'/></span>
             <x-cargar-doc :agclientes='$agclientes' :id='$IDBisabuelo'/>
             <x-ver-doc :agclientes='$agclientes' :id='$IDBisabuelo'/>
         </div>
@@ -180,7 +183,8 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDBisabuela) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDBisabuela) }}">{{ GetVida($agclientes,$IDBisabuela) }}</p>
-            <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDBisabuela'/></span>
+            {{-- <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDBisabuela'/></span> --}}
+            <span class="editar"><x-editar-persona-i-v2 :agclientes='$agclientes' :countries='$countries' :id='$IDBisabuela'/></span>
             <x-cargar-doc :agclientes='$agclientes' :id='$IDBisabuela'/>
             <x-ver-doc :agclientes='$agclientes' :id='$IDBisabuela'/>
         </div>
@@ -221,7 +225,8 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDAbuelo) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDAbuelo) }}">{{ GetVida($agclientes,$IDAbuelo) }}</p>
-            <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDAbuelo'/></span>
+            {{-- <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDAbuelo'/></span> --}}
+            <span class="editar"><x-editar-persona-i-v2 :agclientes='$agclientes' :countries='$countries' :id='$IDAbuelo'/></span>
             <x-cargar-doc :agclientes='$agclientes' :id='$IDAbuelo'/>
             <x-ver-doc :agclientes='$agclientes' :id='$IDAbuelo'/>
         </div>
@@ -251,7 +256,8 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDAbuela) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDAbuela) }}">{{ GetVida($agclientes,$IDAbuela) }}</p>
-            <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDAbuela'/></span>
+            {{-- <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDAbuela'/></span> --}}
+            <span class="editar"><x-editar-persona-i-v2 :agclientes='$agclientes' :countries='$countries' :id='$IDAbuela'/></span>
             <x-cargar-doc :agclientes='$agclientes' :id='$IDAbuela'/>
             <x-ver-doc :agclientes='$agclientes' :id='$IDAbuela'/>
         </div>
@@ -292,7 +298,8 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDPadre) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDPadre) }}">{{ GetVida($agclientes,$IDPadre) }}</p>
-            <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDPadre'/></span>
+            {{-- <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDPadre'/></span> --}}
+            <span class="editar"><x-editar-persona-i-v2 :agclientes='$agclientes' :countries='$countries' :id='$IDPadre'/></span>
             <x-cargar-doc :agclientes='$agclientes' :id='$IDPadre'/>
             <x-ver-doc :agclientes='$agclientes' :id='$IDPadre'/>
         </div>
@@ -322,7 +329,8 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDMadre) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDMadre) }}">{{ GetVida($agclientes,$IDMadre) }}</p>
-            <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDMadre'/></span>
+            {{-- <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDMadre'/></span> --}}
+            <span class="editar"><x-editar-persona-i-v2 :agclientes='$agclientes' :countries='$countries' :id='$IDMadre'/></span>
             <x-cargar-doc :agclientes='$agclientes' :id='$IDMadre'/>
             <x-ver-doc :agclientes='$agclientes' :id='$IDMadre'/>
         </div>
@@ -363,7 +371,8 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDSolicitante) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDSolicitante) }}">{{ GetVida($agclientes,$IDSolicitante) }}</p>
-            <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDSolicitante'/></span>
+            {{-- <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDSolicitante'/></span> --}}
+            <span class="editar"><x-editar-persona-i-v2 :agclientes='$agclientes' :countries='$countries' :id='$IDSolicitante'/></span>
             <x-cargar-doc :agclientes='$agclientes' :id='$IDSolicitante'/>
             <x-ver-doc :agclientes='$agclientes' :id='$IDSolicitante'/>
         </div>
