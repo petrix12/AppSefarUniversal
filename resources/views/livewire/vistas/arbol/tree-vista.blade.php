@@ -178,7 +178,8 @@
             <div class="caja_per" style="top: 225px; left: 10px; ">
                 <span class="encabezado" title="{{ GetDatosMatrimonio($agclientes,1) }}">{{ GetPersona(1) }}</span>
                 <span class="nombres">
-                    <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='1'/>{{ Str::limit(GetNombres($agclientes,1), 30) }}
+                    {{-- <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='1'/>{{ Str::limit(GetNombres($agclientes,1), 30) }} --}}
+                    <x-prueba :agclientes='$agclientes' :id='1'/> {{ Str::limit(GetNombres($agclientes,1), 30) }}
                 </span>
                 <span class="apellidos">{{ Str::limit(GetApellidos($agclientes,1), 30) }}</span>
                 <span class="nacimiento">{{ Str::limit($mostraLN = GetLugarNac($agclientes,1), 35) }}</span>
@@ -292,30 +293,8 @@
         </div>
     </div>
     @endif
-
-    <!-- Button trigger modal -->
-    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal">
-        Launch demo modal
-    </button>
-    
-    <!-- Modal -->
-    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-            </div>
-            <div class="modal-body">
-            ...
-            </div>
-            <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            <button type="button" class="btn btn-primary">Save changes</button>
-            </div>
-        </div>
-        </div>
-    </div>
 </div>
+
+@for ($i = 1; $i <= 31; $i++)
+   <x-prueba_2 :agclientes='$agclientes' :countries='$countries' :id='$i'/> 
+@endfor
