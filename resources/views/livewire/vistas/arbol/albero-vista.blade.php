@@ -393,6 +393,7 @@
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDConyugue) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDConyugue) }}">{{ GetVida($agclientes,$IDConyugue) }}</p>
             {{-- <span class="editar"><x-editar-persona :agclientes='$agclientes' :id='$IDConyugue'/></span> --}}
+            {{-- <span class="editar"><x-editar-persona-i-v2 :agclientes='$agclientes' :id='$IDConyugue'/></span> --}}
             {{-- <x-cargar-doc :agclientes='$agclientes' :countries='$countries' :id='$IDConyugue'/> --}}
             {{-- <x-ver-doc :agclientes='$agclientes' :id='$IDConyugue'/> --}}
         </div>
@@ -409,3 +410,7 @@
         <img class="img_triple_flecha" src="{{ asset('img\flechas\triple_flecha.png') }}" alt="flechas" style="top: 840px; left: 460px;">
     </div>
 </div>
+
+@for ($i = 1; $i <= 31; $i++)
+   <x-editar-persona-ii-v2 :agclientes='$agclientes' :countries='$countries' :id='$i'/> 
+@endfor

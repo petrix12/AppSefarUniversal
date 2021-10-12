@@ -55,7 +55,8 @@
             <div class="caja_per" style="top: 985px; left: 10px; ">
                 <span class="encabezado" title="{{ GetDatosMatrimonio($agclientes,1) }}">{{ GetPersona(1) }}</span>
                 <span class="nombres">
-                    <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='1'/>{{ GetNombres($agclientes,1) }}
+                    {{-- <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='1'/>{{ GetNombres($agclientes,1) }} --}}
+                    <x-editar-persona-i-v2 :agclientes='$agclientes' :id='1'/> {{ GetNombres($agclientes,1) }}
                 </span>
                 <span class="apellidos">{{ GetApellidos($agclientes,1) }}</span>
                 <span class="nacimiento">{{ $mostraLN = GetLugarNac($agclientes,1) }}</span>
@@ -72,7 +73,8 @@
             <div class="caja_per" style="top: {{ 465 + ($i-2)*1040 }}px; left: 78px; ">
                 <span class="encabezado" title="{{ GetDatosMatrimonio($agclientes,$i) }}">{{ GetPersona($i) }}</span>
                 <span class="nombres">
-                    <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ GetNombres($agclientes,$i) }}
+                    {{-- <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ GetNombres($agclientes,$i) }} --}}
+                    <x-editar-persona-i-v2 :agclientes='$agclientes' :id='$i'/> {{ GetNombres($agclientes,$i) }}
                 </span>
                 <span class="apellidos">{{ GetApellidos($agclientes,$i) }}</span>
                 <span class="nacimiento">{{ $mostraLN = GetLugarNac($agclientes,$i) }}</span>
@@ -94,7 +96,8 @@
             <div class="caja_per" style="top: {{ 205 + ($i-4)*520 }}px; left: 280px; ">
                 <span class="encabezado" title="{{ GetDatosMatrimonio($agclientes,$i) }}">{{ GetPersona($i) }}</span>
                 <span class="nombres">
-                    <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ GetNombres($agclientes,$i) }}
+                    {{-- <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ GetNombres($agclientes,$i) }} --}}
+                    <x-editar-persona-i-v2 :agclientes='$agclientes' :id='$i'/> {{ GetNombres($agclientes,$i) }}
                 </span>
                 <span class="apellidos">{{ GetApellidos($agclientes,$i) }}</span>
                 <span class="nacimiento">{{ $mostraLN = GetLugarNac($agclientes,$i) }}</span>
@@ -116,7 +119,8 @@
             <div class="caja_per" style="top: {{ 75 + ($i-8)*260 }}px; left: 400px; ">
                 <span class="encabezado" title="{{ GetDatosMatrimonio($agclientes,$i) }}">{{ GetPersona($i) }}</span>
                 <span class="nombres">
-                    <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ GetNombres($agclientes,$i) }}
+                    {{-- <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ GetNombres($agclientes,$i) }} --}}
+                    <x-editar-persona-i-v2 :agclientes='$agclientes' :id='$i'/> {{ GetNombres($agclientes,$i) }}
                 </span>
                 <span class="apellidos">{{ GetApellidos($agclientes,$i) }}</span>
                 <span class="nacimiento">{{ $mostraLN = GetLugarNac($agclientes,$i) }}</span>
@@ -144,7 +148,8 @@
             <div class="caja_per" style="top: {{ 10 + ($i-16)*130 }}px; left: 705px; ">
                 <span class="encabezado" title="{{ GetDatosMatrimonio($agclientes,$i) }}">{{ GetPersona($i) }}</span>
                 <span class="nombres">
-                    <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ GetNombres($agclientes,$i) }}
+                    {{-- <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ GetNombres($agclientes,$i) }} --}}
+                    <x-editar-persona-i-v2 :agclientes='$agclientes' :id='$i'/> {{ GetNombres($agclientes,$i) }}
                 </span>
                 <span class="apellidos">{{ GetApellidos($agclientes,$i) }}</span>
                 <span class="nacimiento">{{ $mostraLN = GetLugarNac($agclientes,$i) }}</span>
@@ -179,7 +184,7 @@
                 <span class="encabezado" title="{{ GetDatosMatrimonio($agclientes,1) }}">{{ GetPersona(1) }}</span>
                 <span class="nombres">
                     {{-- <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='1'/>{{ Str::limit(GetNombres($agclientes,1), 30) }} --}}
-                    <x-prueba :agclientes='$agclientes' :id='1'/> {{ Str::limit(GetNombres($agclientes,1), 30) }}
+                    <x-editar-persona-i-v2 :agclientes='$agclientes' :id='1'/> {{ Str::limit(GetNombres($agclientes,1), 30) }}
                 </span>
                 <span class="apellidos">{{ Str::limit(GetApellidos($agclientes,1), 30) }}</span>
                 <span class="nacimiento">{{ Str::limit($mostraLN = GetLugarNac($agclientes,1), 35) }}</span>
@@ -196,7 +201,8 @@
             <div class="caja_per" style="top: {{ 85 + ($i-2)*280 }}px; left: 100px; ">
                 <span class="encabezado" title="{{ GetDatosMatrimonio($agclientes,$i) }}">{{ GetPersona($i) }}</span>
                 <span class="nombres">
-                    <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ Str::limit(GetNombres($agclientes,$i), 30) }}
+                    {{-- <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ Str::limit(GetNombres($agclientes,$i), 30) }} --}}
+                    <x-editar-persona-i-v2 :agclientes='$agclientes' :id='$i'/> {{ Str::limit(GetNombres($agclientes,$i), 30) }}
                 </span>
                 <span class="apellidos">{{ Str::limit(GetApellidos($agclientes,$i), 30) }}</span>
                 <span class="nacimiento">{{ Str::limit($mostraLN = GetLugarNac($agclientes,$i), 35) }}</span>
@@ -222,7 +228,8 @@
             <div class="caja_abuelos" style="top: {{ 25 + ($i-4)*140 }}px; left: 390px; ">
                 <span class="encabezado_abl" title="{{ GetDatosMatrimonio($agclientes,$i) }}">{{ GetPersona($i) }}</span>
                 <span class="nom-abuelo">
-                    <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ Str::limit(GetNombres($agclientes,$i), 30) }}
+                    {{-- <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ Str::limit(GetNombres($agclientes,$i), 30) }} --}}
+                    <x-editar-persona-i-v2 :agclientes='$agclientes' :id='$i'/> {{ Str::limit(GetNombres($agclientes,$i), 30) }}
                 </span>
                 <span class="ape-abuelo">{{ Str::limit(GetApellidos($agclientes,$i), 30) }}</span>
                 <span class="nac-abuelo">{{ $mostraLN = GetLugarNac($agclientes,$i) }}</span>
@@ -250,7 +257,8 @@
             <div class="caja_bisabuelos" style="top: {{ 10 + ($i-8)*70 }}px; left: 660px; ">
                 <span class="encabezado_bis" title="{{ GetDatosMatrimonio($agclientes,$i) }}">{{ GetPersona($i) }}</span>
                 <span class="nom-bisabuelo">
-                    <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ Str::limit(GetNombres($agclientes,$i), 30) }}
+                    {{-- <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ Str::limit(GetNombres($agclientes,$i), 30) }} --}}
+                    <x-editar-persona-i-v2 :agclientes='$agclientes' :id='$i'/> {{ Str::limit(GetNombres($agclientes,$i), 30) }}
                 </span>
                 <span class="ape-bisabuelo" title="Lugar de nacimiento: {{  GetLugarNac($agclientes,$i) }}">{{ Str::limit(GetApellidos($agclientes,$i), 30) }}</span>
                 <span class="vid-bisabuelo" title="{{ GetVidaCompleta($agclientes,$i) }}">{{ GetVida($agclientes,$i) }}</span>
@@ -273,7 +281,8 @@
             @for ($i = 16; $i <=31; $i++)
             <div class="caja_tatarabuelos" style="top: {{ 10 + ($i-16)*35 }}px; left: 930px;" title="{{ $vida = GetVidaCompleta($agclientes,$i) }}">
                 <span class="nom-tatarabuelos" title="{{ GetPersona($i) }} - {{ GetDatosMatrimonio($agclientes,$i) }}">
-                    <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ Str::limit(GetNombres($agclientes,$i), 30) }}
+                    {{-- <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ Str::limit(GetNombres($agclientes,$i), 30) }} --}}
+                    <x-editar-persona-i-v2 :agclientes='$agclientes' :id='$i'/> {{ Str::limit(GetNombres($agclientes,$i), 30) }}
                 </span>
                 <span class="ape-tatarabuelos" title="{{ $vida }}">{{ Str::limit(GetApellidos($agclientes,$i), 30) }}</span>
                 <x-ver-doc :agclientes='$agclientes' :id='$i'/>
@@ -296,5 +305,5 @@
 </div>
 
 @for ($i = 1; $i <= 31; $i++)
-   <x-prueba_2 :agclientes='$agclientes' :countries='$countries' :id='$i'/> 
+   <x-editar-persona-ii-v2 :agclientes='$agclientes' :countries='$countries' :id='$i'/> 
 @endfor
