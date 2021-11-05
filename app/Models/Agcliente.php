@@ -100,6 +100,11 @@ class Agcliente extends Model
         if(Auth()->user()->hasRole('Vargassequera')){
             return $query->where('referido','Patricia Vargas Sequera');
         }
+        
+        // Clientes con el rol Badell Law
+        if(Auth()->user()->hasRole('BadellLaw')){
+            return $query->where('referido','Badell Law');
+        }
     }
 
     // Filtro para ver solo clientes
