@@ -38,6 +38,8 @@
                         <option value="Apellidos">Apellidos</option>
                         <option value="AnhoNac">Año de nacimiento</option>
                         <option value="AnhoDef">Año de defunción</option>
+                        <option value="PNacimiento">País de nacimiento</option>
+                        <option value="LNacimiento">Ciudad de nacimiento</option>
                     </select>
                 </div>
             </div>
