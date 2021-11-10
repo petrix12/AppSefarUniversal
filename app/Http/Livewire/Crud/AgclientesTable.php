@@ -3,6 +3,7 @@
 namespace App\Http\Livewire\Crud;
 
 use App\Models\Agcliente;
+use Illuminate\Support\Facades\DB;
 use Livewire\WithPagination;
 use Livewire\Component;
 
@@ -47,6 +48,8 @@ class AgclientesTable extends Component
                 ->orWhere('LNacimiento','LIKE',"%$this->search%")
                 ->orWhere('Usuario','LIKE',"%$this->search%")
                 ->orWhere('referido','LIKE',"%$this->search%")
+                ->orWhere(DB::raw("CONCAT(Nombres,' ',Apellidos)"), 'LIKE',"%$this->search%")
+                ->orWhere(DB::raw("CONCAT(Apellidos,' ',Nombres)"), 'LIKE',"%$this->search%")
                 ->rol()
                 ->clientes($this->solo_clientes)
                 ->orderBy($this->ordenar,$this->asc)
