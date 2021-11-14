@@ -287,13 +287,6 @@ return [
                     'url'           => 'permissions',
                     'can'           => 'crud.permissions.index',
                 ],
-                [
-                    'text'          => 'Documentos',
-                    'icon'          => 'fas fa-passport',
-                    'icon_color'    => 'white',
-                    'route'         => 'crud.files.index',
-                    'can'           => 'crud.files.index',
-                ],
             ],
         ],
 
@@ -331,6 +324,13 @@ return [
                     'icon_color'    => 'white',
                     'url'           => 'no_definido',
                     'can'           => 'no_definido',
+                ],
+                [
+                    'text'          => 'Documentos',
+                    'icon'          => 'fas fa-passport',
+                    'icon_color'    => 'white',
+                    'route'         => 'crud.files.index',
+                    'can'           => 'crud.files.index',
                 ],
             ],
         ],
