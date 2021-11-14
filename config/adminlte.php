@@ -326,7 +326,7 @@ return [
                     'can'           => 'no_definido',
                 ],
                 [
-                    'text'          => 'Documentos',
+                    'text'          => 'Documentos clientes',
                     'icon'          => 'fas fa-passport',
                     'icon_color'    => 'white',
                     'route'         => 'crud.files.index',
