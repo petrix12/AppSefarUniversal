@@ -37,6 +37,16 @@ class TreeController extends Controller
                 return view('crud.agclientes.index');
             }
         }
+        
+        // Si el usuario tiene el rol P&V-Abogados
+        if(Auth()->user()->hasRole('P&V-Abogados')){
+            $autorizado = Agcliente::where('referido','LIKE','P & V Abogados')
+                ->where('IDCliente','LIKE',$IDCliente)
+                ->count();
+            if($autorizado == 0){
+                return view('crud.agclientes.index');
+            }
+        }
 
         $existe = Agcliente::where('IDCliente','LIKE',$IDCliente)->where('IDPersona',1)->get();
         if($existe->count()){

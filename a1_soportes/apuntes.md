@@ -3665,7 +3665,6 @@
     }
 	```
 	
-
 ## Módulo Badell Law
 1. Crear rol **BadellLaw**.
 2. Otorgarle los siguientes permisos al rol **BadellLaw**:
@@ -3677,7 +3676,6 @@
 	+ crud.files.index
 	+ crud.files.create
 	+ crud.files.edit
-
 3. Modificar modelo **app\Models\Agcliente.php**:
 	```php
 	≡
@@ -3759,7 +3757,101 @@
     }
 	```
 
+## Módulo P & V Abogados
+1. Crear rol **P&V-Abogados**.
+2. Otorgarle los siguientes permisos al rol **P&V-Abogados**:
+	+ genealogista
+	+ crud.agclientes.index
+	+ crud.agclientes.create
+	+ crud.agclientes.edit
+	+ crud.agclientes.destroy
+	+ crud.files.index
+	+ crud.files.create
+	+ crud.files.edit
+3. Modificar modelo **app\Models\Agcliente.php**:
+	```php
+	≡
+	class Agcliente extends Model
+	{
+		≡
+		// Filtro de búsqueda
+		public function scopeBuscar($query, $search){
+			≡
+		}
 
+		// Filtro para clientes referidos
+		public function scopeRol($query){
+        	// Clientes con el rol Badell Law
+			≡
+			// Clientes con el rol P & V Abogados
+			if(Auth()->user()->hasRole('P&V-Abogados')){
+				return $query->where('referido','P & V Abogados');
+			}
+		}
+
+		// Filtro para ver solo clientes
+		public function scopeClientes($query, $solo_clientes){
+			≡
+		}
+	}
+	```
+4. Modificar controlador **app\Http\Controllers\TreeController.php**:
+	```php
+	≡
+	class TreeController extends Controller
+	{
+		public function tree($IDCliente){
+			// Si el usuario tiene el rol BadellLaw
+			≡
+			// Si el usuario tiene el rol P&V-Abogados
+			if(Auth()->user()->hasRole('P&V-Abogados')){
+				$autorizado = Agcliente::where('referido','LIKE','P & V Abogados')
+					->where('IDCliente','LIKE',$IDCliente)
+					->count();
+				if($autorizado == 0){
+					return view('crud.agclientes.index');
+				}
+			}
+
+			$existe = Agcliente::where('IDCliente','LIKE',$IDCliente)->where('IDPersona',1)->get();
+			≡
+		}
+	}
+	```
+5. Modificar el método **store** del controlador **app\Http\Controllers\AgclienteController.php**:
+	```php
+    public function store(Request $request)
+    {
+        ≡
+        if($referido == "BadellLaw"){
+            $referido = "Badell Law";
+        }
+        if($referido == "P&V-Abogados"){
+            $referido = "P & V Abogados";
+        }
+
+        // Creando persona en agcliente
+        ≡
+    }
+	```
+6. Modificar el método **index** del conrolador **app\Http\Controllers\Controller.php**:
+	```php
+    public function index(){
+        ≡
+        if(Auth::user()->hasRole('BadellLaw')){
+            return view('crud.agclientes.index');
+        }
+
+        if(Auth::user()->hasRole('P&V-Abogados')){
+            return view('crud.agclientes.index');
+        }
+        ≡
+    }
+	```
+7. Subir cambios a GitHub
+	+ $ git add .
+	+ $ git commit -m "Módulo P & V Abogados"
+	+ $ git push -u origin master
 
 	≡
 	```php

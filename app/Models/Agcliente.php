@@ -105,6 +105,11 @@ class Agcliente extends Model
         if(Auth()->user()->hasRole('BadellLaw')){
             return $query->where('referido','Badell Law');
         }
+        
+        // Clientes con el rol P & V Abogados
+        if(Auth()->user()->hasRole('P&V-Abogados')){
+            return $query->where('referido','P & V Abogados');
+        }
     }
 
     // Filtro para ver solo clientes

@@ -95,6 +95,9 @@ class AgclienteController extends Controller
         if($referido == "BadellLaw"){
             $referido = "Badell Law";
         }
+        if($referido == "P&V-Abogados"){
+            $referido = "P & V Abogados";
+        }
 
         // Creando persona en agcliente
         $agcliente = Agcliente::create([
