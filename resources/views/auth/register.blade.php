@@ -17,6 +17,10 @@
     if (!empty($_GET['pasaporte_f'])) $pasaporte_f = $_GET['pasaporte_f']; else $pasaporte_f = null;
     if (!empty($_GET['referido'])) $referido = $_GET['referido']; else $referido = null;
 
+    if (trim($referido) == 'P'){
+        $referido = 'P & V Abogados';
+    }
+
     $name = null;
     if (!empty($_GET['nombres'])){
         if(is_null($apellidos)){

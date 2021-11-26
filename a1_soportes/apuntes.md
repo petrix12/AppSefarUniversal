@@ -3848,7 +3848,22 @@
         ≡
     }
 	```
-7. Subir cambios a GitHub
+8. Modificar vista **resources\views\auth\register.blade.php**:
+	```php
+	<?php
+		// Captura de parámetros del JotForm
+		≡
+		if (!empty($_GET['referido'])) $referido = $_GET['referido']; else $referido = null;
+
+		if (trim($referido) == 'P'){
+			$referido = 'P & V Abogados';
+		}
+		≡
+	?>
+	≡
+	```
+	+ **Nota**: solo para casos en que el parámetro **referido** proveniente de **JotForm** contenga el caracter '**&**'.
+9. Subir cambios a GitHub
 	+ $ git add .
 	+ $ git commit -m "Módulo P & V Abogados"
 	+ $ git push -u origin master
