@@ -3963,7 +3963,7 @@
 	```
 7. Subir cambios a GitHub
 	+ $ git add .
-	+ $ git commit -m "Módulo P & V Abogados"
+	+ $ git commit -m "Módulo Mujica y Coto Abogados"
 	+ $ git push -u origin master
 
 
