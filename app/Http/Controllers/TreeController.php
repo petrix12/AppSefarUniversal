@@ -47,6 +47,16 @@ class TreeController extends Controller
                 return view('crud.agclientes.index');
             }
         }
+        
+        // Si el usuario tiene el rol Mujica-Coto
+        if(Auth()->user()->hasRole('Mujica-Coto')){
+            $autorizado = Agcliente::where('referido','LIKE','Mujica y Coto Abogados')
+                ->where('IDCliente','LIKE',$IDCliente)
+                ->count();
+            if($autorizado == 0){
+                return view('crud.agclientes.index');
+            }
+        }
 
         $existe = Agcliente::where('IDCliente','LIKE',$IDCliente)->where('IDPersona',1)->get();
         if($existe->count()){
