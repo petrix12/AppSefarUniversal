@@ -3868,7 +3868,7 @@
 	+ $ git commit -m "Módulo P & V Abogados"
 	+ $ git push -u origin master
 
-## Bufete Mujica & Coto Abogados
+## Módulo Mujica & Coto Abogados
 1. Crear rol **Mujica-Coto**.
 2. Otorgarle los siguientes permisos al rol **Mujica-Coto**:
 	+ genealogista
@@ -3965,6 +3965,173 @@
 	+ $ git add .
 	+ $ git commit -m "Módulo Mujica y Coto Abogados"
 	+ $ git push -u origin master
+
+## Módulo German Fleitas
+1. Crear rol **German-Fleitas**.
+2. Otorgarle los siguientes permisos al rol **German-Fleitas**:
+	+ genealogista
+	+ crud.agclientes.index
+	+ crud.agclientes.create
+	+ crud.agclientes.edit
+	+ crud.agclientes.destroy
+	+ crud.files.index
+	+ crud.files.create
+	+ crud.files.edit
+3. Modificar modelo **app\Models\Agcliente.php**:
+	```php
+	≡
+	// Filtro para clientes referidos
+	public function scopeRol($query){
+		≡
+        // Clientes con el rol German Fleitas
+        if(Auth()->user()->hasRole('German-Fleitas')){
+            return $query->where('referido','German Fleitas');
+        }
+	}
+	≡
+	```
+4. Modificar controlador **app\Http\Controllers\TreeController.php**:
+	```php
+	≡
+	class TreeController extends Controller
+	{
+		public function tree($IDCliente){
+			≡
+			// Si el usuario tiene el rol Mujica-Coto
+			≡
+			// Si el usuario tiene el rol German Fleitas
+			if(Auth()->user()->hasRole('German-Fleitas')){
+				$autorizado = Agcliente::where('referido','LIKE','German Fleitas')
+					->where('IDCliente','LIKE',$IDCliente)
+					->count();
+				if($autorizado == 0){
+					return view('crud.agclientes.index');
+				}
+			}
+
+			$existe = Agcliente::where('IDCliente','LIKE',$IDCliente)->where('IDPersona',1)->get();
+			≡
+		}
+	}
+	```
+5. Modificar el método **store** del controlador **app\Http\Controllers\AgclienteController.php**:
+	```php
+    public function store(Request $request)
+    {
+        ≡
+        if($referido == "Mujica-Coto"){
+            $referido = "Mujica y Coto Abogados";
+        }
+
+        // Creando persona en agcliente
+        ≡
+    }
+	```
+6. Modificar el método **index** del conrolador **app\Http\Controllers\Controller.php**:
+	```php
+    public function index(){
+        ≡
+        if(Auth::user()->hasRole('German-Fleitas')){
+            return view('crud.agclientes.index');
+        }
+
+        if(Auth::user()->hasRole('Cliente')){
+            $IDCliente = Auth::user()->passport;
+            return view('arboles.tree', compact('IDCliente'));
+        }
+        ≡
+    }
+	```
+7. Subir cambios a GitHub
+	+ $ git add .
+	+ $ git commit -m "Módulo German Fleitas"
+	+ $ git push -u origin master
+
+## Módulo Soma Consultores
+1. Crear rol **Soma-Consultores**.
+2. Otorgarle los siguientes permisos al rol **Soma-Consultores**:
+	+ genealogista
+	+ crud.agclientes.index
+	+ crud.agclientes.create
+	+ crud.agclientes.edit
+	+ crud.agclientes.destroy
+	+ crud.files.index
+	+ crud.files.create
+	+ crud.files.edit
+3. Modificar modelo **app\Models\Agcliente.php**:
+	```php
+	≡
+	// Filtro para clientes referidos
+	public function scopeRol($query){
+		≡
+        // Clientes con el rol Soma Consultores
+        if(Auth()->user()->hasRole('Soma-Consultores')){
+            return $query->where('referido','Soma Consultores');
+        }
+	}
+	≡
+	```
+4. Modificar controlador **app\Http\Controllers\TreeController.php**:
+	```php
+	≡
+	class TreeController extends Controller
+	{
+		public function tree($IDCliente){
+			≡
+			// Si el usuario tiene el rol German Fleitas
+			≡
+			// Si el usuario tiene el rol Soma Consultores
+			if(Auth()->user()->hasRole('Soma-Consultores')){
+				$autorizado = Agcliente::where('referido','LIKE','Soma Consultores')
+					->where('IDCliente','LIKE',$IDCliente)
+					->count();
+				if($autorizado == 0){
+					return view('crud.agclientes.index');
+				}
+			}
+
+			$existe = Agcliente::where('IDCliente','LIKE',$IDCliente)->where('IDPersona',1)->get();
+			≡
+		}
+	}
+	```
+5. Modificar el método **store** del controlador **app\Http\Controllers\AgclienteController.php**:
+	```php
+    public function store(Request $request)
+    {
+        ≡
+        if($referido == "Mujica-Coto"){
+            $referido = "Mujica y Coto Abogados";
+        }
+
+        // Creando persona en agcliente
+        ≡
+    }
+	```
+6. Modificar el método **index** del conrolador **app\Http\Controllers\Controller.php**:
+	```php
+    public function index(){
+        ≡
+        if(Auth::user()->hasRole('Soma-Consultores')){
+            return view('crud.agclientes.index');
+        }
+
+        if(Auth::user()->hasRole('Cliente')){
+            $IDCliente = Auth::user()->passport;
+            return view('arboles.tree', compact('IDCliente'));
+        }
+        ≡
+    }
+	```
+7. Subir cambios a GitHub
+	+ $ git add .
+	+ $ git commit -m "Módulo Soma Consultores"
+	+ $ git push -u origin master
+
+
+
+
+
 
 
 

@@ -115,6 +115,16 @@ class Agcliente extends Model
         if(Auth()->user()->hasRole('Mujica-Coto')){
             return $query->where('referido','Mujica y Coto Abogados');
         }
+        
+        // Clientes con el rol German Fleitas
+        if(Auth()->user()->hasRole('German-Fleitas')){
+            return $query->where('referido','German Fleitas');
+        }
+        
+        // Clientes con el rol Soma Consultores
+        if(Auth()->user()->hasRole('Soma-Consultores')){
+            return $query->where('referido','Soma Consultores');
+        }
     }
 
     // Filtro para ver solo clientes

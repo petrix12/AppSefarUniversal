@@ -57,6 +57,26 @@ class TreeController extends Controller
                 return view('crud.agclientes.index');
             }
         }
+        
+        // Si el usuario tiene el rol German Fleitas
+        if(Auth()->user()->hasRole('German-Fleitas')){
+            $autorizado = Agcliente::where('referido','LIKE','German Fleitas')
+                ->where('IDCliente','LIKE',$IDCliente)
+                ->count();
+            if($autorizado == 0){
+                return view('crud.agclientes.index');
+            }
+        }
+        
+        // Si el usuario tiene el rol Soma Consultores
+        if(Auth()->user()->hasRole('Soma-Consultores')){
+            $autorizado = Agcliente::where('referido','LIKE','Soma Consultores')
+                ->where('IDCliente','LIKE',$IDCliente)
+                ->count();
+            if($autorizado == 0){
+                return view('crud.agclientes.index');
+            }
+        }
 
         $existe = Agcliente::where('IDCliente','LIKE',$IDCliente)->where('IDPersona',1)->get();
         if($existe->count()){
