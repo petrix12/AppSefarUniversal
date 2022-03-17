@@ -2,11 +2,13 @@
 
 namespace App\Mail;
 
+use App\Models\Agcliente;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Auth;
 
 class CargaCliente extends Mailable
 {
@@ -31,7 +33,9 @@ class CargaCliente extends Mailable
      */
     public function build()
     {
-        return $this->view('mail.carga-cliente')
+        $passport = Auth::user()->passport;
+        $agclientes = Agcliente::where('IDCliente','LIKE',"%$passport%")->get();
+        return $this->view('mail.carga-cliente', compact('agclientes'))
             ->subject('GRACIAS ' . strtoupper($this->user->name) . ' POR ACTUALIZAR SU ÁRBOL GENEALÓGICO');
     }
 }

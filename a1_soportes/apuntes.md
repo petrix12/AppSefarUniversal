@@ -3134,7 +3134,7 @@
 ## Registro de clientes
 1. Crear controlador para capturar parámetros GET:
 	+ $ php artisan make:controller GetController
-1. Archivo de prueba (resources\views\pruebas\registro.blade.php) para el traspaso de cliente de **JotForm** a **app.universalsefar.com**:
+2. Archivo de prueba (resources\views\pruebas\registro.blade.php) para el traspaso de cliente de **JotForm** a **app.universalsefar.com**:
 	```php
 	@extends('adminlte::page')
 

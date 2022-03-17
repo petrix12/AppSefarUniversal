@@ -528,7 +528,6 @@ function GetBoxPerson($agclientes, $IDPersona): string{
 
 // Verifica si una persona existe
 function existePer($agclientes, $IDPersona){
-
     try {
         return $agclientes->where('IDPersona',$IDPersona)->first()->IDCliente;
     } catch (\Throwable $e) {
