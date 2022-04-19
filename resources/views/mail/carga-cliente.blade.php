@@ -86,12 +86,11 @@
                                         @else
                                             <p
                                                 style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
-                                                Uncordial saludo desde Sefar Universal, abogados y genealogistas.
+                                                Un cordial saludo desde Sefar Universal, abogados y genealogistas.
                                                 Queremos notificarle que han quedado algunos campos que no han sido
                                                 llenados.
                                                 Recuerde que para nosotros es muy importante poder tener la mayor
-                                                cantidad de
-                                                datos suyos posible para poder avanzar con rapidez.
+                                                cantidad de datos suyos posibles, para poder avanzar con rapidez.
                                                 Los datos faltantes son:
                                             </p>
                                             <p
@@ -101,6 +100,10 @@
                                                 <strong>{!! $no_cargadas !!}</strong>
                                                 {{-- Añadir otro parrafo --}}
                                             </p>
+                                            <div>
+                                                {{-- <img src="{{ asset('img/estructura.png') }}" alt="Estructura de árbol genealógico" width="500"> --}}
+                                                <img src="https://i.imgur.com/EDBJbiG.png" alt="Estructura de árbol genealógico" width="500">
+                                            </div>
                                         @endif
                                         <p
                                             style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
