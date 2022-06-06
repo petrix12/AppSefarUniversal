@@ -95,35 +95,40 @@ class Agcliente extends Model
         if(Auth()->user()->hasRole('Traviesoevans')){
             return $query->where('referido','Travieso Evans');
         }
-        
+
         // Clientes con el rol Vargassequera
         if(Auth()->user()->hasRole('Vargassequera')){
             return $query->where('referido','Patricia Vargas Sequera');
         }
-        
+
         // Clientes con el rol Badell Law
         if(Auth()->user()->hasRole('BadellLaw')){
             return $query->where('referido','Badell Law');
         }
-        
+
         // Clientes con el rol P & V Abogados
         if(Auth()->user()->hasRole('P&V-Abogados')){
             return $query->where('referido','P & V Abogados');
         }
-        
+
         // Clientes con el rol Mujica y Coto Abogados
         if(Auth()->user()->hasRole('Mujica-Coto')){
             return $query->where('referido','Mujica y Coto Abogados');
         }
-        
+
         // Clientes con el rol German Fleitas
         if(Auth()->user()->hasRole('German-Fleitas')){
             return $query->where('referido','German Fleitas');
         }
-        
+
         // Clientes con el rol Soma Consultores
         if(Auth()->user()->hasRole('Soma-Consultores')){
             return $query->where('referido','Soma Consultores');
+        }
+        
+        // Clientes con el rol MG Tours
+        if(Auth()->user()->hasRole('MG-Tours')){
+            return $query->where('referido','MG Tours');
         }
     }
 

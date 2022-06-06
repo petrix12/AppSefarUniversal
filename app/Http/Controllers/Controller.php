@@ -15,7 +15,7 @@ use Spatie\Permission\Traits\HasRoles;
 class Controller extends BaseController
 {
     use HasRoles;
-    
+
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
 
     public function index(){
@@ -62,6 +62,10 @@ class Controller extends BaseController
         if(Auth::user()->hasRole('Soma-Consultores')){
             return view('crud.agclientes.index');
         }
+        
+        if(Auth::user()->hasRole('MG-Tours')){
+            return view('crud.agclientes.index');
+        }
 
         if(Auth::user()->hasRole('Cliente')){
             $IDCliente = Auth::user()->passport;
@@ -71,7 +75,7 @@ class Controller extends BaseController
         $countries = Country::where('pais','!=','aanull')
                         ->orderBy('pais','ASC')->get();
         $user = Auth()->user();
-        
+
         return view('inicio', compact('countries', 'user'));
     }
 }

@@ -27,7 +27,7 @@ class TreeController extends Controller
                 return view('crud.agclientes.index');
             }
         }
-        
+
         // Si el usuario tiene el rol BadellLaw
         if(Auth()->user()->hasRole('BadellLaw')){
             $autorizado = Agcliente::where('referido','LIKE','Badell Law')
@@ -37,7 +37,7 @@ class TreeController extends Controller
                 return view('crud.agclientes.index');
             }
         }
-        
+
         // Si el usuario tiene el rol P&V-Abogados
         if(Auth()->user()->hasRole('P&V-Abogados')){
             $autorizado = Agcliente::where('referido','LIKE','P & V Abogados')
@@ -47,7 +47,7 @@ class TreeController extends Controller
                 return view('crud.agclientes.index');
             }
         }
-        
+
         // Si el usuario tiene el rol Mujica-Coto
         if(Auth()->user()->hasRole('Mujica-Coto')){
             $autorizado = Agcliente::where('referido','LIKE','Mujica y Coto Abogados')
@@ -57,7 +57,7 @@ class TreeController extends Controller
                 return view('crud.agclientes.index');
             }
         }
-        
+
         // Si el usuario tiene el rol German Fleitas
         if(Auth()->user()->hasRole('German-Fleitas')){
             $autorizado = Agcliente::where('referido','LIKE','German Fleitas')
@@ -67,10 +67,20 @@ class TreeController extends Controller
                 return view('crud.agclientes.index');
             }
         }
-        
+
         // Si el usuario tiene el rol Soma Consultores
         if(Auth()->user()->hasRole('Soma-Consultores')){
             $autorizado = Agcliente::where('referido','LIKE','Soma Consultores')
+                ->where('IDCliente','LIKE',$IDCliente)
+                ->count();
+            if($autorizado == 0){
+                return view('crud.agclientes.index');
+            }
+        }
+        
+        // Si el usuario tiene el rol MG Tours
+        if(Auth()->user()->hasRole('MG-Tours')){
+            $autorizado = Agcliente::where('referido','LIKE','MG Tours')
                 ->where('IDCliente','LIKE',$IDCliente)
                 ->count();
             if($autorizado == 0){

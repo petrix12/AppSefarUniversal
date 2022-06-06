@@ -4129,7 +4129,94 @@
 	+ $ git push -u origin master
 
 
+*****************************MG-Tours
 
+MG Tours
+## Módulo MG Tours
+1. Crear rol **MG-Tours**.
+2. Otorgarle los siguientes permisos al rol **MG-Tours**:
+	+ genealogista
+	+ crud.agclientes.index
+	+ crud.agclientes.create
+	+ crud.agclientes.edit
+	+ crud.agclientes.destroy
+	+ crud.files.index
+	+ crud.files.create
+	+ crud.files.edit
+3. Modificar modelo **app\Models\Agcliente.php**:
+	```php
+	≡
+	// Filtro para clientes referidos
+	public function scopeRol($query){
+		≡
+        // Clientes con el rol MG Tours
+        if(Auth()->user()->hasRole('MG-Tours')){
+            return $query->where('referido','MG Tours');
+        }
+	}
+	≡
+	```
+4. Modificar controlador **app\Http\Controllers\TreeController.php**:
+	```php
+	≡
+	class TreeController extends Controller
+	{
+		public function tree($IDCliente){
+			≡
+			// Si el usuario tiene el rol Soma Consultores
+			≡
+			// Si el usuario tiene el rol MG Tours
+			if(Auth()->user()->hasRole('MG-Tours')){
+				$autorizado = Agcliente::where('referido','LIKE','MG Tours')
+					->where('IDCliente','LIKE',$IDCliente)
+					->count();
+				if($autorizado == 0){
+					return view('crud.agclientes.index');
+				}
+			}
+
+			$existe = Agcliente::where('IDCliente','LIKE',$IDCliente)->where('IDPersona',1)->get();
+			≡
+		}
+	}
+	```
+
+
+
+
+
+5. Modificar el método **store** del controlador **app\Http\Controllers\AgclienteController.php**:
+	```php
+    public function store(Request $request)
+    {
+        ≡
+        if($referido == "MG-Tours"){
+            $referido = "MG Tours";
+        }
+
+        // Creando persona en agcliente
+        ≡
+    }
+	```
+6. Modificar el método **index** del conrolador **app\Http\Controllers\Controller.php**:
+	```php
+    public function index(){
+        ≡
+        if(Auth::user()->hasRole('MG-Tours')){
+            return view('crud.agclientes.index');
+        }
+
+        if(Auth::user()->hasRole('Cliente')){
+            $IDCliente = Auth::user()->passport;
+            return view('arboles.tree', compact('IDCliente'));
+        }
+        ≡
+    }
+	```
+7. Subir cambios a GitHub
+	+ $ git add .
+	+ $ git commit -m "Módulo MG Tours"
+	+ $ git push -u origin master
 
 
 
