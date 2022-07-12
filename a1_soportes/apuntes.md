@@ -4129,9 +4129,6 @@
 	+ $ git push -u origin master
 
 
-*****************************MG-Tours
-
-MG Tours
 ## Módulo MG Tours
 1. Crear rol **MG-Tours**.
 2. Otorgarle los siguientes permisos al rol **MG-Tours**:
@@ -4180,11 +4177,6 @@ MG Tours
 		}
 	}
 	```
-
-
-
-
-
 5. Modificar el método **store** del controlador **app\Http\Controllers\AgclienteController.php**:
 	```php
     public function store(Request $request)
