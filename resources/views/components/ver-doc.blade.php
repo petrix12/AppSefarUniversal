@@ -2,20 +2,20 @@
 
 @php
     $pasaporte = $agclientes->where('IDPersona',1)->first()->IDCliente;
-    $nombre = GetNombres($agclientes,$id) . ' ' . GetApellidos($agclientes,$id);  
+    $nombre = GetNombres($agclientes,$id) . ' ' . GetApellidos($agclientes,$id);
     $persona = GetPersona($id);
     $carpeta = 'doc/P'.$pasaporte.'/'.$persona.'/';
-    if ( ! file_exists($carpeta)){ 
+    if ( ! file_exists($carpeta)){
         $carpeta = 'doc/P0'.$pasaporte.'/Cliente/';
     }
-    if ( ! file_exists($carpeta)){ 
+    if ( ! file_exists($carpeta)){
         $carpeta = null;
     }
 @endphp
 
 @if ($carpeta)
     <button onclick="document.getElementById('verDocumentos{{ $id }}').showModal()"><span class="folder ctrSefar" title="Ver documentos"><i class="far fa-folder-open"></i></span></button>
-    <dialog id="verDocumentos{{ $id }}" class="container h-auto w-11/12 mt-3 md:w-1/2 p-5 bg-white rounded-md">    
+    <dialog id="verDocumentos{{ $id }}" class="container h-auto w-11/12 mt-3 md:w-1/2 p-5 bg-white rounded-md">
         <div class="flex flex-col w-full h-auto ">
             <!-- Título -->
             <div class="flex w-full h-auto justify-center items-center">
@@ -50,5 +50,5 @@
                 </button>
             </div>
         </div>
-    </dialog>    
+    </dialog>
 @endif
