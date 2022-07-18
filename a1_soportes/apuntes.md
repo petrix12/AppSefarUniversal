@@ -5234,3 +5234,87 @@ sudo nano /etc/apache2/sites-available/000-default.conf
 4. Copiar documentos.
 5. Transferir nombre de dominio de GoDaddy a AWS.
 6. Estudiar como guardar los documentos directamente en Google Drive.
+
+## Configurar AWS S3
+1. Ingresar en: https://aws.amazon.com/es
+2. Ir a **IAM** (Administrar el acceso a los recursos de AWS): https://us-east-1.console.aws.amazon.com/iamv2/home?region=us-east-1#/home
+3. Crear usuario:
+    + Clic en **Usuarios** y luego en **Agregar usuarios**.
+    + Nombre de usuario: **appsefar**.
+    + Tipo de credenciales: **Clave de acceso: acceso mediante programación**.
+    + Clic en **Siguiente: Permisos**.
+    + Clic en **Asociar directamente las políticas existentes**.
+    + Seleccionar el permiso:
+        + AmazonS3FullAccess
+    + Clic en **Siguiente: Etiquetas**.
+    + Clic en **Siguiente: Revisar**.
+    + Clic en **Crear un usuario**.
+    + Obtener los valores:
+        + **ID de clave de acceso**.
+        + **Clave de acceso secreta**.
+5. Crear Bucket:
+    + Ir a **S3** (Almacenamiento escalable en la nube): https://s3.console.aws.amazon.com/s3/get-started?region=us-east-1
+    + Clic en **Crear bucket**:
+        + Nombre del bucket: **appsefar-bucket-s3**.
+        + Región de AWS: **EE. UU. Est (Norte de Virginia) us-east-1**.
+        + Clic en **Crear bucket**.
+    + Clic en el nuevo bucket: **appsefar-bucket-s3**.
+    + Clic en **Permisos**:
+        + En **Propiedad de objetos** clic en **Editar**.
+        + Seleccionar **ACL habilitados**.
+        + En **Habilitar las ACL desactiva la configuración forzada del propietario del bucket en cuanto a la propiedad del objeto** seleccionar **Reconozco que las ACL se restaurarán.**
+        + Clic en **Guardar cambios**.
+    + Clic en **Permisos**:
+        + En **Bloquear acceso público (configuración del bucket)** clic en **Editar**:
+            + Deseleccionar **Bloquear todo el acceso público**.
+            + Seleccionar: 
+                + Bloquear el acceso público a buckets y objetos concedido a través de políticas de bucket y puntos de acceso públicas nuevas
+                + Bloquear el acceso público y entre cuentas a buckets y objetos concedido a través de cualquier política de bucket y puntos de acceso pública
+        + Clic en **Guardar cambios** y confirmar.
+    + mmm
+6. Dar valores a variables de entorno Laravel en ****:
+    ```env
+    ≡
+    AWS_ACCESS_KEY_ID=[ID de clave de acceso]
+    AWS_SECRET_ACCESS_KEY=[Clave de acceso secreta]
+    AWS_DEFAULT_REGION=us-east-1
+    AWS_BUCKET=[Nombre del bucket]
+    ≡
+    ```
+7. Instalar dependencia para Amazon S3:
+    + $ composer require --with-all-dependencies league/flysystem-aws-s3-v3 "1.0.29"
+    + $ composer require league/flysystem-cached-adapter "~1.0"
+    + **Documentación**: https://laravel.com/docs/8.x/filesystem#the-public-disk
+8. Limpiar configuración Laravel:
+    + $ php artisan optimize
+    + $ php artisan cache:clear
+
+
+
+
+
+
+
+
+    + Clic en **Permisos**:
+        + En **Política de bucket** clic en **Editar**.
+        + Política:
+            + Obtener **ARN del bucket**: arn:aws:s3:::appsefar-bucket-s3
+            ```json
+            {  
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Sid": "Statement1",
+                        "Principal": "*",
+                        "Effect": "Allow",
+                        "Action": [
+                            "s3:DeleteObject",
+                            "s3:GetObject",
+                            "s3:PutObject"
+                        ],
+                        "Resource": ["arn:aws:s3:::appsefar-bucket-s3/*"]   // ARN del bucket concatenado con "/*"
+                    }
+                ]
+            }
+            ```

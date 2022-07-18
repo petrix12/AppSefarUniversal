@@ -29,10 +29,10 @@
             <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
                 <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
                     <div class="flex bg-white px-4 py-3 sm:px-6">
-                        <input 
+                        <input
                             wire:model="search"
-                            type="text" 
-                            placeholder="Buscar..." 
+                            type="text"
+                            placeholder="Buscar..."
                             class="mr-2 mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                             {{-- class="form-input rounded-md shadow-sm mt-1 block w-full" --}}
                         >
@@ -80,10 +80,11 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                         @foreach ($countries as $country)
-                        <tr>   
+                        <tr>
                             <td class="px-6 py-2 whitespace-nowrap">
-                                <img src="{{ config('app.url').'/storage/'.$country->store }}" alt="{{ $country->id }}" width="33" height="25" >
-                            </td>   
+                                {{-- <img src="{{ config('app.url').'/storage/'.$country->store }}" alt="{{ $country->id }}" width="33" height="25" > --}}
+                                <img src="{{ Storage::disk('s3')->url($country->store) }}" alt="{{ $country->id }}" width="33" height="25" >
+                            </td>
                             <td class="px-6 py-2 whitespace-nowrap">
                                 {{ $country->id }}
                                 {{-- {{ config('app.url').'/storage/'.$country->store }} --}}
@@ -104,9 +105,9 @@
                                 <form action="{{ route('crud.countries.destroy', $country) }}" method="POST">
                                     @csrf
                                     @method('delete')
-                                    <button 
-                                        type="submit" 
-                                        class="text-red-600 hover:text-red-900" 
+                                    <button
+                                        type="submit"
+                                        class="text-red-600 hover:text-red-900"
                                         onclick="return confirm('¿Está seguro que desea eliminar el país?')"><i class="fas fa-trash"></i>
                                     </button>
                                 </form>
