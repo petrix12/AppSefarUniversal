@@ -29,10 +29,10 @@
             <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
                 <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
                     <div class="flex bg-white px-4 py-3 sm:px-6">
-                        <input 
+                        <input
                             wire:model="search"
-                            type="text" 
-                            placeholder="Buscar..." 
+                            type="text"
+                            placeholder="Buscar..."
                             class="mr-2 mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                         >
                         <div class="col-span-6 sm:col-span-3">
@@ -54,15 +54,15 @@
                         <thead class="bg-gray-50">
                         <tr>
                             <th scope="col" class="px-3 py-2 text-left text-md font-medium text-gray-500 uppercase tracking-wider">
-                                {{-- - ■ ■ - --}} 
+                                {{-- - ■ ■ - --}}
                                 - <i class="fas fa-portrait"></i> -
-                            </th>{{-- 
+                            </th>{{--
                             <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 ID
                             </th> --}}
                             <th scope="col" class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 {{ __('User name') }}
-                            </th>{{-- 
+                            </th>{{--
                             <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 {{ __('Passport') }}
                             </th> --}}
@@ -88,18 +88,23 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                         @foreach ($users as $user)
-                        <tr>   
+                        <tr>
                             <td class="px-3 py-2 whitespace-nowrap text-center">
                                 <div class="flex-shrink-0 h-10 w-10">
-                                    <img class="h-10 w-10 rounded-full" src="{{ $user->profile_photo_url }}" alt="">
+                                    <img
+                                        class="h-10 w-10 rounded-full"
+                                        src="{{ $user->profile_photo_url }}"
+                                        onerror="this.src='{{ Storage::disk('s3')->url('imagenes/auxiliar/user.png') }}'"
+                                        alt="Foto usuario"
+                                    >
                                 </div>
-                            </td>{{--    
+                            </td>{{--
                             <td class="px-4 py-2 whitespace-nowrap">
                                 {{ $user->id }}
                             </td> --}}
                             <td class="px-2 py-2 whitespace-nowrap">
                                 {{ $user->name }}
-                            </td>{{-- 
+                            </td>{{--
                             <td class="px-4 py-2 whitespace-nowrap">
                                 {{ $user->passport }}
                             </td> --}}
@@ -121,9 +126,9 @@
                                 <form action="{{ route('crud.users.destroy', $user) }}" method="POST">
                                     @csrf
                                     @method('delete')
-                                    <button 
-                                        type="submit" 
-                                        class="text-red-600 hover:text-red-900" 
+                                    <button
+                                        type="submit"
+                                        class="text-red-600 hover:text-red-900"
                                         title="eliminar usuario"
                                         onclick="return confirm('¿Está seguro que desea eliminar a este usuario?')"><i class="fas fa-trash"></i>
                                     </button>
