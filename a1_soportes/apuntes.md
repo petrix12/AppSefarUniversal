@@ -3,6 +3,11 @@
 ##### https://laravel.com/docs/8.x
 ##### Versión: **Laravel Framework 8.31.0**
 
++ Servidor de producción: https://app.universalsefar.com
++ Servidor auxiliar: https://corporacioncabv.com/appsefar
+
+
+
 ## ___________________________________________________________________
 
 
@@ -5271,7 +5276,29 @@ sudo nano /etc/apache2/sites-available/000-default.conf
                 + Bloquear el acceso público a buckets y objetos concedido a través de políticas de bucket y puntos de acceso públicas nuevas
                 + Bloquear el acceso público y entre cuentas a buckets y objetos concedido a través de cualquier política de bucket y puntos de acceso pública
         + Clic en **Guardar cambios** y confirmar.
-    + mmm
+    + **Opcional**: En caso de querer establecer políticas de almacenamiento:
+        + Clic en **Permisos**:
+            + En **Política de bucket** clic en **Editar**.
+            + Política:
+                + Obtener **ARN del bucket**: arn:aws:s3:::appsefar-bucket-s3
+                ```json
+                {  
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "Statement1",
+                            "Principal": "*",
+                            "Effect": "Allow",
+                            "Action": [
+                                "s3:DeleteObject",
+                                "s3:GetObject",
+                                "s3:PutObject"
+                            ],
+                            "Resource": ["arn:aws:s3:::appsefar-bucket-s3/*"]   // ARN del bucket concatenado con "/*"
+                        }
+                    ]
+                }
+                ```
 6. Dar valores a variables de entorno Laravel en ****:
     ```env
     ≡
@@ -5296,25 +5323,4 @@ sudo nano /etc/apache2/sites-available/000-default.conf
 
 
 
-    + Clic en **Permisos**:
-        + En **Política de bucket** clic en **Editar**.
-        + Política:
-            + Obtener **ARN del bucket**: arn:aws:s3:::appsefar-bucket-s3
-            ```json
-            {  
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Sid": "Statement1",
-                        "Principal": "*",
-                        "Effect": "Allow",
-                        "Action": [
-                            "s3:DeleteObject",
-                            "s3:GetObject",
-                            "s3:PutObject"
-                        ],
-                        "Resource": ["arn:aws:s3:::appsefar-bucket-s3/*"]   // ARN del bucket concatenado con "/*"
-                    }
-                ]
-            }
-            ```
+
