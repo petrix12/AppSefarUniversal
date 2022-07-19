@@ -1,14 +1,10 @@
 # Proyecto App Sefar Universal
 
-##### https://laravel.com/docs/8.x
-##### Versión: **Laravel Framework 8.31.0**
++ https://laravel.com/docs/8.x
++ Versión: **Laravel Framework 8.31.0**
 
 + Servidor de producción: https://app.universalsefar.com
 + Servidor auxiliar: https://corporacioncabv.com/appsefar
-
-
-
-## ___________________________________________________________________
 
 
 ## Consideraciones previas
@@ -4556,7 +4552,7 @@
 		DB_CONNECTION=mysql
 		DB_HOST=107.180.2.195
 		DB_PORT=3306
-		DB_DATABASE=universalsefar
+		DB_DATABASE=sefar
 		DB_USERNAME=pxvim6av41qx
 		DB_PASSWORD="L5=Rj#8lW}YuK"
 		≡
@@ -5324,7 +5320,11 @@ sudo nano /etc/apache2/sites-available/000-default.conf
     + $ php artisan optimize
     + $ php artisan cache:clear
 
-
+## Comandos Git para crear rama y luego hacer merge en la principal
+1. Realizar commit antes de empezar:
+    + $ git add .
+    + $ git commit -am "Estado del repositorio actual"
+2. ffff
 
 
 
