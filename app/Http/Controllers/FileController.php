@@ -49,7 +49,7 @@ class FileController extends Controller
             Alert::error('¡Error!', 'El archivo supera el tamaño máximo permitido.');
             return back();
         }
-      
+
         // Filtrar extensiones
         $abortar = false;
         switch ($request->file->getClientOriginalExtension()) {
@@ -124,8 +124,8 @@ class FileController extends Controller
         }else{
             $location = str_replace('.','','public/documentos/'.$anho.'/'.$user_id.'/'.GetPersona($request->IDPersona));
         }
-        
-        // Guarda el archivo en el servidor y registra el archivo en la tabla files 
+
+        // Guarda el archivo en el servidor y registra el archivo en la tabla files
         if($request->hasFile('file')){
             // Nombre del archivo
             if($request->nfile){
@@ -146,10 +146,10 @@ class FileController extends Controller
                     'IDPersona' => $request->IDPersona,
                     'user_id' => $user_id
                 ]);
-        
-                // Mensaje 
+
+                // Mensaje
                 Alert::success('¡Éxito!', 'Se ha añadido el documento: ' . $fileName);
-                
+
                 // Redireccionar a la vista index
                 if($request->Origen == "arbol"){
                     return back();
@@ -212,7 +212,7 @@ class FileController extends Controller
             Alert::error('¡Error!', 'El archivo supera el tamaño máximo permitido.');
             return back();
         }
-      
+
         // Filtrar extensiones
             if($request->file('file')){
             $abortar = false;
@@ -281,13 +281,13 @@ class FileController extends Controller
 
         // Ubicación del documento
         $location = $file->location;
-        
-        // Actualiza el archivo en el servidor y en la tabla files 
+
+        // Actualiza el archivo en el servidor y en la tabla files
         if($request->hasFile('file')){
             // Nombre del archivo
             if($request->nfile){
-                $fileName = $request->nfile.".".$request->file->getClientOriginalExtension();   
-            } else {    
+                $fileName = $request->nfile.".".$request->file->getClientOriginalExtension();
+            } else {
                 $fileName = $request->file->getClientOriginalName();
             }
             if($request->file('file')->storePubliclyAs($location, $fileName)){
@@ -300,15 +300,15 @@ class FileController extends Controller
                 $file->notas = $request->notas;
                 $file->IDPersona = $request->IDPersona;
                 $file->user_id = $user_id;
-                $file->save();    
-        
-                // Mensaje 
+                $file->save();
+
+                // Mensaje
                 Alert::success('¡Éxito!', 'Se ha añadido el documento: ' . $fileName);
-                
+
                 // Redireccionar a la vista index
                 return redirect()->route('crud.files.index');
             }
-        }else{  
+        }else{
             $fileName = $file->file;
             if($file->file != $request->nfile){
                 try {
@@ -340,11 +340,11 @@ class FileController extends Controller
             $file->notas = $request->notas;
             $file->IDPersona = $request->IDPersona;
             $file->user_id = $user_id;
-            $file->save();    
-    
-            // Mensaje 
+            $file->save();
+
+            // Mensaje
             Alert::success('¡Éxito!', 'Se ha añadido el documento: ' . $fileName);
-            
+
             // Redireccionar a la vista index
             return redirect()->route('crud.files.index');
             /* Alert::error('¡Error!', 'No se pudo añadir el archivo');
@@ -362,15 +362,15 @@ class FileController extends Controller
     {
         try {
             $nombre = $file->file;
-            
+
             // Borra el archivo del storage o almacenamiento
             $archivo = storage_path().'/app/'.$file->location.'/'.$file->file;
             unlink($archivo);
-            
+
             $file->delete();
-    
+
             Alert::info('¡Advertencia!', 'Se ha eliminado el archivo: ' . $nombre);
-    
+
             return redirect()->route('crud.files.index');
         } catch (Exception $e) {
             Alert::error('¡Error!', 'No se ha encontrado ningún archivo que eliminar');
