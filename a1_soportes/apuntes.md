@@ -268,37 +268,44 @@
 	+ $ composer require jeroennoten/laravel-adminlte
 2. Publicar vistas:
     + $ php artisan adminlte:install --only=main_views
-    + **Nota 1**: En **resources\views\vendor\adminlte\page.blade.php** es de donde se extienden las plantillas.
+    + **Nota**: En **resources\views\vendor\adminlte\page.blade.php** es de donde se extienden las plantillas.
+    + Agregar favicon de la aplicación en **resources\views\vendor\adminlte\master.blade.php**:
+        ```html
+        ≡
+        <link rel="shortcut icon" type="image/x-icon" href="{{ asset('/favicon.ico') }}">
+        ≡
+        ```
 3. Ejecutar: 
 	+ $ php artisan adminlte:install
-1. Crear plantilla modelo: **resources\views\layouts\demoAdminLTE.blade.php**
-	>
-		@extends('adminlte::page')
+4. Crear plantilla modelo: **resources\views\layouts\demoAdminLTE.blade.php**:
+    ```php
+    @extends('adminlte::page')
 
-		@section('title', 'Demo')
+    @section('title', 'Demo')
 
-		@section('content_header')
-			<h1>Demo</h1>
-		@stop
+    @section('content_header')
+        <h1>Demo</h1>
+    @stop
 
-		@section('content')
-			<p>Demo.</p>
-		@stop
+    @section('content')
+        <p>Demo.</p>
+    @stop
 
-		@section('css')
-			<link rel="stylesheet" href="/css/admin_custom.css">
-		@stop
+    @section('css')
+        <link rel="stylesheet" href="/css/admin_custom.css">
+    @stop
 
-		@section('js')
-		
-		@stop
-
-	##### **Nota**: Se recomienda insertar ruta en **routes\web.php** para probar vistas:
-	>
-		// Para probar vistas
-		Route::get('/pruebas', function () {
-			return view('layouts.demoAdminLTE');
-		});
+    @section('js')
+    
+    @stop
+    ```
+    + **Nota**: Se recomienda insertar ruta en **routes\web.php** para probar vistas:
+    ```php
+    // Para probar vistas
+    Route::get('/pruebas', function () {
+        return view('layouts.demoAdminLTE');
+    });
+    ```
 
 	### Commit --:
 	+ Ejecutar: $ **git add .**

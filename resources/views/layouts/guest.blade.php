@@ -4,9 +4,10 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        <link rel="shortcut icon" type="image/x-icon" href="{{ asset('/favicon.ico') }}">
 
         <title>{{ config('app.name', 'Laravel') }}</title>
-        <link rel="shortcut icon" type="image/x-icon" href="{{ Storage::disk('s3')->url('imagenes/auxiliar/favicon.ico') }}">
+        {{-- <link rel="shortcut icon" type="image/x-icon" href="{{ Storage::disk('s3')->url('imagenes/auxiliar/favicon.ico') }}"> --}}
 
         <!-- Fonts -->
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap">
