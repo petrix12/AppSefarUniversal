@@ -261,15 +261,16 @@
 
 
 ## Integrar plantilla AdminLTE
-##### Documentación: https://github.com/jeroennoten/Laravel-AdminLTE
-##### Plantilla: https://adminlte.io/themes/v3/index.html
++ **Documentación**: https://github.com/jeroennoten/Laravel-AdminLTE
++ **Plantilla**: https://adminlte.io/themes/v3/index.html
 
 1. Integrar AdminLTE: 
-	>
-		$ composer require jeroennoten/laravel-adminlte
-1. Ejecutar: 
-	>
-		$ php artisan adminlte:install
+	+ $ composer require jeroennoten/laravel-adminlte
+2. Publicar vistas:
+    + $ php artisan adminlte:install --only=main_views
+    + **Nota 1**: En **resources\views\vendor\adminlte\page.blade.php** es de donde se extienden las plantillas.
+3. Ejecutar: 
+	+ $ php artisan adminlte:install
 1. Crear plantilla modelo: **resources\views\layouts\demoAdminLTE.blade.php**
 	>
 		@extends('adminlte::page')
