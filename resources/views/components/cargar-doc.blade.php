@@ -6,7 +6,7 @@
 @endphp
 
 <button onclick="document.getElementById('cargarDocumentos{{ $id }}').showModal()"><span class="cargar_doc ctrSefar" title="Cargar documentos"><i class="fas fa-upload"></i></span></button>
-<dialog id="cargarDocumentos{{ $id }}" class="container h-auto w-11/12 mt-3 md:w-1/2 p-5 bg-white rounded-md">    
+<dialog id="cargarDocumentos{{ $id }}" class="container h-auto w-11/12 mt-3 md:w-1/2 p-5 bg-white rounded-md">
     <div class="flex flex-col w-full h-auto ">
         <!-- Título -->
         <div class="flex w-full h-auto justify-center items-center">
@@ -31,9 +31,9 @@
                         <div class="px-1 py-2 m-2 flex-1">    {{-- nfile --}}
                             <div>
                                 <label for="nfile" class="block text-sm font-medium text-gray-700">Nombre del documento</label>
-                                <input 
-                                    value="{{ old('nfile') }}" 
-                                    type="text" name="nfile" 
+                                <input
+                                    value="{{ old('nfile') }}"
+                                    type="text" name="nfile"
                                     placeholder="Opcional (rellenar solo en caso de querer renombrar el documento)"
                                     class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                                 >
@@ -42,7 +42,7 @@
                                 @enderror
                             </div>
                         </div>
-                    </div>         
+                    </div>
                     {{-- Fila 2: Archivo --}}
                     <div class="md:flex ms:flex-wrap">
                         <div class="px-1 py-2 m-2 flex-1">    {{-- file --}}
