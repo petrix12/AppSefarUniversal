@@ -5324,7 +5324,15 @@ sudo nano /etc/apache2/sites-available/000-default.conf
 1. Realizar commit antes de empezar:
     + $ git add .
     + $ git commit -am "Estado del repositorio actual"
-2. ffff
+    + $ git push -u origin master
+2. Crear rama y cambiar a ella:
+    + $ git checkout -b nombre-rama
+3. Confirmar los cambios en la nueva rama:
+    + $ git add .
+    + $ git commit -am "Confirmando los cambios"
+4. Volver a la rama principal y unir los cambios:
+    + $ git checkout master
+    + $ git rebase nombre-rama
 
 
 
