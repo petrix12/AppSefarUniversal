@@ -5334,7 +5334,28 @@ sudo nano /etc/apache2/sites-available/000-default.conf
     + $ git checkout master
     + $ git rebase nombre-rama
 
+## Configuración del archivo **.htaccess**:
++ Configuración 1:
+    ```htaccess
+    # DON NOT REMOVE THIS LINE AND TEN LINES BELLOW SSL_REDIRECT:corporacioncabv.com/appsefar
+    RewriteEngine on
+    RewriteCond %{HTTPS} off
+    RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
+    SetEnv ENVIRONMENT production
+    
+    RewriteRule ^(.*)$ public/$1 [L]
+
+    # DON NOT REMOVE THIS LINE AND TEN LINES BELLOW SSL_REDIRECT:corporacioncabv.com/appsefar
+    ```
++ Configuración 2:
+    ```htaccess
+    <IfModule mod_rewrite.c>
+        RewriteEngine on
+        RewriteCond %{REQUEST_URI} !^public
+        RewriteRule ^(.*)$ public/$1 [L]
+    </IfModule>
+    ```
 
 
 

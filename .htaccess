@@ -1,0 +1,10 @@
+# DON NOT REMOVE THIS LINE AND TEN LINES BELLOW SSL_REDIRECT:appsefar.corporacioncabv.com
+RewriteEngine on
+RewriteCond %{HTTPS} off
+RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+SetEnv ENVIRONMENT production
+
+RewriteRule ^(.*)$ public/$1 [L]
+
+# DON NOT REMOVE THIS LINE AND TEN LINES BELLOW SSL_REDIRECT:appsefar.corporacioncabv.com

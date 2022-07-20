@@ -1,0 +1,129 @@
+[33m7300879[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m, [m[1;32mamazon-s3[m[33m)[m Configuración Amazon S3 para documentos clientes
+[33mb123dcd[m[33m ([m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m Repositorio actual
+[33m04f7687[m Estado del repositorio actual
+[33m6eef4a0[m Antes de la integración AWS S3 para documentos
+[33m6c3aa39[m Arreglo favicon 3
+[33m4ed2389[m Arreglo favicon 2
+[33m59e55d8[m Arreglo favicon
+[33m8c892c2[m Arreglo de imagenes con AWS S3
+[33m8cabdc8[m Arreglo favicon 2
+[33mf4d9de8[m Arreglo favicon
+[33mda506cd[m[33m ([m[1;32mpruabas-s3[m[33m)[m Integración Country a AWS S3
+[33m75f9ea5[m Vacio
+[33m02b5c60[m[33m ([m[1;32mrev-file[m[33m, [m[1;32mmain[m[33m)[m Commit previo a la revisión de almacenamiento de documentos
+[33m86d4a3b[m Cambio en ruta de estilos 2
+[33m30f3cd7[m Cambio en ruta de estilos
+[33m4ae4386[m Módulo MG Tours
+[33m02c1b7e[m Prueba 2022-04-19
+[33mabb9b74[m Modificación notificación cliente al cargar árbol
+[33m6f0ef6a[m Módulos German Fleitas y Soma Consultores
+[33m4c14d0c[m Módulo Mujica y Coto Abogados
+[33m2201c1f[m Módulo P & V Abogados
+[33mbdb3d13[m Corrección nombre y id en vista árboles
+[33mb043d55[m Arreglo del nombre del cliente en los árboles 2
+[33m7ddc798[m Arreglo del nombre del cliente en los árboles
+[33m34e98ed[m Módulo P & V Abogados 2
+[33m0ea1e1a[m Módulo P & V Abogados
+[33m3b29896[m Activación modulo documentos clientes 2
+[33m0c4a45f[m Activación modulo documentos clientes
+[33m9849e7a[m Búsqueda comibinada agclientes
+[33m30b3598[m Ordenar agclientes por lugar de nacimiento
+[33mfe69615[m Módulo Bufete Badell Law
+[33m9b88df2[m Reparación ventana modal Parte II
+[33m752af6f[m Reparación ventana modal Parte I
+[33m916268a[m Actualización al 12-10-2021
+[33me3b9389[m[33m ([m[1;32mventana_modal[m[33m)[m Ultimos cambios 3
+[33mf531043[m Ultimos cambios 2
+[33m7bd769c[m Proyecto al 11-10-2021
+[33m9b44053[m Módulo Vargassequera
+[33mc0cc30a[m Registro de clientes de Travieso Evans
+[33m541a13e[m Carga de clientes R5
+[33m04adb21[m Carga de clientes R4
+[33m501bb39[m Carga de clientes R2
+[33m04fdde8[m Prueba de actualizacón 25-08-21 I
+[33m6559162[m Imagen de sitio web
+[33mb063bb8[m Desactivar notificaciones Eliot
+[33m7b853dc[m Modificación 14/07/21 vista miscelaneos
+[33m6aaa1d5[m Corrección en asunto email notificaciones
+[33m57d6473[m Incluir destinatario en las notificaciones
+[33md1f8197[m Mejora en vista agclientes 2
+[33m5ec0b86[m Mejora en vista agclientes
+[33m95eb297[m Maillables registros y actualización
+[33mcfe286c[m Modulo Traviesoevans V2
+[33m625df54[m Modulo Traviesoevans V1
+[33m801be51[m Actualización de roles y permisos 3
+[33mf32e9b7[m Actualización de roles y permisos 2
+[33mb7cb815[m Actualización de roles y permisos
+[33mf9a4aaa[m Redirigir pasaportes erroneos
+[33m1521c54[m CRUD Miscelaneos 2
+[33m2602eac[m CRUD Miscelaneos
+[33m8b0de01[m Carga de clientes 4
+[33ma895715[m Carga de clientes 3
+[33m17bfa8c[m Carga de clientes 2
+[33mdb13bf0[m Carga de clientes
+[33mb1edccd[m CRUB Books Solución 1 campo titulo
+[33mcb7cbe2[m Vistas de clientes y ancestros versión 1.1
+[33m4d9a735[m Vistas de clientes y ancestros versión 1
+[33m843676d[m Carga documentos clientes prueba 4
+[33m9887267[m Carga documentos clientes prueba 3 (inhabilitado)
+[33m5cdbed5[m Carga documentos clientes prueba 2 (inhabilitado)
+[33m87f144a[m Carga documentos clientes prueba 1
+[33madcf394[m CRUD Libros Corrección 1
+[33ma29cde3[m CRUD Libros
+[33mf3a47e0[m Árboles listos para lectura
+[33m95d1618[m Prueba de simbolic link 4
+[33m7148a46[m Prueba de simbolic link 3
+[33m85dc06a[m Prueba de simbolic link 2
+[33m6a0385d[m Prueba de simbolic link 1
+[33m38f4831[m Vista Tree
+[33mcb9bab1[m Respaldo al 06-04-2021
+[33ma6bea8b[m CRUD Almacenamiento de documentos
+[33m026efad[m CRUD Tipos de documentos
+[33mad644fb[m Prueba al 31-03-2021
+[33m24457d1[m CRUD Familiares
+[33m111c105[m CRUD y seeders  Conexiones
+[33m7fa7464[m CRUD Lados
+[33m4c27e65[m CRUD Parentescos
+[33mc893793[m CRUD Agclientes
+[33m9eca9be[m Método creaer r1  CRUD Agclientes
+[33m33498f1[m Método eliminar  CRUD Agclientes
+[33mc5e568b[m C8 CRUD Agclientes
+[33mc6e227b[m C7 CRUD Agclientes
+[33m978ace7[m C6 CRUD Agclientes
+[33m83d1612[m C5 CRUD Agclientes
+[33m6c4dcf0[m C4 CRUD Agclientes
+[33m7770d20[m C3 CRUD Agclientes
+[33m9a91bc5[m C2 CRUD Agclientes
+[33m638a45b[m C1 CRUD Agclientes
+[33m0603201[m Prueba 24-03-2021
+[33ma53d844[m Prueba al 22-03-2021
+[33m174e6ba[m Eliminación de node_modules.zip
+[33m233c93b[m CRUD Paises
+[33m36da5a4[m Versión 1 de AppFileLaravel
+[33m9577968[m Rutas para mantenimiento de la app
+[33m5595a50[m Prueba 5 al 21-03-2021
+[33m44e4cd7[m Prueba 4 al 21-03-2021
+[33m019e2ea[m Prueba 3 al 21-03-2021
+[33m6dcce1c[m Prueba 2 al 21-03-2021
+[33m4ee5ddd[m Rutas para Store-link, Config-cahe y Cache-clear
+[33mb787ae0[m Prueba 1  al 21-03-2021
+[33mc08f8e7[m Respaldo al 21-03-2021
+[33mb9c2a40[m Ultimos cambios al 21-03-2021
+[33mdafd90a[m Seeder Paises
+[33md93f00e[m Ultimos cambios IV al 19-03-2021
+[33m7f8a29b[m Ultimos cambios III al 19-03-2021
+[33m31406d8[m Ultimos cambios II al 19-03-2021
+[33m896aa5c[m Cambios registrados al 19-03-2021
+[33m86cddd0[m Verificación de email
+[33m39692b4[m App Consulta BD Onidex
+[33mec791bd[m CRUD Usuarios
+[33m53db696[m CRUD Roles
+[33mcdf770e[m CRUD Permisos
+[33m743ada3[m Perfil de usuario
+[33m328706a[m Proyecto personalizado
+[33m652f368[m Seeder Roles, Permisos y Usuarios
+[33mbfee071[m Adaptación al español
+[33m2a98a75[m Instalación Plantilla AdminLTE
+[33m57cbda7[m Laravel-permission
+[33mb24fe7e[m Ajustes iniciales
+[33m7274302[m Proyecto en blanco
