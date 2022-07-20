@@ -9,7 +9,7 @@
     <span class="cargar_doc ctrSefar" title="Cargar documentos"><i class="fas fa-upload"></i></span>
 </button>
 
-<dialog id="cargarDocumentos{{ $id }}" class="container h-auto w-11/12 mt-3 md:w-1/2 p-5 bg-white rounded-md">
+<dialog id="cargarDocumentos{{ $id }}" class="container w-11/12 mt-3 md:w-1/2 p-5 bg-white rounded-md">
     <div class="flex flex-col w-full h-auto ">
         <!-- Título -->
         <div class="flex w-full h-auto justify-center items-center">

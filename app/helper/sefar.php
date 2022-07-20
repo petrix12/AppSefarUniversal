@@ -2,6 +2,7 @@
 // Obtener persona
 
 use App\Models\Agcliente;
+use App\Models\File;
 
 function GetPersona($IDPersona){
     $Persona = null;
@@ -17,26 +18,26 @@ function GetPersona($IDPersona){
         case 9: $Persona = 'Bisabuela Pat. Pat.'; break;
         case 10: $Persona = 'Bisabuelo Pat. Mat.'; break;
         case 11: $Persona = 'Bisabuela Pat. Mat.'; break;
-        case 12: $Persona = 'Bisabuelo Mat. Pat.'; break;				
-        case 13: $Persona = 'Bisabuela Mat. Pat.'; break;	
-        case 14: $Persona = 'Bisabuelo Mat. Mat.'; break;				
-        case 15: $Persona = 'Bisabuela Mat. Mat.'; break;	
-        case 16: $Persona = 'Tatarabuelo PPP'; break;	
+        case 12: $Persona = 'Bisabuelo Mat. Pat.'; break;
+        case 13: $Persona = 'Bisabuela Mat. Pat.'; break;
+        case 14: $Persona = 'Bisabuelo Mat. Mat.'; break;
+        case 15: $Persona = 'Bisabuela Mat. Mat.'; break;
+        case 16: $Persona = 'Tatarabuelo PPP'; break;
         case 17: $Persona = 'Tatarabuela PPP'; break;
-        case 18: $Persona = 'Tatarabuelo PPM'; break;	
-        case 19: $Persona = 'Tatarabuela PPM'; break;	
-        case 20: $Persona = 'Tatarabuelo PMP'; break;	
+        case 18: $Persona = 'Tatarabuelo PPM'; break;
+        case 19: $Persona = 'Tatarabuela PPM'; break;
+        case 20: $Persona = 'Tatarabuelo PMP'; break;
         case 21: $Persona = 'Tatarabuela PMP'; break;
-        case 22: $Persona = 'Tatarabuelo PMM'; break;	
+        case 22: $Persona = 'Tatarabuelo PMM'; break;
         case 23: $Persona = 'Tatarabuela PMM'; break;
-        case 24: $Persona = 'Tatarabuelo MPP'; break;	
-        case 25: $Persona = 'Tatarabuela MPP'; break;	
-        case 26: $Persona = 'Tatarabuelo MPM'; break;	
-        case 27: $Persona = 'Tatarabuela MPM'; break;	
-        case 28: $Persona = 'Tatarabuelo MMP'; break;	
-        case 29: $Persona = 'Tatarabuela MMP'; break;	
-        case 30: $Persona = 'Tatarabuelo MMM'; break;	
-        case 31: $Persona = 'Tatarabuela MMM'; break;				
+        case 24: $Persona = 'Tatarabuelo MPP'; break;
+        case 25: $Persona = 'Tatarabuela MPP'; break;
+        case 26: $Persona = 'Tatarabuelo MPM'; break;
+        case 27: $Persona = 'Tatarabuela MPM'; break;
+        case 28: $Persona = 'Tatarabuelo MMP'; break;
+        case 29: $Persona = 'Tatarabuela MMP'; break;
+        case 30: $Persona = 'Tatarabuelo MMM'; break;
+        case 31: $Persona = 'Tatarabuela MMM'; break;
     }
     return $Persona;
 }
@@ -432,7 +433,7 @@ function GetFechaMatr($agclientes, $IDPersona){
         $MesMatr = $MesMatr ? $MesMatr : '--';
         $DiaMatr = $agclientes->where('IDPersona',$IDPersona)->first()->DiaMatr;
         $DiaMatr = $DiaMatr ? $DiaMatr : '--';
-        
+
         return "$DiaMatr / $MesMatr / $AnhoMatr";
     }catch(Exception $e){
         return null;
@@ -499,7 +500,7 @@ function AddPersona($IDCliente, $IDPersona){
         'IDMadre' => GetIDPadre($IDPersona) + 1,
         'Generacion' => GetGeneracion($IDPersona),
         'FUpdate' => date('Y-m-d H:i:s'),
-        'Usuario' => Auth()->user()->email,  
+        'Usuario' => Auth()->user()->email,
     ]);
     return $agcliente;
 }
@@ -511,7 +512,7 @@ function GetBoxPerson($agclientes, $IDPersona): string{
         <p class="text-xs font-bold">'.GetNombres($agclientes, $IDPersona).'</p>
         <p class="text-xs font-bold">'.GetApellidos($agclientes, $IDPersona).'</p>
     ';
-    /* 
+    /*
     <p class="text-xs font-bold">{{ GetNombres($agclientes,1) }}</p>
     <p class="text-xs font-bold">{{ GetApellidos($agclientes,1) }}</p>
     @php
@@ -519,7 +520,7 @@ function GetBoxPerson($agclientes, $IDPersona): string{
     @endphp
     <p class="text-xs">{{ $mostraLN = GetLugarNac($agclientes,1) }}</p>
     @if ($mostraLN)
-        <p class="text-xs">Lugar de nacimiento</p>    
+        <p class="text-xs">Lugar de nacimiento</p>
     @endif
     */
     //return $contenido;
@@ -531,6 +532,24 @@ function existePer($agclientes, $IDPersona){
     try {
         return $agclientes->where('IDPersona',$IDPersona)->first()->IDCliente;
     } catch (\Throwable $e) {
+        return null;
+    }
+}
+
+// Comprobar que una persona tiene documentos
+function existeDoc($pasaporte, $IDPersona){
+    try{
+        return File::where('IDCliente',$pasaporte)->where('IDPersona', $IDPersona)->first()->id;
+    }catch(Exception $e){
+        return null;
+    }
+}
+
+// Obtener documentos de una persona
+function getDocumentos($pasaporte, $IDPersona){
+    try{
+        return File::where('IDCliente',$pasaporte)->where('IDPersona', $IDPersona)->get();
+    }catch(Exception $e){
         return null;
     }
 }

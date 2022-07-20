@@ -116,13 +116,14 @@ class FileController extends Controller
         }
 
         // Ubicación del documento
-        $anho = date('Y');
+        /* $anho = date('Y'); */
         if($request->Origen == "arbol"){
             //$carpeta = 'doc/P'.$pasaporte.'/'.$persona.'/';
             /* $location = str_replace('.','','public/doc/P'.$IDCliente.'/'.GetPersona($request->IDPersona)); */
             $location = 'public/doc/P'.$IDCliente.'/'.GetPersona($request->IDPersona);
         }else{
-            $location = str_replace('.','','public/documentos/'.$anho.'/'.$user_id.'/'.GetPersona($request->IDPersona));
+            // $location = str_replace('.','','public/documentos/'.$anho.'/'.$user_id.'/'.GetPersona($request->IDPersona));
+            $location = 'public/doc/P'.$IDCliente.'/'.GetPersona($request->IDPersona);
         }
 
         // Guarda el archivo en el servidor y registra el archivo en la tabla files
@@ -134,7 +135,9 @@ class FileController extends Controller
                 $fileName = $request->file->getClientOriginalName();
             }
             /* if(Storage::putFileAs('/imagenes/paises/' , $request->file, $fileImg)){ */
-            if($request->file('file')->storePubliclyAs($location, $fileName)){
+            /* if($request->file('file')->storePubliclyAs($location, $fileName)){ */
+            $ruta = Storage::disk('s3')->putFileAs($location, $request->file, $fileName, 'public');
+            if($ruta) {
                 // Agregando registro a la tabla files
                 File::create([
                     'file' => $fileName,
@@ -171,8 +174,15 @@ class FileController extends Controller
      */
     public function show(File $file)
     {
-        $pathtoFile = storage_path().'/app/'.$file->location.'/'.$file->file;
-        return response()->file($pathtoFile);
+        /* $pathtoFile = storage_path().'/app/'.$file->location.'/'.$file->file;
+        return response()->file($pathtoFile); */
+        //return Storage::disk('s3')->url($file->location.'/'.$file->file);
+        if(!Storage::disk('s3')->exists($file->location . '/' . $file->file)){
+            Alert::error('¡Error!', 'No se ha podido ubicar el documento solicitado.');
+            return back();
+        }
+
+        return redirect(Storage::disk('s3')->url($file->location . '/' . $file->file));
     }
 
     /**
@@ -214,7 +224,7 @@ class FileController extends Controller
         }
 
         // Filtrar extensiones
-            if($request->file('file')){
+        if($request->file('file')){
             $abortar = false;
             switch ($request->file->getClientOriginalExtension()) {
                 case 'exe':
@@ -290,7 +300,10 @@ class FileController extends Controller
             } else {
                 $fileName = $request->file->getClientOriginalName();
             }
-            if($request->file('file')->storePubliclyAs($location, $fileName)){
+            Storage::disk('s3')->delete($file->location . '/' . $file->file);
+            $ruta = Storage::disk('s3')->putFileAs($location, $request->file, $fileName, 'public');
+            /* if($request->file('file')->storePubliclyAs($location, $fileName)){ */
+            if($ruta){
                 // Agregando registro a la tabla files
                 $file->file = $fileName;
                 $file->location = $location;
@@ -325,7 +338,8 @@ class FileController extends Controller
                         $newName = str_replace('public/','',$file->location.'/'.$request->nfile);
                         $fileName = $request->nfile;
                     }
-                    Storage::disk('public')->move($oldName, $newName);
+                    // Storage::disk('public')->move($oldName, $newName);
+                    Storage::disk('s3')->move($file->location . '/' . $file->file, $location . '/' . $request->nfile);
                 } catch (Exception $e) {
                     Alert::error('¡Error!', 'No se pudo actualizar el archivo');
                     return back();
@@ -364,14 +378,16 @@ class FileController extends Controller
             $nombre = $file->file;
 
             // Borra el archivo del storage o almacenamiento
-            $archivo = storage_path().'/app/'.$file->location.'/'.$file->file;
-            unlink($archivo);
+            /* $archivo = storage_path().'/app/'.$file->location.'/'.$file->file;
+            unlink($archivo); */
+            Storage::disk('s3')->delete($file->location . '/' . $file->file);
 
             $file->delete();
 
             Alert::info('¡Advertencia!', 'Se ha eliminado el archivo: ' . $nombre);
 
-            return redirect()->route('crud.files.index');
+            /* return redirect()->route('crud.files.index'); */
+            return back();
         } catch (Exception $e) {
             Alert::error('¡Error!', 'No se ha encontrado ningún archivo que eliminar');
             return back();
