@@ -6,12 +6,15 @@
 @endphp
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 <button onclick="document.getElementById('cargarDocumentos{{ $id }}').showModal()">
     <span class="cargar_doc ctrSefar" title="Cargar documentos"><i class="fas fa-upload"></i></span>
 </button>
 
 <dialog id="cargarDocumentos{{ $id }}" class="container w-11/12 mt-3 md:w-1/2 p-5 bg-white rounded-md">
 =======
+=======
+>>>>>>> parent of 6eef4a0 (Antes de la integración AWS S3 para documentos)
 <button onclick="document.getElementById('cargarDocumentos{{ $id }}').showModal()"><span class="cargar_doc ctrSefar" title="Cargar documentos"><i class="fas fa-upload"></i></span></button>
 <dialog id="cargarDocumentos{{ $id }}" class="container h-auto w-11/12 mt-3 md:w-1/2 p-5 bg-white rounded-md">
 >>>>>>> parent of 6eef4a0 (Antes de la integración AWS S3 para documentos)

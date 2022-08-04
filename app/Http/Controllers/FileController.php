@@ -387,6 +387,7 @@ class FileController extends Controller
             $archivo = storage_path().'/app/'.$file->location.'/'.$file->file;
             unlink($archivo);
             
+<<<<<<< HEAD
 >>>>>>> parent of 6eef4a0 (Antes de la integración AWS S3 para documentos)
             $file->delete();
     
@@ -396,6 +397,11 @@ class FileController extends Controller
             /* return redirect()->route('crud.files.index'); */
             return back();
 =======
+=======
+            $file->delete();
+    
+            Alert::info('¡Advertencia!', 'Se ha eliminado el archivo: ' . $nombre);
+>>>>>>> parent of 6eef4a0 (Antes de la integración AWS S3 para documentos)
     
             return redirect()->route('crud.files.index');
 >>>>>>> parent of 6eef4a0 (Antes de la integración AWS S3 para documentos)
