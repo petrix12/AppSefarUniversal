@@ -18,13 +18,13 @@ class FilesTable extends Component
     ];
 
     public $search = '';
-    public $perPage = '20';
-    
+    public $perPage = '25';
+
     public function render()
     {
         $users = User::all();
 
-        if(Auth::user()->hasPermissionTo("administrar.documentos")){        
+        if(Auth::user()->hasPermissionTo("administrar.documentos")){
             $files = File::where('file','LIKE',"%$this->search%")
                 ->orWhere('location','LIKE',"%$this->search%")
                 ->orWhere('tipo','LIKE',"%$this->search%")
@@ -44,6 +44,6 @@ class FilesTable extends Component
     public function clear(){
         $this->search = '';
         $this->page = 1;
-        $this->perPage = '20';
+        $this->perPage = '25';
     }
 }

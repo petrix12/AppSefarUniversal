@@ -26,10 +26,10 @@
             <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
                 <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
                     <div class="flex bg-white px-4 py-3 sm:px-6">
-                        <input 
+                        <input
                             wire:model="search"
-                            type="text" 
-                            placeholder="Buscar..." 
+                            type="text"
+                            placeholder="Buscar..."
                             class="mr-2 mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                         >
                         <div class="col-span-6 sm:col-span-3">
@@ -84,10 +84,10 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                         @foreach ($files as $file)
-                        <tr>   
+                        <tr>
                             <td class="px-1 py-2 whitespace-nowrap text-xs text-center">
                                 {{ $file->id }}
-                            </td>  
+                            </td>
                             <td class="px-1 py-2 text-xs whitespace-nowrap">
                                 {{ $file->file }}
                             </td>
@@ -100,9 +100,16 @@
                             @can('administrar.documentos')
                             <td class="px-1 py-2 text-xs whitespace-nowrap text-center">
                                 @php
-                                    $nombre = $users->where('id',$file->user_id)->first()->name;
+                                    try {
+                                        $nombre = $users->where('id',$file->user_id)->first()->name;
+                                        $pasaporte = $users->where('id',$file->user_id)->first()->passport;
+                                    } catch (\Throwable $th) {
+                                        $nombre = "Documento no asignado a ningún cliente";
+                                        $pasaporte = "S/P";
+                                    }
                                 @endphp
-                                <span title="{{ $nombre }}">{{ $users->where('id',$file->user_id)->first()->passport }}</span>
+                                {{-- <span title="{{ $nombre }}">{{ $users->where('id',$file->user_id)->first()->passport }}</span> --}}
+                                <span title="{{ $nombre }}">{{ $pasaporte }}</span>
                             </td>
                             @endcan
                             <td class="px-1 py-2 whitespace-nowrap text-center font-medium">
@@ -118,9 +125,9 @@
                                 <form action="{{ route('crud.files.destroy', $file) }}" method="POST">
                                     @csrf
                                     @method('delete')
-                                    <button 
-                                        type="submit" 
-                                        class="text-red-600 hover:text-red-900" 
+                                    <button
+                                        type="submit"
+                                        class="text-red-600 hover:text-red-900"
                                         onclick="return confirm('¿Está seguro que desea eliminar el registro?')"><i class="fas fa-trash"></i>
                                     </button>
                                 </form>

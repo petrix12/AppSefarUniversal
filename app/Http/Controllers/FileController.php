@@ -197,7 +197,8 @@ class FileController extends Controller
         if(Auth::user()->hasPermissionTo("administrar.documentos") or ($file->user_id == $user_id)){
             $t_files = TFile::all();
             $user = User::where('id',$file->user_id)->first();
-            $IDCliente = $user->passport;
+            $IDCliente = $user ? $user->passport : null;
+            //dd($IDCliente);
             return view('crud.files.edit', compact('file', 'IDCliente', 't_files'));
         }else{
             Alert::error('¡Warning!', 'No tiene permisos para ver este archivo');
