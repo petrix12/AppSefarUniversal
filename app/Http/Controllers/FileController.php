@@ -43,7 +43,7 @@ class FileController extends Controller
     public function store(Request $request)
     {
         // Filtrar tamaño del archivo
-        $max_size = (int)ini_get('upload_max_filesize') * 10240 * 20;
+        $max_size = (int)ini_get('upload_max_filesize') * 10240 * 80;
         $peso_file = filesize($request->file('file'));
         if($peso_file > $max_size){
             Alert::error('¡Error!', 'El archivo supera el tamaño máximo permitido.');

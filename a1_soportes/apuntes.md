@@ -5357,3 +5357,113 @@ sudo nano /etc/apache2/sites-available/000-default.conf
     </IfModule>
     ```
 
+## Módulo cursos
++ Entidades:
+    + **users** (usuarios):
+        + id
+        + name
+        + email
+        + password
+    + **profiles** (profesores):
+        + id
+        + title
+        + biography
+        + website
+        + socialnetwork_name
+        + socialnetwork_url
+    + **courses** (cursos):
+        + id
+        + title
+        + subtitle
+        + description
+        + status
+    + **reviews** (calificaciones):
+        + id
+        + comment
+        + rating
+    + **levels** (niveles):
+        + id
+        + name
+    + **categories** (categorías):
+        + id
+        + name
+    + **prices** (precios):
+        + id
+        + name
+        + value
+    + **goals** (metas):
+        + id
+        + name
+    + **requirements** (requerimientos):
+        + id
+        + name
+    + **audiences**:
+        + id
+        + name
+    + **sections**:
+        + id
+        + name
+    + **lessons**:
+        + id
+        + name
+        + url
+    + **platforms** (plataformas):
+        + id
+        + name
+    + **descriptions** (descripciones):
+        + id
+        + name
++ Tablas polimorficas:
+    + **resources** (recursos):
+        + id
+        + url
+        + resourceable_id
+        + resourceable_type
+    + **comments** (comentarios):
+        + id
+        + name
+        + commentable_id
+        + commentable_type
+    + **likes** (me gustan):
+        + id
+        + value (0 o 1)
+        + likeable_id
+        + likeable_type
+    + **images** (imagenes):
+        + id
+        + url
+        + imageable_id
+        + imageable_type
++ Tablas intermedias (auxiliares):
+    + course_user
+    + lesson_user
++ Relaciones:
+    + **1:1**:
+        + profiles - users
+        + descriptions - lessons
+    + **1:n**:
+        + users - courses
+        + users - reviews
+        + courses - reviews
+        + levels - courses
+        + categories - courses
+        + prices - courses
+        + courses - goals
+        + courses - requirements
+        + courses - audiences
+        + courses - sections
+        + sections - lessons
+        + platforms - lessons
+        + users - course_user
+        + courses - course_user
+        + lessons -lesson_user
+        + users - lesson_user
+    + **n:m**:
+        + courses - users
+        + lessons - users
+
+
+
+
+
+ (4/63)
