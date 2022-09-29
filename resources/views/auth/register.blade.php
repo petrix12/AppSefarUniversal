@@ -7,7 +7,6 @@
         $passport = null;
         $rol = null;
     }
-    dd($rol);
     if (!empty($_GET['apellidos'])) $apellidos = $_GET['apellidos']; else $apellidos = null;
     if (!empty($_GET['email'])) $email = $_GET['email']; else $email = null;
     if (!empty($_GET['fnacimiento'])) $fnacimiento = $_GET['fnacimiento']; else $fnacimiento = null;
