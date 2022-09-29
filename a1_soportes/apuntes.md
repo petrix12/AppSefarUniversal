@@ -5303,7 +5303,7 @@ sudo nano /etc/apache2/sites-available/000-default.conf
                     ]
                 }
                 ```
-6. Dar valores a variables de entorno Laravel en ****:
+6. Dar valores a variables de entorno Laravel en **.env**:
     ```env
     ≡
     AWS_ACCESS_KEY_ID=[ID de clave de acceso]
