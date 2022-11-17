@@ -4,6 +4,7 @@
 + Versión: **Laravel Framework 8.31.0**
 
 + Servidor de producción: https://app.universalsefar.com
++ Servidor auxiliar: http://appsefar.corporacioncabv.com
 + Servidor auxiliar: https://corporacioncabv.com/appsefar
 
 
@@ -34,9 +35,6 @@
 	>
 		$ composer global require laravel/installer.				
 
-## ___________________________________________________________________
-
-
 ## Crear proyecto App Sefar Universal
 1. Crear nuevo proyecto Laravel Jetstream:
 	>
@@ -61,9 +59,6 @@
 		>
 			$ git commit -m "Proyecto en blanco"
 
-## ___________________________________________________________________
-
-
 ## Crear un dominio local
 1. Agregar el siguiente código al final del archivo **C:\Windows\System32\drivers\etc\hosts**
 	>
@@ -85,8 +80,6 @@
 		LoadModule rewrite_module modules/mod_rewrite.so		
 	##### no deben estar comentada con #.
 1. Reiniciar el servidor Apache.
-
-## ___________________________________________________________________
 
 
 ## Ajustes iniciales
@@ -175,8 +168,6 @@
 		>
 			$ git commit -m "Ajustes iniciales"
 
-## ___________________________________________________________________
-
 
 ## Integrar Laravel-permission al proyecto
 ##### Documentación: https://spatie.be/docs/laravel-permission/v4/introduction
@@ -253,7 +244,7 @@
 		>
 			$ git commit -m "Laravel-permission"
 
-## ___________________________________________________________________
+
 
 
 ## Integrar plantilla AdminLTE
@@ -307,7 +298,6 @@
 	+ Ejecutar: $ **git add .**
 	+ Ejecutar: $ **git commit -m "Instalación Plantilla AdminLTE"**
 	
-## ___________________________________________________________________
 
 
 ## Adaptación del proyecto al español
@@ -339,7 +329,6 @@
 		>
 			$ git commit -m "Adaptación al español"
 
-## ___________________________________________________________________
 
 
 ## Seeders para prueba de roles y permisos
@@ -383,7 +372,7 @@
 		>
 			$ git commit -m "Seeder Roles, Permisos y Usuarios"
 
-## ___________________________________________________________________
+
 
 
 ## Personalizar el proyecto
@@ -488,7 +477,6 @@
 		>
 			$ git commit -m "Proyecto personalizado"
 	
-## ___________________________________________________________________
 
 
 ## Instalar Laravel Collective para facilitar el uso de formularios
@@ -497,8 +485,6 @@
     >
         $ composer require laravelcollective/html
 
-
-## ___________________________________________________________________    
 
 ## Perfil de usuario
 1. Rediseñar plantilla **resources\views\profile\update-profile-information-form.blade.php**
@@ -746,7 +732,7 @@
 		>
 			$ git commit -m "Perfil de usuario"
 
-## ___________________________________________________________________
+
 
 
 ## Integrar Sweetalert
@@ -838,7 +824,7 @@
 		>
 			$ git commit -m "Integración Sweetalert"
 
-## ___________________________________________________________________
+
 
 
 ## Verificación de email con Jetstream
@@ -925,7 +911,7 @@
 		>
 			$ git commit -m "Verificación de email"
 
-## ___________________________________________________________________
+
 
 
 ## CRUD Permisos
@@ -1005,7 +991,6 @@
 		>
 			$ git commit -m "CRUD Permisos"
 
-## ___________________________________________________________________
 
 
 ## CRUD Roles
@@ -4248,6 +4233,181 @@
 		***
 1. Crear controlador Registro: $ php artisan make:controller RegistroController
 1. Crear ruta en routes\web.php
+
+
+## Convertir la aplicación en PWA (Aplicación Web Progresiva)
+1. Crear archivo de configuración del **Service Worker** en (public\sw.js):
+    ```js
+    const CACHE_ELEMENTS = [
+        // Incluir todas las rutas que usa la aplicación, incluyendo los CDN's
+        "./",
+        "./agclientes",
+        "./albero",
+        "./books",
+        "./consultaodx",
+        "./countries",
+        "./dashboard",
+        "./families",
+        "./files",
+        "./formats",
+        "./lados",
+        "./libraries",
+        "./login",
+        "./logout",
+        "./miscelaneos",
+        "./olivo",
+        "./parentescos",
+        "./permissions",
+        "./procesar",
+        "./register",
+        "./registro",
+        "./roles",
+        "./salir",
+        "./t_files",
+        "./tree",
+        "./user/password",
+        "./profile",
+        "./users",
+        "./css/app.css",
+        "./css/sefar.css",
+        "./js/app.js",
+        "https://cdn.jsdelivr.net/npm/sweetalert2@9",
+        "https://app.universalsefar.com/vendor/adminlte/dist/img/LogoSefar.png",
+        "https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap",
+        "http://www.w3.org/2000/svg",
+        "https://laravel.com/docs",
+        "https://laracasts.com",
+        "https://laravel-news.com",
+        "https://forge.laravel.com",
+        "https://laravel.bigcartel.com",
+        "https://github.com/sponsors/taylorotwell"
+    ]
+
+    const CACHE_NAME = "v1_cache_app_sefar_old"
+
+    self.addEventListener("install", (e) => {
+        e.waitUntil(
+            caches.open(CACHE_NAME)
+                .then(cache => {
+                    cache.addAll(CACHE_ELEMENTS)
+                        .then(() => {
+                            self.skipWaiting()
+                        }).catch(console.log)
+                })
+        )
+    })
+
+    self.addEventListener("activate", (e) => {
+        const cacheWhiteList = [CACHE_NAME]
+
+        e.waitUntil(
+            caches.keys().then((cacheNames) => {
+                return Promise.all(
+                    cacheNames.map((cacheName) => {
+                        return (
+                            cacheWhiteList.indexOf(cacheName) === -1 && caches.delete(cacheName)
+                        )
+                    })
+                )
+            }).then(() => self.clients.claim())
+        )
+    })
+
+    self.addEventListener("fetch", (e) => {
+        e.respondWith(
+            caches.match(e.request).then((res) => {
+                if(res){
+                    return res
+                }
+                return fetch(e.request)
+            })
+        )
+    })
+    ```
+    ::: tip
+    **Nota**: para establecer las propiedades de incon ir a [PWABuilder](https://www.pwabuilder.com/imageGenerator) e introducir como a imagen base la de **public\Logo.png**. En la página establecer:
+        + Padding: 0
+        + Background Color: Tranparent
+        + Clic en **Generate** y descomprimir el zip generado en la raíz de **public**.
+        + Luego eliminar los siguientes archivos:
+            + public\AppImages.zip
+            + public\icons.json
+    Otra opción para generar las imagenes de la aplicación es ir a: https://www.npmjs.com/package/pwa-asset-generator
+    :::
+2. Crear archivo de registro del SW (public\register.js):
+    ```js
+    if(navigator.serviceWorker) {
+        navigator.serviceWorker.register("./sw.js")
+    }
+    ```
+3. Crear archivo de manifiesto **public\manifest.json**:
+    ```json
+    {
+        "name": "Aplicación Sefar Universal",
+        "short_name": "App Sefar",
+        "description": "Abogados y genealogistas expertos en inmigración. Conseguimos tu pasaporte español, portugues e italiano, para que seas libre, trascendiendo fronteras.",
+        "background_color": "#333333",
+        "theme_color": "#333333",
+        "start_url": "./",
+        "scope": "./",
+        "lang": "es",
+        "display": "standalone",
+        "orientation": "portrait",
+        "icons": [
+            {
+                "src": "windows11/SmallTile.scale-100.png",
+                "sizes": "71x71"
+            },
+            {
+                "src": "windows11/SmallTile.scale-125.png",
+                "sizes": "89x89"
+            },
+            // ...
+        ]
+    }
+    ```
+    ::: warning Advertencia
+    Ver el código completo enla ruta indicada.
+    :::
+4. Registrar el SW (Service Worker) en **resources\views\layouts\app.blade.php**:
+    ```php
+    <!-- ... -->
+    <head>
+        <!-- ... -->
+        <!-- Meta tags PWA -->
+        <meta name="theme-color" content="#333333">
+        <meta name="MobileOptimized" content="width">
+        <meta name="HandheldFriendly" content="true">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+        <!-- Iconos PWA -->
+        <link rel="shortcut icon" href="{{ asset("./Logo.png") }}" type="image/png">
+        <link rel="apple-touch-icon" href="{{ asset("./Logo.png") }}" type="image/png">
+        <link rel="apple-touch-startup-image" href="{{ asset("./Logo.png") }}" type="image/png">
+
+        <!-- Manifest PWA -->
+        <link rel="manifest" href="{{ asset("./manifest.json") }}">
+
+        <title>{{ config('app.name', 'Laravel') }} | Tus antepasados te quieren libre</title>    
+        <!-- ... -->
+        <script src={{ asset("./register.js") }}></script>
+    </head>
+    <!-- ... -->
+    ```
+    + Aplicaar estos mismos cambios en **resources\views\welcome.blade.php**.
+    ::: tip
+    + **Nota**: en caso de no contar con un icono para la aplicación se puede seleccionar uno en [IconFinder](https://www.iconfinder.com). Se recomienda seleccionar un icono: **Free** y **For commercial use**.
+    <p></p>
+    :::
+::: tip Convertir la aplicación en PWA con Vite.js
++ Siguiendo la siguiente documentación se puede convertir también nuestra aplicación en PWA con Vite.js: https://vite-pwa-org.netlify.app
++ También podemos guiarnos con este curso: https://www.udemy.com/course/react-desde-cero-pwa/learn/lecture/30230462#overview
++ En resumen:
+    + npm i vite-plugin-pwa -D
+    + Modificar **vite.config.ts**.
+:::
+
 
 # ///////////////////////////////////////
 ## Crear rutas de mantenimiento de la aplicación

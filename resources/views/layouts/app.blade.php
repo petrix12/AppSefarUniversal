@@ -22,6 +22,21 @@
         <meta data-react-helmet="true" name="robots" content="noindex, nofollow" />
         {{-- Fin - Personalización URL --}}
 
+        <!-- Meta tags PWA -->
+        <meta name="theme-color" content="#333333">
+        <meta name="MobileOptimized" content="width">
+        <meta name="HandheldFriendly" content="true">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+        <!-- Iconos PWA -->
+        <link rel="shortcut icon" href="{{ asset("./Logo.png") }}" type="image/png">
+        <link rel="apple-touch-icon" href="{{ asset("./Logo.png") }}" type="image/png">
+        <link rel="apple-touch-startup-image" href="{{ asset("./Logo.png") }}" type="image/png">
+
+        <!-- Manifest PWA -->
+        <link rel="manifest" href="{{ asset("./manifest.json") }}">
+
         <title>{{ config('app.name', 'Laravel') }}</title>
 
         <!-- Fonts -->
@@ -35,6 +50,7 @@
 
         <!-- Scripts -->
         <script src="{{ asset('/js/app.js') }}" defer></script>
+        <script src={{ asset("./register.js") }}></script>
     </head>
     <body class="font-sans antialiased">
         <x-jet-banner />
