@@ -4,6 +4,7 @@
 /storage/*.key
 /vendor
 /a1_soportes
+/docs/node_modules
 .env
 .env.backup
 .phpunit.result.cache

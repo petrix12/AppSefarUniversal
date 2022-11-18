@@ -1,12 +1,12 @@
 {
-    "name": "Aplicación Sefar Universal",
-    "short_name": "App Sefar",
+    "name": "Aplicación Sefar Universal Old",
+    "short_name": "App Sefar Old",
     "description": "Abogados y genealogistas expertos en inmigración. Conseguimos tu pasaporte español, portugues e italiano, para que seas libre, trascendiendo fronteras.",
     "background_color": "#333333",
     "theme_color": "#333333",
     "start_url": "./",
     "scope": "./",
-    "lang": "es",
+    "lang": "es-ES",
     "display": "standalone",
     "orientation": "portrait",
     "icons": [

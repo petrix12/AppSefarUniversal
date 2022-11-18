@@ -1,0 +1,19 @@
+{
+  "name": "App Sefar",
+  "version": "0.0.1",
+  "description": "Aplicación web para la administración de información de la empresa.",
+  "main": "index.js",
+  "authors": {
+    "name": "Pedro Bazó",
+    "email": "pedro.bazo@gmail.com"
+  },
+  "repository": "https://github.com/petrix12/AppSefarUniversal.git/App Sefar",
+  "scripts": {
+    "dev": "vuepress dev src",
+    "build": "vuepress build src"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "vuepress": "^1.5.3"
+  }
+}

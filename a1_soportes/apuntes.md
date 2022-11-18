@@ -4409,6 +4409,24 @@
 :::
 
 
+## Documentación
+1. Ejecutar:
+    + $ npx create-vuepress-site
+        + ? What's the name of your project?: App Sefar
+        + ? What's the description of your project? Aplicación web para la administración de información de la empresa.
+        + ? What's your email? pedro.bazo@gmail.com
+        + ? What's your name? Pedro Bazó
+        + ? What's the repo of your project? https://github.com/petrix12/AppSefarUniversal.git
+    + $ cd docs
+    + $ npm install
+2. lllllllll
+3. Para ejecutar la documentación:
+    + $ cd docs
+    + $ npm run dev     (en desarrollo)
+    + $ npm run build   (construir documentación para producción)
+
+
+
 # ///////////////////////////////////////
 ## Crear rutas de mantenimiento de la aplicación
 1. Agregar las siguientes rutas en **routes\web.php** para poder realizarle mantenimiento a la aplicación cuando se encuentre en producción:
