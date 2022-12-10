@@ -4408,6 +4408,9 @@
     + Modificar **vite.config.ts**.
 :::
 
+### Modificación en registro de clientes Dic 2022
+
+
 
 ## Documentación
 1. Ejecutar:
