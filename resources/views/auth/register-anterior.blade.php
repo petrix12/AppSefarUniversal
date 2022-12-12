@@ -1,10 +1,12 @@
 <?php
     // Captura de parámetros del JotForm
-    if (!empty($_GET['id_pago'])) $id_pago = $_GET['id_pago']; else $id_pago = null;
-    if (!empty($_GET['estado_pago'])) $estado_pago = $_GET['estado_pago']; else $estado_pago = null;
-    if (!empty($_GET['pasaporte'])) $pasaporte = $_GET['pasaporte']; else $pasaporte = null;
-    $passport = trim($pasaporte);
-
+    if (!empty($_GET['pasaporte'])){
+        $passport = trim($_GET['pasaporte']);
+        $rol = 'cliente';
+    }else{
+        $passport = null;
+        $rol = null;
+    }
     if (!empty($_GET['apellidos'])) $apellidos = $_GET['apellidos']; else $apellidos = null;
     if (!empty($_GET['email'])) $email = $_GET['email']; else $email = null;
     if (!empty($_GET['telefono'])) $telefono = $_GET['telefono']; else $telefono = null;
@@ -21,10 +23,6 @@
         $referido = 'P & V Abogados';
     }
 
-    // Establecer rol según si el cliente pagó o no pagó
-    $rol = ($estado_pago = 'Si') ? 'cliente' : 'no_cliente';
-
-    // Unir nombres y apellidos
     $name = null;
     if (!empty($_GET['nombres'])){
         if(is_null($apellidos)){
@@ -74,10 +72,6 @@
             @csrf
 
             {{-- Campos ocultos --}}
-            <input type="hidden" name="id_pago" value="{{ $id_pago }}" />
-            <input type="hidden" name="estado_pago" value="{{ $estado_pago }}" />
-            <input type="hidden" name="telefono" value="{{ $telefono }}" />
-
             <input type="hidden" name="nombres" value="{{ $nombres }}" />
             <input type="hidden" name="apellidos" value="{{ $apellidos }}" />
             <input type="hidden" name="fnacimiento" value="{{ $fnacimiento }}" />

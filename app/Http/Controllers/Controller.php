@@ -62,14 +62,27 @@ class Controller extends BaseController
         if(Auth::user()->hasRole('Soma-Consultores')){
             return view('crud.agclientes.index');
         }
-        
+
         if(Auth::user()->hasRole('MG-Tours')){
             return view('crud.agclientes.index');
         }
 
+        // Clientes corrientes
         if(Auth::user()->hasRole('Cliente')){
             $IDCliente = Auth::user()->passport;
             return view('arboles.tree', compact('IDCliente'));
+        }
+
+        // Clientes sin completar registro
+        if(Auth::user()->hasRole('ClienteSCP')){
+            $IDCliente = Auth::user()->passport;
+            return view('clientes.getinfo', compact('IDCliente'));
+        }
+
+        // Clientes sin pagar
+        if(Auth::user()->hasRole('ClienteSP')){
+            $IDCliente = Auth::user()->passport;
+            return view('clientes.pay', compact('IDCliente'));
         }
 
         $countries = Country::where('pais','!=','aanull')

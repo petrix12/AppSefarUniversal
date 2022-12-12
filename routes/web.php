@@ -90,6 +90,12 @@ Route::group(['middleware' => ['auth'], 'as' => 'clientes.'], function(){
     Route::get('salir', [ClienteController::class, 'salir'])->name('salir')
         ->middleware('can:cliente');
     Route::post('procesar', [ClienteController::class, 'procesar'])->name('procesar');
+    Route::get('getinfo', [ClienteController::class, 'getinfo'])->name('getinfo')
+        ->middleware('can:cliente');
+    Route::get('pay', [ClienteController::class, 'pay'])->name('pay')
+        ->middleware('can:cliente');
+    Route::post('procesarpay', [ClienteController::class, 'procesarpay'])->name('procesarpay')
+        ->middleware('can:cliente');
 });
 
 // Grupo de rutas para realizar pruebas
@@ -113,7 +119,7 @@ Route::group(['middleware' => ['auth'], 'as' => 'test.'], function(){
     // Generar enlaces para registrar clientes
     Route::get('registro', [App\Http\Controllers\GetController::class, 'registro'])->name('registro')->middleware('can:administrador');
 
-    // Capturar parámetros get 
+    // Capturar parámetros get
     Route::get('capturar_parametros_get', [App\Http\Controllers\GetController::class, 'capturar_parametros_get'])->name('capturar_parametros_get')->middleware('can:administrador');
 });
 

@@ -59,7 +59,7 @@ class ClienteController extends Controller
         // Actualizar usuario
         $user->name = trim($request->nombres) . ' ' . trim($request->apellidos);
         $user->email = $request->email;
-        $user->passport = trim($request->passport);      
+        $user->passport = trim($request->passport);
         $user->save();
 
         // Verificar si el usuario esta registrado en agclientes
@@ -93,7 +93,19 @@ class ClienteController extends Controller
 
         // Asignar rol de cliente
         $user->assignRole('Cliente');
-        
+
         return redirect()->route('clientes.tree', $user->passport);
+    }
+
+    public function getinfo(){
+        return view('clientes.getinfo');
+    }
+
+    public function pay(){
+        return view('clientes.pay');
+    }
+
+    public function procesarpay() {
+        
     }
 }

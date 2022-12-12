@@ -29,15 +29,10 @@ class CreateNewUser implements CreatesNewUsers
     {
         // Verificar que el número de pasoporte no exista
         $rol = $input['rol'];
-        $id_pago = $input['id_pago'];
-        $estado_pago = $input['estado_pago'];
-        $telefono = $input['telefono'];
-
         $passport = $input['passport'];
         $fnacimiento = $input['fnacimiento'];
         $fnacimiento_entero = strtotime($fnacimiento);
-
-        if($rol == 'cliente' || $rol == 'no_cliente'){
+        if($rol == 'cliente'){
             $user = User::where('passport','LIKE',$passport)->get();
             if(empty($user[0]->passport)){
                 // Verificar si el usuario esta registrado en agclientes
@@ -73,15 +68,15 @@ class CreateNewUser implements CreatesNewUsers
                 'passport' => ['required','unique:users', 'min:5', 'max:170'],
                 'password' => $this->passwordRules(),
                 'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['required', 'accepted'] : '',
-            ])->validate();
+            ])->validate(); 
         }else{
             Validator::make($input, [
                 'name' => ['required', 'string', 'max:255'],
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
                 'password' => $this->passwordRules(),
                 'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['required', 'accepted'] : '',
-            ])->validate();
-        }
+            ])->validate(); 
+        } 
         $user = User::create([
             'name' => $input['name'],
             'email' => $input['email'],
@@ -89,8 +84,8 @@ class CreateNewUser implements CreatesNewUsers
             'passport' => $input['passport'],
             'email_verified_at' => date('Y-m-d H:i:s'),
         ]);
-        if($rol == 'cliente' || $rol == 'no_cliente'){
-            //$user->email_verified_at = date('Y-m-d H:i:s');
+        if($rol == 'cliente'){  
+            //$user->email_verified_at = date('Y-m-d H:i:s');     
             //Artisan::call('view:clear');
             // Enviar un correo al cliente indicando que se ha registrado con exito
             $mail_cliente = new RegistroCliente($user);
@@ -103,13 +98,12 @@ class CreateNewUser implements CreatesNewUsers
                 /* 'egonzalez@sefarvzla.com', */
                 'analisisgenealogico@sefarvzla.com',
                 'asistentedeproduccion@sefarvzla.com',
-                /* 'arosales@sefarvzla.com', */
-                /* 'czanella@sefarvzla.com', */
+                'arosales@sefarvzla.com',
+                'czanella@sefarvzla.com',
                 'organizacionrrhh@sefarvzla.com',
                 'gcuriel@sefarvzla.com'
             ])->send($mail_sefar);
-
-            return ($rol == 'cliente') ? $user->assignRole('Cliente') : $user->assignRole('ClienteSP');
+            return $user->assignRole('Cliente');
         }else{
             return $user;
         }

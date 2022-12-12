@@ -471,6 +471,20 @@ return [
                     'url'           => 'user/profile',
                     'can'           => 'cliente',
                 ],
+                [
+                    'text'          => 'Completar información',
+                    'icon'          => 'fas fa-user-plus',
+                    'icon_color'    => 'yellow',
+                    'route'         => 'clientes.getinfo',
+                    'can'           => 'cliente',
+                ],
+                [
+                    'text'          => 'Pago del servicio',
+                    'icon'          => 'fas fa-money-bill',
+                    'icon_color'    => 'yellow',
+                    'route'         => 'clientes.pay',
+                    'can'           => 'cliente',
+                ],
             ],
         ],
         [
@@ -480,7 +494,7 @@ return [
             'route'         => 'clientes.salir',
             'can'           => 'cliente',
         ],
-        
+
         /* *** PRUEBAS *** */
         [
             'text'        => 'Pruebas',
