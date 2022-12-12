@@ -1,65 +1,27 @@
 <?php
     // Captura de parámetros del JotForm
-    if (!empty($_GET['id_pago'])) $id_pago = $_GET['id_pago']; else $id_pago = null;
-    if (!empty($_GET['estado_pago'])) $estado_pago = $_GET['estado_pago']; else $estado_pago = null;
-    if (!empty($_GET['pasaporte'])) $pasaporte = $_GET['pasaporte']; else $pasaporte = null;
-    $passport = trim($pasaporte);
+    if (!empty($_GET['numero_de_pasaporte'])) $dni = $_GET['numero_de_pasaporte']; else $dni = null;
+    $passport = trim($dni);
 
-    if (!empty($_GET['apellidos'])) $apellidos = $_GET['apellidos']; else $apellidos = null;
+    if (!empty($_GET['lastname'])) $apellidos = $_GET['lastname']; else $apellidos = null;
     if (!empty($_GET['email'])) $email = $_GET['email']; else $email = null;
-    if (!empty($_GET['telefono'])) $telefono = $_GET['telefono']; else $telefono = null;
+    if (!empty($_GET['phone'])) $phone = $_GET['phone']; else $phone = null;
+    if (!empty($_GET['nacionalidad_solicitada'])) $servicio = $_GET['nacionalidad_solicitada']; else $servicio = null;
 
-    if (!empty($_GET['fnacimiento'])) $fnacimiento = $_GET['fnacimiento']; else $fnacimiento = null;
-    if (!empty($_GET['cnacimiento'])) $cnacimiento = $_GET['cnacimiento']; else $cnacimiento = null;
-    if (!empty($_GET['pnacimiento'])) $pnacimiento = $_GET['pnacimiento']; else $pnacimiento = null;
-    if (!empty($_GET['sexo'])) $sexo = $_GET['sexo']; else $sexo = null;
-    if (!empty($_GET['nombre_f'])) $nombre_f = $_GET['nombre_f']; else $nombre_f = null;
-    if (!empty($_GET['pasaporte_f'])) $pasaporte_f = $_GET['pasaporte_f']; else $pasaporte_f = null;
-    if (!empty($_GET['referido'])) $referido = $_GET['referido']; else $referido = null;
-
-    if (trim($referido) == 'P'){
-        $referido = 'P & V Abogados';
-    }
-
-    // Establecer rol según si el cliente pagó o no pagó
-    $rol = ($estado_pago = 'Si') ? 'cliente' : 'no_cliente';
+    $rol = 'cliente';
 
     // Unir nombres y apellidos
     $name = null;
-    if (!empty($_GET['nombres'])){
+    if (!empty($_GET['firtsname'])){
         if(is_null($apellidos)){
-            $name = $_GET['nombres'];
+            $name = $_GET['firtsname'];
         } else {
-            $name = $_GET['nombres'].' '.$_GET['apellidos'];
+            $name = $_GET['firtsname'].' '.$_GET['lastname'];
         }
-        $nombres = $_GET['nombres'];
+        $nombres = $_GET['firtsname'];
     }else{
         $nombres = null;
     }
-
-    switch ($sexo) {
-        case "FEMENINO":
-            $sexo = 'F';
-            break;
-        case "FEMENINO / FEMALE":
-            $sexo = 'F';
-            break;
-        case "MASCULINO":
-            $sexo = 'M';
-            break;
-        case "MASCULINO / MALE":
-            $sexo = 'M';
-            break;
-        case "OTROS":
-            $sexo = 'O';
-            break;
-    }
-    // Familiares
-    $Familiares = is_null($nombre_f) ? NULL : 'Si';
-    // Fecha de nacimiento
-    $AnhoNac = date("Y", strtotime($fnacimiento));
-    $MesNac = date("m", strtotime($fnacimiento));
-    $DiaNac = date("d", strtotime($fnacimiento));
 ?>
 <x-guest-layout>
     <x-jet-authentication-card>
@@ -74,20 +36,12 @@
             @csrf
 
             {{-- Campos ocultos --}}
-            <input type="hidden" name="id_pago" value="{{ $id_pago }}" />
-            <input type="hidden" name="estado_pago" value="{{ $estado_pago }}" />
-            <input type="hidden" name="telefono" value="{{ $telefono }}" />
-
             <input type="hidden" name="nombres" value="{{ $nombres }}" />
             <input type="hidden" name="apellidos" value="{{ $apellidos }}" />
-            <input type="hidden" name="fnacimiento" value="{{ $fnacimiento }}" />
-            <input type="hidden" name="cnacimiento" value="{{ $cnacimiento }}" />
-            <input type="hidden" name="pnacimiento" value="{{ $pnacimiento }}" />
-            <input type="hidden" name="sexo" value="{{ $sexo }}" />
-            <input type="hidden" name="nombre_f" value="{{ $nombre_f }}" />
-            <input type="hidden" name="pasaporte_f" value="{{ $pasaporte_f }}" />
+            <input type="hidden" name="phone" value="{{ $phone }}" />
+            <input type="hidden" name="servicio" value="{{ $servicio }}" />
             <input type="hidden" name="rol" value="{{ $rol }}" />
-            <input type="hidden" name="referido" value="{{ $referido }}" />
+
             <div>
                 <x-jet-label for="name" value="{{ __('Name') }}" />
                 <x-jet-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name',$name)" required autofocus autocomplete="name" />
@@ -100,7 +54,7 @@
 
             @if ($rol == 'cliente')
             <div class="mt-4">
-                <x-jet-label for="passport" value="{{ __('Passport') }}" />
+                <x-jet-label for="passport" value="{{ __('Número de Pasaporte o Identificación') }}" />
                 <x-jet-input id="passport" class="block mt-1 w-full" type="text" name="passport" :value="old('passport',$passport)" required />
             </div>
             @else

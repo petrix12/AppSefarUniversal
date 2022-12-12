@@ -29,15 +29,11 @@ class CreateNewUser implements CreatesNewUsers
     {
         // Verificar que el número de pasoporte no exista
         $rol = $input['rol'];
-        $id_pago = $input['id_pago'];
-        $estado_pago = $input['estado_pago'];
-        $telefono = $input['telefono'];
-
         $passport = $input['passport'];
-        $fnacimiento = $input['fnacimiento'];
-        $fnacimiento_entero = strtotime($fnacimiento);
+        $phone = $input['phone'];
+        $servicio = $input['servicio'];
 
-        if($rol == 'cliente' || $rol == 'no_cliente'){
+        if($rol == 'cliente'){
             $user = User::where('passport','LIKE',$passport)->get();
             if(empty($user[0]->passport)){
                 // Verificar si el usuario esta registrado en agclientes
@@ -50,19 +46,8 @@ class CreateNewUser implements CreatesNewUsers
                         'Nombres' => trim($input['nombres']),
                         'Apellidos' => trim($input['apellidos']),
                         'NPasaporte' => trim($input['passport']),
-                        'Sexo' => trim($input['sexo']),
-                        'AnhoNac' => date("Y", $fnacimiento_entero),
-                        'MesNac' => date("m", $fnacimiento_entero),
-                        'DiaNac' => date("d", $fnacimiento_entero),
-                        'LugarNac' => trim($input['cnacimiento']),
-                        'PaisNac' => trim($input['pnacimiento']),
-                        'NombresF' => trim($input['nombre_f']),
-                        'NPasaporteF' => trim($input['pasaporte_f']),
                         'FRegistro' => date('Y-m-d H:i:s'),
-                        'PNacimiento' => trim($input['pnacimiento']),
-                        'LNacimiento' => trim($input['cnacimiento']),
                         'FUpdate' => date('Y-m-d H:i:s'),
-                        'referido' => trim($input['referido']),
                         'Usuario' => trim($input['email']),
                     ]);
                 }
@@ -89,7 +74,7 @@ class CreateNewUser implements CreatesNewUsers
             'passport' => $input['passport'],
             'email_verified_at' => date('Y-m-d H:i:s'),
         ]);
-        if($rol == 'cliente' || $rol == 'no_cliente'){
+        if($rol == 'cliente'){
             //$user->email_verified_at = date('Y-m-d H:i:s');
             //Artisan::call('view:clear');
             // Enviar un correo al cliente indicando que se ha registrado con exito
@@ -109,7 +94,7 @@ class CreateNewUser implements CreatesNewUsers
                 'gcuriel@sefarvzla.com'
             ])->send($mail_sefar);
 
-            return ($rol == 'cliente') ? $user->assignRole('Cliente') : $user->assignRole('ClienteSP');
+            return $user->assignRole('Cliente');
         }else{
             return $user;
         }

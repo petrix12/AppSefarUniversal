@@ -15,17 +15,17 @@
                 <div class="md:flex ms:flex-wrap">
                     {{-- Ejemplo de URL a generar --}}
                     {{-- https://app.universalsefar.com/register?apellidos=XXXX&nombres=XXXX&email=XXXX&dni=XXXX&servicio=XXXX --}}
-                    <div class="px-1 py-2 m-2 flex-1">    {{-- nombres --}}
+                    <div class="px-1 py-2 m-2 flex-1">    {{-- firtsname --}}
                         <div>
-                            <label for="nombres" class="block text-sm font-medium text-gray-700">Nombres</label>
-                            <input value="Fulanito" type="text" name="nombres" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                            <label for="firtsname" class="block text-sm font-medium text-gray-700">Nombres</label>
+                            <input value="Fulanito" type="text" name="firtsname" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                         </div>
                     </div>
 
-                    <div class="px-1 py-2 m-2 flex-1">    {{-- apellidos --}}
+                    <div class="px-1 py-2 m-2 flex-1">    {{-- lastname --}}
                         <div>
-                            <label for="apellidos" class="block text-sm font-medium text-gray-700">Apellidos</label>
-                            <input value="Detal y Borrar" type="text" name="apellidos" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                            <label for="lastname" class="block text-sm font-medium text-gray-700">Apellidos</label>
+                            <input value="Detal y Borrar" type="text" name="lastname" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                         </div>
                     </div>
 
@@ -36,17 +36,24 @@
                         </div>
                     </div>
 
-                    <div class="px-1 py-2 m-2 flex-1">    {{-- dni --}}
+                    <div class="px-1 py-2 m-2 flex-1">    {{-- phone --}}
                         <div>
-                            <label for="dni" class="block text-sm font-medium text-gray-700">DNI</label>
-                            <input value="BORRAR123" type="text" name="dni" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                            <label for="phone" class="block text-sm font-medium text-gray-700">Teléfono</label>
+                            <input value="+584141249753" type="text" name="phone" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                         </div>
                     </div>
 
-                    <div class="px-1 py-2 m-2 flex-1">    {{-- servicio --}}
+                    <div class="px-1 py-2 m-2 flex-1">    {{-- numero_de_pasaporte --}}
                         <div>
-                            <label for="servicio" class="block text-sm font-medium text-gray-700">Servicio</label>
-                            <input value="1" type="text" name="servicio" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                            <label for="numero_de_pasaporte" class="block text-sm font-medium text-gray-700">DNI</label>
+                            <input value="BORRAR123" type="text" name="numero_de_pasaporte" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                        </div>
+                    </div>
+
+                    <div class="px-1 py-2 m-2 flex-1">    {{-- nacionalidad_solicitada --}}
+                        <div>
+                            <label for="nacionalidad_solicitada" class="block text-sm font-medium text-gray-700">Servicio</label>
+                            <input value="1" type="text" name="nacionalidad_solicitada" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                         </div>
                     </div>
                 </div>
