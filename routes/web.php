@@ -94,7 +94,7 @@ Route::group(['middleware' => ['auth'], 'as' => 'clientes.'], function(){
         ->middleware('can:cliente');
     Route::get('pay', [ClienteController::class, 'pay'])->name('pay')
         ->middleware('can:cliente');
-    Route::post('procesarpay', [ClienteController::class, 'procesarpay'])->name('procesarpay')
+    Route::post('pay', [ClienteController::class, 'procesarpay'])->name('procesarpay')
         ->middleware('can:cliente');
 });
 

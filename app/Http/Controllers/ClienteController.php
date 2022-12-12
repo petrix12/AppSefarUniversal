@@ -8,6 +8,7 @@ use App\Models\Agcliente;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Stripe;
 
 class ClienteController extends Controller
 {
@@ -105,7 +106,53 @@ class ClienteController extends Controller
         return view('clientes.pay');
     }
 
-    public function procesarpay() {
-        
+    public function procesarpay(Request $request) {
+        //Lo que va dentro de la Funcion
+        Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+
+        $variable = json_decode(json_encode($request->all()),true);
+
+        print(auth()->user()->servicio);
+
+        $servicio= array();
+
+        $servicio["id"]=auth()->user()->servicio;
+        $servicio["name"]="Nacionalidad Española por origen Sefardí";
+
+        if(auth()->user()->servicio=="Española LMD"){
+            $servicio["name"]="Ley de Memoria Democratica";
+            $servicio["price"]=25;
+        } else {
+            if(auth()->user()->servicio=="Italiana"){
+                $servicio["name"]="Nacionalidad Italiana";
+            } else if(auth()->user()->servicio=="Española Sefardi"){
+                $servicio["name"]="Nacionalidad Española por origen Sefardí";
+            } else if(auth()->user()->servicio=="Portuguesa Sefardi"){
+                $servicio["name"]="Nacionalidad Portuguesa por origen Sefardí";
+            }
+            $servicio["price"]=50;
+        } 
+
+        return false();
+
+        $customer = Stripe\Customer::create(array(
+            "email" => auth()->user()->email,
+            "name" => $variable["namecard"],
+            "source" => $request->stripeToken
+        ));
+
+        $charged = Stripe\Charge::create ([
+            "amount" => $servicio["price"]*100,
+            "currency" => "eur",
+            "customer" => $customer->id,
+            "description" => "Sefar Universal: Inicia tu proceso (". $servicio["name"] .")"
+        ]);
+
+        if ($charged->status == "succeeded"){
+            //Actualizar rol, o actualizar base de datos para decir que el usuario ya pagó
+            return redirect()->route('clientes.getinfo')->with("status","exito");
+        } else {
+            return redirect()->route('clientes.pay')->with("status","fracaso");
+        }
     }
 }

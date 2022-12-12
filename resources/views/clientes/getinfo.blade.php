@@ -7,6 +7,17 @@
 @stop
 
 @section('content')
+    @if(session("status")=="exito")
+        <script type="text/javascript">
+            Swal.fire({
+                icon: 'success',
+                title: '¡Pago procesado correctamente!',
+                showConfirmButton: false,
+                timer: 2500
+            });
+        </script>
+    @endif
+
     <div class="container m-3">
         {{-- Ley MD --}}
         {{-- <script charset="utf-8" type="text/javascript" src="//js.hsforms.net/forms/embed/v2.js"></script>

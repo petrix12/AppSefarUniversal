@@ -24,6 +24,7 @@
         "livewire/livewire": "^2.0",
         "realrashid/sweet-alert": "^3.2",
         "spatie/laravel-permission": "^4.0",
+        "stripe/stripe-php": "^10.1",
         "uxweb/sweet-alert": "^2.0"
     },
     "require-dev": {
