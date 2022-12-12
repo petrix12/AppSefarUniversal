@@ -30,8 +30,6 @@ class CreateNewUser implements CreatesNewUsers
         // Verificar que el número de pasoporte no exista
         $rol = $input['rol'];
         $passport = $input['passport'];
-        $phone = $input['phone'];
-        $servicio = $input['servicio'];
 
         if($rol == 'cliente'){
             $user = User::where('passport','LIKE',$passport)->get();
@@ -73,6 +71,8 @@ class CreateNewUser implements CreatesNewUsers
             'password' => Hash::make($input['password']),
             'passport' => $input['passport'],
             'email_verified_at' => date('Y-m-d H:i:s'),
+            'phone' => $input['phone'],
+            'servicio' => $input['servicio']
         ]);
         if($rol == 'cliente'){
             //$user->email_verified_at = date('Y-m-d H:i:s');
