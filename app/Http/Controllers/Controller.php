@@ -70,18 +70,7 @@ class Controller extends BaseController
         // Clientes corrientes
         if(Auth::user()->hasRole('Cliente')){
             $IDCliente = Auth::user()->passport;
-            return view('arboles.tree', compact('IDCliente'));
-        }
-
-        // Clientes sin completar registro
-        if(Auth::user()->hasRole('ClienteSCP')){
-            $IDCliente = Auth::user()->passport;
-            return view('clientes.getinfo', compact('IDCliente'));
-        }
-
-        // Clientes sin pagar
-        if(Auth::user()->hasRole('ClienteSP')){
-            $IDCliente = Auth::user()->passport;
+            /// return view('arboles.tree', compact('IDCliente'));
             return view('clientes.pay', compact('IDCliente'));
         }
 

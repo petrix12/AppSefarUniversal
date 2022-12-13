@@ -53,7 +53,7 @@
                     <div class="px-1 py-2 m-2 flex-1">    {{-- nacionalidad_solicitada --}}
                         <div>
                             <label for="nacionalidad_solicitada" class="block text-sm font-medium text-gray-700">Servicio</label>
-                            <input value="1" type="text" name="nacionalidad_solicitada" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                            <input value="Española LMD" type="text" name="nacionalidad_solicitada" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                         </div>
                     </div>
                 </div>
