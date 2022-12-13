@@ -112,8 +112,6 @@ class ClienteController extends Controller
 
         $variable = json_decode(json_encode($request->all()),true);
 
-        print(auth()->user()->servicio);
-
         $servicio= array();
 
         $servicio["id"]=auth()->user()->servicio;
@@ -131,13 +129,11 @@ class ClienteController extends Controller
                 $servicio["name"]="Nacionalidad Portuguesa por origen Sefardí";
             }
             $servicio["price"]=50;
-        } 
-
-        return false();
+        }
 
         $customer = Stripe\Customer::create(array(
             "email" => auth()->user()->email,
-            "name" => $variable["namecard"],
+            "name" => $request->nameoncard,
             "source" => $request->stripeToken
         ));
 

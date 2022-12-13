@@ -4,6 +4,7 @@
 
 @section('content_header')
     <h1>Completar información</h1>
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @stop
 
 @section('content')

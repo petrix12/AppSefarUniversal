@@ -136,7 +136,7 @@
                     <h4 style="padding:10px 0px; color:#12313a"><b>Inicia tu Proceso: {{$servicio["name"]}}</b></h4>
 
                     <h4 style="padding:10px 0px 2px 0px; color:#12313a">Pago: <b>{{$servicio["price"]}}€</b></h4> 
-                    
+
                     <input type="hidden" id="idproducto" name="idproducto" value="{{$servicio['id']}}">
                 </div>
             </div>
