@@ -15,10 +15,10 @@
                 <div class="md:flex ms:flex-wrap">
                     {{-- Ejemplo de URL a generar --}}
                     {{-- https://app.universalsefar.com/register?apellidos=XXXX&nombres=XXXX&email=XXXX&dni=XXXX&servicio=XXXX --}}
-                    <div class="px-1 py-2 m-2 flex-1">    {{-- firtsname --}}
+                    <div class="px-1 py-2 m-2 flex-1">    {{-- firstname --}}
                         <div>
-                            <label for="firtsname" class="block text-sm font-medium text-gray-700">Nombres</label>
-                            <input value="Fulanito" type="text" name="firtsname" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                            <label for="firstname" class="block text-sm font-medium text-gray-700">Nombres</label>
+                            <input value="Fulanito" type="text" name="firstname" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                         </div>
                     </div>
 

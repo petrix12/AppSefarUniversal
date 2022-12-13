@@ -12,13 +12,13 @@
 
     // Unir nombres y apellidos
     $name = null;
-    if (!empty($_GET['firtsname'])){
+    if (!empty($_GET['firstname'])){
         if(is_null($apellidos)){
-            $name = $_GET['firtsname'];
+            $name = $_GET['firstname'];
         } else {
-            $name = $_GET['firtsname'].' '.$_GET['lastname'];
+            $name = $_GET['firstname'].' '.$_GET['lastname'];
         }
-        $nombres = $_GET['firtsname'];
+        $nombres = $_GET['firstname'];
     }else{
         $nombres = null;
     }
