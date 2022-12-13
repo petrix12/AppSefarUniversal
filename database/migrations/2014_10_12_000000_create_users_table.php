@@ -26,6 +26,7 @@ class CreateUsersTable extends Migration
             $table->string('password_md5')->nullable();
             $table->string('phone')->nullable();
             $table->string('servicio')->nullable();
+            $table->integer('pay')->nullable();
 
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
