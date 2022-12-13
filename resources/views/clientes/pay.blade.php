@@ -7,6 +7,7 @@
 @stop
 
 @section('content')
+
     @if(session("status")=="exito")
         <script type="text/javascript">
             Swal.fire({
@@ -17,6 +18,7 @@
             });
         </script>
     @endif
+    
     <form action="" method="POST" class="require-validation" data-cc-on-file="false" data-stripe-publishable-key="{{ env('STRIPE_KEY') }}" id="payment-form">
         <div class="container p-8 row" style="display:flex;">
             <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
@@ -198,9 +200,155 @@
             --------------------------------------------*/
             function stripeResponseHandler(status, response) {
                 if (response.error) {
+                    var error = "";
+
+                    switch(response.error.code){
+                        case "authentication_required":
+                            error = "La tarjeta fue rechazada porque la transacción requiere autenticación.";
+                            break;
+                        case "approve_with_id":
+                            error = "No se puede autorizar el pago.";
+                            break;
+                        case "call_issuer":
+                            error = "La tarjeta fue rechazada por un motivo desconocido.";
+                            break;
+                        case "card_not_supported":
+                            error = "La tarjeta no admite este tipo de compra.";
+                            break;
+                        case "card_velocity_exceeded":
+                            error = "El cliente ha superado el saldo o límite de crédito disponible en su tarjeta.";
+                            break;
+                        case "currency_not_supported":
+                            error = "La tarjeta no admite la moneda especificada.";
+                            break;
+                        case "do_not_honor":
+                            error = "La tarjeta fue rechazada por un motivo desconocido.";
+                            break;
+                        case "do_not_try_again":
+                            error = "La tarjeta fue rechazada por un motivo desconocido.";
+                            break;
+                        case "duplicate_transaction":
+                            error = "Recientemente se envió una transacción con la misma cantidad e información de la tarjeta de crédito.";
+                            break;
+                        case "expired_card":
+                            error = "La tarjeta ha caducado.";
+                            break;
+                        case "fraudulent":
+                            error = "El pago fue rechazado porque Stripe sospecha que es fraudulento.";
+                            break;
+                        case "generic_decline":
+                            error = "La tarjeta fue rechazada por un motivo desconocido o posiblemente provocada por una regla de pago bloqueada .";
+                            break;
+                        case "incorrect_number":
+                            error = "El número de tarjeta es incorrecto.";
+                            break;
+                        case "incorrect_cvc":
+                            error = "El número CVC es incorrecto.";
+                            break;
+                        case "incorrect_pin":
+                            error = "El PIN ingresado es incorrecto. Este código de rechazo solo se aplica a los pagos realizados con un lector de tarjetas.";
+                            break;
+                        case "incorrect_zip":
+                            error = "El código postal es incorrecto.";
+                            break;
+                        case "insufficient_funds":
+                            error = "La tarjeta no tiene fondos suficientes para completar la compra.";
+                            break;
+                        case "invalid_account":
+                            error = "La tarjeta o la cuenta a la que está conectada la tarjeta no es válida.";
+                            break;
+                        case "invalid_amount":
+                            error = "El monto del pago no es válido o excede el monto permitido.";
+                            break;
+                        case "invalid_cvc":
+                            error = "El número CVC es incorrecto.";
+                            break;
+                        case "invalid_expiry_month":
+                            error = "El mes de vencimiento no es válido.";
+                            break;
+                        case "invalid_expiry_year":
+                            error = "El año de caducidad no es válido.";
+                            break;
+                        case "invalid_number":
+                            error = "El número de tarjeta es incorrecto.";
+                            break;
+                        case "invalid_pin":
+                            error = "El PIN ingresado es incorrecto. Este código de rechazo solo se aplica a los pagos realizados con un lector de tarjetas.";
+                            break;
+                        case "issuer_not_available":
+                            error = "No se pudo contactar al emisor de la tarjeta, por lo que no se pudo autorizar el pago.";
+                            break;
+                        case "lost_card":
+                            error = "El pago fue rechazado porque la tarjeta se reportó perdida.";
+                            break;
+                        case "merchant_blacklist":
+                            error = "El pago fue rechazado porque coincide con un valor en la lista de bloqueo del usuario de Stripe.";
+                            break;
+                        case "new_account_information_available":
+                            error = "La tarjeta o la cuenta a la que está conectada la tarjeta no es válida.";
+                            break;
+                        case "no_action_taken":
+                            error = "La tarjeta fue rechazada por un motivo desconocido.";
+                            break;
+                        case "not_permitted":
+                            error = "El pago no está permitido.";
+                            break;
+                        case "offline_pin_required":
+                            error = "La tarjeta fue rechazada porque requiere un PIN.";
+                            break;
+                        case "online_or_offline_pin_required":
+                            error = "La tarjeta fue rechazada porque requiere un PIN.";
+                            break;
+                        case "pickup_card":
+                            error = "El cliente no puede usar esta tarjeta para realizar este pago (es posible que haya sido reportada como perdida o robada).";
+                            break;
+                        case "pin_try_exceeded":
+                            error = "Se superó el número permitido de intentos de PIN.";
+                            break;
+                        case "processing_error":
+                            error = "Ocurrió un error al procesar la tarjeta.";
+                            break;
+                        case "reenter_transaction":
+                            error = "El emisor no pudo procesar el pago por un motivo desconocido.";
+                            break;
+                        case "restricted_card":
+                            error = "El cliente no puede usar esta tarjeta para realizar este pago (es posible que haya sido reportada como perdida o robada).";
+                            break;
+                        case "revocation_of_all_authorizations":
+                            error = "La tarjeta fue rechazada por un motivo desconocido";
+                            break;
+                        case "revocation_of_authorization":
+                            error = "La tarjeta fue rechazada por un motivo desconocido.";
+                            break;
+                        case "security_violation":
+                            error = "La tarjeta fue rechazada por un motivo desconocido.";
+                            break;
+                        case "service_not_allowed":
+                            error = "La tarjeta fue rechazada por un motivo desconocido.";
+                            break;
+                        case "stolen_card":
+                            error = "El pago fue rechazado porque la tarjeta fue reportada como robada.";
+                            break;
+                        case "stop_payment_order":
+                            error = "La tarjeta fue rechazada por un motivo desconocido.";
+                            break;
+                        case "testmode_decline":
+                            error = "Se utilizó un número de tarjeta de prueba de Stripe.";
+                            break;
+                        case "transaction_not_allowed":
+                            error = "La tarjeta fue rechazada por un motivo desconocido.";
+                            break;
+                        case "try_again_later":
+                            error = "La tarjeta fue rechazada por un motivo desconocido.";
+                            break;
+                        case "withdrawal_count_limit_exceeded":
+                            error = "El cliente ha superado el saldo o límite de crédito disponible en su tarjeta.";
+                            break;
+                    }
+                    
                     Swal.fire({
                         icon: 'error',
-                        title: response.error.message,
+                        title: error,
                         showConfirmButton: false,
                         timer: 2500
                     });

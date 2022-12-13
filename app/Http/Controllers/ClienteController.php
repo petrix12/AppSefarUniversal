@@ -9,10 +9,18 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Stripe;
+use Illuminate\Support\Facades\DB;
 
 class ClienteController extends Controller
 {
     public function tree(){
+        if (Auth::user()->roles->first()->name == "Cliente"){
+            if (Auth::user()->pay==1){
+                return redirect()->route('clientes.getinfo');
+            } else if(Auth::user()->pay==0){
+                return redirect()->route('clientes.pay');
+            }
+        }
         $IDCliente = Auth::user()->passport;
         return view('arboles.tree', compact('IDCliente'));
     }
@@ -99,10 +107,26 @@ class ClienteController extends Controller
     }
 
     public function getinfo(){
+        if (Auth::user()->roles->first()->name == "Cliente"){
+            if (Auth::user()->pay==2){
+                $IDCliente = Auth::user()->passport;
+                return redirect()->route('arboles.tree', compact('IDCliente'));
+            } else if(Auth::user()->pay==0){
+                return redirect()->route('clientes.pay');
+            }
+        }
         return view('clientes.getinfo');
     }
 
     public function pay(){
+        if (Auth::user()->roles->first()->name == "Cliente"){
+            if (Auth::user()->pay==2){
+                $IDCliente = Auth::user()->passport;
+                return redirect()->route('arboles.tree', compact('IDCliente'));
+            } else if(Auth::user()->pay==1){
+                return redirect()->route('clientes.getinfo');
+            }
+        }
         return view('clientes.pay');
     }
 
@@ -146,6 +170,7 @@ class ClienteController extends Controller
 
         if ($charged->status == "succeeded"){
             //Actualizar rol, o actualizar base de datos para decir que el usuario ya pagó
+            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1]);
             return redirect()->route('clientes.getinfo')->with("status","exito");
         } else {
             return redirect()->route('clientes.pay')->with("status","fracaso");

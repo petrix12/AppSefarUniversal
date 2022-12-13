@@ -68,10 +68,15 @@ class Controller extends BaseController
         }
 
         // Clientes corrientes
-        if(Auth::user()->hasRole('Cliente')){
-            $IDCliente = Auth::user()->passport;
-            /// return view('arboles.tree', compact('IDCliente'));
-            return view('clientes.pay', compact('IDCliente'));
+        if (Auth::user()->hasRole("Cliente")){
+            if(Auth::user()->pay==0){
+                return redirect()->route('clientes.pay');
+            } else if (Auth::user()->pay==1){
+                return redirect()->route('clientes.getinfo');
+            } else {
+                $IDCliente = Auth::user()->passport;
+                return view('arboles.tree', compact('IDCliente'));
+            }
         }
 
         $countries = Country::where('pais','!=','aanull')

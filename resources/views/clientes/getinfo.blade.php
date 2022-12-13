@@ -8,6 +8,7 @@
 @stop
 
 @section('content')
+
     @if(session("status")=="exito")
         <script type="text/javascript">
             Swal.fire({
