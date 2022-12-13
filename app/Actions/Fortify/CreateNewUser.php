@@ -72,7 +72,8 @@ class CreateNewUser implements CreatesNewUsers
             'passport' => $input['passport'],
             'email_verified_at' => date('Y-m-d H:i:s'),
             'phone' => $input['phone'],
-            'servicio' => $input['servicio']
+            'servicio' => $input['servicio'],
+            'pay' => 0
         ]);
         if($rol == 'cliente'){
             //$user->email_verified_at = date('Y-m-d H:i:s');
