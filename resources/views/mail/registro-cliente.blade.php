@@ -69,10 +69,13 @@
                                             En caso de requerir alguna información adicional relacionada con este asunto
                                             o cualquier otro relacionado con el proceso, por favor no dude en comunicarse con nosotros por el
                                             correo electrónico <strong><a href="mailto:info@sefaruniversal.com">info@sefaruniversal.com</a></strong> y/o por los siguientes números de teléfono de atención al cliente:
-                                            <p>USA: <a href="tel:+16032621727">+1 603 2621727</a></p>
-                                            <p>España: <a href="tel:+34911980993">+34 911 980993</a></p>
-                                            <p>Venezuela: <a href="tel:+582127201170">+58 212 7201170</a></p>
-                                            <p>Colombia: <a href="tel:+570353195843">+57 035 3195843</a></p>
+                                            <br>
+                                            <ul>
+                                                <li>USA: <a href="tel:+16032621727">+1 603 2621727</a></li>
+                                                <li>España: <a href="tel:+34911980993">+34 911 980993</a></li>
+                                                <li>Venezuela: <a href="tel:+582127201170">+58 212 7201170</a></li>
+                                                <li>Colombia: <a href="tel:+570353195843">+57 035 3195843</a></li>
+                                            </ul>
                                         </p>
                                         <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
                                             Atención de lunes a sábado las 24hrs.
@@ -80,10 +83,13 @@
                                         <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
                                             Huso horario Colombia (GMT-5).
                                         </p>
+                                        <br>
                                         <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
                                             Atentamente,
                                             <br>
                                             Departamento de Atención al Cliente.
+                                            <br>
+                                            <img src="https://raw.githubusercontent.com/petrix12/imagenes2022/main/Sefar/unnamed.png" alt="Logo Sefar" height="60">
                                         </p>
                                     </td>
                                 </tr>
