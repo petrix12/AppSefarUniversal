@@ -344,6 +344,9 @@
                         case "withdrawal_count_limit_exceeded":
                             error = "El cliente ha superado el saldo o límite de crédito disponible en su tarjeta.";
                             break;
+                        default:
+                            error = response.error.code;
+                            break;
                     }
                     
                     Swal.fire({
