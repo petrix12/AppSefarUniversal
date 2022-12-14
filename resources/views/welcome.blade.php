@@ -4,22 +4,6 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <!-- Meta tags PWA -->
-        {{-- <meta name="theme-color" content="#333333">
-        <meta name="MobileOptimized" content="width">
-        <meta name="HandheldFriendly" content="true">
-        <meta name="apple-mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"> --}}
-
-        <!-- Iconos PWA -->
-        {{-- <link rel="shortcut icon" href="{{ asset("./Logo.png") }}" type="image/png">
-        <link rel="apple-touch-icon" href="{{ asset("./Logo.png") }}" type="image/png">
-        <link rel="apple-touch-startup-image" href="{{ asset("./Logo.png") }}" type="image/png"> --}}
-
-        <!-- Manifest PWA -->
-        {{-- <link rel="manifest" href="{{ asset("./manifest.json") }}"> --}}
-
-
         <title>Laravel</title>
 
         {{-- Inicio - Personalización URL --}}
