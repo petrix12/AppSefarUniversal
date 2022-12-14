@@ -151,11 +151,6 @@ class ClienteController extends Controller
         */
 
         DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]); // no borrar esta linea
-
-        print_r($input);
-        /*return response()->json([
-            'status' => 'success'
-        ]);*/
     }
 
     public function pay(){

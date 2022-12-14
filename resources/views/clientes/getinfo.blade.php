@@ -121,7 +121,14 @@
                                     data
                                 },
                                 success: function(response){
-                                    console.log(response);
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: '¡Registro completado!',
+                                        showDenyButton: false,
+                                        confirmButtonText: 'Ir a mi arbol',
+                                    }).then((result) => {
+                                        window.location.href = "/tree";
+                                    });
                                 }
 
                             });
@@ -147,8 +154,34 @@
                     },
                     onFormSubmit: function($form){
                         setTimeout( function() {
-                            var formData = $form.serialize();
-                            console.log(formData);
+                            var formData = $form;
+
+                            var data = formData.serializeArray();
+
+                            $.ajaxSetup({
+                                headers: {
+                                    'X-CSRF-TOKEN': $("input[name='_token']").val()
+                                }
+                            });
+
+                            $.ajax({
+                                url: '{{ route("procesargetinfo") }}',
+                                method: 'POST',
+                                data: {
+                                    data
+                                },
+                                success: function(response){
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: '¡Registro completado!',
+                                        showDenyButton: false,
+                                        confirmButtonText: 'Ir a mi arbol',
+                                    }).then((result) => {
+                                        window.location.href = "/tree";
+                                    });
+                                }
+
+                            });
                         }, 250 );
                     }
                 });
