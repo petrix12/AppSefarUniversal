@@ -208,7 +208,7 @@ class ClienteController extends Controller
             DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1]);
             return redirect()->route('clientes.getinfo')->with("status","exito");
         } else {
-            return redirect()->route('clientes.pay')->with("status","fracaso");
+            return redirect("/pay")->with("status","fracaso");
         }
     }
 }
