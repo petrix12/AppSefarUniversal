@@ -469,7 +469,7 @@ return [
                     'icon'          => 'fas fa-user-plus',
                     'icon_color'    => 'yellow',
                     'route'         => 'clientes.getinfo',
-                    'can'           => 'cliente',
+                    'can'           => 'finish.register',
                 ],
                 [
                     'text'          => 'Cargar árbol',

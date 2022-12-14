@@ -15,9 +15,7 @@ class ClienteController extends Controller
 {
     public function tree(){
         if (Auth::user()->roles->first()->name == "Cliente"){
-            if (Auth::user()->pay==1){
-                return redirect()->route('clientes.getinfo');
-            } else if(Auth::user()->pay==0){
+            if(Auth::user()->pay==0){
                 return redirect()->route('clientes.pay');
             }
         }
@@ -108,9 +106,7 @@ class ClienteController extends Controller
 
     public function getinfo(){
         if (Auth::user()->roles->first()->name == "Cliente"){
-            if (Auth::user()->pay==2){
-                return redirect('/tree');
-            } else if(Auth::user()->pay==0){
+            if(Auth::user()->pay==0){
                 return redirect()->route('clientes.pay');
             }
         }
@@ -151,6 +147,7 @@ class ClienteController extends Controller
         */
 
         DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]); // no borrar esta linea
+        auth()->user()->revokePermissionTo('finish.register');
     }
 
     public function pay(){
@@ -190,26 +187,28 @@ class ClienteController extends Controller
             $servicio["price"]=50;
         }
 
-        $customer = Stripe\Customer::create(array(
-            "email" => auth()->user()->email,
-            "name" => $request->nameoncard,
-            "source" => $request->stripeToken
-        ));
+        try {
+            $customer = Stripe\Customer::create(array(
+                "email" => auth()->user()->email,
+                "name" => $request->nameoncard,
+                "source" => $request->stripeToken
+            ));
 
-        $charged = Stripe\Charge::create ([
-            "amount" => $servicio["price"]*100,
-            "currency" => "eur",
-            "customer" => $customer->id,
-            "description" => "Sefar Universal: Inicia tu proceso (". $servicio["name"] .")"
-        ]);
+            $charged = Stripe\Charge::create ([
+                "amount" => $servicio["price"]*100,
+                "currency" => "eur",
+                "customer" => $customer->id,
+                "description" => "Sefar Universal: Inicia tu proceso (". $servicio["name"] .")"
+            ]);
 
-        if ($charged->status == "succeeded"){
-            //Actualizar rol, o actualizar base de datos para decir que el usuario ya pagó
-            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1]);
-            auth()->user()->revokePermissionTo('pay.services');
-            return redirect()->route('clientes.getinfo')->with("status","exito");
-        } else {
-            return redirect("/pay")->with("status","fracaso");
+            if ($charged->status == "succeeded"){
+                //Actualizar rol, o actualizar base de datos para decir que el usuario ya pagó
+                DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1]);
+                auth()->user()->revokePermissionTo('pay.services');
+                return redirect()->route('clientes.getinfo')->with("status","exito");
+            } 
+        } catch (Exception $e) {
+            return redirect("/pay")->with("status", "error");
         }
     }
 }
