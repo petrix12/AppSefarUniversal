@@ -206,6 +206,7 @@ class ClienteController extends Controller
         if ($charged->status == "succeeded"){
             //Actualizar rol, o actualizar base de datos para decir que el usuario ya pagó
             DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1]);
+            auth()->user()->revokePermissionTo('pay.services');
             return redirect()->route('clientes.getinfo')->with("status","exito");
         } else {
             return redirect("/pay")->with("status","fracaso");

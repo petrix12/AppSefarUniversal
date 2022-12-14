@@ -5,6 +5,7 @@
 @section('content_header')
     <h1>Realizar pago</h1>
 @stop
+<div id="ajaxload" style="background-color: rgba(0, 0, 0, 0.4); position: absolute; z-index: 1000; display: none; width: 100%; height: 100%;"></div>
 
 @section('content')
 
@@ -146,6 +147,8 @@
         </div>
     </form>
 
+    
+
     <script type="text/javascript" src="//js.stripe.com/v2/"></script>
     
     <script type="text/javascript">
@@ -161,6 +164,9 @@
             var $form = $(".require-validation");
              
             $('form.require-validation').bind('submit', function(e) {
+
+                $("#ajaxload").show();                
+
                 var $form = $(".require-validation"),
                 inputSelector = ['input[type=email]', 'input[type=password]',
                                  'input[type=text]', 'input[type=file]',
@@ -200,6 +206,7 @@
             --------------------------------------------*/
             function stripeResponseHandler(status, response) {
                 if (response.error) {
+                    $("#ajaxload").hide();  
                     var error = "";
 
                     switch(response.error.code){
