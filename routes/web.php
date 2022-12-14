@@ -94,11 +94,13 @@ Route::group(['middleware' => ['auth'], 'as' => 'clientes.'], function(){
         ->middleware('can:cliente');
     Route::get('pay', [ClienteController::class, 'pay'])->name('pay')
         ->middleware('can:cliente');
-    Route::post('pay', [ClienteController::class, 'procesarpay'])->name('procesarpay')
-        ->middleware('can:cliente');
+    
 });
 
 Route::post('getinfo', [ClienteController::class, 'procesargetinfo'])->name('procesargetinfo')
+        ->middleware('can:cliente');
+
+Route::post('pay', [ClienteController::class, 'procesarpay'])->name('procesarpay')
         ->middleware('can:cliente');
 
 // Grupo de rutas para realizar pruebas
