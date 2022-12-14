@@ -109,8 +109,7 @@ class ClienteController extends Controller
     public function getinfo(){
         if (Auth::user()->roles->first()->name == "Cliente"){
             if (Auth::user()->pay==2){
-                $IDCliente = Auth::user()->passport;
-                return redirect()->route('arboles.tree', compact('IDCliente'));
+                return redirect('/tree');
             } else if(Auth::user()->pay==0){
                 return redirect()->route('clientes.pay');
             }
@@ -118,11 +117,47 @@ class ClienteController extends Controller
         return view('clientes.getinfo');
     }
 
+    public function procesargetinfo(Request $request){
+        /*
+            
+            Aqui recibo y organizo el arreglo que viene del Jquery
+
+        */
+
+        $inputdata = json_decode(json_encode($request->all()),true);
+        
+        $input_u = $inputdata["data"];
+
+        $input = array();
+
+        foreach ($input_u as $key => $value) {
+            if($input_u[$key]["name"]!="hs_context") {
+                $input[$input_u[$key]["name"]] = $input_u[$key]["value"];
+            }
+        }
+
+        /*
+
+            Aquí actualizo la base de datos
+
+        */
+
+
+
+        /*
+
+            Fin de la actualización en Base de Datos
+
+        */
+
+        DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]); // no borrar esta linea
+    }
+
     public function pay(){
         if (Auth::user()->roles->first()->name == "Cliente"){
             if (Auth::user()->pay==2){
                 $IDCliente = Auth::user()->passport;
-                return redirect()->route('arboles.tree', compact('IDCliente'));
+                return redirect('/tree');
             } else if(Auth::user()->pay==1){
                 return redirect()->route('clientes.getinfo');
             }
