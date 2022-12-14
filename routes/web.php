@@ -98,6 +98,9 @@ Route::group(['middleware' => ['auth'], 'as' => 'clientes.'], function(){
         ->middleware('can:cliente');
 });
 
+Route::post('getinfo', [ClienteController::class, 'procesargetinfo'])->name('procesargetinfo')
+        ->middleware('can:cliente');
+
 // Grupo de rutas para realizar pruebas
 Route::group(['middleware' => ['auth'], 'as' => 'test.'], function(){
     // Pruebas con Flex de Tailwind
