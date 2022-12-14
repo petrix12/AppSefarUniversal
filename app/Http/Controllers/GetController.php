@@ -20,7 +20,7 @@ class GetController extends Controller
             <small>
                 <p><strong>http://sefar.test/register</strong>'.$parametros.'</p>
                 <br><hr><br>
-                <p><strong>https://app.universalsefar.com/register</strong>'.$parametros.'</p>
+                <p><strong>https://app.sefaruniversal.com/register</strong>'.$parametros.'</p>
                 <br><hr><br>
                 <p><strong>http://127.0.0.1:8050/register</strong>'.$parametros.'</p>
             </small>'

@@ -95,7 +95,7 @@ class CreateNewUser implements CreatesNewUsers
                 'gcuriel@sefarvzla.com'
             ])->send($mail_sefar);
 
-            return $user->assignRole('Cliente');
+            return $user->assignRole('Cliente')->givePermissionTo('pay.services');
         }else{
             return $user;
         }
