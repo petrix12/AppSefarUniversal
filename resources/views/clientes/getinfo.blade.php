@@ -121,14 +121,7 @@
                                     data
                                 },
                                 success: function(response){
-                                    Swal.fire({
-                                        icon: 'success',
-                                        title: '¡Registro completado!',
-                                        showDenyButton: false,
-                                        confirmButtonText: 'Ir a mi arbol',
-                                    }).then((result) => {
-                                        window.location.href = "/tree";
-                                    });
+                                    window.location.href = "/tree";
                                 }
 
                             });
