@@ -173,10 +173,19 @@
                         } else {
                             if(auth()->user()->servicio=="Italiana"){
                                 $servicio["name"]="Nacionalidad Italiana";
+
                             } else if(auth()->user()->servicio=="Española Sefardi"){
                                 $servicio["name"]="Nacionalidad Española por origen Sefardí";
+
                             } else if(auth()->user()->servicio=="Portuguesa Sefardi"){
                                 $servicio["name"]="Nacionalidad Portuguesa por origen Sefardí";
+
+                            } else if(auth()->user()->servicio=="Portuguesa Sefardi - Subsanación") {
+                                $servicio["name"]="Subsanación de Expedientes (Portugal)";
+
+                            } else if(auth()->user()->servicio=="Española Sefardi - Subsanación") {
+                                $servicio["name"]="Subsanación de Expedientes (España)";
+                                
                             }
                             $servicio["price"]=50;
                         }
