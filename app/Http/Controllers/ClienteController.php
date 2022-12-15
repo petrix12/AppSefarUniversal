@@ -168,6 +168,8 @@ class ClienteController extends Controller
         $cupones = ["BYTR4563PO", "BYTR1946RA"];
 
         if( in_array($data["cpn"], $cupones)){
+            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1]);
+                auth()->user()->revokePermissionTo('pay.services');
             return response()->json([
                 'status' => "true"
             ]);
@@ -202,12 +204,6 @@ class ClienteController extends Controller
                 $servicio["name"]="Nacionalidad Portuguesa por origen Sefardí";
             }
             $servicio["price"]=50;
-        }
-
-        if( in_array($variable["coupon"], $cupones)){
-            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1]);
-                auth()->user()->revokePermissionTo('pay.services');
-            return redirect()->route('clientes.getinfo')->with("status","exito");
         }
 
         try {
