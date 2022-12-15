@@ -33,6 +33,10 @@
         <x-jet-validation-errors class="mb-4" />
 
         <form method="POST" action="{{ route('register') }}">
+            <center>
+                <h1 style="font-size: 20px; margin: 5px 0px;">Crea tu contraseña</h1>
+                
+            </center>
             @csrf
 
             {{-- Campos ocultos --}}
@@ -94,7 +98,7 @@
                 </a>
 
                 <x-jet-button class="ml-4 cfrSefar">
-                    {{ __('Register') }}
+                    Continuar
                 </x-jet-button>
             </div>
         </form>
