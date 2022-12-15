@@ -115,13 +115,13 @@ class ClienteController extends Controller
 
     public function procesargetinfo(Request $request){
         /*
-            
+
             Aqui recibo y organizo el arreglo que viene del Jquery
 
         */
 
         $inputdata = json_decode(json_encode($request->all()),true);
-        
+
         $input_u = $inputdata["data"];
 
         $input = array();
@@ -138,7 +138,7 @@ class ClienteController extends Controller
 
         */
 
-
+        
 
         /*
 
@@ -164,7 +164,7 @@ class ClienteController extends Controller
 
     public function revisarcupon(Request $request){
         $data = json_decode(json_encode($request->all()),true);
-        
+
         $cupones = ["BYTR4563PO", "BYTR1946RA"];
 
         if( in_array($data["cpn"], $cupones)){
@@ -229,7 +229,7 @@ class ClienteController extends Controller
                 DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1]);
                 auth()->user()->revokePermissionTo('pay.services');
                 return redirect()->route('clientes.getinfo')->with("status","exito");
-            } 
+            }
         } catch (Exception $e) {
             return redirect("/pay")->with("status", "error");
         }
