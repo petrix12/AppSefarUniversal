@@ -123,7 +123,6 @@
                                 success: function(response){
                                     window.location.href = "/tree";
                                 }
-
                             });
                         }, 250 );
                     }
