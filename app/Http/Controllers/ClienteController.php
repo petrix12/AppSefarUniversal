@@ -181,7 +181,6 @@ class ClienteController extends Controller
     }
 
     public function procesarpay(Request $request) {
-        $cupones = ["BYTR4563PO", "BYTR1946RA"];
         //Lo que va dentro de la Funcion
         Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
 
