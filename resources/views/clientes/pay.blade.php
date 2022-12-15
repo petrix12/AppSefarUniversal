@@ -71,6 +71,7 @@
                                 $("#ajaxload").hide();
                                 if(response["status"]=="true"){
                                     $("#coupon").attr('readonly', true);
+                                    $("#valcoupon").attr('disabled', true);
                                     $("#priced").html("0€");
                                     Swal.fire({
                                         icon: 'success',
