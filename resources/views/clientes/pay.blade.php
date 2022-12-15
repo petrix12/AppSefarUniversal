@@ -68,18 +68,13 @@
                                 cpn: $("#coupon").val()
                             },
                             success: function(response){
-                                $("#ajaxload").hide();
                                 if(response["status"]=="true"){
                                     $("#coupon").attr('readonly', true);
                                     $("#valcoupon").attr('disabled', true);
                                     $("#priced").html("0€");
-                                    Swal.fire({
-                                        icon: 'success',
-                                        title: 'Cupón aplicado correctamente',
-                                        showConfirmButton: false,
-                                        timer: 2500
-                                    });
+                                    window.location.href = "/getinfo";
                                 } else {
+                                    $("#ajaxload").hide();
                                     Swal.fire({
                                         icon: 'error',
                                         title: 'Cupón inválido',
