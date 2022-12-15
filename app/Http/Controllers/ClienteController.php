@@ -162,7 +162,24 @@ class ClienteController extends Controller
         return view('clientes.pay');
     }
 
+    public function revisarcupon(Request $request){
+        $data = json_decode(json_encode($request->all()),true);
+        
+        $cupones = ["BYTR4563PO", "BYTR1946RA"];
+
+        if( in_array($data["cpn"], $cupones)){
+            return response()->json([
+                'status' => "true"
+            ]);
+        } else {
+            return response()->json([
+                'status' => "false"
+            ]);
+        }
+    }
+
     public function procesarpay(Request $request) {
+        $cupones = ["BYTR4563PO", "BYTR1946RA"];
         //Lo que va dentro de la Funcion
         Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
 
@@ -185,6 +202,12 @@ class ClienteController extends Controller
                 $servicio["name"]="Nacionalidad Portuguesa por origen Sefardí";
             }
             $servicio["price"]=50;
+        }
+
+        if( in_array($variable["coupon"], $cupones)){
+            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1]);
+                auth()->user()->revokePermissionTo('pay.services');
+            return redirect()->route('clientes.getinfo')->with("status","exito");
         }
 
         try {

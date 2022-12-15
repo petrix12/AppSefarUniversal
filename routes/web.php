@@ -103,6 +103,9 @@ Route::post('getinfo', [ClienteController::class, 'procesargetinfo'])->name('pro
 Route::post('pay', [ClienteController::class, 'procesarpay'])->name('procesarpay')
         ->middleware('can:cliente');
 
+Route::get('/revisarcupon', [ClienteController::class, 'revisarcupon'])->name('revisarcupon')
+        ->middleware('can:cliente');
+
 // Grupo de rutas para realizar pruebas
 Route::group(['middleware' => ['auth'], 'as' => 'test.'], function(){
     // Pruebas con Flex de Tailwind

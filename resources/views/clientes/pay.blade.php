@@ -33,6 +33,9 @@
                     $('#nameoncard').keyup(function(){
                         this.value = this.value.toUpperCase();
                     });
+                    $('#coupon').keyup(function(){
+                        this.value = this.value.toUpperCase();
+                    });
 
                     new Cleave('#ccn', {
                         creditCard: true
@@ -48,15 +51,61 @@
                         datePattern: ['m']
                     });
 
+                    $(document).on("click", "#valcoupon", function(e){
+                        if ($("#coupon").val() == "" || !$("#coupon").val()){
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'No ha ingresado ningún cupón',
+                                showConfirmButton: false,
+                                timer: 2500
+                            });
+                            return false;
+                        }
+                        $("#ajaxload").show();  
+                        $.ajax({
+                            url: '{{ route("revisarcupon") }}',
+                            data: {
+                                cpn: $("#coupon").val()
+                            },
+                            success: function(response){
+                                $("#ajaxload").hide();
+                                if(response["status"]=="true"){
+                                    $("#coupon").attr('readonly', true);
+                                    $("#priced").html("0€");
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Cupón aplicado correctamente',
+                                        showConfirmButton: false,
+                                        timer: 2500
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Cupón inválido',
+                                        showConfirmButton: false,
+                                        timer: 2500
+                                    });
+                                }
+
+                            }
+
+                        });
+                    });
+
                 });
+
+                
+                
 
             </script>
 
 
             
-            
             @csrf
             <div class="col-sm-12 col-md-7 mb-0">
+                <center>
+                    <h2 style="padding:10px 0px; color:#12313a"><i class="mt-4 fas fa-credit-card"></i> Datos de Pago <i class="fas fa-credit-card"></i></h2>
+                </center>
                 <div class='row' style="margin: 0;">
                     <div class='col-xs-12 form-group required' style="width: 100%;">
                         <label class='control-label'>Nombre en la Tarjeta</label>
@@ -75,7 +124,7 @@
                     </div>
                 </div>
 
-                <div class='row' style="margin: 0;">
+                <div class='row' style="margin: 0 0 1rem 0;">
                     <div class='mt-2' style="width: calc(100%/3); padding-right: 3px;">
                         <label class='control-label'>CVC</label> <input autocomplete='off'
                             class='form-control card-cvc' placeholder='***' maxlength="4" 
@@ -93,12 +142,17 @@
                     </div>
                 </div>
 
-                <div class='row' style="justify-content: center;">
-                    <center>
-                        <br>
-                        <button class="btn btn-primary btn-block" type="submit">Realizar pago</button>
-                        <br>
-                    </center> 
+                <div class='mt-2 row' style="margin: 0;">
+                    <div class='col-xs-12 form-group required' style="width: 100%;">
+                        <label class='control-label type'>Ingresar Cupón</label>
+                        <input
+                            autocomplete='off' name="coupon" id="coupon" class='form-control coupon'
+                            type='text' style="width: 100%;">
+                    </div>
+                </div>
+
+                <div class='row' style="justify-content: center; display: flex; margin-bottom:2rem;">
+                    <input type="button" id="valcoupon" value="Validar cupón" class="btn btn-secondary" style="margin-right: 1rem;"><button class="btn btn-primary" type="submit">Realizar pago</button>
                 </div>
 
                 <div class='row'>
@@ -138,7 +192,7 @@
 
                     <h4 style="padding:10px 0px; color:#12313a"><b>Inicia tu Proceso: {{$servicio["name"]}}</b></h4>
 
-                    <h4 style="padding:10px 0px 2px 0px; color:#12313a">Pago: <b>{{$servicio["price"]}}€</b></h4> 
+                    <h4 style="padding:10px 0px 2px 0px; color:#12313a">Pago: <b id="priced">{{$servicio["price"]}}€</b></h4> 
 
                     <input type="hidden" id="idproducto" name="idproducto" value="{{$servicio['id']}}">
                 </div>
