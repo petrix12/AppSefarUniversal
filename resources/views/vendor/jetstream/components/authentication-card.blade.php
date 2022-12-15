@@ -1,6 +1,6 @@
 <style>
     #contenedorlogin{
-        background-image: url('/img/bglogin.webp');
+        background-color:rgba(0, 0, 0, 0.1);
         background-repeat: no-repeat;
         background-position: 50%;
         background-size: cover;
