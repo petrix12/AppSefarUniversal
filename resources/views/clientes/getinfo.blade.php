@@ -88,7 +88,7 @@
     <div class="container m-3">
 
         @if(auth()->user()->servicio=="Española LMD")
-        
+
             <script>
                 hbspt.forms.create({
                     region: "na1",
@@ -122,6 +122,7 @@
                                 },
                                 success: function(response){
                                     window.location.href = "/tree";
+                                    //console.log(response)
                                 }
                             });
                         }, 250 );
@@ -130,7 +131,7 @@
             </script>
 
         @else
-        
+
             <script>
                 hbspt.forms.create({
                     region: "na1",

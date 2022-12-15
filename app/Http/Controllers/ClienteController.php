@@ -138,7 +138,37 @@ class ClienteController extends Controller
 
         */
 
-        //dd($input);
+        //print_r('de php');
+        //print_r($input['referido_por']);
+        $user = Auth()->user();
+        $agcliente = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',1)->first();
+        //print_r($agcliente->Apellidos);
+        if($agcliente){
+            $agcliente->Sexo = $input['genero'] == 'MASCULINO / MALE' ? 'M' : 'F';
+            //$agcliente->AnhoNac = date("Y", $$input['date_of_birth']);
+            //$agcliente->MesNac = date("m", $$input['date_of_birth']);
+            //$agcliente->DiaNac = date("d", $$input['date_of_birth']);
+            $agcliente->LugarNac = trim($input['ciudad_de_nacimiento']);
+            $agcliente->PaisNac = trim($input['pais_de_nacimiento']);
+            // $agcliente->NombresF = 'Fulano';
+            // $agcliente->NPasaporteF = 'MMMJJHH';
+            $agcliente->FRegistro = date('Y-m-d H:i:s');
+            $agcliente->PNacimiento = trim($input['pais_de_nacimiento']);
+            $agcliente->LNacimiento = trim($input['ciudad_de_nacimiento']);
+            $agcliente->referido = trim($input['referido_por']);
+            $agcliente->save();
+            /*
+            'AnhoNac' => date("Y", $fnacimiento_entero),
+            'MesNac' => date("m", $fnacimiento_entero),
+            'DiaNac' => date("d", $fnacimiento_entero),
+            'LugarNac' => trim($request->cnacimiento),
+            'PaisNac' => trim($request->pnacimiento),
+            'NombresF' => trim($request->nombre_f),
+            'NPasaporteF' => trim($request->pasaporte_f),
+            'FRegistro' => date('Y-m-d H:i:s'),
+            'PNacimiento' => trim($request->pnacimiento),
+            'LNacimiento' => trim($request->cnacimiento), */
+        }
 
         /*
 
@@ -165,7 +195,7 @@ class ClienteController extends Controller
     public function revisarcupon(Request $request){
         $data = json_decode(json_encode($request->all()),true);
 
-        $cupones = ["BYTR4563PO", "BYTR1946RA"];
+        $cupones = ["BYTR4563PO", "BYTR1946RA", "55677"];
 
         if( in_array($data["cpn"], $cupones)){
             DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1]);
