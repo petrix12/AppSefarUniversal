@@ -118,7 +118,7 @@
                                 <small>{{ $user->email }}</small>
                             </td>
                             <td class="px-2 py-2 whitespace-nowrap">
-                                <small>{{ $user->servicio }}</small>
+                                <small>{{ $user->servicio == null ? $user->getRoleNames()[0] ?? 'Sin rol' : $user->servicio }}</small>
                             </td>
                             <td class="px-2 py-2 whitespace-nowrap">
                                 <small>{{ date_format($user->created_at,"Y-m-d") }}</small>
