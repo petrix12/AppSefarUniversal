@@ -132,17 +132,12 @@ class ClienteController extends Controller
             }
         }
 
-        /*
-
-            Aquí actualizo la base de datos
-
-        */
+        /* Aquí actualizo la base de datos */
 
         //print_r('de php');
         //print_r($input['referido_por']);
         $user = Auth()->user();
         $agcliente = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',1)->first();
-        //print_r($agcliente->Apellidos);
         if($agcliente){
             $agcliente->Sexo = $input['genero'] == 'MASCULINO / MALE' ? 'M' : 'F';
             //$agcliente->AnhoNac = date("Y", $$input['date_of_birth']);
@@ -150,31 +145,26 @@ class ClienteController extends Controller
             //$agcliente->DiaNac = date("d", $$input['date_of_birth']);
             $agcliente->LugarNac = trim($input['ciudad_de_nacimiento']);
             $agcliente->PaisNac = trim($input['pais_de_nacimiento']);
-            // $agcliente->NombresF = 'Fulano';
-            // $agcliente->NPasaporteF = 'MMMJJHH';
+
             $agcliente->FRegistro = date('Y-m-d H:i:s');
             $agcliente->PNacimiento = trim($input['pais_de_nacimiento']);
             $agcliente->LNacimiento = trim($input['ciudad_de_nacimiento']);
             $agcliente->referido = trim($input['referido_por']);
+            $agcliente->PaisPasaporte = trim($input['pais_de_expedicion_del_pasaporte']);
+
+            $agcliente->ParentescoF = trim($input['vinculo_miembro_de_familia_1']);
+            $agcliente->NombresF = trim($input['nombre_miembro_de_familia_1']);
+            $agcliente->ApellidosF = trim($input['apellidos_miembro_de_familia_1']);
+            // $agcliente->NPasaporteF = trim($input['pasaporte_f']);
+
+            $agcliente->Observaciones = (($agcliente->Observaciones == null) ? '' : $agcliente->Observaciones . '. ')
+                . 'Phone: ' . trim($input['phone'])
+                . ' E-mail:' . trim($input['email'])
+                . ' Adress:' . trim($input['address']);
             $agcliente->save();
-            /*
-            'AnhoNac' => date("Y", $fnacimiento_entero),
-            'MesNac' => date("m", $fnacimiento_entero),
-            'DiaNac' => date("d", $fnacimiento_entero),
-            'LugarNac' => trim($request->cnacimiento),
-            'PaisNac' => trim($request->pnacimiento),
-            'NombresF' => trim($request->nombre_f),
-            'NPasaporteF' => trim($request->pasaporte_f),
-            'FRegistro' => date('Y-m-d H:i:s'),
-            'PNacimiento' => trim($request->pnacimiento),
-            'LNacimiento' => trim($request->cnacimiento), */
         }
 
-        /*
-
-            Fin de la actualización en Base de Datos
-
-        */
+        /* Fin de la actualización en Base de Datos */
 
         DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]); // no borrar esta linea
         auth()->user()->revokePermissionTo('finish.register');
@@ -239,7 +229,7 @@ class ClienteController extends Controller
 
             } else if(auth()->user()->servicio=="Española Sefardi - Subsanación") {
                 $servicio["name"]="Subsanación de Expedientes (España)";
-                
+
             }
             $servicio["price"]=50;
         }
