@@ -72,6 +72,9 @@
                             <th scope="col" class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 {{ __('Servicio') }}
                             </th>
+                            <th scope="col" class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {{ __('Fecha de registro') }}
+                            </th>
                             {{-- @can('crud.permissions.edit')
                             <th scope="col" class="px-1 y-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 {{ __('Permissions') }}
@@ -116,6 +119,9 @@
                             </td>
                             <td class="px-2 py-2 whitespace-nowrap">
                                 {{ $user->servicio }}
+                            </td>
+                            <td class="px-2 py-2 whitespace-nowrap">
+                                {{ date_format($user->created_at,"Y-m-d") }}
                             </td>
                             {{-- @can('crud.permissions.edit')
                             <td class="px-1 py-2 whitespace-nowrap text-center font-medium">
