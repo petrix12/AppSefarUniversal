@@ -109,19 +109,19 @@
                                 {{ $user->id }}
                             </td> --}}
                             <td class="px-2 py-2 whitespace-nowrap">
-                                {{ $user->name }}
+                                <small>{{ Str::limit($user->name, 20) }}</small>
                             </td>{{--
                             <td class="px-4 py-2 whitespace-nowrap">
                                 {{ $user->passport }}
                             </td> --}}
                             <td class="px-2 py-2 whitespace-nowrap">
-                                {{ $user->email }}
+                                <small>{{ $user->email }}</small>
                             </td>
                             <td class="px-2 py-2 whitespace-nowrap">
-                                {{ $user->servicio }}
+                                <small>{{ $user->servicio }}</small>
                             </td>
                             <td class="px-2 py-2 whitespace-nowrap">
-                                {{ date_format($user->created_at,"Y-m-d") }}
+                                <small>{{ date_format($user->created_at,"Y-m-d") }}</small>
                             </td>
                             {{-- @can('crud.permissions.edit')
                             <td class="px-1 py-2 whitespace-nowrap text-center font-medium">
