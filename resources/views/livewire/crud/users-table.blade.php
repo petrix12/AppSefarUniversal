@@ -69,6 +69,9 @@
                             <th scope="col" class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 {{ __('Correo electrónico') }}
                             </th>
+                            <th scope="col" class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {{ __('Servicio') }}
+                            </th>
                             {{-- @can('crud.permissions.edit')
                             <th scope="col" class="px-1 y-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 {{ __('Permissions') }}
@@ -110,6 +113,9 @@
                             </td> --}}
                             <td class="px-2 py-2 whitespace-nowrap">
                                 {{ $user->email }}
+                            </td>
+                            <td class="px-2 py-2 whitespace-nowrap">
+                                {{ $user->servicio }}
                             </td>
                             {{-- @can('crud.permissions.edit')
                             <td class="px-1 py-2 whitespace-nowrap text-center font-medium">
