@@ -137,19 +137,29 @@ class ClienteController extends Controller
         //print_r('de php');
         //print_r($input['referido_por']);
         $user = Auth()->user();
+        // Actualizando el árbol genenalógico
         $agcliente = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',1)->first();
         if($agcliente){
             $agcliente->Sexo = $input['genero'] == 'MASCULINO / MALE' ? 'M' : 'F';
+            $user->genero = $agcliente->Sexo;
             //$agcliente->AnhoNac = date("Y", $$input['date_of_birth']);
             //$agcliente->MesNac = date("m", $$input['date_of_birth']);
             //$agcliente->DiaNac = date("d", $$input['date_of_birth']);
+            /* try {
+                $user->date_of_birth = $input['date_of_birth'];
+            } catch (\Throwable $th) {
+                // $user->date_of_birth = null;
+            } */
             $agcliente->LugarNac = trim($input['ciudad_de_nacimiento']);
             $agcliente->PaisNac = trim($input['pais_de_nacimiento']);
 
             $agcliente->FRegistro = date('Y-m-d H:i:s');
             $agcliente->PNacimiento = trim($input['pais_de_nacimiento']);
+            $user->pais_de_nacimiento = $agcliente->PNacimiento;
             $agcliente->LNacimiento = trim($input['ciudad_de_nacimiento']);
+            $user->ciudad_de_nacimiento = $agcliente->LNacimiento;
             $agcliente->referido = trim($input['referido_por']);
+            $user->referido_por = $agcliente->referido;
             $agcliente->PaisPasaporte = trim($input['pais_de_expedicion_del_pasaporte']);
 
             $agcliente->ParentescoF = trim($input['vinculo_miembro_de_familia_1']);
@@ -162,6 +172,7 @@ class ClienteController extends Controller
                 . ' E-mail:' . trim($input['email'])
                 . ' Adress:' . trim($input['address']);
             $agcliente->save();
+            $user->save();
         }
 
         /* Fin de la actualización en Base de Datos */

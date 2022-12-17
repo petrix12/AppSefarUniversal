@@ -111,7 +111,7 @@
                             <td class="px-2 py-2 whitespace-nowrap">
                                 <small>{{ Str::limit($user->name, 20) }}</small>
                             </td>{{--
-                            <td class="px-4 py-2 whitespace-nowrap">
+                            <td class="px-4 py-2 whitespace-nowrap"ra
                                 {{ $user->passport }}
                             </td> --}}
                             <td class="px-2 py-2 whitespace-nowrap">
