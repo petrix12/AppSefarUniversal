@@ -458,6 +458,20 @@ return [
             'can'  => 'cliente',
             'submenu' => [
                 [
+                    'text'          => 'Pago del análisis',
+                    'icon'          => 'fas fa-money-bill',
+                    'icon_color'    => 'yellow',
+                    'route'         => 'clientes.pay',
+                    'can'           => 'pay.services',
+                ],
+                [
+                    'text'          => 'Completar información',
+                    'icon'          => 'fas fa-user-plus',
+                    'icon_color'    => 'yellow',
+                    'route'         => 'clientes.getinfo',
+                    'can'           => 'finish.register',
+                ],
+                [
                     'text'          => 'Cargar árbol',
                     'icon'          => 'fas fa-sitemap',
                     'icon_color'    => 'yellow',
@@ -480,7 +494,7 @@ return [
             'route'         => 'clientes.salir',
             'can'           => 'cliente',
         ],
-        
+
         /* *** PRUEBAS *** */
         [
             'text'        => 'Pruebas',

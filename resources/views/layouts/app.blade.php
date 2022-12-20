@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=UA-189067277-1"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'UA-189067277-1');
+        </script>
+
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -8,36 +17,21 @@
 
         {{-- Inicio - Personalización URL --}}
         <meta property="fb:app_id" content="APPID">
-        <meta data-react-helmet="true" property="og:url" content="https://app.universalsefar.com/"/>
+        <meta data-react-helmet="true" property="og:url" content="https://app.sefaruniversal.com/"/>
         <meta data-react-helmet="true" property="og:type" content="website"/>
         <meta data-react-helmet="true" property="og:title" content="Sefar Universal | Tus antepasados te quieren libre."/>
         <meta data-react-helmet="true" property="og:description" content="Abogados y genealogistas expertos en inmigración. Conseguimos tu pasaporte español, portugues e italiano, para que seas libre, trascendiendo fronteras."/>
 
-        <meta data-react-helmet="true" property="og:image" content="https://app.universalsefar.com/vendor/adminlte/dist/img/LogoSefar.png" />
+        <meta data-react-helmet="true" property="og:image" content="https://app.sefaruniversal.com/vendor/adminlte/dist/img/LogoSefar.png" />
         <meta data-react-helmet="true" property="twitter:title" content="Sefar Universal | Tus antepasados te quieren libre."/>
         <meta data-react-helmet="true" property="twitter:description" content="Abogados y genealogistas expertos en inmigración. Conseguimos tu pasaporte español, portugues e italiano, para que seas libre, trascendiendo fronteras."/>
-        <meta data-react-helmet="true" property="twitter:image:src" content="https://app.universalsefar.com/vendor/adminlte/dist/img/LogoSefar.png" />
-        <meta data-react-helmet="true" property="twitter:image" content="https://app.universalsefar.com/vendor/adminlte/dist/img/LogoSefar.png" />
+        <meta data-react-helmet="true" property="twitter:image:src" content="https://app.sefaruniversal.com/vendor/adminlte/dist/img/LogoSefar.png" />
+        <meta data-react-helmet="true" property="twitter:image" content="https://app.sefaruniversal.com/vendor/adminlte/dist/img/LogoSefar.png" />
         <meta data-react-helmet="true" property="twitter:card" content="summary" />
         <meta data-react-helmet="true" name="robots" content="noindex, nofollow" />
         {{-- Fin - Personalización URL --}}
 
-        <!-- Meta tags PWA -->
-        <meta name="theme-color" content="#333333">
-        <meta name="MobileOptimized" content="width">
-        <meta name="HandheldFriendly" content="true">
-        <meta name="apple-mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-        <!-- Iconos PWA -->
-        <link rel="shortcut icon" href="{{ asset("./Logo.png") }}" type="image/png">
-        <link rel="apple-touch-icon" href="{{ asset("./Logo.png") }}" type="image/png">
-        <link rel="apple-touch-startup-image" href="{{ asset("./Logo.png") }}" type="image/png">
-
-        <!-- Manifest PWA -->
-        <link rel="manifest" href="{{ asset("./manifest.json") }}">
-
-        <title>{{ config('app.name', 'Laravel') }}</title>
+                <title>{{ config('app.name', 'Laravel') }}</title>
 
         <!-- Fonts -->
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap">
@@ -50,7 +44,6 @@
 
         <!-- Scripts -->
         <script src="{{ asset('/js/app.js') }}" defer></script>
-        <script src={{ asset("./register.js") }}></script>
     </head>
     <body class="font-sans antialiased">
         <x-jet-banner />
@@ -77,5 +70,9 @@
         @stack('modals')
 
         @livewireScripts
+
+        <!-- Start of HubSpot Embed Code -->
+        <script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/20053496.js"></script>
+        <!-- End of HubSpot Embed Code -->
     </body>
 </html>

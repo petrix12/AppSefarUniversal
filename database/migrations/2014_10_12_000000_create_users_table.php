@@ -24,6 +24,17 @@ class CreateUsersTable extends Migration
             $table->string('picture')->nullable();
             $table->dateTime('created')->nullable();
             $table->string('password_md5')->nullable();
+            
+            $table->string('phone')->nullable();
+            $table->string('servicio')->nullable();
+            $table->integer('pay')->nullable();
+            $table->dateTime('date_of_birth')->nullable();
+            $table->string('nombres')->nullable();
+            $table->string('apellidos')->nullable();
+            $table->string('genero')->nullable();
+            $table->string('pais_de_nacimiento')->nullable();
+            $table->string('ciudad_de_nacimiento')->nullable();
+            $table->string('referido_por')->nullable();
 
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');

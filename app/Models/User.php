@@ -33,6 +33,16 @@ class User extends Authenticatable implements MustVerifyEmail
         'password_md5',
         'passport',
         'email_verified_at',
+        'phone',
+        'servicio',
+		'pay',
+		'date_of_birth',
+		'nombres',
+		'apellidos',
+		'genero',
+		'pais_de_nacimiento',
+		'ciudad_de_nacimiento',
+		'referido_por'
     ];
 
     /**
@@ -70,7 +80,7 @@ class User extends Authenticatable implements MustVerifyEmail
     // Se debe configurar en config\adminlte.php: 'usermenu_image' => true,
     public function adminlte_image(){
         //return 'https://picsum.photos/300/300'; /* Retorna una imagen aleatoria*/
-        
+
         return Auth::user()->profile_photo_url;
     }
 

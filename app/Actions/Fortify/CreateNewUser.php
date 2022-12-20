@@ -30,8 +30,7 @@ class CreateNewUser implements CreatesNewUsers
         // Verificar que el número de pasoporte no exista
         $rol = $input['rol'];
         $passport = $input['passport'];
-        $fnacimiento = $input['fnacimiento'];
-        $fnacimiento_entero = strtotime($fnacimiento);
+
         if($rol == 'cliente'){
             $user = User::where('passport','LIKE',$passport)->get();
             if(empty($user[0]->passport)){
@@ -45,19 +44,9 @@ class CreateNewUser implements CreatesNewUsers
                         'Nombres' => trim($input['nombres']),
                         'Apellidos' => trim($input['apellidos']),
                         'NPasaporte' => trim($input['passport']),
-                        'Sexo' => trim($input['sexo']),
-                        'AnhoNac' => date("Y", $fnacimiento_entero),
-                        'MesNac' => date("m", $fnacimiento_entero),
-                        'DiaNac' => date("d", $fnacimiento_entero),
-                        'LugarNac' => trim($input['cnacimiento']),
-                        'PaisNac' => trim($input['pnacimiento']),
-                        'NombresF' => trim($input['nombre_f']),
-                        'NPasaporteF' => trim($input['pasaporte_f']),
-                        'FRegistro' => date('Y-m-d H:i:s'),
-                        'PNacimiento' => trim($input['pnacimiento']),
-                        'LNacimiento' => trim($input['cnacimiento']),
-                        'FUpdate' => date('Y-m-d H:i:s'),
                         'referido' => trim($input['referido']),
+                        'FRegistro' => date('Y-m-d H:i:s'),
+                        'FUpdate' => date('Y-m-d H:i:s'),
                         'Usuario' => trim($input['email']),
                     ]);
                 }
@@ -68,24 +57,30 @@ class CreateNewUser implements CreatesNewUsers
                 'passport' => ['required','unique:users', 'min:5', 'max:170'],
                 'password' => $this->passwordRules(),
                 'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['required', 'accepted'] : '',
-            ])->validate(); 
+            ])->validate();
         }else{
             Validator::make($input, [
                 'name' => ['required', 'string', 'max:255'],
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
                 'password' => $this->passwordRules(),
                 'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['required', 'accepted'] : '',
-            ])->validate(); 
-        } 
+            ])->validate();
+        }
         $user = User::create([
             'name' => $input['name'],
             'email' => $input['email'],
             'password' => Hash::make($input['password']),
             'passport' => $input['passport'],
             'email_verified_at' => date('Y-m-d H:i:s'),
+            'phone' => $input['phone'],
+            'servicio' => $input['servicio'],
+            'pay' => 0,
+            'nombres' => $input['nombres'],
+            'apellidos' => $input['apellidos'],
+            'referido_por' => $input['referido'],
         ]);
-        if($rol == 'cliente'){  
-            //$user->email_verified_at = date('Y-m-d H:i:s');     
+        if($rol == 'cliente'){
+            //$user->email_verified_at = date('Y-m-d H:i:s');
             //Artisan::call('view:clear');
             // Enviar un correo al cliente indicando que se ha registrado con exito
             $mail_cliente = new RegistroCliente($user);
@@ -98,12 +93,13 @@ class CreateNewUser implements CreatesNewUsers
                 /* 'egonzalez@sefarvzla.com', */
                 'analisisgenealogico@sefarvzla.com',
                 'asistentedeproduccion@sefarvzla.com',
-                'arosales@sefarvzla.com',
-                'czanella@sefarvzla.com',
+                /* 'arosales@sefarvzla.com', */
+                /* 'czanella@sefarvzla.com', */
                 'organizacionrrhh@sefarvzla.com',
                 'gcuriel@sefarvzla.com'
             ])->send($mail_sefar);
-            return $user->assignRole('Cliente');
+
+            return $user->assignRole('Cliente')->givePermissionTo(['pay.services', 'finish.register']);
         }else{
             return $user;
         }

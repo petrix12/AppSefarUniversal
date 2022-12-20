@@ -4,36 +4,20 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <!-- Meta tags PWA -->
-        {{-- <meta name="theme-color" content="#333333">
-        <meta name="MobileOptimized" content="width">
-        <meta name="HandheldFriendly" content="true">
-        <meta name="apple-mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"> --}}
-
-        <!-- Iconos PWA -->
-        {{-- <link rel="shortcut icon" href="{{ asset("./Logo.png") }}" type="image/png">
-        <link rel="apple-touch-icon" href="{{ asset("./Logo.png") }}" type="image/png">
-        <link rel="apple-touch-startup-image" href="{{ asset("./Logo.png") }}" type="image/png"> --}}
-
-        <!-- Manifest PWA -->
-        {{-- <link rel="manifest" href="{{ asset("./manifest.json") }}"> --}}
-
-
         <title>Laravel</title>
 
         {{-- Inicio - Personalización URL --}}
         <meta property="fb:app_id" content="APPID">
-        <meta data-react-helmet="true" property="og:url" content="https://app.universalsefar.com/"/>
+        <meta data-react-helmet="true" property="og:url" content="https://app.sefaruniversal.com/"/>
         <meta data-react-helmet="true" property="og:type" content="website"/>
         <meta data-react-helmet="true" property="og:title" content="Sefar Universal | Tus antepasados te quieren libre."/>
         <meta data-react-helmet="true" property="og:description" content="Abogados y genealogistas expertos en inmigración. Conseguimos tu pasaporte español, portugues e italiano, para que seas libre, trascendiendo fronteras."/>
 
-        <meta data-react-helmet="true" property="og:image" content="https://app.universalsefar.com/vendor/adminlte/dist/img/LogoSefar.png" />
+        <meta data-react-helmet="true" property="og:image" content="https://app.sefaruniversal.com/vendor/adminlte/dist/img/LogoSefar.png" />
         <meta data-react-helmet="true" property="twitter:title" content="Sefar Universal | Tus antepasados te quieren libre."/>
         <meta data-react-helmet="true" property="twitter:description" content="Abogados y genealogistas expertos en inmigración. Conseguimos tu pasaporte español, portugues e italiano, para que seas libre, trascendiendo fronteras."/>
-        <meta data-react-helmet="true" property="twitter:image:src" content="https://app.universalsefar.com/vendor/adminlte/dist/img/LogoSefar.png" />
-        <meta data-react-helmet="true" property="twitter:image" content="https://app.universalsefar.com/vendor/adminlte/dist/img/LogoSefar.png" />
+        <meta data-react-helmet="true" property="twitter:image:src" content="https://app.sefaruniversal.com/vendor/adminlte/dist/img/LogoSefar.png" />
+        <meta data-react-helmet="true" property="twitter:image" content="https://app.sefaruniversal.com/vendor/adminlte/dist/img/LogoSefar.png" />
         <meta data-react-helmet="true" property="twitter:card" content="summary" />
         <meta data-react-helmet="true" name="robots" content="noindex, nofollow" />
         {{-- Fin - Personalización URL --}}
