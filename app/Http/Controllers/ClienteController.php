@@ -159,7 +159,7 @@ class ClienteController extends Controller
             $agcliente->LNacimiento = trim($input['ciudad_de_nacimiento']);
             $user->ciudad_de_nacimiento = $agcliente->LNacimiento;
             $agcliente->referido = trim($input['referido_por']);
-            $user->referido_por = $agcliente->referido;
+            //$user->referido_por = $agcliente->referido;
             $agcliente->PaisPasaporte = trim($input['pais_de_expedicion_del_pasaporte']);
 
             $agcliente->ParentescoF = trim($input['vinculo_miembro_de_familia_1']);

@@ -44,6 +44,7 @@ class CreateNewUser implements CreatesNewUsers
                         'Nombres' => trim($input['nombres']),
                         'Apellidos' => trim($input['apellidos']),
                         'NPasaporte' => trim($input['passport']),
+                        'referido' => trim($input['referido']),
                         'FRegistro' => date('Y-m-d H:i:s'),
                         'FUpdate' => date('Y-m-d H:i:s'),
                         'Usuario' => trim($input['email']),
@@ -76,6 +77,7 @@ class CreateNewUser implements CreatesNewUsers
             'pay' => 0,
             'nombres' => $input['nombres'],
             'apellidos' => $input['apellidos'],
+            'referido_por' => $input['referido'],
         ]);
         if($rol == 'cliente'){
             //$user->email_verified_at = date('Y-m-d H:i:s');

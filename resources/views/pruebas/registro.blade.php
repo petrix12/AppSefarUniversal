@@ -42,7 +42,8 @@
                             <input value="+584141249753" type="text" name="phone" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                         </div>
                     </div>
-
+                </div>
+                <div class="md:flex ms:flex-wrap">
                     <div class="px-1 py-2 m-2 flex-1">    {{-- numero_de_pasaporte --}}
                         <div>
                             <label for="numero_de_pasaporte" class="block text-sm font-medium text-gray-700">DNI</label>
@@ -54,6 +55,20 @@
                         <div>
                             <label for="nacionalidad_solicitada" class="block text-sm font-medium text-gray-700">Servicio</label>
                             <input value="Española LMD" type="text" name="nacionalidad_solicitada" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                        </div>
+                    </div>
+
+                    <div class="px-1 py-2 m-2 flex-1">    {{-- n000__referido_por__clonado_ --}}
+                        <div>
+                            <label for="n000__referido_por__clonado_" class="block text-sm font-medium text-gray-700">Referido por</label>
+                            <input value="Yeinson Diaz" type="text" name="n000__referido_por__clonado_" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                        </div>
+                    </div>
+
+                    <div class="px-1 py-2 m-2 flex-1">    {{-- aplicar_cupon --}}
+                        <div>
+                            <label for="aplicar_cupon" class="block text-sm font-medium text-gray-700">Cupón</label>
+                            <input value="55677" type="text" name="aplicar_cupon" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                         </div>
                     </div>
                 </div>
