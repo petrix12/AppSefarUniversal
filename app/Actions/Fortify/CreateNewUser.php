@@ -44,6 +44,8 @@ class CreateNewUser implements CreatesNewUsers
                         'Nombres' => trim($input['nombres']),
                         'Apellidos' => trim($input['apellidos']),
                         'NPasaporte' => trim($input['passport']),
+                        'PNacimiento' => trim($input['pais_de_nacimiento']),
+                        'PaisNac' => trim($input['pais_de_nacimiento']),
                         'referido' => trim($input['referido']),
                         'FRegistro' => date('Y-m-d H:i:s'),
                         'FUpdate' => date('Y-m-d H:i:s'),
@@ -77,6 +79,7 @@ class CreateNewUser implements CreatesNewUsers
             'pay' => 0,
             'nombres' => $input['nombres'],
             'apellidos' => $input['apellidos'],
+            'pais_de_nacimiento' => $input['pais_de_nacimiento'],
             'referido_por' => $input['referido'],
         ]);
         if($rol == 'cliente'){

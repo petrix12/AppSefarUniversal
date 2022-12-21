@@ -9,6 +9,7 @@
     if (!empty($_GET['nacionalidad_solicitada'])) $servicio = $_GET['nacionalidad_solicitada']; else $servicio = null;
     if (!empty($_GET['n000__referido_por__clonado_'])) $referido = $_GET['n000__referido_por__clonado_']; else $referido = null;
     if (!empty($_GET['aplicar_cupon'])) $cupon = $_GET['aplicar_cupon']; else $cupon = null;
+    if (!empty($_GET['pais_de_nacimiento'])) $pais_de_nacimiento = $_GET['pais_de_nacimiento']; else $pais_de_nacimiento = null;
 
     $rol = 'cliente';
 
@@ -48,6 +49,7 @@
             <input type="hidden" name="servicio" value="{{ $servicio }}" />
             <input type="hidden" name="referido" value="{{ $referido }}" />
             <input type="hidden" name="cupon" value="{{ $cupon }}" />
+            <input type="hidden" name="pais_de_nacimiento" value="{{ $pais_de_nacimiento }}" />
             <input type="hidden" name="rol" value="{{ $rol }}" />
 
             <div>

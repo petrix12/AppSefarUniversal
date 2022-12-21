@@ -5,38 +5,11 @@
 @section('content_header')
     <h1>Realizar pago</h1>
 @stop
+<div id="ajaxload" style="background-color: rgba(0, 0, 0, 0.4); position: absolute; z-index: 1000; display: none; width: 100%; height: 100%;"></div>
 
 @section('content')
 
-<<<<<<< Updated upstream
-    @if(session("status")=="exito")
-=======
-    <?php
-        $servicio= array();
-
-        $servicio["name"]="Nacionalidad Española por origen Sefardí";
-
-        $servicio["id"]=auth()->user()->servicio;
-
-        if(auth()->user()->servicio=="Española LMD"){
-            header("Location: https://buy.stripe.com/test_aEU5lI3qm0lQ3sY6oo?prefilled_email=".auth()->user()->email);
-            exit();
-        } else if(auth()->user()->servicio=="Italiana"){
-            header("Location: https://buy.stripe.com/test_5kA9BY9OK4C6d3yaEF?prefilled_email=".auth()->user()->email);
-            exit();
-        } else if(auth()->user()->servicio=="Española Sefardi"){
-            $servicio["name"]="Nacionalidad Española por origen Sefardí";
-        } else if(auth()->user()->servicio=="Portuguesa Sefardi"){
-            $servicio["name"]="Nacionalidad Portuguesa por origen Sefardí";
-        } else if(auth()->user()->servicio=="Portuguesa Sefardi - Subsanación") {
-            $servicio["name"]="Subsanación de Expedientes (Portugal)";
-        } else if(auth()->user()->servicio=="Española Sefardi - Subsanación") {
-            $servicio["name"]="Subsanación de Expedientes (España)";
-        }
-    ?>
-
     @if(session("status")!="exito")
->>>>>>> Stashed changes
         <script type="text/javascript">
             Swal.fire({
                 icon: 'error',
@@ -46,11 +19,11 @@
             });
         </script>
     @endif
-    
+
     <form action="" method="POST" class="require-validation" data-cc-on-file="false" data-stripe-publishable-key="{{ env('STRIPE_KEY') }}" id="payment-form">
         <div class="container p-8 row" style="display:flex;">
             <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
-            
+
             <script src="https://cdnjs.cloudflare.com/ajax/libs/cleave.js/1.6.0/cleave.min.js"></script>
 
             <script>
@@ -58,6 +31,9 @@
                 document.addEventListener('DOMContentLoaded', () => {
 
                     $('#nameoncard').keyup(function(){
+                        this.value = this.value.toUpperCase();
+                    });
+                    $('#coupon').keyup(function(){
                         this.value = this.value.toUpperCase();
                     });
 
@@ -75,15 +51,57 @@
                         datePattern: ['m']
                     });
 
+                    $(document).on("click", "#valcoupon", function(e){
+                        if ($("#coupon").val() == "" || !$("#coupon").val()){
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'No ha ingresado ningún cupón',
+                                showConfirmButton: false,
+                                timer: 2500
+                            });
+                            return false;
+                        }
+                        $("#ajaxload").show();
+                        $.ajax({
+                            url: '{{ route("revisarcupon") }}',
+                            data: {
+                                cpn: $("#coupon").val()
+                            },
+                            success: function(response){
+                                if(response["status"]=="true"){
+                                    $("#coupon").attr('readonly', true);
+                                    $("#valcoupon").attr('disabled', true);
+                                    $("#priced").html("0€");
+                                    window.location.href = "/getinfo";
+                                } else {
+                                    $("#ajaxload").hide();
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Cupón inválido',
+                                        showConfirmButton: false,
+                                        timer: 2500
+                                    });
+                                }
+
+                            }
+
+                        });
+                    });
+
                 });
+
+
+
 
             </script>
 
 
-            
-            
+
             @csrf
             <div class="col-sm-12 col-md-7 mb-0">
+                <center>
+                    <h2 style="padding:10px 0px; color:#12313a"><i class="mt-4 fas fa-credit-card"></i> Datos de Pago <i class="fas fa-credit-card"></i></h2>
+                </center>
                 <div class='row' style="margin: 0;">
                     <div class='col-xs-12 form-group required' style="width: 100%;">
                         <label class='control-label'>Nombre en la Tarjeta</label>
@@ -102,10 +120,10 @@
                     </div>
                 </div>
 
-                <div class='row' style="margin: 0;">
+                <div class='row' style="margin: 0 0 1rem 0;">
                     <div class='mt-2' style="width: calc(100%/3); padding-right: 3px;">
                         <label class='control-label'>CVC</label> <input autocomplete='off'
-                            class='form-control card-cvc' placeholder='***' maxlength="4" 
+                            class='form-control card-cvc' placeholder='***' maxlength="4"
                             type='password'>
                     </div>
                     <div class='mt-2' style="width: calc(100%/3); padding-left: 3px; padding-right: 3px;">
@@ -120,12 +138,17 @@
                     </div>
                 </div>
 
-                <div class='row' style="justify-content: center;">
-                    <center>
-                        <br>
-                        <button class="btn btn-primary btn-block" type="submit">Realizar pago</button>
-                        <br>
-                    </center> 
+                <div class='mt-2 row' style="margin: 0;">
+                    <div class='col-xs-12 form-group required' style="width: 100%;">
+                        <label class='control-label type'>Ingresar Cupón</label>
+                        <input
+                            autocomplete='off' name="coupon" id="coupon" class='form-control coupon'
+                            type='text' style="width: 100%;">
+                    </div>
+                </div>
+
+                <div class='row' style="justify-content: center; display: flex; margin-bottom:2rem;">
+                    <input type="button" id="valcoupon" value="Validar cupón" class="btn btn-secondary" style="margin-right: 1rem;"><button class="btn btn-primary" type="submit">Realizar pago</button>
                 </div>
 
                 <div class='row'>
@@ -137,7 +160,6 @@
             </div>
             <div class="col-sm-12 col-md-5 mb-0">
                 <div class="card" style="margin:0 30px; padding: 30px;">
-<<<<<<< Updated upstream
                     @php
                         $servicio= array();
 
@@ -151,17 +173,23 @@
                         } else {
                             if(auth()->user()->servicio=="Italiana"){
                                 $servicio["name"]="Nacionalidad Italiana";
+
                             } else if(auth()->user()->servicio=="Española Sefardi"){
                                 $servicio["name"]="Nacionalidad Española por origen Sefardí";
+
                             } else if(auth()->user()->servicio=="Portuguesa Sefardi"){
                                 $servicio["name"]="Nacionalidad Portuguesa por origen Sefardí";
+
+                            } else if(auth()->user()->servicio=="Portuguesa Sefardi - Subsanación") {
+                                $servicio["name"]="Subsanación de Expedientes (Portugal)";
+
+                            } else if(auth()->user()->servicio=="Española Sefardi - Subsanación") {
+                                $servicio["name"]="Subsanación de Expedientes (España)";
+
                             }
                             $servicio["price"]=50;
                         }
                     @endphp
-=======
-                    
->>>>>>> Stashed changes
                     <center>
                         <h3 style="padding:10px 0px; color:#12313a">Información del servicio</h3>
                         <img style="width:100px;" src="/vendor/adminlte/dist/img/LogoSefar.png">
@@ -169,30 +197,35 @@
 
                     <h4 style="padding:10px 0px; color:#12313a"><b>Inicia tu Proceso: {{$servicio["name"]}}</b></h4>
 
-                    <h4 style="padding:10px 0px 2px 0px; color:#12313a">Pago: <b>{{$servicio["price"]}}€</b></h4> 
+                    <h4 style="padding:10px 0px 2px 0px; color:#12313a">Pago: <b id="priced">{{$servicio["price"]}}€</b></h4>
 
                     <input type="hidden" id="idproducto" name="idproducto" value="{{$servicio['id']}}">
                 </div>
             </div>
-    
+
         </div>
     </form>
 
+
+
     <script type="text/javascript" src="//js.stripe.com/v2/"></script>
-    
+
     <script type="text/javascript">
-      
+
         $(function() {
-          
+
             /*------------------------------------------
             --------------------------------------------
             Stripe Payment Code
             --------------------------------------------
             --------------------------------------------*/
-            
+
             var $form = $(".require-validation");
-             
+
             $('form.require-validation').bind('submit', function(e) {
+
+                $("#ajaxload").show();
+
                 var $form = $(".require-validation"),
                 inputSelector = ['input[type=email]', 'input[type=password]',
                                  'input[type=text]', 'input[type=file]',
@@ -201,7 +234,7 @@
                 $errorMessage = $form.find('div.error'),
                 valid = true;
                 $errorMessage.addClass('hide');
-            
+
                 $('.has-error').removeClass('has-error');
                 $inputs.each(function(i, el) {
                   var $input = $(el);
@@ -211,7 +244,7 @@
                     e.preventDefault();
                   }
                 });
-             
+
                 if (!$form.data('cc-on-file')) {
                   e.preventDefault();
                   Stripe.setPublishableKey($form.data('stripe-publishable-key'));
@@ -222,9 +255,9 @@
                     exp_year: $('.card-expiry-year').val()
                   }, stripeResponseHandler);
                 }
-            
+
             });
-              
+
             /*------------------------------------------
             --------------------------------------------
             Stripe Response Handler
@@ -232,6 +265,7 @@
             --------------------------------------------*/
             function stripeResponseHandler(status, response) {
                 if (response.error) {
+                    $("#ajaxload").hide();
                     var error = "";
 
                     switch(response.error.code){
@@ -376,8 +410,11 @@
                         case "withdrawal_count_limit_exceeded":
                             error = "El cliente ha superado el saldo o límite de crédito disponible en su tarjeta.";
                             break;
+                        default:
+                            error = response.error.code;
+                            break;
                     }
-                    
+
                     Swal.fire({
                         icon: 'error',
                         title: error,
@@ -387,13 +424,13 @@
                 } else {
                     /* token contains id, last4, and card type */
                     var token = response['id'];
-                         
+
                     $form.find('input[type=text]').empty();
                     $form.append("<input type='hidden' name='stripeToken' value='" + token + "'/>");
                     $form.get(0).submit();
                 }
             }
-             
+
         });
     </script>
 @stop
