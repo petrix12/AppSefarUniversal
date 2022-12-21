@@ -246,7 +246,8 @@ class ClienteController extends Controller
             }
         } else {
             auth()->user()->revokePermissionTo('pay.services');
-
+            auth()->user()->revokePermissionTo('finish.register');
+            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]);
         }
         
 
@@ -271,8 +272,7 @@ class ClienteController extends Controller
                 return redirect()->route('clientes.getinfo')->with("status","exito");
             }
         } catch (Exception $e) {
-            auth()->user()->revokePermissionTo('pay.services');
-            auth()->user()->revokePermissionTo('finish.register');
+            return redirect("/pay")->with("status", "error");
         }
     }
 }
