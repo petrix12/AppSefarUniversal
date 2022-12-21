@@ -222,28 +222,33 @@ class ClienteController extends Controller
         $servicio["id"]=auth()->user()->servicio;
         $servicio["name"]="Nacionalidad Española por origen Sefardí";
 
-        if(auth()->user()->servicio=="Española LMD"){
-            $servicio["name"]="Ley de Memoria Democratica";
-            $servicio["price"]=25;
-        } else {
-            if(auth()->user()->servicio=="Italiana"){
-                $servicio["name"]="Nacionalidad Italiana";
+        if(!is_null(auth()->user()->servicio)){
+            if(auth()->user()->servicio=="Española LMD"){
+                $servicio["name"]="Ley de Memoria Democratica";
+                $servicio["price"]=25;
+            } else {
+                if(auth()->user()->servicio=="Italiana"){
+                    $servicio["name"]="Nacionalidad Italiana";
 
-            } else if(auth()->user()->servicio=="Española Sefardi"){
-                $servicio["name"]="Nacionalidad Española por origen Sefardí";
+                } else if(auth()->user()->servicio=="Española Sefardi"){
+                    $servicio["name"]="Nacionalidad Española por origen Sefardí";
 
-            } else if(auth()->user()->servicio=="Portuguesa Sefardi"){
-                $servicio["name"]="Nacionalidad Portuguesa por origen Sefardí";
+                } else if(auth()->user()->servicio=="Portuguesa Sefardi"){
+                    $servicio["name"]="Nacionalidad Portuguesa por origen Sefardí";
 
-            } else if(auth()->user()->servicio=="Portuguesa Sefardi - Subsanación") {
-                $servicio["name"]="Subsanación de Expedientes (Portugal)";
+                } else if(auth()->user()->servicio=="Portuguesa Sefardi - Subsanación") {
+                    $servicio["name"]="Subsanación de Expedientes (Portugal)";
 
-            } else if(auth()->user()->servicio=="Española Sefardi - Subsanación") {
-                $servicio["name"]="Subsanación de Expedientes (España)";
-
+                } else if(auth()->user()->servicio=="Española Sefardi - Subsanación") {
+                    $servicio["name"]="Subsanación de Expedientes (España)";
+                }
+                $servicio["price"]=50;
             }
-            $servicio["price"]=50;
+        } else {
+            auth()->user()->revokePermissionTo('pay.services');
+
         }
+        
 
         try {
             $customer = Stripe\Customer::create(array(
@@ -266,7 +271,8 @@ class ClienteController extends Controller
                 return redirect()->route('clientes.getinfo')->with("status","exito");
             }
         } catch (Exception $e) {
-            return redirect("/pay")->with("status", "error");
+            auth()->user()->revokePermissionTo('pay.services');
+            auth()->user()->revokePermissionTo('finish.register');
         }
     }
 }
