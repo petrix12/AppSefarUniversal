@@ -8,7 +8,35 @@
 
 @section('content')
 
+<<<<<<< Updated upstream
     @if(session("status")=="exito")
+=======
+    <?php
+        $servicio= array();
+
+        $servicio["name"]="Nacionalidad Española por origen Sefardí";
+
+        $servicio["id"]=auth()->user()->servicio;
+
+        if(auth()->user()->servicio=="Española LMD"){
+            header("Location: https://buy.stripe.com/test_aEU5lI3qm0lQ3sY6oo?prefilled_email=".auth()->user()->email);
+            exit();
+        } else if(auth()->user()->servicio=="Italiana"){
+            header("Location: https://buy.stripe.com/test_5kA9BY9OK4C6d3yaEF?prefilled_email=".auth()->user()->email);
+            exit();
+        } else if(auth()->user()->servicio=="Española Sefardi"){
+            $servicio["name"]="Nacionalidad Española por origen Sefardí";
+        } else if(auth()->user()->servicio=="Portuguesa Sefardi"){
+            $servicio["name"]="Nacionalidad Portuguesa por origen Sefardí";
+        } else if(auth()->user()->servicio=="Portuguesa Sefardi - Subsanación") {
+            $servicio["name"]="Subsanación de Expedientes (Portugal)";
+        } else if(auth()->user()->servicio=="Española Sefardi - Subsanación") {
+            $servicio["name"]="Subsanación de Expedientes (España)";
+        }
+    ?>
+
+    @if(session("status")!="exito")
+>>>>>>> Stashed changes
         <script type="text/javascript">
             Swal.fire({
                 icon: 'error',
@@ -109,6 +137,7 @@
             </div>
             <div class="col-sm-12 col-md-5 mb-0">
                 <div class="card" style="margin:0 30px; padding: 30px;">
+<<<<<<< Updated upstream
                     @php
                         $servicio= array();
 
@@ -130,6 +159,9 @@
                             $servicio["price"]=50;
                         }
                     @endphp
+=======
+                    
+>>>>>>> Stashed changes
                     <center>
                         <h3 style="padding:10px 0px; color:#12313a">Información del servicio</h3>
                         <img style="width:100px;" src="/vendor/adminlte/dist/img/LogoSefar.png">
