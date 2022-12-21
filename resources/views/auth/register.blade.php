@@ -7,6 +7,8 @@
     if (!empty($_GET['email'])) $email = $_GET['email']; else $email = null;
     if (!empty($_GET['phone'])) $phone = $_GET['phone']; else $phone = null;
     if (!empty($_GET['nacionalidad_solicitada'])) $servicio = $_GET['nacionalidad_solicitada']; else $servicio = null;
+    if (!empty($_GET['n000__referido_por__clonado_'])) $referido = $_GET['n000__referido_por__clonado_']; else $referido = null;
+    if (!empty($_GET['aplicar_cupon'])) $cupon = $_GET['aplicar_cupon']; else $cupon = null;
 
     $rol = 'cliente';
 
@@ -33,6 +35,10 @@
         <x-jet-validation-errors class="mb-4" />
 
         <form method="POST" action="{{ route('register') }}">
+            <center>
+                <h1 style="font-size: 20px; margin: 5px 0px;">Crea tu contraseña</h1>
+
+            </center>
             @csrf
 
             {{-- Campos ocultos --}}
@@ -40,6 +46,8 @@
             <input type="hidden" name="apellidos" value="{{ $apellidos }}" />
             <input type="hidden" name="phone" value="{{ $phone }}" />
             <input type="hidden" name="servicio" value="{{ $servicio }}" />
+            <input type="hidden" name="referido" value="{{ $referido }}" />
+            <input type="hidden" name="cupon" value="{{ $cupon }}" />
             <input type="hidden" name="rol" value="{{ $rol }}" />
 
             <div>
@@ -94,7 +102,7 @@
                 </a>
 
                 <x-jet-button class="ml-4 cfrSefar">
-                    {{ __('Register') }}
+                    Continuar
                 </x-jet-button>
             </div>
         </form>

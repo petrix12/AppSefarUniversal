@@ -15,9 +15,7 @@ class ClienteController extends Controller
 {
     public function tree(){
         if (Auth::user()->roles->first()->name == "Cliente"){
-            if (Auth::user()->pay==1){
-                return redirect()->route('clientes.getinfo');
-            } else if(Auth::user()->pay==0){
+            if(Auth::user()->pay==0){
                 return redirect()->route('clientes.pay');
             }
         }
@@ -108,26 +106,109 @@ class ClienteController extends Controller
 
     public function getinfo(){
         if (Auth::user()->roles->first()->name == "Cliente"){
-            if (Auth::user()->pay==2){
-                $IDCliente = Auth::user()->passport;
-                return redirect()->route('arboles.tree', compact('IDCliente'));
-            } else if(Auth::user()->pay==0){
+            if(Auth::user()->pay==0){
                 return redirect()->route('clientes.pay');
             }
         }
         return view('clientes.getinfo');
     }
 
+    public function procesargetinfo(Request $request){
+        /*
+
+            Aqui recibo y organizo el arreglo que viene del Jquery
+
+        */
+
+        $inputdata = json_decode(json_encode($request->all()),true);
+
+        $input_u = $inputdata["data"];
+
+        $input = array();
+
+        foreach ($input_u as $key => $value) {
+            if($input_u[$key]["name"]!="hs_context") {
+                $input[$input_u[$key]["name"]] = $input_u[$key]["value"];
+            }
+        }
+
+        /* Aquí actualizo la base de datos */
+
+        //print_r('de php');
+        //print_r($input['referido_por']);
+        $user = Auth()->user();
+        // Actualizando el árbol genenalógico
+        $agcliente = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',1)->first();
+        if($agcliente){
+            $agcliente->Sexo = $input['genero'] == 'MASCULINO / MALE' ? 'M' : 'F';
+            $user->genero = $agcliente->Sexo;
+            //$agcliente->AnhoNac = date("Y", $$input['date_of_birth']);
+            //$agcliente->MesNac = date("m", $$input['date_of_birth']);
+            //$agcliente->DiaNac = date("d", $$input['date_of_birth']);
+            /* try {
+                $user->date_of_birth = $input['date_of_birth'];
+            } catch (\Throwable $th) {
+                // $user->date_of_birth = null;
+            } */
+            $agcliente->LugarNac = trim($input['ciudad_de_nacimiento']);
+            $agcliente->PaisNac = trim($input['pais_de_nacimiento']);
+
+            $agcliente->FRegistro = date('Y-m-d H:i:s');
+            $agcliente->PNacimiento = trim($input['pais_de_nacimiento']);
+            $user->pais_de_nacimiento = $agcliente->PNacimiento;
+            $agcliente->LNacimiento = trim($input['ciudad_de_nacimiento']);
+            $user->ciudad_de_nacimiento = $agcliente->LNacimiento;
+            //$agcliente->referido = trim($input['referido_por']);
+            //$user->referido_por = $agcliente->referido;
+            $agcliente->PaisPasaporte = trim($input['pais_de_expedicion_del_pasaporte']);
+
+            $agcliente->ParentescoF = trim($input['vinculo_miembro_de_familia_1']);
+            $agcliente->NombresF = trim($input['nombre_miembro_de_familia_1']);
+            $agcliente->ApellidosF = trim($input['apellidos_miembro_de_familia_1']);
+            // $agcliente->NPasaporteF = trim($input['pasaporte_f']);
+
+            $agcliente->Observaciones = (($agcliente->Observaciones == null) ? '' : $agcliente->Observaciones . '. ')
+                . 'Phone: ' . trim($input['phone'])
+                . ' E-mail:' . trim($input['email'])
+                . ' Adress:' . trim($input['address']);
+            $agcliente->save();
+            $user->save();
+        }
+
+        /* Fin de la actualización en Base de Datos */
+
+        DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]); // no borrar esta linea
+        auth()->user()->revokePermissionTo('finish.register');
+    }
+
     public function pay(){
         if (Auth::user()->roles->first()->name == "Cliente"){
             if (Auth::user()->pay==2){
                 $IDCliente = Auth::user()->passport;
-                return redirect()->route('arboles.tree', compact('IDCliente'));
+                return redirect('/tree');
             } else if(Auth::user()->pay==1){
                 return redirect()->route('clientes.getinfo');
             }
         }
         return view('clientes.pay');
+    }
+
+    public function revisarcupon(Request $request){
+        $data = json_decode(json_encode($request->all()),true);
+
+        $cupones = ["BYTR4563PO", "BYTR1946RA", "55677"];
+
+        if( in_array($data["cpn"], $cupones)){
+            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1]);
+                auth()->user()->revokePermissionTo('pay.services');
+            return response()->json([
+                'status' => "true"
+            ]);
+        } else {
+            return response()->json([
+                'status' => "false"
+            ]);
+        }
     }
 
     public function procesarpay(Request $request) {
@@ -147,33 +228,45 @@ class ClienteController extends Controller
         } else {
             if(auth()->user()->servicio=="Italiana"){
                 $servicio["name"]="Nacionalidad Italiana";
+
             } else if(auth()->user()->servicio=="Española Sefardi"){
                 $servicio["name"]="Nacionalidad Española por origen Sefardí";
+
             } else if(auth()->user()->servicio=="Portuguesa Sefardi"){
                 $servicio["name"]="Nacionalidad Portuguesa por origen Sefardí";
+
+            } else if(auth()->user()->servicio=="Portuguesa Sefardi - Subsanación") {
+                $servicio["name"]="Subsanación de Expedientes (Portugal)";
+
+            } else if(auth()->user()->servicio=="Española Sefardi - Subsanación") {
+                $servicio["name"]="Subsanación de Expedientes (España)";
+
             }
             $servicio["price"]=50;
         }
 
-        $customer = Stripe\Customer::create(array(
-            "email" => auth()->user()->email,
-            "name" => $request->nameoncard,
-            "source" => $request->stripeToken
-        ));
+        try {
+            $customer = Stripe\Customer::create(array(
+                "email" => auth()->user()->email,
+                "name" => $request->nameoncard,
+                "source" => $request->stripeToken
+            ));
 
-        $charged = Stripe\Charge::create ([
-            "amount" => $servicio["price"]*100,
-            "currency" => "eur",
-            "customer" => $customer->id,
-            "description" => "Sefar Universal: Inicia tu proceso (". $servicio["name"] .")"
-        ]);
+            $charged = Stripe\Charge::create ([
+                "amount" => $servicio["price"]*100,
+                "currency" => "eur",
+                "customer" => $customer->id,
+                "description" => "Sefar Universal: Inicia tu proceso (". $servicio["name"] .")"
+            ]);
 
-        if ($charged->status == "succeeded"){
-            //Actualizar rol, o actualizar base de datos para decir que el usuario ya pagó
-            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1]);
-            return redirect()->route('clientes.getinfo')->with("status","exito");
-        } else {
-            return redirect()->route('clientes.pay')->with("status","fracaso");
+            if ($charged->status == "succeeded"){
+                //Actualizar rol, o actualizar base de datos para decir que el usuario ya pagó
+                DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1]);
+                auth()->user()->revokePermissionTo('pay.services');
+                return redirect()->route('clientes.getinfo')->with("status","exito");
+            }
+        } catch (Exception $e) {
+            return redirect("/pay")->with("status", "error");
         }
     }
 }

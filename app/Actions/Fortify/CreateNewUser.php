@@ -44,6 +44,7 @@ class CreateNewUser implements CreatesNewUsers
                         'Nombres' => trim($input['nombres']),
                         'Apellidos' => trim($input['apellidos']),
                         'NPasaporte' => trim($input['passport']),
+                        'referido' => trim($input['referido']),
                         'FRegistro' => date('Y-m-d H:i:s'),
                         'FUpdate' => date('Y-m-d H:i:s'),
                         'Usuario' => trim($input['email']),
@@ -73,7 +74,10 @@ class CreateNewUser implements CreatesNewUsers
             'email_verified_at' => date('Y-m-d H:i:s'),
             'phone' => $input['phone'],
             'servicio' => $input['servicio'],
-            'pay' => 0
+            'pay' => 0,
+            'nombres' => $input['nombres'],
+            'apellidos' => $input['apellidos'],
+            'referido_por' => $input['referido'],
         ]);
         if($rol == 'cliente'){
             //$user->email_verified_at = date('Y-m-d H:i:s');
@@ -95,7 +99,7 @@ class CreateNewUser implements CreatesNewUsers
                 'gcuriel@sefarvzla.com'
             ])->send($mail_sefar);
 
-            return $user->assignRole('Cliente');
+            return $user->assignRole('Cliente')->givePermissionTo(['pay.services', 'finish.register']);
         }else{
             return $user;
         }
