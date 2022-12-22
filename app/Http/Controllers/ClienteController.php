@@ -155,11 +155,8 @@ class ClienteController extends Controller
 
             $agcliente->FRegistro = date('Y-m-d H:i:s');
             $agcliente->PNacimiento = trim($input['pais_de_nacimiento']);
-            $user->pais_de_nacimiento = $agcliente->PNacimiento;
             $agcliente->LNacimiento = trim($input['ciudad_de_nacimiento']);
             $user->ciudad_de_nacimiento = $agcliente->LNacimiento;
-            //$agcliente->referido = trim($input['referido_por']);
-            //$user->referido_por = $agcliente->referido;
             $agcliente->PaisPasaporte = trim($input['pais_de_expedicion_del_pasaporte']);
 
             $agcliente->ParentescoF = trim($input['vinculo_miembro_de_familia_1']);
@@ -249,7 +246,7 @@ class ClienteController extends Controller
             auth()->user()->revokePermissionTo('finish.register');
             DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]);
         }
-        
+
 
         try {
             $customer = Stripe\Customer::create(array(

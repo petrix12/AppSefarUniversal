@@ -75,7 +75,7 @@
                 </div>
 
                 <div class="md:flex ms:flex-wrap">
-                    <div class="px-1 py-2 m-2 flex-1">    {{-- numero_de_pasaporte --}}
+                    <div class="px-1 py-2 m-2 flex-1">    {{-- pais_de_nacimiento --}}
                         <div>
                             <label for="pais_de_nacimiento" class="block text-sm font-medium text-gray-700">País de nacimiento</label>
                             <input value="Venezuela" type="text" name="pais_de_nacimiento" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
