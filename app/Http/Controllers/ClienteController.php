@@ -142,14 +142,14 @@ class ClienteController extends Controller
         if($agcliente){
             $agcliente->Sexo = $input['genero'] == 'MASCULINO / MALE' ? 'M' : 'F';
             $user->genero = $agcliente->Sexo;
-            //$agcliente->AnhoNac = date("Y", $$input['date_of_birth']);
-            //$agcliente->MesNac = date("m", $$input['date_of_birth']);
-            //$agcliente->DiaNac = date("d", $$input['date_of_birth']);
-            /* try {
-                $user->date_of_birth = $input['date_of_birth'];
-            } catch (\Throwable $th) {
-                // $user->date_of_birth = null;
-            } */
+
+            $user->date_of_birth = $input['fecha_nac'];
+            if($user->date_of_birth){
+                $agcliente->AnhoNac = date("Y", strtotime($user->date_of_birth));
+                $agcliente->MesNac = date("m", strtotime($user->date_of_birth));
+                $agcliente->DiaNac = date("d", strtotime($user->date_of_birth));
+            }
+
             $agcliente->LugarNac = trim($input['ciudad_de_nacimiento']);
             $agcliente->PaisNac = trim($input['pais_de_nacimiento']);
 
