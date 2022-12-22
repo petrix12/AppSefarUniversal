@@ -3,6 +3,7 @@
 
 use App\Models\Agcliente;
 use App\Models\File;
+use App\Models\User;
 
 function GetPersona($IDPersona){
     $Persona = null;
@@ -553,3 +554,13 @@ function getDocumentos($pasaporte, $IDPersona){
         return null;
     }
 }
+
+// Obtener servicio
+function getServicio($passport){
+    try{
+        return User::where('passport',$passport)->first()->servicio;
+    }catch(Exception $e){
+        return null;
+    }
+}
+

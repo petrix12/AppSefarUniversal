@@ -125,7 +125,7 @@ class Agcliente extends Model
         if(Auth()->user()->hasRole('Soma-Consultores')){
             return $query->where('referido','Soma Consultores');
         }
-        
+
         // Clientes con el rol MG Tours
         if(Auth()->user()->hasRole('MG-Tours')){
             return $query->where('referido','MG Tours');
