@@ -254,6 +254,7 @@ class ClienteController extends Controller
             DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]);
         }
 
+        $errorcode = "error";
 
         try {
             $customer = Stripe\Customer::create(array(
@@ -268,18 +269,46 @@ class ClienteController extends Controller
                 "description" => "Sefar Universal: Inicia tu proceso (". $servicio["name"] .")"
             ]);
         } catch(CardException $e) {
-            return redirect()->route('clientes.pay')->with("status","error")->with("code",$e->getError()->code);
+            $errorcod= "errorx";
         } catch (RateLimitException $e) {
-            return redirect()->route('clientes.pay')->with("status","error1");
+            $errorcod= "error1";
         } catch (InvalidRequestException $e) {
-            return redirect()->route('clientes.pay')->with("status","error2");
+            $errorcod= "error2";
         } catch (AuthenticationException $e) {
-            return redirect()->route('clientes.pay')->with("status","error3");
+            $errorcod= "error3";
         } catch (ApiConnectionException $e) {
-            return redirect()->route('clientes.pay')->with("status","error4");
+            $errorcod= "error4";
         } catch (ApiErrorException $e) {
-            return redirect()->route('clientes.pay')->with("status","error5");
+            $errorcod= "error5";
         } catch (Exception $e) {
+            $errorcod= "error6";
+        }
+
+        if ($errorcod== "errorx"){
+            return redirect()->route('clientes.pay')->with("status","errorx")->with("code",$e->getError()->code);
+        }
+
+        if ($errorcod== "error1"){
+            return redirect()->route('clientes.pay')->with("status","error1");
+        }
+
+        if ($errorcod== "error2"){
+            return redirect()->route('clientes.pay')->with("status","error2");
+        }
+
+        if ($errorcod== "error3"){
+            return redirect()->route('clientes.pay')->with("status","error3");
+        }
+
+        if ($errorcod== "error4"){
+            return redirect()->route('clientes.pay')->with("status","error4");
+        }
+
+        if ($errorcod== "error5"){
+            return redirect()->route('clientes.pay')->with("status","error5");
+        }
+
+        if ($errorcod== "error6"){
             return redirect()->route('clientes.pay')->with("status","error6");
         }
 
@@ -287,6 +316,6 @@ class ClienteController extends Controller
             DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1]);
             auth()->user()->revokePermissionTo('pay.services');
             return redirect()->route('clientes.getinfo')->with("status","exito");
-        }
+        } 
     }
 }

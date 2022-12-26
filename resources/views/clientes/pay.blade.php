@@ -12,18 +12,18 @@
 
 @section('content')
 
-    @if(session("status")!="error")
+    @if(session("status")=="errorx")
         <script type="text/javascript">
             Swal.fire({
                 icon: 'error',
-                title: 'Pago rechazado',
+                title: 'Pago rechazado: {{ session("code") }}',
                 showConfirmButton: false,
                 timer: 5000
             });
         </script>
     @endif
 
-    @if(session("status")!="error1")
+    @if(session("status")=="error1")
         <script type="text/javascript">
             Swal.fire({
                 icon: 'error',
@@ -34,7 +34,7 @@
         </script>
     @endif
 
-    @if(session("status")!="error2")
+    @if(session("status")=="error2")
         <script type="text/javascript">
             Swal.fire({
                 icon: 'error',
@@ -45,7 +45,7 @@
         </script>
     @endif
 
-    @if(session("status")!="error3")
+    @if(session("status")=="error3")
         <script type="text/javascript">
             Swal.fire({
                 icon: 'error',
@@ -56,7 +56,7 @@
         </script>
     @endif
 
-    @if(session("status")!="error4")
+    @if(session("status")=="error4")
         <script type="text/javascript">
             Swal.fire({
                 icon: 'error',
@@ -67,7 +67,7 @@
         </script>
     @endif
 
-    @if(session("status")!="error5")
+    @if(session("status")=="error5")
         <script type="text/javascript">
             Swal.fire({
                 icon: 'error',
@@ -78,7 +78,7 @@
         </script>
     @endif
 
-    @if(session("status")!="error6")
+    @if(session("status")=="error6")
         <script type="text/javascript">
             Swal.fire({
                 icon: 'error',
