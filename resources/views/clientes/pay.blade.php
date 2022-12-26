@@ -89,7 +89,7 @@
         </script>
     @endif
 
-    <form action="" method="POST" class="require-validation" data-cc-on-file="false" data-stripe-publishable-key="{{ env('STRIPE_KEY') }}" id="payment-form">
+    <form action="" method="POST" class="require-validation" data-cc-on-file="false" data-stripe-publishable-key="pk_live_bRxzDwPip6Zw1w4joIOL4SVu" id="payment-form">
         <div class="container p-8 row" style="display:flex;">
             <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
 
