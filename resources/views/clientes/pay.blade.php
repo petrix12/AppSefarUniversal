@@ -5,17 +5,86 @@
 @section('content_header')
     <h1>Realizar pago</h1>
 @stop
+
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <div id="ajaxload" style="background-color: rgba(0, 0, 0, 0.4); position: absolute; z-index: 1000; display: none; width: 100%; height: 100%;"></div>
 
 @section('content')
 
-    @if(session("status")!="exito")
+    @if(session("status")!="error")
         <script type="text/javascript">
             Swal.fire({
                 icon: 'error',
-                title: 'Ha habido un error procesando su pago',
+                title: 'Pago rechazado',
                 showConfirmButton: false,
-                timer: 2500
+                timer: 5000
+            });
+        </script>
+    @endif
+
+    @if(session("status")!="error1")
+        <script type="text/javascript">
+            Swal.fire({
+                icon: 'error',
+                title: 'Se realizaron varios intentos sin éxito. Por favor, comunicarse con el emisor de su tarjeta.',
+                showConfirmButton: false,
+                timer: 5000
+            });
+        </script>
+    @endif
+
+    @if(session("status")!="error2")
+        <script type="text/javascript">
+            Swal.fire({
+                icon: 'error',
+                title: 'Se ha realizado una petición inválida. Por favor, comunicar este error a Sistemas.',
+                showConfirmButton: false,
+                timer: 5000
+            });
+        </script>
+    @endif
+
+    @if(session("status")!="error3")
+        <script type="text/javascript">
+            Swal.fire({
+                icon: 'error',
+                title: 'Se realizaron varios intentos sin éxito. Por favor, comunicarse con el emisor de su tarjeta',
+                showConfirmButton: false,
+                timer: 5000
+            });
+        </script>
+    @endif
+
+    @if(session("status")!="error4")
+        <script type="text/javascript">
+            Swal.fire({
+                icon: 'error',
+                title: 'Error conectándose a la pasarela de pago. Por favor, comunicar este error a Sistemas.',
+                showConfirmButton: false,
+                timer: 5000
+            });
+        </script>
+    @endif
+
+    @if(session("status")!="error5")
+        <script type="text/javascript">
+            Swal.fire({
+                icon: 'error',
+                title: 'En este momento, la pasarela de pago está en mantenimiento. Por favor, intente pagar mas tarde.',
+                showConfirmButton: false,
+                timer: 5000
+            });
+        </script>
+    @endif
+
+    @if(session("status")!="error6")
+        <script type="text/javascript">
+            Swal.fire({
+                icon: 'error',
+                title: 'Ha ocurrido un error desconocido al realizar su pago.',
+                showConfirmButton: false,
+                timer: 5000
             });
         </script>
     @endif

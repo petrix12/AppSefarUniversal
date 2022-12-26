@@ -10,6 +10,13 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Stripe;
 use Illuminate\Support\Facades\DB;
+use Stripe\Exception\CardException;
+use Stripe\Exception\RateLimitException;
+use Stripe\Exception\InvalidRequestException;
+use Stripe\Exception\AuthenticationException;
+use Stripe\Exception\ApiConnectionException;
+use Stripe\Exception\ApiErrorException;
+use Exception;
 
 class ClienteController extends Controller
 {
@@ -246,9 +253,7 @@ class ClienteController extends Controller
             }
         } else {
             auth()->user()->revokePermissionTo('pay.services');
-
         }
-        
 
         try {
             $customer = Stripe\Customer::create(array(
@@ -256,23 +261,32 @@ class ClienteController extends Controller
                 "name" => $request->nameoncard,
                 "source" => $request->stripeToken
             ));
-
             $charged = Stripe\Charge::create ([
                 "amount" => $servicio["price"]*100,
                 "currency" => "eur",
                 "customer" => $customer->id,
                 "description" => "Sefar Universal: Inicia tu proceso (". $servicio["name"] .")"
             ]);
-
-            if ($charged->status == "succeeded"){
-                //Actualizar rol, o actualizar base de datos para decir que el usuario ya pagó
-                DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1]);
-                auth()->user()->revokePermissionTo('pay.services');
-                return redirect()->route('clientes.getinfo')->with("status","exito");
-            }
+        } catch(CardException $e) {
+            return redirect()->route('clientes.pay')->with("status","error")->with("code",$e->getError()->code);
+        } catch (RateLimitException $e) {
+            return redirect()->route('clientes.pay')->with("status","error1");
+        } catch (InvalidRequestException $e) {
+            return redirect()->route('clientes.pay')->with("status","error2");
+        } catch (AuthenticationException $e) {
+            return redirect()->route('clientes.pay')->with("status","error3");
+        } catch (ApiConnectionException $e) {
+            return redirect()->route('clientes.pay')->with("status","error4");
+        } catch (ApiErrorException $e) {
+            return redirect()->route('clientes.pay')->with("status","error5");
         } catch (Exception $e) {
+            return redirect()->route('clientes.pay')->with("status","error6");
+        }
+
+        if ($charged->status == "succeeded"){
+            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1]);
             auth()->user()->revokePermissionTo('pay.services');
-            auth()->user()->revokePermissionTo('finish.register');
+            return redirect()->route('clientes.getinfo')->with("status","exito");
         }
     }
 }
