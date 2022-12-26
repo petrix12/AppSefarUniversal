@@ -6,6 +6,7 @@
                 {{-- Cliente: {{ $agclientes[0]->Nombres.', '.$agclientes[0]->Apellidos.' / '.$agclientes[0]->IDCliente}} --}}
                 Cliente:
                 {{ GetNombres($agclientes, 1) . ' ' . GetApellidos($agclientes, 1) . ' / ' . $agclientes[0]->IDCliente }}
+                {{ getServicio($agclientes[0]->IDCliente) ? ' / Servicio: ' . getServicio($agclientes[0]->IDCliente) : '' }}
             </h2>
             <p class="mt-2 text-lg leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
                 ÁRBOL GENEALÓGICO (VISTA HORIZONTAL)

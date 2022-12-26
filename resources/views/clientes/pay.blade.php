@@ -88,11 +88,11 @@
             });
         </script>
     @endif
-    
+
     <form action="" method="POST" class="require-validation" data-cc-on-file="false" data-stripe-publishable-key="{{ env('STRIPE_KEY') }}" id="payment-form">
         <div class="container p-8 row" style="display:flex;">
             <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
-            
+
             <script src="https://cdnjs.cloudflare.com/ajax/libs/cleave.js/1.6.0/cleave.min.js"></script>
 
             <script>
@@ -130,7 +130,7 @@
                             });
                             return false;
                         }
-                        $("#ajaxload").show();  
+                        $("#ajaxload").show();
                         $.ajax({
                             url: '{{ route("revisarcupon") }}',
                             data: {
@@ -159,13 +159,13 @@
 
                 });
 
-                
-                
+
+
 
             </script>
 
 
-            
+
             @csrf
             <div class="col-sm-12 col-md-7 mb-0">
                 <center>
@@ -192,7 +192,7 @@
                 <div class='row' style="margin: 0 0 1rem 0;">
                     <div class='mt-2' style="width: calc(100%/3); padding-right: 3px;">
                         <label class='control-label'>CVC</label> <input autocomplete='off'
-                            class='form-control card-cvc' placeholder='***' maxlength="4" 
+                            class='form-control card-cvc' placeholder='***' maxlength="4"
                             type='password'>
                     </div>
                     <div class='mt-2' style="width: calc(100%/3); padding-left: 3px; padding-right: 3px;">
@@ -254,7 +254,7 @@
 
                             } else if(auth()->user()->servicio=="Española Sefardi - Subsanación") {
                                 $servicio["name"]="Subsanación de Expedientes (España)";
-                                
+
                             }
                             $servicio["price"]=50;
                         }
@@ -266,34 +266,34 @@
 
                     <h4 style="padding:10px 0px; color:#12313a"><b>Inicia tu Proceso: {{$servicio["name"]}}</b></h4>
 
-                    <h4 style="padding:10px 0px 2px 0px; color:#12313a">Pago: <b id="priced">{{$servicio["price"]}}€</b></h4> 
+                    <h4 style="padding:10px 0px 2px 0px; color:#12313a">Pago: <b id="priced">{{$servicio["price"]}}€</b></h4>
 
                     <input type="hidden" id="idproducto" name="idproducto" value="{{$servicio['id']}}">
                 </div>
             </div>
-    
+
         </div>
     </form>
 
-    
+
 
     <script type="text/javascript" src="//js.stripe.com/v2/"></script>
-    
+
     <script type="text/javascript">
-      
+
         $(function() {
-          
+
             /*------------------------------------------
             --------------------------------------------
             Stripe Payment Code
             --------------------------------------------
             --------------------------------------------*/
-            
+
             var $form = $(".require-validation");
-             
+
             $('form.require-validation').bind('submit', function(e) {
 
-                $("#ajaxload").show();                
+                $("#ajaxload").show();
 
                 var $form = $(".require-validation"),
                 inputSelector = ['input[type=email]', 'input[type=password]',
@@ -303,7 +303,7 @@
                 $errorMessage = $form.find('div.error'),
                 valid = true;
                 $errorMessage.addClass('hide');
-            
+
                 $('.has-error').removeClass('has-error');
                 $inputs.each(function(i, el) {
                   var $input = $(el);
@@ -313,7 +313,7 @@
                     e.preventDefault();
                   }
                 });
-             
+
                 if (!$form.data('cc-on-file')) {
                   e.preventDefault();
                   Stripe.setPublishableKey($form.data('stripe-publishable-key'));
@@ -324,9 +324,9 @@
                     exp_year: $('.card-expiry-year').val()
                   }, stripeResponseHandler);
                 }
-            
+
             });
-              
+
             /*------------------------------------------
             --------------------------------------------
             Stripe Response Handler
@@ -334,7 +334,7 @@
             --------------------------------------------*/
             function stripeResponseHandler(status, response) {
                 if (response.error) {
-                    $("#ajaxload").hide();  
+                    $("#ajaxload").hide();
                     var error = "";
 
                     switch(response.error.code){
@@ -483,7 +483,7 @@
                             error = response.error.code;
                             break;
                     }
-                    
+
                     Swal.fire({
                         icon: 'error',
                         title: error,
@@ -493,13 +493,13 @@
                 } else {
                     /* token contains id, last4, and card type */
                     var token = response['id'];
-                         
+
                     $form.find('input[type=text]').empty();
                     $form.append("<input type='hidden' name='stripeToken' value='" + token + "'/>");
                     $form.get(0).submit();
                 }
             }
-             
+
         });
     </script>
 @stop

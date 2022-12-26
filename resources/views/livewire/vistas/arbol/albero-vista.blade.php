@@ -4,6 +4,7 @@
             <h2 class="text-sm font-bold ctvSefar cfaSefar tracking-wide pt-2 rounded-lg opacity-75 flex h-8 justify-center items-center">
                 {{-- Cliente: {{ $agclientes[0]->Nombres.', '.$agclientes[0]->Apellidos.' / '.$agclientes[0]->IDCliente}} --}}
                 Cliente: {{ GetNombres($agclientes,1) .' '. GetApellidos($agclientes,1).' / '.$agclientes[0]->IDCliente }}
+                {{ getServicio($agclientes[0]->IDCliente) ? ' / Servicio: ' . getServicio($agclientes[0]->IDCliente) : '' }}
             </h2>
             <p class="mt-2 text-lg leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
                 {{-- ALBERO GENEALOGICO PER LE RICOSTRUZIONI DI CITTADINANZA --}}
@@ -69,7 +70,7 @@
                     <a href="{{ route('crud.agclientes.create') }}">{{ GetPersona($IDTatarabuelo) }}</a>
                 </h1>
             @endif
-            
+
             <p class="text-center text-sm ctrSefar">{{ GetNombres($agclientes,$IDTatarabuelo) }}</p>
             <p class="text-center text-sm ctrSefar">{{ GetApellidos($agclientes,$IDTatarabuelo) }}</p>
             @if ($idT)
@@ -77,13 +78,13 @@
             @endif
             <p class="text-center text-xs">{{ GetLugarNac($agclientes,$IDTatarabuelo) }}</p>
             <p class="text-center text-xs" title="{{ GetVidaCompleta($agclientes,$IDTatarabuelo) }}">{{ GetVida($agclientes,$IDTatarabuelo) }}</p>
-                 
+
             {{-- <span class="editar"><x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$IDTatarabuelo'/></span> --}}
             <span class="editar"><x-editar-persona-i-v2 :agclientes='$agclientes' :countries='$countries' :id='$IDTatarabuelo'/></span>
             <x-cargar-doc :agclientes='$agclientes' :id='$IDTatarabuelo'/>
             <x-ver-doc :agclientes='$agclientes' :id='$IDTatarabuelo'/>
         </div>
-        
+
         {{-- TATARABUELA --}}
         <div class="caja_persona" style="top: 20px; left: 670px;">
             @php
@@ -91,7 +92,7 @@
                 $IDTatarabuela = $IDTatarabuelo + $pasoConyugueT;
                 $idTa = GetID($agclientes,$IDTatarabuela);
             @endphp
-            
+
             @if ($idTa)
                 <h1 class="text-center font-bold text-sm pt-1 ctvSefar" title="Editar">
                     <a href="{{ route('crud.agclientes.edit', $idTa ) }}">{{ GetPersona($IDTatarabuela) }}</a>
@@ -103,7 +104,7 @@
                 </h1>
             </h1>
             @endif
-            
+
             <p class="text-center text-sm ctrSefar">{{ GetNombres($agclientes,$IDTatarabuela) }}</p>
             <p class="text-center text-sm ctrSefar">{{ GetApellidos($agclientes,$IDTatarabuela) }}</p>
             @if ($idTa)
@@ -135,7 +136,7 @@
                 $IDBisabuelo = GetIDHijo($IDTatarabuelo);
                 $idB = GetID($agclientes,$IDBisabuelo);
             @endphp
-            
+
             @if ($idB)
                 <h1 class="text-center font-bold text-sm pt-1 ctvSefar" title="Editar">
                     <a href="{{ route('crud.agclientes.edit', $idB ) }}">{{ GetPersona($IDBisabuelo) }}</a>
@@ -145,7 +146,7 @@
                     <a href="{{ route('crud.agclientes.create') }}">{{ GetPersona($IDBisabuelo) }}</a>
                 </h1>
             @endif
-            
+
             <p class="text-center text-sm ctrSefar">{{ GetNombres($agclientes,$IDBisabuelo) }}</p>
             <p class="text-center text-sm ctrSefar">{{ GetApellidos($agclientes,$IDBisabuelo) }}</p>
             @if ($idB)
@@ -158,7 +159,7 @@
             <x-cargar-doc :agclientes='$agclientes' :id='$IDBisabuelo'/>
             <x-ver-doc :agclientes='$agclientes' :id='$IDBisabuelo'/>
         </div>
-        
+
         {{-- BISABUELA --}}
         <div class="caja_persona" style="top: 220px; left: 670px;">
             @php
@@ -166,7 +167,7 @@
                 $IDBisabuela = $IDBisabuelo + $pasoConyugueB;
                 $idBa = GetID($agclientes,$IDBisabuela);
             @endphp
-            
+
             @if ($idBa)
                 <h1 class="text-center font-bold text-sm pt-1 ctvSefar" title="Editar">
                     <a href="{{ route('crud.agclientes.edit', $idBa ) }}">{{ GetPersona($IDBisabuela) }}</a>
@@ -176,7 +177,7 @@
                     <a href="{{ route('crud.agclientes.create') }}">{{ GetPersona($IDBisabuela) }}</a>
                 </h1>
             @endif
-            
+
             <p class="text-center text-sm ctrSefar">{{ GetNombres($agclientes,$IDBisabuela) }}</p>
             <p class="text-center text-sm ctrSefar">{{ GetApellidos($agclientes,$IDBisabuela) }}</p>
             @if ($idBa)
@@ -208,7 +209,7 @@
                 $IDAbuelo = GetIDHijo($IDBisabuelo);
                 $idA = GetID($agclientes,$IDAbuelo);
             @endphp
-            
+
             @if ($idA)
                 <h1 class="text-center font-bold text-sm pt-1 ctvSefar" title="Editar">
                     <a href="{{ route('crud.agclientes.edit', $idA ) }}">{{ GetPersona($IDAbuelo) }}</a>
@@ -218,7 +219,7 @@
                     <a href="{{ route('crud.agclientes.create') }}">{{ GetPersona($IDAbuelo) }}</a>
                 </h1>
             @endif
-            
+
             <p class="text-center text-sm ctrSefar">{{ GetNombres($agclientes,$IDAbuelo) }}</p>
             <p class="text-center text-sm ctrSefar">{{ GetApellidos($agclientes,$IDAbuelo) }}</p>
             @if ($idA)
@@ -231,7 +232,7 @@
             <x-cargar-doc :agclientes='$agclientes' :id='$IDAbuelo'/>
             <x-ver-doc :agclientes='$agclientes' :id='$IDAbuelo'/>
         </div>
-        
+
         {{-- ABUELA --}}
         <div class="caja_persona" style="top: 420px; left: 670px;">
             @php
@@ -239,7 +240,7 @@
                 $IDAbuela = $IDAbuelo + $pasoConyugueA;
                 $idAa = GetID($agclientes,$IDAbuela);
             @endphp
-            
+
             @if ($idAa)
                 <h1 class="text-center font-bold text-sm pt-1 ctvSefar" title="Editar">
                     <a href="{{ route('crud.agclientes.edit', $idAa ) }}">{{ GetPersona($IDAbuela) }}</a>
@@ -249,7 +250,7 @@
                     <a href="{{ route('crud.agclientes.create') }}">{{ GetPersona($IDAbuela) }}</a>
                 </h1>
             @endif
-            
+
             <p class="text-center text-sm ctrSefar">{{ GetNombres($agclientes,$IDAbuela) }}</p>
             <p class="text-center text-sm ctrSefar">{{ GetApellidos($agclientes,$IDAbuela) }}</p>
             @if ($idAa)
@@ -281,7 +282,7 @@
                 $IDPadre = GetIDHijo($IDAbuelo);
                 $idP = GetID($agclientes,$IDPadre);
             @endphp
-            
+
             @if ($idP)
                 <h1 class="text-center font-bold text-sm pt-1 ctvSefar" title="Editar">
                     <a href="{{ route('crud.agclientes.edit', $idP ) }}">{{ GetPersona($IDPadre) }}</a>
@@ -291,7 +292,7 @@
                     <a href="{{ route('crud.agclientes.create') }}">{{ GetPersona($IDPadre) }}</a>
                 </h1>
             @endif
-            
+
             <p class="text-center text-sm ctrSefar">{{ GetNombres($agclientes,$IDPadre) }}</p>
             <p class="text-center text-sm ctrSefar">{{ GetApellidos($agclientes,$IDPadre) }}</p>
             @if ($idP)
@@ -304,7 +305,7 @@
             <x-cargar-doc :agclientes='$agclientes' :id='$IDPadre'/>
             <x-ver-doc :agclientes='$agclientes' :id='$IDPadre'/>
         </div>
-        
+
         {{-- MADRE --}}
         <div class="caja_persona" style="top: 620px; left: 670px;">
             @php
@@ -312,7 +313,7 @@
                 $IDMadre = $IDPadre + $pasoConyugueP;
                 $idM = GetID($agclientes,$IDMadre);
             @endphp
-            
+
             @if ($idM)
                 <h1 class="text-center font-bold text-sm pt-1 ctvSefar" title="Editar">
                     <a href="{{ route('crud.agclientes.edit', $idM ) }}">{{ GetPersona($IDMadre) }}</a>
@@ -322,7 +323,7 @@
                     <a href="{{ route('crud.agclientes.create') }}">{{ GetPersona($IDMadre) }}</a>
                 </h1>
             @endif
-            
+
             <p class="text-center text-sm ctrSefar">{{ GetNombres($agclientes,$IDMadre) }}</p>
             <p class="text-center text-sm ctrSefar">{{ GetApellidos($agclientes,$IDMadre) }}</p>
             @if ($idM)
@@ -354,7 +355,7 @@
                 $IDSolicitante = GetIDHijo($IDPadre);
                 $idS = GetID($agclientes,$IDSolicitante);
             @endphp
-            
+
             @if ($idS)
                 <h1 class="text-center font-bold text-sm pt-1 ctvSefar" title="Editar">
                     <a href="{{ route('crud.agclientes.edit', $idS ) }}">{{ GetPersona($IDSolicitante) }}</a>
@@ -364,7 +365,7 @@
                     <a href="{{ route('crud.agclientes.create') }}">{{ GetPersona($IDSolicitante) }}</a>
                 </h1>
             @endif
-            
+
             <p class="text-center text-sm ctrSefar">{{ GetNombres($agclientes,$IDSolicitante) }}</p>
             <p class="text-center text-sm ctrSefar">{{ GetApellidos($agclientes,$IDSolicitante) }}</p>
             @if ($idS)
@@ -377,14 +378,14 @@
             <x-cargar-doc :agclientes='$agclientes' :id='$IDSolicitante'/>
             <x-ver-doc :agclientes='$agclientes' :id='$IDSolicitante'/>
         </div>
-        
+
         {{-- CÓNYUGUE --}}
         <div class="caja_persona" style="top: 820px; left: 670px;">
             @php
                 $IDConyugue = null;
                 $idC = GetID($agclientes,$IDConyugue);
             @endphp
-            
+
             @if ($idC)
                 <h1 class="text-center font-bold text-sm pt-1 ctvSefar" title="Editar">
                     <a href="{{ route('crud.agclientes.edit', $idC ) }}">{{ GetPersona($IDConyugue) }}</a>
@@ -394,7 +395,7 @@
                     <a href="{{ route('crud.agclientes.create') }}">{{ GetPersona($IDConyugue) }}</a>
                 </h1>
             @endif
-            
+
             <p class="text-center text-sm ctrSefar">{{ GetNombres($agclientes,$IDConyugue) }}</p>
             <p class="text-center text-sm ctrSefar">{{ GetApellidos($agclientes,$IDConyugue) }}</p>
             @if ($idC)
@@ -422,5 +423,5 @@
 </div>
 
 @for ($i = 1; $i <= 31; $i++)
-   <x-editar-persona-ii-v2 :agclientes='$agclientes' :countries='$countries' :id='$i'/> 
+   <x-editar-persona-ii-v2 :agclientes='$agclientes' :countries='$countries' :id='$i'/>
 @endfor

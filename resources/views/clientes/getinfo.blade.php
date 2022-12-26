@@ -101,6 +101,8 @@
                         $('.hs-fieldtype-intl-phone.hs-input .hs-input').val("{{ auth()->user()->phone }}").change();
                         $('input[name="email"]').val("{{ auth()->user()->email }}").change();
                         $('input[name="numero_de_pasaporte"]').val("{{ auth()->user()->passport }}").change();
+                        $('input[name="pais_de_nacimiento"]').val("{{ auth()->user()->pais_de_nacimiento }}").change();
+                        $('input[name="nacionalidad_solicitada"]').val("{{ auth()->user()->servicio }}").change();
                     },
                     onFormSubmit: function($form){
                         setTimeout( function() {
@@ -144,6 +146,8 @@
                         $('.hs-fieldtype-intl-phone.hs-input .hs-input').val("{{ auth()->user()->phone }}").change();
                         $('input[name="email"]').val("{{ auth()->user()->email }}").change();
                         $('input[name="numero_de_pasaporte"]').val("{{ auth()->user()->passport }}").change();
+                        $('input[name="pais_de_nacimiento"]').val("{{ auth()->user()->pais_de_nacimiento }}").change();
+                        $('input[name="nacionalidad_solicitada"]').val("{{ auth()->user()->servicio }}").change();
                     },
                     onFormSubmit: function($form){
                         setTimeout( function() {
