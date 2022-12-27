@@ -42,7 +42,10 @@ class User extends Authenticatable implements MustVerifyEmail
 		'genero',
 		'pais_de_nacimiento',
 		'ciudad_de_nacimiento',
-		'referido_por'
+		'referido_por',
+		'pago_registro',
+		'pago_cupon',
+		'id_pago'
     ];
 
     /**

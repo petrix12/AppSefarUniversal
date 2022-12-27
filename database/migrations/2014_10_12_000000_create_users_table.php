@@ -24,10 +24,13 @@ class CreateUsersTable extends Migration
             $table->string('picture')->nullable();
             $table->dateTime('created')->nullable();
             $table->string('password_md5')->nullable();
-            
+
             $table->string('phone')->nullable();
             $table->string('servicio')->nullable();
             $table->integer('pay')->nullable();
+            $table->double('pago_registro')->nullable();
+            $table->string('pago_cupon')->nullable();
+            $table->string('id_pago')->nullable();
             $table->dateTime('date_of_birth')->nullable();
             $table->string('nombres')->nullable();
             $table->string('apellidos')->nullable();
