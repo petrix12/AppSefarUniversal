@@ -203,7 +203,7 @@ class ClienteController extends Controller
         $cupones = ["BYTR4563PO", "BYTR1946RA", "55677"];
 
         if( in_array($data["cpn"], $cupones)){
-            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1]);
+            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_cupon' => $data["cpn"]]);
                 auth()->user()->revokePermissionTo('pay.services');
             return response()->json([
                 'status' => "true"
@@ -254,7 +254,7 @@ class ClienteController extends Controller
             DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]);
         }
 
-        $errorcode = "error";
+        $errorcod = "error";
 
         try {
             $customer = Stripe\Customer::create(array(
@@ -313,7 +313,7 @@ class ClienteController extends Controller
         }
 
         if ($charged->status == "succeeded"){
-            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1]);
+            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro' => $servicio["price"], 'id_pago' => $charged->id ]);
             auth()->user()->revokePermissionTo('pay.services');
             return redirect()->route('clientes.getinfo')->with("status","exito");
         } 
