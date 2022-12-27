@@ -54,9 +54,21 @@
                                         <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
                                             En estos momentos su información será remitida al departamento de genealogía e historia para el respectivo análisis de su árbol genealógico.
                                         </p>
+                                        @if ($user->servicio == "Española LMD")
+                                            <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
+                                                Para acelerar la gestión de alguno de los supuestos que establece la
+                                                Ley de Memoria Democrática y preparar un expediente
+                                                <strong>completamente blindado</strong> que nos permita tener así la certeza de
+                                                obtener su nacionalidad española, necesitamos que entre al siguiente enlace y complete
+                                                la mayor cantidad de información posible.
+                                            </p>
+                                            <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
+                                                <a href="https://survey.hsforms.com/19Zypb99_QFyCrbM8-V0fzQbxtdk" target="_blank">FORMULARIO LEY DE MEMORIA DEMOCRÁTICA</a>
+                                            </p>
+                                        @endif
                                         <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
                                             Si no ha podido cargar los datos de su árbol, puede hacerlo entrando a nuestra plataforma en este momento o cuando lo desee, mediante el siguiente enlace:
-                                            <a href="https://app.universalsefar.com/login">https://app.universalsefar.com/login</a>
+                                            <a href="https://app.universalsefar.com/login" target="_blank">https://app.universalsefar.com/login</a>
                                             con su correo {{ $user->email }}, y cuando finalice presione en <strong>finalizar carga</strong>.
                                         </p>
                                         <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
