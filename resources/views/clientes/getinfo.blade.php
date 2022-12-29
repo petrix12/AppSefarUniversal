@@ -100,9 +100,6 @@
                         $('input[name="numero_de_pasaporte"]').val("{{ auth()->user()->passport }}").change();
                         $('input[name="pais_de_nacimiento"]').val("{{ auth()->user()->pais_de_nacimiento }}").change();
                         $('input[name="nacionalidad_solicitada"]').val("{{ auth()->user()->servicio }}").change();
-                        $('input[name="registro_cupon"]').val("{{ auth()->user()->pago_cupon }}").change();
-                        $('input[name="registro_pago"]').val("{{ auth()->user()->pago_registro }}").change();
-                        $('input[name="stripe_form__transaction_id"]').val("{{ auth()->user()->id_pago }}").change();
                     },
                     onFormSubmit: function($form){
                         setTimeout( function() {
