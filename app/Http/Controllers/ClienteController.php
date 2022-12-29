@@ -203,7 +203,7 @@ class ClienteController extends Controller
         $cupones = ["BYTR4563PO", "BYTR1946RA", "55677"];
 
         if( in_array($data["cpn"], $cupones)){
-            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_cupon' => $data["cpn"]]);
+            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro' => 0, 'pago_cupon' => $data["cpn"]]);
                 auth()->user()->revokePermissionTo('pay.services');
             return response()->json([
                 'status' => "true"

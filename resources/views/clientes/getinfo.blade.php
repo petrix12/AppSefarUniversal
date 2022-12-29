@@ -1,4 +1,4 @@
-@extends('adminlte::page')
+0 @extends('adminlte::page')
 
 @section('title', 'Completar información')
 
@@ -10,8 +10,6 @@
 @section('content')
 
     @csrf
-
-    <script charset="utf-8" type="text/javascript" src="/js/parse-names.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.2/jquery.min.js" integrity="sha512-tWHlutFnuG0C6nQRlpvrEhE4QpkG1nn2MOUMWmUeRePl4e3Aki0VB6W1v3oLjFtd0hVOtRQ9PHpSfN6u6/QXkQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script charset="utf-8" type="text/javascript" src="//js.hsforms.net/forms/embed/v2.js"></script>
 
@@ -95,14 +93,16 @@
                     portalId: "20053496",
                     formId: "ae73e323-14a8-40f4-a20c-4a33a30aabde",
                     onFormReady: function($form){
-                        var parsed = NameParse.parse("{{ auth()->user()->name }}");
-                        $('input[name="firstname"]').val(parsed["firstName"]).change();
-                        $('input[name="lastname"]').val(parsed["lastName"]).change();
+                        $('input[name="firstname"]').val("{{ auth()->user()->nombres }}").change();
+                        $('input[name="lastname"]').val("{{ auth()->user()->apellidos }}").change();
                         $('.hs-fieldtype-intl-phone.hs-input .hs-input').val("{{ auth()->user()->phone }}").change();
                         $('input[name="email"]').val("{{ auth()->user()->email }}").change();
                         $('input[name="numero_de_pasaporte"]').val("{{ auth()->user()->passport }}").change();
                         $('input[name="pais_de_nacimiento"]').val("{{ auth()->user()->pais_de_nacimiento }}").change();
                         $('input[name="nacionalidad_solicitada"]').val("{{ auth()->user()->servicio }}").change();
+                        $('input[name="registro_cupon"]').val("{{ auth()->user()->pago_cupon }}").change();
+                        $('input[name="registro_pago"]').val("{{ auth()->user()->pago_registro }}").change();
+                        $('input[name="stripe_form__transaction_id"]').val("{{ auth()->user()->id_pago }}").change();
                     },
                     onFormSubmit: function($form){
                         setTimeout( function() {
