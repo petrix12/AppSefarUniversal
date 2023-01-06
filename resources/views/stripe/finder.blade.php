@@ -73,6 +73,7 @@
 						$("#stripeidpago").html(data[i]["datapago"]["id"]);
 						$("#horave").html(data[i]["datevenezuela"]);
 						$("#horaes").html(data[i]["datespain"]);
+						$("#montopago").html((data[i]["datapago"]["amount"]/100) + " €");
 					}
 				}
 			}
@@ -109,7 +110,7 @@
 </script>
 
 <div id="showdata" style="background-color: rgba(0, 0, 0, 0.6); top: 0;position: fixed; z-index: 9000; display: none; width: 100%; height: 100%; margin: auto;">
-	<div style="width: 70%; height: auto; margin: auto; padding: 20px; background-color: white; top: 50%; left: 50%; transform: translate(-50%, -50%);position: absolute;">
+	<div style="width: auto; height: auto; margin: auto; padding: 20px; background-color: white; top: 50%; left: 50%; transform: translate(-50%, -50%);position: absolute;">
 		<center>
 			<h2>Datos a revisar de Stripe</h2>
 		</center>
@@ -146,12 +147,14 @@
 		<table class="table">
 			<thead>
 				<tr>
+					<th scope="col">Monto pagado</th>
 					<th scope="col">Data DB (id de pago)</th>
 					<th scope="col">Data Stripe (id de pago)</th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr>
+				  <td id="montopago"></td>
 				  <td id="dbidpago"></td>
 				  <td id="stripeidpago"></td>
 				</tr>
