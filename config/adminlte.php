@@ -286,6 +286,23 @@ return [
                     'icon_color'    => 'white',
                     'url'           => 'permissions',
                     'can'           => 'crud.permissions.index',
+                ]
+            ],
+        ],
+
+        /* *** UTILIDADES USANDO LA API DE STRIPE *** */
+        [
+            'text'        => 'Stripe',
+            'icon'        => 'fab fa-cc-stripe',
+            'icon_color'  => 'white',
+            'can'  => 'administrador',
+            'submenu' => [
+                [
+                    'text'          => 'Verificar Stripe',
+                    'icon'          => 'fab fa-cc-stripe',
+                    'icon_color'    => 'white',
+                    'url'           => 'stripeverify',
+                    'can'           => 'crud.stripeverify.index',
                 ],
             ],
         ],

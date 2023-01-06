@@ -8,7 +8,7 @@
 
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<div id="ajaxload" style="background-color: rgba(0, 0, 0, 0.4); position: absolute; z-index: 1000; display: none; width: 100%; height: 100%;"></div>
+<div id="ajaxload" style="background-color: rgba(0, 0, 0, 0.4); position: fixed; z-index: 1000; display: none; width: 100%; height: 100%;"></div>
 
 @section('content')
 

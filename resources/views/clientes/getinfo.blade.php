@@ -1,4 +1,4 @@
-0 @extends('adminlte::page')
+@extends('adminlte::page')
 
 @section('title', 'Completar información')
 
