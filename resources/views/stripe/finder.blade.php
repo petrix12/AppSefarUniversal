@@ -65,16 +65,16 @@
 				$("#ajaxload").hide();
 				if (data!="none"){
 					$("#showdata").show();
+					$("#nombrepago").html(data[0]["datadb"]["name"]);
+					$("#correopago").html(data[0]["datadb"]["email"]);
+					$("#pasaportepago").html(data[0]["datadb"]["passport"]);
+					$("#idstripedb").html(data[0]["datadb"]["id_pago"]);
+					var table = '<table class="table"><thead><tr><th scope="col">Monto pagado</th><th scope="col">Servicio</th><th scope="col">Data Stripe (id de pago)</th><th scope="col">Fecha (Hora venezolana)</th><th scope="col">Fecha (Hora española)</th></tr></thead><tbody>';
 					for (var i = 0; i < data.length; i++) {
-						$("#nombrepago").html(data[i]["datadb"]["name"]);
-						$("#correopago").html(data[i]["datadb"]["email"]);
-						$("#pasaportepago").html(data[i]["datadb"]["passport"]);
-						$("#dbidpago").html(data[i]["datadb"]["id_pago"]);
-						$("#stripeidpago").html(data[i]["datapago"]["id"]);
-						$("#horave").html(data[i]["datevenezuela"]);
-						$("#horaes").html(data[i]["datespain"]);
-						$("#montopago").html((data[i]["datapago"]["amount"]/100) + " €");
+						var table = table + '<tr><td>' + (data[i]["datapago"]["amount"]/100) + ' €</td><td>'+data[i]["datapago"]["description"]+'</td><td>'+data[i]["datadb"]["id_pago"]+'</td><td>'+data[i]["datevenezuela"]+'</td><td>'+data[i]["datespain"]+'</td></tr>';
 					}
+					var table = table + '</tbody></table>';
+					$("#pagosrealiz").html(table);
 				}
 			}
 
@@ -110,7 +110,7 @@
 </script>
 
 <div id="showdata" style="background-color: rgba(0, 0, 0, 0.6); top: 0;position: fixed; z-index: 9000; display: none; width: 100%; height: 100%; margin: auto;">
-	<div style="width: auto; height: auto; margin: auto; padding: 20px; background-color: white; top: 50%; left: 50%; transform: translate(-50%, -50%);position: absolute;">
+	<div style="width: 70%; height: auto; margin: auto; padding: 20px; background-color: white; top: 50%; left: 50%; transform: translate(-50%, -50%);position: absolute;">
 		<center>
 			<h2>Datos a revisar de Stripe</h2>
 		</center>
@@ -120,6 +120,7 @@
 					<th scope="col">Nombre</th>
 					<th scope="col">Correo</th>
 					<th scope="col">Pasaporte</th>
+					<th scope="col">ID de Pago (registrado en db)</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -127,41 +128,16 @@
 				  <td id="nombrepago"></td>
 				  <td id="correopago"></td>
 				  <td id="pasaportepago"></td>
-				</tr>
-			</tbody>
-		</table>
-		<table class="table">
-			<thead>
-				<tr>
-					<th scope="col">Fecha de Pago (Hora venezolana)</th>
-					<th scope="col">Fecha de Pago (Hora española)</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-				  <td id="horave"></td>
-				  <td id="horaes"></td>
-				</tr>
-			</tbody>
-		</table>
-		<table class="table">
-			<thead>
-				<tr>
-					<th scope="col">Monto pagado</th>
-					<th scope="col">Data DB (id de pago)</th>
-					<th scope="col">Data Stripe (id de pago)</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-				  <td id="montopago"></td>
-				  <td id="dbidpago"></td>
-				  <td id="stripeidpago"></td>
+				  <td id="idstripedb"></td>
 				</tr>
 			</tbody>
 		</table>
 		<center>
-			<input type="button" class="btn btn-disablecheck btn-primary" value="Actualizar informacion" id="updatedata" style="margin-right: 10px;">
+			<h4>Pagos registrados en Stripe</h4>
+		</center>
+		<div id="pagosrealiz">
+		</div>
+		<center>
 			<input type="button" class="btn btn-disablecheck btn-danger" value="Cerrar Ventana" id="closemodal">
 		</center>
 	</div>
