@@ -59,6 +59,11 @@ class StripeController extends Controller
 						$array["datadb"]=$value1;
 						$array["data"]=$value;
 						$array["datapago"]=$value2;
+						$epoch = $array["datapago"]["created"];
+						date_default_timezone_set('Europe/Madrid');
+						$array["datespain"] = date('r', $epoch);
+						date_default_timezone_set('America/Caracas');
+						$array["datevenezuela"] = date('r', $epoch);
 						$arraysend[]=$array;
 					}
 				}

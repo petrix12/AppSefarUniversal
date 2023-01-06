@@ -71,6 +71,8 @@
 						$("#pasaportepago").html(data[i]["datadb"]["passport"]);
 						$("#dbidpago").html(data[i]["datadb"]["id_pago"]);
 						$("#stripeidpago").html(data[i]["datapago"]["id"]);
+						$("#horave").html(data[i]["datevenezuela"]);
+						$("#horaes").html(data[i]["datespain"]);
 					}
 				}
 			}
@@ -124,6 +126,20 @@
 				  <td id="nombrepago"></td>
 				  <td id="correopago"></td>
 				  <td id="pasaportepago"></td>
+				</tr>
+			</tbody>
+		</table>
+		<table class="table">
+			<thead>
+				<tr>
+					<th scope="col">Fecha de Pago (Hora venezolana)</th>
+					<th scope="col">Fecha de Pago (Hora española)</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+				  <td id="horave"></td>
+				  <td id="horaes"></td>
 				</tr>
 			</tbody>
 		</table>
