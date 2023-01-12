@@ -71,7 +71,7 @@
 					$("#idstripedb").html(data[0]["datadb"]["id_pago"]);
 					var table = '<table class="table"><thead><tr><th scope="col">Monto pagado</th><th scope="col">Servicio</th><th scope="col">Data Stripe (id de pago)</th><th scope="col">Fecha (Hora venezolana)</th><th scope="col">Fecha (Hora española)</th></tr></thead><tbody>';
 					for (var i = 0; i < data.length; i++) {
-						var table = table + '<tr><td>' + (data[i]["datapago"]["amount"]/100) + ' €</td><td>'+data[i]["datapago"]["description"]+'</td><td>'+data[i]["datadb"]["id_pago"]+'</td><td>'+data[i]["datevenezuela"]+'</td><td>'+data[i]["datespain"]+'</td></tr>';
+						var table = table + '<tr><td>' + (data[i]["datapago"]["amount"]/100) + ' €</td><td>'+data[i]["datapago"]["description"]+'</td><td>'+data[i]["datapago"]["id"]+'</td><td>'+data[i]["datevenezuela"]+'</td><td>'+data[i]["datespain"]+'</td></tr>';
 					}
 					var table = table + '</tbody></table>';
 					$("#pagosrealiz").html(table);
