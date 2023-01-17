@@ -307,6 +307,23 @@ return [
             ],
         ],
 
+        /* *** CUPONES *** */
+        [
+            'text'        => 'Cupones',
+            'icon'        => 'fa fa-gift',
+            'icon_color'  => 'white',
+            'can'  => 'administrador',
+            'submenu' => [
+                [
+                    'text'          => 'Listar Cupones',
+                    'icon'          => 'fa fa-gift',
+                    'icon_color'    => 'white',
+                    'url'           => 'coupons',
+                    'can'           => 'crud.coupons.index',
+                ],
+            ],
+        ],
+
         /* *** MENÚ PARA GENEALOGISTAS E INVESTIGADORES *** */
         [
             'text'        => 'Genealogistas',

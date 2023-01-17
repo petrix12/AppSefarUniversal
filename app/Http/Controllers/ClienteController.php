@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\CargaCliente;
 use App\Mail\CargaSefar;
 use App\Models\Agcliente;
+use App\Models\Coupon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -200,19 +201,28 @@ class ClienteController extends Controller
     public function revisarcupon(Request $request){
         $data = json_decode(json_encode($request->all()),true);
 
-        $cupones = ["BYTR4563PO", "BYTR1946RA", "55677"];
+        $cupones = json_decode(json_encode(Coupon::all()),true);
 
-        if( in_array($data["cpn"], $cupones)){
-            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro' => 0, 'pago_cupon' => $data["cpn"]]);
-                auth()->user()->revokePermissionTo('pay.services');
-            return response()->json([
-                'status' => "true"
-            ]);
-        } else {
-            return response()->json([
-                'status' => "false"
-            ]);
+        foreach ($cupones as $cupon) {
+            if( $data["cpn"] == $cupon["couponcode"] ){
+                if($cupon["percentage"]<100){
+                    return response()->json([
+                        'status' => "halftrue",
+                        'percentage'=>$cupon["percentage"]
+                    ]);
+                } else {
+                    DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro' => 0, 'pago_cupon' => $data["cpn"]]);
+                    auth()->user()->revokePermissionTo('pay.services');
+                    return response()->json([
+                        'status' => "true"
+                    ]);
+                }
+                
+            } 
         }
+        return response()->json([
+            'status' => "false"
+        ]);
     }
 
     public function procesarpay(Request $request) {
@@ -252,6 +262,17 @@ class ClienteController extends Controller
             auth()->user()->revokePermissionTo('pay.services');
             auth()->user()->revokePermissionTo('finish.register');
             DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]);
+        }
+
+        $cupones = json_decode(json_encode(Coupon::all()),true);
+
+        foreach ($cupones as $cupon) {
+            if( $variable["coupon"] == $cupon["couponcode"] ){
+                if($cupon["percentage"]<100){
+                    $newprice=$servicio["price"]*($cupon["percentage"]/100);
+                    $servicio["price"] = $newprice;
+                }
+            } 
         }
 
         $errorcod = "error";
