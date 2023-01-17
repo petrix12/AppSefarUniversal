@@ -205,6 +205,11 @@ class ClienteController extends Controller
 
         foreach ($cupones as $cupon) {
             if( $data["cpn"] == $cupon["couponcode"] ){
+                if(!is_null($cupon["expire"]) && $cupon["expire"]<date('Y-m-d')){
+                    return response()->json([
+                        'status' => "fechabad"
+                    ]);
+                }
                 if($cupon["percentage"]<100){
                     return response()->json([
                         'status' => "halftrue",

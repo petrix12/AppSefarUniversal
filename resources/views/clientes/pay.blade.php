@@ -153,6 +153,14 @@
                                         showConfirmButton: false,
                                         timer: 2500
                                     });
+                                } else if (response["status"]=="fechabad") {
+                                    $("#ajaxload").hide();
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Cupón Vencido',
+                                        showConfirmButton: false,
+                                        timer: 2500
+                                    });
                                 } else {
                                     $("#ajaxload").hide();
                                     Swal.fire({
