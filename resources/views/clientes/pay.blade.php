@@ -89,7 +89,7 @@
         </script>
     @endif
 
-    <form action="" method="POST" class="require-validation" data-cc-on-file="false" data-stripe-publishable-key="pk_test_51MA58GIevP8MvOlWgUfmv2SvQZa7kyubQGUwez2RQSQ4ltfKaJExlscDvexF0Ei6xopOOcvZU4UhvxIgXLVl10cT00O73oHOhs" id="payment-form">
+    <form action="" method="POST" class="require-validation" data-cc-on-file="false" data-stripe-publishable-key="pk_live_bRxzDwPip6Zw1w4joIOL4SVu" id="payment-form">
         <div class="container p-8 row" style="display:flex;">
             <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
 
@@ -150,14 +150,6 @@
                                     Swal.fire({
                                         icon: 'success',
                                         title: 'Se ha aplicado un descuento de un ' + response["percentage"] + '%',
-                                        showConfirmButton: false,
-                                        timer: 2500
-                                    });
-                                } else if (response["status"]=="fechabad") {
-                                    $("#ajaxload").hide();
-                                    Swal.fire({
-                                        icon: 'error',
-                                        title: 'Cupón Vencido',
                                         showConfirmButton: false,
                                         timer: 2500
                                     });
