@@ -158,7 +158,7 @@ class CouponController extends Controller
 
         Alert::info('¡Advertencia!', 'Se ha eliminado el cupón: ' . $titulo);
         
-        return view('crud.coupons.index');
+        return redirect('/coupons');
     }
 
     public function enable(Request $request)

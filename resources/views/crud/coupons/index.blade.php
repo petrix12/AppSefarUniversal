@@ -117,6 +117,7 @@
         </div>
     </div>
     <div class="card p-6">
+    @if (!is_null($coupons))
         <table class="min-w-full divide-y divide-gray-200 w-100" id="example">
             <thead class="bg-gray-50">
             <tr>
@@ -219,6 +220,7 @@
             @endforeach
             </tbody>
         </table>
+    @endif
     </div>
 </x-app-layout>
 @stop
