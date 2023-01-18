@@ -75,6 +75,39 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        <div class="container">
+                                            <div class="md:flex ms:flex-wrap">
+                                                <div class="px-1 py-2 m-2 flex-1">    {{-- solicitante --}}
+                                                    <div>
+                                                        <label for="solicitante" class="block text-sm font-medium text-gray-700">Solicitado por</label>
+                                                        <input value="{{ old('solicitante', $coupon->solicitante) }}" type="text" name="solicitante" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                                        @error('solicitante')
+                                                            <small style="color:red">*{{ $message }}*</small>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+
+                                                <div class="px-1 py-2 m-2 flex-1">    {{-- cliente --}}
+                                                    <div>
+                                                        <label for="cliente" class="block text-sm font-medium text-gray-700">Cliente</label>
+                                                        <input value="{{ old('cliente', $coupon->cliente) }}" type="text" name="cliente" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                                        @error('cliente')
+                                                            <small style="color:red">*{{ $message }}*</small>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+
+                                                <div class="px-1 py-2 m-2 flex-1">    {{-- motivo --}}
+                                                    <div>
+                                                        <label for="motivo" class="block text-sm font-medium text-gray-700">Motivo del Cupón</label>
+                                                        <input value="{{ old('motivo', $coupon->motivo) }}" type="text" name="motivo" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                                        @error('motivo')
+                                                            <small style="color:red">*{{ $message }}*</small>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div> 
                                         <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
                                             <button type="submit" class="cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                                 Actualizar Cupón

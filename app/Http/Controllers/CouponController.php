@@ -6,6 +6,7 @@ use App\Models\Coupon;
 use Illuminate\Http\Request;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
 
 class CouponController extends Controller
 {
@@ -16,7 +17,10 @@ class CouponController extends Controller
      */
     public function index()
     {
-        return view('crud.coupons.index');
+        $coupons = Coupon::orderBy('enabled', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->get();
+        return view('crud.coupons.index', compact('coupons'));
     }
 
     /**
@@ -39,7 +43,10 @@ class CouponController extends Controller
     {
         $request->validate([
             'couponcode' => 'required',
-            'percentage' => 'required|numeric|min:1|max:100'
+            'percentage' => 'required|numeric|min:1|max:100',
+            'solicitante' => 'required',
+            'cliente' => 'required',
+            'motivo' => 'required',
         ]);
 
         if($request->expire == ""){
@@ -52,7 +59,12 @@ class CouponController extends Controller
             Coupon::create([
                 'couponcode' => trim($request->couponcode),
                 'percentage' => trim($request->percentage),
-                'expire' => $date
+                'expire' => $date,
+                'name' => auth()->user()->name,
+                'solicitante' => trim($request->solicitante),
+                'cliente' => trim($request->cliente),
+                'motivo' => trim($request->motivo),
+                'enabled' => 1
             ]);
         } catch(\Illuminate\Database\QueryException $ex){ 
             Alert::error('Error', 'El cupón ya existe');
@@ -99,7 +111,10 @@ class CouponController extends Controller
     {
         $request->validate([
             'couponcode' => 'required',
-            'percentage' => 'required|numeric|min:1|max:100'
+            'percentage' => 'required|numeric|min:1|max:100',
+            'solicitante' => 'required',
+            'cliente' => 'required',
+            'motivo' => 'required',
         ]);
 
         if($request->expire == ""){
@@ -111,6 +126,9 @@ class CouponController extends Controller
         $coupon->couponcode = trim($request->couponcode);
         $coupon->percentage = trim($request->percentage);
         $coupon->expire = $date;
+        $coupon->solicitante = trim($request->solicitante);
+        $coupon->cliente = trim($request->cliente);
+        $coupon->motivo = trim($request->motivo);
 
         try { 
             $coupon->save();
@@ -141,5 +159,16 @@ class CouponController extends Controller
         Alert::info('¡Advertencia!', 'Se ha eliminado el cupón: ' . $titulo);
         
         return view('crud.coupons.index');
+    }
+
+    public function enable(Request $request)
+    {
+        $var = $request->all();
+        $array = json_decode(json_encode(Coupon::select()->where('id', $var["id"])->get()),true);
+        if ( $array[0]["enabled"] == 1 ){
+            DB::table('coupons')->where('id', $var["id"])->update(['enabled' => 0]);
+        } else {
+            DB::table('coupons')->where('id', $var["id"])->update(['enabled' => 1]);
+        }
     }
 }

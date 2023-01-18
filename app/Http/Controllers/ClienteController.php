@@ -210,6 +210,11 @@ class ClienteController extends Controller
                         'status' => "fechabad"
                     ]);
                 }
+                if($cupon["enabled"] == 0){
+                    return response()->json([
+                        'status' => "false"
+                    ]);
+                }
                 if($cupon["percentage"]<100){
                     return response()->json([
                         'status' => "halftrue",

@@ -7,6 +7,30 @@
 @stop
 
 @section('content')
+
+
+<?php
+
+
+$permitted_chars = 'QWERTYUIOPASDFGHJKLZXCVBNM';
+
+$permitted_nums = '0123456789';
+
+
+function generate_string($input, $strength = 16) {
+    $input_length = strlen($input);
+    $random_string = '';
+    for($i = 0; $i < $strength; $i++) {
+        $random_character = $input[mt_rand(0, $input_length - 1)];
+        $random_string .= $random_character;
+    }
+ 
+    return $random_string;
+}
+
+?>
+
+
 <x-app-layout>
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -42,12 +66,20 @@
                                     {{-- RUTA QUE LO INVOCA --}}
                                     <div class="shadow overflow-hidden sm:rounded-md">
 
+                                        <?php
+
+                                            $id = generate_string($permitted_chars, 3).generate_string($permitted_nums, 3);
+
+                                            $dateplusseven = date('Y-m-d', strtotime(date('Y-m-d'). ' + 7 days'));
+
+                                        ?>
+
                                         <div class="container">
                                             <div class="md:flex ms:flex-wrap">
                                                 <div class="px-1 py-2 m-2 flex-1">    {{-- couponcode --}}
                                                     <div>
                                                         <label for="couponcode" class="block text-sm font-medium text-gray-700">Código</label>
-                                                        <input value="{{ old('couponcode') }}" type="text" name="couponcode" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                                        <input value="{{ old('couponcode', $id) }}" readonly type="text" name="couponcode" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                                         @error('couponcode')
                                                             <small style="color:red">*{{ $message }}*</small>
                                                         @enderror
@@ -67,14 +99,48 @@
                                                 <div class="px-1 py-2 m-2 flex-1">    {{-- expire --}}
                                                     <div>
                                                         <label for="expire" class="block text-sm font-medium text-gray-700">Fecha de Vencimiento (opcional)</label>
-                                                        <input value="{{ old('expire') }}" type="date" name="expire" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                                        <input value="{{ old('expire', $dateplusseven) }}" type="date" name="expire" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                                         @error('expire')
                                                             <small style="color:red">*{{ $message }}*</small>
                                                         @enderror
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>                                        
+                                        </div>
+
+                                        <div class="container">
+                                            <div class="md:flex ms:flex-wrap">
+                                                <div class="px-1 py-2 m-2 flex-1">    {{-- solicitante --}}
+                                                    <div>
+                                                        <label for="solicitante" class="block text-sm font-medium text-gray-700">Solicitado por</label>
+                                                        <input value="{{ old('solicitante') }}" type="text" name="solicitante" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                                        @error('solicitante')
+                                                            <small style="color:red">*{{ $message }}*</small>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+
+                                                <div class="px-1 py-2 m-2 flex-1">    {{-- cliente --}}
+                                                    <div>
+                                                        <label for="cliente" class="block text-sm font-medium text-gray-700">Cliente</label>
+                                                        <input value="{{ old('cliente') }}" type="text" name="cliente" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                                        @error('cliente')
+                                                            <small style="color:red">*{{ $message }}*</small>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+
+                                                <div class="px-1 py-2 m-2 flex-1">    {{-- motivo --}}
+                                                    <div>
+                                                        <label for="motivo" class="block text-sm font-medium text-gray-700">Motivo del Cupón</label>
+                                                        <input value="{{ old('motivo') }}" type="text" name="motivo" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                                        @error('motivo')
+                                                            <small style="color:red">*{{ $message }}*</small>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>                                  
                                         
                                         <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
                                             <button type="submit" class="cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">

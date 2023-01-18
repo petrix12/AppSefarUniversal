@@ -1,3 +1,5 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.3/jquery.min.js" integrity="sha512-STof4xm1wgkfm7heWqFJVn58Hm3EtS31XFaagaa8VMReCXAkQnJZ+jEy8PCC/iT18dFy95WcExNHFTqLyp72eQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
 <div>
     <!-- This example requires Tailwind CSS v2.0+ -->
     <div class="flex flex-col">
@@ -24,6 +26,7 @@
             </div>
         </div>
     </div>
+    @csrf
     <div class="flex flex-col">
         <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
             <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
@@ -51,70 +54,7 @@
                         @endif
                     </div>
                     @if ($coupons->count())
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                        <tr>
-                            <th scope="col" class="px-9 py-2 text-left text-md font-medium text-gray-500 uppercase tracking-wider">
-                                ID
-                            </th>
-                            <th scope="col" class="px-9 py-2 text-left text-md font-medium text-gray-500 uppercase tracking-wider">
-                                Cupón
-                            </th>
-                            <th scope="col" class="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Porcentaje
-                            </th>
-                            <th scope="col" class="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Fecha de Vencimiento
-                            </th>
-                            @can('crud.roles.edit')
-                            <th scope="col" class="px-9 y-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">
-                                {{ __('Edit') }}
-                            </th>
-                            @endcan
-                            @can('crud.roles.destroy')
-                            <th scope="col" class="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">
-                                {{ __('Remove') }}
-                            </th>
-                            @endcan
-                        </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach ($coupons as $coupon)
-                        <tr>
-                            <td class="px-6 py-2 whitespace-nowrap">
-                                {{ $coupon->id }}
-                            </td>
-                            <td class="px-6 py-2 whitespace-nowrap">
-                                {{ $coupon->couponcode }}
-                            </td>
-                            <td class="px-6 py-2 whitespace-nowrap">
-                                {{ $coupon->percentage }}
-                            </td>
-                            <td class="px-6 py-2 whitespace-nowrap">
-                                {{ $coupon->expire }}
-                            </td>
-                            @can('crud.coupons.edit')
-                            <td class="py-2 whitespace-nowrap text-right font-medium">
-                                <a href="{{ route('crud.coupons.edit', $coupon) }}" class="mx-12 text-grey-600 hover:text-indigo-900" title="Editar"><i class="fas fa-edit"></i></a>
-                            </td>
-                            @endcan
-                            @can('crud.coupons.destroy')
-                            <td class="px-3 py-2 whitespace-nowrap text-right font-medium">
-                                <form action="{{ route('crud.coupons.destroy', $coupon) }}" method="POST">
-                                    @csrf
-                                    @method('delete')
-                                    <button
-                                        type="submit"
-                                        class="text-red-600 hover:text-red-900"
-                                        onclick="return confirm('¿Está seguro que desea eliminar el cupón?')"><i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </td>
-                            @endcan
-                        </tr>
-                        @endforeach
-                        </tbody>
-                    </table>
+                    
                     @else
                     <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6 text-gray-500">
                         No hay resultado para la búsqueda {{ $search }} en la página {{ $page }} al mostrar {{ $perPage }} por página

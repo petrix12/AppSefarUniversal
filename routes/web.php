@@ -65,6 +65,10 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
             ->middleware('can:crud.coupons.index');
 });
 
+//AJAX para activar y desactivar cupones
+
+Route::post('cuponenable',[CouponController::class, 'enable'])->name('cuponenable');
+
 //Rutas para Stripe:
 Route::get('stripeverify', [StripeController::class, 'stripeverify'])->name('stripeverify')
         ->middleware('can:crud.stripeverify.index');
