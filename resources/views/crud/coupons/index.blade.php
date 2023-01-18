@@ -142,9 +142,6 @@
                 <th scope="col" class="">
                     Vence
                 </th>
-                <th scope="col" class="">
-                    Mas info
-                </th>
                 @can('crud.coupons.edit')
                 <th scope="col" class="">
                     {{ __('Edit') }}
@@ -185,10 +182,7 @@
                     {{ $coupon->motivo }}
                 </td>
                 <td class="">
-                    {{ $coupon->expire }}
-                </td>
-                <td class="text-center">
-                    <i class="fas fa-eye getCouponInfo" id="{{ $coupon->couponcode }}"></i>
+                    {{ date("d-m-Y", strtotime($coupon->expire)) }}
                 </td>
                 @can('crud.coupons.edit')
                 <td class="text-center">
