@@ -92,6 +92,30 @@
 </style>
 
 <x-app-layout>
+    <div class="flex flex-col">
+        <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+            <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                {{-- Inicio --}}
+                <div class="bg-gray-50">
+                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:py-6 lg:px-8 lg:flex lg:items-center lg:justify-between">
+                        <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                            <span class="ctvSefar block text-indigo-600">Cupones</span>
+                        </h2>
+                        @can('crud.coupons.create')
+                        <div class="mt-8 flex lg:mt-0 lg:flex-shrink-0">
+                            <div class="inline-flex rounded-md shadow">
+                                <a href="{{ route('crud.coupons.create') }}" class="cfrSefar inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                                    Registrar Cupón
+                                </a>
+                            </div>
+                        </div>
+                        @endcan
+                    </div>
+                </div>
+                {{-- Fin --}}
+            </div>
+        </div>
+    </div>
     <div class="card p-6">
         <table class="min-w-full divide-y divide-gray-200 w-100" id="example">
             <thead class="bg-gray-50">
@@ -138,6 +162,7 @@
             </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
+
             @foreach ($coupons as $coupon)
             <tr>
                 <td class="">
