@@ -276,11 +276,14 @@ class ClienteController extends Controller
 
         $cupones = json_decode(json_encode(Coupon::all()),true);
 
+        $finalcupon = "";
+
         foreach ($cupones as $cupon) {
             if( $variable["coupon"] == $cupon["couponcode"] ){
                 if($cupon["percentage"]<100){
                     $newprice=$servicio["price"]*($cupon["percentage"]/100);
                     $servicio["price"] = $newprice;
+                    $finalcupon = $variable["coupon"];
                 }
             } 
         }
@@ -344,7 +347,7 @@ class ClienteController extends Controller
         }
 
         if ($charged->status == "succeeded"){
-            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro' => $servicio["price"], 'id_pago' => $charged->id ]);
+            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro' => $servicio["price"], 'id_pago' => $charged->id, 'pago_cupon' => $finalcupon ]);
             auth()->user()->revokePermissionTo('pay.services');
             return redirect()->route('clientes.getinfo')->with("status","exito");
         } 
