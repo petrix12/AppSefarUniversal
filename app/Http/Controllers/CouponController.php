@@ -75,7 +75,10 @@ class CouponController extends Controller
         Alert::success('¡Éxito!', 'Se ha añadido el cupón: ' . $request->couponcode);
 
         // Redireccionar a la vista que invocó este método
-        return view('crud.coupons.index');
+        $coupons = Coupon::orderBy('enabled', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->get();
+        return view('crud.coupons.index', compact('coupons'));
     }
 
     /**
@@ -141,7 +144,10 @@ class CouponController extends Controller
         Alert::success('¡Éxito!', 'Se ha actualizado el cupón: ' . $request->couponcode);
         
         // Redireccionar a la vista que invocó este método
-        return view('crud.coupons.index');
+        $coupons = Coupon::orderBy('enabled', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->get();
+        return view('crud.coupons.index', compact('coupons'));
     }
 
     /**
@@ -158,7 +164,10 @@ class CouponController extends Controller
 
         Alert::info('¡Advertencia!', 'Se ha eliminado el cupón: ' . $titulo);
         
-        return redirect('/coupons');
+        $coupons = Coupon::orderBy('enabled', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->get();
+        return view('crud.coupons.index', compact('coupons'));
     }
 
     public function enable(Request $request)
