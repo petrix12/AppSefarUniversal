@@ -347,6 +347,7 @@ class ClienteController extends Controller
         }
 
         if ($charged->status == "succeeded"){
+            DB::table('coupons')->where('couponcode', $finalcupon)->update(['enabled' => 0]);
             DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro' => $servicio["price"], 'id_pago' => $charged->id, 'pago_cupon' => $finalcupon ]);
             auth()->user()->revokePermissionTo('pay.services');
             return redirect()->route('clientes.getinfo')->with("status","exito");
