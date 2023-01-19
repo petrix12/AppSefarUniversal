@@ -47,7 +47,7 @@
                                                 <div class="px-1 py-2 m-2 flex-1">    {{-- couponcode --}}
                                                     <div>
                                                         <label for="couponcode" class="block text-sm font-medium text-gray-700">Código</label>
-                                                        <input value="{{ old('couponcode', $coupon->couponcode) }}" type="text" name="couponcode" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                                        <input value="{{ old('couponcode', $coupon->couponcode) }}" readonly type="text" name="couponcode" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                                         @error('couponcode')
                                                             <small style="color:red">*{{ $message }}*</small>
                                                         @enderror
@@ -57,7 +57,7 @@
                                                 <div class="px-1 py-2 m-2 flex-1">    {{-- percentage --}}
                                                     <div>
                                                         <label for="percentage" class="block text-sm font-medium text-gray-700">Porcentaje de Descuento</label>
-                                                        <input value="{{ old('percentage', $coupon->percentage) }}" type="text" name="percentage" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                                        <input value="{{ old('percentage', $coupon->percentage) }}" type="number" name="percentage" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                                         @error('percentage')
                                                             <small style="color:red">*{{ $message }}*</small>
                                                         @enderror
@@ -67,7 +67,7 @@
                                                 <div class="px-1 py-2 m-2 flex-1">    {{-- expire --}}
                                                     <div>
                                                         <label for="expire" class="block text-sm font-medium text-gray-700">Fecha de Vencimiento</label>
-                                                        <input value="{{ old('expire', $coupon->expire) }}" type="text" name="expire" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                                        <input value="{{ old('expire', $coupon->expire) }}" type="date" name="expire" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                                         @error('expire')
                                                             <small style="color:red">*{{ $message }}*</small>
                                                         @enderror
