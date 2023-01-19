@@ -105,6 +105,10 @@
                         setTimeout( function() {
                             var formData = $form;
 
+                            if($('input[name="firstname"]').val() == "" || $('input[name="lastname"]').val() == "" || $('.hs-fieldtype-intl-phone.hs-input .hs-input').val() == "" || $('input[name="email"]').val() == "" || $('input[name="numero_de_pasaporte"]').val() == "" || $('input[name="pais_de_nacimiento"]').val() == "" || $('input[name="nacionalidad_solicitada"]').val() == ""){
+                                return false;
+                            }
+
                             var data = formData.serializeArray();
 
                             $.ajaxSetup({
@@ -150,6 +154,10 @@
                         setTimeout( function() {
                             var formData = $form;
 
+                            if($('input[name="firstname"]').val() == "" || $('input[name="lastname"]').val() == "" || $('.hs-fieldtype-intl-phone.hs-input .hs-input').val() == "" || $('input[name="email"]').val() == "" || $('input[name="numero_de_pasaporte"]').val() == "" || $('input[name="pais_de_nacimiento"]').val() == "" || $('input[name="nacionalidad_solicitada"]').val() == ""){
+                                return false;
+                            }
+
                             var data = formData.serializeArray();
 
                             $.ajaxSetup({
@@ -165,16 +173,8 @@
                                     data
                                 },
                                 success: function(response){
-                                    Swal.fire({
-                                        icon: 'success',
-                                        title: '¡Registro completado!',
-                                        showDenyButton: false,
-                                        confirmButtonText: 'Ir a mi arbol',
-                                    }).then((result) => {
-                                        window.location.href = "/tree";
-                                    });
+                                    window.location.href = "/tree";
                                 }
-
                             });
                         }, 250 );
                     }
