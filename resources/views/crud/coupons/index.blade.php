@@ -182,7 +182,11 @@
                     {{ $coupon->motivo }}
                 </td>
                 <td class="">
-                    {{ date("d-m-Y", strtotime($coupon->expire)) }}
+                    <?php
+                        if ($coupon->expire != ""){
+                            echo(date("d-m-Y", strtotime($coupon->expire)));
+                        }
+                    ?>
                 </td>
                 @can('crud.coupons.edit')
                 <td class="text-center">
