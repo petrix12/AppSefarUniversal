@@ -76,6 +76,10 @@ Route::post('stripefind', [StripeController::class, 'stripefind'])->name('stripe
 Route::post('stripegetidpago', [StripeController::class, 'stripegetidpago'])->name('stripegetidpago');
 Route::post('stripeupdatedata',[StripeController::class, 'stripeupdatedata'])->name('stripeupdatedata');
 
+Route::get('/cuponaplicado', function(){
+    return redirect()->route('clientes.getinfo')->with("status","exito");
+})->name('cuponaplicado');
+
 //Rutas para Stripe:
 
 // Grupo de rutas para Consultas a base de datos

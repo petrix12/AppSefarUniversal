@@ -32,6 +32,17 @@
 
         <!-- Scripts -->
         <script src="{{ asset('/js/app.js') }}" defer></script>
+
+        <script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/20053496.js"></script>
+
+        <script async src="//www.googletagmanager.com/gtag/js?id=UA-189067277-1"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+
+          gtag('config', 'UA-189067277-1');
+        </script>
     </head>
     <body>
         <div class="font-sans text-gray-900 antialiased">

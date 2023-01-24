@@ -72,6 +72,17 @@
         <meta name="msapplication-TileImage" content="{{ asset('favicon/ms-icon-144x144.png') }}">
     @endif
 
+    <script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/20053496.js"></script>
+
+    <script async src="//www.googletagmanager.com/gtag/js?id=UA-189067277-1"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'UA-189067277-1');
+    </script>
+
 </head>
 
 <body class="@yield('classes_body')" @yield('body_data')>

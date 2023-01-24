@@ -222,6 +222,7 @@ class ClienteController extends Controller
                     ]);
                 } else {
                     DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro' => 0, 'pago_cupon' => $data["cpn"]]);
+                    DB::table('coupons')->where('couponcode', $cupon["couponcode"])->update(['enabled' => 0]);
                     auth()->user()->revokePermissionTo('pay.services');
                     return response()->json([
                         'status' => "true"
