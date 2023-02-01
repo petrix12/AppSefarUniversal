@@ -267,7 +267,7 @@
                                 $servicio["name"]="Subsanación de Expedientes (España)";
 
                             }
-                            $servicio["price"]=50;
+                            $servicio["price"]=99;
                         }
                     @endphp
                     <center>

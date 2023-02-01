@@ -310,7 +310,7 @@ class ClienteController extends Controller
                 } else if(auth()->user()->servicio=="Española Sefardi - Subsanación") {
                     $servicio["name"]="Subsanación de Expedientes (España)";
                 }
-                $servicio["price"]=50;
+                $servicio["price"]=99;
             }
         } else {
             auth()->user()->revokePermissionTo('pay.services');
