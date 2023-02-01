@@ -40,13 +40,15 @@ class ClienteController extends Controller
         $mail_sefar = new CargaSefar(Auth::user());
         Mail::to([
             'pedro.bazo@sefarvzla.com',
-            'czanella@sefarvzla.com',
+            /* 'czanella@sefarvzla.com', */
             'gerenciait@sefarvzla.com',
             /* 'egonzalez@sefarvzla.com', */
             'analisisgenealogico@sefarvzla.com',
-            'arosales@sefarvzla.com',
+            /* 'arosales@sefarvzla.com', */
             'asistentedeproduccion@sefarvzla.com',
-            'gcuriel@sefarvzla.com'
+            'gcuriel@sefarvzla.com',
+            'organizacionrrhh@sefarvzla.com',
+            '20053496@bcc.hubspot.com'
             /* 'organizacionrrhh@sefarvzla.com' */
         ])->send($mail_sefar);
 
@@ -145,7 +147,9 @@ class ClienteController extends Controller
         //print_r('de php');
         //print_r($input['referido_por']);
         $user = Auth()->user();
+
         // Actualizando el árbol genenalógico
+        // Cliente
         $agcliente = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',1)->first();
         if($agcliente){
             $agcliente->Sexo = $input['genero'] == 'MASCULINO / MALE' ? 'M' : 'F';
@@ -179,6 +183,45 @@ class ClienteController extends Controller
             $agcliente->save();
             $user->save();
         }
+
+        // Padre
+        $nombres_y_apellidos_del_padre = trim($input['nombres_y_apellidos_del_padre']);
+        if($nombres_y_apellidos_del_padre){
+            $padre = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',2)->first();
+            if(!$padre) {
+                $agcliente = Agcliente::create([
+                    'IDCliente' => $user->passport,
+                    'Nombres' => $nombres_y_apellidos_del_padre,
+                    'IDPersona' => 2,
+                    'Sexo' => 'M',
+                    'IDPadre' => 4,
+                    'IDMadre' => 5,
+                    'Generacion' => 2,
+                    'FUpdate' => date('Y-m-d H:i:s'),
+                    'Usuario' => $user->email,
+                ]);
+            }
+        }
+
+        // Madre
+        $nombres_y_apellidos_de_madre = trim($input['nombres_y_apellidos_de_madre']);
+        if($nombres_y_apellidos_de_madre){
+            $madre = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',3)->first();
+            if(!$madre) {
+                $agcliente = Agcliente::create([
+                    'IDCliente' => $user->passport,
+                    'Nombres' => $nombres_y_apellidos_de_madre,
+                    'IDPersona' => 3,
+                    'Sexo' => 'F',
+                    'IDPadre' => 6,
+                    'IDMadre' => 7,
+                    'Generacion' => 2,
+                    'FUpdate' => date('Y-m-d H:i:s'),
+                    'Usuario' => $user->email,
+                ]);
+            }
+        }
+
 
         /* Fin de la actualización en Base de Datos */
 
@@ -228,8 +271,8 @@ class ClienteController extends Controller
                         'status' => "true"
                     ]);
                 }
-                
-            } 
+
+            }
         }
         return response()->json([
             'status' => "false"
@@ -286,7 +329,7 @@ class ClienteController extends Controller
                     $servicio["price"] = $newprice;
                     $finalcupon = $variable["coupon"];
                 }
-            } 
+            }
         }
 
         $errorcod = "error";
@@ -352,6 +395,6 @@ class ClienteController extends Controller
             DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro' => $servicio["price"], 'id_pago' => $charged->id, 'pago_cupon' => $finalcupon ]);
             auth()->user()->revokePermissionTo('pay.services');
             return redirect()->route('clientes.getinfo')->with("status","exito");
-        } 
+        }
     }
 }
