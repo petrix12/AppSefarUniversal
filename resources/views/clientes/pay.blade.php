@@ -266,6 +266,9 @@
                             } else if(auth()->user()->servicio=="Española Sefardi - Subsanación") {
                                 $servicio["name"]="Subsanación de Expedientes (España)";
 
+                            } else if(auth()->user()->servicio=="Española - Carta de Naturaleza") {
+                                $servicio["name"]="Nacionalidad Española por Carta de Naturaleza";
+
                             }
                             $servicio["price"]=99;
                         }
