@@ -186,6 +186,17 @@
                                         @endphp
                                     </select>
                                 </div>
+
+                                {{-- Desactivar verificación en dos pasos --}}
+                                <div class="col-span-8 md:col-span-4 col-start-1">
+                                    @if ($user->two_factor_secret)
+                                        <input name="two_factor" type="checkbox" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                        <label for="verif2pasos" class="m-1 text-gray-500">Desactivar verificación en dos pasos</label>
+                                    @else
+                                        <input name="two_factor" type="checkbox" class="focus:ring-gray-300 h-4 w-4 text-gray-200 border-gray-100 rounded" checked disabled>
+                                        <label for="verif2pasos" class="m-1 text-gray-300">Desactivar verificación en dos pasos</label>
+                                    @endif
+                                </div>
                             </div>
                             {{-- ROLES --}}
                             <div class="container my-10">

@@ -128,6 +128,10 @@ class UserController extends Controller
         $user->passport = $request->passport;
         $user->pay = $request->pay;
         $user->servicio = $request->servicio;
+        if($request->two_factor){
+            $user->two_factor_secret = null;
+            $user->two_factor_recovery_codes = null;
+        }
         if($request->password){
             $user->password = bcrypt($request->password);
             $user->password_md5 = md5($request->password);
