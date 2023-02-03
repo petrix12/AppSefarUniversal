@@ -65,10 +65,10 @@ class UserController extends Controller
                 $user->assignRole($role->name);
             }
         }
-        
-        // Mensaje 
+
+        // Mensaje
         Alert::success('¡Éxito!', 'Se ha creado el usuario: ' . $request->name);
-        
+
         // Redireccionar a la vista index
         return redirect()->route('crud.users.index');
     }
@@ -126,11 +126,13 @@ class UserController extends Controller
         $user->name = $request->name;
         $user->email = $request->email;
         $user->passport = $request->passport;
+        $user->pay = $request->pay;
+        $user->servicio = $request->servicio;
         if($request->password){
             $user->password = bcrypt($request->password);
             $user->password_md5 = md5($request->password);
         }
-            
+
         $user->save();
 
         // Actualizando los roles del usuario
@@ -153,9 +155,9 @@ class UserController extends Controller
             }
         }
 
-        // Mensaje 
+        // Mensaje
         Alert::success('¡Éxito!', 'Se ha actualizado el usuario: ' . $request->name);
-        
+
         // Redireccionar a la vista index
         return redirect()->route('crud.users.index');
     }
@@ -169,7 +171,7 @@ class UserController extends Controller
     public function destroy(User $user)
     {
         $nombre = $user->name;
-        
+
         $user->delete();
 
         Alert::info('¡Advertencia!', 'Se ha eliminado el usuario: ' . $nombre);

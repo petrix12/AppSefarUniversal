@@ -44,7 +44,7 @@
         <div class="md:grid md:grid-cols-3 md:gap-6">
             <div class="md:col-span-1">
                 <div class="px-4 sm:px-0">
-                    <h3 class="text-lg font-medium leading-6 text-gray-900">{{ __('User information') }}</h3>
+                    <h3 class="text-lg font-medium leading-6 text-gray-900">{{ __('User information') }} <small>(ID: {{ $user->id }})</small></h3>
                     <p class="mt-1 text-sm text-gray-600">
                         {{ __('Manage user roles') }}
                     </p>
@@ -64,10 +64,10 @@
                             <div class="grid grid-cols-6 gap-6">
                                 <div class="col-span-6 sm:col-span-3">
                                     <label for="name" class="block text-sm font-medium text-gray-700">{{ __('User name') }}</label>
-                                    <input 
-                                        type="text" 
-                                        name="name" 
-                                        id="name"  
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        id="name"
                                         class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                                         value="{{ old('name', $user->name) }}"
                                     />
@@ -77,13 +77,13 @@
                                         <small style="color:red">*{{ $message }}*</small>
                                     </div>
                                 @enderror
-                    
+
                                 <div class="col-span-6 sm:col-span-3">
                                     <label for="passport" class="block text-sm font-medium text-gray-700">{{ __('Passport') }}</label>
-                                    <input 
-                                        type="text" 
-                                        name="passport" 
-                                        id="passport" 
+                                    <input
+                                        type="text"
+                                        name="passport"
+                                        id="passport"
                                         class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                                         value="{{ old('passport', $user->passport) }}"
                                     />
@@ -93,14 +93,14 @@
                                         <small style="color:red">*{{ $message }}*</small>
                                     </div>
                                 @enderror
-                    
+
                                 <div class="col-span-6 sm:col-span-3">
                                     <label for="email" class="block text-sm font-medium text-gray-700">{{ __('Email address') }}</label>
-                                    <input 
-                                        type="email" 
-                                        name="email" 
-                                        id="email" 
-                                        autocomplete="email" 
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        id="email"
+                                        autocomplete="email"
                                         class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                                         value="{{ old('email', $user->email) }}"
                                     />
@@ -110,24 +110,81 @@
                                         <small style="color:red">*{{ $message }}*</small>
                                     </div>
                                 @enderror
-                    
+
                                 {{-- <div class="col-span-6 sm:col-span-4">
                                     <label for="password" class="block text-sm font-medium text-gray-700">{{ __('Update password') }}</label>
-                                    <input 
-                                        type="paswword" 
-                                        name="password" 
+                                    <input
+                                        type="paswword"
+                                        name="password"
                                         class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                                     />
                                 </div> --}}
-                    
+
                                 <div class="col-span-6 sm:col-span-3">
                                     <label for="password" class="block text-sm font-medium text-gray-700">{{ __('Change Password') }}</label>
-                                    <input 
-                                        type="password" 
-                                        name="password" 
-                                        id="password" 
+                                    <input
+                                        type="password"
+                                        name="password"
+                                        id="password"
                                         class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                        placeholder="No rellenar para conservar contraseña"
                                     />
+                                </div>
+
+                                {{-- Estatus del pago --}}
+                                <div class="col-span-6 sm:col-span-3">
+                                    <label for="pay" class="block text-sm font-medium text-gray-700">{{ __('Payment status') }}</label>
+                                    <select name="pay" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        @if ($user->pay == 0)
+                                            <option selected value=0>No ha pagado</option>
+                                        @else
+                                            <option value=0>No ha pagado</option>
+                                        @endif
+
+                                        @if ($user->pay == 1)
+                                            <option selected value=1>Pagó</option>
+                                        @else
+                                            <option value=1>Pagó</option>
+                                        @endif
+
+                                        @if ($user->pay == 2)
+                                            <option selected value=2>Pagó y completó información</option>
+                                        @else
+                                            <option value=2>Pagó y completó información</option>
+                                        @endif
+                                    </select>
+                                </div>
+
+                                {{-- Servicio --}}
+                                <div class="col-span-6 sm:col-span-3">
+                                    <label for="servicio" class="block text-sm font-medium text-gray-700">{{ __('Servicio') }}</label>
+                                    <select name="servicio" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <option></option>
+                                        @php
+                                            echo '<option ' . (($user->servicio == 'Española - Carta de Naturaleza') ? 'selected' : '') . '>Española - Carta de Naturaleza</option>'
+                                        @endphp
+                                        @php
+                                            echo '<option ' . (($user->servicio == 'Española LMD') ? 'selected' : '') . '>Española LMD</option>'
+                                        @endphp
+                                        @php
+                                            echo '<option ' . (($user->servicio == 'Española Sefardi') ? 'selected' : '') . '>Española Sefardi</option>'
+                                        @endphp
+                                        @php
+                                            echo '<option ' . (($user->servicio == 'Española Sefardi - Subsanación') ? 'selected' : '') . '>Española Sefardi - Subsanación</option>'
+                                        @endphp
+                                        @php
+                                            echo '<option ' . (($user->servicio == 'Italiana') ? 'selected' : '') . '>Italiana</option>'
+                                        @endphp
+                                        @php
+                                            echo '<option ' . (($user->servicio == 'Ley Memoria Democratica') ? 'selected' : '') . '>Ley Memoria Democratica</option>'
+                                        @endphp
+                                        @php
+                                            echo '<option ' . (($user->servicio == 'Portuguesa Sefardi') ? 'selected' : '') . '>Portuguesa Sefardi</option>'
+                                        @endphp
+                                        @php
+                                            echo '<option ' . (($user->servicio == 'Portuguesa Sefardi - Subsanación') ? 'selected' : '') . '>Portuguesa Sefardi - Subsanación</option>'
+                                        @endphp
+                                    </select>
                                 </div>
                             </div>
                             {{-- ROLES --}}
@@ -135,7 +192,7 @@
                                 <p class="my-2 block text-sm font-medium text-gray-700"><strong>Roles del usuario:<strong></p>
                                 <div class="grid grid-cols-1 xl:grid-cols-4">
                                 @foreach ($roles as $role)
-                                    <div class="col-span-2 sm:col-span-2">     
+                                    <div class="col-span-2 sm:col-span-2">
                                         <div class="flex items-start">
                                             <div class="flex items-center h-5">
                                                 @if ($user->hasRole($role->name))
@@ -147,7 +204,7 @@
                                             <div class="ml-3 text-sm">
                                                 <label for="{{ "role" . $role->id }}" class="font-medium text-gray-700">{{ $role->name }}</label>
                                             </div>
-                                        </div> 
+                                        </div>
                                     </div>
                                 @endforeach
                                 </div>
@@ -157,7 +214,7 @@
                                 <p class="my-2 block text-sm font-medium text-gray-700"><strong>Permisos del usuario:<strong></p>
                                 <div class="grid grid-cols-1 xl:grid-cols-4">
                                 @foreach ($permissions as $permission)
-                                    <div class="col-span-2 sm:col-span-2">     
+                                    <div class="col-span-2 sm:col-span-2">
                                         <div class="flex items-start">
                                             <div class="flex items-center h-5">
                                                 @if ($user->hasPermissionTo($permission->name))
@@ -169,7 +226,7 @@
                                             <div class="ml-3 text-sm">
                                                 <label for="{{ "permiso" . $permission->id }}" class="font-medium text-gray-700">{{ $permission->name }}</label>
                                             </div>
-                                        </div> 
+                                        </div>
                                     </div>
                                 @endforeach
                                 </div>
@@ -193,5 +250,5 @@
 @stop
 
 @section('js')
-    
+
 @stop
