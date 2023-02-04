@@ -148,9 +148,8 @@
                     portalId: "20053496",
                     formId: "ae73e323-14a8-40f4-a20c-4a33a30aabde",
                     onFormReady: function($form){
-                        var parsed = NameParse.parse("{{ auth()->user()->name }}");
-                        $('input[name="firstname"]').val(parsed["firstName"]).change();
-                        $('input[name="lastname"]').val(parsed["lastName"]).change();
+                        $('input[name="firstname"]').val("{{ auth()->user()->nombres }}").change();
+                        $('input[name="lastname"]').val("{{ auth()->user()->apellidos }}").change();
                         $('.hs-fieldtype-intl-phone.hs-input .hs-input').val("{{ auth()->user()->phone }}").change();
                         $('input[name="email"]').val("{{ auth()->user()->email }}").change();
                         $('input[name="numero_de_pasaporte"]').val("{{ auth()->user()->passport }}").change();
