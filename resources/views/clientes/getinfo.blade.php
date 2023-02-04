@@ -100,13 +100,15 @@
                     portalId: "20053496",
                     formId: "ae73e323-14a8-40f4-a20c-4a33a30aabde",
                     onFormReady: function($form){
-                        $('input[name="firstname"]').val("{{ auth()->user()->nombres }}").change();
-                        $('input[name="lastname"]').val("{{ auth()->user()->apellidos }}").change();
-                        $('.hs-fieldtype-intl-phone.hs-input .hs-input').val("{{ auth()->user()->phone }}").change();
-                        $('input[name="email"]').val("{{ auth()->user()->email }}").change();
-                        $('input[name="numero_de_pasaporte"]').val("{{ auth()->user()->passport }}").change();
-                        $('input[name="pais_de_nacimiento"]').val("{{ auth()->user()->pais_de_nacimiento }}").change();
-                        $('input[name="nacionalidad_solicitada"]').val("{{ auth()->user()->servicio }}").change();
+                        setTimeout( function() {
+                            $('input[name="firstname"]').val("{{ auth()->user()->nombres }}").change();
+                            $('input[name="lastname"]').val("{{ auth()->user()->apellidos }}").change();
+                            $('.hs-fieldtype-intl-phone.hs-input .hs-input').val("{{ auth()->user()->phone }}").change();
+                            $('input[name="email"]').val("{{ auth()->user()->email }}").change();
+                            $('input[name="numero_de_pasaporte"]').val("{{ auth()->user()->passport }}").change();
+                            $('input[name="pais_de_nacimiento"]').val("{{ auth()->user()->pais_de_nacimiento }}").change();
+                            $('select[name="nacionalidad_solicitada"]').val("{{ auth()->user()->servicio }}").change();
+                        }, 250 );
                     },
                     onFormSubmit: function($form){
                         setTimeout( function() {
@@ -148,13 +150,15 @@
                     portalId: "20053496",
                     formId: "ae73e323-14a8-40f4-a20c-4a33a30aabde",
                     onFormReady: function($form){
-                        $('input[name="firstname"]').val("{{ auth()->user()->nombres }}").change();
-                        $('input[name="lastname"]').val("{{ auth()->user()->apellidos }}").change();
-                        $('.hs-fieldtype-intl-phone.hs-input .hs-input').val("{{ auth()->user()->phone }}").change();
-                        $('input[name="email"]').val("{{ auth()->user()->email }}").change();
-                        $('input[name="numero_de_pasaporte"]').val("{{ auth()->user()->passport }}").change();
-                        $('input[name="pais_de_nacimiento"]').val("{{ auth()->user()->pais_de_nacimiento }}").change();
-                        $('input[name="nacionalidad_solicitada"]').val("{{ auth()->user()->servicio }}").change();
+                        setTimeout( function() {
+                            $('input[name="firstname"]').val("{{ auth()->user()->nombres }}").change();
+                            $('input[name="lastname"]').val("{{ auth()->user()->apellidos }}").change();
+                            $('.hs-fieldtype-intl-phone.hs-input .hs-input').val("{{ auth()->user()->phone }}").change();
+                            $('input[name="email"]').val("{{ auth()->user()->email }}").change();
+                            $('input[name="numero_de_pasaporte"]').val("{{ auth()->user()->passport }}").change();
+                            $('input[name="pais_de_nacimiento"]').val("{{ auth()->user()->pais_de_nacimiento }}").change();
+                            $('select[name="nacionalidad_solicitada"]').val("{{ auth()->user()->servicio }}").change();
+                        }, 250 );
                     },
                     onFormSubmit: function($form){
                         setTimeout( function() {
