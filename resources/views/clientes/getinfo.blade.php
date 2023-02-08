@@ -18,7 +18,7 @@
             Swal.fire({
                 icon: 'success',
                 title: '¡Pago procesado correctamente!',
-                html: '<p>En Sefar Universal estamos muy complacido por tenerlo entre nuestros clientes.</p><p>Para continuar con el proceso es muy importante que nos suministre en la medida de los posible toda la información de sus ancestros.</p><p>Por favor presione el botón de <strong>Continuar</strong>para que sea redirigido a nuestra plataforma de carga genealógica.</p><small><p><strong>Nota: </strong>tenga en cuenta que mientras más información genealógica aporte, más fácil y rápido será su proceso de estudio.</p></small></span>',
+                html: '<p>En Sefar Universal estamos muy complacido por tenerlo entre nuestros clientes.</p><p>Para continuar con el proceso es muy importante que nos suministre en la medida de los posible toda la información de sus ancestros.</p><p>Por favor presione el botón de <strong>Continuar</strong> para que sea redirigido a nuestra plataforma de carga genealógica.</p><small><p><strong>Nota: </strong>tenga en cuenta que mientras más información genealógica aporte, más fácil y rápido será su proceso de estudio.</p></small></span>',
                     showDenyButton: false,
                     confirmButtonText: 'Continuar',
                     denyButtonText: 'Volver a la Página Principal',
@@ -132,12 +132,13 @@
                                 data: {
                                     data
                                 },
-                                success: function(response){
+                                done: function(response){
                                     window.location.href = "/tree";
                                     //console.log(response)
                                 }
                             });
                         }, 250 );
+
                     }
                 });
             </script>
@@ -182,7 +183,7 @@
                                 data: {
                                     data
                                 },
-                                success: function(response){
+                                done: function(response){
                                     window.location.href = "/tree";
                                 }
                             });
