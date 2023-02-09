@@ -168,15 +168,15 @@ class ClienteController extends Controller
             $agcliente->FRegistro = date('Y-m-d H:i:s');
             $agcliente->PNacimiento = trim($input['pais_de_nacimiento']);
             $agcliente->LNacimiento = trim($input['ciudad_de_nacimiento']);
-            $user->ciudad_de_nacimiento = $agcliente->LNacimiento;
-            $agcliente->PaisPasaporte = trim($input['pais_de_expedicion_del_pasaporte']);
+            @$user->ciudad_de_nacimiento = $agcliente->LNacimiento;
+            @$agcliente->PaisPasaporte = trim($input['pais_de_expedicion_del_pasaporte']);
 
-            $agcliente->ParentescoF = trim($input['vinculo_miembro_de_familia_1']);
-            $agcliente->NombresF = trim($input['nombre_miembro_de_familia_1']);
-            $agcliente->ApellidosF = trim($input['apellidos_miembro_de_familia_1']);
+            @$agcliente->ParentescoF = trim($input['vinculo_miembro_de_familia_1']);
+            @$agcliente->NombresF = trim($input['nombre_miembro_de_familia_1']);
+            @$agcliente->ApellidosF = trim($input['apellidos_miembro_de_familia_1']);
             // $agcliente->NPasaporteF = trim($input['pasaporte_f']);
 
-            $agcliente->Observaciones = (($agcliente->Observaciones == null) ? '' : $agcliente->Observaciones . '. ')
+            @$agcliente->Observaciones = (($agcliente->Observaciones == null) ? '' : $agcliente->Observaciones . '. ')
                 . 'Phone: ' . trim($input['phone'])
                 . ' E-mail:' . trim($input['email'])
                 . ' Adress:' . trim($input['address']);
