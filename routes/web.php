@@ -77,7 +77,7 @@ Route::post('stripegetidpago', [StripeController::class, 'stripegetidpago'])->na
 Route::post('stripeupdatedata',[StripeController::class, 'stripeupdatedata'])->name('stripeupdatedata');
 
 Route::get('/cuponaplicado', function(){
-    return redirect()->route('clientes.getinfo')->with("status","exito");
+    return redirect()->route('clientes.gracias')->with("status","exito");
 })->name('cuponaplicado');
 
 //Rutas para Stripe:
@@ -114,6 +114,8 @@ Route::group(['middleware' => ['auth'], 'as' => 'clientes.'], function(){
     Route::get('getinfo', [ClienteController::class, 'getinfo'])->name('getinfo')
         ->middleware('can:cliente');
     Route::get('pay', [ClienteController::class, 'pay'])->name('pay')
+        ->middleware('can:cliente');
+    Route::get('gracias', [ClienteController::class, 'gracias'])->name('gracias')
         ->middleware('can:cliente');
     
 });

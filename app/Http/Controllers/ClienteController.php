@@ -123,6 +123,15 @@ class ClienteController extends Controller
         return view('clientes.getinfo');
     }
 
+    public function gracias(){
+        if (Auth::user()->roles->first()->name == "Cliente"){
+            if(Auth::user()->pay==0){
+                return redirect()->route('clientes.pay');
+            }
+        }
+        return view('clientes.gracias');
+    }
+
     public function procesargetinfo(Request $request){
         /*
 
@@ -398,7 +407,7 @@ class ClienteController extends Controller
             DB::table('coupons')->where('couponcode', $finalcupon)->update(['enabled' => 0]);
             DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro' => $servicio["price"], 'id_pago' => $charged->id, 'pago_cupon' => $finalcupon ]);
             auth()->user()->revokePermissionTo('pay.services');
-            return redirect()->route('clientes.getinfo')->with("status","exito");
+            return redirect()->route('clientes.gracias')->with("status","exito");
         }
     }
 }
