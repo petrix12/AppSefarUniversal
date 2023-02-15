@@ -43,7 +43,7 @@
                     <ul>
                         <li class="d-flex justify-content-between px-20">
                             {{-- <a href="{{ Storage::disk('s3')->url($documento->location . '/' . $documento->file) }}" target="_blank">{{ $documento->file }}</a> --}}
-                            <a href="{{ route('crud.files.show', $documento) }}" target="_blank">{{ $documento->file }}</a>
+                            <a href="{{ route('crud.files.show', $documento) }}" target="_blank"><small>({{ $documento->tipo }}) - {{ $documento->file }}</small></a>
                             @can('crud.files.destroy')
                                 <form action="{{ route('crud.files.destroy', $documento) }}" method="POST">
                                     @csrf
