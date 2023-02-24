@@ -194,7 +194,7 @@ class ClienteController extends Controller
         }
 
         // Padre
-        $nombres_y_apellidos_del_padre = trim($input['nombres_y_apellidos_del_padre']);
+        @$nombres_y_apellidos_del_padre = trim($input['nombres_y_apellidos_del_padre']);
         if($nombres_y_apellidos_del_padre){
             $padre = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',2)->first();
             if(!$padre) {
@@ -213,7 +213,7 @@ class ClienteController extends Controller
         }
 
         // Madre
-        $nombres_y_apellidos_de_madre = trim($input['nombres_y_apellidos_de_madre']);
+        @$nombres_y_apellidos_de_madre = trim($input['nombres_y_apellidos_de_madre']);
         if($nombres_y_apellidos_de_madre){
             $madre = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',3)->first();
             if(!$madre) {
@@ -404,10 +404,14 @@ class ClienteController extends Controller
         }
 
         if ($charged->status == "succeeded"){
-            DB::table('coupons')->where('couponcode', $finalcupon)->update(['enabled' => 0]);
-            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro' => $servicio["price"], 'id_pago' => $charged->id, 'pago_cupon' => $finalcupon ]);
-            auth()->user()->revokePermissionTo('pay.services');
-            return redirect()->route('clientes.gracias')->with("status","exito");
+            if (isset($charged->id)){
+                DB::table('coupons')->where('couponcode', $finalcupon)->update(['enabled' => 0]);
+                DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro' => $servicio["price"], 'id_pago' => $charged->id, 'pago_cupon' => $finalcupon ]);
+                auth()->user()->revokePermissionTo('pay.services');
+                return redirect()->route('clientes.gracias')->with("status","exito");
+            } else {
+                return redirect()->route('clientes.pay')->with("status","errorx")->with("code",$e->getError()->code);
+            }
         }
     }
 }
