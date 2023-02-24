@@ -410,7 +410,7 @@ class ClienteController extends Controller
                 auth()->user()->revokePermissionTo('pay.services');
                 return redirect()->route('clientes.gracias')->with("status","exito");
             } else {
-                return redirect()->route('clientes.pay')->with("status","errorx")->with("code",$e->getError()->code);
+                return redirect()->route('clientes.pay')->with("status","error6");
             }
         }
     }
