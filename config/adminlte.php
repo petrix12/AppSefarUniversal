@@ -310,16 +310,33 @@ return [
         /* *** CUPONES *** */
         [
             'text'        => 'Cupones',
-            'icon'        => 'fa fa-gift',
+            'icon'        => 'fas fa-gift',
             'icon_color'  => 'white',
             'can'  => 'administrador',
             'submenu' => [
                 [
                     'text'          => 'Listar Cupones',
-                    'icon'          => 'fa fa-gift',
+                    'icon'          => 'fas fa-gift',
                     'icon_color'    => 'white',
                     'url'           => 'coupons',
                     'can'           => 'crud.coupons.index',
+                ],
+            ],
+        ],
+
+        /* *** CUPONES *** */
+        [
+            'text'        => 'Servicios',
+            'icon'        => 'fa fa-server',
+            'icon_color'  => 'white',
+            'can'  => 'administrador',
+            'submenu' => [
+                [
+                    'text'          => 'Listar Servicios',
+                    'icon'          => 'fa fa-server',
+                    'icon_color'    => 'white',
+                    'url'           => 'servicios',
+                    'can'           => 'crud.servicios.index',
                 ],
             ],
         ],
