@@ -228,11 +228,11 @@
                 </div>
 
                 <div class='row' style="justify-content: center; display: flex; margin-bottom:2rem;">
-                    <input type="button" id="valcoupon" value="Validar cupón" class="btn btn-secondary" style="margin-right: 1rem;"><button class="btn btn-primary" type="submit">Realizar pago</button>
+                    <input type="button" id="valcoupon" value="Validar cupón" class="btn btn-warning" style="margin-right: 1rem;"><button class="btn btn-primary" type="submit">Realizar pago</button>
                 </div>
 
                 <div class='row'>
-                    <p>Sefar Universal se compromete a proteger y respetar tu privacidad, y solo usaremos tu información personal para administrar tu cuenta y proporcionar los productos y servicios que nos solicitaste. De vez en cuando, nos gustaría ponernos en contacto contigo acerca de nuestros productos y servicios, así como sobre otros contenidos que puedan interesarte. Si aceptas que nos comuniquemos contigo para este fin, marca la casilla a continuación para indicar cómo deseas que nos comuniquemos</p>
+                    <p>Sefar Universal se compromete a proteger y respetar tu privacidad, y solo usaremos tu información personal para administrar tu cuenta y proporcionar los productos y servicios que nos solicitaste. De vez en cuando, nos gustaría ponernos en contacto contigo acerca de nuestros productos y servicios, así como sobre otros contenidos que puedan interesarte.</p>
 
                     <p>Puedes darte de baja de estas comunicaciones en cualquier momento. Para obtener más información sobre cómo darte de baja, nuestras prácticas de privacidad y cómo nos comprometemos a proteger y respetar tu privacidad, consulta nuestra Política de privacidad.
                     Al hacer clic en Enviar, aceptas que Sefar Universal almacene y procese la información personal suministrada arriba para proporcionarte el contenido solicitado.</p>
