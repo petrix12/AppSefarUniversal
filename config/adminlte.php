@@ -324,8 +324,6 @@ return [
             ],
         ],
 
-<<<<<<< Updated upstream
-=======
         /* *** Servicios *** */
         [
             'text'        => 'Servicios',
@@ -367,7 +365,6 @@ return [
             ],
         ],
 
->>>>>>> Stashed changes
         /* *** MENÚ PARA GENEALOGISTAS E INVESTIGADORES *** */
         [
             'text'        => 'Genealogistas',
