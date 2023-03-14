@@ -310,13 +310,13 @@ return [
         /* *** CUPONES *** */
         [
             'text'        => 'Cupones',
-            'icon'        => 'fas fa-gift',
+            'icon'        => 'fa fa-gift',
             'icon_color'  => 'white',
             'can'  => 'administrador',
             'submenu' => [
                 [
                     'text'          => 'Listar Cupones',
-                    'icon'          => 'fas fa-gift',
+                    'icon'          => 'fa fa-gift',
                     'icon_color'    => 'white',
                     'url'           => 'coupons',
                     'can'           => 'crud.coupons.index',
@@ -324,7 +324,7 @@ return [
             ],
         ],
 
-        /* *** CUPONES *** */
+        /* *** Servicios *** */
         [
             'text'        => 'Servicios',
             'icon'        => 'fa fa-server',
@@ -337,6 +337,30 @@ return [
                     'icon_color'    => 'white',
                     'url'           => 'servicios',
                     'can'           => 'crud.servicios.index',
+                ],
+            ],
+        ],
+
+        /* *** Reportes *** */
+        [
+            'text'        => 'Reportes',
+            'icon'        => 'fa fa-server',
+            'icon_color'  => 'white',
+            'can'  => 'administrador',
+            'submenu' => [
+                [
+                    'text'          => 'Reportes Generados',
+                    'icon'          => 'fa fa-server',
+                    'icon_color'    => 'white',
+                    'url'           => 'reports',
+                    'can'           => 'crud.reports.index',
+                ],
+                [
+                    'text'          => 'Referidos de Hubspot',
+                    'icon'          => 'fa fa-server',
+                    'icon_color'    => 'white',
+                    'url'           => 'hsreferidos',
+                    'can'           => 'crud.hsreferidos.index',
                 ],
             ],
         ],

@@ -22,5 +22,6 @@ class DatabaseSeeder extends Seeder
         $this->call(ConnectionSeeder::class);
         $this->call(TFileSeeder::class);
         $this->call(FormatSeeder::class);
+        $this->call(HsReferidosSeeder::class);
     }
 }

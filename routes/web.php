@@ -24,8 +24,11 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\StripeController;
 use App\Http\Controllers\CouponController;
 use App\Http\Controllers\ServicioController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\HsReferidoController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
+
 
 // Vista inicio
 Route::get('/', [Controller::class, 'index'])->name('inicio')->middleware(['auth', 'verified']);
@@ -66,11 +69,18 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
             ->middleware('can:crud.coupons.index');
     Route::resource('servicios', ServicioController::class)->names('servicios')
             ->middleware('can:crud.servicios.index');
+    Route::resource('reports', ReportController::class)->names('reports')
+            ->middleware('can:crud.reports.index');
+    Route::resource('hsreferidos', HsReferidoController::class)->names('hsreferidos')
+            ->middleware('can:crud.hsreferidos.index');
 });
 
 //AJAX para activar y desactivar cupones
 
 Route::post('cuponenable',[CouponController::class, 'enable'])->name('cuponenable');
+
+//Generar Catalogos (Configurar CRON para correr a diario)
+Route::get('makereport', [ReportController::class, 'makereport'])->name('makereport');
 
 //Rutas para Stripe:
 Route::get('stripeverify', [StripeController::class, 'stripeverify'])->name('stripeverify')
@@ -80,7 +90,7 @@ Route::post('stripegetidpago', [StripeController::class, 'stripegetidpago'])->na
 Route::post('stripeupdatedata',[StripeController::class, 'stripeupdatedata'])->name('stripeupdatedata');
 
 Route::get('/cuponaplicado', function(){
-    return redirect()->route('clientes.gracias')->with("status","exito");
+    return redirect()->route('clientes.getinfo')->with("status","exito");
 })->name('cuponaplicado');
 
 //Rutas para Stripe:
@@ -117,8 +127,6 @@ Route::group(['middleware' => ['auth'], 'as' => 'clientes.'], function(){
     Route::get('getinfo', [ClienteController::class, 'getinfo'])->name('getinfo')
         ->middleware('can:cliente');
     Route::get('pay', [ClienteController::class, 'pay'])->name('pay')
-        ->middleware('can:cliente');
-    Route::get('gracias', [ClienteController::class, 'gracias'])->name('gracias')
         ->middleware('can:cliente');
     
 });
