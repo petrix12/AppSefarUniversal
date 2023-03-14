@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2627cc87f28a9b8739e2d22be972112f",
+    "content-hash": "6adfb0c6c99715d78d37929cfc7c3230",
     "packages": [
         {
             "name": "almasaeed2010/adminlte",
@@ -1445,6 +1445,61 @@
                 }
             ],
             "time": "2023-03-09T13:19:02+00:00"
+        },
+        {
+            "name": "hubspot/hubspot-php",
+            "version": "5.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/HubSpot/hubspot-php.git",
+                "reference": "bd8606631e315e1f6f4c7b6607ecaae8259c07b7"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/HubSpot/hubspot-php/zipball/bd8606631e315e1f6f4c7b6607ecaae8259c07b7",
+                "reference": "bd8606631e315e1f6f4c7b6607ecaae8259c07b7",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "guzzlehttp/guzzle": "^7.3",
+                "php": ">=7.3"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.4",
+                "phpspec/phpspec": "^7.1",
+                "phpunit/phpunit": "^9.5"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/helpers.php"
+                ],
+                "psr-4": {
+                    "SevenShores\\Hubspot\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Ryan Winchester",
+                    "email": "fungku@gmail.com",
+                    "homepage": "http://ryanwinchester.ca"
+                }
+            ],
+            "description": "HubSpot PHP API client",
+            "keywords": [
+                "api",
+                "hubspot"
+            ],
+            "support": {
+                "issues": "https://github.com/HubSpot/hubspot-php/issues",
+                "source": "https://github.com/HubSpot/hubspot-php/tree/v5.0.1"
+            },
+            "time": "2022-08-22T13:32:01+00:00"
         },
         {
             "name": "irazasyed/telegram-bot-sdk",
@@ -3842,6 +3897,63 @@
             "time": "2022-06-13T21:57:56+00:00"
         },
         {
+            "name": "proclame/monday-api-laravel",
+            "version": "0.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/proclame/monday-api-laravel.git",
+                "reference": "cccab54597deb417a4c2e718561172f666e42772"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/proclame/monday-api-laravel/zipball/cccab54597deb417a4c2e718561172f666e42772",
+                "reference": "cccab54597deb417a4c2e718561172f666e42772",
+                "shasum": ""
+            },
+            "require": {
+                "laravel/framework": ">=5.5",
+                "php": ">=7.2.0",
+                "tblack-it/monday-api": ">=0.2.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Proclame\\Monday\\MondayServiceProvider"
+                    ],
+                    "aliases": {
+                        "Monday": "Proclame\\Monday\\MondayFacade"
+                    }
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Proclame\\Monday\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nick Mispoulier",
+                    "email": "nick@proclame.be"
+                }
+            ],
+            "description": "Laravel wrapper around the monday-api package from tblack-it",
+            "homepage": "https://github.com/proclame/monday-api-laravel",
+            "keywords": [
+                "laravel",
+                "monday"
+            ],
+            "support": {
+                "issues": "https://github.com/proclame/monday-api-laravel/issues",
+                "source": "https://github.com/proclame/monday-api-laravel/tree/0.2.0"
+            },
+            "time": "2021-01-02T19:49:00+00:00"
+        },
+        {
             "name": "psr/cache",
             "version": "1.0.1",
             "source": {
@@ -4639,6 +4751,68 @@
                 }
             ],
             "time": "2021-05-26T10:10:01+00:00"
+        },
+        {
+            "name": "rossjcooper/laravel-hubspot",
+            "version": "5.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/rossjcooper/laravel-hubspot.git",
+                "reference": "625b87d83ca7ef76b05b49a8561ef19aacbcb142"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/rossjcooper/laravel-hubspot/zipball/625b87d83ca7ef76b05b49a8561ef19aacbcb142",
+                "reference": "625b87d83ca7ef76b05b49a8561ef19aacbcb142",
+                "shasum": ""
+            },
+            "require": {
+                "hubspot/hubspot-php": "^5.0",
+                "illuminate/support": ">=5.3"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^2.15",
+                "orchestra/testbench": ">=3.4"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Rossjcooper\\LaravelHubSpot\\HubSpotServiceProvider"
+                    ],
+                    "aliases": {
+                        "HubSpot": "Rossjcooper\\LaravelHubSpot\\Facades\\HubSpot"
+                    }
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Tests\\": "tests/",
+                    "Rossjcooper\\LaravelHubSpot\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Ross Cooper",
+                    "email": "therossjcooper@gmail.com"
+                }
+            ],
+            "description": "Adds a Laravel specific wrapper for the Hubspot client package",
+            "keywords": [
+                "api",
+                "hubspot",
+                "laravel",
+                "service"
+            ],
+            "support": {
+                "issues": "https://github.com/rossjcooper/laravel-hubspot/issues",
+                "source": "https://github.com/rossjcooper/laravel-hubspot/tree/5.0.0"
+            },
+            "time": "2022-11-12T21:49:34+00:00"
         },
         {
             "name": "sabberworm/php-css-parser",
@@ -7033,6 +7207,46 @@
                 }
             ],
             "time": "2023-02-23T10:00:28+00:00"
+        },
+        {
+            "name": "tblack-it/monday-api",
+            "version": "v0.2.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/tblack-it/monday-api.git",
+                "reference": "f295dd0dca47d4b599f84a6e728aea87f9f76402"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/tblack-it/monday-api/zipball/f295dd0dca47d4b599f84a6e728aea87f9f76402",
+                "reference": "f295dd0dca47d4b599f84a6e728aea87f9f76402",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.5.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "TBlack\\MondayAPI\\": "src/MondayAPI"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "LGPL-2.1-only"
+            ],
+            "authors": [
+                {
+                    "name": "Pedro Teixeira",
+                    "email": "pedro.teixeira@tblack-it.com"
+                }
+            ],
+            "description": "Monday v2 API developed by TBLACK-IT",
+            "support": {
+                "issues": "https://github.com/tblack-it/monday-api/issues",
+                "source": "https://github.com/tblack-it/monday-api/tree/v0.2.3"
+            },
+            "time": "2021-09-17T14:21:29+00:00"
         },
         {
             "name": "tijsverkoyen/css-to-inline-styles",
