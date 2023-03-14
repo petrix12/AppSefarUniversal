@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
-use Webklex\PDFMerger\Facades\PDFMergerFacade as PDFMerger;
+//use Webklex\PDFMerger\Facades\PDFMergerFacade as PDFMerger;
 use Telegram\Bot\Api;
 use Telegram\Bot\FileUpload\InputFile;
 
