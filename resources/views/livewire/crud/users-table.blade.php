@@ -61,19 +61,19 @@
                                 ID
                             </th> --}}
                             <th scope="col" class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('User name') }}
+                                {{ __('Name / Email') }}
                             </th>{{--
                             <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 {{ __('Passport') }}
                             </th> --}}
-                            <th scope="col" class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {{-- <th scope="col" class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 {{ __('Correo electrónico') }}
+                            </th> --}}
+                            <th scope="col" class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {{ __('Service / Pay') }}
                             </th>
                             <th scope="col" class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('Servicio') }}
-                            </th>
-                            <th scope="col" class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('Fecha de registro') }}
+                                {{ __('F. registro / ID') }}
                             </th>
                             {{-- @can('crud.permissions.edit')
                             <th scope="col" class="px-1 y-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -109,19 +109,19 @@
                                 {{ $user->id }}
                             </td> --}}
                             <td class="px-2 py-2 whitespace-nowrap">
-                                <small>{{ Str::limit($user->name, 20) }}</small>
+                                <p><small>{{ Str::limit($user->name, 20) }}</small></p>
+                                <p><small>{{ $user->email }}</small></p>
                             </td>{{--
                             <td class="px-4 py-2 whitespace-nowrap"ra
                                 {{ $user->passport }}
                             </td> --}}
                             <td class="px-2 py-2 whitespace-nowrap">
-                                <small>{{ $user->email }}</small>
+                                <p><small>{{ $user->servicio == null ? $user->getRoleNames()[0] ?? 'Sin rol' : $user->servicio }}</small></p>
+                                <p><small>{{ $user->pay == 0 ? 'No ha pagado' : ($user->pay == 1 ? 'Pagó' : 'Pagó y completó información') }}</small></p>
                             </td>
                             <td class="px-2 py-2 whitespace-nowrap">
-                                <small>{{ $user->servicio == null ? $user->getRoleNames()[0] ?? 'Sin rol' : $user->servicio }}</small>
-                            </td>
-                            <td class="px-2 py-2 whitespace-nowrap">
-                                <small>{{ date_format($user->created_at,"Y-m-d") }}</small>
+                                <p><small>{{ date_format($user->created_at,"Y-m-d") }}</small></p>
+                                <p><small>{{ $user->id }}</small></p>
                             </td>
                             {{-- @can('crud.permissions.edit')
                             <td class="px-1 py-2 whitespace-nowrap text-center font-medium">

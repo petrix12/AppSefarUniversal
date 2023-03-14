@@ -4,6 +4,7 @@
 use App\Models\Agcliente;
 use App\Models\File;
 use App\Models\User;
+use App\Models\TFile;
 
 function GetPersona($IDPersona){
     $Persona = null;
@@ -564,3 +565,8 @@ function getServicio($passport){
     }
 }
 
+// Obtener los tipos de documentos
+function getTiposDoc(){
+    $t_files =TFile::all();
+    return $t_files;
+}

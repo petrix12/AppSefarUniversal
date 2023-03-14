@@ -12,7 +12,7 @@
 <?php
 
 
-$permitted_chars = 'QWERTYUIOPASDFGHJKLZXCVBNM';
+$permitted_chars = 'QWERTYUPASDFGHJKLZXCVBNM';
 
 $permitted_nums = '0123456789';
 

@@ -89,7 +89,7 @@
         </script>
     @endif
 
-    <form action="" method="POST" class="require-validation" data-cc-on-file="false" data-stripe-publishable-key="pk_live_bRxzDwPip6Zw1w4joIOL4SVu" id="payment-form">
+    <form action="" method="POST" class="require-validation" data-cc-on-file="false" data-stripe-publishable-key="{{ env('STRIPE_KEY') }}" id="payment-form">
         <div class="container p-8 row" style="display:flex;">
             <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
 
@@ -228,11 +228,11 @@
                 </div>
 
                 <div class='row' style="justify-content: center; display: flex; margin-bottom:2rem;">
-                    <input type="button" id="valcoupon" value="Validar cupón" class="btn btn-secondary" style="margin-right: 1rem;"><button class="btn btn-primary" type="submit">Realizar pago</button>
+                    <input type="button" id="valcoupon" value="Validar cupón" class="btn btn-warning" style="margin-right: 1rem;"><button class="btn btn-primary" type="submit">Realizar pago</button>
                 </div>
 
                 <div class='row'>
-                    <p>Sefar Universal se compromete a proteger y respetar tu privacidad, y solo usaremos tu información personal para administrar tu cuenta y proporcionar los productos y servicios que nos solicitaste. De vez en cuando, nos gustaría ponernos en contacto contigo acerca de nuestros productos y servicios, así como sobre otros contenidos que puedan interesarte. Si aceptas que nos comuniquemos contigo para este fin, marca la casilla a continuación para indicar cómo deseas que nos comuniquemos</p>
+                    <p>Sefar Universal se compromete a proteger y respetar tu privacidad, y solo usaremos tu información personal para administrar tu cuenta y proporcionar los productos y servicios que nos solicitaste. De vez en cuando, nos gustaría ponernos en contacto contigo acerca de nuestros productos y servicios, así como sobre otros contenidos que puedan interesarte.</p>
 
                     <p>Puedes darte de baja de estas comunicaciones en cualquier momento. Para obtener más información sobre cómo darte de baja, nuestras prácticas de privacidad y cómo nos comprometemos a proteger y respetar tu privacidad, consulta nuestra Política de privacidad.
                     Al hacer clic en Enviar, aceptas que Sefar Universal almacene y procese la información personal suministrada arriba para proporcionarte el contenido solicitado.</p>
@@ -240,46 +240,16 @@
             </div>
             <div class="col-sm-12 col-md-5 mb-0">
                 <div class="card" style="margin:0 30px; padding: 30px;">
-                    @php
-                        $servicio= array();
-
-                        $servicio["name"]="Nacionalidad Española por origen Sefardí";
-
-                        $servicio["id"]=auth()->user()->servicio;
-
-                        if(auth()->user()->servicio=="Española LMD"){
-                            $servicio["name"]="Ley de Memoria Democratica";
-                            $servicio["price"]=25;
-                        } else {
-                            if(auth()->user()->servicio=="Italiana"){
-                                $servicio["name"]="Nacionalidad Italiana";
-
-                            } else if(auth()->user()->servicio=="Española Sefardi"){
-                                $servicio["name"]="Nacionalidad Española por origen Sefardí";
-
-                            } else if(auth()->user()->servicio=="Portuguesa Sefardi"){
-                                $servicio["name"]="Nacionalidad Portuguesa por origen Sefardí";
-
-                            } else if(auth()->user()->servicio=="Portuguesa Sefardi - Subsanación") {
-                                $servicio["name"]="Subsanación de Expedientes (Portugal)";
-
-                            } else if(auth()->user()->servicio=="Española Sefardi - Subsanación") {
-                                $servicio["name"]="Subsanación de Expedientes (España)";
-
-                            }
-                            $servicio["price"]=50;
-                        }
-                    @endphp
                     <center>
                         <h3 style="padding:10px 0px; color:#12313a">Información del servicio</h3>
                         <img style="width:100px;" src="/vendor/adminlte/dist/img/LogoSefar.png">
                     </center>
 
-                    <h4 style="padding:10px 0px; color:#12313a"><b>Inicia tu Proceso: {{$servicio["name"]}}</b></h4>
+                    <h4 style="padding:10px 0px; color:#12313a"><b>Inicia tu Proceso: {{$servicio[0]["nombre"]}}</b></h4>
 
-                    <h4 style="padding:10px 0px 2px 0px; color:#12313a">Pago: <b id="priced">{{$servicio["price"]}}€</b></h4>
+                    <h4 style="padding:10px 0px 2px 0px; color:#12313a">Pago: <b id="priced">{{$servicio[0]["precio"]}}€</b></h4>
 
-                    <input type="hidden" id="idproducto" name="idproducto" value="{{$servicio['id']}}">
+                    <input type="hidden" id="idproducto" name="idproducto" value="{{$servicio[0]['id']}}">
                 </div>
             </div>
 

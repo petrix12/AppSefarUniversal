@@ -40,7 +40,7 @@
 
                                     @csrf
                                     @method('put')
-                                    
+
                                     <div class="shadow overflow-hidden sm:rounded-md">
                                             <div class="container">
                                                 {{-- Fila 1: Documento --}}
@@ -76,7 +76,7 @@
                                                                     @if (old('tipo', $file->tipo) == $t_file->tipo)
                                                                         <option selected>{{ $t_file->tipo }}</option>
                                                                     @else
-                                                                        <option>{{ $t_file->tipo }}</option> 
+                                                                        <option>{{ $t_file->tipo }}</option>
                                                                     @endif
                                                                 @endforeach
                                                             </select>
@@ -89,9 +89,9 @@
                                                             <select name="IDPersona" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                                                 @for ($i = 1; $i <=31; $i++)
                                                                     @if ( old('IDPersona', $file->IDPersona) == $i)
-                                                                        <option value="{{ $i }}" selected>{{ GetPersona($i) }}</option>  
+                                                                        <option value="{{ $i }}" selected>{{ GetPersona($i) }}</option>
                                                                     @else
-                                                                        <option value="{{ $i }}">{{ GetPersona($i) }}</option>    
+                                                                        <option value="{{ $i }}">{{ GetPersona($i) }}</option>
                                                                     @endif
                                                                 @endfor
                                                             </select>
@@ -106,10 +106,10 @@
                                                 <div class="md:flex ms:flex-wrap">
                                                     <div class="px-1 py-2 m-2 flex-1">    {{-- file --}}
                                                         <div>
-                                                            <input  type="file" 
-                                                                    id="file" 
-                                                                    name="file" 
-                                                                    style="display: none" 
+                                                            <input  type="file"
+                                                                    id="file"
+                                                                    name="file"
+                                                                    style="display: none"
                                                                     accept="application/pdf, .doc, .docx, .odf, .xls, .xlsx, .ppt, .pptx, .txt,image/*"
                                                                     {{-- value="{{ old('file', $file->location.'/'.$file->file) }}" --}}
                                                                     value="{{ old('file', storage_path().'/app/'.$file->location.'/'.$file->file) }}"
@@ -160,5 +160,5 @@
 @stop
 
 @section('js')
-    
+
 @stop

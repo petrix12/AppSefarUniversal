@@ -99,7 +99,9 @@ class CreateNewUser implements CreatesNewUsers
                 /* 'arosales@sefarvzla.com', */
                 /* 'czanella@sefarvzla.com', */
                 'organizacionrrhh@sefarvzla.com',
-                'gcuriel@sefarvzla.com'
+                'gcuriel@sefarvzla.com',
+                'organizacionrrhh@sefarvzla.com',
+                '20053496@bcc.hubspot.com'
             ])->send($mail_sefar);
 
             return $user->assignRole('Cliente')->givePermissionTo(['pay.services', 'finish.register']);

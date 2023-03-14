@@ -6,6 +6,7 @@ use App\Mail\CargaCliente;
 use App\Mail\CargaSefar;
 use App\Models\Agcliente;
 use App\Models\Coupon;
+use App\Models\Servicio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -40,13 +41,15 @@ class ClienteController extends Controller
         $mail_sefar = new CargaSefar(Auth::user());
         Mail::to([
             'pedro.bazo@sefarvzla.com',
-            'czanella@sefarvzla.com',
+            /* 'czanella@sefarvzla.com', */
             'gerenciait@sefarvzla.com',
             /* 'egonzalez@sefarvzla.com', */
             'analisisgenealogico@sefarvzla.com',
-            'arosales@sefarvzla.com',
+            /* 'arosales@sefarvzla.com', */
             'asistentedeproduccion@sefarvzla.com',
-            'gcuriel@sefarvzla.com'
+            'gcuriel@sefarvzla.com',
+            'organizacionrrhh@sefarvzla.com',
+            '20053496@bcc.hubspot.com'
             /* 'organizacionrrhh@sefarvzla.com' */
         ])->send($mail_sefar);
 
@@ -121,6 +124,15 @@ class ClienteController extends Controller
         return view('clientes.getinfo');
     }
 
+    public function gracias(){
+        if (Auth::user()->roles->first()->name == "Cliente"){
+            if(Auth::user()->pay==0){
+                return redirect()->route('clientes.pay');
+            }
+        }
+        return view('clientes.gracias');
+    }
+
     public function procesargetinfo(Request $request){
         /*
 
@@ -145,7 +157,9 @@ class ClienteController extends Controller
         //print_r('de php');
         //print_r($input['referido_por']);
         $user = Auth()->user();
+
         // Actualizando el árbol genenalógico
+        // Cliente
         $agcliente = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',1)->first();
         if($agcliente){
             $agcliente->Sexo = $input['genero'] == 'MASCULINO / MALE' ? 'M' : 'F';
@@ -164,21 +178,60 @@ class ClienteController extends Controller
             $agcliente->FRegistro = date('Y-m-d H:i:s');
             $agcliente->PNacimiento = trim($input['pais_de_nacimiento']);
             $agcliente->LNacimiento = trim($input['ciudad_de_nacimiento']);
-            $user->ciudad_de_nacimiento = $agcliente->LNacimiento;
-            $agcliente->PaisPasaporte = trim($input['pais_de_expedicion_del_pasaporte']);
+            @$user->ciudad_de_nacimiento = $agcliente->LNacimiento;
+            @$agcliente->PaisPasaporte = trim($input['pais_de_expedicion_del_pasaporte']);
 
-            $agcliente->ParentescoF = trim($input['vinculo_miembro_de_familia_1']);
-            $agcliente->NombresF = trim($input['nombre_miembro_de_familia_1']);
-            $agcliente->ApellidosF = trim($input['apellidos_miembro_de_familia_1']);
+            @$agcliente->ParentescoF = trim($input['vinculo_miembro_de_familia_1']);
+            @$agcliente->NombresF = trim($input['nombre_miembro_de_familia_1']);
+            @$agcliente->ApellidosF = trim($input['apellidos_miembro_de_familia_1']);
             // $agcliente->NPasaporteF = trim($input['pasaporte_f']);
 
-            $agcliente->Observaciones = (($agcliente->Observaciones == null) ? '' : $agcliente->Observaciones . '. ')
+            @$agcliente->Observaciones = (($agcliente->Observaciones == null) ? '' : $agcliente->Observaciones . '. ')
                 . 'Phone: ' . trim($input['phone'])
                 . ' E-mail:' . trim($input['email'])
                 . ' Adress:' . trim($input['address']);
             $agcliente->save();
             $user->save();
         }
+
+        // Padre
+        @$nombres_y_apellidos_del_padre = trim($input['nombres_y_apellidos_del_padre']);
+        if($nombres_y_apellidos_del_padre){
+            $padre = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',2)->first();
+            if(!$padre) {
+                $agcliente = Agcliente::create([
+                    'IDCliente' => $user->passport,
+                    'Nombres' => $nombres_y_apellidos_del_padre,
+                    'IDPersona' => 2,
+                    'Sexo' => 'M',
+                    'IDPadre' => 4,
+                    'IDMadre' => 5,
+                    'Generacion' => 2,
+                    'FUpdate' => date('Y-m-d H:i:s'),
+                    'Usuario' => $user->email,
+                ]);
+            }
+        }
+
+        // Madre
+        @$nombres_y_apellidos_de_madre = trim($input['nombres_y_apellidos_de_madre']);
+        if($nombres_y_apellidos_de_madre){
+            $madre = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',3)->first();
+            if(!$madre) {
+                $agcliente = Agcliente::create([
+                    'IDCliente' => $user->passport,
+                    'Nombres' => $nombres_y_apellidos_de_madre,
+                    'IDPersona' => 3,
+                    'Sexo' => 'F',
+                    'IDPadre' => 6,
+                    'IDMadre' => 7,
+                    'Generacion' => 2,
+                    'FUpdate' => date('Y-m-d H:i:s'),
+                    'Usuario' => $user->email,
+                ]);
+            }
+        }
+
 
         /* Fin de la actualización en Base de Datos */
 
@@ -195,7 +248,8 @@ class ClienteController extends Controller
                 return redirect()->route('clientes.getinfo');
             }
         }
-        return view('clientes.pay');
+        $servicio = Servicio::where('id_hubspot', auth()->user()->servicio)->get();
+        return view('clientes.pay', compact('servicio'));
     }
 
     public function revisarcupon(Request $request){
@@ -228,8 +282,8 @@ class ClienteController extends Controller
                         'status' => "true"
                     ]);
                 }
-                
-            } 
+
+            }
         }
         return response()->json([
             'status' => "false"
@@ -242,38 +296,7 @@ class ClienteController extends Controller
 
         $variable = json_decode(json_encode($request->all()),true);
 
-        $servicio= array();
-
-        $servicio["id"]=auth()->user()->servicio;
-        $servicio["name"]="Nacionalidad Española por origen Sefardí";
-
-        if(!is_null(auth()->user()->servicio)){
-            if(auth()->user()->servicio=="Española LMD"){
-                $servicio["name"]="Ley de Memoria Democratica";
-                $servicio["price"]=25;
-            } else {
-                if(auth()->user()->servicio=="Italiana"){
-                    $servicio["name"]="Nacionalidad Italiana";
-
-                } else if(auth()->user()->servicio=="Española Sefardi"){
-                    $servicio["name"]="Nacionalidad Española por origen Sefardí";
-
-                } else if(auth()->user()->servicio=="Portuguesa Sefardi"){
-                    $servicio["name"]="Nacionalidad Portuguesa por origen Sefardí";
-
-                } else if(auth()->user()->servicio=="Portuguesa Sefardi - Subsanación") {
-                    $servicio["name"]="Subsanación de Expedientes (Portugal)";
-
-                } else if(auth()->user()->servicio=="Española Sefardi - Subsanación") {
-                    $servicio["name"]="Subsanación de Expedientes (España)";
-                }
-                $servicio["price"]=50;
-            }
-        } else {
-            auth()->user()->revokePermissionTo('pay.services');
-            auth()->user()->revokePermissionTo('finish.register');
-            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]);
-        }
+        $servicio = Servicio::where('id_hubspot', auth()->user()->servicio)->get();
 
         $cupones = json_decode(json_encode(Coupon::all()),true);
 
@@ -282,11 +305,11 @@ class ClienteController extends Controller
         foreach ($cupones as $cupon) {
             if( $variable["coupon"] == $cupon["couponcode"] ){
                 if($cupon["percentage"]<100){
-                    $newprice=$servicio["price"]*($cupon["percentage"]/100);
-                    $servicio["price"] = $newprice;
+                    $newprice=$servicio[0]["precio"]*($cupon["percentage"]/100);
+                    $servicio[0]["precio"] = $newprice;
                     $finalcupon = $variable["coupon"];
                 }
-            } 
+            }
         }
 
         $errorcod = "error";
@@ -298,10 +321,10 @@ class ClienteController extends Controller
                 "source" => $request->stripeToken
             ));
             $charged = Stripe\Charge::create ([
-                "amount" => $servicio["price"]*100,
+                "amount" => $servicio[0]["precio"]*100,
                 "currency" => "eur",
                 "customer" => $customer->id,
-                "description" => "Sefar Universal: Inicia tu proceso (". $servicio["name"] .")"
+                "description" => "Sefar Universal: Inicia tu proceso (". $servicio[0]["nombre"] .")"
             ]);
         } catch(CardException $e) {
             $errorcod= "errorx";
@@ -348,10 +371,14 @@ class ClienteController extends Controller
         }
 
         if ($charged->status == "succeeded"){
-            DB::table('coupons')->where('couponcode', $finalcupon)->update(['enabled' => 0]);
-            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro' => $servicio["price"], 'id_pago' => $charged->id, 'pago_cupon' => $finalcupon ]);
-            auth()->user()->revokePermissionTo('pay.services');
-            return redirect()->route('clientes.getinfo')->with("status","exito");
-        } 
+            if (isset($charged->id)){
+                DB::table('coupons')->where('couponcode', $finalcupon)->update(['enabled' => 0]);
+                DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro' => $servicio[0]["precio"], 'id_pago' => $charged->id, 'pago_cupon' => $finalcupon ]);
+                auth()->user()->revokePermissionTo('pay.services');
+                return redirect()->route('clientes.gracias')->with("status","exito");
+            } else {
+                return redirect()->route('clientes.pay')->with("status","error6");
+            }
+        }
     }
 }

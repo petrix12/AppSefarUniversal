@@ -3,6 +3,7 @@
 @php
     $pasaporte = $agclientes->where('IDPersona',1)->first()->IDCliente;
     $nombre = GetNombres($agclientes,$id) . ' ' . GetApellidos($agclientes,$id);
+    $t_files = getTiposDoc();
 @endphp
 
 <button onclick="document.getElementById('cargarDocumentos{{ $id }}').showModal()">
@@ -35,6 +36,7 @@
                     {{-- Fila 1: Documento --}}
                     <div class="md:flex ms:flex-wrap">
                         <div class="px-1 py-2 m-2 flex-1">    {{-- nfile --}}
+                            {{-- Nombre del documento --}}
                             <div>
                                 <label for="nfile" class="block text-sm font-medium text-gray-700">Nombre del documento</label>
                                 <input
@@ -46,6 +48,16 @@
                                 @error('nfile')
                                     <small style="color:red">*{{ $message }}*</small>
                                 @enderror
+                            </div>
+                            {{-- Tipo de documento --}}
+                            <div class="mt-2">
+                                <label for="tipo" class="block text-sm font-medium text-gray-700">Tipo de documento</label>
+                                <select name="tipo" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                    <option></option>
+                                    @foreach ($t_files as $t_file)
+                                        <option>{{ $t_file->tipo }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
                     </div>

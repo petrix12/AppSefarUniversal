@@ -23,7 +23,7 @@ class StripeController extends Controller
 
     	$dbsearch = json_decode(json_encode(DB::table('users')->where('email', $variable["info"])->get(["id", "name", "email", "passport", "id_pago"])),true);
 
-		$test = json_decode(json_encode(Stripe\Customer::all(['email' => $variable["info"], 'limit' =>1])),true);
+		$test = json_decode(json_encode(Stripe\Customer::all(['email' => $variable["info"], 'limit' =>100])),true);
 
 		foreach ($test["data"] as $key => $value) {
 			foreach ($dbsearch as $key1 => $value1) {
