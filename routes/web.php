@@ -23,12 +23,9 @@ use App\Http\Controllers\TreeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\StripeController;
 use App\Http\Controllers\CouponController;
-<<<<<<< Updated upstream
-=======
 use App\Http\Controllers\ServicioController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\HsReferidoController;
->>>>>>> Stashed changes
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -70,15 +67,12 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
             ->middleware('can:crud.miscelaneos.index');
     Route::resource('coupons', CouponController::class)->names('coupons')
             ->middleware('can:crud.coupons.index');
-<<<<<<< Updated upstream
-=======
     Route::resource('servicios', ServicioController::class)->names('servicios')
             ->middleware('can:crud.servicios.index');
     Route::resource('reports', ReportController::class)->names('reports')
             ->middleware('can:crud.reports.index');
     Route::resource('hsreferidos', HsReferidoController::class)->names('hsreferidos')
             ->middleware('can:crud.hsreferidos.index');
->>>>>>> Stashed changes
 });
 
 //AJAX para activar y desactivar cupones
