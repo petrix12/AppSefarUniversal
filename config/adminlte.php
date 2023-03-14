@@ -310,13 +310,13 @@ return [
         /* *** CUPONES *** */
         [
             'text'        => 'Cupones',
-            'icon'        => 'fas fa-gift',
+            'icon'        => 'fa fa-gift',
             'icon_color'  => 'white',
             'can'  => 'administrador',
             'submenu' => [
                 [
                     'text'          => 'Listar Cupones',
-                    'icon'          => 'fas fa-gift',
+                    'icon'          => 'fa fa-gift',
                     'icon_color'    => 'white',
                     'url'           => 'coupons',
                     'can'           => 'crud.coupons.index',
@@ -324,7 +324,9 @@ return [
             ],
         ],
 
-        /* *** CUPONES *** */
+<<<<<<< Updated upstream
+=======
+        /* *** Servicios *** */
         [
             'text'        => 'Servicios',
             'icon'        => 'fa fa-server',
@@ -341,6 +343,31 @@ return [
             ],
         ],
 
+        /* *** Reportes *** */
+        [
+            'text'        => 'Reportes',
+            'icon'        => 'fa fa-server',
+            'icon_color'  => 'white',
+            'can'  => 'administrador',
+            'submenu' => [
+                [
+                    'text'          => 'Reportes Generados',
+                    'icon'          => 'fa fa-server',
+                    'icon_color'    => 'white',
+                    'url'           => 'reports',
+                    'can'           => 'crud.reports.index',
+                ],
+                [
+                    'text'          => 'Referidos de Hubspot',
+                    'icon'          => 'fa fa-server',
+                    'icon_color'    => 'white',
+                    'url'           => 'hsreferidos',
+                    'can'           => 'crud.hsreferidos.index',
+                ],
+            ],
+        ],
+
+>>>>>>> Stashed changes
         /* *** MENÚ PARA GENEALOGISTAS E INVESTIGADORES *** */
         [
             'text'        => 'Genealogistas',
