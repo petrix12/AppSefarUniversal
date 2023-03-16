@@ -8,6 +8,11 @@ use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
 use RealRashid\SweetAlert\Facades\Alert;
+use HubSpot;
+use HubSpot\Client\Crm\Deals\Model\AssociationSpec;
+use HubSpot\Client\Crm\Associations\ApiException;
+use HubSpot\Client\Crm\Associations\Model\BatchInputPublicObjectId;
+use HubSpot\Client\Crm\Associations\Model\PublicObjectId;
 
 class UserController extends Controller
 {
@@ -81,8 +86,42 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
-        $roles = Role::all();
-        return view('crud.users.edit', compact('user', 'roles'));
+        $hubspot = HubSpot\Factory::createWithAccessToken(env('HUBSPOT_KEY'));
+        $filter = new \HubSpot\Client\Crm\Contacts\Model\Filter();
+        $filter
+            ->setOperator('EQ')
+            ->setPropertyName('email')
+            ->setValue($user->email);
+
+        $filterGroup = new \HubSpot\Client\Crm\Contacts\Model\FilterGroup();
+        $filterGroup->setFilters([$filter]);
+
+        $searchRequest = new \HubSpot\Client\Crm\Contacts\Model\PublicObjectSearchRequest();
+        $searchRequest->setFilterGroups([$filterGroup]);
+
+        $searchRequest->setProperties(['firstname', 'lastname', 'date_of_birth', 'email', 'hs_lead_status', 'num_associated_deals']);
+
+        // @var CollectionResponseWithTotalSimplePublicObject $contactsPage
+        $contactHS = $hubspot->crm()->contacts()->searchApi()->doSearch($searchRequest);
+
+        $idcontact = $contactHS['results'][0]['id'];
+
+        $publicObjectId1 = new PublicObjectId([
+            'id' => $idcontact
+        ]);
+        $batchInputPublicObjectId = new BatchInputPublicObjectId([
+            'inputs' => [$publicObjectId1],
+        ]);
+        
+        $dealIdsHS = $hubspot->crm()->associations()->batchApi()->read('contact', 'deal', $batchInputPublicObjectId);
+
+        $dealsData = [];
+
+        foreach ($dealIdsHS['results'][0]['to'] as $dealid){
+            $dealsData[] = $hubspot->crm()->deals()->basicApi()->getById($dealid['id'], false);
+        }
+
+        return view('crud.users.status', compact('user', 'contactHS', 'dealsData'));
     }
 
     /**
@@ -182,4 +221,6 @@ class UserController extends Controller
 
         return redirect()->route('crud.users.index');
     }
+
+    
 }

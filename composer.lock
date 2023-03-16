@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6adfb0c6c99715d78d37929cfc7c3230",
+    "content-hash": "dc7ab17fe4a436b1c8802c794f3003a4",
     "packages": [
         {
             "name": "almasaeed2010/adminlte",
@@ -1445,6 +1445,66 @@
                 }
             ],
             "time": "2023-03-09T13:19:02+00:00"
+        },
+        {
+            "name": "hubspot/api-client",
+            "version": "9.4.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/HubSpot/hubspot-api-php.git",
+                "reference": "2b7f206a5a2590bd3545d2c87038726332b8b4ac"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/HubSpot/hubspot-api-php/zipball/2b7f206a5a2590bd3545d2c87038726332b8b4ac",
+                "reference": "2b7f206a5a2590bd3545d2c87038726332b8b4ac",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "ext-json": "*",
+                "ext-mbstring": "*",
+                "guzzlehttp/guzzle": "^7.3",
+                "guzzlehttp/psr7": "^1.7 || ^2.0",
+                "php": ">=7.3"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.4",
+                "phpspec/phpspec": "^7.1",
+                "phpunit/phpunit": "^9.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "HubSpot\\": "lib/",
+                    "Hubspot\\Tests\\": "tests/",
+                    "HubSpot\\Client\\": "codegen/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "HubSpot",
+                    "homepage": "https://hubspot.com/"
+                }
+            ],
+            "description": "Hubspot API client",
+            "homepage": "https://hubspot.com/",
+            "keywords": [
+                "api",
+                "hubspot",
+                "php",
+                "sdk",
+                "swagger"
+            ],
+            "support": {
+                "issues": "https://github.com/HubSpot/hubspot-api-php/issues",
+                "source": "https://github.com/HubSpot/hubspot-api-php/tree/9.4.0"
+            },
+            "time": "2023-03-02T12:15:16+00:00"
         },
         {
             "name": "hubspot/hubspot-php",

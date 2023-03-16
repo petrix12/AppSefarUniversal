@@ -90,6 +90,11 @@
                                 {{ __('Remove') }}
                             </th>
                             @endcan
+                            @can('crud.users.status')
+                            <th scope="col" class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status
+                            </th>
+                            @endcan
                         </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -145,6 +150,11 @@
                                         onclick="return confirm('¿Está seguro que desea eliminar a este usuario?')"><i class="fas fa-trash"></i>
                                     </button>
                                 </form>
+                            </td>
+                            @endcan
+                            @can('crud.users.status')
+                            <td class="px-1 py-2 whitespace-nowrap text-center font-medium">
+                                <a href="{{ route('crud.users.show', $user) }}" class="mx-12 text-grey-600 hover:text-indigo-900" title="Estatus"><i class="fas fa-exclamation"></i></a>
                             </td>
                             @endcan
                         </tr>

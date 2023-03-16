@@ -292,53 +292,29 @@ return [
 
         /* *** UTILIDADES USANDO LA API DE STRIPE *** */
         [
-            'text'        => 'Stripe',
-            'icon'        => 'fab fa-cc-stripe',
-            'icon_color'  => 'white',
-            'can'  => 'administrador',
-            'submenu' => [
-                [
-                    'text'          => 'Verificar Stripe',
-                    'icon'          => 'fab fa-cc-stripe',
-                    'icon_color'    => 'white',
-                    'url'           => 'stripeverify',
-                    'can'           => 'crud.stripeverify.index',
-                ],
-            ],
+            'text'          => 'Verificar Stripe',
+            'icon'          => 'fab fa-cc-stripe',
+            'icon_color'    => 'white',
+            'url'           => 'stripeverify',
+            'can'           => 'crud.stripeverify.index',
         ],
 
         /* *** CUPONES *** */
         [
-            'text'        => 'Cupones',
-            'icon'        => 'fa fa-gift',
-            'icon_color'  => 'white',
-            'can'  => 'administrador',
-            'submenu' => [
-                [
-                    'text'          => 'Listar Cupones',
-                    'icon'          => 'fa fa-gift',
-                    'icon_color'    => 'white',
-                    'url'           => 'coupons',
-                    'can'           => 'crud.coupons.index',
-                ],
-            ],
+            'text'          => 'Cupones',
+            'icon'          => 'fa fa-gift',
+            'icon_color'    => 'white',
+            'url'           => 'coupons',
+            'can'           => 'crud.coupons.index',
         ],
 
         /* *** Servicios *** */
         [
-            'text'        => 'Servicios',
-            'icon'        => 'fa fa-server',
-            'icon_color'  => 'white',
-            'can'  => 'administrador',
-            'submenu' => [
-                [
-                    'text'          => 'Listar Servicios',
-                    'icon'          => 'fa fa-server',
-                    'icon_color'    => 'white',
-                    'url'           => 'servicios',
-                    'can'           => 'crud.servicios.index',
-                ],
-            ],
+            'text'          => 'Servicios',
+            'icon'          => 'fa fa-server',
+            'icon_color'    => 'white',
+            'can'           => 'crud.servicios.index',
+            'url'           => 'servicios',
         ],
 
         /* *** Reportes *** */
@@ -551,6 +527,13 @@ return [
                     'icon'          => 'fas fa-sitemap',
                     'icon_color'    => 'yellow',
                     'route'         => 'clientes.tree',
+                    'can'           => 'cliente',
+                ],
+                [
+                    'text'          => 'Estatus de mi Proceso',
+                    'icon'          => 'fas fa-exclamation',
+                    'icon_color'    => 'yellow',
+                    'url'           => 'user/status',
                     'can'           => 'cliente',
                 ],
                 [

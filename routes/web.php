@@ -75,6 +75,9 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
             ->middleware('can:crud.hsreferidos.index');
 });
 
+//panel administrativo status
+Route::get('/users/status/{id}', [UserController::class, 'getuserstatus'])->name('getuserstatus');
+
 //AJAX para activar y desactivar cupones
 
 Route::post('cuponenable',[CouponController::class, 'enable'])->name('cuponenable');
