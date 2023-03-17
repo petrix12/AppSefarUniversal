@@ -110,7 +110,9 @@
                 <br>
                 <img src="/vendor/adminlte/dist/img/LogoSefar.png" style="width:50px;">
                 <br>
+                @if ( count($dealsData) > 0 )
                 <h4>Estatus de Procesos Activos</h4>
+                @endif
 
                 @foreach ($dealsData as $deal)
                     @if($deal["properties"]["pipeline"] == 94794)
