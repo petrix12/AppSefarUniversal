@@ -1180,23 +1180,25 @@ class UserController extends Controller
 
         //Hago el llamado a Hubspot por cada deal que tenga el usuario... Seguramente se puede hacer el llamado a dos IDs distintos, pero no he revisado bien eso.
 
-        foreach ($dealIdsHS['results'][0]['to'] as $dealid){
-            $dealsData[] = json_decode(json_encode($hubspot->crm()->deals()->basicApi()->getById($dealid['id'], $arreglo_propiedades , false)),true);
-        }
+        if (isset($dealIdsHS['results'][0]['to'])){
+            foreach ($dealIdsHS['results'][0]['to'] as $dealid){
+                $dealsData[] = json_decode(json_encode($hubspot->crm()->deals()->basicApi()->getById($dealid['id'], $arreglo_propiedades , false)),true);
+            }
 
-        /*
+            /*
 
-            PIPELINES y DEALSTAGES
+                PIPELINES y DEALSTAGES
 
-            Nota: el Pipeline que nos interesa, realmente, es el 94794, asi que solo deberiamos verificar si es el pipeline que aparece dentro de nuestro negocio abierto.
+                Nota: el Pipeline que nos interesa, realmente, es el 94794, asi que solo deberiamos verificar si es el pipeline que aparece dentro de nuestro negocio abierto.
 
-            Aqui solo hace el query del DealStage para obtener el porcentaje del proceso, y solo añade eso al arreglo.
+                Aqui solo hace el query del DealStage para obtener el porcentaje del proceso, y solo añade eso al arreglo.
 
-        */
+            */
 
-        foreach ($dealsData as $key => $deal){
-            if ($deal["properties"]["pipeline"] == 94794 || $deal["properties"]["pipeline"] == "94794"){
-                $dealsData[$key]["dealstage"] = json_decode(json_encode($hubspot->crm()->pipelines()->pipelineStagesApi()->getById('deal', '94794', $deal["properties"]["dealstage"])),true);
+            foreach ($dealsData as $key => $deal){
+                if ($deal["properties"]["pipeline"] == 94794 || $deal["properties"]["pipeline"] == "94794"){
+                    $dealsData[$key]["dealstage"] = json_decode(json_encode($hubspot->crm()->pipelines()->pipelineStagesApi()->getById('deal', '94794', $deal["properties"]["dealstage"])),true);
+                }
             }
         }
 
