@@ -107,10 +107,13 @@
                         </td>
                     </tr>
                 </table>
-                <br>
-                <img src="/vendor/adminlte/dist/img/LogoSefar.png" style="width:50px;">
-                <br>
                 @if ( count($dealsData) > 0 )
+                <br>
+
+                <img src="/vendor/adminlte/dist/img/LogoSefar.png" style="width:50px;">
+                
+                <br>
+                
                 <h4>Estatus de Procesos Activos</h4>
                 @endif
 
