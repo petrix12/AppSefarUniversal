@@ -253,7 +253,7 @@ return [
         [
             'text'        => 'Panel Administrativo',
             'route'       => 'inicio',
-            'icon'        => 'fas fa-tachometer-alt',
+            'icon'        => 'fa-fw fas fa-tachometer-alt',
             'icon_color'  => 'white',
             /* 'label'       => 1,
             'label_color' => 'success', */
@@ -262,27 +262,27 @@ return [
         /* *** ACCESOS *** */
         [
             'text'        => 'Accesos',
-            'icon'        => 'fas fa-key',
+            'icon'        => 'fa-fw fas fa-key',
             'icon_color'  => 'white',
             'can'  => 'administrador',
             'submenu' => [
                 [
                     'text'          => 'Usuarios',
-                    'icon'          => 'fas fa-users',
+                    'icon'          => 'fa-fw fas fa-users',
                     'icon_color'    => 'white',
                     'url'           => 'users',
                     'can'           => 'crud.users.index',
                 ],
                 [
                     'text'          => 'Roles',
-                    'icon'          => 'fas fa-user-tag',
+                    'icon'          => 'fa-fw fas fa-user-tag',
                     'icon_color'    => 'white',
                     'url'           => 'roles',
                     'can'           => 'crud.roles.index',
                 ],
                 [
                     'text'          => 'Permisos',
-                    'icon'          => 'fas fa-universal-access',
+                    'icon'          => 'fa-fw fas fa-universal-access',
                     'icon_color'    => 'white',
                     'url'           => 'permissions',
                     'can'           => 'crud.permissions.index',
@@ -293,7 +293,7 @@ return [
         /* *** UTILIDADES USANDO LA API DE STRIPE *** */
         [
             'text'          => 'Verificar Stripe',
-            'icon'          => 'fab fa-cc-stripe',
+            'icon'          => 'fa-fw fab fa-cc-stripe',
             'icon_color'    => 'white',
             'url'           => 'stripeverify',
             'can'           => 'crud.stripeverify.index',
@@ -302,7 +302,7 @@ return [
         /* *** CUPONES *** */
         [
             'text'          => 'Cupones',
-            'icon'          => 'fa fa-gift',
+            'icon'          => 'fa-fw fa fa-gift',
             'icon_color'    => 'white',
             'url'           => 'coupons',
             'can'           => 'crud.coupons.index',
@@ -311,7 +311,7 @@ return [
         /* *** Servicios *** */
         [
             'text'          => 'Servicios',
-            'icon'          => 'fa fa-server',
+            'icon'          => 'fa-fw fa fa-server',
             'icon_color'    => 'white',
             'can'           => 'crud.servicios.index',
             'url'           => 'servicios',
@@ -320,20 +320,20 @@ return [
         /* *** Reportes *** */
         [
             'text'        => 'Reportes',
-            'icon'        => 'fa fa-server',
+            'icon'        => 'fa-fw fa fa-file',
             'icon_color'  => 'white',
             'can'  => 'administrador',
             'submenu' => [
                 [
                     'text'          => 'Reportes Generados',
-                    'icon'          => 'fa fa-server',
+                    'icon'          => 'fa-fw fa fa-file',
                     'icon_color'    => 'white',
                     'url'           => 'reports',
                     'can'           => 'crud.reports.index',
                 ],
                 [
                     'text'          => 'Referidos de Hubspot',
-                    'icon'          => 'fa fa-server',
+                    'icon'          => 'fa-fw fa fa-file',
                     'icon_color'    => 'white',
                     'url'           => 'hsreferidos',
                     'can'           => 'crud.hsreferidos.index',
@@ -344,41 +344,41 @@ return [
         /* *** MENÚ PARA GENEALOGISTAS E INVESTIGADORES *** */
         [
             'text'        => 'Genealogistas',
-            'icon'        => 'fab fa-pagelines',
+            'icon'        => 'fa-fw fab fa-pagelines',
             'icon_color'  => 'white',
             'can'  => ['genealogista', 'produccion'],
             'submenu' => [
                 [
                     'text'          => 'Clientes',
-                    'icon'          => 'fas fa-id-card',
+                    'icon'          => 'fa-fw fas fa-id-card',
                     'icon_color'    => 'white',
                     'route'         => '',
                     'can'           => 'crud.clients.index',
                 ],
                 [
                     'text'          => 'Clientes y ancestros',
-                    'icon'          => 'fas fa-user-plus',
+                    'icon'          => 'fa-fw fas fa-user-plus',
                     'icon_color'    => 'white',
                     'route'         => 'crud.agclientes.index',
                     'can'           => 'crud.agclientes.index',
                 ],
                 [
                     'text'          => 'Clientes y familiares',
-                    'icon'          => 'fas fa-user-shield',
+                    'icon'          => 'fa-fw fas fa-user-shield',
                     'icon_color'    => 'white',
                     'route'         => 'crud.families.index',
                     'can'           => 'crud.families.index',
                 ],
                 [
                     'text'          => 'Últimas modificaciones',
-                    'icon'          => 'fas fa-portrait',
+                    'icon'          => 'fa-fw fas fa-portrait',
                     'icon_color'    => 'white',
                     'url'           => 'no_definido',
                     'can'           => 'no_definido',
                 ],
                 [
                     'text'          => 'Documentos clientes',
-                    'icon'          => 'fas fa-passport',
+                    'icon'          => 'fa-fw fas fa-passport',
                     'icon_color'    => 'white',
                     'route'         => 'crud.files.index',
                     'can'           => 'crud.files.index',
@@ -389,13 +389,13 @@ return [
         /* *** REGISTROS ONIDEX, DIEX Y MAISANTA *** */
         [
             'text'        => 'Consultas',
-            'icon'        => 'fas fa-search',
+            'icon'        => 'fa-fw fas fa-search',
             'icon_color'  => 'white',
             'can'  => 'consultas.onidex.index',
             'submenu' => [
                 [
                     'text'          => 'Registros Onidex',
-                    'icon'          => 'fas fa-id-card',
+                    'icon'          => 'fa-fw fas fa-id-card',
                     'icon_color'    => 'white',
                     /* 'url'           => 'consultaodx', */
                     'route'         => 'consultas.onidex.index',
@@ -403,14 +403,14 @@ return [
                 ],
                 [
                     'text'          => 'Diex',
-                    'icon'          => 'fas fa-portrait',
+                    'icon'          => 'fa-fw fas fa-portrait',
                     'icon_color'    => 'white',
                     'url'           => 'roles',
                     'can'           => 'no_definido',
                 ],
                 [
                     'text'          => 'Maisanta',
-                    'icon'          => 'fas fa-portrait',
+                    'icon'          => 'fa-fw fas fa-portrait',
                     'icon_color'    => 'white',
                     'url'           => 'permissions',
                     'can'           => 'no_definido',
@@ -421,7 +421,7 @@ return [
         /* *** MENÚ PARA DOCUMENTALISTAS *** */
         [
             'text'        => 'Control de documentos',
-            'icon'        => 'fas fa-file-import',
+            'icon'        => 'fa-fw fas fa-file-import',
             'icon_color'  => 'white',
             'can'  => 'documentalista',
             'submenu' => [
@@ -434,14 +434,14 @@ return [
                 ], */
                 [
                     'text'          => 'Libros',
-                    'icon'          => 'fas fa-book-reader',
+                    'icon'          => 'fa-fw fas fa-book-reader',
                     'icon_color'    => 'white',
                     'route'         => 'crud.books.index',
                     'can'           => 'crud.books.index',
                 ],
                 [
                     'text'          => 'Miscelaneos',
-                    'icon'          => 'fas fa-file',
+                    'icon'          => 'fa-fw fas fa-file',
                     'icon_color'    => 'white',
                     'route'         => 'crud.miscelaneos.index',
                     'can'           => 'crud.miscelaneos.index',
@@ -452,48 +452,48 @@ return [
         /* *** TABLAS GENERALES *** */
         [
             'text'        => 'Tablas Generales',
-            'icon'        => 'fas fa-table',
+            'icon'        => 'fa-fw fas fa-table',
             'icon_color'  => 'white',
             'can'  => 'administrador',
             'submenu' => [
                 [
                     'text'          => 'Paises',
-                    'icon'          => 'fas fa-flag',
+                    'icon'          => 'fa-fw fas fa-flag',
                     'icon_color'    => 'white',
                     'route'         => 'crud.countries.index',
                     'can'           => 'administrador',
                 ],
                 [
                     'text'          => 'Parentescos',
-                    'icon'          => 'fab fa-first-order',
+                    'icon'          => 'fa-fw fab fa-first-order',
                     'icon_color'    => 'white',
                     'route'         => 'crud.parentescos.index',
                     'can'           => 'administrador',
                 ],
                 [
                     'text'          => 'Lado - Parentesco',
-                    'icon'          => 'fas fa-fingerprint',
+                    'icon'          => 'fa-fw fas fa-fingerprint',
                     'icon_color'    => 'white',
                     'route'         => 'crud.lados.index',
                     'can'           => 'administrador',
                 ],
                 [
                     'text'          => 'Conexión - Parentesco',
-                    'icon'          => 'fas fa-sitemap',
+                    'icon'          => 'fa-fw fas fa-sitemap',
                     'icon_color'    => 'white',
                     'route'         => 'crud.connections.index',
                     'can'           => 'administrador',
                 ],
                 [
                     'text'          => 'Tipos de documentos',
-                    'icon'          => 'fas fa-file-alt',
+                    'icon'          => 'fa-fw fas fa-file-alt',
                     'icon_color'    => 'white',
                     'route'         => 'crud.t_files.index',
                     'can'           => 'administrador',
                 ],
                 [
                     'text'          => 'Tipos de formatos',
-                    'icon'          => 'fas fa-print',
+                    'icon'          => 'fa-fw fas fa-print',
                     'icon_color'    => 'white',
                     'route'         => 'crud.formats.index',
                     'can'           => 'administrador',
@@ -504,41 +504,41 @@ return [
         /* *** CLIENTES *** */
         [
             'text'        => 'Menú de opciones',
-            'icon'        => 'fas fa-caret-square-down',
+            'icon'        => 'fa-fw fas fa-caret-square-down',
             'icon_color'  => 'blue',
             'can'  => 'cliente',
             'submenu' => [
                 [
                     'text'          => 'Pago del análisis',
-                    'icon'          => 'fas fa-money-bill',
+                    'icon'          => 'fa-fw fas fa-money-bill',
                     'icon_color'    => 'yellow',
                     'route'         => 'clientes.pay',
                     'can'           => 'pay.services',
                 ],
                 [
                     'text'          => 'Completar información',
-                    'icon'          => 'fas fa-user-plus',
+                    'icon'          => 'fa-fw fas fa-user-plus',
                     'icon_color'    => 'yellow',
                     'route'         => 'clientes.getinfo',
                     'can'           => 'finish.register',
                 ],
                 [
                     'text'          => 'Cargar árbol',
-                    'icon'          => 'fas fa-sitemap',
+                    'icon'          => 'fa-fw fas fa-sitemap',
                     'icon_color'    => 'yellow',
                     'route'         => 'clientes.tree',
                     'can'           => 'cliente',
                 ],
                 [
                     'text'          => 'Estatus de mi Proceso',
-                    'icon'          => 'fas fa-exclamation',
+                    'icon'          => 'fa-fw fas fa-exclamation',
                     'icon_color'    => 'yellow',
                     'url'           => 'user/status',
                     'can'           => 'cliente',
                 ],
                 [
                     'text'          => 'Perfil de usuario',
-                    'icon'          => 'fas fa-user-cog',
+                    'icon'          => 'fa-fw fas fa-user-cog',
                     'icon_color'    => 'yellow',
                     'url'           => 'user/profile',
                     'can'           => 'cliente',
@@ -547,7 +547,7 @@ return [
         ],
         [
             'text'          => 'Finalizar carga',
-            'icon'          => 'fas fa-sign-out-alt',
+            'icon'          => 'fa-fw fas fa-sign-out-alt',
             'icon_color'    => 'blue',
             'route'         => 'clientes.salir',
             'can'           => 'cliente',
@@ -556,34 +556,34 @@ return [
         /* *** PRUEBAS *** */
         [
             'text'        => 'Pruebas',
-            'icon'        => 'fas fa-grimace',
+            'icon'        => 'fa-fw fas fa-grimace',
             'icon_color'  => 'yellow',
             'can'  => 'administrador',
             'submenu' => [
                 [
                     'text'          => 'Flex Tailwind',
-                    'icon'          => 'fab fa-buromobelexperte',
+                    'icon'          => 'fa-fw fab fa-buromobelexperte',
                     'icon_color'    => 'yellow',
                     'url'           => 'flex',
                     'can'           => 'administrador',
                 ],
                 [
                     'text'          => 'MVC Agclientes',
-                    'icon'          => 'fab fa-intercom',
+                    'icon'          => 'fa-fw fab fa-intercom',
                     'icon_color'    => 'blue',
                     'url'           => 'agclientesp',
                     'can'           => 'administrador',
                 ],
                 [
                     'text'          => 'Ventana Modal',
-                    'icon'          => 'fas fa-window-restore',
+                    'icon'          => 'fa-fw fas fa-window-restore',
                     'icon_color'    => 'red',
                     'url'           => 'vmodal',
                     'can'           => 'administrador',
                 ],
                 [
                     'text'          => 'Enlace para registro',
-                    'icon'          => 'fas fa-user-circle',
+                    'icon'          => 'fa-fw fas fa-user-circle',
                     'icon_color'    => 'green',
                     'url'           => 'registro',
                     'can'           => 'administrador',
@@ -599,18 +599,18 @@ return [
         [
             'text' => 'profile',
             'url'  => 'user/profile',
-            'icon' => 'fas fa-fw fa-user',
+            'icon' => 'fa-fw fas fa-fw fa-user',
             'can'  => 'no_definido',
         ],
         [
             'text' => 'change_password',
             'url'  => 'reset-password',
-            'icon' => 'fas fa-fw fa-lock',
+            'icon' => 'fa-fw fas fa-fw fa-lock',
             'can'  => 'no_definido',
         ],
         [
             'text'    => 'multilevel',
-            'icon'    => 'fas fa-fw fa-share',
+            'icon'    => 'fa-fw fas fa-fw fa-share',
             'can'  => 'no_definido',
             'submenu' => [
                 [

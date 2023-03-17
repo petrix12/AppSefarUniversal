@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'Cupones')
+@section('title', 'Estatus del Proceso')
 
 @section('content_header')
 
@@ -95,7 +95,7 @@
                     </tr>
                     <tr>
                         <td class="title">Referido por</td>
-                        <td>
+                        <td colspan="3">
                             @foreach ($referidosHS as $referido)
                                 @if ($referido["correo"]==$user["referido_por"])
                                     {{ $referido["nombre"] }}
