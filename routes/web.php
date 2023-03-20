@@ -78,6 +78,12 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
 //panel administrativo status
 Route::get('/users/status/{id}', [UserController::class, 'getuserstatus'])->name('getuserstatus');
 
+//panel produccion y ventas status
+Route::get('/clientes/status/{agcliente}', [UserController::class, 'getuserstatus_ventas'])->name('getuserstatus_ventas');
+
+//panel CLIENTE status
+Route::get('/my_status', [UserController::class, 'my_status'])->name('my_status');
+
 //AJAX para activar y desactivar cupones
 
 Route::post('cuponenable',[CouponController::class, 'enable'])->name('cuponenable');
@@ -97,6 +103,10 @@ Route::get('/cuponaplicado', function(){
 })->name('cuponaplicado');
 
 //Rutas para Stripe:
+
+Route::get('/gracias', function(){
+    return view('clientes.gracias');
+})->name('gracias');
 
 // Grupo de rutas para Consultas a base de datos
 Route::group(['middleware' => ['auth'], 'as' => 'consultas.'], function(){

@@ -111,6 +111,11 @@
                                     Acción
                                 </th>
                                 @endcan
+                                @can('crud.users.status')
+                                <th scope="col" class="py-2 text-center text-xs text-gray-500 uppercase tracking-wider">
+                                    Estatus
+                                </th>
+                                @endcan
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -161,7 +166,7 @@
                                 <a href="{{ route('arboles.tree.index', $agcliente->IDCliente) }}" target="_blank" title="Vista Horizontal"><i class="fab fa-pagelines mx-2"></i></a>
                                 <a href="{{ route('arboles.albero.index', $agcliente->IDCliente) }}" target="_blank" title="Vista Lineal"><i class="fas fa-bezier-curve mx-1"></i></a>
                             </td>
-
+                            @can('crud.agclientes.edit')
                             <td class="flex px-4 py-2 text-center">
                                 @can('crud.agclientes.edit')
                                     <a href="{{ route('crud.agclientes.edit', $agcliente ) }}" class="mx-12 text-grey-600 hover:text-indigo-900" title="Editar"><i class="fas fa-edit"></i></a>
@@ -178,7 +183,14 @@
                                 </form>
                                 @endcan
                             </td>
-
+                            @endcan
+                            @can('crud.users.status')
+                            <td class="px-1 py-2 text-sm text-center">
+                                @if($agcliente->NPasaporte == $agcliente->IDCliente)
+                                <a href="{{ route('getuserstatus_ventas', $agcliente ) }}"  class="mx-12 text-grey-600 hover:text-indigo-900" title="Estatus"><i class="fas fa-exclamation"></i></a>
+                                @endif
+                            </td>
+                            @endcan
                         </tr>
                         @endforeach
                         </tbody>

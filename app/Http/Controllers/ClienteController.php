@@ -375,7 +375,7 @@ class ClienteController extends Controller
                 DB::table('coupons')->where('couponcode', $finalcupon)->update(['enabled' => 0]);
                 DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro' => $servicio[0]["precio"], 'id_pago' => $charged->id, 'pago_cupon' => $finalcupon ]);
                 auth()->user()->revokePermissionTo('pay.services');
-                return redirect()->route('clientes.gracias')->with("status","exito");
+                return redirect()->route('gracias')->with("status","exito");
             } else {
                 return redirect()->route('clientes.pay')->with("status","error6");
             }

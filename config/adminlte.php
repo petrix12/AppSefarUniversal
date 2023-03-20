@@ -510,6 +510,7 @@ return [
             'submenu' => [
                 [
                     'text'          => 'Pago del análisis',
+                    'classes'       => "btn_pay",
                     'icon'          => 'fa-fw fas fa-money-bill',
                     'icon_color'    => 'yellow',
                     'route'         => 'clientes.pay',
@@ -517,6 +518,7 @@ return [
                 ],
                 [
                     'text'          => 'Completar información',
+                    'classes'       => "btn_getinfo",
                     'icon'          => 'fa-fw fas fa-user-plus',
                     'icon_color'    => 'yellow',
                     'route'         => 'clientes.getinfo',
@@ -524,6 +526,7 @@ return [
                 ],
                 [
                     'text'          => 'Cargar árbol',
+                    'classes'       => "btn_tree",
                     'icon'          => 'fa-fw fas fa-sitemap',
                     'icon_color'    => 'yellow',
                     'route'         => 'clientes.tree',
@@ -533,7 +536,7 @@ return [
                     'text'          => 'Estatus de mi Proceso',
                     'icon'          => 'fa-fw fas fa-exclamation',
                     'icon_color'    => 'yellow',
-                    'url'           => 'user/status',
+                    'url'           => 'my_status',
                     'can'           => 'cliente',
                 ],
                 [

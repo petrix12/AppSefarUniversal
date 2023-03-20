@@ -141,7 +141,7 @@
                                     $("#coupon").attr('readonly', true);
                                     $("#valcoupon").attr('disabled', true);
                                     $("#priced").html("0€");
-                                    window.location.href = "{{ route('cuponaplicado') }}";
+                                    window.location.href = "{{ route('gracias') }}";
                                 } else if (response["status"]=="halftrue") {
                                     var value = $("#priced").html();
                                     var newvalue = value.replace('€', '')*(response["percentage"]/100);

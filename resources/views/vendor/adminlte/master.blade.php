@@ -72,6 +72,8 @@
         <meta name="msapplication-TileImage" content="{{ asset('favicon/ms-icon-144x144.png') }}">
     @endif
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js" integrity="sha512-pumBsjNRGGqkPzKHndZMaAG+bir374sORyzM3uulLV14lN5LyykqNk8eEeUlUkB3U0M4FApyaHraT65ihJhDpQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
     <script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/20053496.js"></script>
 
     <script async src="//www.googletagmanager.com/gtag/js?id=UA-189067277-1"></script>
@@ -82,6 +84,30 @@
 
       gtag('config', 'UA-189067277-1');
     </script>
+
+    @if(auth()->user()->hasRole(['Cliente']))
+        <script>
+            $(document).ready(function(){
+                if (<?php echo(auth()->user()->pay) ?> == 0){
+                    $(".btn_pay").show();
+                    $(".btn_getinfo").hide();
+                    $(".btn_tree").hide();
+                }
+
+                if (<?php echo(auth()->user()->pay) ?> == 1){
+                    $(".btn_pay").hide();
+                    $(".btn_getinfo").show();
+                    $(".btn_tree").hide();
+                }
+
+                if (<?php echo(auth()->user()->pay) ?> == 2){
+                    $(".btn_pay").hide();
+                    $(".btn_getinfo").hide();
+                    $(".btn_tree").show();
+                }
+            });
+        </script>
+    @endif
 
 </head>
 
