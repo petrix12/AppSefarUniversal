@@ -302,13 +302,13 @@ return [
         /* *** MONDAY Y SUS RESPECTIVAS MÉTRICAS *** */
         [
             'text'        => 'Monday',
-            'icon'        => 'fa-fw fas fa-key',
+            'icon'        => 'fa-fw fas fa-calendar-check',
             'icon_color'  => 'white',
             'can'  => 'administrador',
             'submenu' => [
                 [
                     'text'          => 'Reportes',
-                    'icon'          => 'fa-fw fas fa-users',
+                    'icon'          => 'fa-fw fas fa-calendar-check',
                     'icon_color'    => 'white',
                     'url'           => 'mondayreportes',
                     'can'           => 'crud.mondayreportes.index',
