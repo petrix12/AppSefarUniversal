@@ -7,12 +7,37 @@
 @stop
 
 @section('content')
+
+<script
+src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js">
+</script>
+
 <style>
     table, tr, td{
         border-collapse: collapse; 
         border: 1px solid black;
     }
 </style>
+
+<script>
+    var colors = [
+        "#ff5252",
+        "#f0c755",
+        "#ff6138",
+        "#440505",
+        "#ffbe00",
+        "#d95100",
+        "#d50000",
+        "#fff176",
+        "#ff8c00",
+        "#c62828",
+        "#f2d03b",
+        "#de6d00",
+        "#4c1b1b",
+        "#ffdc00",
+        "#d23600",
+    ];
+</script>
 
 <x-app-layout>
     <div class="card" style="padding: 25px; margin: 20px 15%;">
@@ -53,6 +78,57 @@
                         <td style="text-align: center; padding: 4px 7px; width: 20%;">{{$total}}</td>
                     </tr>
                 </table>
+
+                <br>
+
+                <div style="min-width: 100%;max-width: 100%;"><canvas id="{{str_replace(' ', '', $key)}}"></canvas></div>
+
+                <script>
+
+                    var data = {
+                        labels: [
+                            <?php
+                                foreach ($value as $key1 => $value1){
+                                    echo('"');
+                                    if($key1 == '' || !isset($key1)){
+                                        echo("Sin Estatus");
+                                    }
+                                    else {
+                                        echo($key1);
+                                    }
+                                    echo('", ');
+                                }
+                            ?>
+                        ],
+                        datasets: [{
+                            label: '{{$key}}',
+                            data: [
+                                <?php
+                                    foreach ($value as $key1 => $value1){
+                                        echo $value1 . ",";
+                                    }
+                                ?>
+                            ],
+                            backgroundColor: [
+                                <?php
+                                    $i = 0;
+                                    foreach ($value as $key1 => $value1){
+                                        echo("colors[" . $i . "], ");
+                                        $i++;
+                                    }
+                                ?>
+                            ],
+                            hoverOffset: 2
+                        }]
+                    };
+
+                    var config = {
+                        type: 'doughnut',
+                        data: data,
+                    };
+
+                    new Chart("{{str_replace(' ', '', $key)}}", config);
+                </script>
 
                 <br>
 
