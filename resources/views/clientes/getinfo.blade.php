@@ -119,7 +119,7 @@
                                     //console.log(response)
                                 }
                             });
-                        }, 250 );
+                        }, 1500 );
 
                     }
                 });
@@ -169,7 +169,7 @@
                                     window.location.href = "/tree";
                                 }
                             });
-                        }, 250 );
+                        }, 1500 );
                     }
                 });
             </script>

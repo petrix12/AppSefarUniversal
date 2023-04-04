@@ -12,7 +12,6 @@
         <div class="card" style="padding:35px;">
             <center>
                 <img src="/vendor/adminlte/dist/img/LogoSefar.png" style="width:50px;">
-                <h1>Estatus del Proceso</h1>
                 <h4>Datos del Usuario</h4>
                 <table style="min-width: 98%; max-width: 98%;">
                     <tr>
@@ -87,7 +86,12 @@
                             <td class="title">Estatus del Proceso</td>
                             <td>
                                 @if ($deal["dealstage"]["metadata"]["isClosed"] == "false")
-                                    En proceso: {{ $deal["dealstage"]["label"] }}
+                                    En proceso: 
+                                    @if ( $deal["dealstage"]["id"] == "53192618" || $deal["dealstage"]["id"] == "429097" )
+                                        Análisis Genealógico
+                                    @else
+                                        {{ $deal["dealstage"]["label"] }}
+                                    @endif
                                     @if (isset($deal["dealstage"]["estatus_proceso"]))
                                         <br>{{ $deal["dealstage"]["estatus_proceso"] }}
                                     @endif
@@ -108,6 +112,9 @@
         </div>
     </div>
 
+    <pre>
+        {{ json_encode($usuario_mdy) }}
+    </pre>
 @stop
 
 @section('css')

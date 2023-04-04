@@ -231,10 +231,10 @@ function fechaCastellano ($fecha) {
 }
 
 function sendTelegram($filePDF, $nombre){
-    $telegram = new Api(env('TOKEN_TELEGRAM'));
+    $telegram = new Api(env('TELEGRAM_SAIME_BOT'));
 
     $response = $telegram->sendDocument([
-        'chat_id' => "-".env('CHATID_TELEGRAM'), 
+        'chat_id' => "-".env('TELEGRAM_SAIME_GROUP'), 
         'document' => InputFile::create(storage_path($filePDF)),
         'caption' => $nombre
     ]);

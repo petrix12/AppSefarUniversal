@@ -299,6 +299,23 @@ return [
             'can'           => 'crud.stripeverify.index',
         ],
 
+        /* *** MONDAY Y SUS RESPECTIVAS MÉTRICAS *** */
+        [
+            'text'        => 'Monday',
+            'icon'        => 'fa-fw fas fa-key',
+            'icon_color'  => 'white',
+            'can'  => 'administrador',
+            'submenu' => [
+                [
+                    'text'          => 'Reportes',
+                    'icon'          => 'fa-fw fas fa-users',
+                    'icon_color'    => 'white',
+                    'url'           => 'mondayreportes',
+                    'can'           => 'crud.mondayreportes.index',
+                ]
+            ],
+        ],
+
         /* *** CUPONES *** */
         [
             'text'          => 'Cupones',

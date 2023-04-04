@@ -26,6 +26,7 @@ use App\Http\Controllers\CouponController;
 use App\Http\Controllers\ServicioController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\HsReferidoController;
+use App\Http\Controllers\MondayController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -98,11 +99,17 @@ Route::post('stripefind', [StripeController::class, 'stripefind'])->name('stripe
 Route::post('stripegetidpago', [StripeController::class, 'stripegetidpago'])->name('stripegetidpago');
 Route::post('stripeupdatedata',[StripeController::class, 'stripeupdatedata'])->name('stripeupdatedata');
 
+//Rutas para Monday:
+Route::get('/mondayreportes', [MondayController::class, 'mondayreportes'])->name('mondayreportes')
+        ->middleware('can:crud.mondayreportes.index');
+
+//Verificarcupon
+
 Route::get('/cuponaplicado', function(){
     return redirect()->route('clientes.getinfo')->with("status","exito");
 })->name('cuponaplicado');
 
-//Rutas para Stripe:
+//Rutas para agradecimiento:
 
 Route::get('/gracias', function(){
     return view('clientes.gracias');

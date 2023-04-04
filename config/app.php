@@ -167,6 +167,7 @@ return [
          */
 
         RealRashid\SweetAlert\SweetAlertServiceProvider::class,
+        Proclame\Monday\MondayServiceProvider::class,
 
         /*
          * Application Service Providers...
@@ -231,6 +232,7 @@ return [
         'Validator' => Illuminate\Support\Facades\Validator::class,
         'View' => Illuminate\Support\Facades\View::class,
         'Alert' => RealRashid\SweetAlert\Facades\Alert::class,
+        'Monday' => Proclame\Monday\MondayFacade::class,
 
     ],
 
