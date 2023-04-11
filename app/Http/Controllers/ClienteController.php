@@ -316,7 +316,7 @@ class ClienteController extends Controller
                         //sago solo el id del contacto:
                         $idcontact = $contactHS['results'][0]['id'];
 
-                        DB::table('users')->where('id', $value['id'])->update(['hs_id' => $idcontact]);
+                        DB::table('users')->where('id', auth()->user()->id)->update(['hs_id' => $idcontact]);
 
                         $properties1 = [
                             'registro_pago' => '0',
@@ -455,7 +455,7 @@ class ClienteController extends Controller
                     //sago solo el id del contacto:
                     $idcontact = $contactHS['results'][0]['id'];
 
-                    DB::table('users')->where('id', $value['id'])->update(['hs_id' => $idcontact]);
+                    DB::table('users')->where('id', auth()->user()->id)->update(['hs_id' => $idcontact]);
                     
                     $properties1 = [
                         'registro_pago' => $servicio[0]["precio"],
