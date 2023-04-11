@@ -130,26 +130,155 @@
                         $porcentaje= $porcentaje + 3.03;
                     } else {
                         $vartabuelos = 0;
-                        foreach ($variable as $key => $value) {
-                            // code...
+                        foreach ($familiaresR as $key => $value) {
+                            if($value->Generacion > 3){
+                                $vartabuelos++;
+                            }
+                        }
+                        if ($vartabuelos>1) {
+                            $porcentaje= $porcentaje + 3.03;
                         }
                     }
 
                 ?>
 
+                <h4>Progreso del Usuario</h4>
+            </center>
+
+            <style>
+                .percentp{
+                    max-width:  09.09%;
+                    width:  09.09%;
+                }
+
+                .textpercentp{
+                    max-width:  18.18%;
+                    width:  18.18%;
+                    font-size: 14px;
+                    text-align: center;
+                    padding: 0px 4px;
+                }
+
+                .textpercentp{
+                    max-width:  18.18%;
+                    width:  18.18%;
+                    font-size: 14px;
+                    text-align: center;
+                    padding: 0px 4px;
+                }
+
+                .helperprocess{
+                    display: flex;
+                }
+            </style>
+
+            <div class="progresscontainer" style="position: relative;">
                 <div class="progress">
                     <div class="progress-bar" style="width:<?php echo($porcentaje); ?>%;">
-                        <span class="progress-bar-text">{{$porcentaje}}%</span>
                     </div>
                 </div>
-
-            </center>
+                <div class="helperprocess">
+                    <div class="percentp">
+                        <div style="width:100%; border-right: 1px solid black; height: 35px;">
+                        </div>
+                    </div>
+                    <div class="percentp">
+                        <div style="width:100%; border-right: 1px solid black; height: 135px;">
+                        </div>
+                    </div>
+                    <div class="percentp">
+                        <div style="width:100%; border-right: 1px solid black; height: 35px;">
+                        </div>
+                    </div>
+                    <div class="percentp">
+                        <div style="width:100%; border-right: 1px solid black; height: 135px;">
+                        </div>
+                    </div>
+                    <div class="percentp">
+                        <div style="width:100%; border-right: 1px solid black; height: 35px;">
+                        </div>
+                    </div>
+                    <div class="percentp">
+                        <div style="width:100%; border-right: 1px solid black; height: 135px;">
+                        </div>
+                    </div>
+                    <div class="percentp">
+                        <div style="width:100%; border-right: 1px solid black; height: 35px;">
+                        </div>
+                    </div>
+                    <div class="percentp">
+                        <div style="width:100%; border-right: 1px solid black; height: 135px;">
+                        </div>
+                    </div>
+                    <div class="percentp">
+                        <div style="width:100%; border-right: 1px solid black; height: 35px;">
+                        </div>
+                    </div>
+                    <div class="percentp">
+                        <div style="width:100%; border-right: 1px solid black; height: 135px;">
+                        </div>
+                    </div>
+                </div>
+                <div class="helperprocess" style="margin-top: -100px;">
+                    <div class="textpercentp">
+                        <div style="width:100%;">
+                            Registro
+                        </div>
+                    </div>
+                    <div class="textpercentp">
+                        <div style="width:100%;">
+                            Presupuesto
+                        </div>
+                    </div>
+                    <div class="textpercentp">
+                        <div style="width:100%;">
+                            Documentos Filiatorios
+                        </div>
+                    </div>
+                    <div class="textpercentp">
+                        <div style="width:100%;">
+                            Documentos Legalizados y Apostillados
+                        </div>
+                    </div>
+                    <div class="textpercentp">
+                        <div style="width:100%;">
+                            Expediente consignado ante el ente gubernamental
+                        </div>
+                    </div>
+                </div>
+                <div class="helperprocess" style="margin-top: 40px;">
+                    <div style="width:9.10%;">
+                        
+                    </div>
+                    <div class="textpercentp">
+                        <div style="width:100%;">
+                            Preanalisis
+                        </div>
+                    </div>
+                    <div class="textpercentp">
+                        <div style="width:100%;">
+                            Informe genealógico
+                        </div>
+                    </div>
+                    <div class="textpercentp">
+                        <div style="width:100%;">
+                            Certificados CIL
+                        </div>
+                    </div>
+                    <div class="textpercentp">
+                        <div style="width:100%;">
+                            Revisión de Expediente
+                        </div>
+                    </div>
+                    <div class="textpercentp">
+                        <div style="width:100%;">
+                            Resolución en Espera
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-
-    <pre>
-        {{ count($familiaresR) }}
-    </pre>
 @stop
 
 @section('css')

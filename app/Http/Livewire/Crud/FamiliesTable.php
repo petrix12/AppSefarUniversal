@@ -24,6 +24,8 @@ class FamiliesTable extends Component
             ->orWhere('Cliente','LIKE',"%$this->search%")
             ->orWhere('Familiar','LIKE',"%$this->search%")
             ->orWhere('Parentesco','LIKE',"%$this->search%")
+            ->orWhere('PaisNac','LIKE',"%$this->search%")
+            ->orWhere('LugarNac','LIKE',"%$this->search%")
             ->orderBy('Cliente','ASC')
             ->paginate($this->perPage);
         return view('livewire.crud.families-table', compact('families'));
