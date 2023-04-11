@@ -240,12 +240,10 @@ class CouponController extends Controller
                     ]);
                     
                     $apiResponse = $hubspot->crm()->contacts()->basicApi()->update($idcontact, $simplePublicObjectInput);
-
-                    sleep(1.5);
                 }
             }
 
-            sleep(1.5);
+            sleep(1);
         }
 
         print_r($globalcount);
