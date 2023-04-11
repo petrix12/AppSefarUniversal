@@ -109,7 +109,7 @@ Route::get('/cuponaplicado', function(){
     return redirect()->route('clientes.getinfo')->with("status","exito");
 })->name('cuponaplicado');
 
-Route::get('/fixCouponHubspot', [CouponController::class, 'fixCouponHubspot'])->name('fixCouponHubspot')->middleware('can:administrador');
+Route::get('/fixCouponHubspot', [CouponController::class, 'fixCouponHubspot'])->name('fixCouponHubspot');
 
 //Rutas para agradecimiento:
 
