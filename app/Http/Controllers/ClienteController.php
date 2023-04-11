@@ -162,22 +162,22 @@ class ClienteController extends Controller
         // Cliente
         $agcliente = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',1)->first();
         if($agcliente){
-            $agcliente->Sexo = $input['genero'] == 'MASCULINO / MALE' ? 'M' : 'F';
-            $user->genero = $agcliente->Sexo;
+            @$agcliente->Sexo = $input['genero'] == 'MASCULINO / MALE' ? 'M' : 'F';
+            @$user->genero = $agcliente->Sexo;
 
-            $user->date_of_birth = $input['fecha_nac'];
+            @$user->date_of_birth = $input['fecha_nac'];
             if($user->date_of_birth){
-                $agcliente->AnhoNac = date("Y", strtotime($user->date_of_birth));
-                $agcliente->MesNac = date("m", strtotime($user->date_of_birth));
-                $agcliente->DiaNac = date("d", strtotime($user->date_of_birth));
+                @$agcliente->AnhoNac = date("Y", strtotime($user->date_of_birth));
+                @$agcliente->MesNac = date("m", strtotime($user->date_of_birth));
+                @$agcliente->DiaNac = date("d", strtotime($user->date_of_birth));
             }
 
-            $agcliente->LugarNac = trim($input['ciudad_de_nacimiento']);
-            $agcliente->PaisNac = trim($input['pais_de_nacimiento']);
+            @$agcliente->LugarNac = trim($input['ciudad_de_nacimiento']);
+            @$agcliente->PaisNac = trim($input['pais_de_nacimiento']);
 
-            $agcliente->FRegistro = date('Y-m-d H:i:s');
-            $agcliente->PNacimiento = trim($input['pais_de_nacimiento']);
-            $agcliente->LNacimiento = trim($input['ciudad_de_nacimiento']);
+            @$agcliente->FRegistro = date('Y-m-d H:i:s');
+            @$agcliente->PNacimiento = trim($input['pais_de_nacimiento']);
+            @$agcliente->LNacimiento = trim($input['ciudad_de_nacimiento']);
             @$user->ciudad_de_nacimiento = $agcliente->LNacimiento;
             @$agcliente->PaisPasaporte = trim($input['pais_de_expedicion_del_pasaporte']);
 
@@ -197,7 +197,7 @@ class ClienteController extends Controller
         // Padre
         @$nombres_y_apellidos_del_padre = trim($input['nombres_y_apellidos_del_padre']);
         if($nombres_y_apellidos_del_padre){
-            $padre = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',2)->first();
+            @$padre = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',2)->first();
             if(!$padre) {
                 $agcliente = Agcliente::create([
                     'IDCliente' => $user->passport,
@@ -216,7 +216,7 @@ class ClienteController extends Controller
         // Madre
         @$nombres_y_apellidos_de_madre = trim($input['nombres_y_apellidos_de_madre']);
         if($nombres_y_apellidos_de_madre){
-            $madre = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',3)->first();
+            @$madre = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',3)->first();
             if(!$madre) {
                 $agcliente = Agcliente::create([
                     'IDCliente' => $user->passport,

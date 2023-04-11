@@ -126,6 +126,15 @@
                         $porcentaje= $porcentaje + 3.03;
                     }
 
+                    if (count($familiaresR) > 16) {
+                        $porcentaje= $porcentaje + 3.03;
+                    } else {
+                        $vartabuelos = 0;
+                        foreach ($variable as $key => $value) {
+                            // code...
+                        }
+                    }
+
                 ?>
 
                 <div class="progress">
