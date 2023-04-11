@@ -548,14 +548,14 @@ return [
                     'icon_color'    => 'yellow',
                     'route'         => 'clientes.tree',
                     'can'           => 'cliente',
-                ],
+                ],/*
                 [
                     'text'          => 'Estatus de mi Proceso',
                     'icon'          => 'fa-fw fas fa-exclamation',
                     'icon_color'    => 'yellow',
                     'url'           => 'my_status',
                     'can'           => 'cliente',
-                ],
+                ],*/
                 [
                     'text'          => 'Perfil de usuario',
                     'icon'          => 'fa-fw fas fa-user-cog',
