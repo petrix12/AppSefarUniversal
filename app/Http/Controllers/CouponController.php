@@ -7,6 +7,13 @@ use Illuminate\Http\Request;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use HubSpot;
+use HubSpot\Client\Crm\Deals\Model\AssociationSpec;
+use HubSpot\Client\Crm\Associations\Model\BatchInputPublicObjectId;
+use HubSpot\Client\Crm\Associations\Model\PublicObjectId;
+use HubSpot\Factory;
+use HubSpot\Client\Crm\Contacts\ApiException;
+use HubSpot\Client\Crm\Contacts\Model\SimplePublicObjectInput;
 
 class CouponController extends Controller
 {
@@ -179,5 +186,65 @@ class CouponController extends Controller
         } else {
             DB::table('coupons')->where('id', $var["id"])->update(['enabled' => 1]);
         }
+    }
+
+    public function fixCouponHubspot()
+    {
+        $hubspot = HubSpot\Factory::createWithAccessToken(env('HUBSPOT_KEY'));
+        $query = 'SELECT id, email, pago_cupon, hs_id FROM users where pay>0 and pago_cupon <> "" and pago_cupon is not null and email not like "%sefarvzla.com%"';
+
+        $globalcount = json_decode(json_encode(DB::select(DB::raw($query))),true);
+
+        foreach ($globalcount as $key => $value) {
+            $idcontact = "";
+
+            $filter = new \HubSpot\Client\Crm\Contacts\Model\Filter();
+            $filter
+                ->setOperator('EQ')
+                ->setPropertyName('email')
+                ->setValue($value["email"]);
+
+            $filterGroup = new \HubSpot\Client\Crm\Contacts\Model\FilterGroup();
+            $filterGroup->setFilters([$filter]);
+
+            $searchRequest = new \HubSpot\Client\Crm\Contacts\Model\PublicObjectSearchRequest();
+            $searchRequest->setFilterGroups([$filterGroup]);
+
+            //Llamo a todas las propiedades de Hubspot (Si el dia de mañana hay que añadir algo nuevo, la ventaja que tenemos es que ya me estoy trayendo todos los elementos del arreglo)
+
+            $searchRequest->setProperties([
+                "registro_pago",
+                "registro_cupon"
+            ]);
+
+            //Hago la busqueda del cliente
+            $contactHS = $hubspot->crm()->contacts()->searchApi()->doSearch($searchRequest);
+
+            if ($contactHS['total'] != 0){
+                $valuehscupon = "";
+                //sago solo el id del contacto:
+                $idcontact = $contactHS['results'][0]['id'];
+
+                DB::table('users')->where('id', $value['id'])->update(['hs_id' => $idcontact]);
+
+                if (!isset($contactHS['results'][0]['properties']['registro_cupon'])) {
+                    $properties1 = [
+                        'registro_pago' => '0',
+                        'registro_cupon' => $value["pago_cupon"]
+                    ];
+                    $simplePublicObjectInput = new SimplePublicObjectInput([
+                        'properties' => $properties1,
+                    ]);
+                    
+                    $apiResponse = $hubspot->crm()->contacts()->basicApi()->update($idcontact, $simplePublicObjectInput);
+
+                    sleep(1.5);
+                }
+            }
+
+            sleep(1.5);
+        }
+
+        print_r($globalcount);
     }
 }
