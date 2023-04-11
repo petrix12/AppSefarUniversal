@@ -19,6 +19,13 @@ use Stripe\Exception\AuthenticationException;
 use Stripe\Exception\ApiConnectionException;
 use Stripe\Exception\ApiErrorException;
 use Exception;
+use HubSpot;
+use HubSpot\Client\Crm\Deals\Model\AssociationSpec;
+use HubSpot\Client\Crm\Associations\Model\BatchInputPublicObjectId;
+use HubSpot\Client\Crm\Associations\Model\PublicObjectId;
+use HubSpot\Factory;
+use HubSpot\Client\Crm\Contacts\ApiException;
+use HubSpot\Client\Crm\Contacts\Model\SimplePublicObjectInput;
 
 class ClienteController extends Controller
 {
@@ -253,6 +260,7 @@ class ClienteController extends Controller
     }
 
     public function revisarcupon(Request $request){
+        $hubspot = HubSpot\Factory::createWithAccessToken(env('HUBSPOT_KEY'));
         $data = json_decode(json_encode($request->all()),true);
 
         $cupones = json_decode(json_encode(Coupon::all()),true);
@@ -278,6 +286,50 @@ class ClienteController extends Controller
                     DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro' => 0, 'pago_cupon' => $data["cpn"]]);
                     DB::table('coupons')->where('couponcode', $cupon["couponcode"])->update(['enabled' => 0]);
                     auth()->user()->revokePermissionTo('pay.services');
+                    
+                    $idcontact = "";
+
+                    $filter = new \HubSpot\Client\Crm\Contacts\Model\Filter();
+                    $filter
+                        ->setOperator('EQ')
+                        ->setPropertyName('email')
+                        ->setValue(auth()->user()->email);
+
+                    $filterGroup = new \HubSpot\Client\Crm\Contacts\Model\FilterGroup();
+                    $filterGroup->setFilters([$filter]);
+
+                    $searchRequest = new \HubSpot\Client\Crm\Contacts\Model\PublicObjectSearchRequest();
+                    $searchRequest->setFilterGroups([$filterGroup]);
+
+                    //Llamo a todas las propiedades de Hubspot (Si el dia de mañana hay que añadir algo nuevo, la ventaja que tenemos es que ya me estoy trayendo todos los elementos del arreglo)
+
+                    $searchRequest->setProperties([
+                        "registro_pago",
+                        "registro_cupon"
+                    ]);
+
+                    //Hago la busqueda del cliente
+                    $contactHS = $hubspot->crm()->contacts()->searchApi()->doSearch($searchRequest);
+
+                    if ($contactHS['total'] != 0){
+                        $valuehscupon = "";
+                        //sago solo el id del contacto:
+                        $idcontact = $contactHS['results'][0]['id'];
+
+                        DB::table('users')->where('id', $value['id'])->update(['hs_id' => $idcontact]);
+
+                        if (!isset($contactHS['results'][0]['properties']['registro_cupon'])) {
+                            $properties1 = [
+                                'registro_pago' => '0',
+                                'registro_cupon' => $cupon["couponcode"]
+                            ];
+                            $simplePublicObjectInput = new SimplePublicObjectInput([
+                                'properties' => $properties1,
+                            ]);
+                            
+                            $apiResponse = $hubspot->crm()->contacts()->basicApi()->update($idcontact, $simplePublicObjectInput);
+                        }
+                    }
                     return response()->json([
                         'status' => "true"
                     ]);
@@ -291,6 +343,7 @@ class ClienteController extends Controller
     }
 
     public function procesarpay(Request $request) {
+        $hubspot = HubSpot\Factory::createWithAccessToken(env('HUBSPOT_KEY'));
         //Lo que va dentro de la Funcion
         Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
 
@@ -375,6 +428,49 @@ class ClienteController extends Controller
                 DB::table('coupons')->where('couponcode', $finalcupon)->update(['enabled' => 0]);
                 DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro' => $servicio[0]["precio"], 'id_pago' => $charged->id, 'pago_cupon' => $finalcupon ]);
                 auth()->user()->revokePermissionTo('pay.services');
+                $idcontact = "";
+
+                $filter = new \HubSpot\Client\Crm\Contacts\Model\Filter();
+                $filter
+                    ->setOperator('EQ')
+                    ->setPropertyName('email')
+                    ->setValue(auth()->user()->email);
+
+                $filterGroup = new \HubSpot\Client\Crm\Contacts\Model\FilterGroup();
+                $filterGroup->setFilters([$filter]);
+
+                $searchRequest = new \HubSpot\Client\Crm\Contacts\Model\PublicObjectSearchRequest();
+                $searchRequest->setFilterGroups([$filterGroup]);
+
+                //Llamo a todas las propiedades de Hubspot (Si el dia de mañana hay que añadir algo nuevo, la ventaja que tenemos es que ya me estoy trayendo todos los elementos del arreglo)
+
+                $searchRequest->setProperties([
+                    "registro_pago",
+                    "registro_cupon"
+                ]);
+
+                //Hago la busqueda del cliente
+                $contactHS = $hubspot->crm()->contacts()->searchApi()->doSearch($searchRequest);
+
+                if ($contactHS['total'] != 0){
+                    $valuehscupon = "";
+                    //sago solo el id del contacto:
+                    $idcontact = $contactHS['results'][0]['id'];
+
+                    DB::table('users')->where('id', $value['id'])->update(['hs_id' => $idcontact]);
+
+                    if (!isset($contactHS['results'][0]['properties']['registro_cupon'])) {
+                        $properties1 = [
+                            'registro_pago' => $servicio[0]["precio"],
+                            'transaction_id' => $charged->id
+                        ];
+                        $simplePublicObjectInput = new SimplePublicObjectInput([
+                            'properties' => $properties1,
+                        ]);
+                        
+                        $apiResponse = $hubspot->crm()->contacts()->basicApi()->update($idcontact, $simplePublicObjectInput);
+                    }
+                }
                 return redirect()->route('gracias')->with("status","exito");
             } else {
                 return redirect()->route('clientes.pay')->with("status","error6");
