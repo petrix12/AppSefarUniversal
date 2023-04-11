@@ -318,17 +318,15 @@ class ClienteController extends Controller
 
                         DB::table('users')->where('id', $value['id'])->update(['hs_id' => $idcontact]);
 
-                        if (!isset($contactHS['results'][0]['properties']['registro_cupon'])) {
-                            $properties1 = [
-                                'registro_pago' => '0',
-                                'registro_cupon' => $cupon["couponcode"]
-                            ];
-                            $simplePublicObjectInput = new SimplePublicObjectInput([
-                                'properties' => $properties1,
-                            ]);
-                            
-                            $apiResponse = $hubspot->crm()->contacts()->basicApi()->update($idcontact, $simplePublicObjectInput);
-                        }
+                        $properties1 = [
+                            'registro_pago' => '0',
+                            'registro_cupon' => $cupon["couponcode"]
+                        ];
+                        $simplePublicObjectInput = new SimplePublicObjectInput([
+                            'properties' => $properties1,
+                        ]);
+                        
+                        $apiResponse = $hubspot->crm()->contacts()->basicApi()->update($idcontact, $simplePublicObjectInput);
                     }
                     return response()->json([
                         'status' => "true"
@@ -458,18 +456,16 @@ class ClienteController extends Controller
                     $idcontact = $contactHS['results'][0]['id'];
 
                     DB::table('users')->where('id', $value['id'])->update(['hs_id' => $idcontact]);
-
-                    if (!isset($contactHS['results'][0]['properties']['registro_cupon'])) {
-                        $properties1 = [
-                            'registro_pago' => $servicio[0]["precio"],
-                            'transaction_id' => $charged->id
-                        ];
-                        $simplePublicObjectInput = new SimplePublicObjectInput([
-                            'properties' => $properties1,
-                        ]);
-                        
-                        $apiResponse = $hubspot->crm()->contacts()->basicApi()->update($idcontact, $simplePublicObjectInput);
-                    }
+                    
+                    $properties1 = [
+                        'registro_pago' => $servicio[0]["precio"],
+                        'transaction_id' => $charged->id
+                    ];
+                    $simplePublicObjectInput = new SimplePublicObjectInput([
+                        'properties' => $properties1,
+                    ]);
+                    
+                    $apiResponse = $hubspot->crm()->contacts()->basicApi()->update($idcontact, $simplePublicObjectInput);
                 }
                 return redirect()->route('gracias')->with("status","exito");
             } else {
