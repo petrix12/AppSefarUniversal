@@ -109,6 +109,8 @@
 
                     <img src="/vendor/adminlte/dist/img/LogoSefar.png" style="width:50px;">
                     
+                    {{ $deal["dealstage"]["id"] }}
+
                     <br>
 
                     <?php
@@ -122,15 +124,14 @@
                         if ($user["pay"] > 1) {
                             $porcentaje= $porcentaje + 9.09/2;
                         }
-
                         
                         if ($porcentaje>9){
-                            if ($deal["dealstage"]["id"] == "429097" || $deal["dealstage"]["id"] == 429097){
-                                $porcentaje= $porcentaje + 9.09;
+                            if ($deal["dealstage"]["id"] == "429097" || $deal["dealstage"]["id"] == 429097 || $deal["dealstage"]["id"] == "53192618" || $deal["dealstage"]["id"] == 53192618 ){
+                                $porcentaje= 18.18;
                             }
 
-                            if ($deal["dealstage"]["id"] == "429099" || $deal["dealstage"]["id"] == 429099) {
-                                $porcentaje= $porcentaje + 9.09;
+                            if ($deal["dealstage"]["id"] == "429099" || $deal["dealstage"]["id"] == 429099 || $deal["dealstage"]["id"] == "429098" || $deal["dealstage"]["id"] == 429098) {
+                                $porcentaje= 27.27;
                             }
                         }
 
