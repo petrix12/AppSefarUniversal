@@ -169,14 +169,14 @@
                     }
                 </style>
 
-                <div class="progresscontainer" style="position: relative;">
-                    <div class="progress">
+                <div class="progresscontainer" style="position: relative; height: 145px;">
+                    <div class="progress" style="position:absolute;">
                         <div class="progress-bar" style="width:<?php echo($porcentaje); ?>%;">
                         </div>
                     </div>
-                    <div class="helperprocess">
+                    <div class="helperprocess" style="position:absolute; width: 100%; margin-top: 1px;">
                         <div class="percentp">
-                            <div style="width:100%; border-right: 1px solid black; height: 35px;">
+                            <div style="width:100%; border-right: 1px solid black; height: 45px;">
                             </div>
                         </div>
                         <div class="percentp">
@@ -184,7 +184,7 @@
                             </div>
                         </div>
                         <div class="percentp">
-                            <div style="width:100%; border-right: 1px solid black; height: 35px;">
+                            <div style="width:100%; border-right: 1px solid black; height: 45px;">
                             </div>
                         </div>
                         <div class="percentp">
@@ -192,7 +192,7 @@
                             </div>
                         </div>
                         <div class="percentp">
-                            <div style="width:100%; border-right: 1px solid black; height: 35px;">
+                            <div style="width:100%; border-right: 1px solid black; height: 45px;">
                             </div>
                         </div>
                         <div class="percentp">
@@ -200,7 +200,7 @@
                             </div>
                         </div>
                         <div class="percentp">
-                            <div style="width:100%; border-right: 1px solid black; height: 35px;">
+                            <div style="width:100%; border-right: 1px solid black; height: 45px;">
                             </div>
                         </div>
                         <div class="percentp">
@@ -208,7 +208,7 @@
                             </div>
                         </div>
                         <div class="percentp">
-                            <div style="width:100%; border-right: 1px solid black; height: 35px;">
+                            <div style="width:100%; border-right: 1px solid black; height: 45px;">
                             </div>
                         </div>
                         <div class="percentp">
@@ -216,7 +216,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="helperprocess" style="margin-top: -100px;">
+                    <div class="helperprocess" style="position: absolute; margin-top: 47px; width: 100%;">
                         <div class="textpercentp">
                             <div style="width:100%;">
                                 Registro
@@ -243,7 +243,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="helperprocess" style="margin-top: 40px;">
+                    <div class="helperprocess" style="position: absolute; margin-top: 137px;  width: 100%;">
                         <div style="width:9.10%;">
                             
                         </div>
