@@ -44,17 +44,20 @@
                         </td>
                     </tr>
                 </table>
-                @if ( count($dealsData) > 0 )
-                <br>
+                
+            <br>
 
-                <img src="/vendor/adminlte/dist/img/LogoSefar.png" style="width:50px;">
-                
-                <br>
-                
-                <h4>Estatus de Procesos Activos</h4>
-                @endif
+            <img src="/vendor/adminlte/dist/img/LogoSefar.png" style="width:50px;">
+            
+            <br>
+            
+            <h4>Estatus de Procesos Activos</h4>
+
+            </center>
+            @if (count($dealsData) > 0)
 
                 @foreach ($dealsData as $deal)
+                <center>
                     @if($deal["properties"]["pipeline"] == 94794)
                     <table style="min-width: 98%; max-width: 98%; margin-bottom: 15px;">
                         <tr>
@@ -87,58 +90,68 @@
                             <td>
                                 @if ($deal["dealstage"]["metadata"]["isClosed"] == "false")
                                     En proceso: 
-                                    @if ( $deal["dealstage"]["id"] == "53192618" || $deal["dealstage"]["id"] == "429097" )
-                                        Análisis Genealógico
-                                    @else
-                                        {{ $deal["dealstage"]["label"] }}
-                                    @endif
-                                    @if (isset($deal["dealstage"]["estatus_proceso"]))
-                                        <br>{{ $deal["dealstage"]["estatus_proceso"] }}
-                                    @endif
+                                    
+                                    <?php
+
+                                        $porcentaje= 0;
+
+                                        if ($user["pay"] > 0) {
+                                            $porcentaje= 9.09/2;
+                                        }
+
+                                        if ($user["pay"] > 1) {
+                                            $porcentaje= $porcentaje + 9.09/2;
+                                        }
+                                        
+                                        if ($porcentaje>9){
+                                            if ($deal["dealstage"]["id"] == "429097" || $deal["dealstage"]["id"] == 429097 || $deal["dealstage"]["id"] == "53192618" || $deal["dealstage"]["id"] == 53192618 ){
+                                                $porcentaje= 18.18;
+                                                echo("Análisis Genealógico");
+                                            }
+
+                                            if ($deal["dealstage"]["id"] == "429099" || $deal["dealstage"]["id"] == 429099 || $deal["dealstage"]["id"] == "429098" || $deal["dealstage"]["id"] == 429098) {
+                                                $porcentaje= 27.27;
+                                                echo("Presupuesto");
+                                            }
+                                        } else {
+                                            if($user["pay"] == 0){
+
+                                    ?>
+
+                                        Falta pago del registro. <a href="/pay">Click aquí</a>
+
+                                    <?php
+
+                                            } else if ($user["pay"] == 1) {
+                                    ?>
+
+                                        Falta completar registro. <a href="/getinfo">Click aquí</a>
+
+                                    <?php
+                                            }
+                                        }
+
+                                        
+                                    ?>
+
                                 @else
                                     @if ($deal["dealstage"]["label"] == "Perdido")
                                         <a style="color: red;">Detenido</a>
+
+                                        <?php
+                                            $porcentaje= 0;
+                                        ?>
                                     @else
                                         <a style="color: green;">Completado</a>
+                                        <?php
+                                            $porcentaje= 100;
+                                        ?>
                                     @endif
                                 @endif
                             </td>
                         </tr>
                     </table>
                     <br>
-
-                    <img src="/vendor/adminlte/dist/img/LogoSefar.png" style="width:50px;">
-                    
-                    {{ $deal["dealstage"]["id"] }}
-
-                    <br>
-
-                    <?php
-
-                        $porcentaje= 0;
-
-                        if ($user["pay"] > 0) {
-                            $porcentaje= 9.09/2;
-                        }
-
-                        if ($user["pay"] > 1) {
-                            $porcentaje= $porcentaje + 9.09/2;
-                        }
-                        
-                        if ($porcentaje>9){
-                            if ($deal["dealstage"]["id"] == "429097" || $deal["dealstage"]["id"] == 429097 || $deal["dealstage"]["id"] == "53192618" || $deal["dealstage"]["id"] == 53192618 ){
-                                $porcentaje= 18.18;
-                            }
-
-                            if ($deal["dealstage"]["id"] == "429099" || $deal["dealstage"]["id"] == 429099 || $deal["dealstage"]["id"] == "429098" || $deal["dealstage"]["id"] == 429098) {
-                                $porcentaje= 27.27;
-                            }
-                        }
-
-                        
-                    ?>
-
-                    <h4>Progreso del Usuario</h4>
 
                 </center>
 
@@ -169,7 +182,7 @@
                     }
                 </style>
 
-                <div class="progresscontainer" style="position: relative; height: 145px;">
+                <div class="progresscontainer" style="position: relative; height: 180px;">
                     <div class="progress" style="position:absolute;">
                         <div class="progress-bar" style="width:<?php echo($porcentaje); ?>%;">
                         </div>
@@ -274,8 +287,211 @@
                         </div>
                     </div>
                 </div>
+
+                <center>
+                    <img src="/vendor/adminlte/dist/img/LogoSefar.png" style="width:50px;">
+                </center>
+
+                <br>
                     @endif
                 @endforeach
+            @else
+                <center>
+                    <table style="min-width: 98%; max-width: 98%; margin-bottom: 15px;">
+                        <tr>
+                            <td class="title">Servicio Solicitado</td>
+                            <td>
+                                @foreach ($servicioHS as $servicio)
+                                    @if ($servicio["id_hubspot"]==$user["servicio"])
+                                        {{ $servicio["nombre"] }}
+                                        @php
+                                            break;
+                                        @endphp
+                                    @endif
+                                @endforeach
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="title">Estatus del Proceso</td>
+                            <td>
+                                    En proceso: 
+                                    
+                                    <?php
+
+                                        $porcentaje= 0;
+
+                                        if ($user["pay"] > 0) {
+                                            $porcentaje= 9.09/2;
+                                        }
+
+                                        if ($user["pay"] > 1) {
+                                            $porcentaje= $porcentaje + 9.09/2;
+                                        }
+                                        
+                                        if($user["pay"] == 0){
+
+                                    ?>
+
+                                        Falta pago del registro. <a href="/pay">Click aquí</a>
+
+                                    <?php
+
+                                        } else if ($user["pay"] == 1) {
+                                    ?>
+
+                                        Falta completar registro. <a href="/getinfo">Click aquí</a>
+
+                                    <?php
+
+                                        }
+
+                                    ?>
+                            </td>
+                        </tr>
+                    </table>
+                    <br>
+
+                </center>
+
+                <style>
+                    .percentp{
+                        max-width:  09.09%;
+                        width:  09.09%;
+                    }
+
+                    .textpercentp{
+                        max-width:  18.18%;
+                        width:  18.18%;
+                        font-size: 14px;
+                        text-align: center;
+                        padding: 0px 4px;
+                    }
+
+                    .textpercentp{
+                        max-width:  18.18%;
+                        width:  18.18%;
+                        font-size: 14px;
+                        text-align: center;
+                        padding: 0px 4px;
+                    }
+
+                    .helperprocess{
+                        display: flex;
+                    }
+                </style>
+
+                <div class="progresscontainer" style="position: relative; height: 180px;">
+                    <div class="progress" style="position:absolute;">
+                        <div class="progress-bar" style="width:<?php echo($porcentaje); ?>%;">
+                        </div>
+                    </div>
+                    <div class="helperprocess" style="position:absolute; width: 100%; margin-top: 1px;">
+                        <div class="percentp">
+                            <div style="width:100%; border-right: 1px solid black; height: 45px;">
+                            </div>
+                        </div>
+                        <div class="percentp">
+                            <div style="width:100%; border-right: 1px solid black; height: 135px;">
+                            </div>
+                        </div>
+                        <div class="percentp">
+                            <div style="width:100%; border-right: 1px solid black; height: 45px;">
+                            </div>
+                        </div>
+                        <div class="percentp">
+                            <div style="width:100%; border-right: 1px solid black; height: 135px;">
+                            </div>
+                        </div>
+                        <div class="percentp">
+                            <div style="width:100%; border-right: 1px solid black; height: 45px;">
+                            </div>
+                        </div>
+                        <div class="percentp">
+                            <div style="width:100%; border-right: 1px solid black; height: 135px;">
+                            </div>
+                        </div>
+                        <div class="percentp">
+                            <div style="width:100%; border-right: 1px solid black; height: 45px;">
+                            </div>
+                        </div>
+                        <div class="percentp">
+                            <div style="width:100%; border-right: 1px solid black; height: 135px;">
+                            </div>
+                        </div>
+                        <div class="percentp">
+                            <div style="width:100%; border-right: 1px solid black; height: 45px;">
+                            </div>
+                        </div>
+                        <div class="percentp">
+                            <div style="width:100%; border-right: 1px solid black; height: 135px;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="helperprocess" style="position: absolute; margin-top: 47px; width: 100%;">
+                        <div class="textpercentp">
+                            <div style="width:100%;">
+                                Registro
+                            </div>
+                        </div>
+                        <div class="textpercentp">
+                            <div style="width:100%;">
+                                Presupuesto
+                            </div>
+                        </div>
+                        <div class="textpercentp">
+                            <div style="width:100%;">
+                                Documentos Filiatorios
+                            </div>
+                        </div>
+                        <div class="textpercentp">
+                            <div style="width:100%;">
+                                Documentos Legalizados y Apostillados
+                            </div>
+                        </div>
+                        <div class="textpercentp">
+                            <div style="width:100%;">
+                                Expediente consignado ante el ente gubernamental
+                            </div>
+                        </div>
+                    </div>
+                    <div class="helperprocess" style="position: absolute; margin-top: 137px;  width: 100%;">
+                        <div style="width:9.10%;">
+                            
+                        </div>
+                        <div class="textpercentp">
+                            <div style="width:100%;">
+                                Preanalisis
+                            </div>
+                        </div>
+                        <div class="textpercentp">
+                            <div style="width:100%;">
+                                Informe genealógico
+                            </div>
+                        </div>
+                        <div class="textpercentp">
+                            <div style="width:100%;">
+                                Certificados CIL
+                            </div>
+                        </div>
+                        <div class="textpercentp">
+                            <div style="width:100%;">
+                                Revisión de Expediente
+                            </div>
+                        </div>
+                        <div class="textpercentp">
+                            <div style="width:100%;">
+                                Resolución en Espera
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <center>
+                    <img src="/vendor/adminlte/dist/img/LogoSefar.png" style="width:50px;">
+                </center>
+
+                <br>
+            @endif
         </div>
     </div>
 @stop
