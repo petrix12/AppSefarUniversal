@@ -159,6 +159,9 @@ class ClienteController extends Controller
             }
         }
 
+        DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]); // no borrar esta linea
+        auth()->user()->revokePermissionTo('finish.register');
+
         /* Aquí actualizo la base de datos */
 
         //print_r('de php');
@@ -241,9 +244,6 @@ class ClienteController extends Controller
 
 
         /* Fin de la actualización en Base de Datos */
-
-        DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]); // no borrar esta linea
-        auth()->user()->revokePermissionTo('finish.register');
     }
 
     public function pay(){
