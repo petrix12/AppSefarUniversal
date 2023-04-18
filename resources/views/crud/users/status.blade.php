@@ -173,20 +173,7 @@
 
                                         
                                     ?>
-
-                                @else
-                                    @if ($deal["dealstage"]["label"] == "Perdido")
-                                        <a style="color: red;">Detenido</a>
-
-                                        <?php
-                                            $porcentaje= 0;
-                                        ?>
-                                    @else
-                                        <a style="color: green;">Completado</a>
-                                        <?php
-                                            $porcentaje= 100;
-                                        ?>
-                                    @endif
+                                    
                                 @endif
                             </td>
                         </tr>
