@@ -88,93 +88,90 @@
                         <tr>
                             <td class="title">Estatus del Proceso</td>
                             <td>
-                                @if ($deal["dealstage"]["metadata"]["isClosed"] == "false")
-                                    En proceso: 
+                                En proceso: 
+                                
+                                <?php
+
+                                    $porcentaje= 0;
+
+                                    if ($user["pay"] > 0) {
+                                        $porcentaje= 9.09/2;
+                                    }
+
+                                    if ($user["pay"] > 1) {
+                                        $porcentaje= $porcentaje + 9.09/2;
+                                    }
                                     
-                                    <?php
-
-                                        $porcentaje= 0;
-
-                                        if ($user["pay"] > 0) {
-                                            $porcentaje= 9.09/2;
+                                    if ($porcentaje>9){
+                                        if ($deal["dealstage"]["id"] == "429097" || $deal["dealstage"]["id"] == 429097 || $deal["dealstage"]["id"] == "53192618" || $deal["dealstage"]["id"] == 53192618 ){
+                                            $porcentaje= 18.18;
+                                            echo("Análisis Genealógico");
                                         }
 
-                                        if ($user["pay"] > 1) {
-                                            $porcentaje= $porcentaje + 9.09/2;
-                                        }
-                                        
-                                        if ($porcentaje>9){
-                                            if ($deal["dealstage"]["id"] == "429097" || $deal["dealstage"]["id"] == 429097 || $deal["dealstage"]["id"] == "53192618" || $deal["dealstage"]["id"] == 53192618 ){
-                                                $porcentaje= 18.18;
-                                                echo("Análisis Genealógico");
-                                            }
-
-                                            if ($deal["dealstage"]["id"] == "429099" || $deal["dealstage"]["id"] == 429099 || $deal["dealstage"]["id"] == "429098" || $deal["dealstage"]["id"] == 429098) {
-                                                $porcentaje= 27.27;
-                                                echo("Presupuesto");
-                                            }
-
-                                            if ($deal["dealstage"]["id"] == "429100" || $deal["dealstage"]["id"] == 429100) {
-                                                $porcentaje= 36.36;
-                                                echo("Informe Genealógico");
-                                            }
-
-                                            if ($deal["dealstage"]["id"] == "429101" || $deal["dealstage"]["id"] == 429101) {
-                                                $porcentaje= 0.0;
-                                                echo("Detenido");
-                                            }
-
-                                            if ($deal["dealstage"]["id"] == "68064396" || $deal["dealstage"]["id"] == 68064396) {
-                                                $porcentaje= 45.45;
-                                                echo("Documentos Filiatorios");
-                                            }
-
-                                            if ($deal["dealstage"]["id"] == "68064397" || $deal["dealstage"]["id"] == 68064397) {
-                                                $porcentaje= 54.54;
-                                                echo("Certificados CIL");
-                                            }
-
-                                            if ($deal["dealstage"]["id"] == "68064398" || $deal["dealstage"]["id"] == 68064398) {
-                                                $porcentaje= 63.63;
-                                                echo("Documentos Legalizados y Apostillados");
-                                            }
-
-                                            if ($deal["dealstage"]["id"] == "68064399" || $deal["dealstage"]["id"] == 68064399) {
-                                                $porcentaje= 72.72;
-                                                echo("Revisión de Expediente");
-                                            }
-
-                                            if ($deal["dealstage"]["id"] == "68064400" || $deal["dealstage"]["id"] == 68064400) {
-                                                $porcentaje= 81.81;
-                                                echo("Expediente consignado ante el ente gubernamental");
-                                            }
-
-                                            if ($deal["dealstage"]["id"] == "68064401" || $deal["dealstage"]["id"] == 68064401) {
-                                                $porcentaje= 90.90;
-                                                echo("Resolución en Espera");
-                                            }
-                                        } else {
-                                            if($user["pay"] == 0){
-
-                                    ?>
-
-                                        Falta pago del registro. <a href="/pay">Click aquí</a>
-
-                                    <?php
-
-                                            } else if ($user["pay"] == 1) {
-                                    ?>
-
-                                        Falta completar registro. <a href="/getinfo">Click aquí</a>
-
-                                    <?php
-                                            }
+                                        if ($deal["dealstage"]["id"] == "429099" || $deal["dealstage"]["id"] == 429099 || $deal["dealstage"]["id"] == "429098" || $deal["dealstage"]["id"] == 429098) {
+                                            $porcentaje= 27.27;
+                                            echo("Presupuesto");
                                         }
 
-                                        
-                                    ?>
+                                        if ($deal["dealstage"]["id"] == "429100" || $deal["dealstage"]["id"] == 429100) {
+                                            $porcentaje= 36.36;
+                                            echo("Informe Genealógico");
+                                        }
+
+                                        if ($deal["dealstage"]["id"] == "429101" || $deal["dealstage"]["id"] == 429101) {
+                                            $porcentaje= 0.0;
+                                            echo("Detenido");
+                                        }
+
+                                        if ($deal["dealstage"]["id"] == "68064396" || $deal["dealstage"]["id"] == 68064396) {
+                                            $porcentaje= 45.45;
+                                            echo("Documentos Filiatorios");
+                                        }
+
+                                        if ($deal["dealstage"]["id"] == "68064397" || $deal["dealstage"]["id"] == 68064397) {
+                                            $porcentaje= 54.54;
+                                            echo("Certificados CIL");
+                                        }
+
+                                        if ($deal["dealstage"]["id"] == "68064398" || $deal["dealstage"]["id"] == 68064398) {
+                                            $porcentaje= 63.63;
+                                            echo("Documentos Legalizados y Apostillados");
+                                        }
+
+                                        if ($deal["dealstage"]["id"] == "68064399" || $deal["dealstage"]["id"] == 68064399) {
+                                            $porcentaje= 72.72;
+                                            echo("Revisión de Expediente");
+                                        }
+
+                                        if ($deal["dealstage"]["id"] == "68064400" || $deal["dealstage"]["id"] == 68064400) {
+                                            $porcentaje= 81.81;
+                                            echo("Expediente consignado ante el ente gubernamental");
+                                        }
+
+                                        if ($deal["dealstage"]["id"] == "68064401" || $deal["dealstage"]["id"] == 68064401) {
+                                            $porcentaje= 90.90;
+                                            echo("Resolución en Espera");
+                                        }
+                                    } else {
+                                        if($user["pay"] == 0){
+
+                                ?>
+
+                                    Falta pago del registro. <a href="/pay">Click aquí</a>
+
+                                <?php
+
+                                        } else if ($user["pay"] == 1) {
+                                ?>
+
+                                    Falta completar registro. <a href="/getinfo">Click aquí</a>
+
+                                <?php
+                                        }
+                                    }
+
                                     
-                                @endif
+                                ?>
                             </td>
                         </tr>
                     </table>
