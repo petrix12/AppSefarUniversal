@@ -156,6 +156,8 @@ Route::group(['middleware' => ['auth'], 'as' => 'clientes.'], function(){
 Route::post('getinfo', [ClienteController::class, 'procesargetinfo'])->name('procesargetinfo')
         ->middleware('can:cliente');
 
+Route::get('checkRegAlzada', [ClienteController::class, 'checkRegAlzada'])->name('checkRegAlzada');
+
 Route::post('pay', [ClienteController::class, 'procesarpay'])->name('procesarpay')
         ->middleware('can:cliente');
 

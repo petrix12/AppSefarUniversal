@@ -18,6 +18,7 @@ use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\AuthenticationException;
 use Stripe\Exception\ApiConnectionException;
 use Stripe\Exception\ApiErrorException;
+use RealRashid\SweetAlert\Facades\Alert;
 use Exception;
 use HubSpot;
 use HubSpot\Client\Crm\Deals\Model\AssociationSpec;
@@ -472,5 +473,28 @@ class ClienteController extends Controller
                 return redirect()->route('clientes.pay')->with("status","error6");
             }
         }
+    }
+
+    public function checkRegAlzada(Request $request) {
+        $mailpass = json_decode(json_encode(DB::table('users')->where('email', $request->email)->where('passport', $request->numero_de_pasaporte)->get()),true);
+        $mail = json_decode(json_encode(DB::table('users')->where('email', $request->email)->get()),true);
+
+        dd($request->nacionalidad_solicitada);
+
+        $check = 0;
+
+        if (count($mailpass)>0) {
+            DB::table('users')->where('email', $request->email)->where('passport', $request->numero_de_pasaporte)->update(['pay' => 0, 'servicio' => 0]);
+            dd($mailpass);
+        } else if (count($mail)>0) {
+            dd($mail);
+        }
+
+        if ($check == 1){
+            Alert::warning('¡Aviso!', 'Ya estas registrado en nuestra plataforma. Por favor, inicia sesión');
+        } else {
+            dd($request);
+        }
+        //DB::table('users')->where('passport', $request->numero_de_pasaporte)->get();
     }
 }
