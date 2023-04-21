@@ -14,12 +14,24 @@
             </div>
         @endif
 
+        @if(session()->has('warning'))
+            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+            <script>
+                Swal.fire({
+                  icon: 'warning',
+                  title: '¡Aviso!',
+                  html: '{{ session("warning") }}'
+                })
+            </script>
+        @endif
+
         <form method="POST" action="{{ route('login') }}">
             @csrf
 
             <div>
                 <x-jet-label for="email" value="{{ __('Email') }}" />
-                <x-jet-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus />
+                <x-jet-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email', session('email'))" required autofocus />
             </div>
 
             <div class="mt-4">

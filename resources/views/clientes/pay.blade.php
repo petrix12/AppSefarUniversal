@@ -247,7 +247,13 @@
 
                     <h4 style="padding:10px 0px; color:#12313a"><b>Inicia tu Proceso: {{$servicio[0]["nombre"]}}</b></h4>
 
-                    <h4 style="padding:10px 0px 2px 0px; color:#12313a">Pago: <b id="priced">{{$servicio[0]["precio"]}}€</b></h4>
+                    @if(auth()->user()->servicio == "Recurso de Alzada")
+                        <h4 style="padding:10px 0px 2px 0px; color:#12313a">Pago: <b id="priced">{{$servicio[0]["precio"] * auth()->user()->cantidad_alzada }}€</b></h4>
+                        <small>99 euros por cada familiar declarado en el registro ({{auth()->user()->cantidad_alzada}}).</small>
+                    @else
+                        <h4 style="padding:10px 0px 2px 0px; color:#12313a">Pago: <b id="priced">{{$servicio[0]["precio"]}}€</b></h4>
+
+                    @endif
 
                     <input type="hidden" id="idproducto" name="idproducto" value="{{$servicio[0]['id']}}">
                 </div>

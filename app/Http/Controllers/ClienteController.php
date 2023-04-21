@@ -264,6 +264,8 @@ class ClienteController extends Controller
         $hubspot = HubSpot\Factory::createWithAccessToken(env('HUBSPOT_KEY'));
         $data = json_decode(json_encode($request->all()),true);
 
+        $datos = json_decode(json_encode(DB::table('users')->where('id', auth()->user()->id)->get()),true);
+
         $cupones = json_decode(json_encode(Coupon::all()),true);
 
         foreach ($cupones as $cupon) {
@@ -284,7 +286,58 @@ class ClienteController extends Controller
                         'percentage'=>$cupon["percentage"]
                     ]);
                 } else {
-                    DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro' => 0, 'pago_cupon' => $data["cpn"]]);
+                    if (isset($datos[0]["id_pago"])){
+                        if(is_array(json_decode($datos[0]["id_pago"],true))) {
+                            $cargostemp = json_decode($datos[0]["id_pago"],true);
+                            $cargostemp[] = '';
+                            $cargos = json_encode($cargostemp);
+                        } else {
+                            $cargostemp[] = $datos[0]["id_pago"];
+                            $cargostemp[] = '';
+                            $cargos = json_encode($cargostemp);
+                        }
+                    } else {
+                        $cargostemp[] = '';
+                        $cargos = json_encode($cargostemp);
+                    }
+
+                    if (isset($datos[0]["pago_cupon"])){
+                        if(is_array(json_decode($datos[0]["pago_cupon"],true))) {
+                            $cuponestemp = json_decode($datos[0]["pago_cupon"],true);
+                            $cuponestemp[] = $data["cpn"];
+                            $cupones = json_encode($cuponestemp);
+                        } else {
+                            $cuponestemp[] = $datos[0]["pago_cupon"];
+                            $cuponestemp[] = $data["cpn"];
+                            $cupones = json_encode($cuponestemp);
+                        }
+                    } else {
+                        $cuponestemp[] = $data["cpn"];
+                        $cupones = json_encode($cuponestemp);
+                    }
+
+                    if (isset($datos[0]["pago_registro_hist"])){
+                        if(is_array(json_decode($datos[0]["pago_registro_hist"],true))) {
+                            $pago_registrotemp = json_decode($datos[0]["pago_registro_hist"],true);
+                            $pago_registrotemp[] = 0;
+                            $pago_registro = json_encode($pago_registrotemp);
+                        } else {
+                            $pago_registrotemp[] = $datos[0]["pago_registro_hist"];
+                            $pago_registrotemp[] = 0;
+                            $pago_registro = json_encode($pago_registrotemp);
+                        }
+                    } else {
+                        $pago_registrotemp[] = 0;
+                        $pago_registro = json_encode($pago_registrotemp);
+                    }
+
+                    DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro_hist' => $pago_registro, 'pago_registro' => 0, 'id_pago' => $cargos, 'pago_cupon' => $cupones ]);
+
+                    if (auth()->user()->servicio == 'Recurso de Alzada'){
+                        DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]);
+                        auth()->user()->revokePermissionTo('finish.register');
+                    }
+                    
                     DB::table('coupons')->where('couponcode', $cupon["couponcode"])->update(['enabled' => 0]);
                     auth()->user()->revokePermissionTo('pay.services');
                     
@@ -321,7 +374,9 @@ class ClienteController extends Controller
 
                         $properties1 = [
                             'registro_pago' => '0',
-                            'registro_cupon' => $cupon["couponcode"]
+                            'registro_cupon' => $cupones,
+                            'transaction_id' => $cargos,
+                            'hist_pago_registro' => $pago_registro
                         ];
                         $simplePublicObjectInput = new SimplePublicObjectInput([
                             'properties' => $properties1,
@@ -352,6 +407,8 @@ class ClienteController extends Controller
 
         $cupones = json_decode(json_encode(Coupon::all()),true);
 
+        $datos = json_decode(json_encode(DB::table('users')->where('id', auth()->user()->id)->get()),true);
+
         $finalcupon = "";
 
         foreach ($cupones as $cupon) {
@@ -362,6 +419,11 @@ class ClienteController extends Controller
                     $finalcupon = $variable["coupon"];
                 }
             }
+        }
+
+        if ($servicio[0]["nombre"] == 'Recurso de Alzada'){
+            $temp = $servicio[0]["precio"];
+            $servicio[0]["precio"] = $temp * $datos[0]['cantidad_alzada'];
         }
 
         $errorcod = "error";
@@ -424,8 +486,83 @@ class ClienteController extends Controller
 
         if ($charged->status == "succeeded"){
             if (isset($charged->id)){
-                DB::table('coupons')->where('couponcode', $finalcupon)->update(['enabled' => 0]);
-                DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro' => $servicio[0]["precio"], 'id_pago' => $charged->id, 'pago_cupon' => $finalcupon ]);
+
+                $cargostemp = [];
+
+                if (isset($datos[0]["id_pago"])){
+                    if(is_array(json_decode($datos[0]["id_pago"],true))) {
+                        $cargostemp = json_decode($datos[0]["id_pago"],true);
+                        $cargostemp[] = $charged->id;
+                        $cargos = json_encode($cargostemp);
+                    } else {
+                        $cargostemp[] = $datos[0]["id_pago"];
+                        $cargostemp[] = $charged->id;
+                        $cargos = json_encode($cargostemp);
+                    }
+                } else {
+                    $cargostemp[] = $charged->id;
+                    $cargos = json_encode($cargostemp);
+                }
+
+                $cuponestemp = [];
+
+                if (isset($finalcupon)){
+                    DB::table('coupons')->where('couponcode', $finalcupon)->update(['enabled' => 0]);
+                    if (isset($datos[0]["pago_cupon"])){
+                        if(is_array(json_decode($datos[0]["pago_cupon"],true))) {
+                            $cuponestemp = json_decode($datos[0]["pago_cupon"],true);
+                            $cuponestemp[] = $finalcupon;
+                            $cupones = json_encode($cuponestemp);
+                        } else {
+                            $cuponestemp[] = $datos[0]["pago_cupon"];
+                            $cuponestemp[] = $finalcupon;
+                            $cupones = json_encode($cuponestemp);
+                        }
+                    } else {
+                        $cuponestemp[] = $finalcupon;
+                        $cupones = json_encode($cuponestemp);
+                    }
+                } else {
+                    if (isset($datos[0]["pago_cupon"])){
+                        if(is_array(json_decode($datos[0]["pago_cupon"],true))) {
+                            $cuponestemp = json_decode($datos[0]["pago_cupon"],true);
+                            $cuponestemp[] = '';
+                            $cupones = json_encode($cuponestemp);
+                        } else {
+                            $cuponestemp[] = $datos[0]["pago_cupon"];
+                            $cuponestemp[] = '';
+                            $cupones = json_encode($cuponestemp);
+                        }
+                    } else {
+                        $cuponestemp[] = '';
+                        $cupones = json_encode($cuponestemp);
+                    }
+                }
+
+                $pago_registrotemp = [];
+
+                if (isset($datos[0]["pago_registro_hist"])){
+                    if(is_array(json_decode($datos[0]["pago_registro_hist"],true))) {
+                        $pago_registrotemp = json_decode($datos[0]["pago_registro_hist"],true);
+                        $pago_registrotemp[] = $servicio[0]["precio"];
+                        $pago_registro = json_encode($pago_registrotemp);
+                    } else {
+                        $pago_registrotemp[] = $datos[0]["pago_registro"];
+                        $pago_registrotemp[] = $servicio[0]["precio"];
+                        $pago_registro = json_encode($pago_registrotemp);
+                    }
+                } else {
+                    $pago_registrotemp[] = $servicio[0]["precio"];
+                    $pago_registro = json_encode($pago_registrotemp);
+                }
+
+                DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro_hist' => $pago_registro, 'pago_registro' => $servicio[0]["precio"], 'id_pago' => $cargos, 'pago_cupon' => $cupones ]);
+
+                if ($servicio[0]["nombre"] == 'Recurso de Alzada'){
+                    DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]);
+                    auth()->user()->revokePermissionTo('finish.register');
+                }
+                
                 auth()->user()->revokePermissionTo('pay.services');
                 $idcontact = "";
 
@@ -445,7 +582,8 @@ class ClienteController extends Controller
 
                 $searchRequest->setProperties([
                     "registro_pago",
-                    "registro_cupon"
+                    "registro_cupon",
+                    "transaction_id"
                 ]);
 
                 //Hago la busqueda del cliente
@@ -460,7 +598,9 @@ class ClienteController extends Controller
                     
                     $properties1 = [
                         'registro_pago' => $servicio[0]["precio"],
-                        'transaction_id' => $charged->id
+                        'registro_cupon' => $cupones,
+                        'transaction_id' => $cargos,
+                        'hist_pago_registro' => $pago_registro
                     ];
                     $simplePublicObjectInput = new SimplePublicObjectInput([
                         'properties' => $properties1,
@@ -479,21 +619,20 @@ class ClienteController extends Controller
         $mailpass = json_decode(json_encode(DB::table('users')->where('email', $request->email)->where('passport', $request->numero_de_pasaporte)->get()),true);
         $mail = json_decode(json_encode(DB::table('users')->where('email', $request->email)->get()),true);
 
-        dd($request->nacionalidad_solicitada);
-
         $check = 0;
 
-        if (count($mailpass)>0) {
-            DB::table('users')->where('email', $request->email)->where('passport', $request->numero_de_pasaporte)->update(['pay' => 0, 'servicio' => 0]);
-            dd($mailpass);
-        } else if (count($mail)>0) {
-            dd($mail);
+        //dd(json_decode(json_encode($request->all()), true));
+
+        if (count($mailpass)>0 || count($mail)>0) {
+            $familiares = 1 + $request->cantidad_alzada;
+            DB::table('users')->where('email', $request->email)->update(['pay' => 0, 'servicio' => $request->nacionalidad_solicitada, 'cantidad_alzada' => $request->cantidad_alzada + 1 ]);
+            $check = 1;
         }
 
         if ($check == 1){
-            Alert::warning('¡Aviso!', 'Ya estas registrado en nuestra plataforma. Por favor, inicia sesión');
+            return redirect()->route('login')->with( ['warning' => 'Ya estabas registrado con el correo ' . $request->email . ' en nuestra plataforma. Por favor, inicia sesión.'] )->with( ['email' => $request->email] );
         } else {
-            dd($request);
+            return redirect()->route( 'register' )->with( ['request' => $request->all()] );
         }
         //DB::table('users')->where('passport', $request->numero_de_pasaporte)->get();
     }

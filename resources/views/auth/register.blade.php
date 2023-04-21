@@ -1,15 +1,22 @@
 <?php
     // Captura de parámetros del JotForm
-    if (!empty($_GET['numero_de_pasaporte'])) $dni = $_GET['numero_de_pasaporte']; else $dni = null;
+
+    if (!empty($_GET['numero_de_pasaporte'])) $dni = $_GET['numero_de_pasaporte']; else if (!empty(session('request')['numero_de_pasaporte'])) $dni = session('request')['numero_de_pasaporte']; else $dni = null;
     $passport = trim($dni);
 
-    if (!empty($_GET['lastname'])) $apellidos = $_GET['lastname']; else $apellidos = null;
-    if (!empty($_GET['email'])) $email = $_GET['email']; else $email = null;
-    if (!empty($_GET['phone'])) $phone = $_GET['phone']; else $phone = null;
-    if (!empty($_GET['nacionalidad_solicitada'])) $servicio = $_GET['nacionalidad_solicitada']; else $servicio = null;
-    if (!empty($_GET['n000__referido_por__clonado_'])) $referido = $_GET['n000__referido_por__clonado_']; else $referido = null;
-    if (!empty($_GET['aplicar_cupon'])) $cupon = $_GET['aplicar_cupon']; else $cupon = null;
-    if (!empty($_GET['pais_de_nacimiento'])) $pais_de_nacimiento = $_GET['pais_de_nacimiento']; else $pais_de_nacimiento = null;
+    if (!empty($_GET['lastname'])) $apellidos = $_GET['lastname']; else if (!empty(session('request')['lastname'])) $apellidos = session('request')['lastname']; else $apellidos = null;
+    if (!empty($_GET['email'])) $email = $_GET['email']; else if (!empty(session('request')['email'])) $email = session('request')['email']; else $email = null;
+    if (!empty($_GET['phone'])) $phone = $_GET['phone']; else if (!empty(session('request')['phone'])) $phone = session('request')['phone']; else $phone = null;
+    if (!empty($_GET['nacionalidad_solicitada'])) $servicio = $_GET['nacionalidad_solicitada']; else if (!empty(session('request')['nacionalidad_solicitada'])) $servicio = session('request')['nacionalidad_solicitada']; else $servicio = null;
+    if (!empty($_GET['n000__referido_por__clonado_'])) $referido = $_GET['n000__referido_por__clonado_']; else if (!empty(session('request')['n000__referido_por__clonado_'])) $referido = session('request')['n000__referido_por__clonado_']; else $referido = null;
+    if (!empty($_GET['aplicar_cupon'])) $cupon = $_GET['aplicar_cupon']; else if (!empty(session('request')['aplicar_cupon'])) $cupon = session('request')['aplicar_cupon']; else $cupon = null;
+    if (!empty($_GET['pais_de_nacimiento'])) $pais_de_nacimiento = $_GET['pais_de_nacimiento']; else if (!empty(session('request')['pais_de_nacimiento'])) $pais_de_nacimiento = session('request')['pais_de_nacimiento']; else $pais_de_nacimiento = null;
+
+    $cantidad_alzada = 1;
+
+    // Captura de parámetros de Alzada
+
+    if (!empty(session('request')['cantidad_alzada'])) $cantidad_alzada = session('request')['cantidad_alzada'] + 1; else $cantidad_alzada = 1;
 
     $rol = 'cliente';
 
@@ -22,6 +29,17 @@
             $name = $_GET['firstname'].' '.$_GET['lastname'];
         }
         $nombres = $_GET['firstname'];
+    }else{
+        $nombres = null;
+    }
+
+    if (!empty(session('request')['firstname'])){
+        if(is_null($apellidos)){
+            $name = session('request')['firstname'];
+        } else {
+            $name = session('request')['firstname'].' '.session('request')['lastname'];
+        }
+        $nombres = session('request')['firstname'];
     }else{
         $nombres = null;
     }
@@ -51,6 +69,7 @@
             <input type="hidden" name="cupon" value="{{ $cupon }}" />
             <input type="hidden" name="pais_de_nacimiento" value="{{ $pais_de_nacimiento }}" />
             <input type="hidden" name="rol" value="{{ $rol }}" />
+            <input type="hidden" name="cantidad_alzada" value="{{ $cantidad_alzada }}" />
 
             <div>
                 <x-jet-label for="name" value="{{ __('Name') }}" />
