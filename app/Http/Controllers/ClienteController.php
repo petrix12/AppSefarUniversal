@@ -428,6 +428,12 @@ class ClienteController extends Controller
 
         $errorcod = "error";
 
+        if( auth()->user()->servicio == "Española LMD" || auth()->user()->servicio == "Italiana" ){
+            $nombredelpago = "Pago Fase Inicial: Investigación Preliminar y Preparatoria: " . $servicio[0]["nombre"];
+        } else{
+            $nombredelpago = "Inicia tu proceso: " . $servicio[0]["nombre"];
+        }
+
         try {
             $customer = Stripe\Customer::create(array(
                 "email" => auth()->user()->email,
@@ -438,7 +444,7 @@ class ClienteController extends Controller
                 "amount" => $servicio[0]["precio"]*100,
                 "currency" => "eur",
                 "customer" => $customer->id,
-                "description" => "Sefar Universal: Inicia tu proceso (". $servicio[0]["nombre"] .")"
+                "description" => "Sefar Universal: ". $nombredelpago
             ]);
         } catch(CardException $e) {
             $errorcod= "errorx";

@@ -245,7 +245,14 @@
                         <img style="width:100px;" src="/vendor/adminlte/dist/img/LogoSefar.png">
                     </center>
 
-                    <h4 style="padding:10px 0px; color:#12313a"><b>Inicia tu Proceso: {{$servicio[0]["nombre"]}}</b></h4>
+                    @if( auth()->user()->servicio == "Española LMD" || auth()->user()->servicio == "Italiana" )
+                        <h4 style="padding:10px 0px; color:#12313a"><b>Pago Fase Inicial: Investigación Preliminar y Preparatoria: {{$servicio[0]["nombre"]}}</b></h4>
+                    @else
+                        <h4 style="padding:10px 0px; color:#12313a"><b>Inicia tu Proceso: {{$servicio[0]["nombre"]}}</b></h4>
+
+                    @endif
+
+                    
 
                     @if(auth()->user()->servicio == "Recurso de Alzada")
                         <h4 style="padding:10px 0px 2px 0px; color:#12313a">Pago: <b id="priced">{{$servicio[0]["precio"] * auth()->user()->cantidad_alzada }}€</b></h4>
