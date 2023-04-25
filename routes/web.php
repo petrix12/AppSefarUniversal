@@ -86,7 +86,7 @@ Route::get('/clientes/status/{agcliente}', [UserController::class, 'getuserstatu
 Route::get('/my_status', [UserController::class, 'my_status'])->name('my_status');
 
 //panel Pasaportes erroneos
-Route::get('/fixpassport', [UserController::class, 'fixpassport'])->name('fixpassport');
+Route::get('/fixpassport', [UserController::class, 'fixpassport'])->name('fixpassport')->middleware('can:administrador');
 
 //panel Pasaportes erroneos
 Route::post('/fixpassport', [UserController::class, 'fixpassportprocess'])->name('fixpassportprocess');
