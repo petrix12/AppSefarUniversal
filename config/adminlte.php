@@ -290,6 +290,14 @@ return [
             ],
         ],
 
+        [
+            'text'          => 'Pasaportes Incorrectos',
+            'icon'          => 'fa-fw fas fa-users',
+            'icon_color'    => 'white',
+            'url'           => 'fixpassport',
+            'can'           => 'administrador',
+        ],
+
         /* *** UTILIDADES USANDO LA API DE STRIPE *** */
         [
             'text'          => 'Verificar Stripe',

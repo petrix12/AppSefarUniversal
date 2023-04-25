@@ -3764,5 +3764,43 @@ class UserController extends Controller
         return redirect()->route('crud.users.index');
     }
 
+    public function fixpassport()
+    {
+        return view('crud.users.fix');
+    }
+
+    public function fixpassportprocess(Request $request)
+    {
+        $bad_passport = trim($request->oldpass);
+        $good_passport = trim($request->newpass);
+
+        $user = json_decode(json_encode(DB::table('users')->where('passport', $bad_passport)->get()), true);
+
+        if ( count($user) == 0 ){
+            return redirect()->route('fixpassport')->with(['error' => 'No hay información registrada en la base de datos con el pasaporte '. $bad_passport ."."]);
+        }
+
+        $user2 = DB::table('users')->where('passport', $good_passport)->get();
+
+        if ( count($user2) > 0 ){
+            return redirect()->route('fixpassport')->with(['error' => 'Hay información registrada en la base de datos con el pasaporte '. $good_passport ."."]);
+        }
+
+        DB::table('users')->where('passport', $good_passport)->update(['passport' => $good_passport."X"]);
+        DB::table('users')->where('passport', $bad_passport)->update(['passport' => $good_passport]);
+
+        DB::table('agclientes')->where('IDCliente', $good_passport)->update(['IDCliente' => $good_passport."X"]);
+        DB::table('agclientes')->where('IDCliente', $bad_passport)->update(['IDCliente' => $good_passport]);
+
+        DB::table('files')->where('IDCliente', $good_passport)->update(['IDCliente' => $good_passport."X"]);
+        DB::table('files')->where('IDCliente', $bad_passport)->update(['IDCliente' => $good_passport]);
+
+        DB::table('users')->where('passport', $good_passport."X")->delete();
+        DB::table('agclientes')->where('IDCliente', $good_passport."X")->delete();
+        DB::table('files')->where('IDCliente', $good_passport."X")->delete();
+
+        return redirect()->route('fixpassport')->with(['success' => 'Se ha arreglado satisfactoriamente el pasaporte del cliente ' . $user[0]["name"] . '. Verifique su arbol <a href="/tree/'.$good_passport.'">aquí</a>.']);
+    }
+
     
 }

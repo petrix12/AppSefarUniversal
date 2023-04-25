@@ -85,6 +85,12 @@ Route::get('/clientes/status/{agcliente}', [UserController::class, 'getuserstatu
 //panel CLIENTE status
 Route::get('/my_status', [UserController::class, 'my_status'])->name('my_status');
 
+//panel Pasaportes erroneos
+Route::get('/fixpassport', [UserController::class, 'fixpassport'])->name('fixpassport');
+
+//panel Pasaportes erroneos
+Route::post('/fixpassport', [UserController::class, 'fixpassportprocess'])->name('fixpassportprocess');
+
 //AJAX para activar y desactivar cupones
 
 Route::post('cuponenable',[CouponController::class, 'enable'])->name('cuponenable');
