@@ -3780,11 +3780,15 @@ class UserController extends Controller
             return redirect()->route('fixpassport')->with(['error' => 'No hay información registrada en la base de datos con el pasaporte '. $bad_passport ."."]);
         }
 
+        /*
+
         $user2 = DB::table('users')->where('passport', $good_passport)->get();
 
         if ( count($user2) > 0 ){
             return redirect()->route('fixpassport')->with(['error' => 'Hay información registrada en la base de datos con el pasaporte '. $good_passport ."."]);
         }
+
+        */
 
         DB::table('users')->where('passport', $good_passport)->update(['passport' => $good_passport."X"]);
         DB::table('users')->where('passport', $bad_passport)->update(['passport' => $good_passport]);
