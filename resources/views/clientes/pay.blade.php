@@ -247,7 +247,7 @@
 
                     @if( auth()->user()->servicio == "Española LMD" || auth()->user()->servicio == "Italiana" )
                         <h4 style="padding:10px 0px; color:#12313a"><b>Pago Fase Inicial: Investigación Preliminar y Preparatoria: {{$servicio[0]["nombre"]}}</b></h4>
-                    @else if ( auth()->user()->servicio == "Gestión Documental" )
+                    @elseif ( auth()->user()->servicio == "Gestión Documental" )
                         <h4 style="padding:10px 0px; color:#12313a"><b>{{$servicio[0]["nombre"]}}</b></h4>
                     @else
 
