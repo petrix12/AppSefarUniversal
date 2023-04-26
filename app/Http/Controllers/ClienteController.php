@@ -564,7 +564,7 @@ class ClienteController extends Controller
 
                 DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro_hist' => $pago_registro, 'pago_registro' => $servicio[0]["precio"], 'id_pago' => $cargos, 'pago_cupon' => $cupones ]);
 
-                if ($servicio[0]["nombre"] == 'Recurso de Alzada'){
+                if ($servicio[0]["nombre"] == 'Recurso de Alzada' || $servicio[0]["nombre"] == 'Gestión Documental'){
                     DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]);
                     auth()->user()->revokePermissionTo('finish.register');
                 }
@@ -629,9 +629,15 @@ class ClienteController extends Controller
 
         //dd(json_decode(json_encode($request->all()), true));
 
+        $cantidad = 0;
+
+        if(isset($request->cantidad_alzada) && $request->cantidad_alzada>=0){
+            $cantidad = $cantidad + $request->cantidad_alzada;
+        }
+
         if (count($mailpass)>0 || count($mail)>0) {
             $familiares = 1 + $request->cantidad_alzada;
-            DB::table('users')->where('email', $request->email)->update(['pay' => 0, 'servicio' => $request->nacionalidad_solicitada, 'cantidad_alzada' => $request->cantidad_alzada + 1 ]);
+            DB::table('users')->where('email', $request->email)->update(['pay' => 0, 'servicio' => $request->nacionalidad_solicitada, 'cantidad_alzada' => $cantidad + 1 ]);
             $check = 1;
         }
 

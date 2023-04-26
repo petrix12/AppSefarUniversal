@@ -54,7 +54,7 @@
                     </div>
 
                     <div class='row' style="justify-content: center; display: flex; margin-top:2rem;">
-                        <button class="btn btn-primary" type="submit">Realizar pago</button>
+                        <button class="btn btn-primary" type="submit">Realizar modificación</button>
                     </div>
                 </div>
             </form>
