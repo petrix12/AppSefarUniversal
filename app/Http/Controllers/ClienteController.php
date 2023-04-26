@@ -431,8 +431,12 @@ class ClienteController extends Controller
         if( auth()->user()->servicio == "Española LMD" || auth()->user()->servicio == "Italiana" ){
             $nombredelpago = "Pago Fase Inicial: Investigación Preliminar y Preparatoria: " . $servicio[0]["nombre"];
         } else{
-            $nombredelpago = "Inicia tu proceso: " . $servicio[0]["nombre"];
-        }
+            if(auth()->user()->servicio == "Gestión Documental") {
+                $nombredelpago = $servicio[0]["nombre"];
+            } else {
+                $nombredelpago = "Inicia tu proceso: " . $servicio[0]["nombre"];
+            }
+        }        
 
         try {
             $customer = Stripe\Customer::create(array(
