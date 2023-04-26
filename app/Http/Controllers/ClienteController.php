@@ -333,7 +333,7 @@ class ClienteController extends Controller
 
                     DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro_hist' => $pago_registro, 'pago_registro' => 0, 'id_pago' => $cargos, 'pago_cupon' => $cupones ]);
 
-                    if (auth()->user()->servicio == 'Recurso de Alzada'){
+                    if ($servicio[0]["nombre"] == 'Recurso de Alzada' || $servicio[0]["nombre"] == 'Gestión Documental'){
                         DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]);
                         auth()->user()->revokePermissionTo('finish.register');
                     }
