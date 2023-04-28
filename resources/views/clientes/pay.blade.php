@@ -246,9 +246,17 @@
                     </center>
 
                     @if( auth()->user()->servicio == "Española LMD" || auth()->user()->servicio == "Italiana" )
+
                         <h4 style="padding:10px 0px; color:#12313a"><b>Pago Fase Inicial: Investigación Preliminar y Preparatoria: {{$servicio[0]["nombre"]}}</b></h4>
+                        
                     @elseif ( auth()->user()->servicio == "Gestión Documental" )
+
                         <h4 style="padding:10px 0px; color:#12313a"><b>{{$servicio[0]["nombre"]}}</b></h4>
+
+                    @elseif (auth()->user()->servicio == 'Constitución de Empresa' || auth()->user()->servicio == 'Representante Fiscal' || auth()->user()->servicio == 'Codigo Fiscal' || auth()->user()->servicio == 'Apertura de cuenta' || auth()->user()->servicio == 'Trimestre contable' || auth()->user()->servicio == 'Cooperativa 10 años' || auth()->user()->servicio == 'Cooperativa 5 años')
+
+                        <h4 style="padding:10px 0px; color:#12313a"><b>Vinculaciones Portugal: {{$servicio[0]["nombre"]}}</b></h4>
+
                     @else
 
                         <h4 style="padding:10px 0px; color:#12313a"><b>Inicia tu Proceso: {{$servicio[0]["nombre"]}}</b></h4>
