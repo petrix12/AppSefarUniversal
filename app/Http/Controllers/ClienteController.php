@@ -333,7 +333,7 @@ class ClienteController extends Controller
 
                     DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro_hist' => $pago_registro, 'pago_registro' => 0, 'id_pago' => $cargos, 'pago_cupon' => $cupones ]);
 
-                    if ($servicio[0]["nombre"] == 'Recurso de Alzada' || $servicio[0]["nombre"] == 'Gestión Documental' || $servicio[0]["nombre"] == 'Constitución de Empresa' || $servicio[0]["nombre"] == 'Representante Fiscal' || $servicio[0]["nombre"] == 'Codigo Fiscal' || $servicio[0]["nombre"] == 'Apertura de cuenta' || $servicio[0]["nombre"] == 'Trimestre contable' || $servicio[0]["nombre"] == 'Cooperativa 10 años' || $servicio[0]["nombre"] == 'Cooperativa 5 años')
+                    if ($servicio[0]["nombre"] == 'Recurso de Alzada' || $servicio[0]["nombre"] == 'Gestión Documental' || $servicio[0]["nombre"] == 'Constitución de Empresa' || $servicio[0]["nombre"] == 'Representante Fiscal' || $servicio[0]["nombre"] == 'Codigo  Fiscal' || $servicio[0]["nombre"] == 'Apertura de cuenta' || $servicio[0]["nombre"] == 'Trimestre contable' || $servicio[0]["nombre"] == 'Cooperativa 10 años' || $servicio[0]["nombre"] == 'Cooperativa 5 años')
                     {
                         DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]);
                         auth()->user()->revokePermissionTo('finish.register');
@@ -569,7 +569,7 @@ class ClienteController extends Controller
 
                 DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro_hist' => $pago_registro, 'pago_registro' => $servicio[0]["precio"], 'id_pago' => $cargos, 'pago_cupon' => $cupones ]);
 
-                if ($servicio[0]["nombre"] == 'Recurso de Alzada' || $servicio[0]["nombre"] == 'Gestión Documental' || $servicio[0]["nombre"] == 'Constitución de Empresa' || $servicio[0]["nombre"] == 'Representante Fiscal' || $servicio[0]["nombre"] == 'Codigo Fiscal' || $servicio[0]["nombre"] == 'Apertura de cuenta' || $servicio[0]["nombre"] == 'Trimestre contable' || $servicio[0]["nombre"] == 'Cooperativa 10 años' || $servicio[0]["nombre"] == 'Cooperativa 5 años')
+                if ($servicio[0]["nombre"] == 'Recurso de Alzada' || $servicio[0]["nombre"] == 'Gestión Documental' || $servicio[0]["nombre"] == 'Constitución de Empresa' || $servicio[0]["nombre"] == 'Representante Fiscal' || $servicio[0]["nombre"] == 'Codigo  Fiscal' || $servicio[0]["nombre"] == 'Apertura de cuenta' || $servicio[0]["nombre"] == 'Trimestre contable' || $servicio[0]["nombre"] == 'Cooperativa 10 años' || $servicio[0]["nombre"] == 'Cooperativa 5 años')
                 {
                     DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]);
                     auth()->user()->revokePermissionTo('finish.register');
