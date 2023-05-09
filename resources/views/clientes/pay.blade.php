@@ -168,6 +168,27 @@
                         });
                     });
 
+                    $(document).on("click", '.deletedesc', function(){
+                        $.ajaxSetup({
+                            headers: {
+                                'X-CSRF-TOKEN': $("input[name='_token']").val()
+                            }
+                        });
+                        if (confirm("¿Está seguro que desea eliminar este pago?") == true) {
+                            $.ajax({
+                                type: "POST",
+                                url: "{{ route('destroypayelement') }}",
+                                data: {id: this.id},
+                                success: function(info){
+                                    if (info == 0 || info == '0'){
+                                        window.location.replace("/noservices");
+                                    } else {
+                                        window.location.replace("/pay");
+                                    }
+                                }
+                            });
+                        }
+                    })
                 });
 
 
@@ -178,7 +199,7 @@
 
 
             @csrf
-            <div class="col-sm-12 col-md-7 mb-0">
+            <div class="col-sm-12 col-md-5 mb-0">
                 <center>
                     <h2 style="padding:10px 0px; color:#12313a"><i class="mt-4 fas fa-credit-card"></i> Datos de Pago <i class="fas fa-credit-card"></i></h2>
                 </center>
@@ -230,53 +251,102 @@
                 <div class='row' style="justify-content: center; display: flex; margin-bottom:2rem;">
                     <input type="button" id="valcoupon" value="Validar cupón" class="btn btn-warning" style="margin-right: 1rem;"><button class="btn btn-primary" type="submit">Realizar pago</button>
                 </div>
-
-                <div class='row'>
-                    <p>Sefar Universal se compromete a proteger y respetar tu privacidad, y solo usaremos tu información personal para administrar tu cuenta y proporcionar los productos y servicios que nos solicitaste. De vez en cuando, nos gustaría ponernos en contacto contigo acerca de nuestros productos y servicios, así como sobre otros contenidos que puedan interesarte.</p>
-
-                    <p>Puedes darte de baja de estas comunicaciones en cualquier momento. Para obtener más información sobre cómo darte de baja, nuestras prácticas de privacidad y cómo nos comprometemos a proteger y respetar tu privacidad, consulta nuestra Política de privacidad.
-                    Al hacer clic en Enviar, aceptas que Sefar Universal almacene y procese la información personal suministrada arriba para proporcionarte el contenido solicitado.</p>
-                </div>
             </div>
-            <div class="col-sm-12 col-md-5 mb-0">
+            <div class="col-sm-12 col-md-7 mb-0">
                 <div class="card" style="margin:0 30px; padding: 30px;">
                     <center>
-                        <h3 style="padding:10px 0px; color:#12313a">Información del servicio</h3>
                         <img style="width:100px;" src="/vendor/adminlte/dist/img/LogoSefar.png">
+                        <h4 style="font-weight: bold;">Información de Pago</h4>
                     </center>
 
-                    @if( auth()->user()->servicio == "Española LMD" || auth()->user()->servicio == "Italiana" )
+                    <style type="text/css">
+                        .styled-table {
+                            border-collapse: collapse;
+                            margin: 15px 0 25px 0;
+                            font-size: 0.9em;
+                            min-width: 400px;
+                            box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+                        }
+                        .styled-table thead tr {
+                            background-color: rgb(121,22,15) !important;;
+                            color: #ffffff;
+                            text-align: left;
+                        }
+                        .styled-table th,
+                        .styled-table td {
+                            padding: 12px 15px;
+                        }
+                        .styled-table tbody tr {
+                            border-bottom: 1px solid #dddddd;
+                        }
 
-                        <h4 style="padding:10px 0px; color:#12313a"><b>Pago Fase Inicial: Investigación Preliminar y Preparatoria: {{$servicio[0]["nombre"]}}</b></h4>
-                        
-                    @elseif ( auth()->user()->servicio == "Gestión Documental" )
+                        .styled-table tbody tr:nth-of-type(even) {
+                            background-color: #f3f3f3;
+                        }
 
-                        <h4 style="padding:10px 0px; color:#12313a"><b>{{$servicio[0]["nombre"]}}</b></h4>
+                        .styled-table tbody tr:last-of-type {
+                            border-bottom: 2px solid rgb(121,22,15);
+                        }
+                    </style>
 
-                    @elseif (auth()->user()->servicio == 'Constitución de Empresa' || auth()->user()->servicio == 'Representante Fiscal' || auth()->user()->servicio == 'Codigo  Fiscal' || auth()->user()->servicio == 'Apertura de cuenta' || auth()->user()->servicio == 'Trimestre contable' || auth()->user()->servicio == 'Cooperativa 10 años' || auth()->user()->servicio == 'Cooperativa 5 años')
+                    <table class="styled-table">
+                        <thead>
+                            <tr>
+                                <th>Descripción</th>
+                                <th>Costo(€)</th>
+                                @if (count($compras)>1)
+                                <th></th>
+                                @endif
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
 
-                        <h4 style="padding:10px 0px; color:#12313a"><b>Servicios para Vinculaciones: {{$servicio[0]["nombre"]}}</b></h4>
+                            $total = 0;
 
-                    @else
+                            foreach ($compras as $key => $compra) {
+                            ?>
 
-                        <h4 style="padding:10px 0px; color:#12313a"><b>Inicia tu Proceso: {{$servicio[0]["nombre"]}}</b></h4>
+                                <tr>
+                                    <td style="">{{$compra["descripcion"]}}</td>
+                                    <td style="">{{$compra["monto"]}}€</td>
+                                    @if (count($compras)>1)
+                                    <td style="">
+                                        <a style="color: white;" 
+                                            class="deletedesc btn btn-danger"
+                                            id="{{$compra['id']}}"
+                                            ><i class="fas fa-trash"></i>
+                                        </a>
+                                    </td>
+                                    @endif
+                                </tr>
 
-                    @endif
+                            <?php
+                                $total = $total + $compra["monto"];
+                            }
 
-                    
-
-                    @if(auth()->user()->servicio == "Recurso de Alzada")
-                        <h4 style="padding:10px 0px 2px 0px; color:#12313a">Pago: <b id="priced">{{$servicio[0]["precio"] * auth()->user()->cantidad_alzada }}€</b></h4>
-                        <small>99 euros por cada familiar declarado en el registro ({{auth()->user()->cantidad_alzada}}).</small>
-                    @else
-                        <h4 style="padding:10px 0px 2px 0px; color:#12313a">Pago: <b id="priced">{{$servicio[0]["precio"]}}€</b></h4>
-
-                    @endif
-
+                            ?>
+                            <tr>
+                                <td style="font-weight: bold; text-align: right;">TOTAL:</td>
+                                <td style="font-weight: bold;">{{$total}}€</td>
+                                @if (count($compras)>1)
+                                <td style=""></td>
+                                @endif
+                            </tr>
+                        </tbody>
+                    </table>
                     <input type="hidden" id="idproducto" name="idproducto" value="{{$servicio[0]['id']}}">
                 </div>
             </div>
 
+        </div>
+        <div class='row' style="padding: 0px 60px 0px 20px;">
+            <small>
+                <p>Sefar Universal se compromete a proteger y respetar tu privacidad, y solo usaremos tu información personal para administrar tu cuenta y proporcionar los productos y servicios que nos solicitaste. De vez en cuando, nos gustaría ponernos en contacto contigo acerca de nuestros productos y servicios, así como sobre otros contenidos que puedan interesarte.</p>
+
+                <p>Puedes darte de baja de estas comunicaciones en cualquier momento. Para obtener más información sobre cómo darte de baja, nuestras prácticas de privacidad y cómo nos comprometemos a proteger y respetar tu privacidad, consulta nuestra Política de privacidad.
+                Al hacer clic en Enviar, aceptas que Sefar Universal almacene y procese la información personal suministrada arriba para proporcionarte el contenido solicitado.</p>
+            </small>
         </div>
     </form>
 

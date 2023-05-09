@@ -7,6 +7,9 @@ use App\Mail\CargaSefar;
 use App\Models\Agcliente;
 use App\Models\Coupon;
 use App\Models\Servicio;
+use App\Models\Compras;
+use App\Models\HsReferido;
+use App\Models\Factura;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -256,11 +259,47 @@ class ClienteController extends Controller
                 return redirect()->route('clientes.getinfo');
             }
         }
+        $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->get();
         $servicio = Servicio::where('id_hubspot', auth()->user()->servicio)->get();
-        return view('clientes.pay', compact('servicio'));
+
+        $cps = json_decode(json_encode($compras),true);
+
+        if (count($cps)==0){
+            $hss = json_decode(json_encode($servicio),true);
+
+            if( auth()->user()->servicio == "Española LMD" || auth()->user()->servicio == "Italiana" ) {
+                $desc = "Pago Fase Inicial: Investigación Preliminar y Preparatoria: " . $hss[0]["nombre"];
+            } elseif ( auth()->user()->servicio == "Gestión Documental" ) {
+                $desc = $hss[0]["nombre"];
+            } elseif (auth()->user()->servicio == 'Constitución de Empresa' || auth()->user()->servicio == 'Representante Fiscal' || auth()->user()->servicio == 'Codigo  Fiscal' || auth()->user()->servicio == 'Apertura de cuenta' || auth()->user()->servicio == 'Trimestre contable' || auth()->user()->servicio == 'Cooperativa 10 años' || auth()->user()->servicio == 'Cooperativa 5 años') {
+                $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
+            } else {
+                $desc = "Inicia tu Proceso: " . $hss[0]["nombre"];
+            }
+
+            if(auth()->user()->servicio == "Recurso de Alzada"){
+                $monto = $hss[0]["precio"] * auth()->user()->cantidad_alzada;
+            } else {
+                $monto = $hss[0]["precio"];
+            }
+
+            Compras::create([
+                'id_user' => auth()->user()->id,
+                'servicio_hs_id' => auth()->user()->servicio,
+                'descripcion' => $desc,
+                'pagado' => 0,
+                'monto' => $monto
+            ]);
+
+            $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->get();
+        }
+
+        return view('clientes.pay', compact('servicio', 'compras'));
     }
 
     public function revisarcupon(Request $request){
+        $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->get();
+        $servicio = Servicio::where('id_hubspot', auth()->user()->servicio)->get();
         $hubspot = HubSpot\Factory::createWithAccessToken(env('HUBSPOT_KEY'));
         $data = json_decode(json_encode($request->all()),true);
 
@@ -286,6 +325,20 @@ class ClienteController extends Controller
                         'percentage'=>$cupon["percentage"]
                     ]);
                 } else {
+                    $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+                    $hash_factura = "sef_".generate_string($permitted_chars, 50);
+
+                    Factura::create([
+                        'id_cliente' => auth()->user()->id,
+                        'hash_factura' => $hash_factura,
+                        'met' => 'cupon',
+                    ]);
+
+                    foreach ($compras as $key => $compra) {
+                        DB::table('compras')->where('id', $compra['id'])->update(['pagado' => 1, 'hash_factura' => $hash_factura]);
+                    }
+
                     if (isset($datos[0]["id_pago"])){
                         if(is_array(json_decode($datos[0]["id_pago"],true))) {
                             $cargostemp = json_decode($datos[0]["id_pago"],true);
@@ -333,8 +386,21 @@ class ClienteController extends Controller
 
                     DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro_hist' => $pago_registro, 'pago_registro' => 0, 'id_pago' => $cargos, 'pago_cupon' => $cupones ]);
 
-                    if (auth()->user()->servicio == 'Recurso de Alzada' || auth()->user()->servicio == 'Gestión Documental' || auth()->user()->servicio == 'Constitución de Empresa' || auth()->user()->servicio == 'Representante Fiscal' || auth()->user()->servicio == 'Codigo  Fiscal' || auth()->user()->servicio == 'Apertura de cuenta' || auth()->user()->servicio == 'Trimestre contable' || auth()->user()->servicio == 'Cooperativa 10 años' || auth()->user()->servicio == 'Cooperativa 5 años')
-                    {
+                    $setto2 = 1;
+
+                    foreach ($compras as $key => $compra) {
+                        if ($compra["servicio_hs_id"] == 'Recurso de Alzada' || $compra["servicio_hs_id"] == 'Gestión Documental' || $compra["servicio_hs_id"] == 'Constitución de Empresa' || $compra["servicio_hs_id"] == 'Representante Fiscal' || $compra["servicio_hs_id"] == 'Codigo  Fiscal' || $compra["servicio_hs_id"] == 'Apertura de cuenta' || $compra["servicio_hs_id"] == 'Trimestre contable' || $compra["servicio_hs_id"] == 'Cooperativa 10 años' || $compra["servicio_hs_id"] == 'Cooperativa 5 años')
+                        {
+                                                  
+                            $setto2 = 1;
+                            
+                        } else {
+                            $setto2 = 0;
+                            break;
+                        }
+                    }
+
+                    if ($setto2==1) {
                         DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]);
                         auth()->user()->revokePermissionTo('finish.register');
                     }
@@ -412,32 +478,20 @@ class ClienteController extends Controller
 
         $finalcupon = "";
 
-        foreach ($cupones as $cupon) {
-            if( $variable["coupon"] == $cupon["couponcode"] ){
-                if($cupon["percentage"]<100){
-                    $newprice=$servicio[0]["precio"]*($cupon["percentage"]/100);
-                    $servicio[0]["precio"] = $newprice;
-                    $finalcupon = $variable["coupon"];
-                }
-            }
-        }
-
-        if ($servicio[0]["nombre"] == 'Recurso de Alzada'){
-            $temp = $servicio[0]["precio"];
-            $servicio[0]["precio"] = $temp * $datos[0]['cantidad_alzada'];
-        }
-
         $errorcod = "error";
 
-        if( auth()->user()->servicio == "Española LMD" || auth()->user()->servicio == "Italiana" ){
-            $nombredelpago = "Pago Fase Inicial: Investigación Preliminar y Preparatoria: " . $servicio[0]["nombre"];
-        } else{
-            if(auth()->user()->servicio == "Gestión Documental") {
-                $nombredelpago = $servicio[0]["nombre"];
-            } else {
-                $nombredelpago = "Inicia tu proceso: " . $servicio[0]["nombre"];
-            }
-        }        
+        $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->get();
+        $servicio = Servicio::where('id_hubspot', auth()->user()->servicio)->get();
+
+        $cps = json_decode(json_encode($compras),true);
+
+        $hss = json_decode(json_encode($servicio),true);
+
+        $monto = 0;
+
+        foreach ($compras as $key => $compra) {
+            $monto = $monto + $compra["monto"];
+        }
 
         try {
             $customer = Stripe\Customer::create(array(
@@ -446,10 +500,10 @@ class ClienteController extends Controller
                 "source" => $request->stripeToken
             ));
             $charged = Stripe\Charge::create ([
-                "amount" => $servicio[0]["precio"]*100,
+                "amount" => $monto*100,
                 "currency" => "eur",
                 "customer" => $customer->id,
-                "description" => "Sefar Universal: ". $nombredelpago
+                "description" => "Sefar Universal: Gestión de Pago Múltiple (Carrito)"
             ]);
         } catch(CardException $e) {
             $errorcod= "errorx";
@@ -497,6 +551,20 @@ class ClienteController extends Controller
 
         if ($charged->status == "succeeded"){
             if (isset($charged->id)){
+
+                $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+                $hash_factura = "sef_".generate_string($permitted_chars, 50);
+
+                Factura::create([
+                    'id_cliente' => auth()->user()->id,
+                    'hash_factura' => $hash_factura,
+                    'met' => 'stripe'
+                ]);
+
+                foreach ($compras as $key => $compra) {
+                    DB::table('compras')->where('id', $compra['id'])->update(['pagado' => 1, 'hash_factura' => $hash_factura]);
+                }
 
                 $cargostemp = [];
 
@@ -555,22 +623,35 @@ class ClienteController extends Controller
                 if (isset($datos[0]["pago_registro_hist"])){
                     if(is_array(json_decode($datos[0]["pago_registro_hist"],true))) {
                         $pago_registrotemp = json_decode($datos[0]["pago_registro_hist"],true);
-                        $pago_registrotemp[] = $servicio[0]["precio"];
+                        $pago_registrotemp[] = $monto;
                         $pago_registro = json_encode($pago_registrotemp);
                     } else {
                         $pago_registrotemp[] = $datos[0]["pago_registro"];
-                        $pago_registrotemp[] = $servicio[0]["precio"];
+                        $pago_registrotemp[] = $monto;
                         $pago_registro = json_encode($pago_registrotemp);
                     }
                 } else {
-                    $pago_registrotemp[] = $servicio[0]["precio"];
+                    $pago_registrotemp[] = $monto;
                     $pago_registro = json_encode($pago_registrotemp);
                 }
 
-                DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro_hist' => $pago_registro, 'pago_registro' => $servicio[0]["precio"], 'id_pago' => $cargos, 'pago_cupon' => $cupones ]);
+                DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro_hist' => $pago_registro, 'pago_registro' => $monto, 'id_pago' => $cargos, 'pago_cupon' => $cupones ]);
 
-                if ($servicio[0]["nombre"] == 'Recurso de Alzada' || $servicio[0]["nombre"] == 'Gestión Documental' || $servicio[0]["nombre"] == 'Constitución de Empresa' || $servicio[0]["nombre"] == 'Representante Fiscal' || $servicio[0]["nombre"] == 'Codigo  Fiscal' || $servicio[0]["nombre"] == 'Apertura de cuenta' || $servicio[0]["nombre"] == 'Trimestre contable' || $servicio[0]["nombre"] == 'Cooperativa 10 años' || $servicio[0]["nombre"] == 'Cooperativa 5 años')
-                {
+                $setto2 = 1;
+
+                foreach ($compras as $key => $compra) {
+                    if ($compra["servicio_hs_id"] == 'Recurso de Alzada' || $compra["servicio_hs_id"] == 'Gestión Documental' || $compra["servicio_hs_id"] == 'Constitución de Empresa' || $compra["servicio_hs_id"] == 'Representante Fiscal' || $compra["servicio_hs_id"] == 'Codigo  Fiscal' || $compra["servicio_hs_id"] == 'Apertura de cuenta' || $compra["servicio_hs_id"] == 'Trimestre contable' || $compra["servicio_hs_id"] == 'Cooperativa 10 años' || $compra["servicio_hs_id"] == 'Cooperativa 5 años')
+                    {
+                                              
+                        $setto2 = 1;
+                        
+                    } else {
+                        $setto2 = 0;
+                        break;
+                    }
+                }
+
+                if ($setto2==1) {
                     DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]);
                     auth()->user()->revokePermissionTo('finish.register');
                 }
@@ -642,8 +723,48 @@ class ClienteController extends Controller
         }
 
         if (count($mailpass)>0 || count($mail)>0) {
+
             $familiares = 1 + $request->cantidad_alzada;
             DB::table('users')->where('email', $request->email)->update(['pay' => 0, 'servicio' => $request->nacionalidad_solicitada, 'cantidad_alzada' => $cantidad + 1 ]);
+
+            if(count($mailpass)>0){
+                $userdata = json_decode(json_encode(DB::table('users')->where('email', $request->email)->where('passport', $request->numero_de_pasaporte)->get()),true);
+            } elseif (count($mail)>0){
+                $userdata = json_decode(json_encode(DB::table('users')->where('email', $request->email)->get()),true);
+            }
+
+
+            $compras = Compras::where('id_user', $userdata[0]["id"])->where('pagado', 0)->get();
+            $servicio = Servicio::where('id_hubspot', $userdata[0]["servicio"])->get();
+
+            $cps = json_decode(json_encode($compras),true);
+
+            $hss = json_decode(json_encode($servicio),true);
+
+            if( $userdata[0]["servicio"] == "Española LMD" || $userdata[0]["servicio"] == "Italiana" ) {
+                $desc = "Pago Fase Inicial: Investigación Preliminar y Preparatoria: " . $hss[0]["nombre"];
+            } elseif ( $userdata[0]["servicio"] == "Gestión Documental" ) {
+                $desc = $hss[0]["nombre"];
+            } elseif ($userdata[0]["servicio"] == 'Constitución de Empresa' || $userdata[0]["servicio"] == 'Representante Fiscal' || $userdata[0]["servicio"] == 'Codigo  Fiscal' || $userdata[0]["servicio"] == 'Apertura de cuenta' || $userdata[0]["servicio"] == 'Trimestre contable' || $userdata[0]["servicio"] == 'Cooperativa 10 años' || $userdata[0]["servicio"] == 'Cooperativa 5 años') {
+                $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
+            } else {
+                $desc = "Inicia tu Proceso: " . $hss[0]["nombre"];
+            }
+
+            if($userdata[0]["servicio"] == "Recurso de Alzada"){
+                $monto = $hss[0]["precio"] * ($cantidad+1);
+            } else {
+                $monto = $hss[0]["precio"];
+            }
+
+            Compras::create([
+                'id_user' => $userdata[0]["id"],
+                'servicio_hs_id' => $userdata[0]["servicio"],
+                'descripcion' => $desc,
+                'pagado' => 0,
+                'monto' => $monto
+            ]);
+
             $check = 1;
         }
 
@@ -654,4 +775,88 @@ class ClienteController extends Controller
         }
         //DB::table('users')->where('passport', $request->numero_de_pasaporte)->get();
     }
+
+    public function fixPayDataHubspot()
+    {
+        ini_set('max_execution_time', 3000000);
+        ini_set('max_input_time', 3000000);
+
+        $hubspot = HubSpot\Factory::createWithAccessToken(env('HUBSPOT_KEY'));
+        $query = 'SELECT id, email, pago_cupon, pago_registro, hs_id FROM users where pago_cupon = "NOPAY" or id_pago = "NOPAY"';
+
+        $globalcount = json_decode(json_encode(DB::select(DB::raw($query))),true);
+
+        foreach ($globalcount as $key => $value) {
+            $idcontact = "";
+
+            $filter = new \HubSpot\Client\Crm\Contacts\Model\Filter();
+            $filter
+                ->setOperator('EQ')
+                ->setPropertyName('email')
+                ->setValue($value["email"]);
+
+            $filterGroup = new \HubSpot\Client\Crm\Contacts\Model\FilterGroup();
+            $filterGroup->setFilters([$filter]);
+
+            $searchRequest = new \HubSpot\Client\Crm\Contacts\Model\PublicObjectSearchRequest();
+            $searchRequest->setFilterGroups([$filterGroup]);
+
+            //Llamo a todas las propiedades de Hubspot (Si el dia de mañana hay que añadir algo nuevo, la ventaja que tenemos es que ya me estoy trayendo todos los elementos del arreglo)
+
+            $searchRequest->setProperties([
+                "registro_pago",
+                "registro_cupon",
+                "transaction_id"
+            ]);
+
+            //Hago la busqueda del cliente
+            $contactHS = $hubspot->crm()->contacts()->searchApi()->doSearch($searchRequest);
+
+            if ($contactHS['total'] != 0){
+                $valuehscupon = "";
+                //sago solo el id del contacto:
+                $idcontact = $contactHS['results'][0]['id'];
+
+                DB::table('users')->where('id', $value['id'])->update(['hs_id' => $idcontact]);
+                $properties1 = [
+                    'registro_pago' => '0',
+                    'registro_cupon' => 'NOPAY',
+                    'transaction_id' => 'NOPAY'
+                ];
+
+                $simplePublicObjectInput = new SimplePublicObjectInput([
+                    'properties' => $properties1,
+                ]);
+                
+                $apiResponse = $hubspot->crm()->contacts()->basicApi()->update($idcontact, $simplePublicObjectInput);
+            }
+
+            sleep(1);
+        }
+
+        print_r($globalcount);
+    }
+
+    public function destroypayelement(Request $request)
+    {
+        $data = $request->all();
+        Compras::where('id', $data["id"])->delete();
+        $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->get();
+        if(count($compras)>0){
+            echo(1);
+        } else {
+            echo(0);
+        }
+    }
+}
+
+function generate_string($input, $strength = 16) {
+    $input_length = strlen($input);
+    $random_string = '';
+    for($i = 0; $i < $strength; $i++) {
+        $random_character = $input[mt_rand(0, $input_length - 1)];
+        $random_string .= $random_character;
+    }
+ 
+    return $random_string;
 }

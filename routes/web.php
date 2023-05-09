@@ -98,6 +98,9 @@ Route::post('cuponenable',[CouponController::class, 'enable'])->name('cuponenabl
 //Generar Catalogos (Configurar CRON para correr a diario)
 Route::get('makereport', [ReportController::class, 'makereport'])->name('makereport');
 
+//Eliminar datos de factura en pay
+Route::post('/destroypayelement', [ClienteController::class, 'destroypayelement'])->name('destroypayelement');
+
 //Rutas para Stripe:
 Route::get('stripeverify', [StripeController::class, 'stripeverify'])->name('stripeverify')
         ->middleware('can:crud.stripeverify.index');
@@ -117,11 +120,17 @@ Route::get('/cuponaplicado', function(){
 
 Route::get('/fixCouponHubspot', [CouponController::class, 'fixCouponHubspot'])->name('fixCouponHubspot');
 
+Route::get('/fixPayDataHubspot', [ClienteController::class, 'fixPayDataHubspot'])->name('fixPayDataHubspot');
+
 //Rutas para agradecimiento:
 
 Route::get('/gracias', function(){
     return view('clientes.gracias');
 })->name('gracias');
+
+Route::get('/noservices', function(){
+    return view('clientes.noservices');
+})->name('noservices');
 
 // Grupo de rutas para Consultas a base de datos
 Route::group(['middleware' => ['auth'], 'as' => 'consultas.'], function(){

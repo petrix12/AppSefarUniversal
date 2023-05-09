@@ -153,12 +153,6 @@
 
                             var data = formData.serializeArray();
 
-                            $.ajaxSetup({
-                                headers: {
-                                    'X-CSRF-TOKEN': $("input[name='_token']").val()
-                                }
-                            });
-
                             $.ajax({
                                 url: '{{ route("procesargetinfo") }}',
                                 method: 'POST',
