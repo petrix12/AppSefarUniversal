@@ -27,6 +27,7 @@ use App\Http\Controllers\ServicioController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\HsReferidoController;
 use App\Http\Controllers\MondayController;
+use App\Http\Controllers\FacturaController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -74,7 +75,11 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
             ->middleware('can:crud.reports.index');
     Route::resource('hsreferidos', HsReferidoController::class)->names('hsreferidos')
             ->middleware('can:crud.hsreferidos.index');
+    Route::resource('comprobantes', FacturaController::class)->names('hsreferidos')
+            ->middleware('can:crud.comprobantes.index');
 });
+
+Route::get('/viewcomprobante/{id}', [FacturaController::class, 'viewcomprobante'])->name('viewcomprobante');
 
 //panel administrativo status
 Route::get('/users/status/{id}', [UserController::class, 'getuserstatus'])->name('getuserstatus');

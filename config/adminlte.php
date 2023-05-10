@@ -289,13 +289,22 @@ return [
                 ]
             ],
         ],
-
+        /* *** Pasaportes Incorrectos *** */
         [
             'text'          => 'Pasaportes Incorrectos',
             'icon'          => 'fa-fw fas fa-users',
             'icon_color'    => 'white',
             'url'           => 'fixpassport',
             'can'           => 'administrador',
+        ],
+
+        /* *** COMPROBANTES DE PAGO *** */
+        [
+            'text'          => 'Comprobantes de Pago',
+            'icon'          => 'fa-fw fab fa-cc-stripe',
+            'icon_color'    => 'white',
+            'url'           => 'comprobantes',
+            'can'           => 'crud.comprobantes.index',
         ],
 
         /* *** UTILIDADES USANDO LA API DE STRIPE *** */

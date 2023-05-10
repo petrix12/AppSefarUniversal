@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Factura;
+use App\Models\Compras;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class FacturaController extends Controller
 {
@@ -14,7 +17,11 @@ class FacturaController extends Controller
      */
     public function index()
     {
-        //
+        $query = 'SELECT a.*, b.name, b.passport FROM facturas as a, users as b WHERE a.id_cliente = b.id;';
+
+        $datos_factura = json_decode(json_encode(DB::select(DB::raw($query))),true);
+
+        return view('crud.comprobantes.index', compact('datos_factura'));
     }
 
     /**
@@ -22,64 +29,15 @@ class FacturaController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function viewcomprobante(Request $request)
     {
-        //
-    }
+        $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND a.id='$request->id';";
+        $datos_factura = json_decode(json_encode(DB::select(DB::raw($query))),true);
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        //
-    }
+        $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Factura  $factura
-     * @return \Illuminate\Http\Response
-     */
-    public function show(Factura $factura)
-    {
-        //
-    }
+        $pdf = PDF::loadView('crud.comprobantes.pdf', compact('datos_factura', 'productos'));
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Factura  $factura
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Factura $factura)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Factura  $factura
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, Factura $factura)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Factura  $factura
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Factura $factura)
-    {
-        //
+        return $pdf->stream("comprobantecliente.pdf", array("Attachment" => false));
     }
 }
