@@ -8,7 +8,7 @@
 <style>
     @page{
         margin-top: 150px; /* create space for header */
-        margin-bottom: 110px; /* create space for footer */
+        margin-bottom: 50px; /* create space for footer */
         page-break-inside: avoid;
     }
     main {
@@ -46,13 +46,14 @@
     footer {
         position: fixed; 
         bottom: 1px;
-        margin-bottom: -70px;
+        margin-bottom: -30px;
     }
     header{
         position: fixed;
         left: 0px;
         right: 0px;
         margin-top: -100px;
+        page-break-after: avoid;
     }
 </style>
 
