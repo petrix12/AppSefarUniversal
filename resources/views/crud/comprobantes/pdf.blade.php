@@ -24,7 +24,7 @@
         width: 100%;
     }
     .styled-table thead tr {
-        background-color: rgb(121,22,15) !important;;
+        background-color: rgb(121,22,15) !important;
         color: #ffffff;
         text-align: left;
     }
