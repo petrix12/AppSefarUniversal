@@ -361,7 +361,7 @@
             </div>
 
         </div>
-        <div class='row' style="padding: 0px 60px 0px 20px;">
+        <div class='row' style="padding: 0px 60px 0px 20px;"><br><br>
             <small>
                 <p>Sefar Universal se compromete a proteger y respetar tu privacidad, y solo usaremos tu información personal para administrar tu cuenta y proporcionar los productos y servicios que nos solicitaste. De vez en cuando, nos gustaría ponernos en contacto contigo acerca de nuestros productos y servicios, así como sobre otros contenidos que puedan interesarte.</p>
 
