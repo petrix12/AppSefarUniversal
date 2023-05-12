@@ -347,7 +347,7 @@
                         if ($vinc == 1){
 
                     ?>
-                            <a class="btn-primary" href="https://sefaruniversal.com/landing-registro-servicios-de-vinculaciones/" style="color:white;">Solicitar más servicios de Vinculaciones</a>
+                            <a href="https://sefaruniversal.com/landing-registro-servicios-de-vinculaciones/"><input type="button" value="Solicitar más servicios de Vinculaciones" class="btn-primary"></a>
                     <?php
 
                         }
