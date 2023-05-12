@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Servicio;
 use App\Models\HsReferido;
+use App\Models\Compras;
 use Monday;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -3674,9 +3675,10 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
+        $compras = Compras::where('id_user', $user->id)->get();
         $roles = Role::all();
         $permissions = Permission::all();
-        return view('crud.users.edit', compact('user', 'roles', 'permissions'));
+        return view('crud.users.edit', compact('user', 'roles', 'permissions', 'compras'));
     }
 
     /**

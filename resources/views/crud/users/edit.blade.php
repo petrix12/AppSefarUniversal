@@ -184,6 +184,38 @@
                                         @php
                                             echo '<option ' . (($user->servicio == 'Portuguesa Sefardi - Subsanación') ? 'selected' : '') . '>Portuguesa Sefardi - Subsanación</option>'
                                         @endphp
+
+                                        @php
+                                            echo '<option ' . (($user->servicio == 'Análisis por semana') ? 'selected' : '') . '>Análisis por semana</option>'
+                                        @endphp
+                                        @php
+                                            echo '<option ' . (($user->servicio == 'Recurso de Alzada') ? 'selected' : '') . '>Recurso de Alzada</option>'
+                                        @endphp
+                                        @php
+                                            echo '<option ' . (($user->servicio == 'Gestión Documental') ? 'selected' : '') . '>Gestión Documental</option>'
+                                        @endphp
+                                        @php
+                                            echo '<option ' . (($user->servicio == 'Constitución de Empresa') ? 'selected' : '') . '>Constitución de Empresa</option>'
+                                        @endphp
+                                        @php
+                                            echo '<option ' . (($user->servicio == 'Representante Fiscal') ? 'selected' : '') . '>Representante Fiscal</option>'
+                                        @endphp
+                                        @php
+                                            echo '<option ' . (($user->servicio == 'Codigo  Fiscal') ? 'selected' : '') . '>Codigo  Fiscal</option>'
+                                        @endphp
+                                        @php
+                                            echo '<option ' . (($user->servicio == 'Apertura de cuenta') ? 'selected' : '') . '>Apertura de cuenta</option>'
+                                        @endphp
+                                        @php
+                                            echo '<option ' . (($user->servicio == 'Trimestre contable') ? 'selected' : '') . '>Trimestre contable</option>'
+                                        @endphp
+
+                                        @php
+                                            echo '<option ' . (($user->servicio == 'Cooperativa 10 años') ? 'selected' : '') . '>Cooperativa 10 años</option>'
+                                        @endphp
+                                        @php
+                                            echo '<option ' . (($user->servicio == 'Cooperativa 5 años') ? 'selected' : '') . '>Cooperativa 5 años</option>'
+                                        @endphp
                                     </select>
                                 </div>
 
@@ -196,6 +228,21 @@
                                         <input name="two_factor" type="checkbox" class="focus:ring-gray-300 h-4 w-4 text-gray-200 border-gray-100 rounded" checked disabled>
                                         <label for="verif2pasos" class="m-1 text-gray-300">Desactivar verificación en dos pasos</label>
                                     @endif
+                                </div>
+                            </div>
+                            {{-- Servicios solicitados por el usuario --}}
+                            <div class="container my-10">
+                                <p class="my-2 block text-sm font-medium text-gray-700"><strong>Servicios Solicitados por el Usuario:<strong></p>
+                                <div style="width: 95%; padding-left: 30px; font-size: 13px; font-weight: normal;">
+                                @foreach ($compras as $compra)
+                                    <li>
+                                        @if ($compra["pagado"] == 1)
+                                            <b>{{$compra["descripcion"]}} (Pagó)</b><br>
+                                        @else
+                                            {{$compra["descripcion"]}} (No Pagó)<br>
+                                        @endif
+                                    </li>
+                                @endforeach
                                 </div>
                             </div>
                             {{-- ROLES --}}
