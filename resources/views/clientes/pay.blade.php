@@ -175,6 +175,7 @@
                             }
                         });
                         if (confirm("¿Está seguro que desea eliminar este pago?") == true) {
+                            $("#ajaxload").show();
                             $.ajax({
                                 type: "POST",
                                 url: "{{ route('destroypayelement') }}",
