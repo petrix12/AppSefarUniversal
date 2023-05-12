@@ -341,18 +341,20 @@
                             </tr>
                         </tbody>
                     </table>
+                    <center>
 
-                    <?php
+                        <?php
 
-                        if ($vinc == 1){
+                            if ($vinc == 1){
 
-                    ?>
-                            <a href="https://sefaruniversal.com/landing-registro-servicios-de-vinculaciones/"><input type="button" value="Solicitar más servicios de Vinculaciones" class="btn-primary"></a>
-                    <?php
+                        ?>
+                                <a href="https://sefaruniversal.com/landing-registro-servicios-de-vinculaciones/"><input type="button" value="Solicitar más servicios de Vinculaciones" class="btn btn-primary"></a>
+                        <?php
 
-                        }
+                            }
 
-                    ?>
+                        ?>
+                    </center>
                     
                     <input type="hidden" id="idproducto" name="idproducto" value="{{$servicio[0]['id']}}">
                 </div>
