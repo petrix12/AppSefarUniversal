@@ -305,7 +305,12 @@
 
                             $total = 0;
 
+                            $vinc = 0;
+
                             foreach ($compras as $key => $compra) {
+                                if (auth()->user()->servicio == 'Constitución de Empresa' || auth()->user()->servicio == 'Representante Fiscal' || auth()->user()->servicio == 'Codigo  Fiscal' || auth()->user()->servicio == 'Apertura de cuenta' || auth()->user()->servicio == 'Trimestre contable' || auth()->user()->servicio == 'Cooperativa 10 años' || auth()->user()->servicio == 'Cooperativa 5 años') {
+                                    $vinc = 1;
+                                }
                             ?>
 
                                 <tr>
@@ -336,6 +341,19 @@
                             </tr>
                         </tbody>
                     </table>
+
+                    <?php
+
+                        if ($vinc == 1){
+
+                    ?>
+                            <a class="btn-primary" href="https://sefaruniversal.com/landing-registro-servicios-de-vinculaciones/" style="color:white;">Solicitar más servicios de Vinculaciones</a>
+                    <?php
+
+                        }
+
+                    ?>
+                    
                     <input type="hidden" id="idproducto" name="idproducto" value="{{$servicio[0]['id']}}">
                 </div>
             </div>
