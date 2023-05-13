@@ -298,22 +298,31 @@ return [
             'can'           => 'administrador',
         ],
 
-        /* *** COMPROBANTES DE PAGO *** */
+        /* *** Administracion de PAGOS *** */
         [
-            'text'          => 'Comprobantes de Pago',
-            'icon'          => 'fa-fw fab fa-cc-stripe',
-            'icon_color'    => 'white',
-            'url'           => 'comprobantes',
-            'can'           => 'crud.comprobantes.index',
-        ],
+            'text'        => 'Admin. Pagos',
+            'icon'        => 'fa-fw fa fa-credit-card',
+            'icon_color'  => 'white',
+            'can'  => 'admin.payments',
+            'submenu' => [
+                /* *** COMPROBANTES DE PAGO *** */
+                [
+                    'text'          => 'Comprobantes',
+                    'icon'          => 'fa-fw fas fa-file-invoice',
+                    'icon_color'    => 'white',
+                    'url'           => 'comprobantes',
+                    'can'           => 'crud.comprobantes.index',
+                ],
 
-        /* *** UTILIDADES USANDO LA API DE STRIPE *** */
-        [
-            'text'          => 'Verificar Stripe',
-            'icon'          => 'fa-fw fab fa-cc-stripe',
-            'icon_color'    => 'white',
-            'url'           => 'stripeverify',
-            'can'           => 'crud.stripeverify.index',
+                /* *** UTILIDADES USANDO LA API DE STRIPE *** */
+                [
+                    'text'          => 'Verificar Stripe',
+                    'icon'          => 'fa-fw fab fa-cc-stripe',
+                    'icon_color'    => 'white',
+                    'url'           => 'stripeverify',
+                    'can'           => 'crud.stripeverify.index',
+                ],
+            ],
         ],
 
         /* *** MONDAY Y SUS RESPECTIVAS MÉTRICAS *** */
