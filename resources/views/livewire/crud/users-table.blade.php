@@ -88,7 +88,7 @@
                                 @if ($helperc==1)
                                     @foreach ($compras as $compra)
                                         @if ($compra['id_user'] == $user->id)
-                                            <p><small><b>{{ $compra['servicio_hs_id'] }}</b> - {{ $compra->pagado == 0 ? 'No ha pagado' : Pagó }}</small></p>
+                                            <p><small><b>{{ $compra['servicio_hs_id'] }}</b> - {{ $compra->pagado == 0 ? 'No ha pagado' : 'Pagó' }}</small></p>
                                         @endif
                                     @endforeach
                                     <p><small>{{ $user->pay == 2 ? 'El usuario completó información' : 'El usuario NO completó información' }}</p>
