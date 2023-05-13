@@ -4,6 +4,7 @@ namespace App\Http\Livewire\Crud;
 
 use Livewire\WithPagination;
 use App\Models\User;
+use App\Models\Compras;
 use Livewire\Component;
 
 class UsersTable extends Component
@@ -24,8 +25,9 @@ class UsersTable extends Component
             'users' => User::where('name','LIKE',"%$this->search%")
                 ->orWhere('email','LIKE',"%$this->search%")
                 ->orWhere('passport','LIKE',"%$this->search%")
-                ->orderBy('updated_at','DESC')
-                ->paginate($this->perPage)
+                ->orderBy('created_at','DESC')
+                ->paginate($this->perPage) ,
+            'compras' => Compras::all()
         ]);
     }
 

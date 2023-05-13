@@ -52,111 +52,78 @@
                     @if ($users->count())
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
-                        <tr>
-                            <th scope="col" class="px-3 py-2 text-left text-md font-medium text-gray-500 uppercase tracking-wider">
-                                {{-- - ■ ■ - --}}
-                                - <i class="fas fa-portrait"></i> -
-                            </th>{{--
-                            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                ID
-                            </th> --}}
-                            <th scope="col" class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('Name / Email') }}
-                            </th>{{--
-                            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('Passport') }}
-                            </th> --}}
-                            {{-- <th scope="col" class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('Correo electrónico') }}
-                            </th> --}}
-                            <th scope="col" class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('Service / Pay') }}
-                            </th>
-                            <th scope="col" class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('F. registro / ID') }}
-                            </th>
-                            {{-- @can('crud.permissions.edit')
-                            <th scope="col" class="px-1 y-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('Permissions') }}
-                            </th>
-                            @endcan --}}
-                            @can('crud.users.edit')
-                            <th scope="col" class="px-1 y-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('Edit') }}
-                            </th>
-                            @endcan
-                            @can('crud.users.destroy')
-                            <th scope="col" class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('Remove') }}
-                            </th>
-                            @endcan
-                            @can('crud.users.status')
-                            <th scope="col" class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Status
-                            </th>
-                            @endcan
-                        </tr>
+                            <tr>
+                                <th style="padding: 10px 15px;">
+                                    Nombre, Correo y Pasaporte
+                                </th>
+                                <th style="padding: 10px 15px;">
+                                    Servicios Solicitados / Pago
+                                </th>
+                                <th style="padding: 10px 15px;">
+                                    Fecha Registro / ID
+                                </th>
+                                <th style="padding: 10px 15px;">
+                                    Opciones
+                                </th>
+                            </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                         @foreach ($users as $user)
                         <tr>
-                            <td class="px-3 py-2 whitespace-nowrap text-center">
-                                <div class="flex-shrink-0 h-10 w-10">
-                                    <img
-                                        class="h-10 w-10 rounded-full"
-                                        src="{{ $user->profile_photo_url }}"
-                                        onerror="this.src='{{ Storage::disk('s3')->url('imagenes/auxiliar/user.png') }}'"
-                                        alt="Foto usuario"
-                                    >
-                                </div>
-                            </td>{{--
-                            <td class="px-4 py-2 whitespace-nowrap">
-                                {{ $user->id }}
-                            </td> --}}
-                            <td class="px-2 py-2 whitespace-nowrap">
-                                <p><small>{{ Str::limit($user->name, 20) }}</small></p>
+                            <td class="whitespace-nowrap" style="padding: 5px 15px;">
+                                <p><b>{{ Str::limit($user->name, 25) }}</b></p>
                                 <p><small>{{ $user->email }}</small></p>
-                            </td>{{--
-                            <td class="px-4 py-2 whitespace-nowrap"ra
-                                {{ $user->passport }}
-                            </td> --}}
-                            <td class="px-2 py-2 whitespace-nowrap">
-                                <p><small>{{ $user->servicio == null ? $user->getRoleNames()[0] ?? 'Sin rol' : $user->servicio }}</small></p>
-                                <p><small>{{ $user->pay == 0 ? 'No ha pagado' : ($user->pay == 1 ? 'Pagó' : 'Pagó y completó información') }}</small></p>
+                                <p><small>{{ $user->passport }}</small></p>
                             </td>
-                            <td class="px-2 py-2 whitespace-nowrap">
+                            <td class="whitespace-nowrap" style="padding: 5px 15px;">
+                                <?php
+                                    $helperc = 0;
+                                    foreach ($compras as $compra) {
+                                        if ($compra['id_user'] == $user->id){
+                                            $helperc = 1;
+                                            break;
+                                        }
+                                    }
+                                ?>
+                                @if ($helperc==1)
+                                    @foreach ($compras as $compra)
+                                        @if ($compra['id_user'] == $user->id)
+                                            <p><small><b>{{ $compra['servicio_hs_id'] }}</b> - {{ $compra->pagado == 0 ? 'No ha pagado' : Pagó }}</small></p>
+                                        @endif
+                                    @endforeach
+                                    <p><small>{{ $user->pay == 2 ? 'El usuario completó información' : 'El usuario NO completó información' }}</p>
+                                @else
+                                    <p><small>{{ $user->servicio == null ? $user->getRoleNames()[0] ?? 'Sin rol' : $user->servicio }}</small></p>
+                                    <p><small>{{ $user->pay == 0 ? 'No ha pagado' : ($user->pay == 1 ? 'Pagó' : 'Pagó y completó información') }}</small></p>
+                                @endif
+                                
+                            </td>
+                            <td class="whitespace-nowrap" style="padding: 5px 15px;">
                                 <p><small>{{ date_format($user->created_at,"Y-m-d") }}</small></p>
                                 <p><small>{{ $user->id }}</small></p>
                             </td>
-                            {{-- @can('crud.permissions.edit')
-                            <td class="px-1 py-2 whitespace-nowrap text-center font-medium">
-                                <a href="#" class="mx-12 text-grey-600 hover:text-indigo-900" title="Permisos"><i class="fas fa-clipboard-check"></i></a>
+                            <td class="whitespace-nowrap" style="padding: 5px 15px;">
+                                <div style="display: flex; justify-content:center;">
+                                    @can('crud.users.edit')
+                                        <a href="{{ route('crud.users.edit', $user) }}" class="btn btn-primary" title="Editar"><i class="fas fa-edit fa-fw"></i></a>&#160;
+                                    @endcan
+                                    @can('crud.users.destroy')
+                                        <form action="{{ route('crud.users.destroy', $user) }}" method="POST">
+                                            @csrf
+                                            @method('delete')
+                                            <button
+                                                type="submit"
+                                                class="btn btn-danger"
+                                                title="Eliminar usuario"
+                                                onclick="return confirm('¿Está seguro que desea eliminar a este usuario?')"><i class="fas fa-trash fa-fw"></i>
+                                            </button>
+                                        </form>&#160;
+                                    @endcan
+                                    @can('crud.users.status')
+                                        <a href="{{ route('crud.users.show', $user) }}" class="btn btn-warning" title="Estatus"><i class="fas fa-exclamation fa-fw"></i></a>
+                                    @endcan
+                                </div>
                             </td>
-                            @endcan --}}
-                            @can('crud.users.edit')
-                            <td class="px-1 py-2 whitespace-nowrap text-center font-medium">
-                                <a href="{{ route('crud.users.edit', $user) }}" class="mx-12 text-grey-600 hover:text-indigo-900" title="Editar"><i class="fas fa-edit"></i></a>
-                            </td>
-                            @endcan
-                            @can('crud.users.destroy')
-                            <td class="px-3 py-2 whitespace-nowrap text-center font-medium">
-                                <form action="{{ route('crud.users.destroy', $user) }}" method="POST">
-                                    @csrf
-                                    @method('delete')
-                                    <button
-                                        type="submit"
-                                        class="text-red-600 hover:text-red-900"
-                                        title="eliminar usuario"
-                                        onclick="return confirm('¿Está seguro que desea eliminar a este usuario?')"><i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </td>
-                            @endcan
-                            @can('crud.users.status')
-                            <td class="px-1 py-2 whitespace-nowrap text-center font-medium">
-                                <a href="{{ route('crud.users.show', $user) }}" class="mx-12 text-grey-600 hover:text-indigo-900" title="Estatus"><i class="fas fa-exclamation"></i></a>
-                            </td>
-                            @endcan
                         </tr>
                         @endforeach
                         </tbody>
