@@ -105,7 +105,7 @@
                             <td class="whitespace-nowrap" style="padding: 5px 15px;">
                                 <div style="display: flex; justify-content:center;">
                                     @can('crud.users.edit')
-                                        <a href="{{ route('crud.users.edit', $user) }}" class="btn btn-primary" title="Editar"><i class="fas fa-edit fa-fw"></i></a>&#160;
+                                        <a href="{{ route('crud.users.edit', $user) }}" class="btn btn-primary" title="Editar Usuario"><i class="fas fa-edit fa-fw"></i></a>&#160;
                                     @endcan
                                     @can('crud.users.destroy')
                                         <form action="{{ route('crud.users.destroy', $user) }}" method="POST">
@@ -114,13 +114,13 @@
                                             <button
                                                 type="submit"
                                                 class="btn btn-danger"
-                                                title="Eliminar usuario"
+                                                title="Eliminar Usuario"
                                                 onclick="return confirm('¿Está seguro que desea eliminar a este usuario?')"><i class="fas fa-trash fa-fw"></i>
                                             </button>
                                         </form>&#160;
                                     @endcan
                                     @can('crud.users.status')
-                                        <a href="{{ route('crud.users.show', $user) }}" class="btn btn-warning" title="Estatus"><i class="fas fa-exclamation fa-fw"></i></a>
+                                        <a style="color:white!important;" href="{{ route('crud.users.show', $user) }}" class="btn btn-warning" title="Estatus del Cliente"><i class="fas fa-exclamation fa-fw"></i></a>
                                     @endcan
                                 </div>
                             </td>
