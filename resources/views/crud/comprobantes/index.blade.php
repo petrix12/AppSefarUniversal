@@ -116,7 +116,7 @@
                     ID
                 </th>
                 <th scope="col" class="" style="width: 50%;">
-                    Nombre y Pasaporte
+                    Nombre, Correo y Pasaporte
                 </th>
                 <th scope="col" class="" style="width: 30%;">
                     Fecha de Emisión
@@ -134,7 +134,7 @@
                     {{ $factura["id"] }}
                 </td>
                 <td class="">
-                    <b>{{ $factura["name"] }}</b><br>{{ $factura["passport"] }}
+                    <b>{{ $factura["name"] }}</b><br>{{ $factura["email"] }}<br>{{ $factura["passport"] }}
                 </td>
                 <td class="">
                     <?php
