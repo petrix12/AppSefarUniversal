@@ -24,7 +24,7 @@
 	                        	}
 	                        ?>
 	                    	<div id="total" style="font-size: 24px;">
-								<small>Total recaudado en el mes de mayo: {{$total}}</small>
+								<small>Total recaudado en el mes de mayo: {{$total}}€</small>
 							</div>
 							<div style="font-size: 24px;">
 								<small>Saldo disponible en Stripe: {{$balance["available"][0]["amount"]}}€</small>
