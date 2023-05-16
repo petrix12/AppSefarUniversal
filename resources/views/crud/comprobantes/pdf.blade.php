@@ -6,6 +6,9 @@
 </head>
 
 <style>
+    html, body {
+        font-family: Arial, Helvetica, sans-serif;
+    }
     @page{
         margin-top: 150px; /* create space for header */
         margin-bottom: 50px; /* create space for footer */
