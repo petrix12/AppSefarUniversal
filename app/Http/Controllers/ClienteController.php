@@ -709,7 +709,6 @@ class ClienteController extends Controller
     }
 
     public function checkRegAlzada(Request $request) {
-        dd($request);
         $mailpass = json_decode(json_encode(DB::table('users')->where('email', $request->email)->where('passport', $request->numero_de_pasaporte)->get()),true);
         $mail = json_decode(json_encode(DB::table('users')->where('email', $request->email)->get()),true);
 
