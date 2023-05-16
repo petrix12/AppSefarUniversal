@@ -85,4 +85,47 @@ class StripeController extends Controller
 
     	return $variable;
     }
+
+    public function listLatestStripeData(){
+    	Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+
+    	$startOfMonth = strtotime('first day of this month this year midnight');
+		$endOfMonth = strtotime('first day of next month this year midnight');
+
+		$mycharges = Stripe\Charge::all([
+			'created' => [
+		    	'gte' => $startOfMonth,
+		    	'lte' => $endOfMonth,
+		    ],
+		    'limit' => 100
+		]);
+
+		$charges = [];
+
+		foreach ($mycharges->data as $charge) {
+		    $charges[] = $charge;
+		}
+
+		$verify = 1;
+
+		while ($mycharges->has_more) {
+			$lastCharge = end($mycharges->data);
+			$mycharges =Stripe\Charge::all([
+				'created' => [
+			    	'gte' => $startOfMonth,
+			    	'lte' => $endOfMonth,
+			    ],
+			    'limit' => 100,
+				'starting_after' => $lastCharge->id,
+			]);
+
+			foreach ($mycharges->data as $charge) {
+			    $charges[] = $charge;
+			}
+		}
+
+		$balance = Stripe\Balance::retrieve();
+
+		return view('stripe.listarstripe', compact('charges', 'startOfMonth', 'balance'));
+    }
 }

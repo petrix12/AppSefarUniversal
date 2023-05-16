@@ -316,12 +316,20 @@ return [
 
                 /* *** UTILIDADES USANDO LA API DE STRIPE *** */
                 [
-                    'text'          => 'Verificar Stripe',
+                    'text'          => 'Verif. Pagos de Cliente',
                     'icon'          => 'fa-fw fab fa-cc-stripe',
                     'icon_color'    => 'white',
                     'url'           => 'stripeverify',
                     'can'           => 'crud.stripeverify.index',
                 ],
+
+                [
+                    'text'          => 'Listar Pagos',
+                    'icon'          => 'fa-fw fab fa-cc-stripe',
+                    'icon_color'    => 'white',
+                    'url'           => 'listLatestStripeData',
+                    'can'           => 'crud.stripeverify.index',
+                ]
             ],
         ],
 

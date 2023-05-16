@@ -709,6 +709,7 @@ class ClienteController extends Controller
     }
 
     public function checkRegAlzada(Request $request) {
+        dd($request);
         $mailpass = json_decode(json_encode(DB::table('users')->where('email', $request->email)->where('passport', $request->numero_de_pasaporte)->get()),true);
         $mail = json_decode(json_encode(DB::table('users')->where('email', $request->email)->get()),true);
 
@@ -722,10 +723,21 @@ class ClienteController extends Controller
             $cantidad = $cantidad + $request->cantidad_alzada;
         }
 
+        $antepasados = 0;
+
+        if (isset($request->tiene_antepasados_espanoles) && $request->tiene_antepasados_espanoles == "Si"){
+            $antepasados = 1;
+        }
+
+        if (isset($request->tiene_antepasados_italianos) && $request->tiene_antepasados_italianos == "Si"){
+            $antepasados = 1;
+        }
+
+
         if (count($mailpass)>0 || count($mail)>0) {
 
             $familiares = 1 + $request->cantidad_alzada;
-            DB::table('users')->where('email', $request->email)->update(['pay' => 0, 'servicio' => $request->nacionalidad_solicitada, 'cantidad_alzada' => $cantidad + 1 ]);
+            DB::table('users')->where('email', $request->email)->update(['pay' => 0, 'servicio' => $request->nacionalidad_solicitada, 'cantidad_alzada' => $cantidad + 1, "antepasados" => $antepasados ]);
 
             if(count($mailpass)>0){
                 $userdata = json_decode(json_encode(DB::table('users')->where('email', $request->email)->where('passport', $request->numero_de_pasaporte)->get()),true);
@@ -743,6 +755,7 @@ class ClienteController extends Controller
 
             if( $userdata[0]["servicio"] == "Española LMD" || $userdata[0]["servicio"] == "Italiana" ) {
                 $desc = "Pago Fase Inicial: Investigación Preliminar y Preparatoria: " . $hss[0]["nombre"];
+                if ($userdata[0]["servicio"] == "Española LMD" && )
             } elseif ( $userdata[0]["servicio"] == "Gestión Documental" ) {
                 $desc = $hss[0]["nombre"];
             } elseif ($userdata[0]["servicio"] == 'Constitución de Empresa' || $userdata[0]["servicio"] == 'Representante Fiscal' || $userdata[0]["servicio"] == 'Codigo  Fiscal' || $userdata[0]["servicio"] == 'Apertura de cuenta' || $userdata[0]["servicio"] == 'Trimestre contable' || $userdata[0]["servicio"] == 'Cooperativa 10 años' || $userdata[0]["servicio"] == 'Cooperativa 5 años') {
