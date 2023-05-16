@@ -12,6 +12,16 @@
     if (!empty($_GET['aplicar_cupon'])) $cupon = $_GET['aplicar_cupon']; else if (!empty(session('request')['aplicar_cupon'])) $cupon = session('request')['aplicar_cupon']; else $cupon = null;
     if (!empty($_GET['pais_de_nacimiento'])) $pais_de_nacimiento = $_GET['pais_de_nacimiento']; else if (!empty(session('request')['pais_de_nacimiento'])) $pais_de_nacimiento = session('request')['pais_de_nacimiento']; else $pais_de_nacimiento = null;
 
+    $antepasados = 0;
+
+    if (isset(session('request')['$request->tiene_antepasados_espanoles)']) && session('request')['$request->tiene_antepasados_espanoles)'] == "Si"){
+        $antepasados = 1;
+    }
+
+    if (isset(session('request')['$request->tiene_antepasados_italianos)']) && session('request')['$request->tiene_antepasados_italianos)'] == "Si"){
+        $antepasados = 1;
+    }
+
     $cantidad_alzada = 1;
 
     // Captura de parámetros de Alzada
@@ -70,6 +80,7 @@
             <input type="hidden" name="pais_de_nacimiento" value="{{ $pais_de_nacimiento }}" />
             <input type="hidden" name="rol" value="{{ $rol }}" />
             <input type="hidden" name="cantidad_alzada" value="{{ $cantidad_alzada }}" />
+            <input type="hidden" name="antepasados" value="{{ $antepasados }}" />
 
             <div>
                 <x-jet-label for="name" value="{{ __('Name') }}" />
