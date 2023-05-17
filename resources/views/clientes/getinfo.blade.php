@@ -9,7 +9,6 @@
 
 @section('content')
 
-    @csrf
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.2/jquery.min.js" integrity="sha512-tWHlutFnuG0C6nQRlpvrEhE4QpkG1nn2MOUMWmUeRePl4e3Aki0VB6W1v3oLjFtd0hVOtRQ9PHpSfN6u6/QXkQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script charset="utf-8" type="text/javascript" src="//js.hsforms.net/forms/embed/v2.js"></script>
 
@@ -153,6 +152,12 @@
 
                             var data = formData.serializeArray();
 
+                            $.ajaxSetup({
+                                headers: {
+                                    'X-CSRF-TOKEN': $("input[name='_token']").val()
+                                }
+                            });
+
                             $.ajax({
                                 url: '{{ route("procesargetinfo") }}',
                                 method: 'POST',
@@ -169,6 +174,8 @@
             </script>
 
         @endif
+
+        @csrf
 
     </div>
 @stop
