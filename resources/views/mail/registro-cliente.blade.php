@@ -68,7 +68,7 @@
                                         @endif
                                         <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
                                             Si no ha podido cargar los datos de su árbol, puede hacerlo entrando a nuestra plataforma en este momento o cuando lo desee, mediante el siguiente enlace:
-                                            <a href="https://app.universalsefar.com/login" target="_blank">https://app.universalsefar.com/login</a>
+                                            <a href="https://app.sefaruniversal.com/login" target="_blank">https://app.sefaruniversal.com/login</a>
                                             con su correo {{ $user->email }}, y cuando finalice presione en <strong>finalizar carga</strong>.
                                         </p>
                                         <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
