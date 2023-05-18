@@ -23,7 +23,7 @@
     }
 
     if (isset(session('request')['tiene_antepasados_italianos']) && session('request')['tiene_antepasados_italianos'] == "Si"){
-        $antepasados = 1;
+        $antepasados = 2;
     }
 
     $cantidad_alzada = 1;
