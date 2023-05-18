@@ -267,20 +267,30 @@ class ClienteController extends Controller
         if (count($cps)==0){
             $hss = json_decode(json_encode($servicio),true);
 
+            if(auth()->user()->servicio == "Recurso de Alzada"){
+                $monto = $hss[0]["precio"] * auth()->user()->cantidad_alzada;
+            } else {
+                $monto = $hss[0]["precio"];
+            }
+
             if( auth()->user()->servicio == "Española LMD" || auth()->user()->servicio == "Italiana" ) {
                 $desc = "Pago Fase Inicial: Investigación Preliminar y Preparatoria: " . $hss[0]["nombre"];
+                if (auth()->user()->servicio == "Española LMD"){
+                    if (!auth()->user()->antepasados==1){
+                        $monto = 99;
+                    }
+                }
+                if (auth()->user()->servicio == "Italiana"){
+                    if (auth()->user()->antepasados==1){
+                        $desc = $desc . " + (Consulta Gratuita)";
+                    }
+                }
             } elseif ( auth()->user()->servicio == "Gestión Documental" ) {
                 $desc = $hss[0]["nombre"];
             } elseif (auth()->user()->servicio == 'Constitución de Empresa' || auth()->user()->servicio == 'Representante Fiscal' || auth()->user()->servicio == 'Codigo  Fiscal' || auth()->user()->servicio == 'Apertura de cuenta' || auth()->user()->servicio == 'Trimestre contable' || auth()->user()->servicio == 'Cooperativa 10 años' || auth()->user()->servicio == 'Cooperativa 5 años') {
                 $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
             } else {
                 $desc = "Inicia tu Proceso: " . $hss[0]["nombre"];
-            }
-
-            if(auth()->user()->servicio == "Recurso de Alzada"){
-                $monto = $hss[0]["precio"] * auth()->user()->cantidad_alzada;
-            } else {
-                $monto = $hss[0]["precio"];
             }
 
             Compras::create([

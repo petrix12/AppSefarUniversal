@@ -80,7 +80,10 @@ class CreateNewUser implements CreatesNewUsers
             'nombres' => $input['nombres'],
             'apellidos' => $input['apellidos'],
             'pais_de_nacimiento' => $input['pais_de_nacimiento'],
-            'referido_por' => $input['referido'],
+            'cantidad_alzada' => $input['cantidad_alzada'],
+            'antepasados' => $input['antepasados'],
+            'vinculo_antepasados' => $input['vinculo_antepasados'],
+            'estado_de_datos_y_documentos_de_los_antepasados' => $input['estado_de_datos_y_documentos_de_los_antepasados'],
         ]);
         if($rol == 'cliente'){
             //$user->email_verified_at = date('Y-m-d H:i:s');
