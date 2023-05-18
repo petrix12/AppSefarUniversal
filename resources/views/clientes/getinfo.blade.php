@@ -80,6 +80,8 @@
                 formId: "ae73e323-14a8-40f4-a20c-4a33a30aabde",
                 onFormReady: function($form){
                     setTimeout( function() {
+                        var antepasados = <?php echo (auth()->user()->antepasados); ?>;
+                        var servicio = "<?php echo (auth()->user()->servicio); ?>";
                         $('input[name="firstname"]').val("{{ auth()->user()->nombres }}").change();
                         $('input[name="lastname"]').val("{{ auth()->user()->apellidos }}").change();
                         $('.hs-fieldtype-intl-phone.hs-input .hs-input').val("{{ auth()->user()->phone }}").change();
@@ -87,6 +89,30 @@
                         $('input[name="numero_de_pasaporte"]').val("{{ auth()->user()->passport }}").change();
                         $('input[name="pais_de_nacimiento"]').val("{{ auth()->user()->pais_de_nacimiento }}").change();
                         $('select[name="nacionalidad_solicitada"]').val("{{ auth()->user()->servicio }}").change();
+                        if (servicio == 'Italiana'){
+                            if (antepasados == 2){
+                                $('select[name="tiene_antepasados_italianos"]').val("Si").change();
+
+                                var checkbox = $('input[value="<?php echo(auth()->user()->vinculo_antepasados); ?>"]');
+                                checkbox.prop('checked', true);
+
+                                $('select[name="estado_de_datos_y_documentos_de_los_antepasados"]').val("<?php echo(auth()->user()->estado_de_datos_y_documentos_de_los_antepasados); ?>").change();
+                            } else {
+                                $('select[name="tiene_antepasados_italianos"]').val("No").change();
+                            }
+                        }
+                        if (servicio == 'Española LMD'){
+                            if (antepasados == 1){
+                                $('select[name="tiene_antepasados_espanoles"]').val("Si").change();
+
+                                var checkbox = $('input[value="<?php echo(auth()->user()->vinculo_antepasados); ?>"]');
+                                checkbox.prop('checked', true);
+
+                                $('select[name="estado_de_datos_y_documentos_de_los_antepasados"]').val("<?php echo(auth()->user()->estado_de_datos_y_documentos_de_los_antepasados); ?>").change();
+                            } else {
+                                $('select[name="tiene_antepasados_espanoles"]').val("No").change();
+                            }
+                        }                        
                     }, 250 );
                 },
                 onFormSubmit: function($form){
