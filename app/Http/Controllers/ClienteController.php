@@ -276,7 +276,7 @@ class ClienteController extends Controller
             if( auth()->user()->servicio == "Española LMD" || auth()->user()->servicio == "Italiana" ) {
                 $desc = "Pago Fase Inicial: Investigación Preliminar y Preparatoria: " . $hss[0]["nombre"];
                 if (auth()->user()->servicio == "Española LMD"){
-                    if (!auth()->user()->antepasados==1){
+                    if (auth()->user()->antepasados==0){
                         $monto = 99;
                     }
                 }
@@ -781,12 +781,16 @@ class ClienteController extends Controller
 
             $hss = json_decode(json_encode($servicio),true);
 
+            if($userdata[0]["servicio"] == "Recurso de Alzada"){
+                $monto = $hss[0]["precio"] * ($cantidad+1);
+            } else {
+                $monto = $hss[0]["precio"];
+            }
+
             if( $userdata[0]["servicio"] == "Española LMD" || $userdata[0]["servicio"] == "Italiana" ) {
                 $desc = "Pago Fase Inicial: Investigación Preliminar y Preparatoria: " . $hss[0]["nombre"];
                 if ($userdata[0]["servicio"] == "Española LMD"){
-                    if ($userdata[0]['antepasados']==1){
-                        $monto = 49;
-                    } else {
+                    if ($userdata[0]['antepasados']==0){
                         $monto = 99;
                     }
                 }
@@ -801,12 +805,6 @@ class ClienteController extends Controller
                 $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
             } else {
                 $desc = "Inicia tu Proceso: " . $hss[0]["nombre"];
-            }
-
-            if($userdata[0]["servicio"] == "Recurso de Alzada"){
-                $monto = $hss[0]["precio"] * ($cantidad+1);
-            } else {
-                $monto = $hss[0]["precio"];
             }
 
             Compras::create([
