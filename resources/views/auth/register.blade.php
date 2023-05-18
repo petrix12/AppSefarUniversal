@@ -18,11 +18,11 @@
 
     $antepasados = 0;
 
-    if (isset(session('request')['$request->tiene_antepasados_espanoles)']) && session('request')['$request->tiene_antepasados_espanoles)'] == "Si"){
+    if (isset(session('request')['tiene_antepasados_espanoles']) && session('request')['tiene_antepasados_espanoles'] == "Si"){
         $antepasados = 1;
     }
 
-    if (isset(session('request')['$request->tiene_antepasados_italianos)']) && session('request')['$request->tiene_antepasados_italianos)'] == "Si"){
+    if (isset(session('request')['tiene_antepasados_italianos']) && session('request')['tiene_antepasados_italianos'] == "Si"){
         $antepasados = 1;
     }
 
