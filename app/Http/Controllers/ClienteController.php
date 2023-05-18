@@ -739,7 +739,7 @@ class ClienteController extends Controller
         }
 
         if (isset($request->tiene_antepasados_italianos) && $request->tiene_antepasados_italianos == "Si"){
-            $antepasados = 1;
+            $antepasados = 2;
         }
 
         if(isset($request->vinculo_antepasados)){
