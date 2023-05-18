@@ -26,6 +26,7 @@
         "league/flysystem-aws-s3-v3": "1.0.29",
         "league/flysystem-cached-adapter": "~1.0",
         "livewire/livewire": "^2.0",
+        "maatwebsite/excel": "^3.1",
         "proclame/monday-api-laravel": "^0.2.0",
         "realrashid/sweet-alert": "^3.2",
         "rossjcooper/laravel-hubspot": "^5.0",

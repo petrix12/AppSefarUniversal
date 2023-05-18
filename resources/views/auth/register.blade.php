@@ -12,6 +12,10 @@
     if (!empty($_GET['aplicar_cupon'])) $cupon = $_GET['aplicar_cupon']; else if (!empty(session('request')['aplicar_cupon'])) $cupon = session('request')['aplicar_cupon']; else $cupon = null;
     if (!empty($_GET['pais_de_nacimiento'])) $pais_de_nacimiento = $_GET['pais_de_nacimiento']; else if (!empty(session('request')['pais_de_nacimiento'])) $pais_de_nacimiento = session('request')['pais_de_nacimiento']; else $pais_de_nacimiento = null;
 
+    if (!empty($_GET['vinculo_antepasados'])) $vinculo_antepasados = $_GET['vinculo_antepasados']; else if (!empty(session('request')['vinculo_antepasados'])) $vinculo_antepasados = session('request')['vinculo_antepasados']; else $vinculo_antepasados = null;
+
+    if (!empty($_GET['estado_de_datos_y_documentos_de_los_antepasados'])) $estado_de_datos_y_documentos_de_los_antepasados = $_GET['estado_de_datos_y_documentos_de_los_antepasados']; else if (!empty(session('request')['estado_de_datos_y_documentos_de_los_antepasados'])) $estado_de_datos_y_documentos_de_los_antepasados = session('request')['estado_de_datos_y_documentos_de_los_antepasados']; else $estado_de_datos_y_documentos_de_los_antepasados = null;
+
     $antepasados = 0;
 
     if (isset(session('request')['$request->tiene_antepasados_espanoles)']) && session('request')['$request->tiene_antepasados_espanoles)'] == "Si"){
@@ -71,16 +75,18 @@
             @csrf
 
             {{-- Campos ocultos --}}
-            <input type="hidden" name="nombres" value="{{ $nombres }}" />
-            <input type="hidden" name="apellidos" value="{{ $apellidos }}" />
-            <input type="hidden" name="phone" value="{{ $phone }}" />
-            <input type="hidden" name="servicio" value="{{ $servicio }}" />
-            <input type="hidden" name="referido" value="{{ $referido }}" />
-            <input type="hidden" name="cupon" value="{{ $cupon }}" />
-            <input type="hidden" name="pais_de_nacimiento" value="{{ $pais_de_nacimiento }}" />
-            <input type="hidden" name="rol" value="{{ $rol }}" />
-            <input type="hidden" name="cantidad_alzada" value="{{ $cantidad_alzada }}" />
-            <input type="hidden" name="antepasados" value="{{ $antepasados }}" />
+            <input type="hidden" name="nombres" value="{{ old('nombres',$nombres) }}" />
+            <input type="hidden" name="apellidos" value="{{ old('apellidos',$apellidos) }}" />
+            <input type="hidden" name="phone" value="{{ old('phone',$phone) }}" />
+            <input type="hidden" name="servicio" value="{{ old('servicio',$servicio) }}" />
+            <input type="hidden" name="referido" value="{{ old('referido',$referido) }}" />
+            <input type="hidden" name="cupon" value="{{ old('cupon',$cupon) }}" />
+            <input type="hidden" name="pais_de_nacimiento" value="{{ old('pais_de_nacimiento',$pais_de_nacimiento) }}" />
+            <input type="hidden" name="rol" value="{{ old('rol',$rol) }}" />
+            <input type="hidden" name="cantidad_alzada" value="{{ old('cantidad_alzada',$cantidad_alzada) }}" />
+            <input type="hidden" name="antepasados" value="{{ old('antepasados',$antepasados) }}" />
+            <input type="hidden" name="vinculo_antepasados" value="{{ old('vinculo_antepasados',$vinculo_antepasados) }}" />
+            <input type="hidden" name="estado_de_datos_y_documentos_de_los_antepasados" value="{{ old('estado_de_datos_y_documentos_de_los_antepasados',$estado_de_datos_y_documentos_de_los_antepasados) }}" />
 
             <div>
                 <x-jet-label for="name" value="{{ __('Name') }}" />

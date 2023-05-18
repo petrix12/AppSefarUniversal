@@ -9,7 +9,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 use Stripe;
+use App\Exports\StripeExcel;
 
 class StripeController extends Controller
 {
@@ -127,5 +129,42 @@ class StripeController extends Controller
 		$balance = Stripe\Balance::retrieve();
 
 		return view('stripe.listarstripe', compact('charges', 'startOfMonth', 'balance'));
+    }
+
+    public function exportdatastripeexcel(Request $request){
+
+    	$meses = array(
+		    1 => 'january',
+		    2 => 'february',
+		    3 => 'march',
+		    4 => 'april',
+		    5 => 'may',
+		    6 => 'june',
+		    7 => 'july',
+		    8 => 'august',
+		    9 => 'september',
+		    10 => 'october',
+		    11 => 'november',
+		    12 => 'december'
+		);
+
+		$year = $request->yearstripe;
+
+    	if ($request->monthstripe<12){
+    		$firstmonth = $meses[$request->monthstripe];
+    		$nextmonth = $meses[$request->monthstripe+1];
+    		$startOfMonth = strtotime('first day of '.$firstmonth.' '.$year.' midnight');
+			$endOfMonth = strtotime('first day of '.$nextmonth.' '.$year.' midnight');
+    	} else {
+    		$firstmonth = $meses[12];
+    		$nextmonth = $meses[1];
+    		$startOfMonth = strtotime('first day of '.$firstmonth.' '.$year.' midnight');
+			$endOfMonth = strtotime('first day of '.$nextmonth.' '. ($year+1) .' midnight');
+    	}
+
+		return Excel::download(new StripeExcel($startOfMonth, $endOfMonth), 'stripe-balance.xlsx', \Maatwebsite\Excel\Excel::XLSX, [
+        	'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        	'Content-Disposition' => 'attachment; filename="stripe-balance.xlsx"',
+    	]);
     }
 }

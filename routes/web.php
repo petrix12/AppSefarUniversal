@@ -113,6 +113,7 @@ Route::post('stripefind', [StripeController::class, 'stripefind'])->name('stripe
 Route::post('stripegetidpago', [StripeController::class, 'stripegetidpago'])->name('stripegetidpago');
 Route::post('stripeupdatedata',[StripeController::class, 'stripeupdatedata'])->name('stripeupdatedata');
 Route::get('listLatestStripeData', [StripeController::class, 'listLatestStripeData'])->name('listLatestStripeData');
+Route::post('/listLatestStripeData/export', [StripeController::class, 'exportdatastripeexcel'])->name('exportdatastripeexcel');
 
 //Rutas para Monday:
 Route::get('/mondayreportes', [MondayController::class, 'mondayreportes'])->name('mondayreportes')
