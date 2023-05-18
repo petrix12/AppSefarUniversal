@@ -73,107 +73,52 @@
 
     <div class="container m-3">
 
-        @if(auth()->user()->servicio=="Española LMD")
+        <script>
+            hbspt.forms.create({
+                region: "na1",
+                portalId: "20053496",
+                formId: "ae73e323-14a8-40f4-a20c-4a33a30aabde",
+                onFormReady: function($form){
+                    setTimeout( function() {
+                        $('input[name="firstname"]').val("{{ auth()->user()->nombres }}").change();
+                        $('input[name="lastname"]').val("{{ auth()->user()->apellidos }}").change();
+                        $('.hs-fieldtype-intl-phone.hs-input .hs-input').val("{{ auth()->user()->phone }}").change();
+                        $('input[name="email"]').val("{{ auth()->user()->email }}").change();
+                        $('input[name="numero_de_pasaporte"]').val("{{ auth()->user()->passport }}").change();
+                        $('input[name="pais_de_nacimiento"]').val("{{ auth()->user()->pais_de_nacimiento }}").change();
+                        $('select[name="nacionalidad_solicitada"]').val("{{ auth()->user()->servicio }}").change();
+                    }, 250 );
+                },
+                onFormSubmit: function($form){
+                    setTimeout( function() {
+                        var formData = $form;
 
-            <script>
-                hbspt.forms.create({
-                    region: "na1",
-                    portalId: "20053496",
-                    formId: "ae73e323-14a8-40f4-a20c-4a33a30aabde",
-                    onFormReady: function($form){
-                        setTimeout( function() {
-                            $('input[name="firstname"]').val("{{ auth()->user()->nombres }}").change();
-                            $('input[name="lastname"]').val("{{ auth()->user()->apellidos }}").change();
-                            $('.hs-fieldtype-intl-phone.hs-input .hs-input').val("{{ auth()->user()->phone }}").change();
-                            $('input[name="email"]').val("{{ auth()->user()->email }}").change();
-                            $('input[name="numero_de_pasaporte"]').val("{{ auth()->user()->passport }}").change();
-                            $('input[name="pais_de_nacimiento"]').val("{{ auth()->user()->pais_de_nacimiento }}").change();
-                            $('select[name="nacionalidad_solicitada"]').val("{{ auth()->user()->servicio }}").change();
-                        }, 250 );
-                    },
-                    onFormSubmit: function($form){
-                        setTimeout( function() {
-                            var formData = $form;
+                        if($('input[name="firstname"]').val() == "" || $('input[name="lastname"]').val() == "" || $('.hs-fieldtype-intl-phone.hs-input .hs-input').val() == "" || $('input[name="email"]').val() == "" || $('input[name="numero_de_pasaporte"]').val() == "" || $('input[name="pais_de_nacimiento"]').val() == "" || $('input[name="nacionalidad_solicitada"]').val() == ""){
+                            return false;
+                        }
 
-                            if($('input[name="firstname"]').val() == "" || $('input[name="lastname"]').val() == "" || $('.hs-fieldtype-intl-phone.hs-input .hs-input').val() == "" || $('input[name="email"]').val() == "" || $('input[name="numero_de_pasaporte"]').val() == "" || $('input[name="pais_de_nacimiento"]').val() == "" || $('input[name="nacionalidad_solicitada"]').val() == ""){
-                                return false;
+                        var data = formData.serializeArray();
+
+                        $.ajaxSetup({
+                            headers: {
+                                'X-CSRF-TOKEN': $("input[name='_token']").val()
                             }
+                        });
 
-                            var data = formData.serializeArray();
-
-                            $.ajaxSetup({
-                                headers: {
-                                    'X-CSRF-TOKEN': $("input[name='_token']").val()
-                                }
-                            });
-
-                            $.ajax({
-                                url: '{{ route("procesargetinfo") }}',
-                                method: 'POST',
-                                data: {
-                                    data
-                                },
-                                success: function(response){
-                                    window.location.href = "/tree";
-                                    //console.log(response)
-                                }
-                            });
-                        }, 5000 );
-
-                    }
-                });
-            </script>
-
-        @else
-
-            <script>
-                hbspt.forms.create({
-                    region: "na1",
-                    portalId: "20053496",
-                    formId: "ae73e323-14a8-40f4-a20c-4a33a30aabde",
-                    onFormReady: function($form){
-                        setTimeout( function() {
-                            $('input[name="firstname"]').val("{{ auth()->user()->nombres }}").change();
-                            $('input[name="lastname"]').val("{{ auth()->user()->apellidos }}").change();
-                            $('.hs-fieldtype-intl-phone.hs-input .hs-input').val("{{ auth()->user()->phone }}").change();
-                            $('input[name="email"]').val("{{ auth()->user()->email }}").change();
-                            $('input[name="numero_de_pasaporte"]').val("{{ auth()->user()->passport }}").change();
-                            $('input[name="pais_de_nacimiento"]').val("{{ auth()->user()->pais_de_nacimiento }}").change();
-                            $('select[name="nacionalidad_solicitada"]').val("{{ auth()->user()->servicio }}").change();
-                        }, 250 );
-                    },
-                    onFormSubmit: function($form){
-                        setTimeout( function() {
-                            var formData = $form;
-
-                            if($('input[name="firstname"]').val() == "" || $('input[name="lastname"]').val() == "" || $('.hs-fieldtype-intl-phone.hs-input .hs-input').val() == "" || $('input[name="email"]').val() == "" || $('input[name="numero_de_pasaporte"]').val() == "" || $('input[name="pais_de_nacimiento"]').val() == "" || $('input[name="nacionalidad_solicitada"]').val() == ""){
-                                return false;
+                        $.ajax({
+                            url: '{{ route("procesargetinfo") }}',
+                            method: 'POST',
+                            data: {
+                                data
+                            },
+                            success: function(response){
+                                window.location.href = "/tree";
                             }
-
-                            var data = formData.serializeArray();
-
-                            $.ajaxSetup({
-                                headers: {
-                                    'X-CSRF-TOKEN': $("input[name='_token']").val()
-                                }
-                            });
-
-                            $.ajax({
-                                url: '{{ route("procesargetinfo") }}',
-                                method: 'POST',
-                                data: {
-                                    data
-                                },
-                                success: function(response){
-                                    window.location.href = "/tree";
-                                }
-                            });
-                        }, 5000 );
-                    }
-                });
-            </script>
-
-        @endif
+                        });
+                    }, 5000 );
+                }
+            });
+        </script>
 
         @csrf
 

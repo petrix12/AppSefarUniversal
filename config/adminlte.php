@@ -324,7 +324,7 @@ return [
                 ],
 
                 [
-                    'text'          => 'Listar Pagos',
+                    'text'          => 'Hist. Pagos Stripe',
                     'icon'          => 'fa-fw fab fa-cc-stripe',
                     'icon_color'    => 'white',
                     'url'           => 'listLatestStripeData',
