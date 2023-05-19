@@ -51,7 +51,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'pago_registro_hist',
         'antepasados',
         'vinculo_antepasados',
-        'estado_de_datos_y_documentos_de_los_antepasados'
+        'estado_de_datos_y_documentos_de_los_antepasados',
+        'contrato'
     ];
 
     /**
