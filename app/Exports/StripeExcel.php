@@ -3,11 +3,15 @@
 namespace App\Exports;
 
 use Illuminate\Support\Collection;
-use Maatwebsite\Excel\Concerns\FromQuery;
+use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Stripe;
 
-class StripeExcel implements FromQuery, WithHeadings
+class StripeExcel implements FromCollection, WithHeadings
 {
+    use Exportable;
+
     protected $startOfMonth;
     protected $endOfMonth;
 
@@ -17,11 +21,10 @@ class StripeExcel implements FromQuery, WithHeadings
         $this->endOfMonth = $endOfMonth;
     }
 
-    public function query()
-    {
-        \Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+    public function collection() {
+        Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
 
-        $mycharges = \Stripe\Charge::all([
+        $mycharges = Stripe\Charge::all([
             'created' => [
                 'gte' => $this->startOfMonth,
                 'lte' => $this->endOfMonth,
@@ -39,7 +42,7 @@ class StripeExcel implements FromQuery, WithHeadings
 
         while ($mycharges->has_more) {
             $lastCharge = end($mycharges->data);
-            $mycharges = \Stripe\Charge::all([
+            $mycharges = Stripe\Charge::all([
                 'created' => [
                     'gte' => $this->startOfMonth,
                     'lte' => $this->endOfMonth,
@@ -53,25 +56,24 @@ class StripeExcel implements FromQuery, WithHeadings
             }
         }
 
-        $data = collect($charges)->map(function ($charge) {
-            return [
-                'ID' => $charge->id,
-                'Monto' => $charge->amount / 100,
-                'Moneda' => $charge->currency,
-                'Cliente' => $charge->receipt_email,
-            ];
-        });
+        foreach ($charges as $charge) {
+            if ($charge->status == 'succeeded'){
+                $data[] = [
+                    $charge->id,
+                    ($charge->amount / 100),
+                    $charge->currency,
+                    $charge->receipt_email,
+                    date('d/m/Y H:i:s', $charge["created"] - 4 * 60 * 60),
+                    date('d/m/Y H:i:s', $charge["created"] + 2 * 60 * 60),
+                ];
+            }
+        }
 
-        return $data;
+        return collect([$data]);
     }
 
     public function headings(): array
     {
-        return [
-            'ID',
-            'Monto',
-            'Moneda',
-            'Cliente',
-        ];
+        return ['ID', 'Monto', 'Moneda', 'Cliente', 'Fecha y Hora (Venezuela)', 'Fecha y Hora (España)'];
     }
 }

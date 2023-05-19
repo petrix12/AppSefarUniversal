@@ -162,9 +162,87 @@ class StripeController extends Controller
 			$endOfMonth = strtotime('first day of '.$nextmonth.' '. ($year+1) .' midnight');
     	}
 
-		return Excel::download(new StripeExcel($startOfMonth, $endOfMonth), 'stripe-balance.xlsx', \Maatwebsite\Excel\Excel::XLSX, [
-        	'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        	'Content-Disposition' => 'attachment; filename="stripe-balance.xlsx"',
-    	]);
+		return Excel::download(new StripeExcel($startOfMonth, $endOfMonth), 'export.xlsx');
+
+    }
+
+    public function getStripeAJAX(Request $request){
+    	$meses = array(
+		    1 => 'january',
+		    2 => 'february',
+		    3 => 'march',
+		    4 => 'april',
+		    5 => 'may',
+		    6 => 'june',
+		    7 => 'july',
+		    8 => 'august',
+		    9 => 'september',
+		    10 => 'october',
+		    11 => 'november',
+		    12 => 'december'
+		);
+
+		$year = $request->yearstripe;
+
+    	if ($request->monthstripe<12){
+    		$firstmonth = $meses[$request->monthstripe];
+    		$nextmonth = $meses[$request->monthstripe+1];
+    		$startOfMonth = strtotime('first day of '.$firstmonth.' '.$year.' midnight');
+			$endOfMonth = strtotime('first day of '.$nextmonth.' '.$year.' midnight');
+    	} else {
+    		$firstmonth = $meses[12];
+    		$nextmonth = $meses[1];
+    		$startOfMonth = strtotime('first day of '.$firstmonth.' '.$year.' midnight');
+			$endOfMonth = strtotime('first day of '.$nextmonth.' '. ($year+1) .' midnight');
+    	}
+
+		Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+
+		$mycharges = Stripe\Charge::all([
+			'created' => [
+		    	'gte' => $startOfMonth,
+		    	'lte' => $endOfMonth,
+		    ],
+		    'limit' => 100
+		]);
+
+		$charges = [];
+
+		foreach ($mycharges->data as $charge) {
+		    $charges[] = $charge;
+		}
+
+		$verify = 1;
+
+		while ($mycharges->has_more) {
+			$lastCharge = end($mycharges->data);
+			$mycharges =Stripe\Charge::all([
+				'created' => [
+			    	'gte' => $startOfMonth,
+			    	'lte' => $endOfMonth,
+			    ],
+			    'limit' => 100,
+				'starting_after' => $lastCharge->id,
+			]);
+
+			foreach ($mycharges->data as $charge) {
+			    $charges[] = $charge;
+			}
+		}
+
+		foreach ($charges as $charge) {
+            if ($charge->status == 'succeeded'){
+                $data[] = [
+                    $charge->id,
+                    ($charge->amount / 100),
+                    $charge->currency,
+                    $charge->receipt_email,
+                    date('d/m/Y H:i:s', $charge["created"] - 4 * 60 * 60),
+                    date('d/m/Y H:i:s', $charge["created"] + 2 * 60 * 60),
+                ];
+            }
+        }
+
+        return json_encode($data);
     }
 }
