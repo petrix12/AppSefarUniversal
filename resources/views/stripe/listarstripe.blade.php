@@ -85,7 +85,7 @@
 							}
 						?>
 					</select>
-					<select name="yearstripe" id="yearstripe" style="width:10%; margin-right: 20px;">
+					<select name="yearstripe" id="yearstripe" style="width:10%;">
 						<?php 
 							for($i=2019; $i<date('Y')+1; $i++){
 								if ($i == date('Y')){
@@ -96,12 +96,6 @@
 							}
 						?>
 					</select>
-					<a id="sendAjaxStripe" class="cfrSefar border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700" style="    padding-top: 0.5rem;
-    padding-right: 0.75rem;
-    padding-bottom: 0.5rem;
-    padding-left: 0.75rem;">
-                        Actualizar Tabla
-                    </a>
 				</div>
 			</div>
 
