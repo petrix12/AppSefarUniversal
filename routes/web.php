@@ -121,7 +121,7 @@ Route::post('/listLatestStripeData/getStripeAJAX', [StripeController::class, 'ge
 Route::get('/mondayreportes', [MondayController::class, 'mondayreportes'])->name('mondayreportes')
         ->middleware('can:crud.mondayreportes.index');
 
-Route::get('/contrato', [ClienteController::class, 'contrato'])->name('contrato');
+Route::get('/contrato', [ClienteController::class, 'contrato'])->name('cliente.contrato');
 
 //Verificarcupon
 
