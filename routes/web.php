@@ -28,6 +28,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\HsReferidoController;
 use App\Http\Controllers\MondayController;
 use App\Http\Controllers\FacturaController;
+use App\Http\Controllers\CorreoController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -177,6 +178,10 @@ Route::group(['middleware' => ['auth'], 'as' => 'clientes.'], function(){
         ->middleware('can:cliente');
     
 });
+
+Route::get('testcorreos', [CorreoController::class, 'testcorreos'])->name('testcorreos');
+Route::post('testcorreos', [CorreoController::class, 'sendcorreo'])->name('sendcorreo');
+
 
 Route::post('getinfo', [ClienteController::class, 'procesargetinfo'])->name('procesargetinfo')
         ->middleware('can:cliente');

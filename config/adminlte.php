@@ -622,6 +622,13 @@ return [
                     'can'           => 'administrador',
                 ],
                 [
+                    'text'          => 'Pruebas de Correos',
+                    'icon'          => 'fa-fw fas fa-envelope',
+                    'icon_color'    => 'yellow',
+                    'url'           => 'testcorreos',
+                    'can'           => 'administrador',
+                ],
+                [
                     'text'          => 'MVC Agclientes',
                     'icon'          => 'fa-fw fab fa-intercom',
                     'icon_color'    => 'blue',

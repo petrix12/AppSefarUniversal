@@ -21,6 +21,7 @@
         "laravel/framework": "^8.12",
         "laravel/jetstream": "^2.2",
         "laravel/sanctum": "^2.6",
+        "laravel/telescope": "^4.14",
         "laravel/tinker": "^2.5",
         "laravelcollective/html": "^6.2",
         "league/flysystem-aws-s3-v3": "1.0.29",
