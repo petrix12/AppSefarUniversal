@@ -13,6 +13,9 @@
     <script charset="utf-8" type="text/javascript" src="//js.hsforms.net/forms/embed/v2.js"></script>
 
     <style>
+        .hs_nacionalidad_solicitada {
+            display: none;
+        }
         .hs-input{
             display: block;
             width: 100%;
