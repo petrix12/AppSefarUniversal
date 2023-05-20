@@ -7,6 +7,18 @@
 @stop
 
 @section('content')
+
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @if(session("Exito"))
+        <script type="text/javascript">
+            Swal.fire({
+                icon: 'success',
+                title: 'Correo Enviado',
+                showConfirmButton: false,
+                timer: 5000
+            });
+        </script>
+    @endif
     <form action='{{route("sendcorreo")}}' method="POST">
         @csrf
         <div class="container" style="padding:20px 50px">
