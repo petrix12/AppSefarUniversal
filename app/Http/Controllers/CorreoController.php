@@ -17,5 +17,6 @@ class CorreoController extends Controller
         $mail_cliente = new RegistroCliente(auth()->user());
         $result = Mail::to($request->email)->send($mail_cliente);
         Alert::success('Exito', 'Se envió el correo.');
+        return view('pruebas.correos');
     }
 }
