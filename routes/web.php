@@ -122,6 +122,7 @@ Route::get('/mondayreportes', [MondayController::class, 'mondayreportes'])->name
         ->middleware('can:crud.mondayreportes.index');
 
 Route::get('/contrato', [ClienteController::class, 'contrato'])->name('cliente.contrato');
+Route::get('/checkContrato', [ClienteController::class, 'checkContrato'])->name('checkContrato');
 
 //Verificarcupon
 

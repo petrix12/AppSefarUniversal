@@ -60,6 +60,11 @@ class ClienteController extends Controller
         return view('clientes.contrato');
     }
 
+    public function checkContrato(){
+        DB::table('users')->where('id', auth()->user()->id)->update(['contrato' => 1]); // no borrar esta linea
+        return redirect()->route('tree');
+    }
+
     public function salir(Request $request){
         // Envía un correo al cliente que ha culminado la carga
         $mail_cliente = new CargaCliente(Auth::user());
