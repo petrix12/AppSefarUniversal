@@ -38,11 +38,9 @@ class ClienteController extends Controller
             if(Auth::user()->pay==0){
                 return redirect()->route('clientes.pay');
             }
-            /*
             if(Auth::user()->contrato==0){
                 return redirect()->route('cliente.contrato');
             }
-            */
         }
         $IDCliente = Auth::user()->passport;
         return view('arboles.tree', compact('IDCliente'));
@@ -54,7 +52,7 @@ class ClienteController extends Controller
                 return redirect()->route('clientes.pay');
             }
             if(Auth::user()->contrato==1){
-                return redirect()->route('tree');
+                return redirect('/tree');
             }
         }
         return view('clientes.contrato');
@@ -62,7 +60,7 @@ class ClienteController extends Controller
 
     public function checkContrato(){
         DB::table('users')->where('id', auth()->user()->id)->update(['contrato' => 1]); // no borrar esta linea
-        return redirect('/');
+        return redirect('/tree');
     }
 
     public function salir(Request $request){
