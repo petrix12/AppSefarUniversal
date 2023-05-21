@@ -730,6 +730,29 @@ class ClienteController extends Controller
                     ]);
                     
                     $apiResponse = $hubspot->crm()->contacts()->basicApi()->update($idcontact, $simplePublicObjectInput);
+
+                    $dealInput = new \HubSpot\Client\Crm\Deals\Model\SimplePublicObjectInput();
+
+                    foreach ($compras as $key => $compra) {
+                        $dealInput->setProperties([
+                            'dealname' => auth()->user()->name . ' - ' . $compra['servicio_hs_id'],
+                            'pipeline' => "94794",
+                            'dealstage' => "429097"
+                        ]);
+                        
+                        $apiResponse = json_decode(json_encode($hubspot->crm()->deals()->basicApi()->create($dealInput)),true);
+
+                        $iddeal = $apiResponse["id"];
+
+                        $associationSpec1 = new AssociationSpec([
+                            'association_category' => 'HUBSPOT_DEFINED',
+                            'association_type_id' => 3
+                        ]);
+
+                        $asocdeal = $hubspot->crm()->deals()->associationsApi()->create($iddeal, 'contacts', $idcontact, [$associationSpec1]);
+                        sleep(1);
+                    }
+
                 }
                 return redirect()->route('gracias')->with("status","exito");
             } else {
