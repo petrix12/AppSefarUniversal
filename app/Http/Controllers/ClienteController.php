@@ -60,7 +60,7 @@ class ClienteController extends Controller
 
     public function checkContrato(){
         DB::table('users')->where('id', auth()->user()->id)->update(['contrato' => 1]); // no borrar esta linea
-        return redirect('/tree');
+        return redirect('/tree')->with('exito', 'contrato enviado');
     }
 
     public function salir(Request $request){

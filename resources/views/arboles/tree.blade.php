@@ -8,6 +8,18 @@
 
 @section('content')
 <x-app-layout>
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @if(session("exito"))
+        <script type="text/javascript">
+            Swal.fire({
+                icon: 'success',
+                title: 'Contrato firmado',
+                html: 'A continuación, puede continuar con el llenado del arbol',
+                showConfirmButton: false,
+                timer: 5000
+            });
+        </script>
+    @endif
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
