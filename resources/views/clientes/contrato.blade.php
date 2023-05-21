@@ -13,7 +13,18 @@
 
     <script type="text/javascript" src="https://form.jotform.com/jsform/231384136753659"></script>
 
-
+    <script>
+        $('#231384136753659').on('load',function(){
+            var inputText = $('#231384136753659').contents().find('#input_67');
+            var inputText2 = $('#231384136753659').contents().find('#input_68');
+            var inputText3 = $('#231384136753659').contents().find('#input_329');
+            var inputText4 = $('#231384136753659').contents().find('#input_330');
+            inputText.val('{{auth()->user()->nombres}}').change();
+            inputText2.val('{{auth()->user()->apellidos}}').change();
+            inputText3.val('{{auth()->user()->passport}}').change();
+            inputText4.val('{{auth()->user()->servicio}}').change();
+        });
+    </script>
 @stop
 
 @section('css')
