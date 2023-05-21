@@ -62,7 +62,7 @@ class ClienteController extends Controller
 
     public function checkContrato(){
         DB::table('users')->where('id', auth()->user()->id)->update(['contrato' => 1]); // no borrar esta linea
-        return redirect()->route('tree');
+        return redirect('/');
     }
 
     public function salir(Request $request){
