@@ -75,7 +75,7 @@ class Controller extends BaseController
                 return redirect()->route('clientes.getinfo');
             } else {
                 $IDCliente = Auth::user()->passport;
-                return view('arboles.tree', compact('IDCliente'));
+                return redirect('/tree');
             }
         }
 
