@@ -3,12 +3,41 @@
 @section('title', 'Servicios de Vinculaciones')
 
 @section('content_header')
-    <h1>Servicios de Vinculaciones</h1>
-    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
 @stop
 
 @section('content')
 
+<x-app-layout>
+
+    <style>
+        .hidden, .border-gray-100 {
+            display: none!important;
+        }
+    </style>
+    <div class="flex flex-col">
+        <div class="">
+            <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                {{-- Inicio --}}
+                <div class="bg-gray-50">
+                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:py-6 lg:px-8 lg:flex lg:items-center lg:justify-between">
+                        <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                            <span class="ctvSefar block text-indigo-600">Servicios de Vinculaciones</span>
+                        </h2>
+                        <div class="mt-8 flex lg:mt-0 lg:flex-shrink-0">
+                            <div class="inline-flex rounded-md shadow">
+                                <a href="/pay" class="cfrSefar inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                                    Regresar a Ventana de Pago
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {{-- Fin --}}
+            </div>
+        </div>
+    </div>
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style type="text/css">
         .grid-container {
             display: grid;
@@ -65,6 +94,7 @@
             }
         ?>
     </div>
+</x-app-layout>
 
 @stop
 
