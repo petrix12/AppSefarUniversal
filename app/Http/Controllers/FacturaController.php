@@ -17,7 +17,7 @@ class FacturaController extends Controller
      */
     public function index()
     {
-        $query = 'SELECT a.*, b.name, b.email, b.passport FROM facturas as a, users as b WHERE a.id_cliente = b.id;';
+        $query = 'SELECT a.*, b.name, b.email, b.passport FROM facturas as a, users as b WHERE a.id_cliente = b.id ORDER BY a.created_at DESC;';
 
         $datos_factura = json_decode(json_encode(DB::select(DB::raw($query))),true);
 
