@@ -823,7 +823,7 @@ class ClienteController extends Controller
         if (count($mailpass)>0 || count($mail)>0) {
             $preusercheck = json_decode( json_encode( DB::table('users')->where('email', $request->email)->get()),true);
 
-            $comprasexistentes = json_decode( json_encode( DB::table('compras')->where('email', $preusercheck[0]['id'])->where('servicio_hs_id', $request->nacionalidad_solicitada)->get()),true);
+            $comprasexistentes = json_decode( json_encode( DB::table('compras')->where('id_user', $preusercheck[0]['id'])->where('servicio_hs_id', $request->nacionalidad_solicitada)->get()),true);
 
             if (count($comprasexistentes) > 0){
                 $check = 2;
