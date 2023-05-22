@@ -821,70 +821,80 @@ class ClienteController extends Controller
 
 
         if (count($mailpass)>0 || count($mail)>0) {
+            $preusercheck = json_decode( json_encode( DB::table('users')->where('email', $request->email)->get()),true);
 
-            $familiares = 1 + $request->cantidad_alzada;
-            DB::table('users')->where('email', $request->email)->update([
-                'pay' => 0, 
-                'servicio' => $request->nacionalidad_solicitada, 
-                'cantidad_alzada' => $cantidad + 1, 
-                "antepasados" => $antepasados, 
-                'vinculo_antepasados' => $vinculo_antepasados,
-                'estado_de_datos_y_documentos_de_los_antepasados' => $estado_de_datos_y_documentos_de_los_antepasados
-            ]);
+            $comprasexistentes = json_decode( json_encode( DB::table('compras')->where('email', $preusercheck[0]['id'])->where('servicio_hs_id', $request->nacionalidad_solicitada)->get()),true);
 
-            if(count($mailpass)>0){
-                $userdata = json_decode(json_encode(DB::table('users')->where('email', $request->email)->where('passport', $request->numero_de_pasaporte)->get()),true);
-            } elseif (count($mail)>0){
-                $userdata = json_decode(json_encode(DB::table('users')->where('email', $request->email)->get()),true);
-            }
-
-
-            $compras = Compras::where('id_user', $userdata[0]["id"])->where('pagado', 0)->get();
-            $servicio = Servicio::where('id_hubspot', $userdata[0]["servicio"])->get();
-
-            $cps = json_decode(json_encode($compras),true);
-
-            $hss = json_decode(json_encode($servicio),true);
-
-            if($userdata[0]["servicio"] == "Recurso de Alzada"){
-                $monto = $hss[0]["precio"] * ($cantidad+1);
+            if (count($comprasexistentes) > 0){
+                $check = 2;
             } else {
-                $monto = $hss[0]["precio"];
-            }
 
-            if( $userdata[0]["servicio"] == "Española LMD" || $userdata[0]["servicio"] == "Italiana" ) {
-                $desc = "Pago Fase Inicial: Investigación Preliminar y Preparatoria: " . $hss[0]["nombre"];
-                if ($userdata[0]["servicio"] == "Española LMD"){
-                    if ($userdata[0]['antepasados']==0){
-                        $monto = 99;
-                    }
+                $familiares = 1 + $request->cantidad_alzada;
+                DB::table('users')->where('email', $request->email)->update([
+                    'pay' => 0, 
+                    'servicio' => $request->nacionalidad_solicitada, 
+                    'cantidad_alzada' => $cantidad + 1, 
+                    "antepasados" => $antepasados, 
+                    'vinculo_antepasados' => $vinculo_antepasados,
+                    'estado_de_datos_y_documentos_de_los_antepasados' => $estado_de_datos_y_documentos_de_los_antepasados
+                ]);
+
+                if(count($mailpass)>0){
+                    $userdata = json_decode(json_encode(DB::table('users')->where('email', $request->email)->where('passport', $request->numero_de_pasaporte)->get()),true);
+                } elseif (count($mail)>0){
+                    $userdata = json_decode(json_encode(DB::table('users')->where('email', $request->email)->get()),true);
                 }
-                if ($userdata[0]["servicio"] == "Italiana"){
-                    if ($userdata[0]['antepasados']==1){
-                        $desc = $desc . " + (Consulta Gratuita)";
-                    }
+
+
+                $compras = Compras::where('id_user', $userdata[0]["id"])->where('pagado', 0)->get();
+                $servicio = Servicio::where('id_hubspot', $userdata[0]["servicio"])->get();
+
+                $cps = json_decode(json_encode($compras),true);
+
+                $hss = json_decode(json_encode($servicio),true);
+
+                if($userdata[0]["servicio"] == "Recurso de Alzada"){
+                    $monto = $hss[0]["precio"] * ($cantidad+1);
+                } else {
+                    $monto = $hss[0]["precio"];
                 }
-            } elseif ( $userdata[0]["servicio"] == "Gestión Documental" ) {
-                $desc = $hss[0]["nombre"];
-            } elseif ($userdata[0]["servicio"] == 'Constitución de Empresa' || $userdata[0]["servicio"] == 'Representante Fiscal' || $userdata[0]["servicio"] == 'Codigo  Fiscal' || $userdata[0]["servicio"] == 'Apertura de cuenta' || $userdata[0]["servicio"] == 'Trimestre contable' || $userdata[0]["servicio"] == 'Cooperativa 10 años' || $userdata[0]["servicio"] == 'Cooperativa 5 años' || $userdata[0]["servicio"] == 'Participaciones sociales') {
-                $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
-            } else {
-                $desc = "Inicia tu Proceso: " . $hss[0]["nombre"];
+
+                if( $userdata[0]["servicio"] == "Española LMD" || $userdata[0]["servicio"] == "Italiana" ) {
+                    $desc = "Pago Fase Inicial: Investigación Preliminar y Preparatoria: " . $hss[0]["nombre"];
+                    if ($userdata[0]["servicio"] == "Española LMD"){
+                        if ($userdata[0]['antepasados']==0){
+                            $monto = 99;
+                        }
+                    }
+                    if ($userdata[0]["servicio"] == "Italiana"){
+                        if ($userdata[0]['antepasados']==1){
+                            $desc = $desc . " + (Consulta Gratuita)";
+                        }
+                    }
+                } elseif ( $userdata[0]["servicio"] == "Gestión Documental" ) {
+                    $desc = $hss[0]["nombre"];
+                } elseif ($userdata[0]["servicio"] == 'Constitución de Empresa' || $userdata[0]["servicio"] == 'Representante Fiscal' || $userdata[0]["servicio"] == 'Codigo  Fiscal' || $userdata[0]["servicio"] == 'Apertura de cuenta' || $userdata[0]["servicio"] == 'Trimestre contable' || $userdata[0]["servicio"] == 'Cooperativa 10 años' || $userdata[0]["servicio"] == 'Cooperativa 5 años' || $userdata[0]["servicio"] == 'Participaciones sociales') {
+                    $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
+                } else {
+                    $desc = "Inicia tu Proceso: " . $hss[0]["nombre"];
+                }
+
+                Compras::create([
+                    'id_user' => $userdata[0]["id"],
+                    'servicio_hs_id' => $userdata[0]["servicio"],
+                    'descripcion' => $desc,
+                    'pagado' => 0,
+                    'monto' => $monto
+                ]);
+
+                $check = 1;
             }
-
-            Compras::create([
-                'id_user' => $userdata[0]["id"],
-                'servicio_hs_id' => $userdata[0]["servicio"],
-                'descripcion' => $desc,
-                'pagado' => 0,
-                'monto' => $monto
-            ]);
-
-            $check = 1;
         }
 
         if ($check == 1){
             return redirect()->route('login')->with( ['warning' => 'Ya estabas registrado con el correo ' . $request->email . ' en nuestra plataforma. Por favor, inicia sesión.'] )->with( ['email' => $request->email] );
+        } elseif ($check == 2) {
+            return redirect()->route('login')->with( ['warning' => 'Ya estabas registrado con el correo ' . $request->email . ' en nuestra plataforma y ya habias solicitado este servicio en el pasado. Por favor, inicia sesión.'] )->with( ['email' => $request->email] );
         } else {
             return redirect()->route( 'register' )->with( ['request' => $request->all()] );
         }
