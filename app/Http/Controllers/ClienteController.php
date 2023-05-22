@@ -500,7 +500,7 @@ class ClienteController extends Controller
                             ]);
 
                             $asocdeal = $hubspot->crm()->deals()->associationsApi()->create($iddeal, 'contacts', $idcontact, [$associationSpec1]);
-                            sleep(1);
+                            sleep(2);
                         }
                     }
                     return response()->json([
@@ -772,7 +772,7 @@ class ClienteController extends Controller
                         ]);
 
                         $asocdeal = $hubspot->crm()->deals()->associationsApi()->create($iddeal, 'contacts', $idcontact, [$associationSpec1]);
-                        sleep(1);
+                        sleep(2);
                     }
 
                 }
@@ -945,7 +945,7 @@ class ClienteController extends Controller
                 $apiResponse = $hubspot->crm()->contacts()->basicApi()->update($idcontact, $simplePublicObjectInput);
             }
 
-            sleep(1);
+            sleep(2);
         }
 
         print_r($globalcount);
