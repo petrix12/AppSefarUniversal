@@ -148,6 +148,9 @@
             <tr>
                 <td class="">
                     {{ $servicio->nombre }}
+                    @if ($servicio->tipov==1)
+                        <b> (Vinculaciones)</b>
+                    @endif
                 </td>
                 <td class="">
                     {{ $servicio->id_hubspot }}

@@ -307,7 +307,7 @@ class ClienteController extends Controller
                 }
             } elseif ( auth()->user()->servicio == "Gestión Documental" ) {
                 $desc = $hss[0]["nombre"];
-            } elseif (auth()->user()->servicio == 'Constitución de Empresa' || auth()->user()->servicio == 'Representante Fiscal' || auth()->user()->servicio == 'Codigo  Fiscal' || auth()->user()->servicio == 'Apertura de cuenta' || auth()->user()->servicio == 'Trimestre contable' || auth()->user()->servicio == 'Cooperativa 10 años' || auth()->user()->servicio == 'Cooperativa 5 años' || auth()->user()->servicio == 'Participaciones sociales') {
+            } elseif ($servicio[0]['tipov'] == 1) {
                 $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
             } else {
                 $desc = "Inicia tu Proceso: " . $hss[0]["nombre"];
@@ -419,11 +419,9 @@ class ClienteController extends Controller
                     $setto2 = 1;
 
                     foreach ($compras as $key => $compra) {
-                        if ($compra["servicio_hs_id"] == 'Recurso de Alzada' || $compra["servicio_hs_id"] == 'Gestión Documental' || $compra["servicio_hs_id"] == 'Constitución de Empresa' || $compra["servicio_hs_id"] == 'Representante Fiscal' || $compra["servicio_hs_id"] == 'Codigo  Fiscal' || $compra["servicio_hs_id"] == 'Apertura de cuenta' || $compra["servicio_hs_id"] == 'Trimestre contable' || $compra["servicio_hs_id"] == 'Cooperativa 10 años' || $compra["servicio_hs_id"] == 'Cooperativa 5 años' || $compra["servicio_hs_id"] == 'Participaciones sociales')
-                        {
-                                                  
+                        $servicio = Servicio::where('id_hubspot', $compra["servicio_hs_id"])->get();
+                        if ($compra["servicio_hs_id"] == 'Recurso de Alzada' || $compra["servicio_hs_id"] == 'Gestión Documental' || $servicio[0]['tipov']==0){                     
                             $setto2 = 1;
-                            
                         } else {
                             $setto2 = 0;
                             break;
@@ -692,11 +690,9 @@ class ClienteController extends Controller
                 $setto2 = 1;
 
                 foreach ($compras as $key => $compra) {
-                    if ($compra["servicio_hs_id"] == 'Recurso de Alzada' || $compra["servicio_hs_id"] == 'Gestión Documental' || $compra["servicio_hs_id"] == 'Constitución de Empresa' || $compra["servicio_hs_id"] == 'Representante Fiscal' || $compra["servicio_hs_id"] == 'Codigo  Fiscal' || $compra["servicio_hs_id"] == 'Apertura de cuenta' || $compra["servicio_hs_id"] == 'Trimestre contable' || $compra["servicio_hs_id"] == 'Cooperativa 10 años' || $compra["servicio_hs_id"] == 'Cooperativa 5 años'  || $compra["servicio_hs_id"] == 'Participaciones sociales')
-                    {
-                                              
+                    $servicio = Servicio::where('id_hubspot', $compra["servicio_hs_id"])->get();
+                    if ($compra["servicio_hs_id"] == 'Recurso de Alzada' || $compra["servicio_hs_id"] == 'Gestión Documental' || $servicio[0]['tipov']==0){
                         $setto2 = 1;
-                        
                     } else {
                         $setto2 = 0;
                         break;
@@ -873,7 +869,7 @@ class ClienteController extends Controller
                     }
                 } elseif ( $userdata[0]["servicio"] == "Gestión Documental" ) {
                     $desc = $hss[0]["nombre"];
-                } elseif ($userdata[0]["servicio"] == 'Constitución de Empresa' || $userdata[0]["servicio"] == 'Representante Fiscal' || $userdata[0]["servicio"] == 'Codigo  Fiscal' || $userdata[0]["servicio"] == 'Apertura de cuenta' || $userdata[0]["servicio"] == 'Trimestre contable' || $userdata[0]["servicio"] == 'Cooperativa 10 años' || $userdata[0]["servicio"] == 'Cooperativa 5 años' || $userdata[0]["servicio"] == 'Participaciones sociales') {
+                } elseif ($servicio[0]['tipov']==1) {
                     $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
                 } else {
                     $desc = "Inicia tu Proceso: " . $hss[0]["nombre"];
@@ -898,6 +894,15 @@ class ClienteController extends Controller
         } else {
             return redirect()->route( 'register' )->with( ['request' => $request->all()] );
         }
+    }
+
+    public function vinculaciones() {
+        $comprasexistentes = DB::table('compras')->where('id_user', auth()->user()->id)->get();
+        return view('cliente.vinculaciones', compact('comprasexistentes'));
+    }
+
+    public function regvinculaciones() {
+        
     }
 
     public function fixPayDataHubspot()

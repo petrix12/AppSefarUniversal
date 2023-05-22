@@ -43,7 +43,8 @@ class ServicioController extends Controller
             Servicio::create([
                 'id_hubspot' => trim($request->id_hubspot),
                 'nombre' => trim($request->nombre),
-                'precio' => trim($request->precio)
+                'precio' => trim($request->precio),
+                'tipov' => trim($request->tipov)
             ]);
         } catch(\Illuminate\Database\QueryException $ex){ 
             Alert::error('Error', 'El servicio ya existe');
@@ -92,6 +93,7 @@ class ServicioController extends Controller
         $servicio->id_hubspot = trim($request->id_hubspot);
         $servicio->nombre = trim($request->nombre);
         $servicio->precio = trim($request->precio);
+        $servicio->tipov = trim($request->tipov);
 
         try { 
             $servicio->save();

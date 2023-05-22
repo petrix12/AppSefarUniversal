@@ -12,6 +12,7 @@ class Servicio extends Model
     protected $fillable = [
         'id_hubspot',
         'nombre',
-        'precio'
+        'precio',
+        'tipov'
     ];
 }

@@ -73,6 +73,20 @@
                                                         @enderror
                                                     </div>
                                                 </div>
+
+                                                <div class="px-1 py-2 m-2 flex-1">    {{-- tipov --}}
+                                                    <div>
+                                                        <label for="expire" class="block text-sm font-medium text-gray-700">¿Es servicio de Vinculación?</label>
+                                                        <select class="form-control" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" name="tipov" required>
+                                                            <option value="" disabled selected>Seleccione una opción</option>
+                                                            <option value="1" {{ old('tipov', $servicio->tipov) == 1 ? 'selected' : '' }}>Si</option>
+                                                            <option value="0" {{ old('tipov', $servicio->tipov) == 0 ? 'selected' : '' }}>No</option>
+                                                        </select>
+                                                        @error('tipov')
+                                                            <small style="color:red">*{{ $message }}*</small>
+                                                        @enderror
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                         <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">

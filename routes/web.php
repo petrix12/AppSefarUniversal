@@ -121,6 +121,10 @@ Route::post('/listLatestStripeData/getStripeAJAX', [StripeController::class, 'ge
 Route::get('/mondayreportes', [MondayController::class, 'mondayreportes'])->name('mondayreportes')
         ->middleware('can:crud.mondayreportes.index');
 
+//Rutas para servicios de vinculaciones
+Route::get('/vinculaciones', [ClienteController::class, 'vinculaciones'])->name('cliente.vinculaciones');
+
+//rutas para firma de contrato
 Route::get('/contrato', [ClienteController::class, 'contrato'])->name('cliente.contrato');
 Route::get('/checkContrato', [ClienteController::class, 'checkContrato'])->name('checkContrato');
 
