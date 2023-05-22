@@ -897,12 +897,22 @@ class ClienteController extends Controller
     }
 
     public function vinculaciones() {
-        $comprasexistentes = DB::table('compras')->where('id_user', auth()->user()->id)->get();
-        return view('cliente.vinculaciones', compact('comprasexistentes'));
+        $servicios = Servicio::where('tipov', 1)->get();
+        $compras = DB::table('compras')->where('id_user', auth()->user()->id)->get();
+        return view('clientes.vinculaciones', compact('compras', 'servicios'));
     }
 
-    public function regvinculaciones() {
-        
+    public function regvinculaciones(Request $request) {
+        $servicios = Servicio::where('id_hubspot', $request->id)->get();
+        $desc = "Servicios para Vinculaciones: " . $servicios[0]["nombre"];
+        Compras::create([
+            'id_user' => auth()->user()->id,
+            'servicio_hs_id' => $servicios[0]["id_hubspot"],
+            'descripcion' => $desc,
+            'pagado' => 0,
+            'monto' => $servicios[0]["precio"]
+        ]);
+        return redirect()->route('clientes.pay');
     }
 
     public function fixPayDataHubspot()

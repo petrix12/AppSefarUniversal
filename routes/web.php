@@ -122,10 +122,11 @@ Route::get('/mondayreportes', [MondayController::class, 'mondayreportes'])->name
         ->middleware('can:crud.mondayreportes.index');
 
 //Rutas para servicios de vinculaciones
-Route::get('/vinculaciones', [ClienteController::class, 'vinculaciones'])->name('cliente.vinculaciones');
+Route::get('/vinculaciones', [ClienteController::class, 'vinculaciones'])->name('cliente.vinculaciones')->middleware('can:cliente');
+Route::get('/vinculaciones/{id}', [ClienteController::class, 'regvinculaciones'])->name('cliente.regvinculaciones');
 
 //rutas para firma de contrato
-Route::get('/contrato', [ClienteController::class, 'contrato'])->name('cliente.contrato');
+Route::get('/contrato', [ClienteController::class, 'contrato'])->name('cliente.contrato')->middleware('can:cliente');
 Route::get('/checkContrato', [ClienteController::class, 'checkContrato'])->name('checkContrato');
 
 //Verificarcupon
