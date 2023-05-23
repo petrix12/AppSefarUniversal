@@ -69,11 +69,11 @@ class ClienteController extends Controller
     public function salir(Request $request){
         // Envía un correo al cliente que ha culminado la carga
         $mail_cliente = new CargaCliente(Auth::user());
-        Mail::to(Auth::user()->email)->send($mail_cliente);
+        \Illuminate\Support\Facades\Mail::to(Auth::user()->email)->send($mail_cliente);
 
         // Envía un correo al equipo de Sefar
         $mail_sefar = new CargaSefar(Auth::user());
-        Mail::to([
+        \Illuminate\Support\Facades\Mail::to([
             'pedro.bazo@sefarvzla.com',
             'gerenciait@sefarvzla.com',
             'sistemasccs@sefarvzla.com',
