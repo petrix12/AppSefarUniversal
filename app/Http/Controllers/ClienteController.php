@@ -10,6 +10,7 @@ use App\Models\Servicio;
 use App\Models\Compras;
 use App\Models\HsReferido;
 use App\Models\Factura;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Stripe;
