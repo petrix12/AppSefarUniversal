@@ -32,7 +32,7 @@ use HubSpot\Client\Crm\Contacts\ApiException;
 use HubSpot\Client\Crm\Contacts\Model\SimplePublicObjectInput;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Mail;
-
+use Illuminate\Support\Facades\Mail as Mail2;
 
 class ClienteController extends Controller
 {
@@ -69,11 +69,11 @@ class ClienteController extends Controller
     public function salir(Request $request){
         // Envía un correo al cliente que ha culminado la carga
         $mail_cliente = new CargaCliente(Auth::user());
-        \Illuminate\Support\Facades\Mail::to(Auth::user()->email)->send($mail_cliente);
+        Mail2::to(Auth::user()->email)->send($mail_cliente);
 
         // Envía un correo al equipo de Sefar
         $mail_sefar = new CargaSefar(Auth::user());
-        \Illuminate\Support\Facades\Mail::to([
+        Mail2::to([
             'pedro.bazo@sefarvzla.com',
             'gerenciait@sefarvzla.com',
             'sistemasccs@sefarvzla.com',
