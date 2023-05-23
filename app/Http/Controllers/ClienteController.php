@@ -12,7 +12,6 @@ use App\Models\HsReferido;
 use App\Models\Factura;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
 use Stripe;
 use Illuminate\Support\Facades\DB;
 use Stripe\Exception\CardException;
@@ -31,6 +30,7 @@ use HubSpot\Factory;
 use HubSpot\Client\Crm\Contacts\ApiException;
 use HubSpot\Client\Crm\Contacts\Model\SimplePublicObjectInput;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Mail;
 
 
 class ClienteController extends Controller
@@ -503,6 +503,36 @@ class ClienteController extends Controller
                             sleep(2);
                         }
                     }
+
+                    $user = User::findOrFail(auth()->user()->id);
+                    $pdfContent = createPDF($hash_factura);
+
+                    /*
+                    Mail::send('mail.comprobante-mail', ['user' => $user], function ($m) use ($pdfContent, $request) { 
+                        $m->to($request->email)->subject('SEFAR UNIVERSAL - Hemos procesado su pago satisfactoriamente')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
+                    });
+                    */
+
+                    Mail::send('mail.comprobante-mail-intel', ['user' => $user], function ($m) use ($pdfContent, $request, $user) { 
+                        $m->to([
+                            'pedro.bazo@sefarvzla.com',
+                            'gerenciait@sefarvzla.com',
+                            'sistemasccs@sefarvzla.com',
+                            'automatizacion@sefarvzla.com',
+                            'sistemascol@sefarvzla.com',
+                            /* 'egonzalez@sefarvzla.com', */
+                            'analisisgenealogico@sefarvzla.com',
+                            'asistentedeproduccion@sefarvzla.com',
+                            /* 'arosales@sefarvzla.com', */
+                            /* 'czanella@sefarvzla.com', */
+                            'organizacionrrhh@sefarvzla.com',
+                            'gcuriel@sefarvzla.com',
+                            'organizacionrrhh@sefarvzla.com',
+                            '20053496@bcc.hubspot.com'
+                        ])->subject(strtoupper($user->name) . ' (ID: ' . 
+                            strtoupper($user->passport) . ') HA REALIZADO UN PAGO EN App Sefar Universal')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
+                    });
+
                     return response()->json([
                         'status' => "true"
                     ]);
