@@ -30,6 +30,8 @@ use HubSpot\Client\Crm\Associations\Model\PublicObjectId;
 use HubSpot\Factory;
 use HubSpot\Client\Crm\Contacts\ApiException;
 use HubSpot\Client\Crm\Contacts\Model\SimplePublicObjectInput;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 
 class ClienteController extends Controller
 {
@@ -772,6 +774,34 @@ class ClienteController extends Controller
                     }
 
                 }
+                $user = User::findOrFail(auth()->user()->id);
+                $pdfContent = createPDF($hash_factura);
+
+                /*
+                Mail::send('mail.comprobante-mail', ['user' => $user], function ($m) use ($pdfContent, $request) { 
+                    $m->to($request->email)->subject('SEFAR UNIVERSAL - Hemos procesado su pago satisfactoriamente')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
+                });
+                */
+
+                Mail::send('mail.comprobante-mail-intel', ['user' => $user], function ($m) use ($pdfContent, $request, $user) { 
+                    $m->to([
+                        'pedro.bazo@sefarvzla.com',
+                        'gerenciait@sefarvzla.com',
+                        'sistemasccs@sefarvzla.com',
+                        'automatizacion@sefarvzla.com',
+                        'sistemascol@sefarvzla.com',
+                        /* 'egonzalez@sefarvzla.com', */
+                        'analisisgenealogico@sefarvzla.com',
+                        'asistentedeproduccion@sefarvzla.com',
+                        /* 'arosales@sefarvzla.com', */
+                        /* 'czanella@sefarvzla.com', */
+                        'organizacionrrhh@sefarvzla.com',
+                        'gcuriel@sefarvzla.com',
+                        'organizacionrrhh@sefarvzla.com',
+                        '20053496@bcc.hubspot.com'
+                    ])->subject(strtoupper($user->name) . ' (ID: ' . 
+                        strtoupper($user->passport) . ') HA REALIZADO UN PAGO EN App Sefar Universal')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
+                });
                 return redirect()->route('gracias')->with("status","exito");
             } else {
                 return redirect()->route('clientes.pay')->with("status","error6");
@@ -998,4 +1028,15 @@ function generate_string($input, $strength = 16) {
     }
  
     return $random_string;
+}
+
+function createPDF($dato){
+    $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND a.hash_factura='$dato';";
+    $datos_factura = json_decode(json_encode(DB::select(DB::raw($query))),true);
+
+    $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
+
+    $pdf = PDF::loadView('crud.comprobantes.pdf', compact('datos_factura', 'productos'));
+
+    return $pdf->output();
 }
