@@ -510,11 +510,11 @@ class ClienteController extends Controller
                     $user = User::findOrFail(auth()->user()->id);
                     $pdfContent = createPDF($hash_factura);
 
-                    /*
+                    
                     Mail::send('mail.comprobante-mail', ['user' => $user], function ($m) use ($pdfContent, $request) { 
                         $m->to($request->email)->subject('SEFAR UNIVERSAL - Hemos procesado su pago satisfactoriamente')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
                     });
-                    */
+                    
 
                     Mail::send('mail.comprobante-mail-intel', ['user' => $user], function ($m) use ($pdfContent, $request, $user) { 
                         $m->to([
@@ -810,11 +810,11 @@ class ClienteController extends Controller
                 $user = User::findOrFail(auth()->user()->id);
                 $pdfContent = createPDF($hash_factura);
 
-                /*
+                
                 Mail::send('mail.comprobante-mail', ['user' => $user], function ($m) use ($pdfContent, $request) { 
                     $m->to($request->email)->subject('SEFAR UNIVERSAL - Hemos procesado su pago satisfactoriamente')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
                 });
-                */
+                
 
                 Mail::send('mail.comprobante-mail-intel', ['user' => $user], function ($m) use ($pdfContent, $request, $user) { 
                     $m->to([
