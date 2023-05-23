@@ -74,8 +74,10 @@ class ClienteController extends Controller
         $mail_sefar = new CargaSefar(Auth::user());
         Mail::to([
             'pedro.bazo@sefarvzla.com',
-            /* 'czanella@sefarvzla.com', */
             'gerenciait@sefarvzla.com',
+            'sistemasccs@sefarvzla.com',
+            'automatizacion@sefarvzla.com',
+            'sistemascol@sefarvzla.com',
             /* 'egonzalez@sefarvzla.com', */
             'analisisgenealogico@sefarvzla.com',
             /* 'arosales@sefarvzla.com', */
