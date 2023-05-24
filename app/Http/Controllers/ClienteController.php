@@ -512,7 +512,7 @@ class ClienteController extends Controller
 
                     Mail::send('mail.comprobante-mail', ['user' => $user], function ($m) use ($pdfContent, $request, $user) { 
                         $m->to([
-                            auth()->user->email
+                            auth()->user()->email
                         ])->subject('SEFAR UNIVERSAL - Hemos procesado su pago satisfactoriamente')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
                     });
 
@@ -812,7 +812,7 @@ class ClienteController extends Controller
 
                 Mail::send('mail.comprobante-mail', ['user' => $user], function ($m) use ($pdfContent, $request, $user) { 
                     $m->to([
-                        auth()->user->email
+                        auth()->user()->email
                     ])->subject('SEFAR UNIVERSAL - Hemos procesado su pago satisfactoriamente')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
                 });
 
