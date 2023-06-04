@@ -85,6 +85,7 @@ class CreateNewUser implements CreatesNewUsers
             'vinculo_antepasados' => $input['vinculo_antepasados'],
             'estado_de_datos_y_documentos_de_los_antepasados' => $input['estado_de_datos_y_documentos_de_los_antepasados'],
             'contrato' => 0,
+            'referido' => $input['referido'],
         ]);
         if($rol == 'cliente'){
             //$user->email_verified_at = date('Y-m-d H:i:s');
