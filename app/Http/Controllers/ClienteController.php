@@ -531,7 +531,8 @@ class ClienteController extends Controller
                             'organizacionrrhh@sefarvzla.com',
                             'gcuriel@sefarvzla.com',
                             'organizacionrrhh@sefarvzla.com',
-                            '20053496@bcc.hubspot.com'
+                            '20053496@bcc.hubspot.com',
+                            'contabilidad@sefarvzla.com'
                         ])->subject(strtoupper($user->name) . ' (ID: ' . 
                             strtoupper($user->passport) . ') HA REALIZADO UN PAGO EN App Sefar Universal')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
                     });
@@ -831,7 +832,8 @@ class ClienteController extends Controller
                         'organizacionrrhh@sefarvzla.com',
                         'gcuriel@sefarvzla.com',
                         'organizacionrrhh@sefarvzla.com',
-                        '20053496@bcc.hubspot.com'
+                        '20053496@bcc.hubspot.com',
+                        'contabilidad@sefarvzla.com'
                     ])->subject(strtoupper($user->name) . ' (ID: ' . 
                         strtoupper($user->passport) . ') HA REALIZADO UN PAGO EN App Sefar Universal')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
                 });
