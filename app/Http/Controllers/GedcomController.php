@@ -80,60 +80,96 @@ function generateGedcom($personas)
             $gedcom .= "1 SEX ".$persona['Sexo']."\n";
         }
 
+        $nacimiento = "1 BIRT\n";
+
         if (!is_null($persona['AnhoNac'])){
             if (is_null($persona['MesNac'])){
-                $gedcom .= "1 BIRT\n";
-                $gedcom .= "2 DATE ".$persona['AnhoNac']."\n";
+                $nacimiento .= "2 DATE ".$persona['AnhoNac']."\n";
             } else {
                 if (is_null($persona['DiaNac'])){
-                    $gedcom .= "1 BIRT\n";
                     $fecha_original = $persona['AnhoNac']."-".$persona['MesNac']."-01";
                     $fecha_convertida = date("M Y", strtotime($fecha_original));
-                    $gedcom .= "2 DATE ".$fecha_convertida."\n";
+                    $nacimiento .= "2 DATE ".$fecha_convertida."\n";
                 } else {
-                    $gedcom .= "1 BIRT\n";
                     $fecha_original = $persona['AnhoNac']."-".$persona['MesNac']."-".$persona['DiaNac'];
                     $fecha_convertida = date("j M Y", strtotime($fecha_original));
-                    $gedcom .= "2 DATE ".$fecha_convertida."\n";
+                    $nacimiento .= "2 DATE ".$fecha_convertida."\n";
                 }
             }
+        }
+
+        $cadena_con_espacios = $persona['PaisNac'];
+        $persona['PaisNac'] = preg_replace('/\s+/', ' ', trim($cadena_con_espacios));
+
+        if (strlen($persona['PaisNac']) === 0) {
+            $persona['PaisNac'] = null;
         }
 
         if (!is_null($persona['PaisNac']) && $persona['PaisNac']!=""){
-            $gedcom .= "2 PLAC ";
-            if (!is_null($persona['LugarNac'])){
-                $gedcom .= $persona['LugarNac'].", ";
+            $nacimiento .= "2 PLAC ";
+
+            $cadena_con_espacios = $persona['LugarNac'];
+            $persona['LugarNac'] = preg_replace('/\s+/', ' ', trim($cadena_con_espacios));
+
+            if (strlen($persona['LugarNac']) === 0) {
+                $persona['LugarNac'] = null;
             }
-            $gedcom .= $persona['PaisNac'];
-            $gedcom .= "\n";
+
+            if (!is_null($persona['LugarNac'])){
+                $nacimiento .= $persona['LugarNac'].", ";
+            }
+            $nacimiento .= $persona['PaisNac'];
+            $nacimiento .= "\n";
         }
+
+        if ($nacimiento != "1 BIRT\n"){
+            $gedcom .= $nacimiento;
+        }
+
+        $defuncion = "1 DEAT\n";
 
         if (!is_null($persona['AnhoDef'])){
             if (is_null($persona['MesDef'])){
-                $gedcom .= "1 DEAT\n";
-                $gedcom .= "2 DATE ".$persona['AnhoDef']."\n";
+                $defuncion .= "2 DATE ".$persona['AnhoDef']."\n";
             } else {
                 if (is_null($persona['DiaDef'])){
-                    $gedcom .= "1 DEAT\n";
                     $fecha_original = $persona['AnhoDef']."-".$persona['MesDef']."-01";
                     $fecha_convertida = date("M Y", strtotime($fecha_original));
-                    $gedcom .= "2 DATE ".$fecha_convertida."\n";
+                    $defuncion .= "2 DATE ".$fecha_convertida."\n";
                 } else {
-                    $gedcom .= "1 DEAT\n";
                     $fecha_original = $persona['AnhoDef']."-".$persona['MesDef']."-".$persona['DiaDef'];
                     $fecha_convertida = date("j M Y", strtotime($fecha_original));
-                    $gedcom .= "2 DATE ".$fecha_convertida."\n";
+                    $defuncion .= "2 DATE ".$fecha_convertida."\n";
                 }
             }
         }
 
+        $cadena_con_espacios = $persona['PaisDef'];
+        $persona['PaisDef'] = preg_replace('/\s+/', ' ', trim($cadena_con_espacios));
+
+        if (strlen($persona['PaisDef']) === 0) {
+            $persona['PaisDef'] = null;
+        }
+
         if (!is_null($persona['PaisDef']) && $persona['PaisDef']!=""){
-            $gedcom .= "2 PLAC ";
+            $defuncion .= "2 PLAC ";
+
+            $cadena_con_espacios = $persona['LugarDef'];
+            $persona['LugarDef'] = preg_replace('/\s+/', ' ', trim($cadena_con_espacios));
+
+            if (strlen($persona['LugarDef']) === 0) {
+                $persona['LugarDef'] = null;
+            }
+
             if (!is_null($persona['LugarDef'])){
                 $gedcom .= $persona['LugarDef'].", ";
             }
-            $gedcom .= $persona['PaisDef'];
-            $gedcom .= "\n";
+            $defuncion .= $persona['PaisDef'];
+            $defuncion .= "\n";
+        }
+
+        if ($defuncion != "1 DEAT\n"){
+            $gedcom .= $defuncion;
         }
 
         $gedcom .= "1 FAMC @F".$persona['IDPersona']."@\n";
@@ -157,6 +193,8 @@ function generateGedcom($personas)
 
         $gedcom .= "1 CHIL @I".$persona['IDPersona']."@\n";
 
+        $matrimonio = "1 MARR\n";
+
         foreach ($personas as $buscarmadre) {
             if ($persona['IDMadre']==$buscarmadre['IDPersona']){
                 $infopadre = $infomadre;
@@ -174,59 +212,89 @@ function generateGedcom($personas)
         if (!is_null($infomadre)) {
             if(!is_null($infomadre["AnhoMatr"])){
                 if (is_null($infomadre['MesMatr'])){
-                    $gedcom .= "1 MARR\n";
-                    $gedcom .= "2 DATE ".$infomadre['AnhoMatr']."\n";
+                    $matrimonio .= "2 DATE ".$infomadre['AnhoMatr']."\n";
                 } else {
                     if (is_null($infomadre['DiaMatr'])){
-                        $gedcom .= "1 MARR\n";
                         $fecha_original = $infomadre['AnhoMatr']."-".$infomadre['MesMatr']."-01";
                         $fecha_convertida = date("M Y", strtotime($fecha_original));
-                        $gedcom .= "2 DATE ".$fecha_convertida."\n";
+                        $matrimonio .= "2 DATE ".$fecha_convertida."\n";
                     } else {
-                        $gedcom .= "1 MARR\n";
                         $fecha_original = $infomadre['AnhoMatr']."-".$infomadre['MesMatr']."-".$infomadre['DiaMatr'];
                         $fecha_convertida = date("j M Y", strtotime($fecha_original));
-                        $gedcom .= "2 DATE ".$fecha_convertida."\n";
+                        $matrimonio .= "2 DATE ".$fecha_convertida."\n";
                     }
                 }
             }
+
+            $cadena_con_espacios = $infomadre['PaisMatr'];
+            $infomadre['PaisMatr'] = preg_replace('/\s+/', ' ', trim($cadena_con_espacios));
+
+            if (strlen($infomadre['PaisMatr']) === 0) {
+                $infomadre['PaisMatr'] = null;
+            }
+
             if (!is_null($infomadre['PaisMatr']) && $infomadre['PaisMatr']!=""){
-                $gedcom .= "2 PLAC ";
-                if (!is_null($infomadre['LugarMatr'])){
-                    $gedcom .= $infomadre['LugarMatr'].", ";
+                $matrimonio .= "2 PLAC ";
+
+                $cadena_con_espacios = $infomadre['LugarMatr'];
+                $infomadre['LugarMatr'] = preg_replace('/\s+/', ' ', trim($cadena_con_espacios));
+
+                if (strlen($infomadre['LugarMatr']) === 0) {
+                    $infomadre['LugarMatr'] = null;
                 }
-                $gedcom .= $infomadre['PaisMatr'];
-                $gedcom .= "\n";
+
+                if (!is_null($infomadre['LugarMatr'])){
+                    $matrimonio .= $infomadre['LugarMatr'].", ";
+                }
+                $matrimonio .= $infomadre['PaisMatr'];
+                $matrimonio .= "\n";
             }
         } else {
             if (!is_null($infopadre)) {
                 if(!is_null($infopadre["AnhoMatr"])){
                     if (is_null($infopadre['MesMatr'])){
-                        $gedcom .= "1 MARR\n";
-                        $gedcom .= "2 DATE ".$infopadre['AnhoMatr']."\n";
+                        $matrimonio .= "2 DATE ".$infopadre['AnhoMatr']."\n";
                     } else {
                         if (is_null($infopadre['DiaMatr'])){
-                            $gedcom .= "1 MARR\n";
                             $fecha_original = $infopadre['AnhoMatr']."-".$infopadre['MesMatr']."-01";
                             $fecha_convertida = date("M Y", strtotime($fecha_original));
-                            $gedcom .= "2 DATE ".$fecha_convertida."\n";
+                            $matrimonio .= "2 DATE ".$fecha_convertida."\n";
                         } else {
-                            $gedcom .= "1 MARR\n";
                             $fecha_original = $infopadre['AnhoMatr']."-".$infopadre['MesMatr']."-".$infopadre['DiaMatr'];
                             $fecha_convertida = date("j M Y", strtotime($fecha_original));
-                            $gedcom .= "2 DATE ".$fecha_convertida."\n";
+                            $matrimonio .= "2 DATE ".$fecha_convertida."\n";
                         }
                     }
                 }
+
+                $cadena_con_espacios = $infopadre['PaisMatr'];
+                $infopadre['PaisMatr'] = preg_replace('/\s+/', ' ', trim($cadena_con_espacios));
+
+                if (strlen($infopadre['PaisMatr']) === 0) {
+                    $infopadre['PaisMatr'] = null;
+                }
+
                 if (!is_null($infopadre['PaisMatr']) && $infopadre['PaisMatr']!=""){
-                    $gedcom .= "2 PLAC ";
-                    if (!is_null($infopadre['LugarMatr'])){
-                        $gedcom .= $infopadre['LugarMatr'].", ";
+                    $matrimonio .= "2 PLAC ";
+
+                    $cadena_con_espacios = $infopadre['LugarMatr'];
+                    $infopadre['LugarMatr'] = preg_replace('/\s+/', ' ', trim($cadena_con_espacios));
+
+                    if (strlen($infopadre['LugarMatr']) === 0) {
+                        $infopadre['LugarMatr'] = null;
                     }
-                    $gedcom .= $infopadre['PaisMatr'];
-                    $gedcom .= "\n";
+
+                    if (!is_null($infopadre['LugarMatr'])){
+                        $matrimonio .= $infopadre['LugarMatr'].", ";
+                    }
+                    $matrimonio .= $infopadre['PaisMatr'];
+                    $matrimonio .= "\n";
                 }
             }
+        }
+
+        if ($matrimonio != "1 MARR\n"){
+            $gedcom .= $matrimonio;
         }
     }
 
