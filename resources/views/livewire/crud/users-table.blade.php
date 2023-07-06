@@ -50,7 +50,7 @@
                         @endif
                     </div>
                     @if ($users->count())
-                    <table class="min-w-full divide-y divide-gray-200">
+                    <table class="min-w-full divide-y divide-gray-200" style="max-width: 100%;">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th style="padding: 10px 15px;">
