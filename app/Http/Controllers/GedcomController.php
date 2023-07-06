@@ -99,7 +99,7 @@ function generateGedcom($personas)
             }
         }
 
-        if (!is_null($persona['PaisNac'])){
+        if (!is_null($persona['PaisNac']) && $persona['PaisNac']!=""){
             $gedcom .= "2 PLAC ";
             if (!is_null($persona['LugarNac'])){
                 $gedcom .= $persona['LugarNac'].", ";
@@ -127,7 +127,7 @@ function generateGedcom($personas)
             }
         }
 
-        if (!is_null($persona['PaisDef'])){
+        if (!is_null($persona['PaisDef']) && $persona['PaisDef']!=""){
             $gedcom .= "2 PLAC ";
             if (!is_null($persona['LugarDef'])){
                 $gedcom .= $persona['LugarDef'].", ";
@@ -190,7 +190,7 @@ function generateGedcom($personas)
                     }
                 }
             }
-            if (!is_null($infomadre['PaisMatr'])){
+            if (!is_null($infomadre['PaisMatr']) && $infomadre['PaisMatr']!=""){
                 $gedcom .= "2 PLAC ";
                 if (!is_null($infomadre['LugarMatr'])){
                     $gedcom .= $infomadre['LugarMatr'].", ";
@@ -218,7 +218,7 @@ function generateGedcom($personas)
                         }
                     }
                 }
-                if (!is_null($infopadre['PaisMatr'])){
+                if (!is_null($infopadre['PaisMatr']) && $infopadre['PaisMatr']!=""){
                     $gedcom .= "2 PLAC ";
                     if (!is_null($infopadre['LugarMatr'])){
                         $gedcom .= $infopadre['LugarMatr'].", ";
