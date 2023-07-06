@@ -34,10 +34,10 @@
 									<small>Total recaudado en el mes de {{ $meses[ intval(date('m'))-1 ] }}: {{$total}}€</small>
 								</div>
 								<div style="font-size: 24px;">
-									<small>Saldo disponible en Stripe: {{$balance["available"][0]["amount"]}}€</small>
+									<small>Saldo disponible en Stripe: {{ ($balance["available"][0]["amount"]/100) }}$</small>
 								</div>
 								<div style="font-size: 24px;">
-									<small>Saldo pendiente en Stripe: {{$balance["pending"][0]["amount"]}}€</small>
+									<small>Saldo pendiente en Stripe: {{ ($balance["pending"][0]["amount"]/100) }}$</small>
 								</div>
 		                    </h2>
 		                    <div class="mt-8 flex lg:mt-0 lg:flex-shrink-0">

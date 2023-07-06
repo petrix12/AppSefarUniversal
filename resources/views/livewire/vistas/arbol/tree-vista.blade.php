@@ -33,7 +33,7 @@
                     <div class="justify-center">
                         <label for="Familiares" class="px-3 block text-sm font-medium text-gray-700"
                             title="Familiares en el proceso">Familiares</label>
-                        <select wire:model="IDFamiliar" style="width:450px" name="Familiares"
+                        <select wire:model="IDFamiliar" style="min-width:350px; max-width:450px" name="Familiares"
                             class="w-44 mt-1 block py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             <option value="{{ null }}">-</option>
                             @foreach ($families as $family)
@@ -51,6 +51,26 @@
                                 </div>
                             </div>
                         @endif
+                    </div>
+                </div>
+            @endcan
+            <style>
+                .downloadgedcom{
+                    background-color: rgb(22,43,27);
+                }
+                .downloadgedcom:hover{
+                    background-color: rgb(247,176,52);
+                }
+            </style>
+            @can('descargarGedcom')
+                <div class="px-4 py-2 m-2">
+                    {{-- FAMILIARES --}}
+                    <div class="justify-center">
+                        <label for="downloadgedcom" class="px-3 block text-sm font-medium text-gray-700"
+                            title="Descargar Gedcom">Descargar Gedcom</label>
+                        <a href="{{route('getGedcomCliente', $agclientes[0])}}" class="downloadgedcom inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <b>Descargar Gedcom</b>
+                        </a>
                     </div>
                 </div>
             @endcan

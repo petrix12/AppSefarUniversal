@@ -29,6 +29,7 @@ use App\Http\Controllers\HsReferidoController;
 use App\Http\Controllers\MondayController;
 use App\Http\Controllers\FacturaController;
 use App\Http\Controllers\CorreoController;
+use App\Http\Controllers\GedcomController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -80,6 +81,10 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
             ->middleware('can:crud.comprobantes.index');
 });
 
+//Ruta Comprobantes de Pago
+Route::get('/downloadTree/{id}', [GedcomController::class, 'getGedcomCliente'])->name('getGedcomCliente');
+
+//Ruta Comprobantes de Pago
 Route::get('/viewcomprobante/{id}', [FacturaController::class, 'viewcomprobante'])->name('viewcomprobante');
 
 //panel administrativo status
