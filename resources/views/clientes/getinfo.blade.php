@@ -9,6 +9,8 @@
 
 @section('content')
 
+    <div style="position: fixed; top: 0; left: 0; background-color:rgba(0, 0, 0, 0.5); z-index: 6000;" id="ajaxload"></div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.2/jquery.min.js" integrity="sha512-tWHlutFnuG0C6nQRlpvrEhE4QpkG1nn2MOUMWmUeRePl4e3Aki0VB6W1v3oLjFtd0hVOtRQ9PHpSfN6u6/QXkQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script charset="utf-8" type="text/javascript" src="//js.hsforms.net/forms/embed/v2.js"></script>
 
@@ -83,43 +85,49 @@
                 formId: "ae73e323-14a8-40f4-a20c-4a33a30aabde",
                 onFormReady: function($form){
                     setTimeout( function() {
+                        $("#ajaxload").hide();
                         var antepasados = <?php echo (auth()->user()->antepasados); ?>;
                         var servicio = "<?php echo (auth()->user()->servicio); ?>";
-                        $('input[name="firstname"]').val("{{ auth()->user()->nombres }}").change();
-                        $('input[name="lastname"]').val("{{ auth()->user()->apellidos }}").change();
-                        $('.hs-fieldtype-intl-phone.hs-input .hs-input').val("{{ auth()->user()->phone }}").change();
-                        $('input[name="email"]').val("{{ auth()->user()->email }}").change();
-                        $('input[name="numero_de_pasaporte"]').val("{{ auth()->user()->passport }}").change();
-                        $('input[name="pais_de_nacimiento"]').val("{{ auth()->user()->pais_de_nacimiento }}").change();
-                        $('select[name="nacionalidad_solicitada"]').val("{{ auth()->user()->servicio }}").change();
+                        $('#hs-form-iframe-0').contents().find('input[name="firstname"]').val("{{ auth()->user()->nombres }}").change();
+                        $('#hs-form-iframe-0').contents().find('input[name="lastname"]').val("{{ auth()->user()->apellidos }}").change();
+                        $('#hs-form-iframe-0').contents().find('input[name="phone"]').val("{{ auth()->user()->phone }}").change();
+                        $('#hs-form-iframe-0').contents().find('input[name="email"]').val("{{ auth()->user()->email }}").change();
+                        $('#hs-form-iframe-0').contents().find('input[name="numero_de_pasaporte"]').val("{{ auth()->user()->passport }}").change();
+                        $('#hs-form-iframe-0').contents().find('input[name="pais_de_nacimiento"]').val("{{ auth()->user()->pais_de_nacimiento }}").change();
+                        $('#hs-form-iframe-0').contents().find('select[name="nacionalidad_solicitada"]').val("{{ auth()->user()->servicio }}").change();
                         if (servicio == 'Italiana'){
                             if (antepasados == 2){
-                                $('select[name="tiene_antepasados_italianos"]').val("Si").change();
+                                $('#hs-form-iframe-0').contents().find('select[name="tiene_antepasados_italianos"]').val("Si").change();
+                                $('#hs-form-iframe-0').contents().find('input[name="tiene_antepasados_italianos"]').val("Si").change();
 
-                                var checkbox = $('input[value="<?php echo(auth()->user()->vinculo_antepasados); ?>"]');
+                                var checkbox = $('#hs-form-iframe-0').contents().find('input[value="<?php echo(auth()->user()->vinculo_antepasados); ?>"]');
                                 checkbox.prop('checked', true);
 
-                                $('select[name="estado_de_datos_y_documentos_de_los_antepasados"]').val("<?php echo(auth()->user()->estado_de_datos_y_documentos_de_los_antepasados); ?>").change();
+                                $('#hs-form-iframe-0').contents().find('select[name="estado_de_datos_y_documentos_de_los_antepasados"]').val("<?php echo(auth()->user()->estado_de_datos_y_documentos_de_los_antepasados); ?>").change();
                             } else {
-                                $('select[name="tiene_antepasados_italianos"]').val("No").change();
+                                $('#hs-form-iframe-0').contents().find('select[name="tiene_antepasados_italianos"]').val("No").change();
+                                $('#hs-form-iframe-0').contents().find('input[name="tiene_antepasados_italianos"]').val("No").change();
                             }
                         }
                         if (servicio == 'Española LMD'){
                             if (antepasados == 1){
-                                $('select[name="tiene_antepasados_espanoles"]').val("Si").change();
+                                $('#hs-form-iframe-0').contents().find('select[name="tiene_antepasados_espanoles"]').val("Si").change();
+                                $('#hs-form-iframe-0').contents().find('input[name="tiene_antepasados_espanoles"]').val("Si").change();
 
-                                var checkbox = $('input[value="<?php echo(auth()->user()->vinculo_antepasados); ?>"]');
+                                var checkbox = $('#hs-form-iframe-0').contents().find('input[value="<?php echo(auth()->user()->vinculo_antepasados); ?>"]');
                                 checkbox.prop('checked', true);
 
-                                $('select[name="estado_de_datos_y_documentos_de_los_antepasados"]').val("<?php echo(auth()->user()->estado_de_datos_y_documentos_de_los_antepasados); ?>").change();
+                                $('#hs-form-iframe-0').contents().find('select[name="estado_de_datos_y_documentos_de_los_antepasados"]').val("<?php echo(auth()->user()->estado_de_datos_y_documentos_de_los_antepasados); ?>").change();
                             } else {
-                                $('select[name="tiene_antepasados_espanoles"]').val("No").change();
+                                $('#hs-form-iframe-0').contents().find('select[name="tiene_antepasados_espanoles"]').val("No").change();
+                                $('#hs-form-iframe-0').contents().find('input[name="tiene_antepasados_espanoles"]').val("No").change();
                             }
-                        }                        
-                    }, 250 );
+                        }                  
+                    }, 1000 );
                 },
                 onFormSubmit: function($form){
                     setTimeout( function() {
+                        $("#ajaxload").show();
                         var formData = $form;
 
                         if($('input[name="firstname"]').val() == "" || $('input[name="lastname"]').val() == "" || $('.hs-fieldtype-intl-phone.hs-input .hs-input').val() == "" || $('input[name="email"]').val() == "" || $('input[name="numero_de_pasaporte"]').val() == "" || $('input[name="pais_de_nacimiento"]').val() == "" || $('input[name="nacionalidad_solicitada"]').val() == ""){
@@ -144,7 +152,7 @@
                                 window.location.href = "/tree";
                             }
                         });
-                    }, 5000 );
+                    }, 4500 );
                 }
             });
         </script>

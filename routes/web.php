@@ -81,6 +81,9 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
             ->middleware('can:crud.comprobantes.index');
 });
 
+//checkRegMondayTest
+Route::get('/checkMondayTest', [ClienteController::class, 'checkMondayTest'])->name('checkMondayTest');
+
 //Ruta Comprobantes de Pago
 Route::get('/downloadTree/{id}', [GedcomController::class, 'getGedcomCliente'])->name('getGedcomCliente');
 

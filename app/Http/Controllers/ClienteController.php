@@ -33,6 +33,7 @@ use HubSpot\Client\Crm\Contacts\Model\SimplePublicObjectInput;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Mail;
 use Illuminate\Support\Facades\Mail as Mail2;
+use Monday;
 
 class ClienteController extends Controller
 {
@@ -271,8 +272,57 @@ class ClienteController extends Controller
             }
         }
 
-
         /* Fin de la actualización en Base de Datos */
+
+        /* Añade info a Monday */
+        $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND b.passport='131388437' ORDER BY a.id DESC LIMIT 1;";
+
+        $datos_factura = json_decode(json_encode(DB::select(DB::raw($query))),true);
+
+        $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
+
+        $servicios = "";
+
+        foreach ($productos as $key => $value) {
+            $servicios = $servicios . $value["servicio_hs_id"];
+            if ($key != count($productos)-1){
+                $servicios = $servicios . ", ";
+            }
+        }
+
+        $token = env('MONDAY_TOKEN');
+        $apiUrl = 'https://api.monday.com/v2';
+        $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
+        
+        $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
+         
+        $vars = [
+            'myItemName' => auth()->user()->name, 
+            'columnVals' => json_encode([
+                'texto' => auth()->user()->passport,
+                'fecha75' => ['date' => date("Y-m-d", strtotime($input['fecha_nac']))],
+                'texto_largo8' => $nombres_y_apellidos_del_padre,
+                'texto_largo75' => $nombres_y_apellidos_de_madre,
+                'enlace' => ['link' => 'https://app.universalsefar.com/tree/' . auth()->user()->passport],
+                'estado54' => 'Arbol Incompleto',
+                'texto1' => $servicios,
+                'texto4' => auth()->user()->hs_id
+            ])
+        ];
+
+        $data = @file_get_contents($apiUrl, false, stream_context_create([
+                'http' => [
+                    'method' => 'POST',
+                    'header' => $headers,
+                    'content' => json_encode(['query' => $query, 'variables' => $vars]),
+                ]
+            ]
+        ));
+
+        $responseContent = json_decode($data, true);
+
+        echo json_encode($responseContent);
+
     }
 
     public function pay(){
@@ -536,6 +586,58 @@ class ClienteController extends Controller
                         ])->subject(strtoupper($user->name) . ' (ID: ' . 
                             strtoupper($user->passport) . ') HA REALIZADO UN PAGO EN App Sefar Universal')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
                     });
+
+                    if ($setto2==1) {
+
+                        $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND b.passport='131388437' ORDER BY a.id DESC LIMIT 1;";
+
+                        $datos_factura = json_decode(json_encode(DB::select(DB::raw($query))),true);
+
+                        $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
+
+                        $servicios = "";
+
+                        foreach ($productos as $key => $value) {
+                            $servicios = $servicios . $value["servicio_hs_id"];
+                            if ($key != count($productos)-1){
+                                $servicios = $servicios . ", ";
+                            }
+                        }
+
+                        $token = env('MONDAY_TOKEN');
+                        $apiUrl = 'https://api.monday.com/v2';
+                        $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
+                        
+                        $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
+                         
+                        $vars = [
+                            'myItemName' => auth()->user()->name, 
+                            'columnVals' => json_encode([
+                                'texto' => auth()->user()->passport,
+                                'fecha75' => ['date' => date("Y-m-d", strtotime($input['fecha_nac']))],
+                                'texto_largo8' => $nombres_y_apellidos_del_padre,
+                                'texto_largo75' => $nombres_y_apellidos_de_madre,
+                                'enlace' => ['link' => 'https://app.universalsefar.com/tree/' . auth()->user()->passport],
+                                'estado54' => 'Arbol Incompleto',
+                                'texto1' => $servicios,
+                                'texto4' => auth()->user()->hs_id
+                            ])
+                        ];
+
+                        $data = @file_get_contents($apiUrl, false, stream_context_create([
+                                'http' => [
+                                    'method' => 'POST',
+                                    'header' => $headers,
+                                    'content' => json_encode(['query' => $query, 'variables' => $vars]),
+                                ]
+                            ]
+                        ));
+
+                        $responseContent = json_decode($data, true);
+
+                        echo json_encode($responseContent);
+
+                    }
 
                     return response()->json([
                         'status' => "true"
@@ -837,6 +939,59 @@ class ClienteController extends Controller
                     ])->subject(strtoupper($user->name) . ' (ID: ' . 
                         strtoupper($user->passport) . ') HA REALIZADO UN PAGO EN App Sefar Universal')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
                 });
+
+                if ($setto2==1) {
+
+                    $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND b.passport='131388437' ORDER BY a.id DESC LIMIT 1;";
+
+                    $datos_factura = json_decode(json_encode(DB::select(DB::raw($query))),true);
+
+                    $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
+
+                    $servicios = "";
+
+                    foreach ($productos as $key => $value) {
+                        $servicios = $servicios . $value["servicio_hs_id"];
+                        if ($key != count($productos)-1){
+                            $servicios = $servicios . ", ";
+                        }
+                    }
+
+                    $token = env('MONDAY_TOKEN');
+                    $apiUrl = 'https://api.monday.com/v2';
+                    $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
+                    
+                    $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
+                     
+                    $vars = [
+                        'myItemName' => auth()->user()->name, 
+                        'columnVals' => json_encode([
+                            'texto' => auth()->user()->passport,
+                            'fecha75' => ['date' => date("Y-m-d", strtotime($input['fecha_nac']))],
+                            'texto_largo8' => $nombres_y_apellidos_del_padre,
+                            'texto_largo75' => $nombres_y_apellidos_de_madre,
+                            'enlace' => ['link' => 'https://app.universalsefar.com/tree/' . auth()->user()->passport],
+                            'estado54' => 'Arbol Incompleto',
+                            'texto1' => $servicios,
+                            'texto4' => auth()->user()->hs_id
+                        ])
+                    ];
+
+                    $data = @file_get_contents($apiUrl, false, stream_context_create([
+                            'http' => [
+                                'method' => 'POST',
+                                'header' => $headers,
+                                'content' => json_encode(['query' => $query, 'variables' => $vars]),
+                            ]
+                        ]
+                    ));
+
+                    $responseContent = json_decode($data, true);
+
+                    echo json_encode($responseContent);
+
+                }
+
                 return redirect()->route('gracias')->with("status","exito");
             } else {
                 return redirect()->route('clientes.pay')->with("status","error6");
@@ -1051,6 +1206,16 @@ class ClienteController extends Controller
         } else {
             echo(0);
         }
+    }
+
+    public function checkMondayTest()
+    {
+        $prueba = [
+            'andi' => 'andrea',
+            'test' => 'no se'
+        ];
+
+        print_r(json_encode($prueba));
     }
 }
 
