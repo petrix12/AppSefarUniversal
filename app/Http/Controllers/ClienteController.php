@@ -614,9 +614,6 @@ class ClienteController extends Controller
                             'myItemName' => auth()->user()->name, 
                             'columnVals' => json_encode([
                                 'texto' => auth()->user()->passport,
-                                'fecha75' => ['date' => date("Y-m-d", strtotime($input['fecha_nac']))],
-                                'texto_largo8' => $nombres_y_apellidos_del_padre,
-                                'texto_largo75' => $nombres_y_apellidos_de_madre,
                                 'enlace' => ['link' => 'https://app.universalsefar.com/tree/' . auth()->user()->passport],
                                 'estado54' => 'Arbol Incompleto',
                                 'texto1' => $servicios,
@@ -967,9 +964,6 @@ class ClienteController extends Controller
                         'myItemName' => auth()->user()->name, 
                         'columnVals' => json_encode([
                             'texto' => auth()->user()->passport,
-                            'fecha75' => ['date' => date("Y-m-d", strtotime($input['fecha_nac']))],
-                            'texto_largo8' => $nombres_y_apellidos_del_padre,
-                            'texto_largo75' => $nombres_y_apellidos_de_madre,
                             'enlace' => ['link' => 'https://app.universalsefar.com/tree/' . auth()->user()->passport],
                             'estado54' => 'Arbol Incompleto',
                             'texto1' => $servicios,
