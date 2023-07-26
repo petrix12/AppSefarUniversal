@@ -321,6 +321,27 @@ class ClienteController extends Controller
             ]
         ));
 
+        $obdata = json_decode($data,true);
+
+        $regid = $obdata["data"]['create_item']['id'];
+
+        $query2 = 'mutation ($myItemId:Int!, $myColumnValue: String!, $columnId: String!) { change_simple_column_value (item_id:$myItemId, board_id:878831315, column_id: $columnId, value: $myColumnValue) { id } }';
+
+        $vars2 = [
+            'myItemId' => intval($regid), 
+            'columnId' => 'enlace',
+            'myColumnValue' => $link . " " . $link,
+        ];
+
+        $data2 = @file_get_contents($apiUrl, false, stream_context_create([
+                'http' => [
+                    'method' => 'POST',
+                    'header' => $headers,
+                    'content' => json_encode(['query' => $query2, 'variables' => $vars2]),
+                ]
+            ]
+        ));
+
         $responseContent = json_decode($data, true);
 
         echo json_encode($responseContent);
@@ -630,6 +651,27 @@ class ClienteController extends Controller
                                     'method' => 'POST',
                                     'header' => $headers,
                                     'content' => json_encode(['query' => $query, 'variables' => $vars]),
+                                ]
+                            ]
+                        ));
+
+                        $obdata = json_decode($data,true);
+
+                        $regid = $obdata["data"]['create_item']['id'];
+
+                        $query2 = 'mutation ($myItemId:Int!, $myColumnValue: String!, $columnId: String!) { change_simple_column_value (item_id:$myItemId, board_id:878831315, column_id: $columnId, value: $myColumnValue) { id } }';
+
+                        $vars2 = [
+                            'myItemId' => intval($regid), 
+                            'columnId' => 'enlace',
+                            'myColumnValue' => $link . " " . $link,
+                        ];
+
+                        $data2 = @file_get_contents($apiUrl, false, stream_context_create([
+                                'http' => [
+                                    'method' => 'POST',
+                                    'header' => $headers,
+                                    'content' => json_encode(['query' => $query2, 'variables' => $vars2]),
                                 ]
                             ]
                         ));
@@ -970,7 +1012,7 @@ class ClienteController extends Controller
                         'myItemName' => auth()->user()->apellidos." ".auth()->user()->nombres, 
                         'columnVals' => json_encode([
                             'texto' => auth()->user()->passport,
-                            'enlace' => ['link' => 'https://app.universalsefar.com/tree/' . $link],
+                            'enlace' => ['link' => $link],
                             'estado54' => 'Arbol Incompleto',
                             'texto1' => $servicios,
                             'texto4' => auth()->user()->hs_id
@@ -982,6 +1024,27 @@ class ClienteController extends Controller
                                 'method' => 'POST',
                                 'header' => $headers,
                                 'content' => json_encode(['query' => $query, 'variables' => $vars]),
+                            ]
+                        ]
+                    ));
+
+                    $obdata = json_decode($data,true);
+
+                    $regid = $obdata["data"]['create_item']['id'];
+
+                    $query2 = 'mutation ($myItemId:Int!, $myColumnValue: String!, $columnId: String!) { change_simple_column_value (item_id:$myItemId, board_id:878831315, column_id: $columnId, value: $myColumnValue) { id } }';
+
+                    $vars2 = [
+                        'myItemId' => intval($regid), 
+                        'columnId' => 'enlace',
+                        'myColumnValue' => $link . " " . $link,
+                    ];
+
+                    $data2 = @file_get_contents($apiUrl, false, stream_context_create([
+                            'http' => [
+                                'method' => 'POST',
+                                'header' => $headers,
+                                'content' => json_encode(['query' => $query2, 'variables' => $vars2]),
                             ]
                         ]
                     ));
@@ -1210,12 +1273,58 @@ class ClienteController extends Controller
 
     public function checkMondayTest()
     {
-        $prueba = [
-            'andi' => 'andrea',
-            'test' => 'no se'
+        $token = env('MONDAY_TOKEN');
+        $apiUrl = 'https://api.monday.com/v2';
+        $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
+        
+        $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
+        
+        $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+        $hash_factura = "PRUEBA".generate_string($permitted_chars, 10);
+
+        $link = 'https://app.universalsefar.com/tree/' . $hash_factura;
+
+        $vars = [
+            'myItemName' => 'PRUEBAS PRUEBAS', 
+            'columnVals' => json_encode([
+                'texto' => $hash_factura,
+                'link' => $link . " " . $link,
+                'estado54' => 'Arbol Incompleto',
+                'texto1' => 'PRUEBA',
+                'texto4' => $hash_factura
+            ])
         ];
 
-        print_r(json_encode($prueba));
+        $data = @file_get_contents($apiUrl, false, stream_context_create([
+                'http' => [
+                    'method' => 'POST',
+                    'header' => $headers,
+                    'content' => json_encode(['query' => $query, 'variables' => $vars]),
+                ]
+            ]
+        ));
+
+        $obdata = json_decode($data,true);
+
+        $regid = $obdata["data"]['create_item']['id'];
+
+        $query2 = 'mutation ($myItemId:Int!, $myColumnValue: String!, $columnId: String!) { change_simple_column_value (item_id:$myItemId, board_id:878831315, column_id: $columnId, value: $myColumnValue) { id } }';
+
+        $vars2 = [
+            'myItemId' => intval($regid), 
+            'columnId' => 'enlace',
+            'myColumnValue' => $link . " " . $link,
+        ];
+
+        $data = @file_get_contents($apiUrl, false, stream_context_create([
+                'http' => [
+                    'method' => 'POST',
+                    'header' => $headers,
+                    'content' => json_encode(['query' => $query2, 'variables' => $vars2]),
+                ]
+            ]
+        ));
     }
 }
 
