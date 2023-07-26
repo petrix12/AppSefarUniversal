@@ -293,17 +293,19 @@ class ClienteController extends Controller
         $token = env('MONDAY_TOKEN');
         $apiUrl = 'https://api.monday.com/v2';
         $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
+
+        $link = 'https://app.universalsefar.com/tree/' . auth()->user()->passport;
         
         $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
          
         $vars = [
-            'myItemName' => auth()->user()->name, 
+            'myItemName' => auth()->user()->apellidos." ".auth()->user()->nombres, 
             'columnVals' => json_encode([
                 'texto' => auth()->user()->passport,
                 'fecha75' => ['date' => date("Y-m-d", strtotime($input['fecha_nac']))],
                 'texto_largo8' => $nombres_y_apellidos_del_padre,
                 'texto_largo75' => $nombres_y_apellidos_de_madre,
-                'enlace' => ['link' => 'https://app.universalsefar.com/tree/' . auth()->user()->passport],
+                'enlace' => ['link' => $link],
                 'estado54' => 'Arbol Incompleto',
                 'texto1' => $servicios,
                 'texto4' => auth()->user()->hs_id
@@ -609,12 +611,14 @@ class ClienteController extends Controller
                         $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
                         
                         $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
-                         
+                        
+                        $link = 'https://app.universalsefar.com/tree/' . auth()->user()->passport;
+
                         $vars = [
-                            'myItemName' => auth()->user()->name, 
+                            'myItemName' => auth()->user()->apellidos." ".auth()->user()->nombres, 
                             'columnVals' => json_encode([
                                 'texto' => auth()->user()->passport,
-                                'enlace' => ['link' => 'https://app.universalsefar.com/tree/' . auth()->user()->passport],
+                                'enlace' => ['link' => $link],
                                 'estado54' => 'Arbol Incompleto',
                                 'texto1' => $servicios,
                                 'texto4' => auth()->user()->hs_id
@@ -959,12 +963,14 @@ class ClienteController extends Controller
                     $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
                     
                     $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
-                     
+                    
+                    $link = 'https://app.universalsefar.com/tree/' . auth()->user()->passport;
+
                     $vars = [
-                        'myItemName' => auth()->user()->name, 
+                        'myItemName' => auth()->user()->apellidos." ".auth()->user()->nombres, 
                         'columnVals' => json_encode([
                             'texto' => auth()->user()->passport,
-                            'enlace' => ['link' => 'https://app.universalsefar.com/tree/' . auth()->user()->passport],
+                            'enlace' => ['link' => 'https://app.universalsefar.com/tree/' . $link],
                             'estado54' => 'Arbol Incompleto',
                             'texto1' => $servicios,
                             'texto4' => auth()->user()->hs_id

@@ -152,7 +152,7 @@
                                 window.location.href = "/tree";
                             }
                         });
-                    }, 4500 );
+                    }, 6500 );
                 }
             });
         </script>
