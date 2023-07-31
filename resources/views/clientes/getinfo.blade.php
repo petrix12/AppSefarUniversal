@@ -11,6 +11,33 @@
 
     <div style="position: fixed; top: 0; left: 0; background-color:rgba(0, 0, 0, 0.5); z-index: 6000; width: 100%; height: 100%;" id="ajaxload"></div>
 
+    <div style="position: fixed;top: 0;left: 0;background-color:rgba(0, 0, 0, 0.5);z-index: 6000;width: 100%;height: 100%; display: none;" id="ajaxload2">
+        
+        <div class="card" style="
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 420px;
+            background-color: #EFEFEFEF;
+            border-radius: 20px;
+            display: table;
+            text-align: center;
+            vertical-align: middle;
+        ">
+            <div style="display:table-cell;vertical-align: middle;">
+                <h1 style="
+                    color: black;
+                    vertical-align: middle;
+                ">¡Gracias!</h1>
+                <p style="
+                    color: black;
+                ">Estamos guardando tu información. En breve serás redirigido.</p>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.2/jquery.min.js" integrity="sha512-tWHlutFnuG0C6nQRlpvrEhE4QpkG1nn2MOUMWmUeRePl4e3Aki0VB6W1v3oLjFtd0hVOtRQ9PHpSfN6u6/QXkQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script charset="utf-8" type="text/javascript" src="//js.hsforms.net/forms/embed/v2.js"></script>
 
@@ -127,12 +154,14 @@
                 },
                 onFormSubmit: function($form){
                     setTimeout( function() {
-                        $("#ajaxload").show();
+                        
                         var formData = $form;
 
-                        if($('input[name="firstname"]').val() == "" || $('input[name="lastname"]').val() == "" || $('.hs-fieldtype-intl-phone.hs-input .hs-input').val() == "" || $('input[name="email"]').val() == "" || $('input[name="numero_de_pasaporte"]').val() == "" || $('input[name="pais_de_nacimiento"]').val() == "" || $('input[name="nacionalidad_solicitada"]').val() == ""){
+                        if($('input[name="firstname"]').val() == "" || $('input[name="lastname"]').val() == "" || $('input[name="email"]').val() == "" || $('input[name="numero_de_pasaporte"]').val() == "" || $('input[name="pais_de_nacimiento"]').val() == "" || $('input[name="nacionalidad_solicitada"]').val() == "" || $('#hs-form-iframe-0').contents().find('input[name="firstname"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="lastname"]').val() == "" || $('#hs-form-iframe-0').contents().find('input[name="email"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="numero_de_pasaporte"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="pais_de_nacimiento"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="nacionalidad_solicitada"]').val() == ""){
                             return false;
                         }
+
+                        $("#ajaxload2").show();
 
                         var data = formData.serializeArray();
 
@@ -152,7 +181,7 @@
                                 window.location.href = "/tree";
                             }
                         });
-                    }, 6500 );
+                    }, 12500 );
                 }
             });
         </script>
