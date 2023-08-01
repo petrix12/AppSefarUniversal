@@ -594,18 +594,17 @@ class ClienteController extends Controller
                             'pedro.bazo@sefarvzla.com',
                             'gerenciait@sefarvzla.com',
                             'sistemasccs@sefarvzla.com',
+                            'contabilidad@sefarvzla.com',
+                            'admin.presidencia@sefarvzla.com',
+                            'crisantoantonio@gmail.com',
                             'automatizacion@sefarvzla.com',
                             'sistemascol@sefarvzla.com',
-                            /* 'egonzalez@sefarvzla.com', */
                             'analisisgenealogico@sefarvzla.com',
                             'asistentedeproduccion@sefarvzla.com',
-                            /* 'arosales@sefarvzla.com', */
-                            /* 'czanella@sefarvzla.com', */
                             'organizacionrrhh@sefarvzla.com',
                             'gcuriel@sefarvzla.com',
                             'organizacionrrhh@sefarvzla.com',
                             '20053496@bcc.hubspot.com',
-                            'contabilidad@sefarvzla.com'
                         ])->subject(strtoupper($user->name) . ' (ID: ' . 
                             strtoupper($user->passport) . ') HA REALIZADO UN PAGO EN App Sefar Universal')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
                     });
@@ -966,20 +965,18 @@ class ClienteController extends Controller
                     $m->to([
                         'pedro.bazo@sefarvzla.com',
                         'gerenciait@sefarvzla.com',
+                        'contabilidad@sefarvzla.com',
+                        'admin.presidencia@sefarvzla.com',
+                        'crisantoantonio@gmail.com',
                         'sistemasccs@sefarvzla.com',
                         'automatizacion@sefarvzla.com',
                         'sistemascol@sefarvzla.com',
-                        /* 'egonzalez@sefarvzla.com', */
                         'analisisgenealogico@sefarvzla.com',
                         'asistentedeproduccion@sefarvzla.com',
-                        /* 'arosales@sefarvzla.com', */
-                        /* 'czanella@sefarvzla.com', */
                         'organizacionrrhh@sefarvzla.com',
                         'gcuriel@sefarvzla.com',
                         'organizacionrrhh@sefarvzla.com',
                         '20053496@bcc.hubspot.com',
-                        'contabilidad@sefarvzla.com',
-                        'crisantoantonio@gmail.com '
                     ])->subject(strtoupper($user->name) . ' (ID: ' . 
                         strtoupper($user->passport) . ') HA REALIZADO UN PAGO EN App Sefar Universal')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
                 });
