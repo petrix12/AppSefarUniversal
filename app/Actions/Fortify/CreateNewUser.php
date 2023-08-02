@@ -99,13 +99,11 @@ class CreateNewUser implements CreatesNewUsers
                 'pedro.bazo@sefarvzla.com',
                 'gerenciait@sefarvzla.com',
                 'sistemasccs@sefarvzla.com',
+                'mcera@sefarvzla.com',
                 'automatizacion@sefarvzla.com',
                 'sistemascol@sefarvzla.com',
-                /* 'egonzalez@sefarvzla.com', */
                 'analisisgenealogico@sefarvzla.com',
                 'asistentedeproduccion@sefarvzla.com',
-                /* 'arosales@sefarvzla.com', */
-                /* 'czanella@sefarvzla.com', */
                 'organizacionrrhh@sefarvzla.com',
                 'gcuriel@sefarvzla.com',
                 'organizacionrrhh@sefarvzla.com',
