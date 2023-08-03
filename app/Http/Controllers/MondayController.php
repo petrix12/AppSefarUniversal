@@ -4,6 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Monday;
+use App\Models\Factura;
+use App\Models\Compras;
+use App\Models\Agcliente;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class MondayController extends Controller
 {
@@ -103,77 +108,103 @@ class MondayController extends Controller
     }
 
     public function registrarMD(Request $request){
-        dd($request->passport);
+        $passport = $request->passport;
 
-        $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND b.passport='".$user->passport."' ORDER BY a.id DESC LIMIT 1;";
+        $users = json_decode(json_encode(User::where("passport", "LIKE", $request->passport)->get()),true);
 
-        $datos_factura = json_decode(json_encode(DB::select(DB::raw($query))),true);
+        if (sizeof($users)>0){
+            $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND b.passport='".$passport."' ORDER BY a.id DESC LIMIT 1;";
 
-        $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
+            $datos_factura = json_decode(json_encode(DB::select(DB::raw($query))),true);
 
-        $servicios = "";
+            if (sizeof($datos_factura)>1){
 
-        foreach ($productos as $key => $value) {
-            $servicios = $servicios . $value["servicio_hs_id"];
-            if ($key != count($productos)-1){
-                $servicios = $servicios . ", ";
-            }
-        }
-
-        $token = env('MONDAY_TOKEN');
-        $apiUrl = 'https://api.monday.com/v2';
-        $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
-
-        $link = 'https://app.universalsefar.com/tree/' . auth()->user()->passport;
+                $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
+                $servicios = "";
         
-        $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
-         
-        $vars = [
-            'myItemName' => auth()->user()->apellidos." ".auth()->user()->nombres, 
-            'columnVals' => json_encode([
-                'texto' => auth()->user()->passport,
-                'fecha75' => ['date' => date("Y-m-d", strtotime($input['fecha_nac']))],
-                'texto_largo8' => $nombres_y_apellidos_del_padre,
-                'texto_largo75' => $nombres_y_apellidos_de_madre,
-                'enlace' => ['link' => $link],
-                'estado54' => 'Arbol Incompleto',
-                'texto1' => $servicios,
-                'texto4' => auth()->user()->hs_id
-            ])
-        ];
+                foreach ($productos as $key => $value) {
+                    $servicios = $servicios . $value["servicio_hs_id"];
+                    if ($key != count($productos)-1){
+                        $servicios = $servicios . ", ";
+                    }
+                }
+            } else {
+                $servicios = $users[0]["servicio"];
+            }
 
-        $data = @file_get_contents($apiUrl, false, stream_context_create([
-                'http' => [
-                    'method' => 'POST',
-                    'header' => $headers,
-                    'content' => json_encode(['query' => $query, 'variables' => $vars]),
+            $familiarescheck = json_decode(json_encode(Agcliente::where('IDCliente','LIKE',$passport)->get()),true);
+
+            $nombres_y_apellidos_del_padre = "";
+            $nombres_y_apellidos_de_madre = "";
+
+            if($familiarescheck[1]["Sexo"]=="M"){
+                $nombres_y_apellidos_del_padre = $familiarescheck[1]["Nombres"] . " " . $familiarescheck[1]["Apellidos"];
+                $nombres_y_apellidos_de_madre = $familiarescheck[2]["Nombres"] . " " . $familiarescheck[2]["Apellidos"];
+            } else {
+                $nombres_y_apellidos_del_padre = $familiarescheck[2]["Nombres"] . " " . $familiarescheck[2]["Apellidos"];
+                $nombres_y_apellidos_de_madre = $familiarescheck[1]["Nombres"] . " " . $familiarescheck[1]["Apellidos"];
+            }
+
+            $fechanacimiento = $familiarescheck[0]["AnhoNac"]."-".$familiarescheck[0]["MesNac"]."-".$familiarescheck[0]["DiaNac"];
+
+            $token = env('MONDAY_TOKEN');
+            $apiUrl = 'https://api.monday.com/v2';
+            $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
+
+            $link = 'https://app.universalsefar.com/tree/' . $passport;
+            
+            $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
+             
+            $vars = [
+                'myItemName' => $users[0]["apellidos"]." ".$users[0]["nombres"], 
+                'columnVals' => json_encode([
+                    'texto' => $passport,
+                    'fecha75' => ['date' => date("Y-m-d", strtotime($fechanacimiento))],
+                    'texto_largo8' => $nombres_y_apellidos_del_padre,
+                    'texto_largo75' => $nombres_y_apellidos_de_madre,
+                    'enlace' => ['link' => $link],
+                    'estado54' => 'Arbol Incompleto',
+                    'texto1' => $servicios,
+                    'texto4' => $users[0]["hs_id"]
+                ])
+            ];
+
+            $data = @file_get_contents($apiUrl, false, stream_context_create([
+                    'http' => [
+                        'method' => 'POST',
+                        'header' => $headers,
+                        'content' => json_encode(['query' => $query, 'variables' => $vars]),
+                    ]
                 ]
-            ]
-        ));
+            ));
 
-        $obdata = json_decode($data,true);
+            $obdata = json_decode($data,true);
 
-        $regid = $obdata["data"]['create_item']['id'];
+            $regid = $obdata["data"]['create_item']['id'];
 
-        $query2 = 'mutation ($myItemId:Int!, $myColumnValue: String!, $columnId: String!) { change_simple_column_value (item_id:$myItemId, board_id:878831315, column_id: $columnId, value: $myColumnValue) { id } }';
+            $query2 = 'mutation ($myItemId:Int!, $myColumnValue: String!, $columnId: String!) { change_simple_column_value (item_id:$myItemId, board_id:878831315, column_id: $columnId, value: $myColumnValue) { id } }';
 
-        $vars2 = [
-            'myItemId' => intval($regid), 
-            'columnId' => 'enlace',
-            'myColumnValue' => $link . " " . $link,
-        ];
+            $vars2 = [
+                'myItemId' => intval($regid), 
+                'columnId' => 'enlace',
+                'myColumnValue' => $link . " " . $link,
+            ];
 
-        $data2 = @file_get_contents($apiUrl, false, stream_context_create([
-                'http' => [
-                    'method' => 'POST',
-                    'header' => $headers,
-                    'content' => json_encode(['query' => $query2, 'variables' => $vars2]),
+            $data2 = @file_get_contents($apiUrl, false, stream_context_create([
+                    'http' => [
+                        'method' => 'POST',
+                        'header' => $headers,
+                        'content' => json_encode(['query' => $query2, 'variables' => $vars2]),
+                    ]
                 ]
-            ]
-        ));
+            ));
 
-        $responseContent = json_decode($data, true);
+            $responseContent = json_decode($data, true);
 
-        echo json_encode($responseContent);
+            return redirect()->route('mondayregistrar')->with("status","ok");
+        } else {
+            return redirect()->route('mondayregistrar')->with("status","error");
+        }
+        
     }
 }
