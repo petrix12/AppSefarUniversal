@@ -39,6 +39,17 @@ src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js">
         </script>
     @endif
 
+    @if(session("status")=="error2")
+        <script type="text/javascript">
+            Swal.fire({
+                icon: 'error',
+                title: 'El cliente no ha rellenado el segundo formulario de Hubspot (completación)',
+                showConfirmButton: false,
+                timer: 5000
+            });
+        </script>
+    @endif
+
     <div class="card" style="padding: 25px; margin: 20px 15%;">
 
         <center>

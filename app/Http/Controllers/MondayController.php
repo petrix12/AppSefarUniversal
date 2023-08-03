@@ -112,6 +112,10 @@ class MondayController extends Controller
 
         $users = json_decode(json_encode(User::where("passport", "LIKE", $request->passport)->get()),true);
 
+        if ($users[0]["pay"]!=2 || $users[0]["pay"]!="2"){
+            return redirect()->route('mondayregistrar')->with("status","error2");
+        }
+
         if (sizeof($users)>0){
             $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND b.passport='".$passport."' ORDER BY a.id DESC LIMIT 1;";
 
@@ -137,13 +141,16 @@ class MondayController extends Controller
             $nombres_y_apellidos_del_padre = "";
             $nombres_y_apellidos_de_madre = "";
 
-            if($familiarescheck[1]["Sexo"]=="M"){
-                $nombres_y_apellidos_del_padre = $familiarescheck[1]["Nombres"] . " " . $familiarescheck[1]["Apellidos"];
-                $nombres_y_apellidos_de_madre = $familiarescheck[2]["Nombres"] . " " . $familiarescheck[2]["Apellidos"];
-            } else {
-                $nombres_y_apellidos_del_padre = $familiarescheck[2]["Nombres"] . " " . $familiarescheck[2]["Apellidos"];
-                $nombres_y_apellidos_de_madre = $familiarescheck[1]["Nombres"] . " " . $familiarescheck[1]["Apellidos"];
+            if (sizeof($familiarescheck) > 1) {
+                if($familiarescheck[1]["Sexo"]=="M"){
+                    $nombres_y_apellidos_del_padre = $familiarescheck[1]["Nombres"] . " " . $familiarescheck[1]["Apellidos"];
+                    $nombres_y_apellidos_de_madre = $familiarescheck[2]["Nombres"] . " " . $familiarescheck[2]["Apellidos"];
+                } else {
+                    $nombres_y_apellidos_del_padre = $familiarescheck[2]["Nombres"] . " " . $familiarescheck[2]["Apellidos"];
+                    $nombres_y_apellidos_de_madre = $familiarescheck[1]["Nombres"] . " " . $familiarescheck[1]["Apellidos"];
+                }
             }
+            
 
             $fechanacimiento = $familiarescheck[0]["AnhoNac"]."-".$familiarescheck[0]["MesNac"]."-".$familiarescheck[0]["DiaNac"];
 
