@@ -346,6 +346,13 @@ return [
                     'icon_color'    => 'white',
                     'url'           => 'mondayreportes',
                     'can'           => 'crud.mondayreportes.index',
+                ],
+                [
+                    'text'          => 'Registrar en Monday',
+                    'icon'          => 'fa-fw fas fa-calendar-check',
+                    'icon_color'    => 'white',
+                    'url'           => 'mondayregistrar',
+                    'can'           => 'crud.mondayreportes.index',
                 ]
             ],
         ],

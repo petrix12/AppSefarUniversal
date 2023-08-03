@@ -7,6 +7,7 @@ use App\Models\Compras;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Stripe;
 
 class FacturaController extends Controller
 {
@@ -36,7 +37,7 @@ class FacturaController extends Controller
 
         $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
 
-        $pdf = PDF::loadView('crud.comprobantes.pdf', compact('datos_factura', 'productos'));
+        $pdf = PDF::loadView('crud.comprobantes.pdfintel', compact('datos_factura', 'productos'));
 
         return $pdf->stream("comprobantecliente.pdf", array("Attachment" => false));
     }

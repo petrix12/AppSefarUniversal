@@ -789,7 +789,9 @@ class ClienteController extends Controller
                 Factura::create([
                     'id_cliente' => auth()->user()->id,
                     'hash_factura' => $hash_factura,
-                    'met' => 'stripe'
+                    'met' => 'stripe',
+                    'idcus' => $charged->customer,
+                    'idcharge' => $charged->id
                 ]);
 
                 foreach ($compras as $key => $compra) {
@@ -865,7 +867,7 @@ class ClienteController extends Controller
                     $pago_registro = json_encode($pago_registrotemp);
                 }
 
-                DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro_hist' => $pago_registro, 'pago_registro' => $monto, 'id_pago' => $cargos, 'pago_cupon' => $cupones ]);
+                DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro_hist' => $pago_registro, 'pago_registro' => $monto, 'id_pago' => $cargos, 'pago_cupon' => $cupones, 'stripe_cus_id' => $charged->customer]);
 
                 $setto2 = 1;
 
@@ -961,7 +963,9 @@ class ClienteController extends Controller
                     ])->subject('SEFAR UNIVERSAL - Hemos procesado su pago satisfactoriamente')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
                 });
 
-                Mail::send('mail.comprobante-mail-intel', ['user' => $user], function ($m) use ($pdfContent, $request, $user) { 
+                $pdfContent2 = createPDFintel($hash_factura);
+
+                Mail::send('mail.comprobante-mail-intel', ['user' => $user], function ($m) use ($pdfContent2, $request, $user) { 
                     $m->to([
                         'pedro.bazo@sefarvzla.com',
                         'gerenciait@sefarvzla.com',
@@ -1344,6 +1348,17 @@ function createPDF($dato){
     $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
 
     $pdf = PDF::loadView('crud.comprobantes.pdf', compact('datos_factura', 'productos'));
+
+    return $pdf->output();
+}
+
+function createPDFintel($dato){
+    $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND a.hash_factura='$dato';";
+    $datos_factura = json_decode(json_encode(DB::select(DB::raw($query))),true);
+
+    $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
+
+    $pdf = PDF::loadView('crud.comprobantes.pdfintel', compact('datos_factura', 'productos'));
 
     return $pdf->output();
 }

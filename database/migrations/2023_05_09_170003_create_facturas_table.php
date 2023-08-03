@@ -18,6 +18,8 @@ class CreateFacturasTable extends Migration
             $table->integer("id_cliente");
             $table->text("hash_factura");
             $table->string('met');
+            $table->text('idcus')->nullable();
+            $table->text('idcharge')->nullable();
             $table->timestamps();
         });
     }

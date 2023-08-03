@@ -106,13 +106,12 @@
 
 	<input type="hidden" id="actualmonth" value="{{ intval(date('m')) }}">
 	<input type="hidden" id="actualyear" value="{{ date('Y') }}">
-
 	<div id="tablecontainer" style="width: 100%;">
 		<table id="example" class="table table-striped" style="width: 100%;">
 			<thead>
 				<tr>
 					<th>
-						Correo cliente
+						Customer ID
 					</th>
 					<th>
 						Monto
@@ -130,7 +129,7 @@
 					@if ($charge["status"] == 'succeeded')
 						<tr>
 							<td style="vertical-align: center;">
-								{{ $charge["receipt_email"] }}
+								{{ $charge["customer"] }}
 							</td>
 							<td style="vertical-align: center;">
 								{{ $charge["amount"]/100 }}€

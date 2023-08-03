@@ -12,6 +12,8 @@ class Factura extends Model
     protected $fillable = [
         'id_cliente',
         'hash_factura',
-        'met'
+        'met',
+        'idcus',
+        'idcharge'
     ];
 }
