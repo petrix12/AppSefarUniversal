@@ -611,7 +611,7 @@ class ClienteController extends Controller
 
                     if ($setto2==1) {
 
-                        $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND b.passport='131388437' ORDER BY a.id DESC LIMIT 1;";
+                        $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND b.passport='".$user->passport."' ORDER BY a.id DESC LIMIT 1;";
 
                         $datos_factura = json_decode(json_encode(DB::select(DB::raw($query))),true);
 
@@ -987,7 +987,7 @@ class ClienteController extends Controller
 
                 if ($setto2==1) {
 
-                    $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND b.passport='131388437' ORDER BY a.id DESC LIMIT 1;";
+                    $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND b.passport='".$user->passport."' ORDER BY a.id DESC LIMIT 1;";
 
                     $datos_factura = json_decode(json_encode(DB::select(DB::raw($query))),true);
 

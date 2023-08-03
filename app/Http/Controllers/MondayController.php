@@ -99,91 +99,81 @@ class MondayController extends Controller
 
     public function validarMD(Request $request)
     {
-        /*INFO DE MONDAY*/
-        dd($request->all());
 
-        $userpassport = "0000";
-
-        //Tablas que NO voy a llamar
-        $preventmondayids = [
-            "3016568563",
-            "3016439235",
-            "3016427689",
-            "3016425138",
-            "2922023945",
-            "2921955649",
-            "2840594467",
-            "2369283634",
-            "2267403210",
-            "2178303858",
-            "2135021222",
-            "1721146413",
-            "1708668268",
-            "1708668252",
-            "1531350971",
-            "1078272587",
-            "1078272574",
-            "1078272554",
-            "1029708419",
-            "867510225",
-        ];
-
-        //me traigo todas las tablas de monday
-        $mondayboards_temp = json_decode(json_encode(Monday::customQuery("boards (limit: 500) { id name }")),true);
-
-        $mondayboards = $mondayboards_temp["boards"];
-
-        $usuario_mdy = [];
-
-        $vartest = 0;
-
-        //proceso la informacion
-
-        foreach ($mondayboards as $key => $value) {
-            if (!str_contains($value["name"], 'Subelementos de ')) {
-                if( !in_array($value["id"], $preventmondayids) ){
-
-                    //me traigo toda la informacion de una tabla en especifico
-
-                    $mondayboards_temp = json_decode(json_encode(Monday::customQuery("boards (ids: " . $value["id"] . ")  { id name items { name column_values { title text id } } }")),true);
-
-                    //proceso la informacion
-
-                    foreach ($mondayboards_temp["boards"][0]["items"] as $key => $item) {
-                        foreach ($item["column_values"] as $keycv => $cv) {
-                            if ($cv["id"]=="enlace"){
-                                if ($cv["text"]="https://app.universalsefar.com/tree/".$userpassport){
-                                    $vartest = 1;
-                                    $usuario_mdy = $item;
-                                    $usuario_mdy["tabla_nombre"] = $mondayboards_temp["boards"][0]["name"];
-                                }
-                                break;
-                            } 
-                        }
-                        if($vartest==1){
-                            break;
-                        }
-                    };
-                }
-                
-            }
-
-            if($vartest==1){
-                break;
-            }
-
-        }
-
-        if (sizeof($usuario_mdy)>0){
-            dd($usuario_mdy);
-        } else {
-            echo "0";
-        }
-
-        
     }
 
-    public function registrarMD(){
+    public function registrarMD(Request $request){
+        dd($request->passport);
 
+        $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND b.passport='".$user->passport."' ORDER BY a.id DESC LIMIT 1;";
+
+        $datos_factura = json_decode(json_encode(DB::select(DB::raw($query))),true);
+
+        $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
+
+        $servicios = "";
+
+        foreach ($productos as $key => $value) {
+            $servicios = $servicios . $value["servicio_hs_id"];
+            if ($key != count($productos)-1){
+                $servicios = $servicios . ", ";
+            }
+        }
+
+        $token = env('MONDAY_TOKEN');
+        $apiUrl = 'https://api.monday.com/v2';
+        $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
+
+        $link = 'https://app.universalsefar.com/tree/' . auth()->user()->passport;
+        
+        $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
+         
+        $vars = [
+            'myItemName' => auth()->user()->apellidos." ".auth()->user()->nombres, 
+            'columnVals' => json_encode([
+                'texto' => auth()->user()->passport,
+                'fecha75' => ['date' => date("Y-m-d", strtotime($input['fecha_nac']))],
+                'texto_largo8' => $nombres_y_apellidos_del_padre,
+                'texto_largo75' => $nombres_y_apellidos_de_madre,
+                'enlace' => ['link' => $link],
+                'estado54' => 'Arbol Incompleto',
+                'texto1' => $servicios,
+                'texto4' => auth()->user()->hs_id
+            ])
+        ];
+
+        $data = @file_get_contents($apiUrl, false, stream_context_create([
+                'http' => [
+                    'method' => 'POST',
+                    'header' => $headers,
+                    'content' => json_encode(['query' => $query, 'variables' => $vars]),
+                ]
+            ]
+        ));
+
+        $obdata = json_decode($data,true);
+
+        $regid = $obdata["data"]['create_item']['id'];
+
+        $query2 = 'mutation ($myItemId:Int!, $myColumnValue: String!, $columnId: String!) { change_simple_column_value (item_id:$myItemId, board_id:878831315, column_id: $columnId, value: $myColumnValue) { id } }';
+
+        $vars2 = [
+            'myItemId' => intval($regid), 
+            'columnId' => 'enlace',
+            'myColumnValue' => $link . " " . $link,
+        ];
+
+        $data2 = @file_get_contents($apiUrl, false, stream_context_create([
+                'http' => [
+                    'method' => 'POST',
+                    'header' => $headers,
+                    'content' => json_encode(['query' => $query2, 'variables' => $vars2]),
+                ]
+            ]
+        ));
+
+        $responseContent = json_decode($data, true);
+
+        echo json_encode($responseContent);
     }
 }

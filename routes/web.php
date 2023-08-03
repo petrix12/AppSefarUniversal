@@ -132,6 +132,8 @@ Route::get('/mondayreportes', [MondayController::class, 'mondayreportes'])->name
 Route::get('/mondayregistrar', [MondayController::class, 'mondayregistrar'])->name('mondayregistrar')
         ->middleware('can:crud.mondayreportes.index');
 
+Route::post('/registrarMD', [MondayController::class, 'registrarMD'])->name('registrarMD');
+
 //Rutas para servicios de vinculaciones
 Route::get('/vinculaciones', [ClienteController::class, 'vinculaciones'])->name('cliente.vinculaciones')->middleware('can:cliente');
 Route::get('/vinculaciones/{id}', [ClienteController::class, 'regvinculaciones'])->name('cliente.regvinculaciones');
