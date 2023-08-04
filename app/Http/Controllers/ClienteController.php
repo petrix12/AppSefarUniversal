@@ -594,7 +594,6 @@ class ClienteController extends Controller
                             'pedro.bazo@sefarvzla.com',
                             'gerenciait@sefarvzla.com',
                             'sistemasccs@sefarvzla.com',
-                            'contabilidad@sefarvzla.com',
                             'admin.presidencia@sefarvzla.com',
                             'crisantoantonio@gmail.com',
                             'automatizacion@sefarvzla.com',
@@ -969,7 +968,6 @@ class ClienteController extends Controller
                     $m->to([
                         'pedro.bazo@sefarvzla.com',
                         'gerenciait@sefarvzla.com',
-                        'contabilidad@sefarvzla.com',
                         'admin.presidencia@sefarvzla.com',
                         'crisantoantonio@gmail.com',
                         'sistemasccs@sefarvzla.com',
