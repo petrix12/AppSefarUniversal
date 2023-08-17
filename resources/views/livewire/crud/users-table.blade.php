@@ -91,10 +91,10 @@
                                             <p><small><b>{{ $compra['servicio_hs_id'] }}</b> - {{ $compra->pagado == 0 ? 'No ha pagado' : 'Pagó' }}</small></p>
                                         @endif
                                     @endforeach
-                                    <p><small>{{ $user->pay == 2 ? 'El usuario completó información' : 'El usuario NO completó información' }}</p>
+                                    <p><small>{{ $user->pay == 2 ? 'El usuario completó información' : 'El usuario NO completó información' }}<b>{{ $user->pay == 3 ? ' - Estatus 3 activo' }}</b></p>
                                 @else
                                     <p><small>{{ $user->servicio == null ? $user->getRoleNames()[0] ?? 'Sin rol' : $user->servicio }}</small></p>
-                                    <p><small>{{ $user->pay == 0 ? 'No ha pagado' : ($user->pay == 1 ? 'Pagó' : 'Pagó y completó información') }}</small></p>
+                                    <p><small>{{ $user->pay == 0 ? 'No ha pagado' : ($user->pay == 1 ? 'Pagó' : 'Pagó y completó información') }}<b>{{ $user->pay == 3 ? ' - Estatus 3 activo' }}</b></small></p>
                                 @endif
                                 
                             </td>
