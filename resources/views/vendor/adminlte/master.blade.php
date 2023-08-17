@@ -94,7 +94,7 @@
                     $(".btn_tree").hide();
                 }
 
-                if (<?php echo(auth()->user()->pay) ?> == 1){
+                if (<?php echo(auth()->user()->pay) ?> == 1 || <?php echo(auth()->user()->pay) ?> == 3){
                     $(".btn_pay").hide();
                     $(".btn_getinfo").show();
                     $(".btn_tree").hide();

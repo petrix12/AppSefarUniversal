@@ -177,174 +177,181 @@ class ClienteController extends Controller
 
         */
 
-        $inputdata = json_decode(json_encode($request->all()),true);
+        if (auth()->user()->pay == 3){
+            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]); // no borrar esta linea
+            auth()->user()->revokePermissionTo('finish.register');
+        } else {
+            $inputdata = json_decode(json_encode($request->all()),true);
 
-        $input_u = $inputdata["data"];
+            $input_u = $inputdata["data"];
 
-        $input = array();
+            $input = array();
 
-        foreach ($input_u as $key => $value) {
-            if($input_u[$key]["name"]!="hs_context") {
-                $input[$input_u[$key]["name"]] = $input_u[$key]["value"];
-            }
-        }
-
-        DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]); // no borrar esta linea
-        auth()->user()->revokePermissionTo('finish.register');
-
-        /* Aquí actualizo la base de datos */
-
-        //print_r('de php');
-        //print_r($input['referido_por']);
-        $user = Auth()->user();
-
-        // Actualizando el árbol genenalógico
-        // Cliente
-        $agcliente = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',1)->first();
-        if($agcliente){
-            @$agcliente->Sexo = $input['genero'] == 'MASCULINO / MALE' ? 'M' : 'F';
-            @$user->genero = $agcliente->Sexo;
-
-            @$user->date_of_birth = $input['fecha_nac'];
-            if($user->date_of_birth){
-                @$agcliente->AnhoNac = date("Y", strtotime($user->date_of_birth));
-                @$agcliente->MesNac = date("m", strtotime($user->date_of_birth));
-                @$agcliente->DiaNac = date("d", strtotime($user->date_of_birth));
+            foreach ($input_u as $key => $value) {
+                if($input_u[$key]["name"]!="hs_context") {
+                    $input[$input_u[$key]["name"]] = $input_u[$key]["value"];
+                }
             }
 
-            @$agcliente->LugarNac = trim($input['ciudad_de_nacimiento']);
-            @$agcliente->PaisNac = trim($input['pais_de_nacimiento']);
+            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]); // no borrar esta linea
+            auth()->user()->revokePermissionTo('finish.register');
 
-            @$agcliente->FRegistro = date('Y-m-d H:i:s');
-            @$agcliente->PNacimiento = trim($input['pais_de_nacimiento']);
-            @$agcliente->LNacimiento = trim($input['ciudad_de_nacimiento']);
-            @$user->ciudad_de_nacimiento = $agcliente->LNacimiento;
-            @$agcliente->PaisPasaporte = trim($input['pais_de_expedicion_del_pasaporte']);
+            /* Aquí actualizo la base de datos */
 
-            @$agcliente->ParentescoF = trim($input['vinculo_miembro_de_familia_1']);
-            @$agcliente->NombresF = trim($input['nombre_miembro_de_familia_1']);
-            @$agcliente->ApellidosF = trim($input['apellidos_miembro_de_familia_1']);
-            // $agcliente->NPasaporteF = trim($input['pasaporte_f']);
+            //print_r('de php');
+            //print_r($input['referido_por']);
+            $user = Auth()->user();
 
-            @$agcliente->Observaciones = (($agcliente->Observaciones == null) ? '' : $agcliente->Observaciones . '. ')
-                . 'Phone: ' . trim($input['phone'])
-                . ' E-mail:' . trim($input['email'])
-                . ' Adress:' . trim($input['address']);
-            $agcliente->save();
-            $user->save();
-        }
+            // Actualizando el árbol genenalógico
+            // Cliente
+            $agcliente = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',1)->first();
+            if($agcliente){
+                @$agcliente->Sexo = $input['genero'] == 'MASCULINO / MALE' ? 'M' : 'F';
+                @$user->genero = $agcliente->Sexo;
 
-        // Padre
-        @$nombres_y_apellidos_del_padre = trim($input['nombres_y_apellidos_del_padre']);
-        if($nombres_y_apellidos_del_padre){
-            @$padre = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',2)->first();
-            if(!$padre) {
-                $agcliente = Agcliente::create([
-                    'IDCliente' => $user->passport,
-                    'Nombres' => $nombres_y_apellidos_del_padre,
-                    'IDPersona' => 2,
-                    'Sexo' => 'M',
-                    'IDPadre' => 4,
-                    'IDMadre' => 5,
-                    'Generacion' => 2,
-                    'FUpdate' => date('Y-m-d H:i:s'),
-                    'Usuario' => $user->email,
-                ]);
+                @$user->date_of_birth = $input['fecha_nac'];
+                if($user->date_of_birth){
+                    @$agcliente->AnhoNac = date("Y", strtotime($user->date_of_birth));
+                    @$agcliente->MesNac = date("m", strtotime($user->date_of_birth));
+                    @$agcliente->DiaNac = date("d", strtotime($user->date_of_birth));
+                }
+
+                @$agcliente->LugarNac = trim($input['ciudad_de_nacimiento']);
+                @$agcliente->PaisNac = trim($input['pais_de_nacimiento']);
+
+                @$agcliente->FRegistro = date('Y-m-d H:i:s');
+                @$agcliente->PNacimiento = trim($input['pais_de_nacimiento']);
+                @$agcliente->LNacimiento = trim($input['ciudad_de_nacimiento']);
+                @$user->ciudad_de_nacimiento = $agcliente->LNacimiento;
+                @$agcliente->PaisPasaporte = trim($input['pais_de_expedicion_del_pasaporte']);
+
+                @$agcliente->ParentescoF = trim($input['vinculo_miembro_de_familia_1']);
+                @$agcliente->NombresF = trim($input['nombre_miembro_de_familia_1']);
+                @$agcliente->ApellidosF = trim($input['apellidos_miembro_de_familia_1']);
+                // $agcliente->NPasaporteF = trim($input['pasaporte_f']);
+
+                @$agcliente->Observaciones = (($agcliente->Observaciones == null) ? '' : $agcliente->Observaciones . '. ')
+                    . 'Phone: ' . trim($input['phone'])
+                    . ' E-mail:' . trim($input['email'])
+                    . ' Adress:' . trim($input['address']);
+                $agcliente->save();
+                $user->save();
             }
-        }
 
-        // Madre
-        @$nombres_y_apellidos_de_madre = trim($input['nombres_y_apellidos_de_madre']);
-        if($nombres_y_apellidos_de_madre){
-            @$madre = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',3)->first();
-            if(!$madre) {
-                $agcliente = Agcliente::create([
-                    'IDCliente' => $user->passport,
-                    'Nombres' => $nombres_y_apellidos_de_madre,
-                    'IDPersona' => 3,
-                    'Sexo' => 'F',
-                    'IDPadre' => 6,
-                    'IDMadre' => 7,
-                    'Generacion' => 2,
-                    'FUpdate' => date('Y-m-d H:i:s'),
-                    'Usuario' => $user->email,
-                ]);
+            // Padre
+            @$nombres_y_apellidos_del_padre = trim($input['nombres_y_apellidos_del_padre']);
+            if($nombres_y_apellidos_del_padre){
+                @$padre = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',2)->first();
+                if(!$padre) {
+                    $agcliente = Agcliente::create([
+                        'IDCliente' => $user->passport,
+                        'Nombres' => $nombres_y_apellidos_del_padre,
+                        'IDPersona' => 2,
+                        'Sexo' => 'M',
+                        'IDPadre' => 4,
+                        'IDMadre' => 5,
+                        'Generacion' => 2,
+                        'FUpdate' => date('Y-m-d H:i:s'),
+                        'Usuario' => $user->email,
+                    ]);
+                }
             }
-        }
 
-        /* Fin de la actualización en Base de Datos */
-
-        /* Añade info a Monday */
-        $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND b.passport='".$user->passport."' ORDER BY a.id DESC LIMIT 1;";
-
-        $datos_factura = json_decode(json_encode(DB::select(DB::raw($query))),true);
-
-        $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
-
-        $servicios = "";
-
-        foreach ($productos as $key => $value) {
-            $servicios = $servicios . $value["servicio_hs_id"];
-            if ($key != count($productos)-1){
-                $servicios = $servicios . ", ";
+            // Madre
+            @$nombres_y_apellidos_de_madre = trim($input['nombres_y_apellidos_de_madre']);
+            if($nombres_y_apellidos_de_madre){
+                @$madre = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',3)->first();
+                if(!$madre) {
+                    $agcliente = Agcliente::create([
+                        'IDCliente' => $user->passport,
+                        'Nombres' => $nombres_y_apellidos_de_madre,
+                        'IDPersona' => 3,
+                        'Sexo' => 'F',
+                        'IDPadre' => 6,
+                        'IDMadre' => 7,
+                        'Generacion' => 2,
+                        'FUpdate' => date('Y-m-d H:i:s'),
+                        'Usuario' => $user->email,
+                    ]);
+                }
             }
+
+            /* Fin de la actualización en Base de Datos */
+
+            /* Añade info a Monday */
+            $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND b.passport='".$user->passport."' ORDER BY a.id DESC LIMIT 1;";
+
+            $datos_factura = json_decode(json_encode(DB::select(DB::raw($query))),true);
+
+            $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
+
+            $servicios = "";
+
+            foreach ($productos as $key => $value) {
+                $servicios = $servicios . $value["servicio_hs_id"];
+                if ($key != count($productos)-1){
+                    $servicios = $servicios . ", ";
+                }
+            }
+
+            $token = env('MONDAY_TOKEN');
+            $apiUrl = 'https://api.monday.com/v2';
+            $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
+
+            $link = 'https://app.universalsefar.com/tree/' . auth()->user()->passport;
+            
+            $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
+             
+            $vars = [
+                'myItemName' => auth()->user()->apellidos." ".auth()->user()->nombres, 
+                'columnVals' => json_encode([
+                    'texto' => auth()->user()->passport,
+                    'fecha75' => ['date' => date("Y-m-d", strtotime($input['fecha_nac']))],
+                    'texto_largo8' => $nombres_y_apellidos_del_padre,
+                    'texto_largo75' => $nombres_y_apellidos_de_madre,
+                    'enlace' => ['link' => $link],
+                    'estado54' => 'Arbol Incompleto',
+                    'texto1' => $servicios,
+                    'texto4' => auth()->user()->hs_id
+                ])
+            ];
+
+            $data = @file_get_contents($apiUrl, false, stream_context_create([
+                    'http' => [
+                        'method' => 'POST',
+                        'header' => $headers,
+                        'content' => json_encode(['query' => $query, 'variables' => $vars]),
+                    ]
+                ]
+            ));
+
+            $obdata = json_decode($data,true);
+
+            $regid = $obdata["data"]['create_item']['id'];
+
+            $query2 = 'mutation ($myItemId:Int!, $myColumnValue: String!, $columnId: String!) { change_simple_column_value (item_id:$myItemId, board_id:878831315, column_id: $columnId, value: $myColumnValue) { id } }';
+
+            $vars2 = [
+                'myItemId' => intval($regid), 
+                'columnId' => 'enlace',
+                'myColumnValue' => $link . " " . $link,
+            ];
+
+            $data2 = @file_get_contents($apiUrl, false, stream_context_create([
+                    'http' => [
+                        'method' => 'POST',
+                        'header' => $headers,
+                        'content' => json_encode(['query' => $query2, 'variables' => $vars2]),
+                    ]
+                ]
+            ));
+
+            $responseContent = json_decode($data, true);
+
+            echo json_encode($responseContent);
         }
 
-        $token = env('MONDAY_TOKEN');
-        $apiUrl = 'https://api.monday.com/v2';
-        $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
-
-        $link = 'https://app.universalsefar.com/tree/' . auth()->user()->passport;
         
-        $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
-         
-        $vars = [
-            'myItemName' => auth()->user()->apellidos." ".auth()->user()->nombres, 
-            'columnVals' => json_encode([
-                'texto' => auth()->user()->passport,
-                'fecha75' => ['date' => date("Y-m-d", strtotime($input['fecha_nac']))],
-                'texto_largo8' => $nombres_y_apellidos_del_padre,
-                'texto_largo75' => $nombres_y_apellidos_de_madre,
-                'enlace' => ['link' => $link],
-                'estado54' => 'Arbol Incompleto',
-                'texto1' => $servicios,
-                'texto4' => auth()->user()->hs_id
-            ])
-        ];
-
-        $data = @file_get_contents($apiUrl, false, stream_context_create([
-                'http' => [
-                    'method' => 'POST',
-                    'header' => $headers,
-                    'content' => json_encode(['query' => $query, 'variables' => $vars]),
-                ]
-            ]
-        ));
-
-        $obdata = json_decode($data,true);
-
-        $regid = $obdata["data"]['create_item']['id'];
-
-        $query2 = 'mutation ($myItemId:Int!, $myColumnValue: String!, $columnId: String!) { change_simple_column_value (item_id:$myItemId, board_id:878831315, column_id: $columnId, value: $myColumnValue) { id } }';
-
-        $vars2 = [
-            'myItemId' => intval($regid), 
-            'columnId' => 'enlace',
-            'myColumnValue' => $link . " " . $link,
-        ];
-
-        $data2 = @file_get_contents($apiUrl, false, stream_context_create([
-                'http' => [
-                    'method' => 'POST',
-                    'header' => $headers,
-                    'content' => json_encode(['query' => $query2, 'variables' => $vars2]),
-                ]
-            ]
-        ));
-
-        $responseContent = json_decode($data, true);
-
-        echo json_encode($responseContent);
 
     }
 
@@ -353,7 +360,7 @@ class ClienteController extends Controller
             if (Auth::user()->pay==2){
                 $IDCliente = Auth::user()->passport;
                 return redirect('/tree');
-            } else if(Auth::user()->pay==1){
+            } else if(Auth::user()->pay==1 || Auth::user()->pay==3){
                 return redirect()->route('clientes.getinfo');
             }
         }
