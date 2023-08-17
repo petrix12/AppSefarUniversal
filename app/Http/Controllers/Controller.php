@@ -71,7 +71,7 @@ class Controller extends BaseController
         if (Auth::user()->hasRole("Cliente")){
             if(Auth::user()->pay==0){
                 return redirect()->route('clientes.pay');
-            } else if (Auth::user()->pay==1){
+            } else if (Auth::user()->pay==1 || Auth::user()->pay==3){
                 return redirect()->route('clientes.getinfo');
             } else {
                 $IDCliente = Auth::user()->passport;
