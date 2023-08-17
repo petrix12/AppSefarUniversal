@@ -152,6 +152,12 @@
                                         @else
                                             <option value=2>Pagó y completó información</option>
                                         @endif
+
+                                        @if ($user->pay == 3)
+                                            <option selected value=3>Pagó pero no se registró en Hubspot</option>
+                                        @else
+                                            <option value=3>Pagó pero no se registró en Hubspot</option>
+                                        @endif
                                     </select>
                                 </div>
 
