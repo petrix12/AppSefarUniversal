@@ -30,6 +30,7 @@ use App\Http\Controllers\MondayController;
 use App\Http\Controllers\FacturaController;
 use App\Http\Controllers\CorreoController;
 use App\Http\Controllers\GedcomController;
+use App\Http\Controllers\TeamLeaderController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -80,6 +81,11 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
     Route::resource('comprobantes', FacturaController::class)->names('hsreferidos')
             ->middleware('can:crud.comprobantes.index');
 });
+
+//TeamleaderTest
+Route::get('/tltest', [TeamLeaderController::class, 'checkteamleader'])->name('checkteamleader');
+Route::get('/tlprocess', [TeamLeaderController::class, 'tlprocess'])->name('tlprocess');
+Route::get('/queryTL', [TeamLeaderController::class, 'queryTL'])->name('queryTL');
 
 //checkRegMondayTest
 Route::get('/checkMondayTest', [ClienteController::class, 'checkMondayTest'])->name('checkMondayTest');

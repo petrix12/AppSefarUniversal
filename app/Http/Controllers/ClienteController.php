@@ -570,7 +570,9 @@ class ClienteController extends Controller
                             $dealInput->setProperties([
                                 'dealname' => auth()->user()->name . ' - ' . $compra['servicio_hs_id'],
                                 'pipeline' => "94794",
-                                'dealstage' => "429097"
+                                'dealstage' => "429097",          
+                                'servicio_solicitado' => $compra['servicio_hs_id'],
+                                'servicio_solicitado2' => $compra['servicio_hs_id'],
                             ]);
                             
                             $apiResponse = json_decode(json_encode($hubspot->crm()->deals()->basicApi()->create($dealInput)),true);
@@ -942,7 +944,9 @@ class ClienteController extends Controller
                         $dealInput->setProperties([
                             'dealname' => auth()->user()->name . ' - ' . $compra['servicio_hs_id'],
                             'pipeline' => "94794",
-                            'dealstage' => "429097"
+                            'dealstage' => "429097",
+                            'servicio_solicitado' => $compra['servicio_hs_id'],
+                            'servicio_solicitado2' => $compra['servicio_hs_id'],
                         ]);
                         
                         $apiResponse = json_decode(json_encode($hubspot->crm()->deals()->basicApi()->create($dealInput)),true);

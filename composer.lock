@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f4720e049d6c2a3bc9e3ad5adec6d37e",
+    "content-hash": "2c1e8331f4b7df3e7ee30de5591baf07",
     "packages": [
         {
             "name": "almasaeed2010/adminlte",
@@ -1979,6 +1979,55 @@
             "time": "2023-04-04T06:40:56+00:00"
         },
         {
+            "name": "justijndepover/teamleader-api",
+            "version": "0.7.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/justijndepover/teamleader-api.git",
+                "reference": "1dc4158db831fe12a0fcec1fa214f31cfaa9ea11"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/justijndepover/teamleader-api/zipball/1dc4158db831fe12a0fcec1fa214f31cfaa9ea11",
+                "reference": "1dc4158db831fe12a0fcec1fa214f31cfaa9ea11",
+                "shasum": ""
+            },
+            "require": {
+                "guzzlehttp/guzzle": "^7.3"
+            },
+            "require-dev": {
+                "justijndepover/php-check": "^0.12.0",
+                "orchestra/testbench": "^6.4"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Justijndepover\\Teamleader\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Justijn Depover",
+                    "email": "justijndepover@gmail.com"
+                }
+            ],
+            "description": "PHP Client for the Teamleader API",
+            "keywords": [
+                "Teamleader",
+                "api",
+                "php"
+            ],
+            "support": {
+                "issues": "https://github.com/justijndepover/teamleader-api/issues",
+                "source": "https://github.com/justijndepover/teamleader-api/tree/0.7.0"
+            },
+            "time": "2023-01-11T13:19:05+00:00"
+        },
+        {
             "name": "laravel-lang/lang",
             "version": "7.0.9",
             "source": {
@@ -3309,6 +3358,81 @@
                 }
             ],
             "time": "2023-02-22T21:01:38+00:00"
+        },
+        {
+            "name": "madeitbelgium/teamleader",
+            "version": "1.11.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/madeITBelgium/TeamLeader.git",
+                "reference": "8f7a87baf5d82c2a45cb0156273ee70ea6f05a4e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/madeITBelgium/TeamLeader/zipball/8f7a87baf5d82c2a45cb0156273ee70ea6f05a4e",
+                "reference": "8f7a87baf5d82c2a45cb0156273ee70ea6f05a4e",
+                "shasum": ""
+            },
+            "require": {
+                "guzzlehttp/guzzle": "^6.5|7.*",
+                "illuminate/container": "*",
+                "illuminate/support": "*",
+                "nesbot/carbon": "^1.35|^2.0",
+                "php": ">=7.2"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "2.*",
+                "mockery/mockery": "0.9",
+                "php-coveralls/php-coveralls": "^2.0",
+                "phpunit/phpunit": "7.*|6.*|8.*"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "MadeITBelgium\\TeamLeader\\ServiceProvider\\TeamLeader"
+                    ],
+                    "aliases": {
+                        "TeamLeader": "MadeITBelgium\\TeamLeader\\Facade\\TeamLeader"
+                    }
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "MadeITBelgium\\TeamLeader\\": "src/"
+                },
+                "classmap": [
+                    "src/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "LGPL-3.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "Tjebbe Lievens - Made I.T.",
+                    "email": "tjebbe.lievens@madeit.be",
+                    "homepage": "https://www.madeit.be"
+                }
+            ],
+            "description": "Laravel TeamLeader SDK",
+            "homepage": "https://www.madeit.be",
+            "keywords": [
+                "Teamleader",
+                "laravel"
+            ],
+            "support": {
+                "issues": "https://github.com/madeITBelgium/TeamLeader/issues",
+                "source": "https://github.com/madeITBelgium/TeamLeader/tree/1.11.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/madeitbelgium",
+                    "type": "github"
+                }
+            ],
+            "time": "2023-08-08T08:59:53+00:00"
         },
         {
             "name": "maennchen/zipstream-php",
