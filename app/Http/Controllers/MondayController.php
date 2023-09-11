@@ -162,8 +162,14 @@ class MondayController extends Controller
             
             $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
              
+            if (is_null($users[0]["apellidos"]) || is_null($users[0]["nombres"])){
+                $clientname = $users[0]["name"];
+            } else {
+                $clientname = $users[0]["apellidos"]." ".$users[0]["nombres"];
+            }
+
             $vars = [
-                'myItemName' => $users[0]["apellidos"]." ".$users[0]["nombres"], 
+                'myItemName' => $clientname, 
                 'columnVals' => json_encode([
                     'texto' => $passport,
                     'fecha75' => ['date' => date("Y-m-d", strtotime($fechanacimiento))],
