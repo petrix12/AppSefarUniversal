@@ -301,9 +301,15 @@ class ClienteController extends Controller
             $link = 'https://app.universalsefar.com/tree/' . auth()->user()->passport;
             
             $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
-             
+
+            if (is_null(auth()->user()->apellidos) || is_null(auth()->user()->nombres)){
+                $clientname = auth()->user()->name;
+            } else {
+                $clientname = auth()->user()->apellidos." ".auth()->user()->nombres;
+            }
+
             $vars = [
-                'myItemName' => auth()->user()->apellidos." ".auth()->user()->nombres, 
+                'myItemName' => $clientname,
                 'columnVals' => json_encode([
                     'texto' => auth()->user()->passport,
                     'fecha75' => ['date' => date("Y-m-d", strtotime($input['fecha_nac']))],
