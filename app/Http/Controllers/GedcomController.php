@@ -162,7 +162,7 @@ function generateGedcom($personas)
             }
 
             if (!is_null($persona['LugarDef'])){
-                $gedcom .= $persona['LugarDef'].", ";
+                $defuncion .= $persona['LugarDef'].", ";
             }
             $defuncion .= $persona['PaisDef'];
             $defuncion .= "\n";
