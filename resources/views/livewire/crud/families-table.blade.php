@@ -53,12 +53,6 @@
                             {{-- <th scope="col" class="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 ID
                             </th> --}}
-                            <th scope="col" class="px-2 py-2 text-left text-md text-gray-500 uppercase tracking-wider">
-                                <span title="ID del cliente">Pais Nac</span>
-                            </th>
-                            <th scope="col" class="px-2 py-2 text-left text-md text-gray-500 uppercase tracking-wider">
-                                <span title="ID del cliente">Lugar Nac</span>
-                            </th>
                             <th scope="col" class="px-2 py-2 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">
                                 <span title="ID del cliente">IDC</span>
                             </th>
@@ -99,12 +93,6 @@
                                 {{ $family->id }}
                             </td> --}}
 
-                            <td class="px-2 py-2">
-                                {{ $family->PaisNac }}
-                            </td>
-                            <td class="px-2 py-2 whitespace-nowrap text-xs text-center">
-                                {{ $family->LugarNac }}
-                            </td>
                             <td class="px-2 py-2 whitespace-nowrap text-xs text-center">
                                 {{ $family->IDCliente }}
                             </td>
