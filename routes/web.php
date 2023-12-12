@@ -93,6 +93,9 @@ Route::get('/checkMondayTest', [ClienteController::class, 'checkMondayTest'])->n
 //Ruta Comprobantes de Pago
 Route::get('/downloadTree/{id}', [GedcomController::class, 'getGedcomCliente'])->name('getGedcomCliente');
 
+//Ruta api GetEmail
+Route::get('/api/getemail/{id}', [UserController::class, 'getemail'])->name('getemail');
+
 //Ruta Comprobantes de Pago
 Route::get('/viewcomprobante/{id}', [FacturaController::class, 'viewcomprobante'])->name('viewcomprobante');
 

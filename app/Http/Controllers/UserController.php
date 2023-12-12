@@ -20,6 +20,7 @@ use HubSpot\Client\Crm\Deals\Model\AssociationSpec;
 use HubSpot\Client\Crm\Associations\ApiException;
 use HubSpot\Client\Crm\Associations\Model\BatchInputPublicObjectId;
 use HubSpot\Client\Crm\Associations\Model\PublicObjectId;
+use Illuminate\Support\Facades\Input;
 
 class UserController extends Controller
 {
@@ -3796,6 +3797,15 @@ class UserController extends Controller
         DB::table('files')->where('IDCliente', $good_passport."X")->delete();
 
         return redirect()->route('fixpassport')->with(['success' => 'Se ha arreglado satisfactoriamente el pasaporte del cliente ' . $user[0]["name"] . '. Verifique su arbol <a href="/tree/'.$good_passport.'">aquí</a>.']);
+    }
+
+    public function getemail(Request $request)
+    {
+        $data = $request->id;
+        $email = json_decode(json_encode(User::where('passport', 'LIKE', '%'.$data.'%')->get()),true);
+        if (sizeof($email)>0){
+            print_r($email[0]['email']);
+        }
     }
 
     
