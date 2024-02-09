@@ -124,6 +124,10 @@ Route::get('makereport', [ReportController::class, 'makereport'])->name('makerep
 //Eliminar datos de factura en pay
 Route::post('/destroypayelement', [ClienteController::class, 'destroypayelement'])->name('destroypayelement');
 
+//GEDCOM EXPORT
+Route::get('/gedcomexport', [GedcomController::class, 'gedcomexport'])->name('gedcomexport');
+Route::get('/getGedcomGlobal', [GedcomController::class, 'getGedcomGlobal'])->name('getGedcomGlobal');
+
 //Rutas para Stripe:
 Route::get('stripeverify', [StripeController::class, 'stripeverify'])->name('stripeverify')
         ->middleware('can:crud.stripeverify.index');

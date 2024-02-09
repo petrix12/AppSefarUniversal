@@ -444,6 +444,22 @@ return [
             ],
         ],
 
+        [
+            'text'        => 'Herramientas GED',
+            'icon'        => 'fa-fw fab fa-pagelines',
+            'icon_color'  => 'white',
+            'can'  => ['administrador'],
+            'submenu' => [
+                [
+                    'text'          => 'Exportar Gedcom',
+                    'icon'          => 'fa-fw fab fa-pagelines',
+                    'icon_color'    => 'white',
+                    'route'         => 'gedcomexport',
+                    'can'           => ['administrador'],
+                ],
+            ],
+        ],
+
         /* *** REGISTROS ONIDEX, DIEX Y MAISANTA *** */
         [
             'text'        => 'Consultas',
