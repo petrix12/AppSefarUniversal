@@ -99,7 +99,6 @@ class CreateNewUser implements CreatesNewUsers
                 'pedro.bazo@sefarvzla.com',
                 'gerenciait@sefarvzla.com',
                 'sistemasccs@sefarvzla.com',
-                'mcera@sefarvzla.com',
                 'automatizacion@sefarvzla.com',
                 'sistemascol@sefarvzla.com',
                 'analisisgenealogico@sefarvzla.com',
