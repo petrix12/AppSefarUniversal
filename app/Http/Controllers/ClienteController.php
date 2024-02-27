@@ -298,7 +298,7 @@ class ClienteController extends Controller
             $apiUrl = 'https://api.monday.com/v2';
             $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
 
-            $link = 'https://app.universalsefar.com/tree/' . auth()->user()->passport;
+            $link = 'https://app.sefaruniversal.com/tree/' . auth()->user()->passport;
             
             $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
 
@@ -645,7 +645,7 @@ class ClienteController extends Controller
                         
                         $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
                         
-                        $link = 'https://app.universalsefar.com/tree/' . auth()->user()->passport;
+                        $link = 'https://app.sefaruniversal.com/tree/' . auth()->user()->passport;
 
                         $vars = [
                             'myItemName' => auth()->user()->apellidos." ".auth()->user()->nombres, 
@@ -1021,7 +1021,7 @@ class ClienteController extends Controller
                     
                     $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
                     
-                    $link = 'https://app.universalsefar.com/tree/' . auth()->user()->passport;
+                    $link = 'https://app.sefaruniversal.com/tree/' . auth()->user()->passport;
 
                     $vars = [
                         'myItemName' => auth()->user()->apellidos." ".auth()->user()->nombres, 
@@ -1298,7 +1298,7 @@ class ClienteController extends Controller
 
         $hash_factura = "PRUEBA".generate_string($permitted_chars, 10);
 
-        $link = 'https://app.universalsefar.com/tree/' . $hash_factura;
+        $link = 'https://app.sefaruniversal.com/tree/' . $hash_factura;
 
         $vars = [
             'myItemName' => 'PRUEBAS PRUEBAS', 
