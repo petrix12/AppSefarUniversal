@@ -158,7 +158,7 @@ class MondayController extends Controller
             $apiUrl = 'https://api.monday.com/v2';
             $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
 
-            $link = 'https://app.universalsefar.com/tree/' . $passport;
+            $link = 'https://app.sefaruniversal.com/tree/' . $passport;
             
             $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
              
