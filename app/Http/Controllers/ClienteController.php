@@ -490,7 +490,7 @@ class ClienteController extends Controller
 
                     foreach ($compras as $key => $compra) {
                         $servicio = Servicio::where('id_hubspot', $compra["servicio_hs_id"])->get();
-                        if ($compra["servicio_hs_id"] == 'Acumulación de linajes' || $compra["servicio_hs_id"] == 'Árbol genealógico de Deslinde' || $compra["servicio_hs_id"] == 'Procedimiento de Urgencia' || $compra["servicio_hs_id"] == 'Recurso de Alzada' || $compra["servicio_hs_id"] == 'Gestión Documental' || $servicio[0]['tipov']==1){                     
+                        if ($compra["servicio_hs_id"] == 'Acumulación de linajes' || $compra["servicio_hs_id"] == 'Procedimiento de Urgencia' || $compra["servicio_hs_id"] == 'Recurso de Alzada' || $compra["servicio_hs_id"] == 'Gestión Documental' || $servicio[0]['tipov']==1){                     
                             $setto2 = 1;
                         } else {
                             $setto2 = 0;
@@ -844,7 +844,7 @@ class ClienteController extends Controller
 
                 foreach ($compras as $key => $compra) {
                     $servicio = Servicio::where('id_hubspot', $compra["servicio_hs_id"])->get();
-                    if ($compra["servicio_hs_id"] == 'Acumulación de linajes' || $compra["servicio_hs_id"] == 'Árbol genealógico de Deslinde' || $compra["servicio_hs_id"] == 'Procedimiento de Urgencia' || $compra["servicio_hs_id"] == 'Recurso de Alzada' || $compra["servicio_hs_id"] == 'Gestión Documental' || $servicio[0]['tipov']==1){
+                    if ($compra["servicio_hs_id"] == 'Acumulación de linajes' || $compra["servicio_hs_id"] == 'Procedimiento de Urgencia' || $compra["servicio_hs_id"] == 'Recurso de Alzada' || $compra["servicio_hs_id"] == 'Gestión Documental' || $servicio[0]['tipov']==1){
                         $setto2 = 1;
                     } else {
                         $setto2 = 0;
