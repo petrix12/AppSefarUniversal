@@ -16,6 +16,8 @@
 
     if (!empty($_GET['estado_de_datos_y_documentos_de_los_antepasados'])) $estado_de_datos_y_documentos_de_los_antepasados = $_GET['estado_de_datos_y_documentos_de_los_antepasados']; else if (!empty(session('request')['estado_de_datos_y_documentos_de_los_antepasados'])) $estado_de_datos_y_documentos_de_los_antepasados = session('request')['estado_de_datos_y_documentos_de_los_antepasados']; else $estado_de_datos_y_documentos_de_los_antepasados = null;
 
+    if (!empty($_GET['pay'])) $pay = $_GET['pay']; else if (!empty(session('request')['pay'])) $pay = session('request')['pay']; else $pay = 0;
+
     $antepasados = 0;
 
     if (isset(session('request')['tiene_antepasados_espanoles']) && session('request')['tiene_antepasados_espanoles'] == "Si"){
@@ -80,6 +82,7 @@
             <input type="hidden" name="phone" value="{{ old('phone',$phone) }}" />
             <input type="hidden" name="servicio" value="{{ old('servicio',$servicio) }}" />
             <input type="hidden" name="referido" value="{{ old('referido',$referido) }}" />
+            <input type="hidden" name="pay" value="{{ old('pay',$pay) }}" />
             <input type="hidden" name="cupon" value="{{ old('cupon',$cupon) }}" />
             <input type="hidden" name="pais_de_nacimiento" value="{{ old('pais_de_nacimiento',$pais_de_nacimiento) }}" />
             <input type="hidden" name="rol" value="{{ old('rol',$rol) }}" />

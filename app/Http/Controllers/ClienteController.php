@@ -1110,13 +1110,49 @@ class ClienteController extends Controller
                     $desc = "Inicia tu Proceso: " . $hss[0]["nombre"];
                 }
 
-                Compras::create([
-                    'id_user' => $userdata[0]["id"],
-                    'servicio_hs_id' => $userdata[0]["servicio"],
-                    'descripcion' => $desc,
-                    'pagado' => 0,
-                    'monto' => $monto
-                ]);
+                if (isset($request->pay)){
+                    if ($request->pay==='1'){
+                        DB::table('users')->where('email', $request->email)->update([
+                            'pay' => 1
+                        ]);
+
+                        $compra = Compras::create([
+                            'id_user' => $userdata[0]["id"],
+                            'servicio_hs_id' => $userdata[0]["servicio"],
+                            'descripcion' => $desc,
+                            'pagado' => 0,
+                            'monto' => 
+                        ]);
+
+                        $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+                        $hash_factura = "sef_".generate_string($permitted_chars, 50);
+
+                        Factura::create([
+                            'id_cliente' => auth()->user()->id,
+                            'hash_factura' => $hash_factura,
+                            'met' => 'jotform'
+                        ]);
+
+                        DB::table('compras')->where('id', $compra->id)->update(['pagado' => 1, 'hash_factura' => $hash_factura]);
+                    } else {
+                        Compras::create([
+                            'id_user' => $userdata[0]["id"],
+                            'servicio_hs_id' => $userdata[0]["servicio"],
+                            'descripcion' => $desc,
+                            'pagado' => 0,
+                            'monto' => $monto
+                        ]);
+                    }
+                } else {
+                    Compras::create([
+                        'id_user' => $userdata[0]["id"],
+                        'servicio_hs_id' => $userdata[0]["servicio"],
+                        'descripcion' => $desc,
+                        'pagado' => 0,
+                        'monto' => $monto
+                    ]);
+                }
 
                 $check = 1;
             }
