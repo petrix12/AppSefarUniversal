@@ -1120,7 +1120,7 @@ class ClienteController extends Controller
                             $compra = Compras::create([
                                 'id_user' => $userdata[0]["id"],
                                 'servicio_hs_id' => $userdata[0]["servicio"],
-                                'descripcion' => $desc,
+                                'descripcion' => 'Pago desde www.sefaruniversal.com usando Jotform',
                                 'pagado' => 0,
                                 'monto' =>$request->monto
                             ]);
@@ -1128,7 +1128,7 @@ class ClienteController extends Controller
                             $compra = Compras::create([
                                 'id_user' => $userdata[0]["id"],
                                 'servicio_hs_id' => $userdata[0]["servicio"],
-                                'descripcion' => $desc,
+                                'descripcion' => 'Pago desde www.sefaruniversal.com usando Jotform',
                                 'pagado' => 0,
                                 'monto' => 0
                             ]);

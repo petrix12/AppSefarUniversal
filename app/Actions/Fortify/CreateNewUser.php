@@ -95,9 +95,9 @@ class CreateNewUser implements CreatesNewUsers
             $compra = Compras::create([
                 'id_user' => $user["id"],
                 'servicio_hs_id' => $user["servicio"],
-                'descripcion' => 'Pago desde www.sefaruniversal.com',
+                'descripcion' => 'Pago desde www.sefaruniversal.com usando Jotform',
                 'pagado' => 0,
-                'monto' => 0
+                'monto' => $input['monto']
             ]);
 
             $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
