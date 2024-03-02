@@ -1112,7 +1112,7 @@ class ClienteController extends Controller
 
                 if (isset($request->pay)){
                     if ($request->pay==='1'){
-                        DB::table('users')->where('email', $request->email)->update([
+                        $usuariofinal = DB::table('users')->where('email', $request->email)->update([
                             'pay' => 1
                         ]);
 
@@ -1141,7 +1141,7 @@ class ClienteController extends Controller
                         $hash_factura = "sef_".generate_string($permitted_chars, 50);
 
                         Factura::create([
-                            'id_cliente' => auth()->user()->id,
+                            'id_cliente' => $usuariofinal->id,
                             'hash_factura' => $hash_factura,
                             'met' => 'jotform'
                         ]);
