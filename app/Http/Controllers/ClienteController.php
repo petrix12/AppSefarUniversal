@@ -1116,13 +1116,25 @@ class ClienteController extends Controller
                             'pay' => 1
                         ]);
 
-                        $compra = Compras::create([
-                            'id_user' => $userdata[0]["id"],
-                            'servicio_hs_id' => $userdata[0]["servicio"],
-                            'descripcion' => $desc,
-                            'pagado' => 0,
-                            'monto' => 
-                        ]);
+                        if (isset($request->monto)){
+                            $compra = Compras::create([
+                                'id_user' => $userdata[0]["id"],
+                                'servicio_hs_id' => $userdata[0]["servicio"],
+                                'descripcion' => $desc,
+                                'pagado' => 0,
+                                'monto' =>$request->monto
+                            ]);
+                        } else {
+                            $compra = Compras::create([
+                                'id_user' => $userdata[0]["id"],
+                                'servicio_hs_id' => $userdata[0]["servicio"],
+                                'descripcion' => $desc,
+                                'pagado' => 0,
+                                'monto' => 0
+                            ]);
+                        }
+
+                        
 
                         $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
