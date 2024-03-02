@@ -93,8 +93,8 @@ class CreateNewUser implements CreatesNewUsers
 
         if($input['pay']==='1'){
             $compra = Compras::create([
-                'id_user' => $userdata[0]["id"],
-                'servicio_hs_id' => $userdata[0]["servicio"],
+                'id_user' => $user["id"],
+                'servicio_hs_id' => $user["servicio"],
                 'descripcion' => $desc,
                 'pagado' => 0,
                 'monto' => 0
@@ -105,7 +105,7 @@ class CreateNewUser implements CreatesNewUsers
             $hash_factura = "sef_".generate_string($permitted_chars, 50);
 
             Factura::create([
-                'id_cliente' => $usuariofinal->id,
+                'id_cliente' => $user->id,
                 'hash_factura' => $hash_factura,
                 'met' => 'jotform'
             ]);
