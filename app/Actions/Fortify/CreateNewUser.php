@@ -6,6 +6,8 @@ use App\Mail\RegistroCliente;
 use App\Mail\RegistroSefar;
 use App\Models\Agcliente;
 use App\Models\User;
+use App\Models\Compras;
+use App\Models\Factura;
 use Illuminate\Support\Facades\Auth;
 // use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
@@ -14,6 +16,7 @@ use Illuminate\Support\Facades\Validator;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 use Laravel\Jetstream\Jetstream;
 use RealRashid\SweetAlert\Facades\Alert;
+use Illuminate\Support\Facades\DB;
 
 class CreateNewUser implements CreatesNewUsers
 {
@@ -87,6 +90,29 @@ class CreateNewUser implements CreatesNewUsers
             'contrato' => 0,
             'referido_por' => $input['referido'],
         ]);
+
+        if($input['pay']==='1'){
+            $compra = Compras::create([
+                'id_user' => $userdata[0]["id"],
+                'servicio_hs_id' => $userdata[0]["servicio"],
+                'descripcion' => $desc,
+                'pagado' => 0,
+                'monto' => 0
+            ]);
+
+            $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+            $hash_factura = "sef_".generate_string($permitted_chars, 50);
+
+            Factura::create([
+                'id_cliente' => $usuariofinal->id,
+                'hash_factura' => $hash_factura,
+                'met' => 'jotform'
+            ]);
+
+            DB::table('compras')->where('id', $compra->id)->update(['pagado' => 1, 'hash_factura' => $hash_factura]);
+        }
+
         if($rol == 'cliente'){
             //$user->email_verified_at = date('Y-m-d H:i:s');
             //Artisan::call('view:clear');
@@ -114,4 +140,15 @@ class CreateNewUser implements CreatesNewUsers
             return $user;
         }
     }
+}
+
+function generate_string($input, $strength = 16) {
+    $input_length = strlen($input);
+    $random_string = '';
+    for($i = 0; $i < $strength; $i++) {
+        $random_character = $input[mt_rand(0, $input_length - 1)];
+        $random_string .= $random_character;
+    }
+ 
+    return $random_string;
 }
