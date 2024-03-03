@@ -20,6 +20,8 @@
 
     if (!empty($_GET['monto'])) $monto = $_GET['monto']; else if (!empty(session('request')['monto'])) $monto = session('request')['monto']; else $monto = 0;
 
+    if (!empty($_GET['jotform'])) $jotform = $_GET['jotform']; else if (!empty(session('request')['jotform'])) $jotform = session('request')['jotform']; else $jotform = 0;
+
     $antepasados = 0;
 
     if (isset(session('request')['tiene_antepasados_espanoles']) && session('request')['tiene_antepasados_espanoles'] == "Si"){
@@ -68,6 +70,18 @@
             {{-- <x-jet-authentication-card-logo /> --}}
             @include('layouts.logos.logo')
         </x-slot>
+
+        @if($jotform!=0)
+            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+            <script>
+                Swal.fire({
+                  icon: 'success',
+                  title: '¡Gracias!',
+                  html: '<b>Hemos procesado tu pago correctamente.</b><br><br>Para continuar con tu proceso, debes completar tu registro en nuestra app.'
+                })
+            </script>
+        @endif
 
         <x-jet-validation-errors class="mb-4" />
 
