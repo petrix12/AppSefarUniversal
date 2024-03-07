@@ -667,7 +667,13 @@ class ClienteController extends Controller
     public function procesarpay(Request $request) {
         $hubspot = HubSpot\Factory::createWithAccessToken(env('HUBSPOT_KEY'));
         //Lo que va dentro de la Funcion
-        Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+
+        if (auth()->user()->servicio == 'Constitución de Empresa' || auth()->user()->servicio == 'Representante Fiscal' || auth()->user()->servicio == 'Codigo  Fiscal' || auth()->user()->servicio == 'Apertura de cuenta' || auth()->user()->servicio == 'Trimestre contable' || auth()->user()->servicio == 'Cooperativa 10 años' || auth()->user()->servicio == 'Cooperativa 5 años' || auth()->user()->servicio == 'Portuguesa Sefardi' || auth()->user()->servicio == 'Portuguesa Sefardi - Subsanación' || auth()->user()->servicio == 'Certificación de Documentos - Portugal') {
+            Stripe\Stripe::setApiKey(env('STRIPE_SECRET_PORT'));
+        } else {
+            Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+        }
+        
 
         $variable = json_decode(json_encode($request->all()),true);
 
