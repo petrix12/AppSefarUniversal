@@ -89,6 +89,7 @@ class CreateNewUser implements CreatesNewUsers
             'estado_de_datos_y_documentos_de_los_antepasados' => $input['estado_de_datos_y_documentos_de_los_antepasados'],
             'contrato' => 0,
             'referido_por' => $input['referido'],
+            'tiene_hermanos' => $input['tiene_hermanos'],
         ]);
 
         if($input['pay']==='1'){

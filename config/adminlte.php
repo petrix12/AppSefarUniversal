@@ -605,7 +605,7 @@ return [
                     'icon_color'    => 'yellow',
                     'route'         => 'clientes.tree',
                     'can'           => 'cliente',
-                ],
+                ],/*
                 [
                     'text'          => 'Registrar hermanos',
                     'classes'       => "btn_tree",
@@ -613,7 +613,7 @@ return [
                     'icon_color'    => 'yellow',
                     'route'         => 'cliente.hermanos',
                     'can'           => 'cliente',
-                ],/*
+                ],
                 [
                     'text'          => 'Estatus de mi Proceso',
                     'icon'          => 'fa-fw fas fa-exclamation',

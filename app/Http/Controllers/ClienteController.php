@@ -379,7 +379,12 @@ class ClienteController extends Controller
             }
         }
         $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->get();
-        $servicio = Servicio::where('id_hubspot', auth()->user()->servicio)->get();
+
+        if (auth()->user()->tiene_hermanos==1 || auth()->user()->tiene_hermanos=="1" || auth()->user()->tiene_hermanos=="Si") {
+            $servicio = Servicio::where('id_hubspot', auth()->user()->servicio." - Hermano")->get();
+        } else {
+            $servicio = Servicio::where('id_hubspot', auth()->user()->servicio)->get();
+        }
 
         $cps = json_decode(json_encode($compras),true);
 
@@ -1113,7 +1118,12 @@ class ClienteController extends Controller
 
 
                 $compras = Compras::where('id_user', $userdata[0]["id"])->where('pagado', 0)->get();
-                $servicio = Servicio::where('id_hubspot', $userdata[0]["servicio"])->get();
+
+                if ($request->tiene_hermanos == 1 || $request->tiene_hermanos == "1" || $request->tiene_hermanos == "Si"){
+                    $servicio = Servicio::where('id_hubspot', $userdata[0]["servicio"]." - Hermano")->get();
+                } else {
+                    $servicio = Servicio::where('id_hubspot', $userdata[0]["servicio"])->get();
+                }
 
                 $cps = json_decode(json_encode($compras),true);
 
@@ -1129,7 +1139,7 @@ class ClienteController extends Controller
                     $desc = "Pago Fase Inicial: Investigación Preliminar y Preparatoria: " . $hss[0]["nombre"];
                     if ($userdata[0]["servicio"] == "Española LMD"){
                         if ($userdata[0]['antepasados']==0){
-                            $monto = 99;
+                            $monto = 299;
                         }
                     }
                     if ($userdata[0]["servicio"] == "Italiana"){

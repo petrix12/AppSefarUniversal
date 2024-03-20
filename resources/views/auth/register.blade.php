@@ -22,6 +22,8 @@
 
     if (!empty($_GET['jotform'])) $jotform = $_GET['jotform']; else if (!empty(session('request')['jotform'])) $jotform = session('request')['jotform']; else $jotform = 0;
 
+    if (!empty($_GET['tiene_hermanos'])) $tiene_hermanos = $_GET['tiene_hermanos']; else if (!empty(session('request')['tiene_hermanos'])) $tiene_hermanos = session('request')['tiene_hermanos']; else $tiene_hermanos = 0;
+
     $antepasados = 0;
 
     if (isset(session('request')['tiene_antepasados_espanoles']) && session('request')['tiene_antepasados_espanoles'] == "Si"){
@@ -107,6 +109,7 @@
             <input type="hidden" name="antepasados" value="{{ old('antepasados',$antepasados) }}" />
             <input type="hidden" name="vinculo_antepasados" value="{{ old('vinculo_antepasados',$vinculo_antepasados) }}" />
             <input type="hidden" name="estado_de_datos_y_documentos_de_los_antepasados" value="{{ old('estado_de_datos_y_documentos_de_los_antepasados',$estado_de_datos_y_documentos_de_los_antepasados) }}" />
+            <input type="hidden" name="tiene_hermanos" value="{{ old('tiene_hermanos',$tiene_hermanos) }}" />
 
             <div>
                 <x-jet-label for="name" value="{{ __('Name') }}" />
