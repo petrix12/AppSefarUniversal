@@ -58,7 +58,7 @@
                                             También hemos notificado a tu hermano al respecto, y hemos enviado sus credenciales para acceder a nuestra App.
                                         </p>
                                         <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
-                                            Puede continuar con su proceso ingresando con su usuario y contraseña mediante el siguiente enlace: <a href="https://sefaruniversal.com/login" target="_blank">https://app.sefaruniversal.com/login</a>
+                                            Puede continuar con su proceso ingresando con su usuario y contraseña mediante el siguiente enlace: <a href="https://app.sefaruniversal.com/login" target="_blank">https://app.sefaruniversal.com/login</a>
                                         </p>
                                         <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
                                             En caso de requerir alguna información adicional relacionada con este asunto
