@@ -53,7 +53,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'vinculo_antepasados',
         'estado_de_datos_y_documentos_de_los_antepasados',
         'contrato',
-        'stripe_cus_id'
+        'stripe_cus_id',
+        'tiene_hermanos'
     ];
 
     /**
