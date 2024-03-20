@@ -1,9 +1,9 @@
 @extends('adminlte::page')
 
-@section('title', 'Completar información')
+@section('title', '¡Gracias!')
 
 @section('content_header')
-    <h1>Completar información</h1>
+    <h1>¡Gracias!</h1>
     <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @stop
 

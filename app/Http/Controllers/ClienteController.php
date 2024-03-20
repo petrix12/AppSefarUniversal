@@ -11,6 +11,7 @@ use App\Models\Compras;
 use App\Models\HsReferido;
 use App\Models\Factura;
 use App\Models\User;
+use App\Models\Hermano;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Stripe;
@@ -42,6 +43,9 @@ class ClienteController extends Controller
             if(Auth::user()->pay==0){
                 return redirect()->route('clientes.pay');
             }
+            if(Auth::user()->pay==1 || auth()->user()->pay == 3){
+                return redirect()->route('clientes.getinfo');
+            }
             if(Auth::user()->contrato==0){
                 return redirect()->route('cliente.contrato');
             }
@@ -50,10 +54,32 @@ class ClienteController extends Controller
         return view('arboles.tree', compact('IDCliente'));
     }
 
+    public function hermanoscliente(){
+        if (Auth::user()->roles->first()->name == "Cliente"){
+            if(Auth::user()->pay==0){
+                return redirect()->route('clientes.pay');
+            }
+            if(Auth::user()->pay==1 || auth()->user()->pay == 3){
+                return redirect()->route('clientes.getinfo');
+            }
+            if(Auth::user()->contrato==0){
+                return redirect()->route('cliente.contrato');
+            }
+        }
+
+        $usermain = User::where('id', '=', auth()->user()->id)->get();
+        $hermanos = Hermano::with('usuarioPrincipal', 'hermano')->where('id_main', '=', auth()->user()->id)->get();
+        
+        return view('clientes.hermanos', compact('usermain', 'hermanos'));
+    }
+
     public function contrato(){
         if (Auth::user()->roles->first()->name == "Cliente"){
             if(Auth::user()->pay==0){
                 return redirect()->route('clientes.pay');
+            }
+            if(Auth::user()->pay==1 || auth()->user()->pay == 3){
+                return redirect()->route('clientes.getinfo');
             }
             if(Auth::user()->contrato==1){
                 return redirect('/tree');
@@ -156,6 +182,9 @@ class ClienteController extends Controller
         if (Auth::user()->roles->first()->name == "Cliente"){
             if(Auth::user()->pay==0){
                 return redirect()->route('clientes.pay');
+            }
+            if(Auth::user()->pay==2){
+                return redirect('/tree');
             }
         }
         return view('clientes.getinfo');

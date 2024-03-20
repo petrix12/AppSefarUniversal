@@ -31,6 +31,7 @@ use App\Http\Controllers\FacturaController;
 use App\Http\Controllers\CorreoController;
 use App\Http\Controllers\GedcomController;
 use App\Http\Controllers\TeamLeaderController;
+use App\Http\Controllers\HermanoController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -154,6 +155,11 @@ Route::get('/vinculaciones/{id}', [ClienteController::class, 'regvinculaciones']
 //rutas para firma de contrato
 Route::get('/contrato', [ClienteController::class, 'contrato'])->name('cliente.contrato')->middleware('can:cliente');
 Route::get('/checkContrato', [ClienteController::class, 'checkContrato'])->name('checkContrato');
+
+//
+Route::get('/hermanoscliente', [ClienteController::class, 'hermanoscliente'])->name('cliente.hermanos')->middleware('can:cliente');
+
+Route::post('/registrarhermanoscliente', [HermanoController::class, 'registrarhermanoscliente'])->name('registrarhermanoscliente');
 
 //Verificarcupon
 
