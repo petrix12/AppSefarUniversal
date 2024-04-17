@@ -360,7 +360,7 @@
                         ?>
                     </center>
                     
-                    <input type="hidden" id="idproducto" name="idproducto" value="{{$servicio[0]['id']}}">
+                    <input type="hidden" id="idproducto" name="idproducto" value="{{isset($servicio[0]['id']) ? $servicio[0]['id'] : ''}}">
                 </div>
             </div>
 
