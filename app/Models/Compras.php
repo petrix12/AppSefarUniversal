@@ -15,6 +15,9 @@ class Compras extends Model
         'descripcion',
         'pagado',
         'monto',
-        'hash_factura'
+        'cuponaplicado',
+        'hash_factura',
+        'montooriginal',
+        'porcentajedescuento'
     ];
 }

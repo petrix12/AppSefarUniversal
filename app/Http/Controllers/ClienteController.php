@@ -454,9 +454,25 @@ class ClienteController extends Controller
                     ]);
                 }
                 if($cupon["percentage"]<100){
+                    foreach ($compras as $compra) {
+                        if ($compra->cuponaplicado != 1){
+                            $montoDescuento = $compra->monto - ($compra->monto * ($cupon["percentage"] / 100));
+                            $montoFinal = round($montoDescuento, 2);
+
+                            $compra->update([
+                                'monto' => $montoFinal,
+                                'cuponaplicado' => 1,
+                                'montooriginal' => $compra->monto,
+                                'porcentajedescuento' => $cupon["percentage"]
+                            ]);
+                        }
+                    }
+
+                    DB::table('coupons')->where('couponcode', $cupon["couponcode"])->update(['enabled' => 0]);
+
                     return response()->json([
                         'status' => "halftrue",
-                        'percentage'=>$cupon["percentage"]
+                        'percentage' => $cupon["percentage"]
                     ]);
                 } else {
                     $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';

@@ -147,15 +147,14 @@
                                     $("#priced").html("0€");
                                     window.location.href = "{{ route('gracias') }}";
                                 } else if (response["status"]=="halftrue") {
-                                    var value = $("#priced").html();
-                                    var newvalue = value.replace('€', '')*(response["percentage"]/100);
-                                    $("#priced").html(newvalue+'€');
                                     $("#ajaxload").hide();
                                     Swal.fire({
                                         icon: 'success',
-                                        title: 'Se ha aplicado un descuento de un ' + response["percentage"] + '%',
+                                        title: 'Se ha aplicado un descuento de un ' + response["percentage"] + '%. En un momento recargaré la página.',
                                         showConfirmButton: false,
-                                        timer: 2500
+                                        timer: 5000
+                                    }).then(function() {
+                                        window.location.reload();
                                     });
                                 } else {
                                     $("#ajaxload").hide();
