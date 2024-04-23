@@ -699,8 +699,6 @@ class ClienteController extends Controller
 
                         $responseContent = json_decode($data, true);
 
-                        echo json_encode($responseContent);
-
                     }
 
                     return response()->json([
