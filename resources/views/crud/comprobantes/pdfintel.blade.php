@@ -27,7 +27,7 @@
         width: 100%;
     }
     .styled-table thead tr {
-        background-color: rgb(121,22,15) !important;
+        background-color: var(--main-bg-color) !important;
         color: #ffffff;
         text-align: left;
     }
@@ -44,7 +44,7 @@
     }
 
     .styled-table tbody tr:last-of-type {
-        border-bottom: 2px solid rgb(121,22,15);
+        background-color: var(--main-bg-color) !important;
     }
     footer {
         position: fixed; 

@@ -253,7 +253,7 @@
                 </div>
 
                 <div class='row' style="justify-content: center; display: flex; margin-bottom:2rem;">
-                    <input type="button" id="valcoupon" value="Validar cupón" class="btn btn-warning" style="margin-right: 1rem;"><button class="btn btn-primary" type="submit">Realizar pago</button>
+                    <input type="button" id="valcoupon" value="Validar cupón" class="btn csrSefar" style="margin-right: 1rem;"><button class="btn btn-primary cfrSefar" type="submit">Realizar pago</button>
                 </div>
             </div>
             <div class="col-sm-12 col-md-7 mb-0">
@@ -272,7 +272,7 @@
                             box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
                         }
                         .styled-table thead tr {
-                            background-color: rgb(121,22,15) !important;;
+                            background-color: var(--main-bg-color) !important;
                             color: #ffffff;
                             text-align: left;
                         }
@@ -289,7 +289,7 @@
                         }
 
                         .styled-table tbody tr:last-of-type {
-                            border-bottom: 2px solid rgb(121,22,15);
+                            border-bottom: 2px solid var(--main-bg-color);
                         }
                     </style>
 
@@ -351,7 +351,7 @@
                             if ($vinc == 1){
 
                         ?>
-                                <a href="{{ route('cliente.vinculaciones') }}"><input type="button" value="Solicitar más servicios de Vinculaciones" class="btn btn-primary"></a>
+                                <a href="{{ route('cliente.vinculaciones') }}"><input type="button" value="Solicitar más servicios de Vinculaciones" class="btn btn-primary cfrSefar"></a>
                         <?php
 
                             }

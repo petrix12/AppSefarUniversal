@@ -1,6 +1,7 @@
 <style>
     #contenedorlogin{
-        background-color:rgba(0, 0, 0, 0.1);
+        background-color:rgba(0, 0, 0, 1);
+        background-image: url("/img/bglogin.png");
         background-repeat: no-repeat;
         background-position: 50%;
         background-size: cover;

@@ -1,21 +1,39 @@
 /* Color de fondo rojo Sefar */
+
+:root {
+  --main-bg-color: #093143;
+}
+
 .cfrSefar{
-	background-color:rgb(121,22,15) !important;
+	background-color:#093143 !important;
+	border: 0!important;
 }
 
 .cfrSefar:hover{
-	background-color:rgb(204, 98, 90) !important;
-	color:rgb(0, 0, 0) !important;
+	background-color:#06C2CC !important;
+	color:#093143 !important;
+	border: 0!important;
+}
+
+.csrSefar{
+	background-color:#A17F48 !important;
+	color:rgba(255, 255, 255, 0.9); !important;
+	border: 0!important;
+}
+
+.csrSefar:hover{
+	background-color:#DBBA72 !important;
+	border: 0!important;
 }
 
 /* Color de fondo amarillo Sefar */
 .cfaSefar{
-	background-color:rgb(247,176,52) !important;
+	background-color:#DBBA72 !important;
 }
 
 /* Color de fondo verde Sefar */
 .cfvSefar{
-	background-color:rgb(22,43,27) !important;
+	background-color:#A17F48 !important;
 }
 
 /* Color de fondo blanco */
@@ -30,7 +48,12 @@
 
 /* Color de texto rojo Sefar */
 .ctrSefar{
-	color:rgb(121,22,15) !important;
+	color:#093143 !important;
+}
+
+.cbgSefar{
+	background-color:#093143 !important;
+	color: rgba(255, 255, 255, .9);
 }
 
 /* Color de texto amarillo Sefar */

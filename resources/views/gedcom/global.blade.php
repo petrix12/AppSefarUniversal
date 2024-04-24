@@ -24,22 +24,13 @@
 	        </div>
 	    </div>
 	</div>
-
-	<style>
-        .downloadgedcom{
-            background-color: rgb(22,43,27);
-        }
-        .downloadgedcom:hover{
-            background-color: rgb(247,176,52);
-        }
-    </style>
     <center>
 
 		@can('descargarGedcom')
 	        <div class="px-4 py-2 m-2">
 	            {{-- FAMILIARES --}}
 	            <div class="justify-center">
-	                <a href="{{route('getGedcomGlobal')}}" class="downloadgedcom inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+	                <a href="{{route('getGedcomGlobal')}}" class="cfrSefar downloadgedcom inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
 	                    <b>Descargar Gedcom Global</b>
 	                </a>
 	            </div>

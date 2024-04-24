@@ -58,7 +58,7 @@ src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js">
                     <h4>Pasaporte del Cliente</h4><br>
                     @csrf
                     <input type="text" name="passport" placeholder="Número de Pasaporte del Cliente">
-                    <button class="btn btn-warning">Enviar a Monday</button>
+                    <button class="btn btn-primary cfrSefar">Enviar a Monday</button>
                 </div>
             </form>
             

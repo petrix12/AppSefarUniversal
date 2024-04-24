@@ -201,7 +201,7 @@
 	<div class="containerstripe">
 		<div class="findercontainer">
 			@csrf
-			<input type="text" class="control-label" placeholder="Nombre o Correo" id="find"><input type="button" class="btn btn-primary" value="Buscar en Stripe" id="buscar">
+			<input type="text" class="control-label" placeholder="Nombre o Correo" id="find"><input type="button" class="btn btn-primary cfrSefar" value="Buscar en Stripe" id="buscar">
 		</div>
 		<div class="tablecontainer">
 

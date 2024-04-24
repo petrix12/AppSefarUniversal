@@ -2,7 +2,7 @@
     <div class="p-2 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="lg:text-center">
             <h2
-                class="text-sm font-bold ctaSefar cfvSefar tracking-wide pt-2 rounded-lg opacity-75 flex h-8 justify-center items-center">
+                class="text-sm font-bold cbgSefar tracking-wide pt-2 rounded-lg opacity-75 flex h-8 justify-center items-center">
                 {{-- Cliente: {{ $agclientes[0]->Nombres.', '.$agclientes[0]->Apellidos.' / '.$agclientes[0]->IDCliente}} --}}
                 Cliente:
                 {{ GetNombres($agclientes, 1) . ' ' . GetApellidos($agclientes, 1) . ' / ' . $agclientes[0]->IDCliente }}
@@ -68,7 +68,7 @@
                     <div class="justify-center">
                         <label for="downloadgedcom" class="px-3 block text-sm font-medium text-gray-700"
                             title="Descargar Gedcom">Descargar Gedcom</label>
-                        <a href="{{route('getGedcomCliente', $agclientes[0])}}" class="downloadgedcom inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <a href="{{route('getGedcomCliente', $agclientes[0])}}" class="csrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                             <b>Descargar Gedcom</b>
                         </a>
                     </div>
