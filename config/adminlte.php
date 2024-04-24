@@ -122,7 +122,7 @@ return [
     */
 
     'classes_body' => '',
-    'classes_brand' => 'cfrSefar',
+    'classes_brand' => 'cbgSefar',
     'classes_brand_text' => 'ct_blanco',
     'classes_content_wrapper' => '',
     'classes_content_header' => '',
