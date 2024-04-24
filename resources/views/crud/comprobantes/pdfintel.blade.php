@@ -113,8 +113,8 @@
 
                     ?>
                     <tr>
-                        <td style="font-weight: bold; text-align: right;">TOTAL:</td>
-                        <td style="font-weight: bold;">{{$total}}€</td>
+                        <td style="font-weight: bold; text-align: right; color:white;">TOTAL:</td>
+                        <td style="font-weight: bold; color:white;">{{$total}}€</td>
                     </tr>
                 </tbody>
             </table>
