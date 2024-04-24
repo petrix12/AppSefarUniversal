@@ -10,7 +10,7 @@
         font-family: Arial, Helvetica, sans-serif;
     }
     @page{
-        margin-top: 150px; /* create space for header */
+        margin-top: 170px; /* create space for header */
         margin-bottom: 50px; /* create space for footer */
         page-break-inside: avoid;
     }
@@ -27,7 +27,7 @@
         width: 100%;
     }
     .styled-table thead tr {
-        background-color: var(--main-bg-color) !important;
+        background-color:#093143 !important;
         color: #ffffff;
         text-align: left;
     }
@@ -44,7 +44,7 @@
     }
 
     .styled-table tbody tr:last-of-type {
-        background-color: var(--main-bg-color) !important;
+        background-color:#093143 !important;
     }
     footer {
         position: fixed; 
