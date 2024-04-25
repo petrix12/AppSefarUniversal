@@ -2,9 +2,9 @@
     <td class="header">
         <a href="{{ $url }}" style="display: inline-block;">
             @if (trim($slot) === 'Laravel')
-                <img src="https://laravel.com/img/notification-logo.png" class="logo" alt="Laravel Logo">
+                <img src="https://app.sefaruniversal.com/img/logo.png" class="logo" alt="Laravel Logo" height="60">
             @else
-                <img src="https://1.bp.blogspot.com/-etZLVgh-Qn8/YFFkEMlCOrI/AAAAAAAAmlI/xf0ehLF8904Y3ehvw_ToKOHw1eDBUZakACLcBGAsYHQ/s0/LogoSefar_sm.png" class="logo" alt="Logo Sefar">
+                <img src="https://app.sefaruniversal.com/img/logo.png" class="logo" alt="Logo Sefar" height="60">
                 <hr>
                 {{ $slot }}
             @endif

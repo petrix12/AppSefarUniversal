@@ -69,7 +69,7 @@
                                             <br>
                                             Departamento de Sistemas.
                                             <br>
-                                            <img src="https://raw.githubusercontent.com/petrix12/imagenes2022/main/Sefar/unnamed.png" alt="Logo Sefar" height="60">
+                                            <img src="https://app.sefaruniversal.com/img/logonormal.png" alt="Logo Sefar" height="60">
                                         </p>
                                     </td>
                                 </tr>
