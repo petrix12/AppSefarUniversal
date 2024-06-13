@@ -8,6 +8,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 use RealRashid\SweetAlert\Facades\Alert;
+use App\Mail\CargaSefar;
+use Illuminate\Support\Facades\Mail as Mail2;
 
 class AgclienteController extends Controller
 {
@@ -177,6 +179,24 @@ class AgclienteController extends Controller
                 'passport' => $request->IDCliente,
             ])->assignRole('Cliente');        
         }
+
+        $mail_sefar = new CargaSefar(Auth::user());
+        Mail2::to([
+            'pedro.bazo@sefarvzla.com',
+            'gerenciait@sefarvzla.com',
+            'sistemasccs@sefarvzla.com',
+            'automatizacion@sefarvzla.com',
+            'sistemascol@sefarvzla.com',
+            /* 'egonzalez@sefarvzla.com', */
+            'analisisgenealogico@sefarvzla.com',
+            /* 'arosales@sefarvzla.com', */
+            'asistentedeproduccion@sefarvzla.com',
+            'gcuriel@sefarvzla.com',
+            'organizacionrrhh@sefarvzla.com',
+            'arodriguez@sefarvzla.com',
+            '20053496@bcc.hubspot.com'
+            /* 'organizacionrrhh@sefarvzla.com' */
+        ])->send($mail_sefar);
 
         // Mensaje 
         Alert::success('¡Éxito!', 'Se ha añadido a la lista: ' . $request->Nombres . ' ' . $request->Apellidos);
