@@ -112,6 +112,7 @@ class ClienteController extends Controller
             'asistentedeproduccion@sefarvzla.com',
             'gcuriel@sefarvzla.com',
             'organizacionrrhh@sefarvzla.com',
+            'arodriguez@sefarvzla.com',
             '20053496@bcc.hubspot.com'
             /* 'organizacionrrhh@sefarvzla.com' */
         ])->send($mail_sefar);
