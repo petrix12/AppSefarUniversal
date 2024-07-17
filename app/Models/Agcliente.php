@@ -61,6 +61,9 @@ class Agcliente extends Model
         'FTM',
         'FUpdate',
         'Usuario',
+        'idPadreNew',
+        'idMadreNew',
+        'migradoNuevoID'
     ];
 
     // Filtro de búsqueda

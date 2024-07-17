@@ -14,15 +14,28 @@
     <script type="text/javascript" src="https://form.jotform.com/jsform/231384136753659"></script>
 
     <script>
-        $('#231384136753659').on('load',function(){
-            var inputText = $('#231384136753659').contents().find('#input_67');
-            var inputText2 = $('#231384136753659').contents().find('#input_68');
-            var inputText3 = $('#231384136753659').contents().find('#input_329');
-            var inputText4 = $('#231384136753659').contents().find('#input_330');
-            inputText.val('{{auth()->user()->nombres}}').change();
-            inputText2.val('{{auth()->user()->apellidos}}').change();
-            inputText3.val('{{auth()->user()->passport}}').change();
-            inputText4.val('{{auth()->user()->servicio}}').change();
+        document.addEventListener('DOMContentLoaded', function() {
+          var iframe = document.getElementById('231384136753659');
+
+          iframe.addEventListener('load', function() {
+
+              var inputText = iframe.contentWindow.document.getElementById('input_67');
+              var inputText2 = iframe.contentWindow.document.getElementById('input_68');
+              var inputText3 = iframe.contentWindow.document.getElementById('input_329');
+              var inputText4 = iframe.contentWindow.document.getElementById('input_330');
+
+              console.log(inputText); // Para depuración
+
+              inputText.value = '{{auth()->user()->nombres}}';
+              inputText.dispatchEvent(new Event('change')); // Activar evento change
+              inputText2.value = '{{auth()->user()->apellidos}}';
+              inputText2.dispatchEvent(new Event('change'));
+              inputText3.value = '{{auth()->user()->passport}}';
+              inputText3.dispatchEvent(new Event('change'));
+              inputText4.value = '{{auth()->user()->servicio}}';
+              inputText4.dispatchEvent(new Event('change'));
+              
+          });
         });
     </script>
 @stop

@@ -113,7 +113,7 @@
                 onFormReady: function($form){
                     setTimeout( function() {
                         $("#ajaxload").hide();
-                        var antepasados = <?php echo (auth()->user()->antepasados); ?>;
+                        var antepasados = <?php echo (auth()->user()->antepasados ? auth()->user()->antepasados : 0); ?>;
                         var servicio = "<?php echo (auth()->user()->servicio); ?>";
                         $('#hs-form-iframe-0').contents().find('input[name="firstname"]').val("{{ auth()->user()->nombres }}").change();
                         $('#hs-form-iframe-0').contents().find('input[name="lastname"]').val("{{ auth()->user()->apellidos }}").change();

@@ -17,7 +17,14 @@ class File extends Model
         'IDCliente',
         'notas',
         'IDPersona',
+        'IDPersonaNew',
+        'migradoNuevoID',
         'user_id'
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'IDCliente', 'passport'); 
+    }
 
 }

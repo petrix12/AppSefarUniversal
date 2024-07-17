@@ -32,6 +32,7 @@ use App\Http\Controllers\CorreoController;
 use App\Http\Controllers\GedcomController;
 use App\Http\Controllers\TeamLeaderController;
 use App\Http\Controllers\HermanoController;
+use App\Http\Controllers\AgClienteNewController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -49,7 +50,16 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
 			->middleware('can:crud.users.index');
     Route::resource('countries', CountryController::class)->names('countries')
             ->middleware('can:crud.countries.index');
-    Route::resource('agclientes', AgclienteController::class)->names('agclientes')
+    Route::resource('agclientes', AgclienteController::class)
+            ->names([
+                'index' => 'agclientes.index',
+                'store' => 'agclientes.store',
+                'create' => 'agclientes.create',
+                'show' => 'agclientes.show',
+                'edit' => 'agclientes.edit',
+                'update' => 'agclientes.update',
+                'destroy' => 'agclientes.destroy',
+            ])
             ->middleware('can:crud.agclientes.index');
     Route::resource('parentescos', ParentescoController::class)->names('parentescos')
             ->middleware('can:crud.parentescos.index');
@@ -82,6 +92,25 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
     Route::resource('comprobantes', FacturaController::class)->names('hsreferidos')
             ->middleware('can:crud.comprobantes.index');
 });
+
+Route::post('agclientesnew', [AgClienteNewController::class, 'storeNotCliente'])->name('agclientesnew.store');
+
+Route::post('agclientesupdate', [AgClienteNewController::class, 'updateNotCliente'])->name('agclientesnew.update');
+
+Route::post('getclientfiles', [AgClienteNewController::class, 'getClientFiles'])->name('getclientfiles');
+
+Route::post('updatefiletype', [AgClienteNewController::class, 'updatefiletype'])->name('updatefiletype');
+
+Route::post('storefile', [AgClienteNewController::class, 'storefile'])->name('storefile');
+
+Route::post('openfile', [AgClienteNewController::class, 'openfile'])->name('openfile');
+
+Route::post('deletefile', [AgClienteNewController::class, 'deletefile'])->name('deletefile');
+
+Route::post('getfileedit', [AgClienteNewController::class, 'getfileedit'])->name('getfileedit');
+
+Route::post('getfileupdate', [AgClienteNewController::class, 'getfileupdate'])->name('getfileupdate');
+
 
 //TeamleaderTest
 Route::get('/tltest', [TeamLeaderController::class, 'checkteamleader'])->name('checkteamleader');

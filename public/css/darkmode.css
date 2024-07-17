@@ -1,0 +1,46 @@
+body.dark-mode, 
+body.dark-mode .main-header, 
+body.dark-mode .main-header,
+body.dark-mode .bg-white, 
+body.dark-mode .card , 
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea, body.dark-mode .paginate_button, body.dark-mode .page-link, body.dark-mode .contentmodaladdfamiliar
+{
+    background-color: #343A40 !important;
+    color: #eeeeee!important;
+}
+
+body.dark-mode .cerrarmodal, body.dark-mode .tituloform, body.dark-mode p,  body.dark-mode h3, body.dark-mode .ctvSefar, body.dark-mode h2, body.dark-mode .uppercase, body.dark-mode .text-gray-700, body.dark-mode span{
+  color: #eeeeee!important;
+}
+
+body.dark-mode .cerrarmodal svg, body.dark-mode .cerrarmodalarchivo svg, body.dark-mode .cerrarmodalarchivoedit svg{
+  stroke: #eeeeee !important; /* Use !important to override inline styles */
+  fill: none; /* Ensure the SVG isn't filled with a color */
+}
+
+body.dark-mode .bg-gray-50, body.dark-mode .cajapernew_min{
+  background-color: #3e4c59 !important;
+}
+
+body.dark-mode .content , body.dark-mode .container-fluid, body.dark-mode .bg-gray-100, body.dark-mode .content-wrapper {
+    background-color: #232a30 !important;
+}
+
+body.dark-mode input[type='checkbox']:checked{
+	border-color: white;
+} 
+
+body.dark-mode .nav-link, body.dark-mode .fontwhite, body.dark-mode .contentfiles {
+    color: #eeeeee!important;
+}
+
+body.dark-mode .active, body.dark-mode .sidebar .nav-link.active p{
+  color: #343A40 !important;
+}
+
+body.dark-mode .styled-table tbody tr:nth-of-type(even){
+	background-color: #3e4c59 !important;
+	color: #eeeeee!important;
+}

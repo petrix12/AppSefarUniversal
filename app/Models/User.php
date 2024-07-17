@@ -54,7 +54,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'estado_de_datos_y_documentos_de_los_antepasados',
         'contrato',
         'stripe_cus_id',
-        'tiene_hermanos'
+        'tiene_hermanos',
+        'dark_mode'
     ];
 
     /**

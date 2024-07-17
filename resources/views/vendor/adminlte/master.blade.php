@@ -9,6 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="shortcut icon" type="image/x-icon" href="{{ asset('/favicon.ico') }}">
+    <link rel="stylesheet" href='/css/darkmode.css'>
 
     {{-- Custom Meta Tags --}}
     @yield('meta_tags')
