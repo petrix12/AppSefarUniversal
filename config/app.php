@@ -168,6 +168,7 @@ return [
 
         RealRashid\SweetAlert\SweetAlertServiceProvider::class,
         Proclame\Monday\MondayServiceProvider::class,
+        ConsoleTVs\Charts\ChartsServiceProvider::class,
 
         /*
          * Application Service Providers...
@@ -233,7 +234,6 @@ return [
         'View' => Illuminate\Support\Facades\View::class,
         'Alert' => RealRashid\SweetAlert\Facades\Alert::class,
         'Monday' => Proclame\Monday\MondayFacade::class,
-
     ],
 
     'tmp' => env('VAR_TMP', null),

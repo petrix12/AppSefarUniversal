@@ -10,6 +10,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use App\Models\Compras;
 use Illuminate\Support\Facades\Auth;
 
 class User extends Authenticatable implements MustVerifyEmail
@@ -113,5 +114,10 @@ class User extends Authenticatable implements MustVerifyEmail
     // Se debe configurar en config\adminlte.php: 'usermenu_profile_url' => true,
     public function adminlte_profile_url(){
         return 'user/profile';
+    }
+
+    public function compras()
+    {
+        return $this->hasMany(Compras::class, 'id_user', 'id');
     }
 }

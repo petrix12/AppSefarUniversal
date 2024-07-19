@@ -385,22 +385,29 @@ return [
             'text'        => 'Reportes',
             'icon'        => 'fa-fw fa fa-file',
             'icon_color'  => 'white',
-            'can'  => 'administrador',
+            'can'  => 'reportes.index',
             'submenu' => [
                 [
-                    'text'          => 'Reportes Generados',
+                    'text'          => 'Reportes Diarios',
                     'icon'          => 'fa-fw fa fa-file',
                     'icon_color'    => 'white',
-                    'url'           => 'reports',
-                    'can'           => 'crud.reports.index',
+                    'url'           => 'diarioindex',
+                    'can'           => 'reportes.index',
+                ],/*
+                [
+                    'text'          => 'Reportes Mensuales',
+                    'icon'          => 'fa-fw fa fa-file',
+                    'icon_color'    => 'white',
+                    'url'           => 'mensualindex',
+                    'can'           => 'administrador',
                 ],
                 [
-                    'text'          => 'Referidos de Hubspot',
+                    'text'          => 'Reportes Anuales',
                     'icon'          => 'fa-fw fa fa-file',
                     'icon_color'    => 'white',
-                    'url'           => 'hsreferidos',
-                    'can'           => 'crud.hsreferidos.index',
-                ],
+                    'url'           => 'anualindex',
+                    'can'           => 'administrador',
+                ],*/
             ],
         ],
 

@@ -11,7 +11,7 @@ body.dark-mode textarea, body.dark-mode .paginate_button, body.dark-mode .page-l
     color: #eeeeee!important;
 }
 
-body.dark-mode .cerrarmodal, body.dark-mode .tituloform, body.dark-mode p,  body.dark-mode h3, body.dark-mode .ctvSefar, body.dark-mode h2, body.dark-mode .uppercase, body.dark-mode .text-gray-700, body.dark-mode span{
+body.dark-mode .bar-label, body.dark-mode .cerrarmodal, body.dark-mode .tituloform, body.dark-mode p,  body.dark-mode h3, body.dark-mode .ctvSefar, body.dark-mode h2, body.dark-mode .uppercase, body.dark-mode .text-gray-700, body.dark-mode span{
   color: #eeeeee!important;
 }
 
@@ -43,4 +43,16 @@ body.dark-mode .active, body.dark-mode .sidebar .nav-link.active p{
 body.dark-mode .styled-table tbody tr:nth-of-type(even){
 	background-color: #3e4c59 !important;
 	color: #eeeeee!important;
+}
+
+body.dark-mode .addborderbottom {
+  border-bottom: 2px solid #cccccc!important;
+}
+
+body.dark-mode #dailygraph{
+  display: none!important;
+}
+
+body.dark-mode #nightlygraph{
+  display: block!important;
 }

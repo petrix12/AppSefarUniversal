@@ -11,84 +11,324 @@ use Illuminate\Support\Facades\Storage;
 //use Webklex\PDFMerger\Facades\PDFMergerFacade as PDFMerger;
 use Telegram\Bot\Api;
 use Telegram\Bot\FileUpload\InputFile;
+use Carbon\Carbon;
 
 class ReportController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
+    public function diarioindex()
     {
-        $reports = Report::orderBy('created_at', 'desc')->get();
-        return view('crud.reports.index', compact('reports'));
+        return view('reportes.diario.diario');
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
+    public function getreportediario(Request $request)
     {
-        //
+        $peticion = $request->all();
+
+        // Fecha actual
+        $fechaActual = Carbon::create($peticion['año'], $peticion['mes'], $peticion['dia']);
+
+        // Usuarios registrados hoy
+        $usuariosHoy = User::with('compras')->whereDate('created_at', $fechaActual)->get();
+
+        // Usuarios registrados en los últimos 30 días
+        $usuariosUltimos30Dias = User::where('created_at', '>=', $fechaActual->subDays(30))->get();
+
+        // Número de personas registradas hoy
+        $registrosHoy = $usuariosHoy->count();
+
+        // Promedio de registros en el mes actual
+        $promedioMesActual = User::whereMonth('created_at', $peticion['mes'])
+                                ->whereYear('created_at', $peticion['año'])
+                                ->count() / $fechaActual->daysInMonth;
+
+        $diaMasRegistrosMesActual = User::whereMonth('created_at', $peticion['mes'])
+                                ->whereYear('created_at', $peticion['año'])
+                                ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
+                                ->groupBy('dia')
+                                ->orderBy('registros', 'desc')
+                                ->first();
+
+        $diaMenosRegistrosMesActual = User::whereMonth('created_at', $peticion['mes'])
+                                 ->whereYear('created_at', $peticion['año'])
+                                 ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
+                                 ->groupBy('dia')
+                                 ->orderBy('registros', 'asc')
+                                 ->first();
+
+
+        // Promedio de registros en el mes anterior
+        $mesAnterior = $fechaActual->subMonth();
+        $promedioMesAnterior = User::whereMonth('created_at', $mesAnterior->month)
+                                   ->whereYear('created_at', $mesAnterior->year)
+                                   ->count() / $mesAnterior->daysInMonth;
+
+        $diaMasRegistrosMesAnterior = User::whereMonth('created_at', $mesAnterior->month)
+                                ->whereYear('created_at', $mesAnterior->year)
+                                ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
+                                ->groupBy('dia')
+                                ->orderBy('registros', 'desc')
+                                ->first();
+
+        $diaMenosRegistrosMesAnterior = User::whereMonth('created_at', $mesAnterior->month)
+                                 ->whereYear('created_at', $mesAnterior->year)
+                                 ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
+                                 ->groupBy('dia')
+                                 ->orderBy('registros', 'asc')
+                                 ->first();
+
+        // Promedio de registros en el mismo mes del año anterior
+        $añoAnterior = $fechaActual->subYear();
+        $promedioMismoMesAñoAnterior = User::whereMonth('created_at', $peticion['mes'])
+                                            ->whereYear('created_at', $añoAnterior->year)
+                                            ->count() / $fechaActual->daysInMonth;
+
+        $diaMasRegistrosMesActual_aa = User::whereMonth('created_at', $peticion['mes'])
+                                ->whereYear('created_at', $añoAnterior->year)
+                                ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
+                                ->groupBy('dia')
+                                ->orderBy('registros', 'desc')
+                                ->first();
+
+        $diaMenosRegistrosMesActual_aa = User::whereMonth('created_at', $peticion['mes'])
+                                ->whereYear('created_at', $añoAnterior->year)
+                                ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
+                                ->groupBy('dia')
+                                ->orderBy('registros', 'asc')
+                                ->first();
+
+        // Promedio de registros en el mes anterior al mes actual del año anterior
+        $mesAnteriorAñoAnterior = $añoAnterior->subMonth();
+        $promedioMesAnteriorAñoAnterior = User::whereMonth('created_at', $mesAnteriorAñoAnterior->month)
+                                               ->whereYear('created_at', $mesAnteriorAñoAnterior->year)
+                                               ->count() / $mesAnteriorAñoAnterior->daysInMonth;
+
+        $diaMasRegistrosMesAnterior_aa = User::whereMonth('created_at', $mesAnteriorAñoAnterior->month)
+                                ->whereYear('created_at', $mesAnteriorAñoAnterior->year)
+                                ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
+                                ->groupBy('dia')
+                                ->orderBy('registros', 'desc')
+                                ->first();
+
+        $diaMenosRegistrosMesAnterior_aa = User::whereMonth('created_at', $mesAnteriorAñoAnterior->month)
+                                ->whereYear('created_at', $mesAnteriorAñoAnterior->year)
+                                ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
+                                ->groupBy('dia')
+                                ->orderBy('registros', 'asc')
+                                ->first();
+
+        $fechaActual = Carbon::create($peticion['año'], $peticion['mes'], $peticion['dia']);
+
+        $lastMonth = $fechaActual->copy()->subDays(40);
+        $fechaSiguiente = $fechaActual->copy()->addDay();
+
+        $lastMonthStr = $lastMonth->format('Y-m-d');
+        $fechaSiguienteStr = $fechaSiguiente->format('Y-m-d');
+
+        $datesInRange = [];
+        $currentDate = $lastMonth->copy();
+        while ($currentDate < $fechaSiguiente) {
+            $datesInRange[$currentDate->format('Y-m-d')] = 0; // Inicializa con 0 registros
+            $currentDate->addDay();
+        }
+
+        // Ejecuta la consulta
+        $registrations = DB::select(
+            DB::raw("
+                SELECT DATE(created_at) as date, COUNT(*) as count
+                FROM users
+                WHERE created_at >= :lastMonth AND created_at < :fechaSiguiente
+                GROUP BY DATE(created_at)
+                ORDER BY date ASC
+            "),
+            [
+                'lastMonth' => $lastMonthStr,
+                'fechaSiguiente' => $fechaSiguienteStr
+            ]
+        );
+
+        // Asigna los registros obtenidos a las fechas correspondientes
+        foreach ($registrations as $registration) {
+            $date = $registration->date;
+            $count = $registration->count;
+            $datesInRange[$date] = $count;
+        }
+
+        dd($datesInRange);
+
+        // Convierte el resultado a un array de objetos para una respuesta consistente
+        $last30Registrations = [];
+        foreach ($datesInRange as $date => $count) {
+            $last30Registrations[] = (object)[
+                'date' => $date,
+                'count' => $count
+            ];
+        }
+
+        $last30Registrations = array_slice($registrations, -30);
+
+
+
+        $datosgraficos = [
+            'mes_actual' => [
+                'promedio' => round($promedioMesActual, 2),
+                'maximo' => $diaMasRegistrosMesActual->registros,
+                'minimo' => $diaMenosRegistrosMesActual->registros,
+            ],
+            'mes_anterior' => [
+                'promedio' => round($promedioMesAnterior, 2),
+                'maximo' => $diaMasRegistrosMesAnterior->registros,
+                'minimo' => $diaMenosRegistrosMesAnterior->registros,
+            ],
+            'mes_actual_aa' => [
+                'promedio' => round($promedioMismoMesAñoAnterior, 2),
+                'maximo' => $diaMasRegistrosMesActual_aa->registros,
+                'minimo' => $diaMenosRegistrosMesActual_aa->registros,
+            ],
+            'mes_anterior_aa' => [
+                'promedio' => round($promedioMesAnteriorAñoAnterior, 2),
+                'maximo' => $diaMasRegistrosMesAnterior_aa->registros,
+                'minimo' => $diaMenosRegistrosMesAnterior_aa->registros,
+            ]
+        ];
+
+        $datosgraficosporcentaje = [
+            'mes_actual' => [
+                'promedio' => round($promedioMesActual*100/$diaMasRegistrosMesActual->registros, 2),
+                'maximo' => 100,
+                'minimo' => 0,
+            ],
+            'mes_anterior' => [
+                'promedio' => round($promedioMesAnterior*100/$diaMasRegistrosMesAnterior->registros, 2),
+                'maximo' => 100,
+                'minimo' => 0,
+            ],
+            'mes_actual_aa' => [
+                'promedio' => round($promedioMismoMesAñoAnterior*100/$diaMasRegistrosMesActual_aa->registros, 2),
+                'maximo' => 100,
+                'minimo' => 0,
+            ],
+            'mes_anterior_aa' => [
+                'promedio' => round($promedioMesAnteriorAñoAnterior*100/$diaMasRegistrosMesAnterior_aa->registros, 2),
+                'maximo' => 100,
+                'minimo' => 0,
+            ]
+        ];
+
+        $labels = [];
+        $data = [];
+        foreach ($last30Registrations as $registration) {
+            $labels[] = $registration->date;
+            $data[] = $registration->count;
+        }
+
+        dd($data);
+
+        $chartConfig = [
+            'type' => 'line',
+            'data' => [
+                'labels' => $labels,
+                'datasets' => [[
+                    'label' => 'Registros',
+                    'data' => $data,
+                    'fill' => false,
+                    'borderColor' => 'rgba(0, 0, 0, 0.5)',
+                    'backgroundColor' => '#093143'
+                ]]
+            ],
+            'options' => [
+                'title' => [
+                    'display' => true,
+                    'text' => 'Registros de Usuarios en los Últimos 30 Días'
+                ],
+                'scales' => [
+                    'xAxes' => [[
+                        'scaleLabel' => [
+                            'display' => true,
+                            'labelString' => 'Fecha'
+                        ]
+                    ]],
+                    'yAxes' => [[
+                        'scaleLabel' => [
+                            'display' => true,
+                            'labelString' => 'Cantidad de Registros'
+                        ]
+                    ]]
+                ]
+            ]
+        ];
+
+        $chartConfignight = [
+            'type' => 'line',
+            'data' => [
+                'labels' => $labels,
+                'datasets' => [[
+                    'label' => 'Registros',
+                    'data' => $data,
+                    'fill' => false,
+                    'borderColor' => 'rgba(255, 255, 255, 0.5)', // Color del borde
+                    'backgroundColor' => '#093143',
+                    'color' => '#eeeeee'
+                ]]
+            ],
+            'options' => [
+                'legend' => [
+                    'labels' => [
+                        'fontColor' => '#eeeeee' // Color del texto de la leyenda
+                    ]
+                ],
+                'scales' => [
+                    'xAxes' => [[
+                        'scaleLabel' => [
+                            'display' => true,
+                            'labelString' => 'Fecha',
+                            'fontColor' => '#eeeeee' // Color del texto del eje X
+                        ],
+                        'ticks' => [
+                            'fontColor' => '#eeeeee' // Color del texto de las etiquetas del eje X
+                        ]
+                    ]],
+                    'yAxes' => [[
+                        'scaleLabel' => [
+                            'display' => true,
+                            'labelString' => 'Cantidad de Registros',
+                            'fontColor' => '#eeeeee' // Color del texto del eje Y
+                        ],
+                        'ticks' => [
+                            'fontColor' => '#eeeeee' // Color del texto de las etiquetas del eje Y
+                        ]
+                    ]]
+                ]
+            ]
+        ];
+
+        $chartUrl = 'https://quickchart.io/chart?c=' . urlencode(json_encode($chartConfig));
+        $chartNight = 'https://quickchart.io/chart?c=' . urlencode(json_encode($chartConfignight));
+
+        return view('reportes.diario.reporte', compact(
+            'peticion',
+            'usuariosHoy',
+            'usuariosUltimos30Dias',
+            'registrosHoy',
+            'promedioMesActual',
+            'promedioMesAnterior',
+            'promedioMismoMesAñoAnterior',
+            'promedioMesAnteriorAñoAnterior',
+            'datosgraficos',
+            'datosgraficosporcentaje',
+            'registrations',
+            'chartUrl',
+            'chartNight'
+        ));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
+    public function mensualindex()
     {
-        //
+        return view('reportes.diario.mensual');
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Report  $report
-     * @return \Illuminate\Http\Response
-     */
-    public function show(Report $report)
+    public function anualindex()
     {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Report  $report
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Report $report)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Report  $report
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, Report $report)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Report  $report
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Report $report)
-    {
-        //
+        return view('reportes.diario.anual');
     }
 
     public function makeReport() {

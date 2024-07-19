@@ -94,22 +94,21 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
 });
 
 Route::post('agclientesnew', [AgClienteNewController::class, 'storeNotCliente'])->name('agclientesnew.store');
-
 Route::post('agclientesupdate', [AgClienteNewController::class, 'updateNotCliente'])->name('agclientesnew.update');
-
 Route::post('getclientfiles', [AgClienteNewController::class, 'getClientFiles'])->name('getclientfiles');
-
 Route::post('updatefiletype', [AgClienteNewController::class, 'updatefiletype'])->name('updatefiletype');
-
 Route::post('storefile', [AgClienteNewController::class, 'storefile'])->name('storefile');
-
 Route::post('openfile', [AgClienteNewController::class, 'openfile'])->name('openfile');
-
 Route::post('deletefile', [AgClienteNewController::class, 'deletefile'])->name('deletefile');
-
 Route::post('getfileedit', [AgClienteNewController::class, 'getfileedit'])->name('getfileedit');
-
 Route::post('getfileupdate', [AgClienteNewController::class, 'getfileupdate'])->name('getfileupdate');
+
+Route::get('diarioindex',[ReportController::class, 'diarioindex'])->name('diarioindex')->middleware('can:reportes.index');
+Route::get('mensualindex',[ReportController::class, 'mensualindex'])->name('mensualindex')->middleware('can:reportes.index');
+Route::get('anualindex',[ReportController::class, 'anualindex'])->name('anualindex')->middleware('can:reportes.index');
+Route::post('getreportediario',[ReportController::class, 'getreportediario'])->name('getreportediario')->middleware('can:reportes.index');
+Route::post('getreportemensual',[ReportController::class, 'getreportemensual'])->name('getreportemensual')->middleware('can:reportes.index');
+Route::post('getreporteanual',[ReportController::class, 'getreporteanual'])->name('getreporteanual')->middleware('can:reportes.index');
 
 
 //TeamleaderTest
