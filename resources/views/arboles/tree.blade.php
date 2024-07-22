@@ -2040,10 +2040,10 @@
             align-items: center; /* Alinea los elementos al centro horizontalmente */
         }
         .treecont_minimized{
-            padding: 0px 20px 0px 20px;
+            padding: 30px 20px;
             margin-bottom: 20px;
             width: 100%;
-            height: 550px;
+            height: 700px;
             overflow-x: auto;
             overflow-y: hidden;
             position: relative;
