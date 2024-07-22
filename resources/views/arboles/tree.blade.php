@@ -2264,7 +2264,7 @@
             let datosFormateados = dataElement.innerText;
 
             datosFormateados = datosFormateados.replace(/(\s)+/g, ' ').trim();
-            datosFormateados = datosFormateados.replace(/\|/g, '\n');
+            datosFormateados = datosFormateados.replace(/\|/g, ' ');
             datosFormateados = datosFormateados.replace(/^\s+/gm, '');
 
             navigator.clipboard.writeText(datosFormateados)
