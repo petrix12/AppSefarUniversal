@@ -123,7 +123,7 @@
                                             <div class="encabezadonew_min">
                                                 {{ Str::limit($persona["Nombres"] . ' ' . $persona["Apellidos"], 20) }}
                                             </div>
-                                            <div id="datacopy_{{ $persona['id'] }}" style="display: none;">
+                                            <div id="datacopy_{{ $persona['id'] }}" style="displaf: none;">
                                                  @if (!empty($persona['Nombres']))
                                                     <p>
                                                         {{ $persona['Nombres'] }}{{!empty($persona['Apellidos']) ? " ".$persona['Apellidos'] : "" }}|
@@ -299,7 +299,7 @@
 
                                                 @if (!empty($persona['AnhoDef']))
                                                     <p>
-                                                        <strong>d </strong>
+                                                        <strong>f </strong>
                                                         @if (!empty($persona['LugarDef']))
                                                             en {{ $persona['LugarDef'] }}
                                                         @endif
@@ -432,7 +432,7 @@
 
                                                 @if (!empty($persona['AnhoDef']))
                                                     <p>
-                                                        <strong>d </strong>
+                                                        <strong>f </strong>
                                                         @if (!empty($persona['LugarDef']))
                                                             en {{ $persona['LugarDef'] }}
                                                         @endif
@@ -564,7 +564,7 @@
 
                                                 @if (!empty($persona['AnhoDef']))
                                                     <p>
-                                                        <strong>d </strong>
+                                                        <strong>f </strong>
                                                         @if (!empty($persona['LugarDef']))
                                                             en {{ $persona['LugarDef'] }}
                                                         @endif
@@ -695,7 +695,7 @@
 
                                                 @if (!empty($persona['AnhoDef']))
                                                     <p>
-                                                        <strong>d </strong>
+                                                        <strong>f </strong>
                                                         @if (!empty($persona['LugarDef']))
                                                             en {{ $persona['LugarDef'] }}
                                                         @endif
