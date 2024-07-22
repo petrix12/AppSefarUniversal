@@ -1259,7 +1259,6 @@
                             </div>
                         </div>
                     </div>
-                    @if(auth()->user() && auth()->user()->hasRole(['Administrador']))
                     <div class="md:flex ms:flex-wrap">
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
@@ -1268,7 +1267,6 @@
                             </div>
                         </div>
                     </div>
-                    @endif
                     <div class="px-4 py-3 w-full text-right sm:px-6">
                         <button type="button" class="cerrarmodal cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                             Cancelar
@@ -1762,7 +1760,6 @@
                             </div>
                         </div>
                     </div>
-                    @if(auth()->user() && auth()->user()->hasRole(['Administrador']))
                     <div class="md:flex ms:flex-wrap">
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
@@ -1771,7 +1768,6 @@
                             </div>
                         </div>
                     </div>
-                    @endif
                     <div class="px-4 py-3 w-full text-right sm:px-6">
                         <button type="button" class="cerrarmodal cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                             Cancelar
@@ -1846,7 +1842,6 @@
                             </div>
                         </div>
                     </div>
-                    @if(auth()->user() && auth()->user()->hasRole(['Administrador']))
                     <div class="md:flex ms:flex-wrap">
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
@@ -1855,7 +1850,6 @@
                             </div>
                         </div>
                     </div>
-                    @endif
                     <div class="px-4 py-3 w-full text-right sm:px-6">
                         <button type="button" class="cerrarmodalarchivo cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                             Cancelar
@@ -1906,7 +1900,6 @@
                             </div>
                         </div>
                     </div>
-                    @if(auth()->user() && auth()->user()->hasRole(['Administrador']))
                     <div class="md:flex ms:flex-wrap">
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
@@ -1915,7 +1908,6 @@
                             </div>
                         </div>
                     </div>
-                    @endif
                     <div class="px-4 py-3 w-full text-right sm:px-6">
                         <button type="button" class="cerrarmodalarchivoedit cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                             Cancelar
