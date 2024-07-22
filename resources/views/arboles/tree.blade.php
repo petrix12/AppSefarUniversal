@@ -123,7 +123,7 @@
                                             <div class="encabezadonew_min">
                                                 {{ Str::limit($persona["Nombres"] . ' ' . $persona["Apellidos"], 20) }}
                                             </div>
-                                            <div id="datacopy_{{ $persona['id'] }}" style="displaf: none;">
+                                            <div id="datacopy_{{ $persona['id'] }}" style="display: none;">
                                                  @if (!empty($persona['Nombres']))
                                                     <p>
                                                         {{ $persona['Nombres'] }}{{!empty($persona['Apellidos']) ? " ".$persona['Apellidos'] : "" }}|
@@ -167,7 +167,7 @@
 
                                                 @if (!empty($persona['AnhoDef']))
                                                     <p>
-                                                        <strong>d </strong>
+                                                        <strong>f </strong>
                                                         @if (!empty($persona['LugarDef']))
                                                             en {{ $persona['LugarDef'] }}
                                                         @endif
@@ -181,9 +181,7 @@
                                                     <p><strong>Lugar de Defunción:</strong> {{ $persona['LugarDef'] }}|</p>
                                                 @endif
 
-                                                @if (!empty($persona['Observaciones']))
-                                                    <p><strong>Observaciones:</strong> {{ $persona['Observaciones'] }}|</p>
-                                                @endif
+                                         
                                             </div>
                                             <div class="continfo">
                                                 @if (!empty($persona['Nombres']))
@@ -227,7 +225,7 @@
                                                 <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : $persona['Observaciones']}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar Persona</button>
                                                 <br>
                                                 <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Ver Archivos</button>
-                                                @if(auth()->user() && !auth()->user()->hasRole('Cliente'))
+                                                @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
                                                 <button class="copydata" onclick="copydata('datacopy_{{ $persona['id'] }}')">Copiar información de persona</button>
                                                 @endif
                                             </div>
@@ -313,9 +311,7 @@
                                                     <p><strong>Lugar de Defunción:</strong> {{ $persona['LugarDef'] }}|</p>
                                                 @endif
 
-                                                @if (!empty($persona['Observaciones']))
-                                                    <p><strong>Observaciones:</strong> {{ $persona['Observaciones'] }}|</p>
-                                                @endif
+                                         
                                             </div>
                                             <div class="continfo">
                                                 @if (!empty($persona['Nombres']))
@@ -359,7 +355,7 @@
                                                 <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : $persona['Observaciones']}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar Persona</button>
                                                 <br>
                                                 <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Ver Archivos</button>
-                                                @if(auth()->user() && !auth()->user()->hasRole('Cliente'))
+                                                @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
                                                 <button class="copydata" onclick="copydata('datacopy_{{ $persona['id'] }}')">Copiar información de persona</button>
                                                 @endif
                                             </div>
@@ -446,9 +442,7 @@
                                                     <p><strong>Lugar de Defunción:</strong> {{ $persona['LugarDef'] }}|</p>
                                                 @endif
 
-                                                @if (!empty($persona['Observaciones']))
-                                                    <p><strong>Observaciones:</strong> {{ $persona['Observaciones'] }}|</p>
-                                                @endif
+                                         
                                             </div>
                                             <div class="continfo">
                                                 @if (!empty($persona['Nombres']))
@@ -493,7 +487,7 @@
                                                 <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : $persona['Observaciones']}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar Persona</button>
                                                 <br>
                                                 <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Ver Archivos</button>
-                                                @if(auth()->user() && !auth()->user()->hasRole('Cliente'))
+                                                @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
                                                 <button class="copydata" onclick="copydata('datacopy_{{ $persona['id'] }}')">Copiar información de persona</button>
                                                 @endif
                                             </div>
@@ -578,9 +572,7 @@
                                                     <p><strong>Lugar de Defunción:</strong> {{ $persona['LugarDef'] }}|</p>
                                                 @endif
 
-                                                @if (!empty($persona['Observaciones']))
-                                                    <p><strong>Observaciones:</strong> {{ $persona['Observaciones'] }}|</p>
-                                                @endif
+                                         
                                             </div>
                                             <div class="continfo">
                                                 @if (!empty($persona['Nombres']))
@@ -620,11 +612,12 @@
                                                 @endif
 
                                                 <div style="width: 100%; height:0.5rem; border-bottom: #093143 1px solid ; margin-bottom:0.5rem;"></div>
-
+                                                @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
                                                 <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : $persona['Observaciones']}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar Persona</button>
                                                 <br>
                                                 <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Ver Archivos</button>
-                                                @if(auth()->user() && !auth()->user()->hasRole('Cliente'))
+                                                @endif
+                                                @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
                                                 <button class="copydata" onclick="copydata('datacopy_{{ $persona['id'] }}')">Copiar información de persona</button>
                                                 @endif
                                             </div>
@@ -709,9 +702,7 @@
                                                     <p><strong>Lugar de Defunción:</strong> {{ $persona['LugarDef'] }}|</p>
                                                 @endif
 
-                                                @if (!empty($persona['Observaciones']))
-                                                    <p><strong>Observaciones:</strong> {{ $persona['Observaciones'] }}|</p>
-                                                @endif
+                                         
                                             </div>
                                             <div class="continfo">
                                                 @if (!empty($persona['Nombres']))
@@ -755,7 +746,7 @@
                                                 <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : $persona['Observaciones']}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar Persona</button>
                                                 <br>
                                                 <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Ver Archivos</button>
-                                                @if(auth()->user() && !auth()->user()->hasRole('Cliente'))
+                                                @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
                                                 <button class="copydata" onclick="copydata('datacopy_{{ $persona['id'] }}')">Copiar información de persona</button>
                                                 @endif
                                             </div>
@@ -1268,6 +1259,7 @@
                             </div>
                         </div>
                     </div>
+                    @if(auth()->user() && auth()->user()->hasRole(['Administrador']))
                     <div class="md:flex ms:flex-wrap">
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
@@ -1276,6 +1268,7 @@
                             </div>
                         </div>
                     </div>
+                    @endif
                     <div class="px-4 py-3 w-full text-right sm:px-6">
                         <button type="button" class="cerrarmodal cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                             Cancelar
@@ -1769,6 +1762,7 @@
                             </div>
                         </div>
                     </div>
+                    @if(auth()->user() && auth()->user()->hasRole(['Administrador']))
                     <div class="md:flex ms:flex-wrap">
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
@@ -1777,6 +1771,7 @@
                             </div>
                         </div>
                     </div>
+                    @endif
                     <div class="px-4 py-3 w-full text-right sm:px-6">
                         <button type="button" class="cerrarmodal cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                             Cancelar
@@ -1851,6 +1846,7 @@
                             </div>
                         </div>
                     </div>
+                    @if(auth()->user() && auth()->user()->hasRole(['Administrador']))
                     <div class="md:flex ms:flex-wrap">
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
@@ -1859,6 +1855,7 @@
                             </div>
                         </div>
                     </div>
+                    @endif
                     <div class="px-4 py-3 w-full text-right sm:px-6">
                         <button type="button" class="cerrarmodalarchivo cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                             Cancelar
@@ -1909,6 +1906,7 @@
                             </div>
                         </div>
                     </div>
+                    @if(auth()->user() && auth()->user()->hasRole(['Administrador']))
                     <div class="md:flex ms:flex-wrap">
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
@@ -1917,6 +1915,7 @@
                             </div>
                         </div>
                     </div>
+                    @endif
                     <div class="px-4 py-3 w-full text-right sm:px-6">
                         <button type="button" class="cerrarmodalarchivoedit cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                             Cancelar
