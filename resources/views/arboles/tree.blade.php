@@ -42,8 +42,14 @@
                         <h2
                             class="text-sm font-bold cbgSefar tracking-wide pt-2 rounded-lg opacity-75 flex h-8 justify-center items-center">
                             Cliente:
+                            @if(sizeof($cliente)>0)
                             {{ $cliente[0]["nombres"] . ' ' . $cliente[0]["apellidos"] . ' / ' . $cliente[0]["passport"] }}
                             {{ ' / ' . $cliente[0]["servicio"] }}
+                            @else
+                            @foreach ($columna1 as $persona)
+                            {{$persona["Nombres"] . ' ' . $persona['Apellidos'] . ' / ' . $persona['IDCliente']}}
+                            @endforeach
+                            @endif
                         </h2>
                         <p class="mt-2 text-lg leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
                             ÁRBOL GENEALÓGICO
