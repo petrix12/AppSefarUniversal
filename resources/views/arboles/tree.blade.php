@@ -126,64 +126,51 @@
                                             <div id="datacopy_{{ $persona['id'] }}" style="display: none;">
                                                  @if (!empty($persona['Nombres']))
                                                     <p>
-                                                        <strong>Nombre completo:</strong>
                                                         {{ $persona['Nombres'] }}{{!empty($persona['Apellidos']) ? " ".$persona['Apellidos'] : "" }}|
                                                     </p>
                                                 @endif
-                                                @if (!empty($persona['NPasaporte']))
-                                                    <p><strong>Número de Pasaporte:</strong> {{ $persona['NPasaporte'] }}</p>|
-                                                @endif
-                                                @if (!empty($persona['PaisPasaporte']))
-                                                    <p><strong>País de emisión del Pasaporte:</strong> {{ $persona['PaisPasaporte'] }}</p>|
-                                                @endif
-                                                @if (!empty($persona['NDocIdent']))
-                                                    <p><strong>Número de Documento de Identidad:</strong> {{ $persona['NDocIdent'] }}</p>|
-                                                @endif
-                                                @if (!empty($persona['PaisDocIdent']))
-                                                    <p><strong>País de emisión del Documento de Identidad:</strong> {{ $persona['PaisDocIdent'] }}</p>|
-                                                @endif
                                                 @if (!empty($persona['AnhoNac']))
                                                     <p>
-                                                        <strong>Fecha de Nacimiento:</strong>
+                                                        <strong>n </strong>
+                                                        @if (!empty($persona['LugarNac']))
+                                                            en {{ $persona['LugarNac'] }}
+                                                        @endif
                                                         {{ !empty($persona['DiaNac']) ? $persona['DiaNac'] : '' }}{{ !empty($persona['DiaNac']) ? '/' : '' }}
                                                         {{ !empty($persona['MesNac']) ? $persona['MesNac'] : '' }}{{ !empty($persona['MesNac']) ? '/' : '' }}
                                                         {{ $persona['AnhoNac'] }}|
                                                     </p>
                                                 @endif
 
-                                                @if (!empty($persona['LugarNac']))
-                                                    <p><strong>Lugar de Nacimiento:</strong> {{ $persona['LugarNac'] }}</p>|
-                                                @endif
-
                                                 @if (!empty($persona['AnhoBtzo']))
                                                     <p>
-                                                        <strong>Fecha de Bautizo:</strong>
+                                                        <strong>b </strong>
+                                                        @if (!empty($persona['LugarBtzo']))
+                                                            en {{ $persona['LugarBtzo'] }}
+                                                        @endif
                                                         {{ !empty($persona['DiaBtzo']) ? $persona['DiaBtzo'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
                                                         {{ !empty($persona['MesBtzo']) ? $persona['MesBtzo'] : '' }}{{ !empty($persona['MesBtzo']) ? '/' : '' }}
                                                         {{ $persona['AnhoBtzo'] }}|
                                                     </p>
                                                 @endif
 
-                                                @if (!empty($persona['LugarBtzo']))
-                                                    <p><strong>Lugar de Bautizo:</strong> {{ $persona['LugarBtzo'] }}</p>|
-                                                @endif
-
                                                 @if (!empty($persona['AnhoMatr']))
                                                     <p>
-                                                        <strong>Fecha de Matrimonio:</strong>
-                                                        {{ !empty($persona['DiaMatr']) ? $persona['DiaMatr'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
+                                                        <strong>m </strong>
+                                                        @if (!empty($persona['LugarMatr']))
+                                                            en {{ $persona['LugarMatr'] }}
+                                                        @endif
+                                                        {{ !empty($persona['DiaMatr']) ? $persona['DiaMatr'] : '' }}{{ !empty($persona['DiaMatr']) ? '/' : '' }}
                                                         {{ !empty($persona['MesMatr']) ? $persona['MesMatr'] : '' }}{{ !empty($persona['MesMatr']) ? '/' : '' }}
                                                         {{ $persona['AnhoMatr'] }}|
                                                     </p>
                                                 @endif
 
-                                                @if (!empty($persona['LugarMatr']))
-                                                    <p><strong>Lugar de Matrimonio:</strong> {{ $persona['LugarMatr'] }}</p>|
-                                                @endif
-
                                                 @if (!empty($persona['AnhoDef']))
                                                     <p>
-                                                        <strong>Fecha de Defunción:</strong>
+                                                        <strong>d </strong>
+                                                        @if (!empty($persona['LugarDef']))
+                                                            en {{ $persona['LugarDef'] }}
+                                                        @endif
                                                         {{ !empty($persona['DiaDef']) ? $persona['DiaDef'] : '' }}{{ !empty($persona['DiaDef']) ? '/' : '' }}
                                                         {{ !empty($persona['MesDef']) ? $persona['MesDef'] : '' }}{{ !empty($persona['MesDef']) ? '/' : '' }}
                                                         {{ $persona['AnhoDef'] }}|
@@ -271,64 +258,51 @@
                                             <div id="datacopy_{{ $persona['id'] }}" style="display: none;">
                                                  @if (!empty($persona['Nombres']))
                                                     <p>
-                                                        <strong>Nombre completo:</strong>
                                                         {{ $persona['Nombres'] }}{{!empty($persona['Apellidos']) ? " ".$persona['Apellidos'] : "" }}|
                                                     </p>
                                                 @endif
-                                                @if (!empty($persona['NPasaporte']))
-                                                    <p><strong>Número de Pasaporte:</strong> {{ $persona['NPasaporte'] }}</p>|
-                                                @endif
-                                                @if (!empty($persona['PaisPasaporte']))
-                                                    <p><strong>País de emisión del Pasaporte:</strong> {{ $persona['PaisPasaporte'] }}</p>|
-                                                @endif
-                                                @if (!empty($persona['NDocIdent']))
-                                                    <p><strong>Número de Documento de Identidad:</strong> {{ $persona['NDocIdent'] }}</p>|
-                                                @endif
-                                                @if (!empty($persona['PaisDocIdent']))
-                                                    <p><strong>País de emisión del Documento de Identidad:</strong> {{ $persona['PaisDocIdent'] }}</p>|
-                                                @endif
                                                 @if (!empty($persona['AnhoNac']))
                                                     <p>
-                                                        <strong>Fecha de Nacimiento:</strong>
+                                                        <strong>n </strong>
+                                                        @if (!empty($persona['LugarNac']))
+                                                            en {{ $persona['LugarNac'] }}
+                                                        @endif
                                                         {{ !empty($persona['DiaNac']) ? $persona['DiaNac'] : '' }}{{ !empty($persona['DiaNac']) ? '/' : '' }}
                                                         {{ !empty($persona['MesNac']) ? $persona['MesNac'] : '' }}{{ !empty($persona['MesNac']) ? '/' : '' }}
                                                         {{ $persona['AnhoNac'] }}|
                                                     </p>
                                                 @endif
 
-                                                @if (!empty($persona['LugarNac']))
-                                                    <p><strong>Lugar de Nacimiento:</strong> {{ $persona['LugarNac'] }}</p>|
-                                                @endif
-
                                                 @if (!empty($persona['AnhoBtzo']))
                                                     <p>
-                                                        <strong>Fecha de Bautizo:</strong>
+                                                        <strong>b </strong>
+                                                        @if (!empty($persona['LugarBtzo']))
+                                                            en {{ $persona['LugarBtzo'] }}
+                                                        @endif
                                                         {{ !empty($persona['DiaBtzo']) ? $persona['DiaBtzo'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
                                                         {{ !empty($persona['MesBtzo']) ? $persona['MesBtzo'] : '' }}{{ !empty($persona['MesBtzo']) ? '/' : '' }}
                                                         {{ $persona['AnhoBtzo'] }}|
                                                     </p>
                                                 @endif
 
-                                                @if (!empty($persona['LugarBtzo']))
-                                                    <p><strong>Lugar de Bautizo:</strong> {{ $persona['LugarBtzo'] }}</p>|
-                                                @endif
-
                                                 @if (!empty($persona['AnhoMatr']))
                                                     <p>
-                                                        <strong>Fecha de Matrimonio:</strong>
-                                                        {{ !empty($persona['DiaMatr']) ? $persona['DiaMatr'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
+                                                        <strong>m </strong>
+                                                        @if (!empty($persona['LugarMatr']))
+                                                            en {{ $persona['LugarMatr'] }}
+                                                        @endif
+                                                        {{ !empty($persona['DiaMatr']) ? $persona['DiaMatr'] : '' }}{{ !empty($persona['DiaMatr']) ? '/' : '' }}
                                                         {{ !empty($persona['MesMatr']) ? $persona['MesMatr'] : '' }}{{ !empty($persona['MesMatr']) ? '/' : '' }}
                                                         {{ $persona['AnhoMatr'] }}|
                                                     </p>
                                                 @endif
 
-                                                @if (!empty($persona['LugarMatr']))
-                                                    <p><strong>Lugar de Matrimonio:</strong> {{ $persona['LugarMatr'] }}</p>|
-                                                @endif
-
                                                 @if (!empty($persona['AnhoDef']))
                                                     <p>
-                                                        <strong>Fecha de Defunción:</strong>
+                                                        <strong>d </strong>
+                                                        @if (!empty($persona['LugarDef']))
+                                                            en {{ $persona['LugarDef'] }}
+                                                        @endif
                                                         {{ !empty($persona['DiaDef']) ? $persona['DiaDef'] : '' }}{{ !empty($persona['DiaDef']) ? '/' : '' }}
                                                         {{ !empty($persona['MesDef']) ? $persona['MesDef'] : '' }}{{ !empty($persona['MesDef']) ? '/' : '' }}
                                                         {{ $persona['AnhoDef'] }}|
@@ -417,64 +391,51 @@
                                             <div id="datacopy_{{ $persona['id'] }}" style="display: none;">
                                                  @if (!empty($persona['Nombres']))
                                                     <p>
-                                                        <strong>Nombre completo:</strong>
                                                         {{ $persona['Nombres'] }}{{!empty($persona['Apellidos']) ? " ".$persona['Apellidos'] : "" }}|
                                                     </p>
                                                 @endif
-                                                @if (!empty($persona['NPasaporte']))
-                                                    <p><strong>Número de Pasaporte:</strong> {{ $persona['NPasaporte'] }}</p>|
-                                                @endif
-                                                @if (!empty($persona['PaisPasaporte']))
-                                                    <p><strong>País de emisión del Pasaporte:</strong> {{ $persona['PaisPasaporte'] }}</p>|
-                                                @endif
-                                                @if (!empty($persona['NDocIdent']))
-                                                    <p><strong>Número de Documento de Identidad:</strong> {{ $persona['NDocIdent'] }}</p>|
-                                                @endif
-                                                @if (!empty($persona['PaisDocIdent']))
-                                                    <p><strong>País de emisión del Documento de Identidad:</strong> {{ $persona['PaisDocIdent'] }}</p>|
-                                                @endif
                                                 @if (!empty($persona['AnhoNac']))
                                                     <p>
-                                                        <strong>Fecha de Nacimiento:</strong>
+                                                        <strong>n </strong>
+                                                        @if (!empty($persona['LugarNac']))
+                                                            en {{ $persona['LugarNac'] }}
+                                                        @endif
                                                         {{ !empty($persona['DiaNac']) ? $persona['DiaNac'] : '' }}{{ !empty($persona['DiaNac']) ? '/' : '' }}
                                                         {{ !empty($persona['MesNac']) ? $persona['MesNac'] : '' }}{{ !empty($persona['MesNac']) ? '/' : '' }}
                                                         {{ $persona['AnhoNac'] }}|
                                                     </p>
                                                 @endif
 
-                                                @if (!empty($persona['LugarNac']))
-                                                    <p><strong>Lugar de Nacimiento:</strong> {{ $persona['LugarNac'] }}</p>|
-                                                @endif
-
                                                 @if (!empty($persona['AnhoBtzo']))
                                                     <p>
-                                                        <strong>Fecha de Bautizo:</strong>
+                                                        <strong>b </strong>
+                                                        @if (!empty($persona['LugarBtzo']))
+                                                            en {{ $persona['LugarBtzo'] }}
+                                                        @endif
                                                         {{ !empty($persona['DiaBtzo']) ? $persona['DiaBtzo'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
                                                         {{ !empty($persona['MesBtzo']) ? $persona['MesBtzo'] : '' }}{{ !empty($persona['MesBtzo']) ? '/' : '' }}
                                                         {{ $persona['AnhoBtzo'] }}|
                                                     </p>
                                                 @endif
 
-                                                @if (!empty($persona['LugarBtzo']))
-                                                    <p><strong>Lugar de Bautizo:</strong> {{ $persona['LugarBtzo'] }}</p>|
-                                                @endif
-
                                                 @if (!empty($persona['AnhoMatr']))
                                                     <p>
-                                                        <strong>Fecha de Matrimonio:</strong>
-                                                        {{ !empty($persona['DiaMatr']) ? $persona['DiaMatr'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
+                                                        <strong>m </strong>
+                                                        @if (!empty($persona['LugarMatr']))
+                                                            en {{ $persona['LugarMatr'] }}
+                                                        @endif
+                                                        {{ !empty($persona['DiaMatr']) ? $persona['DiaMatr'] : '' }}{{ !empty($persona['DiaMatr']) ? '/' : '' }}
                                                         {{ !empty($persona['MesMatr']) ? $persona['MesMatr'] : '' }}{{ !empty($persona['MesMatr']) ? '/' : '' }}
                                                         {{ $persona['AnhoMatr'] }}|
                                                     </p>
                                                 @endif
 
-                                                @if (!empty($persona['LugarMatr']))
-                                                    <p><strong>Lugar de Matrimonio:</strong> {{ $persona['LugarMatr'] }}</p>|
-                                                @endif
-
                                                 @if (!empty($persona['AnhoDef']))
                                                     <p>
-                                                        <strong>Fecha de Defunción:</strong>
+                                                        <strong>d </strong>
+                                                        @if (!empty($persona['LugarDef']))
+                                                            en {{ $persona['LugarDef'] }}
+                                                        @endif
                                                         {{ !empty($persona['DiaDef']) ? $persona['DiaDef'] : '' }}{{ !empty($persona['DiaDef']) ? '/' : '' }}
                                                         {{ !empty($persona['MesDef']) ? $persona['MesDef'] : '' }}{{ !empty($persona['MesDef']) ? '/' : '' }}
                                                         {{ $persona['AnhoDef'] }}|
@@ -562,64 +523,51 @@
                                             <div id="datacopy_{{ $persona['id'] }}" style="display: none;">
                                                  @if (!empty($persona['Nombres']))
                                                     <p>
-                                                        <strong>Nombre completo:</strong>
                                                         {{ $persona['Nombres'] }}{{!empty($persona['Apellidos']) ? " ".$persona['Apellidos'] : "" }}|
                                                     </p>
                                                 @endif
-                                                @if (!empty($persona['NPasaporte']))
-                                                    <p><strong>Número de Pasaporte:</strong> {{ $persona['NPasaporte'] }}</p>|
-                                                @endif
-                                                @if (!empty($persona['PaisPasaporte']))
-                                                    <p><strong>País de emisión del Pasaporte:</strong> {{ $persona['PaisPasaporte'] }}</p>|
-                                                @endif
-                                                @if (!empty($persona['NDocIdent']))
-                                                    <p><strong>Número de Documento de Identidad:</strong> {{ $persona['NDocIdent'] }}</p>|
-                                                @endif
-                                                @if (!empty($persona['PaisDocIdent']))
-                                                    <p><strong>País de emisión del Documento de Identidad:</strong> {{ $persona['PaisDocIdent'] }}</p>|
-                                                @endif
                                                 @if (!empty($persona['AnhoNac']))
                                                     <p>
-                                                        <strong>Fecha de Nacimiento:</strong>
+                                                        <strong>n </strong>
+                                                        @if (!empty($persona['LugarNac']))
+                                                            en {{ $persona['LugarNac'] }}
+                                                        @endif
                                                         {{ !empty($persona['DiaNac']) ? $persona['DiaNac'] : '' }}{{ !empty($persona['DiaNac']) ? '/' : '' }}
                                                         {{ !empty($persona['MesNac']) ? $persona['MesNac'] : '' }}{{ !empty($persona['MesNac']) ? '/' : '' }}
                                                         {{ $persona['AnhoNac'] }}|
                                                     </p>
                                                 @endif
 
-                                                @if (!empty($persona['LugarNac']))
-                                                    <p><strong>Lugar de Nacimiento:</strong> {{ $persona['LugarNac'] }}</p>|
-                                                @endif
-
                                                 @if (!empty($persona['AnhoBtzo']))
                                                     <p>
-                                                        <strong>Fecha de Bautizo:</strong>
+                                                        <strong>b </strong>
+                                                        @if (!empty($persona['LugarBtzo']))
+                                                            en {{ $persona['LugarBtzo'] }}
+                                                        @endif
                                                         {{ !empty($persona['DiaBtzo']) ? $persona['DiaBtzo'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
                                                         {{ !empty($persona['MesBtzo']) ? $persona['MesBtzo'] : '' }}{{ !empty($persona['MesBtzo']) ? '/' : '' }}
                                                         {{ $persona['AnhoBtzo'] }}|
                                                     </p>
                                                 @endif
 
-                                                @if (!empty($persona['LugarBtzo']))
-                                                    <p><strong>Lugar de Bautizo:</strong> {{ $persona['LugarBtzo'] }}</p>|
-                                                @endif
-
                                                 @if (!empty($persona['AnhoMatr']))
                                                     <p>
-                                                        <strong>Fecha de Matrimonio:</strong>
-                                                        {{ !empty($persona['DiaMatr']) ? $persona['DiaMatr'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
+                                                        <strong>m </strong>
+                                                        @if (!empty($persona['LugarMatr']))
+                                                            en {{ $persona['LugarMatr'] }}
+                                                        @endif
+                                                        {{ !empty($persona['DiaMatr']) ? $persona['DiaMatr'] : '' }}{{ !empty($persona['DiaMatr']) ? '/' : '' }}
                                                         {{ !empty($persona['MesMatr']) ? $persona['MesMatr'] : '' }}{{ !empty($persona['MesMatr']) ? '/' : '' }}
                                                         {{ $persona['AnhoMatr'] }}|
                                                     </p>
                                                 @endif
 
-                                                @if (!empty($persona['LugarMatr']))
-                                                    <p><strong>Lugar de Matrimonio:</strong> {{ $persona['LugarMatr'] }}</p>|
-                                                @endif
-
                                                 @if (!empty($persona['AnhoDef']))
                                                     <p>
-                                                        <strong>Fecha de Defunción:</strong>
+                                                        <strong>d </strong>
+                                                        @if (!empty($persona['LugarDef']))
+                                                            en {{ $persona['LugarDef'] }}
+                                                        @endif
                                                         {{ !empty($persona['DiaDef']) ? $persona['DiaDef'] : '' }}{{ !empty($persona['DiaDef']) ? '/' : '' }}
                                                         {{ !empty($persona['MesDef']) ? $persona['MesDef'] : '' }}{{ !empty($persona['MesDef']) ? '/' : '' }}
                                                         {{ $persona['AnhoDef'] }}|
@@ -706,64 +654,51 @@
                                             <div id="datacopy_{{ $persona['id'] }}" style="display: none;">
                                                  @if (!empty($persona['Nombres']))
                                                     <p>
-                                                        <strong>Nombre completo:</strong>
                                                         {{ $persona['Nombres'] }}{{!empty($persona['Apellidos']) ? " ".$persona['Apellidos'] : "" }}|
                                                     </p>
                                                 @endif
-                                                @if (!empty($persona['NPasaporte']))
-                                                    <p><strong>Número de Pasaporte:</strong> {{ $persona['NPasaporte'] }}</p>|
-                                                @endif
-                                                @if (!empty($persona['PaisPasaporte']))
-                                                    <p><strong>País de emisión del Pasaporte:</strong> {{ $persona['PaisPasaporte'] }}</p>|
-                                                @endif
-                                                @if (!empty($persona['NDocIdent']))
-                                                    <p><strong>Número de Documento de Identidad:</strong> {{ $persona['NDocIdent'] }}</p>|
-                                                @endif
-                                                @if (!empty($persona['PaisDocIdent']))
-                                                    <p><strong>País de emisión del Documento de Identidad:</strong> {{ $persona['PaisDocIdent'] }}</p>|
-                                                @endif
                                                 @if (!empty($persona['AnhoNac']))
                                                     <p>
-                                                        <strong>Fecha de Nacimiento:</strong>
+                                                        <strong>n </strong>
+                                                        @if (!empty($persona['LugarNac']))
+                                                            en {{ $persona['LugarNac'] }}
+                                                        @endif
                                                         {{ !empty($persona['DiaNac']) ? $persona['DiaNac'] : '' }}{{ !empty($persona['DiaNac']) ? '/' : '' }}
                                                         {{ !empty($persona['MesNac']) ? $persona['MesNac'] : '' }}{{ !empty($persona['MesNac']) ? '/' : '' }}
                                                         {{ $persona['AnhoNac'] }}|
                                                     </p>
                                                 @endif
 
-                                                @if (!empty($persona['LugarNac']))
-                                                    <p><strong>Lugar de Nacimiento:</strong> {{ $persona['LugarNac'] }}</p>|
-                                                @endif
-
                                                 @if (!empty($persona['AnhoBtzo']))
                                                     <p>
-                                                        <strong>Fecha de Bautizo:</strong>
+                                                        <strong>b </strong>
+                                                        @if (!empty($persona['LugarBtzo']))
+                                                            en {{ $persona['LugarBtzo'] }}
+                                                        @endif
                                                         {{ !empty($persona['DiaBtzo']) ? $persona['DiaBtzo'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
                                                         {{ !empty($persona['MesBtzo']) ? $persona['MesBtzo'] : '' }}{{ !empty($persona['MesBtzo']) ? '/' : '' }}
                                                         {{ $persona['AnhoBtzo'] }}|
                                                     </p>
                                                 @endif
 
-                                                @if (!empty($persona['LugarBtzo']))
-                                                    <p><strong>Lugar de Bautizo:</strong> {{ $persona['LugarBtzo'] }}</p>|
-                                                @endif
-
                                                 @if (!empty($persona['AnhoMatr']))
                                                     <p>
-                                                        <strong>Fecha de Matrimonio:</strong>
-                                                        {{ !empty($persona['DiaMatr']) ? $persona['DiaMatr'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
+                                                        <strong>m </strong>
+                                                        @if (!empty($persona['LugarMatr']))
+                                                            en {{ $persona['LugarMatr'] }}
+                                                        @endif
+                                                        {{ !empty($persona['DiaMatr']) ? $persona['DiaMatr'] : '' }}{{ !empty($persona['DiaMatr']) ? '/' : '' }}
                                                         {{ !empty($persona['MesMatr']) ? $persona['MesMatr'] : '' }}{{ !empty($persona['MesMatr']) ? '/' : '' }}
                                                         {{ $persona['AnhoMatr'] }}|
                                                     </p>
                                                 @endif
 
-                                                @if (!empty($persona['LugarMatr']))
-                                                    <p><strong>Lugar de Matrimonio:</strong> {{ $persona['LugarMatr'] }}</p>|
-                                                @endif
-
                                                 @if (!empty($persona['AnhoDef']))
                                                     <p>
-                                                        <strong>Fecha de Defunción:</strong>
+                                                        <strong>d </strong>
+                                                        @if (!empty($persona['LugarDef']))
+                                                            en {{ $persona['LugarDef'] }}
+                                                        @endif
                                                         {{ !empty($persona['DiaDef']) ? $persona['DiaDef'] : '' }}{{ !empty($persona['DiaDef']) ? '/' : '' }}
                                                         {{ !empty($persona['MesDef']) ? $persona['MesDef'] : '' }}{{ !empty($persona['MesDef']) ? '/' : '' }}
                                                         {{ $persona['AnhoDef'] }}|
