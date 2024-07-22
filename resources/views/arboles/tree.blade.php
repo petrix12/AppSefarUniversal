@@ -75,6 +75,7 @@
                                 background-color: rgb(247,176,52);
                             }
                         </style>
+                        <div style="display:flex;">
                         @can('descargarGedcom')
                             <div class="px-4 py-2 m-2">
                                 {{-- FAMILIARES --}}
@@ -87,6 +88,19 @@
                                 </div>
                             </div>
                         @endcan
+                        @can('descargarGedcom')
+                            <div class="px-4 py-2 m-2">
+                                {{-- FAMILIARES --}}
+                                <div class="justify-center">
+                                    <label for="downloadgedcom" class="px-3 block text-sm font-medium text-gray-700"
+                                        title="Descargar Gedcom">Descargar Excel</label>
+                                    <a href="{{route('getExcelCliente', $columna1[0])}}" class="csrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600">
+                                        <b>Descargar Excel</b>
+                                    </a>
+                                </div>
+                            </div>
+                        @endcan
+                        </div>
                     </div>
                 </div>
 

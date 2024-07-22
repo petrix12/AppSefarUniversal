@@ -122,6 +122,9 @@ Route::get('/checkMondayTest', [ClienteController::class, 'checkMondayTest'])->n
 //Ruta Comprobantes de Pago
 Route::get('/downloadTree/{id}', [GedcomController::class, 'getGedcomCliente'])->name('getGedcomCliente');
 
+//Ruta Comprobantes de Pago
+Route::get('/downloadExcel/{id}', [GedcomController::class, 'getExcelCliente'])->name('getExcelCliente');
+
 //Ruta api GetEmail
 Route::get('/api/getemail/{id}', [UserController::class, 'getemail'])->name('getemail');
 

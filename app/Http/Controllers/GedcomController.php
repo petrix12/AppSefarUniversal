@@ -6,9 +6,63 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 use App\Models\Agcliente;
 use App\Models\User;
+use App\Exports\TreeExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class GedcomController extends Controller
 {
+    public function getExcelCliente(Request $request){
+        $arrayGeneraciones = [
+            "Cliente",
+            "Padres",
+            "Abuelos",
+            "Bisabuelos",
+            "Tatarabuelos",
+            "Trastatarabuelos",
+            "Cuartabuelos",
+            "Quintabuelos",
+            "Sextabuelos",
+            "Septabuelos",
+            "Octabuelos",
+            "Nonabuelos",
+            "Decabuelos"
+        ];
+
+        // Obtener los datos del cliente
+        $datacliente = json_decode(json_encode(Agcliente::where("id", $request->id)->select("id","idPadreNew","idMadreNew","Nombres","Apellidos","NPasaporte","PaisPasaporte","NDocIdent","PaisDocIdent","Sexo","AnhoNac","MesNac","DiaNac","LugarNac","PaisNac","AnhoBtzo","MesBtzo","DiaBtzo","LugarBtzo","PaisBtzo","AnhoMatr" ,"MesMatr","DiaMatr","LugarMatr","PaisMatr","AnhoDef","MesDef","DiaDef","LugarDef","PaisDef","Observaciones","created_at")->first()), true);
+        $people = [];
+
+        // Función recursiva para asignar generaciones
+        function getGenerations($person, $generationIndex, &$people, $arrayGeneraciones) {
+            if ($generationIndex >= count($arrayGeneraciones)) {
+                return;
+            }
+
+            // Agregar la persona a la lista con su generación
+            $person['generacion'] = $arrayGeneraciones[$generationIndex];
+            $people[] = $person;
+
+            // Buscar padres y asociar la siguiente generación
+            if (!empty($person['idPadreNew'])) {
+                $padre = Agcliente::where('id', $person['idPadreNew'])->select("id","idPadreNew","idMadreNew","Nombres","Apellidos","NPasaporte","PaisPasaporte","NDocIdent","PaisDocIdent","Sexo","AnhoNac","MesNac","DiaNac","LugarNac","PaisNac","AnhoBtzo","MesBtzo","DiaBtzo","LugarBtzo","PaisBtzo","AnhoMatr" ,"MesMatr","DiaMatr","LugarMatr","PaisMatr","AnhoDef","MesDef","DiaDef","LugarDef","PaisDef","Observaciones","created_at")->first();
+                if ($padre) {
+                    getGenerations($padre->toArray(), $generationIndex + 1, $people, $arrayGeneraciones);
+                }
+            }
+
+            if (!empty($person['idMadreNew'])) {
+                $madre = Agcliente::where('id', $person['idMadreNew'])->select("id","idPadreNew","idMadreNew","Nombres","Apellidos","NPasaporte","PaisPasaporte","NDocIdent","PaisDocIdent","Sexo","AnhoNac","MesNac","DiaNac","LugarNac","PaisNac","AnhoBtzo","MesBtzo","DiaBtzo","LugarBtzo","PaisBtzo","AnhoMatr" ,"MesMatr","DiaMatr","LugarMatr","PaisMatr","AnhoDef","MesDef","DiaDef","LugarDef","PaisDef","Observaciones","created_at")->first();
+                if ($madre) {
+                    getGenerations($madre->toArray(), $generationIndex + 1, $people, $arrayGeneraciones);
+                }
+            }
+        }
+
+        // Iniciar la asignación de generaciones con el cliente
+        getGenerations($datacliente, 0, $people, $arrayGeneraciones);
+
+        return Excel::download(new TreeExport($people), 'Arbol Genealógico - '.$request->id.'.xlsx');
+    }
     public function getGedcomCliente(Request $request)
     {
         $datacliente = json_decode(json_encode(Agcliente::where("id", $request->id)->get()),true);
