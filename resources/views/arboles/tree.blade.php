@@ -109,6 +109,81 @@
                                             <div class="encabezadonew_min">
                                                 {{ Str::limit($persona["Nombres"] . ' ' . $persona["Apellidos"], 20) }}
                                             </div>
+                                            <div id="datacopy_{{ $persona['id'] }}" style="display: none;">
+                                                 @if (!empty($persona['Nombres']))
+                                                    <p>
+                                                        <strong>Nombre completo:</strong>
+                                                        {{ $persona['Nombres'] }}{{!empty($persona['Apellidos']) ? " ".$persona['Apellidos'] : "" }}|
+                                                    </p>
+                                                @endif
+                                                @if (!empty($persona['NPasaporte']))
+                                                    <p><strong>Número de Pasaporte:</strong> {{ $persona['NPasaporte'] }}</p>|
+                                                @endif
+                                                @if (!empty($persona['PaisPasaporte']))
+                                                    <p><strong>País de emisión del Pasaporte:</strong> {{ $persona['PaisPasaporte'] }}</p>|
+                                                @endif
+                                                @if (!empty($persona['NDocIdent']))
+                                                    <p><strong>Número de Documento de Identidad:</strong> {{ $persona['NDocIdent'] }}</p>|
+                                                @endif
+                                                @if (!empty($persona['PaisDocIdent']))
+                                                    <p><strong>País de emisión del Documento de Identidad:</strong> {{ $persona['PaisDocIdent'] }}</p>|
+                                                @endif
+                                                @if (!empty($persona['AnhoNac']))
+                                                    <p>
+                                                        <strong>Fecha de Nacimiento:</strong>
+                                                        {{ !empty($persona['DiaNac']) ? $persona['DiaNac'] : '' }}{{ !empty($persona['DiaNac']) ? '/' : '' }}
+                                                        {{ !empty($persona['MesNac']) ? $persona['MesNac'] : '' }}{{ !empty($persona['MesNac']) ? '/' : '' }}
+                                                        {{ $persona['AnhoNac'] }}|
+                                                    </p>
+                                                @endif
+
+                                                @if (!empty($persona['LugarNac']))
+                                                    <p><strong>Lugar de Nacimiento:</strong> {{ $persona['LugarNac'] }}</p>|
+                                                @endif
+
+                                                @if (!empty($persona['AnhoBtzo']))
+                                                    <p>
+                                                        <strong>Fecha de Bautizo:</strong>
+                                                        {{ !empty($persona['DiaBtzo']) ? $persona['DiaBtzo'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
+                                                        {{ !empty($persona['MesBtzo']) ? $persona['MesBtzo'] : '' }}{{ !empty($persona['MesBtzo']) ? '/' : '' }}
+                                                        {{ $persona['AnhoBtzo'] }}|
+                                                    </p>
+                                                @endif
+
+                                                @if (!empty($persona['LugarBtzo']))
+                                                    <p><strong>Lugar de Bautizo:</strong> {{ $persona['LugarBtzo'] }}</p>|
+                                                @endif
+
+                                                @if (!empty($persona['AnhoMatr']))
+                                                    <p>
+                                                        <strong>Fecha de Matrimonio:</strong>
+                                                        {{ !empty($persona['DiaMatr']) ? $persona['DiaMatr'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
+                                                        {{ !empty($persona['MesMatr']) ? $persona['MesMatr'] : '' }}{{ !empty($persona['MesMatr']) ? '/' : '' }}
+                                                        {{ $persona['AnhoMatr'] }}|
+                                                    </p>
+                                                @endif
+
+                                                @if (!empty($persona['LugarMatr']))
+                                                    <p><strong>Lugar de Matrimonio:</strong> {{ $persona['LugarMatr'] }}</p>|
+                                                @endif
+
+                                                @if (!empty($persona['AnhoDef']))
+                                                    <p>
+                                                        <strong>Fecha de Defunción:</strong>
+                                                        {{ !empty($persona['DiaDef']) ? $persona['DiaDef'] : '' }}{{ !empty($persona['DiaDef']) ? '/' : '' }}
+                                                        {{ !empty($persona['MesDef']) ? $persona['MesDef'] : '' }}{{ !empty($persona['MesDef']) ? '/' : '' }}
+                                                        {{ $persona['AnhoDef'] }}|
+                                                    </p>
+                                                @endif
+
+                                                @if (!empty($persona['LugarDef']))
+                                                    <p><strong>Lugar de Defunción:</strong> {{ $persona['LugarDef'] }}|</p>
+                                                @endif
+
+                                                @if (!empty($persona['Observaciones']))
+                                                    <p><strong>Observaciones:</strong> {{ $persona['Observaciones'] }}|</p>
+                                                @endif
+                                            </div>
                                             <div class="continfo">
                                                 @if (!empty($persona['Nombres']))
                                                     <p>
@@ -151,6 +226,7 @@
                                                 <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : $persona['Observaciones']}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar Persona</button>
                                                 <br>
                                                 <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Ver Archivos</button>
+                                                <button class="copydata" onclick="copydata('datacopy_{{ $persona['id'] }}')">Copiar información de persona</button>
                                             </div>
                                         </div>
                                     @elseif ($persona["showbtn"]==1)
@@ -176,6 +252,81 @@
                                             <div class="encabezadonew_min">
                                                 {{ Str::limit($persona["Nombres"] . ' ' . $persona["Apellidos"], 20) }}
                                             </div>
+                                            <div id="datacopy_{{ $persona['id'] }}" style="display: none;">
+                                                 @if (!empty($persona['Nombres']))
+                                                    <p>
+                                                        <strong>Nombre completo:</strong>
+                                                        {{ $persona['Nombres'] }}{{!empty($persona['Apellidos']) ? " ".$persona['Apellidos'] : "" }}|
+                                                    </p>
+                                                @endif
+                                                @if (!empty($persona['NPasaporte']))
+                                                    <p><strong>Número de Pasaporte:</strong> {{ $persona['NPasaporte'] }}</p>|
+                                                @endif
+                                                @if (!empty($persona['PaisPasaporte']))
+                                                    <p><strong>País de emisión del Pasaporte:</strong> {{ $persona['PaisPasaporte'] }}</p>|
+                                                @endif
+                                                @if (!empty($persona['NDocIdent']))
+                                                    <p><strong>Número de Documento de Identidad:</strong> {{ $persona['NDocIdent'] }}</p>|
+                                                @endif
+                                                @if (!empty($persona['PaisDocIdent']))
+                                                    <p><strong>País de emisión del Documento de Identidad:</strong> {{ $persona['PaisDocIdent'] }}</p>|
+                                                @endif
+                                                @if (!empty($persona['AnhoNac']))
+                                                    <p>
+                                                        <strong>Fecha de Nacimiento:</strong>
+                                                        {{ !empty($persona['DiaNac']) ? $persona['DiaNac'] : '' }}{{ !empty($persona['DiaNac']) ? '/' : '' }}
+                                                        {{ !empty($persona['MesNac']) ? $persona['MesNac'] : '' }}{{ !empty($persona['MesNac']) ? '/' : '' }}
+                                                        {{ $persona['AnhoNac'] }}|
+                                                    </p>
+                                                @endif
+
+                                                @if (!empty($persona['LugarNac']))
+                                                    <p><strong>Lugar de Nacimiento:</strong> {{ $persona['LugarNac'] }}</p>|
+                                                @endif
+
+                                                @if (!empty($persona['AnhoBtzo']))
+                                                    <p>
+                                                        <strong>Fecha de Bautizo:</strong>
+                                                        {{ !empty($persona['DiaBtzo']) ? $persona['DiaBtzo'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
+                                                        {{ !empty($persona['MesBtzo']) ? $persona['MesBtzo'] : '' }}{{ !empty($persona['MesBtzo']) ? '/' : '' }}
+                                                        {{ $persona['AnhoBtzo'] }}|
+                                                    </p>
+                                                @endif
+
+                                                @if (!empty($persona['LugarBtzo']))
+                                                    <p><strong>Lugar de Bautizo:</strong> {{ $persona['LugarBtzo'] }}</p>|
+                                                @endif
+
+                                                @if (!empty($persona['AnhoMatr']))
+                                                    <p>
+                                                        <strong>Fecha de Matrimonio:</strong>
+                                                        {{ !empty($persona['DiaMatr']) ? $persona['DiaMatr'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
+                                                        {{ !empty($persona['MesMatr']) ? $persona['MesMatr'] : '' }}{{ !empty($persona['MesMatr']) ? '/' : '' }}
+                                                        {{ $persona['AnhoMatr'] }}|
+                                                    </p>
+                                                @endif
+
+                                                @if (!empty($persona['LugarMatr']))
+                                                    <p><strong>Lugar de Matrimonio:</strong> {{ $persona['LugarMatr'] }}</p>|
+                                                @endif
+
+                                                @if (!empty($persona['AnhoDef']))
+                                                    <p>
+                                                        <strong>Fecha de Defunción:</strong>
+                                                        {{ !empty($persona['DiaDef']) ? $persona['DiaDef'] : '' }}{{ !empty($persona['DiaDef']) ? '/' : '' }}
+                                                        {{ !empty($persona['MesDef']) ? $persona['MesDef'] : '' }}{{ !empty($persona['MesDef']) ? '/' : '' }}
+                                                        {{ $persona['AnhoDef'] }}|
+                                                    </p>
+                                                @endif
+
+                                                @if (!empty($persona['LugarDef']))
+                                                    <p><strong>Lugar de Defunción:</strong> {{ $persona['LugarDef'] }}|</p>
+                                                @endif
+
+                                                @if (!empty($persona['Observaciones']))
+                                                    <p><strong>Observaciones:</strong> {{ $persona['Observaciones'] }}|</p>
+                                                @endif
+                                            </div>
                                             <div class="continfo">
                                                 @if (!empty($persona['Nombres']))
                                                     <p>
@@ -218,6 +369,7 @@
                                                 <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : $persona['Observaciones']}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar Persona</button>
                                                 <br>
                                                 <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Ver Archivos</button>
+                                                <button class="copydata" onclick="copydata('datacopy_{{ $persona['id'] }}')">Copiar información de persona</button>
                                             </div>
                                         </div>
                                     @elseif ($persona["showbtn"]==1)
@@ -244,6 +396,81 @@
                                             <div class="encabezadonew_min">
                                                 {{ Str::limit($persona["Nombres"] . ' ' . $persona["Apellidos"], 20) }}
                                             </div>
+                                            <div id="datacopy_{{ $persona['id'] }}" style="display: none;">
+                                                 @if (!empty($persona['Nombres']))
+                                                    <p>
+                                                        <strong>Nombre completo:</strong>
+                                                        {{ $persona['Nombres'] }}{{!empty($persona['Apellidos']) ? " ".$persona['Apellidos'] : "" }}|
+                                                    </p>
+                                                @endif
+                                                @if (!empty($persona['NPasaporte']))
+                                                    <p><strong>Número de Pasaporte:</strong> {{ $persona['NPasaporte'] }}</p>|
+                                                @endif
+                                                @if (!empty($persona['PaisPasaporte']))
+                                                    <p><strong>País de emisión del Pasaporte:</strong> {{ $persona['PaisPasaporte'] }}</p>|
+                                                @endif
+                                                @if (!empty($persona['NDocIdent']))
+                                                    <p><strong>Número de Documento de Identidad:</strong> {{ $persona['NDocIdent'] }}</p>|
+                                                @endif
+                                                @if (!empty($persona['PaisDocIdent']))
+                                                    <p><strong>País de emisión del Documento de Identidad:</strong> {{ $persona['PaisDocIdent'] }}</p>|
+                                                @endif
+                                                @if (!empty($persona['AnhoNac']))
+                                                    <p>
+                                                        <strong>Fecha de Nacimiento:</strong>
+                                                        {{ !empty($persona['DiaNac']) ? $persona['DiaNac'] : '' }}{{ !empty($persona['DiaNac']) ? '/' : '' }}
+                                                        {{ !empty($persona['MesNac']) ? $persona['MesNac'] : '' }}{{ !empty($persona['MesNac']) ? '/' : '' }}
+                                                        {{ $persona['AnhoNac'] }}|
+                                                    </p>
+                                                @endif
+
+                                                @if (!empty($persona['LugarNac']))
+                                                    <p><strong>Lugar de Nacimiento:</strong> {{ $persona['LugarNac'] }}</p>|
+                                                @endif
+
+                                                @if (!empty($persona['AnhoBtzo']))
+                                                    <p>
+                                                        <strong>Fecha de Bautizo:</strong>
+                                                        {{ !empty($persona['DiaBtzo']) ? $persona['DiaBtzo'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
+                                                        {{ !empty($persona['MesBtzo']) ? $persona['MesBtzo'] : '' }}{{ !empty($persona['MesBtzo']) ? '/' : '' }}
+                                                        {{ $persona['AnhoBtzo'] }}|
+                                                    </p>
+                                                @endif
+
+                                                @if (!empty($persona['LugarBtzo']))
+                                                    <p><strong>Lugar de Bautizo:</strong> {{ $persona['LugarBtzo'] }}</p>|
+                                                @endif
+
+                                                @if (!empty($persona['AnhoMatr']))
+                                                    <p>
+                                                        <strong>Fecha de Matrimonio:</strong>
+                                                        {{ !empty($persona['DiaMatr']) ? $persona['DiaMatr'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
+                                                        {{ !empty($persona['MesMatr']) ? $persona['MesMatr'] : '' }}{{ !empty($persona['MesMatr']) ? '/' : '' }}
+                                                        {{ $persona['AnhoMatr'] }}|
+                                                    </p>
+                                                @endif
+
+                                                @if (!empty($persona['LugarMatr']))
+                                                    <p><strong>Lugar de Matrimonio:</strong> {{ $persona['LugarMatr'] }}</p>|
+                                                @endif
+
+                                                @if (!empty($persona['AnhoDef']))
+                                                    <p>
+                                                        <strong>Fecha de Defunción:</strong>
+                                                        {{ !empty($persona['DiaDef']) ? $persona['DiaDef'] : '' }}{{ !empty($persona['DiaDef']) ? '/' : '' }}
+                                                        {{ !empty($persona['MesDef']) ? $persona['MesDef'] : '' }}{{ !empty($persona['MesDef']) ? '/' : '' }}
+                                                        {{ $persona['AnhoDef'] }}|
+                                                    </p>
+                                                @endif
+
+                                                @if (!empty($persona['LugarDef']))
+                                                    <p><strong>Lugar de Defunción:</strong> {{ $persona['LugarDef'] }}|</p>
+                                                @endif
+
+                                                @if (!empty($persona['Observaciones']))
+                                                    <p><strong>Observaciones:</strong> {{ $persona['Observaciones'] }}|</p>
+                                                @endif
+                                            </div>
                                             <div class="continfo">
                                                 @if (!empty($persona['Nombres']))
                                                     <p>
@@ -287,6 +514,7 @@
                                                 <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : $persona['Observaciones']}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar Persona</button>
                                                 <br>
                                                 <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Ver Archivos</button>
+                                                <button class="copydata" onclick="copydata('datacopy_{{ $persona['id'] }}')">Copiar información de persona</button>
                                             </div>
                                         </div>
                                     @elseif ($persona["showbtn"]==1)
@@ -311,6 +539,81 @@
                                             <div class="encabezadonew_min">
                                                 {{ Str::limit($persona["Nombres"] . ' ' . $persona["Apellidos"], 20) }}
                                             </div>
+                                            <div id="datacopy_{{ $persona['id'] }}" style="display: none;">
+                                                 @if (!empty($persona['Nombres']))
+                                                    <p>
+                                                        <strong>Nombre completo:</strong>
+                                                        {{ $persona['Nombres'] }}{{!empty($persona['Apellidos']) ? " ".$persona['Apellidos'] : "" }}|
+                                                    </p>
+                                                @endif
+                                                @if (!empty($persona['NPasaporte']))
+                                                    <p><strong>Número de Pasaporte:</strong> {{ $persona['NPasaporte'] }}</p>|
+                                                @endif
+                                                @if (!empty($persona['PaisPasaporte']))
+                                                    <p><strong>País de emisión del Pasaporte:</strong> {{ $persona['PaisPasaporte'] }}</p>|
+                                                @endif
+                                                @if (!empty($persona['NDocIdent']))
+                                                    <p><strong>Número de Documento de Identidad:</strong> {{ $persona['NDocIdent'] }}</p>|
+                                                @endif
+                                                @if (!empty($persona['PaisDocIdent']))
+                                                    <p><strong>País de emisión del Documento de Identidad:</strong> {{ $persona['PaisDocIdent'] }}</p>|
+                                                @endif
+                                                @if (!empty($persona['AnhoNac']))
+                                                    <p>
+                                                        <strong>Fecha de Nacimiento:</strong>
+                                                        {{ !empty($persona['DiaNac']) ? $persona['DiaNac'] : '' }}{{ !empty($persona['DiaNac']) ? '/' : '' }}
+                                                        {{ !empty($persona['MesNac']) ? $persona['MesNac'] : '' }}{{ !empty($persona['MesNac']) ? '/' : '' }}
+                                                        {{ $persona['AnhoNac'] }}|
+                                                    </p>
+                                                @endif
+
+                                                @if (!empty($persona['LugarNac']))
+                                                    <p><strong>Lugar de Nacimiento:</strong> {{ $persona['LugarNac'] }}</p>|
+                                                @endif
+
+                                                @if (!empty($persona['AnhoBtzo']))
+                                                    <p>
+                                                        <strong>Fecha de Bautizo:</strong>
+                                                        {{ !empty($persona['DiaBtzo']) ? $persona['DiaBtzo'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
+                                                        {{ !empty($persona['MesBtzo']) ? $persona['MesBtzo'] : '' }}{{ !empty($persona['MesBtzo']) ? '/' : '' }}
+                                                        {{ $persona['AnhoBtzo'] }}|
+                                                    </p>
+                                                @endif
+
+                                                @if (!empty($persona['LugarBtzo']))
+                                                    <p><strong>Lugar de Bautizo:</strong> {{ $persona['LugarBtzo'] }}</p>|
+                                                @endif
+
+                                                @if (!empty($persona['AnhoMatr']))
+                                                    <p>
+                                                        <strong>Fecha de Matrimonio:</strong>
+                                                        {{ !empty($persona['DiaMatr']) ? $persona['DiaMatr'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
+                                                        {{ !empty($persona['MesMatr']) ? $persona['MesMatr'] : '' }}{{ !empty($persona['MesMatr']) ? '/' : '' }}
+                                                        {{ $persona['AnhoMatr'] }}|
+                                                    </p>
+                                                @endif
+
+                                                @if (!empty($persona['LugarMatr']))
+                                                    <p><strong>Lugar de Matrimonio:</strong> {{ $persona['LugarMatr'] }}</p>|
+                                                @endif
+
+                                                @if (!empty($persona['AnhoDef']))
+                                                    <p>
+                                                        <strong>Fecha de Defunción:</strong>
+                                                        {{ !empty($persona['DiaDef']) ? $persona['DiaDef'] : '' }}{{ !empty($persona['DiaDef']) ? '/' : '' }}
+                                                        {{ !empty($persona['MesDef']) ? $persona['MesDef'] : '' }}{{ !empty($persona['MesDef']) ? '/' : '' }}
+                                                        {{ $persona['AnhoDef'] }}|
+                                                    </p>
+                                                @endif
+
+                                                @if (!empty($persona['LugarDef']))
+                                                    <p><strong>Lugar de Defunción:</strong> {{ $persona['LugarDef'] }}|</p>
+                                                @endif
+
+                                                @if (!empty($persona['Observaciones']))
+                                                    <p><strong>Observaciones:</strong> {{ $persona['Observaciones'] }}|</p>
+                                                @endif
+                                            </div>
                                             <div class="continfo">
                                                 @if (!empty($persona['Nombres']))
                                                     <p>
@@ -353,6 +656,7 @@
                                                 <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : $persona['Observaciones']}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar Persona</button>
                                                 <br>
                                                 <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Ver Archivos</button>
+                                                <button class="copydata" onclick="copydata('datacopy_{{ $persona['id'] }}')">Copiar información de persona</button>
                                             </div>
                                         </div>
                                     @elseif ($persona["showbtn"]==1)
@@ -377,6 +681,81 @@
                                             <div class="encabezadonew_min">
                                                 {{ Str::limit($persona["Nombres"] . ' ' . $persona["Apellidos"], 20) }}
                                             </div>
+                                            <div id="datacopy_{{ $persona['id'] }}" style="display: none;">
+                                                 @if (!empty($persona['Nombres']))
+                                                    <p>
+                                                        <strong>Nombre completo:</strong>
+                                                        {{ $persona['Nombres'] }}{{!empty($persona['Apellidos']) ? " ".$persona['Apellidos'] : "" }}|
+                                                    </p>
+                                                @endif
+                                                @if (!empty($persona['NPasaporte']))
+                                                    <p><strong>Número de Pasaporte:</strong> {{ $persona['NPasaporte'] }}</p>|
+                                                @endif
+                                                @if (!empty($persona['PaisPasaporte']))
+                                                    <p><strong>País de emisión del Pasaporte:</strong> {{ $persona['PaisPasaporte'] }}</p>|
+                                                @endif
+                                                @if (!empty($persona['NDocIdent']))
+                                                    <p><strong>Número de Documento de Identidad:</strong> {{ $persona['NDocIdent'] }}</p>|
+                                                @endif
+                                                @if (!empty($persona['PaisDocIdent']))
+                                                    <p><strong>País de emisión del Documento de Identidad:</strong> {{ $persona['PaisDocIdent'] }}</p>|
+                                                @endif
+                                                @if (!empty($persona['AnhoNac']))
+                                                    <p>
+                                                        <strong>Fecha de Nacimiento:</strong>
+                                                        {{ !empty($persona['DiaNac']) ? $persona['DiaNac'] : '' }}{{ !empty($persona['DiaNac']) ? '/' : '' }}
+                                                        {{ !empty($persona['MesNac']) ? $persona['MesNac'] : '' }}{{ !empty($persona['MesNac']) ? '/' : '' }}
+                                                        {{ $persona['AnhoNac'] }}|
+                                                    </p>
+                                                @endif
+
+                                                @if (!empty($persona['LugarNac']))
+                                                    <p><strong>Lugar de Nacimiento:</strong> {{ $persona['LugarNac'] }}</p>|
+                                                @endif
+
+                                                @if (!empty($persona['AnhoBtzo']))
+                                                    <p>
+                                                        <strong>Fecha de Bautizo:</strong>
+                                                        {{ !empty($persona['DiaBtzo']) ? $persona['DiaBtzo'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
+                                                        {{ !empty($persona['MesBtzo']) ? $persona['MesBtzo'] : '' }}{{ !empty($persona['MesBtzo']) ? '/' : '' }}
+                                                        {{ $persona['AnhoBtzo'] }}|
+                                                    </p>
+                                                @endif
+
+                                                @if (!empty($persona['LugarBtzo']))
+                                                    <p><strong>Lugar de Bautizo:</strong> {{ $persona['LugarBtzo'] }}</p>|
+                                                @endif
+
+                                                @if (!empty($persona['AnhoMatr']))
+                                                    <p>
+                                                        <strong>Fecha de Matrimonio:</strong>
+                                                        {{ !empty($persona['DiaMatr']) ? $persona['DiaMatr'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
+                                                        {{ !empty($persona['MesMatr']) ? $persona['MesMatr'] : '' }}{{ !empty($persona['MesMatr']) ? '/' : '' }}
+                                                        {{ $persona['AnhoMatr'] }}|
+                                                    </p>
+                                                @endif
+
+                                                @if (!empty($persona['LugarMatr']))
+                                                    <p><strong>Lugar de Matrimonio:</strong> {{ $persona['LugarMatr'] }}</p>|
+                                                @endif
+
+                                                @if (!empty($persona['AnhoDef']))
+                                                    <p>
+                                                        <strong>Fecha de Defunción:</strong>
+                                                        {{ !empty($persona['DiaDef']) ? $persona['DiaDef'] : '' }}{{ !empty($persona['DiaDef']) ? '/' : '' }}
+                                                        {{ !empty($persona['MesDef']) ? $persona['MesDef'] : '' }}{{ !empty($persona['MesDef']) ? '/' : '' }}
+                                                        {{ $persona['AnhoDef'] }}|
+                                                    </p>
+                                                @endif
+
+                                                @if (!empty($persona['LugarDef']))
+                                                    <p><strong>Lugar de Defunción:</strong> {{ $persona['LugarDef'] }}|</p>
+                                                @endif
+
+                                                @if (!empty($persona['Observaciones']))
+                                                    <p><strong>Observaciones:</strong> {{ $persona['Observaciones'] }}|</p>
+                                                @endif
+                                            </div>
                                             <div class="continfo">
                                                 @if (!empty($persona['Nombres']))
                                                     <p>
@@ -419,6 +798,7 @@
                                                 <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : $persona['Observaciones']}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar Persona</button>
                                                 <br>
                                                 <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Ver Archivos</button>
+                                                <button class="copydata" onclick="copydata('datacopy_{{ $persona['id'] }}')">Copiar información de persona</button>
                                             </div>
                                         </div>
                                     @elseif ($persona["showbtn"]==1)
@@ -1702,20 +2082,17 @@
             @endphp
         }
 
-        .editperson, .filebtn {
+        .editperson, .filebtn, .copydata {
             background-color: #093143;
             color: white;
             border-radius: 10px;
             padding: 2px 10px;
             border: 1px solid #093143 !important;
             transition: all 0.3s ease;
-        }
-
-        .editperson {
             font-size: 0.7rem;
         }
 
-        .editperson:hover, .filebtn:hover {
+        .editperson:hover, .filebtn:hover, .copydata:hover {
             color: #093143 !important;
             background-color: rgb(6, 194, 204)!important;
         }
@@ -1920,6 +2297,40 @@
             reloadlines();
         });
     });
+
+    function copydata(elementId) {
+        const dataElement = document.getElementById(elementId);
+
+        if (dataElement) {
+            let datosFormateados = dataElement.innerText;
+
+            datosFormateados = datosFormateados.replace(/(\s)+/g, ' ').trim();
+            datosFormateados = datosFormateados.replace(/\|/g, '\n');
+            datosFormateados = datosFormateados.replace(/^\s+/gm, '');
+
+            navigator.clipboard.writeText(datosFormateados)
+                .then(() => {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Copiado!',
+                        text: 'Los datos se han copiado al portapapeles.',
+                    });
+                })
+                .catch(err => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'No se pudieron copiar los datos.',
+                    });
+                });
+        } else {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Oops...',
+                text: 'No se encontraron datos para copiar.',
+            });
+        }
+    }
 
     function callEdit(Nombres, Apellidos, AnhoNac, MesNac, DiaNac, LugarNac, PaisNac, AnhoBtzo, MesBtzo, DiaBtzo, LugarBtzo, PaisBtzo, AnhoMatr, MesMatr, DiaMatr, LugarMatr, PaisMatr, AnhoDef, MesDef, DiaDef, LugarDef, PaisDef, Observaciones, id, NPasaporte, PaisPasaporte, NDocIdent, PaisDocIdent){
         $("#editid").val(id);
