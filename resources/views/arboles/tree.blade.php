@@ -127,7 +127,8 @@
                                     @if ($persona["showbtn"]==2)
                                         <div class="cajapernew_min min_persona_id_{{ $persona['id'] }} min_padre_id_{{ $persona['idPadreNew'] ?? 'no' }} min_madre_id_{{ $persona['idMadreNew'] ?? 'no' }}" id="min_{{ $persona['id'] }}_{{ $persona['idPadreNew'] ?? 'no' }}_{{ $persona['idMadreNew'] ?? 'no' }}">
                                             <div class="encabezadonew_min">
-                                                {{ Str::limit($persona["Nombres"] . ' ' . $persona["Apellidos"], 20) }}
+                                                {{ Str::limit($persona["Nombres"] . ' ' . $persona["Apellidos"], 20) }}<br>
+                                                Cliente
                                             </div>
                                             <div id="datacopy_{{ $persona['id'] }}" style="display: none;">
                                                  @if (!empty($persona['Nombres']))
@@ -1265,6 +1266,7 @@
                             </div>
                         </div>
                     </div>
+                    @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
                     <div class="md:flex ms:flex-wrap">
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
@@ -1273,6 +1275,7 @@
                             </div>
                         </div>
                     </div>
+                    @endif
                     <div class="px-4 py-3 w-full text-right sm:px-6">
                         <button type="button" class="cerrarmodal cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                             Cancelar
@@ -1766,6 +1769,7 @@
                             </div>
                         </div>
                     </div>
+                    @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
                     <div class="md:flex ms:flex-wrap">
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
@@ -1774,6 +1778,7 @@
                             </div>
                         </div>
                     </div>
+                    @endif
                     <div class="px-4 py-3 w-full text-right sm:px-6">
                         <button type="button" class="cerrarmodal cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                             Cancelar
@@ -2458,11 +2463,19 @@
 
                         html += "</select>";
                         html += "</td>";
-                        html += "<td class='fontwhite' style='width: 30%'><button class='filebtn mr1' onclick='verArchivo(\"" + archivo.location+"/"+ archivo.file + "\")'>Ver archivo</button><button class='filebtn mr1' onclick='editarArchivo(" + archivo.id + ")'>Editar</button>";
+                        html += "<td class='fontwhite' style='width: 30%'><button class='filebtn mr1' onclick='verArchivo(\"" + archivo.location+"/"+ archivo.file + "\")'>Ver archivo</button>";
 
                         <?php
-                            if (auth()->user()->roles->pluck('name')[0] != "Cliente"){
+                            if (auth()->user()->roles->pluck('name')[0] == "Administrador" || auth()->user()->roles->pluck('name')[0] == "Genealogista" || auth()->user()->roles->pluck('name')[0] == "Documentalista"){
                         ?>
+                            html+="<button class='filebtn mr1' onclick='editarArchivo(" + archivo.id + ")'>Editar</button>";
+
+                        <?php
+                            }
+
+                            if (auth()->user()->roles->pluck('name')[0] == "Administrador"){
+                        ?>
+
                             html+="<button class='filebtn' onclick='borrararchivo(" + archivo.id + ")'>Borrar</button>";
                         <?php
                             }
