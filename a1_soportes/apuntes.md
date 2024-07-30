@@ -3,7 +3,7 @@
 + https://laravel.com/docs/8.x
 + Versión: **Laravel Framework 8.31.0**
 
-+ Servidor de producción: https://app.universalsefar.com
++ Servidor de producción: https://app.sefaruniversal.com
 + Servidor auxiliar: http://appsefar.corporacioncabv.com
 + Servidor auxiliar: https://corporacioncabv.com/appsefar
 
@@ -895,7 +895,7 @@
 					@if (trim($slot) === 'Laravel')
 						<img src="https://laravel.com/img/notification-logo.png" class="logo" alt="Laravel Logo">
 					@else
-						<img src="https://app.universalsefar.com/vendor/adminlte/dist/img/LogoSefar.png" alt="Logo Sefar" width="100" height="100">
+						<img src="https://app.sefaruniversal.com/vendor/adminlte/dist/img/LogoSefar.png" alt="Logo Sefar" width="100" height="100">
 						<hr>
 						{{ $slot }}
 					@endif
@@ -2710,18 +2710,18 @@
 ## Creación de enlaces simbólicos (symbolic link)
 1. Crear enlace simbólico en Windows 10
 	+ Ejecutar **C:\Windows\System32\cmd.exe como administrador**
-	+ $ Mklink/D C:\xampp\htdocs\sefar\public\doc C:\xampp\htdocs\universalsefar.com\documentos
-	+ $ Mklink/D C:\xampp\htdocs\sefar\storage\app\public\doc C:\xampp\htdocs\universalsefar.com\documentos 
+	+ $ Mklink/D C:\xampp\htdocs\sefar\public\doc C:\xampp\htdocs\sefaruniversal.com\documentos
+	+ $ Mklink/D C:\xampp\htdocs\sefar\storage\app\public\doc C:\xampp\htdocs\sefaruniversal.com\documentos 
 		###### Mklink /D "ruta donde queremos crear el enlace" "ruta de origen de archivos"
 1. Crear enlace simbólico en el hosting
 	+ En el cPanel ir a **Trabajos de cron**.
 	+ Ubicarse en **Añadir nuevo trabajo de cron** y luego **Configuración común**, y seleccionar **Una vez por mínuto(* * * * *)**.
 	+ En **Comando:** escribir:
-		* ln -s /home/pxvim6av41qx/public_html/documentos /home/pxvim6av41qx/public_html/app.universalsefar.com/public/doc
+		* ln -s /home/pxvim6av41qx/public_html/documentos /home/pxvim6av41qx/public_html/app.sefaruniversal.com/public/doc
 	+ Presionar **Añadir nuevo trabajo de cron** y esperar a que se ejecute la tarea.
 	+ Borrar tarea una vez creado el enlace en **Trabajos de cron actuales**.
 	+ Repetir el procedimiento pero ahora para:
-		* ln -s /home/pxvim6av41qx/public_html/documentos /home/pxvim6av41qx/public_html/app.universalsefar.com/storage/app/public/doc
+		* ln -s /home/pxvim6av41qx/public_html/documentos /home/pxvim6av41qx/public_html/app.sefaruniversal.com/storage/app/public/doc
 
 
 
@@ -3128,7 +3128,7 @@
 ## Registro de clientes
 1. Crear controlador para capturar parámetros GET:
 	+ $ php artisan make:controller GetController
-2. Archivo de prueba (resources\views\pruebas\registro.blade.php) para el traspaso de cliente de **JotForm** a **app.universalsefar.com**:
+2. Archivo de prueba (resources\views\pruebas\registro.blade.php) para el traspaso de cliente de **JotForm** a **app.sefaruniversal.com**:
 	```php
 	@extends('adminlte::page')
 
@@ -3295,7 +3295,7 @@
 				<small>
 					<p><strong>http://sefar.test/register</strong>'.$parametros.'</p>
 					<br><hr><br>
-					<p><strong>https://app.universalsefar.com/register</strong>'.$parametros.'</p>
+					<p><strong>https://app.sefaruniversal.com/register</strong>'.$parametros.'</p>
 				</small>'
 			)->toHtml()->persistent(true);
 			return back();
@@ -4272,7 +4272,7 @@
         "./css/sefar.css",
         "./js/app.js",
         "https://cdn.jsdelivr.net/npm/sweetalert2@9",
-        "https://app.universalsefar.com/vendor/adminlte/dist/img/LogoSefar.png",
+        "https://app.sefaruniversal.com/vendor/adminlte/dist/img/LogoSefar.png",
         "https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap",
         "http://www.w3.org/2000/svg",
         "https://laravel.com/docs",
@@ -4500,9 +4500,9 @@
 1. En la sección **ARCHIVOS** ir a **Git™ Version Control**
 1. Crear repositorio ingresando los siguientes parámetros:
 	+ Clone URL: https://github.com/petrix12/AppSefarUniversal.git
-	+ Repository Path: public_html/app.universalsefar.com
+	+ Repository Path: public_html/app.sefaruniversal.com
 	+ Repository Name: AppSefarUniversal
-1. Copiar del proyecto local a la carpeta del hosting **public_html/app.universalsefar.com** los siguientes directorios:
+1. Copiar del proyecto local a la carpeta del hosting **public_html/app.sefaruniversal.com** los siguientes directorios:
 	+ node_modules
 	+ public/storage
 	+ vendor
@@ -4513,7 +4513,7 @@
 		APP_ENV=production
 		APP_KEY=base64:LsfuS5WhYfAe/FWDLdrzXFWacnFB4EgNIHBHo8ZzOSk=
 		APP_DEBUG=false
-		APP_URL=https://app.universalsefar.com
+		APP_URL=https://app.sefaruniversal.com
 
 		DB_CONNECTION=mysql
 		DB_HOST=127.0.0.1
@@ -4530,12 +4530,12 @@
 		ONIDEX_PASSWORD="L5=Rj#8lW}YuK"
 
 		MAIL_MAILER=smtp
-		MAIL_HOST=universalsefar.com
+		MAIL_HOST=sefaruniversal.com
 		MAIL_PORT=587
-		MAIL_USERNAME=app@universalsefar.com
+		MAIL_USERNAME=app@sefaruniversal.com
 		MAIL_PASSWORD=Madrid2021!
 		MAIL_ENCRYPTION=null
-		MAIL_FROM_ADDRESS=app@universalsefar.com
+		MAIL_FROM_ADDRESS=app@sefaruniversal.com
 		MAIL_FROM_NAME="${APP_NAME}"
 
 1. Para configurar Laravel (AppSefar) con Gmail (info@sefarvzla.com)
@@ -4560,12 +4560,12 @@
 		
 	Luego direccionar
 	>
-		https://app.universalsefar.com/config-clear
+		https://app.sefaruniversal.com/config-clear
 1. Direccionar las siguientes rutas:
 	>
-		https://app.universalsefar.com/storage-link
+		https://app.sefaruniversal.com/storage-link
 	##### Esta acción simula la instrucción artisan **$ php artisan storage:link** para crear un enlace simbólico de public a storage. Verifique que no exista carpeta o acceso directo en **public** con el nombre **storage**, de ser así, elimínelo.
-		https://app.universalsefar.com/config-cache
+		https://app.sefaruniversal.com/config-cache
 	##### Esta acción simula la instrucción artisan **php artisan config:cache** para borrar la caché de la configuración anterior.
 	
 	### **Nota**: De aquí en adelante, cada vez que se realicen cambios en local se deberán seguir los siguientes pasos para que se reflejen en producción:
@@ -5268,7 +5268,7 @@
 		```
 		Por:
 		```
-		APP_URL=https://app.universalsefar.com
+		APP_URL=https://app.sefaruniversal.com
 		```
 	**Nota 2**: El valor de la variable de entorno **DB_HOST** proviene de la página de AWS en: **RDS** > **Databases** > **appsefar-db** en **Conectividad y seguridad** -> **Punto de enlace y puerto** -> **Punto de enlace**.
 	**Nota 3**: Los valores de las variables de entorno correspondiente a **MAIL_** están configurados con la cuenta de **info@sefarvzla.com**, también se podría configurar con una cuenta de **AWS**.

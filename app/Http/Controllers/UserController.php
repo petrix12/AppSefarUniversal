@@ -145,7 +145,7 @@ class UserController extends Controller
                     foreach ($mondayboards_temp["boards"][0]["items"] as $key => $item) {
                         foreach ($item["column_values"] as $keycv => $cv) {
                             if ($cv["id"]=="enlace"){
-                                if ($cv["text"]="https://app.universalsefar.com/tree/".$user->passport){
+                                if ($cv["text"]="https://app.sefaruniversal.com/tree/".$user->passport){
                                     $vartest = 1;
                                     $usuario_mdy = $item;
                                     $usuario_mdy["tabla_nombre"] = $mondayboards_temp["boards"][0]["name"];
@@ -1335,7 +1335,7 @@ class UserController extends Controller
                     foreach ($mondayboards_temp["boards"][0]["items"] as $key => $item) {
                         foreach ($item["column_values"] as $keycv => $cv) {
                             if ($cv["id"]=="enlace"){
-                                if ($cv["text"]="https://app.universalsefar.com/tree/".$user["passport"]){
+                                if ($cv["text"]="https://app.sefaruniversal.com/tree/".$user["passport"]){
                                     $vartest = 1;
                                     $usuario_mdy = $item;
                                     $usuario_mdy["tabla_nombre"] = $mondayboards_temp["boards"][0]["name"];
@@ -2529,7 +2529,7 @@ class UserController extends Controller
                     foreach ($mondayboards_temp["boards"][0]["items"] as $key => $item) {
                         foreach ($item["column_values"] as $keycv => $cv) {
                             if ($cv["id"]=="enlace"){
-                                if ($cv["text"]="https://app.universalsefar.com/tree/". $user->passport){
+                                if ($cv["text"]="https://app.sefaruniversal.com/tree/". $user->passport){
                                     $vartest = 1;
                                     $usuario_mdy = $item;
                                     $usuario_mdy["tabla_nombre"] = $mondayboards_temp["boards"][0]["name"];

@@ -14,7 +14,7 @@
                 <p class="my-2 ml-2 text-bold text-blue-600">Datos Clientes:</p>
                 <div class="md:flex ms:flex-wrap">
                     {{-- Ejemplo de URL a generar --}}
-                    {{-- https://app.universalsefar.com/register?apellidos=XXXX&nombres=XXXX&email=XXXX&dni=XXXX&servicio=XXXX --}}
+                    {{-- https://app.sefaruniversal.com/register?apellidos=XXXX&nombres=XXXX&email=XXXX&dni=XXXX&servicio=XXXX --}}
                     <div class="px-1 py-2 m-2 flex-1">    {{-- firstname --}}
                         <div>
                             <label for="firstname" class="block text-sm font-medium text-gray-700">Nombres</label>

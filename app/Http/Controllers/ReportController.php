@@ -153,8 +153,6 @@ class ReportController extends Controller
             $datesInRange[$date] = $count;
         }
 
-        dd($datesInRange);
-
         // Convierte el resultado a un array de objetos para una respuesta consistente
         $last30Registrations = [];
         foreach ($datesInRange as $date => $count) {
@@ -220,8 +218,6 @@ class ReportController extends Controller
             $labels[] = $registration->date;
             $data[] = $registration->count;
         }
-
-        dd($data);
 
         $chartConfig = [
             'type' => 'line',
