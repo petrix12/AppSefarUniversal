@@ -140,7 +140,7 @@ class ServicioController extends Controller
         $precio = [];
 
         if ($resultados) {
-            $precio["precio"] = number_format($precio, 2);
+            $precio["precio"] = number_format($resultados->precio, 2);
         } else {
             $precio["precio"] = number_format(0, 2);
         }
