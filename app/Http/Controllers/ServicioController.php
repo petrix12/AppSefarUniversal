@@ -127,4 +127,24 @@ class ServicioController extends Controller
         $servicios = Servicio::orderBy('created_at', 'desc')->get();
         return view('crud.servicios.index', compact('servicios'));
     }
+
+    public function getservicio(Request $request)
+    {
+        // Obtener el término de búsqueda del request
+        $terminoBusqueda = $request->get('servicio');
+
+        // Realizar la búsqueda en la base de datos
+        $resultados = Servicio::where('id_hubspot', '=', $terminoBusqueda)
+                              ->first();
+
+        $precio = [];
+
+        if ($resultados) {
+            $precio["precio"] = number_format($precio, 2);
+        } else {
+            $precio["precio"] = number_format(0, 2);
+        }
+
+        return response()->json($precio);
+    }
 }
