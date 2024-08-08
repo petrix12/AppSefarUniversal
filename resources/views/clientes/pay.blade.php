@@ -156,6 +156,16 @@
                                     }).then(function() {
                                         window.location.reload();
                                     });
+                                } else if (response["status"]=="promo") {
+                                    $("#ajaxload").hide();
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Se ha aplicado un descuento: ' + response["percentage"] + '. En un momento recargaré la página.',
+                                        showConfirmButton: false,
+                                        timer: 5000
+                                    }).then(function() {
+                                        window.location.reload();
+                                    });
                                 } else {
                                     $("#ajaxload").hide();
                                     Swal.fire({

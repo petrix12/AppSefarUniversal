@@ -610,6 +610,28 @@ class ClienteController extends Controller
 
         $cupones = json_decode(json_encode(Coupon::all()),true);
 
+        $cupontest = strtoupper(str_replace(' ', '', $data["cpn"]));
+
+        $currentMonth = date('m');
+        $currentYear = date('Y');
+
+        if ($cupontest == "AGOSTOSEFAR" && $currentMonth == '08' && $currentYear == '2024') {
+            foreach ($compras as $compra) {
+
+                $compra->update([
+                    'monto' => 99,
+                    'cuponaplicado' => 1,
+                    'montooriginal' => $compra->monto,
+                    'porcentajedescuento' => "Oferta Mes de Agosto 2024"
+                ]);
+
+            }
+            return response()->json([
+                'status' => "promo",
+                'percentage' => "Oferta Mes de Agosto 2024"
+            ]);
+        }
+
         foreach ($cupones as $cupon) {
             if( $data["cpn"] == $cupon["couponcode"] ){
                 if(!is_null($cupon["expire"]) && $cupon["expire"]<date('Y-m-d')){
@@ -641,7 +663,7 @@ class ClienteController extends Controller
 
                     return response()->json([
                         'status' => "halftrue",
-                        'percentage' => $cupon["percentage"]
+                        'percentage' => $cupon["percentage"]."%"
                     ]);
                 } else {
                     $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
