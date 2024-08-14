@@ -100,6 +100,19 @@
             <script src="https://cdnjs.cloudflare.com/ajax/libs/cleave.js/1.6.0/cleave.min.js"></script>
 
             <script>
+                @php
+                    $currentMonth = date('m');
+                    $currentYear = date('Y');
+                @endphp
+                @if ($currentMonth == '08' && $currentYear == '2024')
+                $(document).ready(function() {
+                    Swal.fire({
+                        imageUrl: 'http://sefaruniversal.com/wp-content/uploads/2024/08/CUPON-AGOSTOSEFAR-1.jpg',
+                        imageAlt: 'Cupón de descuento de agosto', // Añade un texto alternativo descriptivo
+                        showConfirmButton: true // Ocultamos el botón de confirmación
+                    });
+                });
+                @endif
 
                 document.addEventListener('DOMContentLoaded', () => {
 
