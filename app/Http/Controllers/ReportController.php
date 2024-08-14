@@ -179,8 +179,8 @@ class ReportController extends Controller
                 'promedio' => round($promedioMesAnterior, 2),
                 'maximo' => $diaMasRegistrosMesAnterior->registros,
                 'minimo' => $diaMenosRegistrosMesAnterior->registros,
-                'total' => User::whereMonth('created_at', $mesAnterior->month)
-                        ->whereYear('created_at', $mesAnterior->year)
+                'total' => User::whereMonth('created_at', $peticion['mes'] == 1 ? 12 : $peticion['mes'] - 1)
+                        ->whereYear('created_at', $peticion['año'])
                         ->count()
             ],
             'mes_actual_aa' => [
@@ -195,8 +195,8 @@ class ReportController extends Controller
                 'promedio' => round($promedioMesAnteriorAñoAnterior, 2),
                 'maximo' => $diaMasRegistrosMesAnterior_aa->registros,
                 'minimo' => $diaMenosRegistrosMesAnterior_aa->registros,
-                'total' => User::whereMonth('created_at', $mesAnteriorAñoAnterior->month)
-                        ->whereYear('created_at', $mesAnteriorAñoAnterior->year)
+                'total' => User::whereMonth('created_at', $peticion['mes'] == 1 ? 12 : $peticion['mes'] - 1)
+                        ->whereYear('created_at', $peticion['año']-1)
                         ->count()
             ]
         ];

@@ -8,7 +8,20 @@
 
 @section('content')
     <x-app-layout>
+        @php
+            // Configura la localización a español
+            setlocale(LC_TIME, 'es_ES', 'Spanish_Spain', 'es_ES.UTF-8');
+            
+            // Convertimos el número del mes actual en su nombre en español
+            $nombreMesActual = ucfirst(strftime('%B', mktime(0, 0, 0, $peticion["mes"], 10)));
 
+            // Calculamos el mes anterior (si es enero, va a diciembre del año anterior)
+            $mesAnterior = $peticion["mes"] - 1;
+            if ($mesAnterior < 1) {
+                $mesAnterior = 12;
+            }
+            $nombreMesAnterior = ucfirst(strftime('%B', mktime(0, 0, 0, $mesAnterior, 10)));
+        @endphp
         <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.2/jquery.min.js" integrity="sha512-tWHlutFnuG0C6nQRlpvrEhE4QpkG1nn2MOUMWmUeRePl4e3Aki0VB6W1v3oLjFtd0hVOtRQ9PHpSfN6u6/QXkQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
@@ -76,7 +89,7 @@
             
             <div class="chart-container">
                 <div class="chart">
-                    <h3>Mes Actual - {{$peticion["año"]}}</h3><br>
+                    <h3>{{$nombreMesActual}} - {{$peticion["año"]}}</h3><br>
                     <div class="bar-container">
                         <div class="bar" style="width: {{$datosgraficosporcentaje['mes_actual']['promedio']}}%;"></div>
                         <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_actual']['promedio']}}%;">{{$datosgraficosporcentaje['mes_actual']['promedio']}}%</div>
@@ -90,7 +103,7 @@
                     </p>
                 </div>
                 <div class="chart">
-                    <h3>Mes Anterior - {{$peticion["año"]}}</h3><br>
+                    <h3>{{$nombreMesAnterior}} - {{$peticion["año"]}}</h3><br>
                     <div class="bar-container">
                         <div class="bar" style="width: {{$datosgraficosporcentaje['mes_anterior']['promedio']}}%;"></div>
                         <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_anterior']['promedio']}}%;">{{$datosgraficosporcentaje['mes_anterior']['promedio']}}%</div>
@@ -106,7 +119,7 @@
             </div>
             <div class="chart-container">
                 <div class="chart">
-                    <h3>Mes Actual - {{$peticion["año"] - 1}}</h3><br>
+                    <h3>{{$nombreMesActual}} - {{$peticion["año"] - 1}}</h3><br>
                     <div class="bar-container">
                         <div class="bar" style="width: {{$datosgraficosporcentaje['mes_actual_aa']['promedio']}}%;"></div>
                         <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_actual_aa']['promedio']}}%;">{{$datosgraficosporcentaje['mes_actual_aa']['promedio']}}%</div>
@@ -120,7 +133,7 @@
                     </p>
                 </div>
                 <div class="chart">
-                    <h3>Mes Anterior - {{$peticion["año"] - 1}}</h3><br>
+                    <h3>{{$nombreMesAnterior}} - {{$peticion["año"] - 1}}</h3><br>
                     <div class="bar-container">
                         <div class="bar" style="width: {{$datosgraficosporcentaje['mes_anterior_aa']['promedio']}}%;"></div>
                         <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_anterior_aa']['promedio']}}%;">{{$datosgraficosporcentaje['mes_anterior_aa']['promedio']}}%</div>
