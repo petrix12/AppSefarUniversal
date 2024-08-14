@@ -12,39 +12,32 @@
         <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.2/jquery.min.js" integrity="sha512-tWHlutFnuG0C6nQRlpvrEhE4QpkG1nn2MOUMWmUeRePl4e3Aki0VB6W1v3oLjFtd0hVOtRQ9PHpSfN6u6/QXkQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-        <!--
+
         <script type="text/javascript">
-            google.charts.load('current', {packages: ['corechart', 'line']});
-            google.charts.setOnLoadCallback(drawChart);
+            const fechaActual = new Date("{{$peticion['año']}}-{{$peticion['mes']}}-{{$peticion['dia']}}");
 
-            function drawChart() {
-                var data = new google.visualization.DataTable();
-                data.addColumn('string', 'Fecha');
-                data.addColumn('number', 'Registros');
+            function navigateToReport(dias) {
+                fechaActual.setDate(fechaActual.getDate() + dias);
+                const nuevoDia = fechaActual.getDate();
+                const nuevoMes = fechaActual.getMonth() + 1; // Los meses en JavaScript son de 0-11
+                const nuevoAño = fechaActual.getFullYear();
 
-                // Los datos obtenidos del controlador
-                var registrations = @json($registrations);
+                // Actualiza los campos del formulario oculto
+                document.getElementById('hiddenDia').value = nuevoDia;
+                document.getElementById('hiddenMes').value = nuevoMes;
+                document.getElementById('hiddenAño').value = nuevoAño;
 
-                // Añadir las filas de datos al gráfico
-                registrations.forEach(function(registration) {
-                    data.addRow([registration.date, registration.count]);
-                });
-
-                var options = {
-                    title: 'Registros de Usuarios en los Últimos 30 Días',
-                    hAxis: {
-                        title: 'Fecha'
-                    },
-                    vAxis: {
-                        title: 'Cantidad de Registros'
-                    }
-                };
-
-                var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
-                chart.draw(data, options);
+                // Envía el formulario
+                document.getElementById('dateForm').submit();
             }
         </script>
-        -->
+
+        <form id="dateForm" action="{{ route('getreportediario') }}" method="POST" style="display: none;">
+            @csrf
+            <input type="hidden" name="dia" id="hiddenDia" value="{{$peticion['dia']}}">
+            <input type="hidden" name="mes" id="hiddenMes" value="{{$peticion['mes']}}">
+            <input type="hidden" name="año" id="hiddenAño" value="{{$peticion['año']}}">
+        </form>
 
         <div class="flex flex-col">
             <div class="">
@@ -52,14 +45,28 @@
                     {{-- Inicio --}}
                     <div >
                         <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:py-6 lg:px-8 lg:flex lg:items-center lg:justify-between">
-                            <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-                                <span class="ctvSefar block text-indigo-600">Reporte Diario - {{$peticion["dia"]}}/{{$peticion["mes"]}}/{{$peticion["año"]}}</span>
-                            </h2>
+                            <center>
+                                <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                                    <span class="ctvSefar block text-indigo-600">Reporte Diario - {{$peticion["dia"]}}/{{$peticion["mes"]}}/{{$peticion["año"]}}</span>
+                                </h2>
+                            </center>
                         </div>
                     </div>
                     {{-- Fin --}}
                 </div>
             </div>
+        </div>
+
+        <div class="flex justify-between max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:py-6 lg:px-8">
+            <!-- Botón de día anterior -->
+            <button onclick="navigateToReport(-1)" class="text-white bg-indigo-600 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Día Anterior
+            </button>
+
+            <!-- Botón de día siguiente -->
+            <button onclick="navigateToReport(1)" class="text-white bg-indigo-600 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Día Siguiente
+            </button>
         </div>
         
         <div class="card p-4">
@@ -78,7 +85,8 @@
                     <p>
                         <strong>Mínimo:</strong> {{$datosgraficos['mes_actual']['minimo']}}<br>
                         <strong>Máximo:</strong> {{$datosgraficos['mes_actual']['maximo']}}<br>
-                        <strong>Promedio:</strong> {{$datosgraficos['mes_actual']['promedio']}}
+                        <strong>Promedio:</strong> {{$datosgraficos['mes_actual']['promedio']}}<br>
+                        <strong>Total Registrados (Mes Actual - {{$peticion["año"]}}):</strong> {{$datosgraficos['mes_actual']['total']}}<br>
                     </p>
                 </div>
                 <div class="chart">
@@ -91,7 +99,8 @@
                     <p>
                         <strong>Mínimo:</strong> {{$datosgraficos['mes_anterior']['minimo']}}<br>
                         <strong>Máximo:</strong> {{$datosgraficos['mes_anterior']['maximo']}}<br>
-                        <strong>Promedio:</strong> {{$datosgraficos['mes_anterior']['promedio']}}
+                        <strong>Promedio:</strong> {{$datosgraficos['mes_anterior']['promedio']}}<br>
+                        <strong>Total Registrados (Mes Anterior - {{$peticion["año"]}}):</strong> {{$datosgraficos['mes_anterior']['total']}}<br>
                     </p>
                 </div>
             </div>
@@ -106,7 +115,8 @@
                     <p>
                         <strong>Mínimo:</strong> {{$datosgraficos['mes_actual_aa']['minimo']}}<br>
                         <strong>Máximo:</strong> {{$datosgraficos['mes_actual_aa']['maximo']}}<br>
-                        <strong>Promedio:</strong> {{$datosgraficos['mes_actual_aa']['promedio']}}
+                        <strong>Promedio:</strong> {{$datosgraficos['mes_actual_aa']['promedio']}}<br>
+                        <strong>Total Registrados (Mes Actual - {{$peticion["año"] - 1}}):</strong> {{$datosgraficos['mes_actual_aa']['total']}}<br>
                     </p>
                 </div>
                 <div class="chart">
@@ -119,7 +129,8 @@
                     <p>
                         <strong>Mínimo:</strong> {{$datosgraficos['mes_anterior_aa']['minimo']}}<br>
                         <strong>Máximo:</strong> {{$datosgraficos['mes_anterior_aa']['maximo']}}<br>
-                        <strong>Promedio:</strong> {{$datosgraficos['mes_anterior_aa']['promedio']}}
+                        <strong>Promedio:</strong> {{$datosgraficos['mes_anterior_aa']['promedio']}}<br>
+                        <strong>Total Registrados (Mes Anterior - {{$peticion["año"] - 1}}):</strong> {{$datosgraficos['mes_anterior_aa']['total']}}<br>
                     </p>
                 </div>
             </div>

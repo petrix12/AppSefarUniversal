@@ -171,21 +171,33 @@ class ReportController extends Controller
                 'promedio' => round($promedioMesActual, 2),
                 'maximo' => $diaMasRegistrosMesActual->registros,
                 'minimo' => $diaMenosRegistrosMesActual->registros,
+                'total' => User::whereMonth('created_at', $peticion['mes'])
+                        ->whereYear('created_at', $peticion['año'])
+                        ->count()
             ],
             'mes_anterior' => [
                 'promedio' => round($promedioMesAnterior, 2),
                 'maximo' => $diaMasRegistrosMesAnterior->registros,
                 'minimo' => $diaMenosRegistrosMesAnterior->registros,
+                'total' => User::whereMonth('created_at', $mesAnterior->month)
+                        ->whereYear('created_at', $mesAnterior->year)
+                        ->count()
             ],
             'mes_actual_aa' => [
                 'promedio' => round($promedioMismoMesAñoAnterior, 2),
                 'maximo' => $diaMasRegistrosMesActual_aa->registros,
                 'minimo' => $diaMenosRegistrosMesActual_aa->registros,
+                'total' => User::whereMonth('created_at', $peticion['mes'])
+                        ->whereYear('created_at', $añoAnterior->year)
+                        ->count()
             ],
             'mes_anterior_aa' => [
                 'promedio' => round($promedioMesAnteriorAñoAnterior, 2),
                 'maximo' => $diaMasRegistrosMesAnterior_aa->registros,
                 'minimo' => $diaMenosRegistrosMesAnterior_aa->registros,
+                'total' => User::whereMonth('created_at', $mesAnteriorAñoAnterior->month)
+                        ->whereYear('created_at', $mesAnteriorAñoAnterior->year)
+                        ->count()
             ]
         ];
 
