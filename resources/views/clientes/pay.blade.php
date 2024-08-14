@@ -99,6 +99,13 @@
 
             <script src="https://cdnjs.cloudflare.com/ajax/libs/cleave.js/1.6.0/cleave.min.js"></script>
 
+            <style>
+                .swal2-image {
+                  max-height: 70vh; /* Establecemos un máximo de 80% de la altura de la ventana */
+                  object-fit: contain; /* Hacemos que la imagen se ajuste al contenedor sin distorsionar */
+                }
+            </style>
+
             <script>
                 @php
                     $currentMonth = date('m');
