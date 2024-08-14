@@ -59,12 +59,12 @@
 
         <div class="flex justify-between max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:py-6 lg:px-8">
             <!-- Botón de día anterior -->
-            <button onclick="navigateToReport(-1)" class="text-white bg-indigo-600 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+            <button onclick="navigateToReport(-1)" class="cfrSefar text-white bg-indigo-600 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
                 Día Anterior
             </button>
 
             <!-- Botón de día siguiente -->
-            <button onclick="navigateToReport(1)" class="text-white bg-indigo-600 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+            <button onclick="navigateToReport(1)" class="cfrSefar text-white bg-indigo-600 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
                 Día Siguiente
             </button>
         </div>
