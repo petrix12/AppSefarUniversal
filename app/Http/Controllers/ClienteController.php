@@ -56,6 +56,38 @@ class ClienteController extends Controller
 
         $cliente[0] = Auth::user();
 
+        //revisar padres
+
+        $searchCliente = Agcliente::where('IDCliente','LIKE',$IDCliente)->where('IDPersona',1)->first();
+        $existe = Agcliente::where('IDCliente','LIKE',$IDCliente)->where('IDPersona',1)->get();
+
+        $padreQuery = Agcliente::where('IDCliente','LIKE',$IDCliente)->where('IDPersona',2)->first();
+
+        $madreQuery = Agcliente::where('IDCliente','LIKE',$IDCliente)->where('IDPersona',3)->first();
+
+        if ($padreQuery || $madreQuery) {
+            $data = [
+                'migradoNuevoID' => 1,
+            ];
+
+            // Si existe el padre, añade 'idPadreNew' y 'IDPadre' al array de actualización
+            if ($padreQuery) {
+                $data['idPadreNew'] = $padreQuery->id;
+                $data['IDPadre'] = 2;
+            }
+
+            // Si existe la madre, añade 'idMadreNew' y 'IDMadre' al array de actualización
+            if ($madreQuery) {
+                $data['idMadreNew'] = $madreQuery->id;
+                $data['IDMadre'] = 3;
+            }
+
+            // Ejecuta la actualización
+            DB::table('agclientes')
+                ->where('id', $searchCliente->id)
+                ->update($data);
+        }
+
         $people = json_decode(json_encode(Agcliente::where("IDCliente",$IDCliente)->get()),true);
 
         //Asignar ids de padres al nodo 0 (en caso de no tenerlo)
