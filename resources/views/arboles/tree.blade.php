@@ -10,7 +10,10 @@
 
 
 <x-app-layout>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <button id="back-to-top"><i class="fa-solid fa-arrow-up"></i></button>
         @if (session('refresh'))
         <script>
             window.location.reload();
@@ -175,6 +178,34 @@
                                 </div>
                             </div>
                         @endcan
+                            <div class="px-4 py-2 m-2">
+                                {{-- FAMILIARES --}}
+                                <div class="justify-center">
+                                    <label for="change_person" class="px-3 block text-sm font-medium text-gray-700"
+                                        title="Ir a">Ir a</label>
+                                    <select id="change_person" class="change_person" style="height: 36px; border-radius: 10px; font-size: 16px; padding: 0px 10px;">
+                                        <option value="" selected disabled>Selecciona una persona</option>
+                                        @foreach ($columnasparatabla  as $key1 => $columna)
+                                            @foreach ($columna as $key2 => $persona)
+                                                @if ($persona["showbtn"]==2)
+                                                <option value="{{ $persona['id'] }}">{{$persona["Nombres"] . ' ' . $persona["Apellidos"]}} 
+                                                @if ($key1 == 0)  
+                                                    (Cliente)                                         
+                                                @elseif ($key1 == 1)
+                                                    @if ($key2 == 0)  
+                                                        (Padre)               
+                                                    @else
+                                                        (Madre)
+                                                    @endif
+                                                @else
+                                                    ({{$parentescos[$key1-2][$key2]}})
+                                                @endif</option>
+                                                @endif
+                                            @endforeach
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1501,6 +1532,34 @@
     <link rel="stylesheet" href="{{ asset('css\cdn_tailwind.css') }}">
     <link rel="stylesheet" href="{{ asset('css\sefar.css') }}">
     <style>
+        #back-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgb(6, 194, 204);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50%;
+            color: white;
+            font-size: 35px;
+            cursor: pointer;
+            width: 56px;
+            height: 56px;
+            transition: box-shadow 0.3s ease-in-out, background-color 0.3s ease-in-out;
+            display: flex;
+            justify-content: center; /* Centrar horizontalmente */
+            align-items: center; /* Centrar verticalmente */
+            z-index: 6555;
+        }
+
+        #back-to-top:hover {
+            background-color: rgb(4, 150, 158); /* Color al pasar el cursor */
+            box-shadow: 0 0 25px rgb(6, 194, 204); /* Intensificar el glow al hacer hover */
+        }
+        .glow-effect {
+            box-shadow: 0 0 15px rgb(6, 194, 204);
+            transition: box-shadow 0.5s ease-in-out;
+        }
         .fontwhite{
             color: rgba(55, 65, 81, 1);
         }
@@ -1796,6 +1855,20 @@
         $(".cajapernew_min").hover(function(){
             reloadlines();
         });
+
+        $(window).scroll(function() {
+            if ($(this).scrollTop() > 10) { // Mostrar si el scroll es mayor a 100px
+                $('#back-to-top').fadeIn();
+            } else {
+                $('#back-to-top').fadeOut();
+            }
+        });
+
+        // Animación suave para volver al tope al hacer clic en el botón
+        $('#back-to-top').click(function() {
+            $('html, body').animate({scrollTop: 0}, 800); // Desplazamiento suave en 800ms
+            return false;
+        });
     });
 
     function copydata(elementId) {
@@ -1863,6 +1936,33 @@
         $("#editPaisDocIdent").val(PaisDocIdent);
         $(".modaleditfamiliar").show();
     }
+
+    function gotofamiliar(id) {
+        var classid = ".min_persona_id_" + id;
+        var element = document.querySelector(classid);
+
+        if (element) {
+            // Añadir el efecto de "glow"
+            element.classList.add("glow-effect");
+
+            // Centrar el elemento en la vista
+            element.scrollIntoView({
+                behavior: "smooth", // Desplazamiento suave
+                block: "center",    // Centrar el elemento verticalmente en la vista
+                inline: "center"    // Centrar el elemento horizontalmente en la vista (opcional)
+            });
+
+            // Remover el "glow" después de un tiempo (opcional)
+            setTimeout(function() {
+                element.classList.remove("glow-effect");
+            }, 3000); // Elimina el glow después de 2 segundos (puedes ajustar el tiempo)
+        }
+    }
+
+
+    $(".change_person").on("change", function(e){
+        gotofamiliar(this.value);
+    });
 
     $(".cerrarmodal").click(function(){
         $(".modaladdfamiliar").hide();
