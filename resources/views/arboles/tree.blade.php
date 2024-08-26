@@ -227,7 +227,7 @@
                                 $tienePersonaConShowBtn2 = array_reduce($columna, function ($carry, $persona) {
                                     return $carry || $persona["showbtn"] === 2;
                                 }, false);
-                                if ($tienePersonaConShowBtn2) { $height = (155 * $sizeheight); } 
+                                if ($tienePersonaConShowBtn2) { $height = (170 * $sizeheight); } 
                                 $sizeheight = $sizeheight * 2;
                             @endphp
                         @endforeach
@@ -1720,8 +1720,8 @@
             position: relative;
             border: 1px solid rgb(22, 43, 27);
             width: 18rem;
-            min-height: 150px!important;
-            max-height: 150px!important;
+            min-height: 160px!important;
+            max-height: 160px!important;
             border-radius: 5px;
             padding: 0;
             overflow: hidden;
