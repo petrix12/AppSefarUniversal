@@ -8,13 +8,6 @@
 
 @section('content')
 
-@php
-    @$columna1 = $columnasparatabla[0];
-    @$columna2 = $columnasparatabla[1];
-    @$columna3 = $columnasparatabla[2];
-    @$columna4 = $columnasparatabla[3];
-    @$columna5 = $columnasparatabla[4];
-@endphp
 
 <x-app-layout>
     <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -34,6 +27,82 @@
             });
         </script>
     @endif
+    @php
+        $parentescos = [];
+        $parentescos_post_padres = [
+            "Abuel", 
+            "Bisabuel", 
+            "Tatarabuel", 
+            "Trastatarabuel", 
+            "Retatarabuel", 
+            "Sestarabuel", 
+            "Setatarabuel", 
+            "Octatarabuel", 
+            "Nonatarabuel",
+            "Decatarabuel",
+            "Undecatarabuel",
+            "Duodecatarabuel",
+            "Trececatarabuel",
+            "Catorcatarabuel",
+            "Quincecatarabuel",
+            "Deciseiscatarabuel",
+            "Decisietecatarabuel",
+            "Deciochocatarabuel",
+            "Decinuevecatarabuel",
+            "Vigecatarabuel",
+            "Vigecimoprimocatarabuel",
+            "Vigecimosegundocatarabuel",
+            "Vigecimotercercatarabuel",
+            "Vigecimocuartocatarabuel",
+            "Vigecimoquintocatarabuel",
+            "Vigecimosextocatarabuel",
+            "Vigecimoseptimocatarabuel",
+            "Vigecimooctavocatarabuel",
+            "Vigecimonovenocatarabuel",
+            "Trigecatarabuel",
+            "Trigecimoprimocatarabuel",
+            "Trigecimosegundocatarabuel",
+            "Trigecimotercercatarabuel",
+            "Trigecimocuartocatarabuel",
+            "Trigecimoquintocatarabuel",
+            "Trigecimosextocatarabuel",
+            "Trigecimoseptimocatarabuel",
+            "Trigecimooctavocatarabuel",
+            "Trigecimonovenocatarabuel",
+            "Cuarentacatarabuel",
+            "Cuarentaprimocatarabuel",
+            "Cuarentasegundocatarabuel",
+            "Cuarentatercercatarabuel",
+        ];
+        $prepar = 4;
+
+        function generarTexto($i, $key) {
+            $text = "";
+            $multiplicador = 4;
+
+            for ($j = 1; $j <= $key; $j++) {
+                $text .= (($i % $multiplicador) < ($multiplicador / 2) ? "P " : "M ");
+                $multiplicador *= 2;
+            }
+
+            $text .= ($i < 2 * ($key + 1) ? "P" : "M");
+            return $text;
+        }
+
+        foreach ($parentescos_post_padres as $key => $parentesco) {
+            if($key <= sizeof($columnasparatabla)){
+                $parentescos[$key] = [];
+
+                for ($i = 0; $i < $prepar; $i++) {
+                    $textparentesco = $parentesco . ($i % 2 == 0 ? "o" : "a");
+                    $text = generarTexto($i, $key);
+                    $parentescos[$key][] = $textparentesco . " " . $text;
+                }
+
+                $prepar *= 2;
+            }
+        }
+    @endphp
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
@@ -46,7 +115,7 @@
                             {{ $cliente[0]["nombres"] . ' ' . $cliente[0]["apellidos"] . ' / ' . $cliente[0]["passport"] }}
                             {{ ' / ' . $cliente[0]["servicio"] }}
                             @else
-                            @foreach ($columna1 as $persona)
+                            @foreach ($columnasparatabla[0] as $persona)
                             {{$persona["Nombres"] . ' ' . $persona['Apellidos'] . ' / ' . $persona['IDCliente']}}
                             @endforeach
                             @endif
@@ -88,7 +157,7 @@
                                 <div class="justify-center">
                                     <label for="downloadgedcom" class="px-3 block text-sm font-medium text-gray-700"
                                         title="Descargar Gedcom">Descargar Gedcom</label>
-                                    <a href="{{route('getGedcomCliente', $columna1[0])}}" class="csrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600">
+                                    <a href="{{route('getGedcomCliente', $columnasparatabla[0][0])}}" class="csrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600">
                                         <b>Descargar Gedcom</b>
                                     </a>
                                 </div>
@@ -100,7 +169,7 @@
                                 <div class="justify-center">
                                     <label for="downloadgedcom" class="px-3 block text-sm font-medium text-gray-700"
                                         title="Descargar Gedcom">Descargar Excel</label>
-                                    <a href="{{route('getExcelCliente', $columna1[0])}}" class="csrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600">
+                                    <a href="{{route('getExcelCliente', $columnasparatabla[0][0])}}" class="csrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600">
                                         <b>Descargar Excel</b>
                                     </a>
                                 </div>
@@ -119,16 +188,47 @@
                             <div style="width:20px">
                             </div>
                         </div>
-                        @if (isset($columna1))
 
-                        <div class="cliente" style="margin: 0px -50px 0 0;">
+                        @php $key = 0; $sizeheight = 1; $height = 0; @endphp
+
+                        @foreach ($columnasparatabla as $columna)
+                            @php 
+                                $tienePersonaConShowBtn2 = array_reduce($columna, function ($carry, $persona) {
+                                    return $carry || $persona["showbtn"] === 2;
+                                }, false);
+                                if ($tienePersonaConShowBtn2) { $height = (155 * $sizeheight); } 
+                                $sizeheight = $sizeheight * 2;
+                            @endphp
+                        @endforeach
+
+                        @php $key = 0; $sizeheight = 1;@endphp
+
+                        @foreach ($columnasparatabla as $key1 => $columna)
+
+                        @php 
+                            $tienePersonaConShowBtn2 = array_reduce($columna, function ($carry, $persona) {
+                                return $carry || $persona["showbtn"] === 2;
+                            }, false);
+                        @endphp
+
+                        <div class="cliente" style="margin: auto 25px auto 0; height: {{$height}}px;" >
                             
-                                @foreach ($columna1 as $persona)
+                                @foreach ($columna as $key2 => $persona)
                                     @if ($persona["showbtn"]==2)
                                         <div class="cajapernew_min min_persona_id_{{ $persona['id'] }} min_padre_id_{{ $persona['idPadreNew'] ?? 'no' }} min_madre_id_{{ $persona['idMadreNew'] ?? 'no' }}" id="min_{{ $persona['id'] }}_{{ $persona['idPadreNew'] ?? 'no' }}_{{ $persona['idMadreNew'] ?? 'no' }}">
                                             <div class="encabezadonew_min">
-                                                {{ Str::limit($persona["Nombres"] . ' ' . $persona["Apellidos"], 20) }}<br>
-                                                Cliente
+                                                {{$persona["Nombres"] . ' ' . $persona["Apellidos"]}}<br>
+                                                @if ($key1 == 0)  
+                                                    (Cliente)                                         
+                                                @elseif ($key1 == 1)
+                                                    @if ($key2 == 0)  
+                                                        (Padre)               
+                                                    @else
+                                                        (Madre)
+                                                    @endif
+                                                @else
+                                                    ({{$parentescos[$key1-2][$key2]}})
+                                                @endif
                                             </div>
                                             <div id="datacopy_{{ $persona['id'] }}" style="display: none;">
                                                  @if (!empty($persona['Nombres']))
@@ -191,46 +291,27 @@
                                          
                                             </div>
                                             <div class="continfo">
-                                                @if (!empty($persona['Nombres']))
-                                                    <p>
-                                                        <strong>Nombre completo:</strong>
-                                                        {{ $persona['Nombres'] }}{{!empty($persona['Apellidos']) ? " ".$persona['Apellidos'] : "" }}
-                                                    </p>
-                                                @endif
                                                 @if (!empty($persona['AnhoNac']))
                                                     <p>
-                                                        <strong>Fecha de Nacimiento:</strong>
+                                                        <strong>○ </strong>
                                                         {{ !empty($persona['DiaNac']) ? $persona['DiaNac'] : '' }}{{ !empty($persona['DiaNac']) ? '/' : '' }}
                                                         {{ !empty($persona['MesNac']) ? $persona['MesNac'] : '' }}{{ !empty($persona['MesNac']) ? '/' : '' }}
-                                                        {{ $persona['AnhoNac'] }}
+                                                        {{ $persona['AnhoNac'] }} {{!empty($persona['LugarNac']) ? '(' . $persona['LugarNac'] . ')' : '' }}
                                                     </p>
-                                                @endif
-
-                                                @if (!empty($persona['LugarNac']))
-                                                    <p><strong>Lugar de Nacimiento:</strong> {{ $persona['LugarNac'] }}</p>
                                                 @endif
 
                                                 @if (!empty($persona['AnhoDef']))
                                                     <p>
-                                                        <strong>Fecha de Defunción:</strong>
+                                                        <strong>✟ </strong>
                                                         {{ !empty($persona['DiaDef']) ? $persona['DiaDef'] : '' }}{{ !empty($persona['DiaDef']) ? '/' : '' }}
                                                         {{ !empty($persona['MesDef']) ? $persona['MesDef'] : '' }}{{ !empty($persona['MesDef']) ? '/' : '' }}
-                                                        {{ $persona['AnhoDef'] }}
+                                                        {{ $persona['AnhoDef'] }} {{!empty($persona['LugarDef']) ? '(' . $persona['LugarDef'] . ')' : '' }}
                                                     </p>
-                                                @endif
-
-                                                @if (!empty($persona['LugarDef']))
-                                                    <p><strong>Lugar de Defunción:</strong> {{ $persona['LugarDef'] }}</p>
-                                                @endif
-
-                                                @if (!empty($persona['NPasaporte']))
-                                                    <p><strong>Número de Pasaporte:</strong> {{ $persona['NPasaporte'] }}</p>
                                                 @endif
 
                                                 <div style="width: 100%; height:0.5rem; border-bottom: #093143 1px solid ; margin-bottom:0.5rem;"></div>
 
                                                 <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : json_encode($persona['Observaciones'])}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar Persona</button>
-                                                <br>
                                                 <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Ver Archivos</button>
                                                 @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
                                                 <button class="copydata" onclick="copydata('datacopy_{{ $persona['id'] }}')">Copiar información de persona</button>
@@ -238,540 +319,19 @@
                                             </div>
                                         </div>
                                     @elseif ($persona["showbtn"]==1)
-                                        <div class="cajabtn_min">
-                                            <button id="{{ $persona["showbtnsex"] == "m" ? "M" : "F" }}_{{$persona["id_hijo"]}}_{{$columna1[0]["IDCliente"]}}" class="addbtn {{ $persona["showbtnsex"] == "m" ? "M" : "F" }}_{{$persona["id_hijo"]}}">+</button> <span class="addbtntext">Agregar {{ $persona["showbtnsex"] == "m" ? "Padre" : "Madre" }}</span>
+                                        <div class="cajabtn_min" <?php if ($tienePersonaConShowBtn2) { ?> style = "min-height: 150px!important;" <?php } else { ?> style = "height: 37.5px!important;" <?php } ?> >
+                                            <button id="{{ $persona["showbtnsex"] == "m" ? "M" : "F" }}_{{$persona["id_hijo"]}}_{{$columnasparatabla[0][0]["IDCliente"]}}" class="addbtn {{ $persona["showbtnsex"] == "m" ? "M" : "F" }}_{{$persona["id_hijo"]}}">+</button> <span class="addbtntext">Agregar {{ $persona["showbtnsex"] == "m" ? "Padre" : "Madre" }}</span>
                                         </div>
                                     @else
-                                        <div class="cajaperemptynew_min">
+                                        <div class="cajaperemptynew_min" <?php if ($tienePersonaConShowBtn2) { ?> style = "min-height: 150px!important;" <?php } else { ?> style = "height: 37.5px!important;" <?php } ?> >
                                         </div>
                                     @endif
                                  @endforeach
                              
                         </div>
-                        @endif
 
-
-                        @if (isset($columna2))
-                        <div class="cliente" style="margin: 0px -25px;">
-                            
-                                @foreach ($columna2 as $persona)
-                                    @if ($persona["showbtn"]==2)
-                                        <div class="cajapernew_min min_persona_id_{{ $persona['id'] }} min_padre_id_{{ $persona['idPadreNew'] ?? 'no' }} min_madre_id_{{ $persona['idMadreNew'] ?? 'no' }}" id="min_{{ $persona['id'] }}_{{ $persona['idPadreNew'] ?? 'no' }}_{{ $persona['idMadreNew'] ?? 'no' }}">
-                                            <div class="encabezadonew_min">
-                                                {{ Str::limit($persona["Nombres"] . ' ' . $persona["Apellidos"], 20) }}
-                                            </div>
-                                            <div id="datacopy_{{ $persona['id'] }}" style="display: none;">
-                                                 @if (!empty($persona['Nombres']))
-                                                    <p>
-                                                        {{ $persona['Nombres'] }}{{!empty($persona['Apellidos']) ? " ".$persona['Apellidos'] : "" }}|
-                                                    </p>
-                                                @endif
-                                                @if (!empty($persona['AnhoNac']))
-                                                    <p>
-                                                        <strong>n </strong>
-                                                        @if (!empty($persona['LugarNac']))
-                                                            en {{ $persona['LugarNac'] }}
-                                                        @endif
-                                                        {{ !empty($persona['DiaNac']) ? $persona['DiaNac'] : '' }}{{ !empty($persona['DiaNac']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesNac']) ? $persona['MesNac'] : '' }}{{ !empty($persona['MesNac']) ? '/' : '' }}
-                                                        {{ $persona['AnhoNac'] }}|
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['AnhoBtzo']))
-                                                    <p>
-                                                        <strong>b </strong>
-                                                        @if (!empty($persona['LugarBtzo']))
-                                                            en {{ $persona['LugarBtzo'] }}
-                                                        @endif
-                                                        {{ !empty($persona['DiaBtzo']) ? $persona['DiaBtzo'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesBtzo']) ? $persona['MesBtzo'] : '' }}{{ !empty($persona['MesBtzo']) ? '/' : '' }}
-                                                        {{ $persona['AnhoBtzo'] }}|
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['AnhoMatr']))
-                                                    <p>
-                                                        <strong>m </strong>
-                                                        @if (!empty($persona['LugarMatr']))
-                                                            en {{ $persona['LugarMatr'] }}
-                                                        @endif
-                                                        {{ !empty($persona['DiaMatr']) ? $persona['DiaMatr'] : '' }}{{ !empty($persona['DiaMatr']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesMatr']) ? $persona['MesMatr'] : '' }}{{ !empty($persona['MesMatr']) ? '/' : '' }}
-                                                        {{ $persona['AnhoMatr'] }}|
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['AnhoDef']))
-                                                    <p>
-                                                        <strong>f </strong>
-                                                        @if (!empty($persona['LugarDef']))
-                                                            en {{ $persona['LugarDef'] }}
-                                                        @endif
-                                                        {{ !empty($persona['DiaDef']) ? $persona['DiaDef'] : '' }}{{ !empty($persona['DiaDef']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesDef']) ? $persona['MesDef'] : '' }}{{ !empty($persona['MesDef']) ? '/' : '' }}
-                                                        {{ $persona['AnhoDef'] }}|
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['LugarDef']))
-                                                    <p><strong>Lugar de Defunción:</strong> {{ $persona['LugarDef'] }}|</p>
-                                                @endif
-
-                                         
-                                            </div>
-                                            <div class="continfo">
-                                                @if (!empty($persona['Nombres']))
-                                                    <p>
-                                                        <strong>Nombre completo:</strong>
-                                                        {{ $persona['Nombres'] }}{{!empty($persona['Apellidos']) ? " ".$persona['Apellidos'] : "" }}
-                                                    </p>
-                                                @endif
-                                                @if (!empty($persona['AnhoNac']))
-                                                    <p>
-                                                        <strong>Fecha de Nacimiento:</strong>
-                                                        {{ !empty($persona['DiaNac']) ? $persona['DiaNac'] : '' }}{{ !empty($persona['DiaNac']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesNac']) ? $persona['MesNac'] : '' }}{{ !empty($persona['MesNac']) ? '/' : '' }}
-                                                        {{ $persona['AnhoNac'] }}
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['LugarNac']))
-                                                    <p><strong>Lugar de Nacimiento:</strong> {{ $persona['LugarNac'] }}</p>
-                                                @endif
-
-                                                @if (!empty($persona['AnhoDef']))
-                                                    <p>
-                                                        <strong>Fecha de Defunción:</strong>
-                                                        {{ !empty($persona['DiaDef']) ? $persona['DiaDef'] : '' }}{{ !empty($persona['DiaDef']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesDef']) ? $persona['MesDef'] : '' }}{{ !empty($persona['MesDef']) ? '/' : '' }}
-                                                        {{ $persona['AnhoDef'] }}
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['LugarDef']))
-                                                    <p><strong>Lugar de Defunción:</strong> {{ $persona['LugarDef'] }}</p>
-                                                @endif
-
-                                                @if (!empty($persona['NPasaporte']))
-                                                    <p><strong>Número de Pasaporte:</strong> {{ $persona['NPasaporte'] }}</p>
-                                                @endif
-
-                                                <div style="width: 100%; height:0.5rem; border-bottom: #093143 1px solid ; margin-bottom:0.5rem;"></div>
-
-                                                <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : json_encode($persona['Observaciones'])}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar Persona</button>
-                                                <br>
-                                                <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Ver Archivos</button>
-                                                @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
-                                                <button class="copydata" onclick="copydata('datacopy_{{ $persona['id'] }}')">Copiar información de persona</button>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    @elseif ($persona["showbtn"]==1)
-                                        <div class="cajabtn_min">
-                                            <button id="{{ $persona["showbtnsex"] == "m" ? "M" : "F" }}_{{$persona["id_hijo"]}}_{{$columna1[0]["IDCliente"]}}" class="addbtn {{ $persona["showbtnsex"] == "m" ? "M" : "F" }}_{{$persona["id_hijo"]}}">+</button> <span class="addbtntext">Agregar {{ $persona["showbtnsex"] == "m" ? "Padre" : "Madre" }}</span>
-                                        </div>
-                                    @else
-                                        <div class="cajaperemptynew_min">
-                                        </div>
-                                    @endif
-                                @endforeach
-                            
-                        </div>
-                        @endif
-
-
-                        
-                        @if (isset($columna3))
-                        <div class="cliente" style="margin: 0px -25px;">
-                            
-                                @foreach ($columna3 as $persona)
-                                    @if ($persona["showbtn"]==2)
-                                        <div class="cajapernew_min min_persona_id_{{ $persona['id'] }} min_padre_id_{{ $persona['idPadreNew'] ?? 'no' }} min_madre_id_{{ $persona['idMadreNew'] ?? 'no' }}" id="min_{{ $persona['id'] }}_{{ $persona['idPadreNew'] ?? 'no' }}_{{ $persona['idMadreNew'] ?? 'no' }}">
-                                            <div class="encabezadonew_min">
-                                                {{ Str::limit($persona["Nombres"] . ' ' . $persona["Apellidos"], 20) }}
-                                            </div>
-                                            <div id="datacopy_{{ $persona['id'] }}" style="display: none;">
-                                                 @if (!empty($persona['Nombres']))
-                                                    <p>
-                                                        {{ $persona['Nombres'] }}{{!empty($persona['Apellidos']) ? " ".$persona['Apellidos'] : "" }}|
-                                                    </p>
-                                                @endif
-                                                @if (!empty($persona['AnhoNac']))
-                                                    <p>
-                                                        <strong>n </strong>
-                                                        @if (!empty($persona['LugarNac']))
-                                                            en {{ $persona['LugarNac'] }}
-                                                        @endif
-                                                        {{ !empty($persona['DiaNac']) ? $persona['DiaNac'] : '' }}{{ !empty($persona['DiaNac']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesNac']) ? $persona['MesNac'] : '' }}{{ !empty($persona['MesNac']) ? '/' : '' }}
-                                                        {{ $persona['AnhoNac'] }}|
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['AnhoBtzo']))
-                                                    <p>
-                                                        <strong>b </strong>
-                                                        @if (!empty($persona['LugarBtzo']))
-                                                            en {{ $persona['LugarBtzo'] }}
-                                                        @endif
-                                                        {{ !empty($persona['DiaBtzo']) ? $persona['DiaBtzo'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesBtzo']) ? $persona['MesBtzo'] : '' }}{{ !empty($persona['MesBtzo']) ? '/' : '' }}
-                                                        {{ $persona['AnhoBtzo'] }}|
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['AnhoMatr']))
-                                                    <p>
-                                                        <strong>m </strong>
-                                                        @if (!empty($persona['LugarMatr']))
-                                                            en {{ $persona['LugarMatr'] }}
-                                                        @endif
-                                                        {{ !empty($persona['DiaMatr']) ? $persona['DiaMatr'] : '' }}{{ !empty($persona['DiaMatr']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesMatr']) ? $persona['MesMatr'] : '' }}{{ !empty($persona['MesMatr']) ? '/' : '' }}
-                                                        {{ $persona['AnhoMatr'] }}|
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['AnhoDef']))
-                                                    <p>
-                                                        <strong>f </strong>
-                                                        @if (!empty($persona['LugarDef']))
-                                                            en {{ $persona['LugarDef'] }}
-                                                        @endif
-                                                        {{ !empty($persona['DiaDef']) ? $persona['DiaDef'] : '' }}{{ !empty($persona['DiaDef']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesDef']) ? $persona['MesDef'] : '' }}{{ !empty($persona['MesDef']) ? '/' : '' }}
-                                                        {{ $persona['AnhoDef'] }}|
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['LugarDef']))
-                                                    <p><strong>Lugar de Defunción:</strong> {{ $persona['LugarDef'] }}|</p>
-                                                @endif
-
-                                         
-                                            </div>
-                                            <div class="continfo">
-                                                @if (!empty($persona['Nombres']))
-                                                    <p>
-                                                        <strong>Nombre completo:</strong>
-                                                        {{ $persona['Nombres'] }}{{!empty($persona['Apellidos']) ? " ".$persona['Apellidos'] : "" }}
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['AnhoNac']))
-                                                    <p>
-                                                        <strong>Fecha de Nacimiento:</strong>
-                                                        {{ !empty($persona['DiaNac']) ? $persona['DiaNac'] : '' }}{{ !empty($persona['DiaNac']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesNac']) ? $persona['MesNac'] : '' }}{{ !empty($persona['MesNac']) ? '/' : '' }}
-                                                        {{ $persona['AnhoNac'] }}
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['LugarNac']))
-                                                    <p><strong>Lugar de Nacimiento:</strong> {{ $persona['LugarNac'] }}</p>
-                                                @endif
-
-                                                @if (!empty($persona['AnhoDef']))
-                                                    <p>
-                                                        <strong>Fecha de Defunción:</strong>
-                                                        {{ !empty($persona['DiaDef']) ? $persona['DiaDef'] : '' }}{{ !empty($persona['DiaDef']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesDef']) ? $persona['MesDef'] : '' }}{{ !empty($persona['MesDef']) ? '/' : '' }}
-                                                        {{ $persona['AnhoDef'] }}
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['LugarDef']))
-                                                    <p><strong>Lugar de Defunción:</strong> {{ $persona['LugarDef'] }}</p>
-                                                @endif
-
-                                                @if (!empty($persona['NPasaporte']))
-                                                    <p><strong>Número de Pasaporte:</strong> {{ $persona['NPasaporte'] }}</p>
-                                                @endif
-
-                                                <div style="width: 100%; height:0.5rem; border-bottom: #093143 1px solid ; margin-bottom:0.5rem;"></div>
-
-                                                <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : json_encode($persona['Observaciones'])}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar Persona</button>
-                                                <br>
-                                                <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Ver Archivos</button>
-                                                @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
-                                                <button class="copydata" onclick="copydata('datacopy_{{ $persona['id'] }}')">Copiar información de persona</button>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    @elseif ($persona["showbtn"]==1)
-                                        <div class="cajabtn_min">
-                                            <button id="{{ $persona["showbtnsex"] == "m" ? "M" : "F" }}_{{$persona["id_hijo"]}}_{{$columna1[0]["IDCliente"]}}" class="addbtn {{ $persona["showbtnsex"] == "m" ? "M" : "F" }}_{{$persona["id_hijo"]}}">+</button> <span class="addbtntext">Agregar {{ $persona["showbtnsex"] == "m" ? "Padre" : "Madre" }}</span>
-                                        </div>
-                                    @else
-                                        <div class="cajaperemptynew_min">
-                                        </div>
-                                    @endif
-                                @endforeach
-                            
-                        </div>
-                        @endif
-                        
-                        @if (isset($columna4))
-                        <div class="cliente" style="margin: 0px 0 0 -25px;">
-                            
-                                @foreach ($columna4 as $persona)
-                                    @if ($persona["showbtn"]==2)
-                                        <div class="cajapernew_min min_persona_id_{{ $persona['id'] }} min_padre_id_{{ $persona['idPadreNew'] ?? 'no' }} min_madre_id_{{ $persona['idMadreNew'] ?? 'no' }}" id="min_{{ $persona['id'] }}_{{ $persona['idPadreNew'] ?? 'no' }}_{{ $persona['idMadreNew'] ?? 'no' }}">
-                                            <div class="encabezadonew_min">
-                                                {{ Str::limit($persona["Nombres"] . ' ' . $persona["Apellidos"], 20) }}
-                                            </div>
-                                            <div id="datacopy_{{ $persona['id'] }}" style="display: none;">
-                                                 @if (!empty($persona['Nombres']))
-                                                    <p>
-                                                        {{ $persona['Nombres'] }}{{!empty($persona['Apellidos']) ? " ".$persona['Apellidos'] : "" }}|
-                                                    </p>
-                                                @endif
-                                                @if (!empty($persona['AnhoNac']))
-                                                    <p>
-                                                        <strong>n </strong>
-                                                        @if (!empty($persona['LugarNac']))
-                                                            en {{ $persona['LugarNac'] }}
-                                                        @endif
-                                                        {{ !empty($persona['DiaNac']) ? $persona['DiaNac'] : '' }}{{ !empty($persona['DiaNac']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesNac']) ? $persona['MesNac'] : '' }}{{ !empty($persona['MesNac']) ? '/' : '' }}
-                                                        {{ $persona['AnhoNac'] }}|
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['AnhoBtzo']))
-                                                    <p>
-                                                        <strong>b </strong>
-                                                        @if (!empty($persona['LugarBtzo']))
-                                                            en {{ $persona['LugarBtzo'] }}
-                                                        @endif
-                                                        {{ !empty($persona['DiaBtzo']) ? $persona['DiaBtzo'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesBtzo']) ? $persona['MesBtzo'] : '' }}{{ !empty($persona['MesBtzo']) ? '/' : '' }}
-                                                        {{ $persona['AnhoBtzo'] }}|
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['AnhoMatr']))
-                                                    <p>
-                                                        <strong>m </strong>
-                                                        @if (!empty($persona['LugarMatr']))
-                                                            en {{ $persona['LugarMatr'] }}
-                                                        @endif
-                                                        {{ !empty($persona['DiaMatr']) ? $persona['DiaMatr'] : '' }}{{ !empty($persona['DiaMatr']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesMatr']) ? $persona['MesMatr'] : '' }}{{ !empty($persona['MesMatr']) ? '/' : '' }}
-                                                        {{ $persona['AnhoMatr'] }}|
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['AnhoDef']))
-                                                    <p>
-                                                        <strong>f </strong>
-                                                        @if (!empty($persona['LugarDef']))
-                                                            en {{ $persona['LugarDef'] }}
-                                                        @endif
-                                                        {{ !empty($persona['DiaDef']) ? $persona['DiaDef'] : '' }}{{ !empty($persona['DiaDef']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesDef']) ? $persona['MesDef'] : '' }}{{ !empty($persona['MesDef']) ? '/' : '' }}
-                                                        {{ $persona['AnhoDef'] }}|
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['LugarDef']))
-                                                    <p><strong>Lugar de Defunción:</strong> {{ $persona['LugarDef'] }}|</p>
-                                                @endif
-
-                                         
-                                            </div>
-                                            <div class="continfo">
-                                                @if (!empty($persona['Nombres']))
-                                                    <p>
-                                                        <strong>Nombre completo:</strong>
-                                                        {{ $persona['Nombres'] }}{{!empty($persona['Apellidos']) ? " ".$persona['Apellidos'] : "" }}
-                                                    </p>
-                                                @endif
-                                                @if (!empty($persona['AnhoNac']))
-                                                    <p>
-                                                        <strong>Fecha de Nacimiento:</strong>
-                                                        {{ !empty($persona['DiaNac']) ? $persona['DiaNac'] : '' }}{{ !empty($persona['DiaNac']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesNac']) ? $persona['MesNac'] : '' }}{{ !empty($persona['MesNac']) ? '/' : '' }}
-                                                        {{ $persona['AnhoNac'] }}
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['LugarNac']))
-                                                    <p><strong>Lugar de Nacimiento:</strong> {{ $persona['LugarNac'] }}</p>
-                                                @endif
-
-                                                @if (!empty($persona['AnhoDef']))
-                                                    <p>
-                                                        <strong>Fecha de Defunción:</strong>
-                                                        {{ !empty($persona['DiaDef']) ? $persona['DiaDef'] : '' }}{{ !empty($persona['DiaDef']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesDef']) ? $persona['MesDef'] : '' }}{{ !empty($persona['MesDef']) ? '/' : '' }}
-                                                        {{ $persona['AnhoDef'] }}
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['LugarDef']))
-                                                    <p><strong>Lugar de Defunción:</strong> {{ $persona['LugarDef'] }}</p>
-                                                @endif
-
-                                                @if (!empty($persona['NPasaporte']))
-                                                    <p><strong>Número de Pasaporte:</strong> {{ $persona['NPasaporte'] }}</p>
-                                                @endif
-
-                                                <div style="width: 100%; height:0.5rem; border-bottom: #093143 1px solid ; margin-bottom:0.5rem;"></div>
-                                                
-                                                <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : json_encode($persona['Observaciones'])}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar Persona</button>
-                                                <br>
-
-                                                <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Ver Archivos</button>
-                                                
-                                                @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
-                                                <button class="copydata" onclick="copydata('datacopy_{{ $persona['id'] }}')">Copiar información de persona</button>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    @elseif ($persona["showbtn"]==1)
-                                        <div class="cajabtn_min">
-                                            <button id="{{ $persona["showbtnsex"] == "m" ? "M" : "F" }}_{{$persona["id_hijo"]}}_{{$columna1[0]["IDCliente"]}}" class="addbtn {{ $persona["showbtnsex"] == "m" ? "M" : "F" }}_{{$persona["id_hijo"]}}">+</button> <span class="addbtntext">Agregar {{ $persona["showbtnsex"] == "m" ? "Padre" : "Madre" }}</span>
-                                        </div>
-                                    @else
-                                        <div class="cajaperemptynew_min">
-                                        </div>
-                                    @endif
-                                @endforeach
-                            
-                        </div>
-                        @endif
-                        
-                        @if (isset($columna5))
-                        <div class="cliente" style="margin: 0px 0 0 20px;">
-                            
-                                @foreach ($columna5 as $persona)
-                                    @if ($persona["showbtn"]==2)
-                                        <div class="cajapernew_min min_persona_id_{{ $persona['id'] }} min_padre_id_{{ $persona['idPadreNew'] ?? 'no' }} min_madre_id_{{ $persona['idMadreNew'] ?? 'no' }}" id="min_{{ $persona['id'] }}_{{ $persona['idPadreNew'] ?? 'no' }}_{{ $persona['idMadreNew'] ?? 'no' }}">
-                                            <div class="encabezadonew_min">
-                                                {{ Str::limit($persona["Nombres"] . ' ' . $persona["Apellidos"], 20) }}
-                                            </div>
-                                            <div id="datacopy_{{ $persona['id'] }}" style="display: none;">
-                                                 @if (!empty($persona['Nombres']))
-                                                    <p>
-                                                        {{ $persona['Nombres'] }}{{!empty($persona['Apellidos']) ? " ".$persona['Apellidos'] : "" }}|
-                                                    </p>
-                                                @endif
-                                                @if (!empty($persona['AnhoNac']))
-                                                    <p>
-                                                        <strong>n </strong>
-                                                        @if (!empty($persona['LugarNac']))
-                                                            en {{ $persona['LugarNac'] }}
-                                                        @endif
-                                                        {{ !empty($persona['DiaNac']) ? $persona['DiaNac'] : '' }}{{ !empty($persona['DiaNac']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesNac']) ? $persona['MesNac'] : '' }}{{ !empty($persona['MesNac']) ? '/' : '' }}
-                                                        {{ $persona['AnhoNac'] }}|
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['AnhoBtzo']))
-                                                    <p>
-                                                        <strong>b </strong>
-                                                        @if (!empty($persona['LugarBtzo']))
-                                                            en {{ $persona['LugarBtzo'] }}
-                                                        @endif
-                                                        {{ !empty($persona['DiaBtzo']) ? $persona['DiaBtzo'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesBtzo']) ? $persona['MesBtzo'] : '' }}{{ !empty($persona['MesBtzo']) ? '/' : '' }}
-                                                        {{ $persona['AnhoBtzo'] }}|
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['AnhoMatr']))
-                                                    <p>
-                                                        <strong>m </strong>
-                                                        @if (!empty($persona['LugarMatr']))
-                                                            en {{ $persona['LugarMatr'] }}
-                                                        @endif
-                                                        {{ !empty($persona['DiaMatr']) ? $persona['DiaMatr'] : '' }}{{ !empty($persona['DiaMatr']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesMatr']) ? $persona['MesMatr'] : '' }}{{ !empty($persona['MesMatr']) ? '/' : '' }}
-                                                        {{ $persona['AnhoMatr'] }}|
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['AnhoDef']))
-                                                    <p>
-                                                        <strong>f </strong>
-                                                        @if (!empty($persona['LugarDef']))
-                                                            en {{ $persona['LugarDef'] }}
-                                                        @endif
-                                                        {{ !empty($persona['DiaDef']) ? $persona['DiaDef'] : '' }}{{ !empty($persona['DiaDef']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesDef']) ? $persona['MesDef'] : '' }}{{ !empty($persona['MesDef']) ? '/' : '' }}
-                                                        {{ $persona['AnhoDef'] }}|
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['LugarDef']))
-                                                    <p><strong>Lugar de Defunción:</strong> {{ $persona['LugarDef'] }}|</p>
-                                                @endif
-
-                                         
-                                            </div>
-                                            <div class="continfo">
-                                                @if (!empty($persona['Nombres']))
-                                                    <p>
-                                                        <strong>Nombre completo:</strong>
-                                                        {{ $persona['Nombres'] }}{{!empty($persona['Apellidos']) ? " ".$persona['Apellidos'] : "" }}
-                                                    </p>
-                                                @endif
-                                                @if (!empty($persona['AnhoNac']))
-                                                    <p>
-                                                        <strong>Fecha de Nacimiento:</strong>
-                                                        {{ !empty($persona['DiaNac']) ? $persona['DiaNac'] : '' }}{{ !empty($persona['DiaNac']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesNac']) ? $persona['MesNac'] : '' }}{{ !empty($persona['MesNac']) ? '/' : '' }}
-                                                        {{ $persona['AnhoNac'] }}
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['LugarNac']))
-                                                    <p><strong>Lugar de Nacimiento:</strong> {{ $persona['LugarNac'] }}</p>
-                                                @endif
-
-                                                @if (!empty($persona['AnhoDef']))
-                                                    <p>
-                                                        <strong>Fecha de Defunción:</strong>
-                                                        {{ !empty($persona['DiaDef']) ? $persona['DiaDef'] : '' }}{{ !empty($persona['DiaDef']) ? '/' : '' }}
-                                                        {{ !empty($persona['MesDef']) ? $persona['MesDef'] : '' }}{{ !empty($persona['MesDef']) ? '/' : '' }}
-                                                        {{ $persona['AnhoDef'] }}
-                                                    </p>
-                                                @endif
-
-                                                @if (!empty($persona['LugarDef']))
-                                                    <p><strong>Lugar de Defunción:</strong> {{ $persona['LugarDef'] }}</p>
-                                                @endif
-
-                                                @if (!empty($persona['NPasaporte']))
-                                                    <p><strong>Número de Pasaporte:</strong> {{ $persona['NPasaporte'] }}</p>
-                                                @endif
-
-                                                <div style="width: 100%; height:0.5rem; border-bottom: #093143 1px solid ; margin-bottom:0.5rem;"></div>
-
-                                                <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : json_encode($persona['Observaciones'])}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar Persona</button>
-                                                <br>
-                                                <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Ver Archivos</button>
-
-                                                @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
-                                                <button class="copydata" onclick="copydata('datacopy_{{ $persona['id'] }}')">Copiar información de persona</button>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    @elseif ($persona["showbtn"]==1)
-                                        <div class="cajabtn_min">
-                                            <button id="{{ $persona["showbtnsex"] == "m" ? "M" : "F" }}_{{$persona["id_hijo"]}}_{{$columna1[0]["IDCliente"]}}" class="addbtn {{ $persona["showbtnsex"] == "m" ? "M" : "F" }}_{{$persona["id_hijo"]}}">+</button> <span class="addbtntext">Agregar {{ $persona["showbtnsex"] == "m" ? "Padre" : "Madre" }}</span>
-                                        </div>
-                                    @else
-                                        <div class="cajaperemptynew_min">
-                                        </div>
-                                    @endif
-                                @endforeach
-                            
-                        </div>
-                        @endif
+                        @php $key++; $sizeheight = $sizeheight * 2; @endphp
+                        @endforeach
 
                         <div style="width:50px">
                             <div style="width:50px">
@@ -799,7 +359,7 @@
                 @csrf
                 <input name="Origen" type="hidden" value="arbol">
                 <input name="Sexo" id="sexaddform" type="hidden"> 
-                <input name="IDCliente" type="hidden" value="{{$columna1[0]["IDCliente"]}}" >
+                <input name="IDCliente" type="hidden" value="{{$columnasparatabla[0][0]["IDCliente"]}}" >
                 <input name="id_hijo" id="id_hijo" type="hidden">
                 <div class="container">
                     <div class="md:flex ms:flex-wrap">
@@ -1806,7 +1366,7 @@
                     </button>
                 </div>
             </div>
-            <input type="hidden" id="f_IDCliente" value="{{$columna1[0]["IDCliente"]}}"/>
+            <input type="hidden" id="f_IDCliente" value="{{$columnasparatabla[0][0]["IDCliente"]}}"/>
             <input type="hidden" id="f_IDPersonaNew">
             <div class="contentfiles">
                 
@@ -1997,7 +1557,6 @@
         }
         .cliente {
             display: inline-flex;
-            height: 100%;
             flex-direction: column;
             justify-content: space-around; /* Distribuye el espacio alrededor de los elementos */
             align-items: center; /* Alinea los elementos al centro horizontalmente */
@@ -2006,17 +1565,10 @@
             padding: 30px 20px;
             margin-bottom: 20px;
             width: 100%;
-            height: 700px;
+            height: auto;
             overflow-x: auto;
             overflow-y: hidden;
             position: relative;
-        }
-        .treecont{
-            padding: 0px 20px;
-            width: 100%;
-            height: 1000px;
-            overflow-x: auto;
-            overflow-y: hidden;
         }
 
         .tooltip {
@@ -2039,7 +1591,7 @@
             height: 100%;
             z-index: 2;
             @php 
-                if (!isset($columna5)){
+                if (!isset($columnasparatabla[4])){
                     echo("justify-content: center;");
                 }
             @endphp
@@ -2084,24 +1636,21 @@
 
         .cajapernew {
             border: 1px solid rgb(22, 43, 27);
-            width: 14rem;
+            width: 16rem;
             height: 1.3rem;
             border-radius: 5px;
             padding: 0;
             overflow: hidden;
             z-index: 1;
             text-align: center;
-            min-height: 1.3rem;
         }
 
         .cajabtn {
-            width: 14rem;
-            height: 1.3rem;
+            width: 16rem;
             padding: 0;
             overflow: hidden;
             z-index: 1;
             text-align: left;
-            min-height: 1.3rem;
             display: flex;
             align-content: center;
             align-items: center;
@@ -2111,27 +1660,25 @@
             background-color: white !important;
             position: relative;
             border: 1px solid rgb(22, 43, 27);
-            width: 14rem;
-            height: 1.3rem;
+            width: 18rem;
+            min-height: 150px!important;
+            max-height: 150px!important;
             border-radius: 5px;
             padding: 0;
             overflow: hidden;
             z-index: 1;
             text-align: center;
-            z-index: 2;
+
         }
 
         .cajaperemptynew_min{
             position: relative;
-            width: 14rem;
-            height: 1.3rem;
+            width: 16rem;
             border-radius: 5px;
             padding: 0;
             overflow: hidden;
             z-index: 1;
             text-align: center;
-            min-height: 1.3rem;
-            z-index: 2;
         }
 
         .cajapernew_min p {
@@ -2152,26 +1699,16 @@
             transition: all 0.3s ease;
         }
 
-        .cajapernew_min:hover {
-            transform-origin: center;
-            transform: scale(1.2);
-            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.6)!important;
-            height: auto;
-            z-index: 5;
-        }
-
         .mr1{
             margin-right: 5px;
         }
 
         .cajabtn_min{
             width: 14rem;
-            height: 1.3rem;
             padding: 0;
             overflow: hidden;
             z-index: 1;
             text-align: left;
-            min-height: 1.3rem;
             display: flex;
             align-content: center;
             align-items: center;
