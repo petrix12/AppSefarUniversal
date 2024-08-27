@@ -218,7 +218,7 @@
                     </div>
                 </div> 
                 
-                <div style="width: 100%; height: 70vh; overflow: auto;" id="containertree">
+                <div style="width: 100%; height: 80vh; overflow: auto;" id="containertree">
                     <div class="treecont_minimized" id="zoomableContent" style="position:relative;">
                         <div id="mylines" class="mylines"></div>  
                         <div class="arbolflex">
