@@ -350,11 +350,11 @@
                                             </div>
                                         </div>
                                     @elseif ($persona["showbtn"]==1)
-                                        <div class="cajabtn_min" <?php if ($tienePersonaConShowBtn2) { ?> style = "min-height: 150px!important;" <?php } else { ?> style = "height: 37.5px!important;" <?php } ?> >
+                                        <div class="cajabtn_min" <?php if ($tienePersonaConShowBtn2) { ?> style = "min-height: 160px!important;" <?php } else { ?> style = "height: 37.5px!important;" <?php } ?> >
                                             <button id="{{ $persona["showbtnsex"] == "m" ? "M" : "F" }}_{{$persona["id_hijo"]}}_{{$columnasparatabla[0][0]["IDCliente"]}}" class="addbtn {{ $persona["showbtnsex"] == "m" ? "M" : "F" }}_{{$persona["id_hijo"]}}">+</button> <span class="addbtntext">Agregar {{ $persona["showbtnsex"] == "m" ? "Padre" : "Madre" }}</span>
                                         </div>
                                     @else
-                                        <div class="cajaperemptynew_min" <?php if ($tienePersonaConShowBtn2) { ?> style = "min-height: 150px!important;" <?php } else { ?> style = "height: 37.5px!important;" <?php } ?> >
+                                        <div class="cajaperemptynew_min" <?php if ($tienePersonaConShowBtn2) { ?> style = "min-height: 160px!important;" <?php } else { ?> style = "height: 37.5px!important;" <?php } ?> >
                                         </div>
                                     @endif
                                  @endforeach
