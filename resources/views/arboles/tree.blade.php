@@ -1967,6 +1967,8 @@
     function gotofamiliar(id) {
         zoomLevel = 1;
         zoomableContent.style.zoom = zoomLevel;
+        document.getElementById('zoomOut').disabled = false;
+
         var classid = ".min_persona_id_" + id;
         var element = document.querySelector(classid);
 
