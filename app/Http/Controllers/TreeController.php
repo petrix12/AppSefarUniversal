@@ -785,7 +785,7 @@ class TreeController extends Controller
             $cliente = json_decode(json_encode(User::where("passport",$IDCliente)->get()),true);
 
             $temparr = [];
-            $var = 7;
+            $var = 5;
             foreach ($columnasparatabla as $key => $columna){
                 if($key<$var){
                     $temparr[] = $columna;
