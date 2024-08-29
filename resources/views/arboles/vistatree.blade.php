@@ -10,7 +10,7 @@
     @endphp
 @endforeach
 
-@php $key = 0; $sizeheight = 1;@endphp
+@php $key = 0; $sizeheight = 1; $varcalc = 0; @endphp
 
 @foreach ($columnasparatabla as $key1 => $columna)
 
@@ -21,24 +21,36 @@
 @endphp
 
 <div class="cliente" style="margin: auto 25px auto 0; height: {{$height}}px;" >
-    
+    	
         @foreach ($columna as $key2 => $persona)
             @if ($persona["showbtn"]==2)
             	<div class="contnodo" style="height: {{$boxheight}}px;">
 	                <div class="cajapernew_min min_persona_id_{{ $persona['id'] }} min_padre_id_{{ $persona['idPadreNew'] ?? 'no' }} min_madre_id_{{ $persona['idMadreNew'] ?? 'no' }}" id="min_{{ $persona['id'] }}_{{ $persona['idPadreNew'] ?? 'no' }}_{{ $persona['idMadreNew'] ?? 'no' }}">
 	                    <div class="encabezadonew_min">
 	                        {{$persona["Nombres"] . ' ' . $persona["Apellidos"]}}<br>
-	                        @if ($key1 == 0)  
-	                            (Cliente)                                         
-	                        @elseif ($key1 == 1)
-	                            @if ($key2 == 0)  
-	                                (Padre)               
-	                            @else
-	                                (Madre)
-	                            @endif
+	                        @if($checkBtn == "si")
+	                        	@if ($key1+$generacionBase == 1)
+		                            @if ($key2 == 0)  
+		                                (Padre)               
+		                            @else
+		                                (Madre)
+		                            @endif
+		                        @else
+	                        		({{$parentescos[$key1-2+$generacionBase][$persona['PersonaIDNew']]}})
+	                        	@endif
 	                        @else
-	                            ({{$parentescos[$key1-2][$key2]}})
-	                        @endif
+		                        @if ($key1 == 0)  
+		                            (Cliente)                                         
+		                        @elseif ($key1 == 1)
+		                            @if ($key2 == 0)  
+		                                (Padre)               
+		                            @else
+		                                (Madre)
+		                            @endif
+		                        @else
+		                            ({{$parentescos[$key1-2+$generacionBase][$persona['PersonaIDNew']]}})
+		                        @endif
+		                    @endif
 	                    </div>
 	                    <div id="datacopy_{{ $persona['id'] }}" style="display: none;">
 	                         @if (!empty($persona['Nombres']))
@@ -125,6 +137,7 @@
 	                        <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Archivos</button>
 	                        @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
 	                        <button class="copydata" onclick="copydata('datacopy_{{ $persona['id'] }}')">Copiar</button>
+	                        <button class="copydata" onclick="window.location.href='/tree/{{$persona["IDCliente"]}}/{{$persona["id"]}}/{{$key1}}/{{$key2}}'">Extender</button>
 	                        @endif
 	                    </div>
 	                </div>
@@ -137,6 +150,11 @@
                 <div class="cajaperemptynew_min" <?php if ($tienePersonaConShowBtn2) { ?> style = "min-height: {{$boxheight}}px!important;" <?php } else { ?> style = "height: {{$boxheight /4}}px!important;" <?php } ?> >
                 </div>
             @endif
+            @php 
+        		if ($varcalc == 0){
+        			$varcalc++; 
+        		}
+        	@endphp
          @endforeach
      
 </div>

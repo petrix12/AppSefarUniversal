@@ -63,6 +63,7 @@ class Agcliente extends Model
         'Usuario',
         'idPadreNew',
         'idMadreNew',
+        'PersonaIDNew',
         'migradoNuevoID'
     ];
 

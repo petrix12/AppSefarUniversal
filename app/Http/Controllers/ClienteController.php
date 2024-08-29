@@ -332,13 +332,30 @@ class ClienteController extends Controller
             if($key<$var){
                 $temparr[] = $columna;
             }
+            foreach ($columna as $key2 => $persona) {
+                if ($persona["showbtn"] == 2) {
+                    if ($persona["PersonaIDNew"] == null || $persona["PersonaIDNew"] == "null"){
+                        DB::table('agclientes')
+                        ->where('id', $persona['id'])
+                        ->update([
+                            'PersonaIDNew' => $key2
+                        ]);
+                        $columnasparatabla[$key][$key2]["PersonaIDNew"] = $key2;
+                    }
+                }
+            }
         }
 
         $columnasparatabla = $temparr;
 
-        $htmlGenerado = view('arboles.vistatree', compact('columnasparatabla', 'parentescos'))->render();
+        $checkBtn = "no";
+        $generacionBase = 0;
 
-        return view('arboles.tree', compact('IDCliente', 'people', 'columnasparatabla', 'cliente', 'tipoarchivos', 'parentescos', 'htmlGenerado'));
+        $parentnumber = 0;
+
+        $htmlGenerado = view('arboles.vistatree', compact('generacionBase', 'columnasparatabla', 'parentescos', 'checkBtn', 'parentnumber'))->render();
+
+        return view('arboles.tree', compact('IDCliente', 'people', 'columnasparatabla', 'cliente', 'tipoarchivos', 'parentescos', 'htmlGenerado', 'checkBtn', 'generacionBase', 'parentnumber'));
     }
 
     public function hermanoscliente(){

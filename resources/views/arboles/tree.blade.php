@@ -57,19 +57,6 @@
                 <div class="container">
                     <div class="flex justify-between">
                         <div class="px-4 py-2 m-2">
-                    <!--
-                            {{-- ÁRBOL EXPANDIDO O COMPACTO --}}
-                            <div class="text-left">
-                                <label for="Modo" class="px-3 block text-sm font-medium text-gray-700"
-                                    title="Indicar línea genealógica">Modo</label>
-                                <select id="modeview" name="Modo"
-                                    class="w-44 mt-1 block py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-600 focus:border-indigo-600 sm:text-sm">
-                                    <option value="0" selected>Compacto</option>
-                                    <option value="1">Expandido</option>
-                                </select>
-                            </div>
-                        </div>
-                    -->
                         <style>
                             .downloadgedcom{
                                 background-color: rgb(22,43,27);
@@ -114,17 +101,30 @@
                                             @foreach ($columna as $key2 => $persona)
                                                 @if ($persona["showbtn"]==2)
                                                 <option value="{{ $persona['id'] }}">{{$persona["Nombres"] . ' ' . $persona["Apellidos"]}} 
-                                                @if ($key1 == 0)  
-                                                    (Cliente)                                         
-                                                @elseif ($key1 == 1)
-                                                    @if ($key2 == 0)  
-                                                        (Padre)               
+                                                    @if($checkBtn == "si")
+                                                        @if ($key1+$generacionBase == 1)
+                                                            @if ($key2 == 0)  
+                                                                (Padre)               
+                                                            @else
+                                                                (Madre)
+                                                            @endif
+                                                        @else
+                                                            ({{$parentescos[$key1-2+$generacionBase][$persona['PersonaIDNew']]}})
+                                                        @endif
                                                     @else
-                                                        (Madre)
+                                                        @if ($key1 == 0)  
+                                                            (Cliente)                                         
+                                                        @elseif ($key1 == 1)
+                                                            @if ($key2 == 0)  
+                                                                (Padre)               
+                                                            @else
+                                                                (Madre)
+                                                            @endif
+                                                        @else
+                                                            ({{$parentescos[$key1-2+$generacionBase][$persona['PersonaIDNew']]}})
+                                                        @endif
                                                     @endif
-                                                @else
-                                                    ({{$parentescos[$key1-2][$key2]}})
-                                                @endif</option>
+                                                </option>
                                                 @endif
                                             @endforeach
                                         @endforeach
@@ -139,6 +139,15 @@
                                     <button id="zoomOut" style="width: 36px; height: 36px; border-radius: 10px;" class="csrSefar"><i class="fa-solid fa-minus"></i></button>
                                 </div>
                             </div>
+                            @if ($checkBtn == "si")
+                            <div class="px-4 py-2 m-2">
+                                <div class="justify-center">
+                                    <label for="change_person" class="px-3 block text-sm font-medium text-gray-700"
+                                        title="Zoom">Regresar a Cliente</label>
+                                    <button onclick="window.location.href='/tree/{{$columnasparatabla[0][0]["IDCliente"]}}'" style="height: 36px; border-radius: 10px; padding: 0px 10px;" class="csrSefar">Regresar a Cliente</button>
+                                </div>
+                            </div>
+                            @endif
                         </div>
                     </div>
                 </div> 
@@ -1438,11 +1447,6 @@
             display: flex;
             height: 100%;
             z-index: 2;
-            @php 
-                if (!isset($columnasparatabla[4])){
-                    echo("justify-content: center;");
-                }
-            @endphp
         }
 
         .editperson, .filebtn, .copydata {
