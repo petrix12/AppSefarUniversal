@@ -137,7 +137,7 @@
 	                        <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Archivos</button>
 	                        @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
 	                        <button class="copydata" onclick="copydata('datacopy_{{ $persona['id'] }}')">Copiar</button>
-	                        <button class="copydata" onclick="window.location.href='/tree/{{$persona["IDCliente"]}}/{{$persona["id"]}}/{{$key1}}/{{$key2}}'">Extender</button>
+	                        <button class="copydata" onclick="window.location.href='/tree/{{$persona["IDCliente"]}}/{{$persona["id"]}}/{{$key1-2+$generacionBase}}/{{$key2}}'">Extender</button>
 	                        @endif
 	                    </div>
 	                </div>
