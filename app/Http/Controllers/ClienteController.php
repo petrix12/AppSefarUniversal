@@ -251,7 +251,94 @@ class ClienteController extends Controller
 
         $tipoarchivos = TFile::all();
 
-        return view('arboles.tree', compact('IDCliente', 'people', 'columnasparatabla', 'cliente', 'tipoarchivos'));
+        $parentescos = [];
+        $parentescos_post_padres = [
+            "Abuel", 
+            "Bisabuel", 
+            "Tatarabuel", 
+            "Trastatarabuel", 
+            "Retatarabuel", 
+            "Sestarabuel", 
+            "Setatarabuel", 
+            "Octatarabuel", 
+            "Nonatarabuel",
+            "Decatarabuel",
+            "Undecatarabuel",
+            "Duodecatarabuel",
+            "Trececatarabuel",
+            "Catorcatarabuel",
+            "Quincecatarabuel",
+            "Deciseiscatarabuel",
+            "Decisietecatarabuel",
+            "Deciochocatarabuel",
+            "Decinuevecatarabuel",
+            "Vigecatarabuel",
+            "Vigecimoprimocatarabuel",
+            "Vigecimosegundocatarabuel",
+            "Vigecimotercercatarabuel",
+            "Vigecimocuartocatarabuel",
+            "Vigecimoquintocatarabuel",
+            "Vigecimosextocatarabuel",
+            "Vigecimoseptimocatarabuel",
+            "Vigecimooctavocatarabuel",
+            "Vigecimonovenocatarabuel",
+            "Trigecatarabuel",
+            "Trigecimoprimocatarabuel",
+            "Trigecimosegundocatarabuel",
+            "Trigecimotercercatarabuel",
+            "Trigecimocuartocatarabuel",
+            "Trigecimoquintocatarabuel",
+            "Trigecimosextocatarabuel",
+            "Trigecimoseptimocatarabuel",
+            "Trigecimooctavocatarabuel",
+            "Trigecimonovenocatarabuel",
+            "Cuarentacatarabuel",
+            "Cuarentaprimocatarabuel",
+            "Cuarentasegundocatarabuel",
+            "Cuarentatercercatarabuel",
+        ];
+        $prepar = 4;
+
+        function generarTexto($i, $key) {
+            $text = "";
+            $multiplicador = 4;
+
+            for ($j = 1; $j <= $key; $j++) {
+                $text .= (($i % $multiplicador) < ($multiplicador / 2) ? "P " : "M ");
+                $multiplicador *= 2;
+            }
+
+            $text .= ($i < 2 * ($key + 1) ? "P" : "M");
+            return $text;
+        }
+
+        foreach ($parentescos_post_padres as $key => $parentesco) {
+            if($key <= sizeof($columnasparatabla)){
+                $parentescos[$key] = [];
+
+                for ($i = 0; $i < $prepar; $i++) {
+                    $textparentesco = $parentesco . ($i % 2 == 0 ? "o" : "a");
+                    $text = generarTexto($i, $key);
+                    $parentescos[$key][] = $textparentesco . " " . $text;
+                }
+
+                $prepar *= 2;
+            }
+        }
+
+        $temparr = [];
+        $var = 5;
+        foreach ($columnasparatabla as $key => $columna){
+            if($key<$var){
+                $temparr[] = $columna;
+            }
+        }
+
+        $columnasparatabla = $temparr;
+
+        $htmlGenerado = view('arboles.vistatree', compact('columnasparatabla', 'parentescos'))->render();
+
+        return view('arboles.tree', compact('IDCliente', 'people', 'columnasparatabla', 'cliente', 'tipoarchivos', 'parentescos', 'htmlGenerado'));
     }
 
     public function hermanoscliente(){
