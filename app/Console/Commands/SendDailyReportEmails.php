@@ -373,7 +373,7 @@ class SendDailyReportEmails extends Command
             'chartUrl',
             'chartNight',
             'usuariosPorServicio'
-        ), function ($message) use ($pdfContent) {
+        ), function ($message) use ($pdfContent, $peticion) {
             $message->to([
                 'dpm.ladera@sefarvzla.com',
                 'sistemasccs@sefarvzla.com',
@@ -381,8 +381,8 @@ class SendDailyReportEmails extends Command
                 'gflorez@sefarvzla.com',
                 'practicanteit@sefarvzla.com'
                 ])
-                    ->subject('Reporte Diario')
-                    ->attachData($pdfContent, 'reporte_diario_' . now()->format('Y_m_d') . '.pdf', [
+                    ->subject('Reporte Diario - ' . $peticion["dia"] . '/' . $peticion["mes"] . '/' . $peticion["año"])
+                    ->attachData($pdfContent, 'reporte_diario_' . $peticion["dia"] . '-' . $peticion["mes"] . '-' . $peticion["año"] . '.pdf', [
                         'mime' => 'application/pdf',
                     ]);
         });
