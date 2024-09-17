@@ -11,7 +11,7 @@
         @php
             // Configura la localización a español
             setlocale(LC_TIME, 'es_ES', 'Spanish_Spain', 'es_ES.UTF-8');
-            
+
             // Convertimos el número del mes actual en su nombre en español
             $nombreMesActual = ucfirst(strftime('%B', mktime(0, 0, 0, $peticion["mes"], 10)));
 
@@ -25,9 +25,59 @@
         <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.2/jquery.min.js" integrity="sha512-tWHlutFnuG0C6nQRlpvrEhE4QpkG1nn2MOUMWmUeRePl4e3Aki0VB6W1v3oLjFtd0hVOtRQ9PHpSfN6u6/QXkQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
         <script type="text/javascript">
             const fechaActual = new Date("{{$peticion['año']}}-{{$peticion['mes']}}-{{$peticion['dia']}}");
+
+            function goToReport() {
+                // Obtiene el valor del input de fecha
+                const fechaSeleccionada = document.getElementById('fecha').value;
+
+                // Asegura que haya una fecha seleccionada
+                if (fechaSeleccionada) {
+                    // Divide la fecha en partes: año, mes y día (el formato es "YYYY-MM-DD")
+                    const partesFecha = fechaSeleccionada.split('-');
+                    const nuevoAño = partesFecha[0];
+                    const nuevoMes = partesFecha[1];
+                    const nuevoDia = partesFecha[2];
+
+                    // Actualiza los campos del formulario oculto
+                    document.getElementById('hiddenDia').value = nuevoDia;
+                    document.getElementById('hiddenMes').value = nuevoMes;
+                    document.getElementById('hiddenAño').value = nuevoAño;
+
+                    // Envía el formulario
+                    document.getElementById('dateForm').submit();
+                } else {
+                    console.error("No se ha seleccionado una fecha.");
+                }
+            }
+
+            function goToReport1() {
+                // Obtiene el valor del input de fecha
+                const fechaSeleccionada = document.getElementById('fecha1').value;
+
+                // Asegura que haya una fecha seleccionada
+                if (fechaSeleccionada) {
+                    // Divide la fecha en partes: año, mes y día (el formato es "YYYY-MM-DD")
+                    const partesFecha = fechaSeleccionada.split('-');
+                    const nuevoAño = partesFecha[0];
+                    const nuevoMes = partesFecha[1];
+                    const nuevoDia = partesFecha[2];
+
+                    // Actualiza los campos del formulario oculto
+                    document.getElementById('hiddenDia').value = nuevoDia;
+                    document.getElementById('hiddenMes').value = nuevoMes;
+                    document.getElementById('hiddenAño').value = nuevoAño;
+
+                    // Envía el formulario
+                    document.getElementById('dateForm').submit();
+                } else {
+                    console.error("No se ha seleccionado una fecha.");
+                }
+            }
 
             function navigateToReport(dias) {
                 fechaActual.setDate(fechaActual.getDate() + dias);
@@ -43,6 +93,42 @@
                 // Envía el formulario
                 document.getElementById('dateForm').submit();
             }
+
+            document.addEventListener('DOMContentLoaded', function() {
+                flatpickr("#fecha", {
+                    dateFormat: "Y-m-d",  // Formato de la fecha
+                    defaultDate: "{{$peticion['año']}}-{{$peticion['mes']}}-{{$peticion['dia']}}",  // Fecha por defecto: hoy
+                    maxDate: "{{ now()->format('Y-m-d') }}",  // Fecha máxima: hoy
+                    locale: {
+                        firstDayOfWeek: 1,
+                        weekdays: {
+                        shorthand: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
+                        longhand: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+                        },
+                        months: {
+                        shorthand: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Оct', 'Nov', 'Dic'],
+                        longhand: ['Enero', 'Febreo', 'Мarzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+                        },
+                    },
+                });
+
+                flatpickr("#fecha1", {
+                    dateFormat: "Y-m-d",  // Formato de la fecha
+                    defaultDate: "{{$peticion['año']}}-{{$peticion['mes']}}-{{$peticion['dia']}}",  // Fecha por defecto: hoy
+                    maxDate: "{{ now()->format('Y-m-d') }}",  // Fecha máxima: hoy
+                    locale: {
+                        firstDayOfWeek: 1,
+                        weekdays: {
+                        shorthand: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
+                        longhand: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+                        },
+                        months: {
+                        shorthand: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Оct', 'Nov', 'Dic'],
+                        longhand: ['Enero', 'Febreo', 'Мarzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+                        },
+                    },
+                });
+            });
         </script>
 
         <form id="dateForm" action="{{ route('getreportediario') }}" method="POST" style="display: none;">
@@ -76,17 +162,19 @@
                 Día Anterior
             </button>
 
+            <input type="text" onchange="goToReport()" id="fecha" class="cfrSefar text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" placeholder="Selecciona una fecha">
+
             <!-- Botón de día siguiente -->
             <button onclick="navigateToReport(1)" class="cfrSefar text-white bg-indigo-600 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
                 Día Siguiente
             </button>
         </div>
-        
+
         <div class="card p-4">
             <center>
                 <h3 style="margin-bottom: 0rem;">Usuarios registrados en el día: {{$registrosHoy}}</h3>
             </center>
-            
+
             <div class="chart-container">
                 <div class="chart">
                     <h3>{{$nombreMesActual}} - {{$peticion["año"]}}</h3><br>
@@ -186,7 +274,13 @@
                         <tr>
                             <td>{{ $usuario->nombres }}</td>
                             <td>{{ $usuario->apellidos }}</td>
-                            <td>{{ $usuario->compras->pluck('servicio_hs_id')->join(', ') }}</td>
+                            <td>
+                            @php
+                                $servicioHsIds = $usuario->compras->pluck('servicio_hs_id')->join(', ');
+                            @endphp
+
+                            {{ $servicioHsIds ? $servicioHsIds : $usuario->servicio }}
+                            </td>
                             <td>
                                 @if ($usuario->pay == 0)
                                     No ha pagado
@@ -205,6 +299,19 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+        <div class="flex justify-between max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:py-6 lg:px-8">
+            <!-- Botón de día anterior -->
+            <button onclick="navigateToReport(-1)" class="cfrSefar text-white bg-indigo-600 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Día Anterior
+            </button>
+
+            <input type="text" onchange="goToReport1()" id="fecha1" class="cfrSefar text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" placeholder="Selecciona una fecha">
+
+            <!-- Botón de día siguiente -->
+            <button onclick="navigateToReport(1)" class="cfrSefar text-white bg-indigo-600 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Día Siguiente
+            </button>
         </div>
     </x-app-layout>
 @stop

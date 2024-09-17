@@ -96,7 +96,11 @@
                                     <p><small>{{ $user->servicio == null ? $user->getRoleNames()[0] ?? 'Sin rol' : $user->servicio }}</small></p>
                                     <p><small>{{ $user->pay == 0 ? 'No ha pagado' : ($user->pay == 1 ? 'Pagó' : 'Pagó y completó información') }}<b>{{ $user->pay == 3 ? ' - Estatus 3 activo' : '' }}</b></small></p>
                                 @endif
-                                
+                                @if($user->contrato)
+                                    <p><small>El usuario ya firmó su contrato</small></p>
+                                @else
+                                    <p><small>El usuario <b>NO</b> ha firmado su contrato</small></p>
+                                @endif
                             </td>
                             <td class="whitespace-nowrap" style="padding: 5px 15px;">
                                 <p><small>{{ date_format($user->created_at,"Y-m-d") }}</small></p>

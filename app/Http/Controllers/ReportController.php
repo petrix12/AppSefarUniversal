@@ -24,8 +24,14 @@ class ReportController extends Controller
     {
         $peticion = $request->all();
 
-        // Fecha actual
-        $fechaActual = Carbon::create($peticion['año'], $peticion['mes'], $peticion['dia']);
+        if (isset($peticion["fecha"])){
+            $fechaActual = Carbon::create($peticion["fecha"]);
+            $peticion['dia'] = $fechaActual->day;
+            $peticion['mes'] = $fechaActual->month;
+            $peticion['año'] = $fechaActual->year;
+        } else {
+            $fechaActual = Carbon::create($peticion['año'], $peticion['mes'], $peticion['dia']);
+        }
 
         // Usuarios registrados hoy
         $usuariosHoy = User::with('compras')->whereDate('created_at', $fechaActual)->get();
@@ -482,7 +488,7 @@ function sendTelegram($filePDF, $nombre){
     $telegram = new Api(env('TELEGRAM_SAIME_BOT'));
 
     $response = $telegram->sendDocument([
-        'chat_id' => "-".env('TELEGRAM_SAIME_GROUP'), 
+        'chat_id' => "-".env('TELEGRAM_SAIME_GROUP'),
         'document' => InputFile::create(storage_path($filePDF)),
         'caption' => $nombre
     ]);

@@ -1,8 +1,8 @@
-body.dark-mode, 
-body.dark-mode .main-header, 
+body.dark-mode,
 body.dark-mode .main-header,
-body.dark-mode .bg-white, 
-body.dark-mode .card , 
+body.dark-mode .main-header,
+body.dark-mode .bg-white,
+body.dark-mode .card ,
 body.dark-mode input,
 body.dark-mode select,
 body.dark-mode textarea, body.dark-mode .paginate_button, body.dark-mode .page-link, body.dark-mode .contentmodaladdfamiliar
@@ -30,7 +30,7 @@ body.dark-mode .content , body.dark-mode .container-fluid, body.dark-mode .bg-gr
 
 body.dark-mode input[type='checkbox']:checked{
 	border-color: white;
-} 
+}
 
 body.dark-mode .nav-link, body.dark-mode .fontwhite, body.dark-mode .contentfiles {
     color: #eeeeee!important;
@@ -55,4 +55,8 @@ body.dark-mode #dailygraph{
 
 body.dark-mode #nightlygraph{
   display: block!important;
+}
+
+body.dark-mode .flatpickr-calendar {
+    background-color: #343A40!important;
 }

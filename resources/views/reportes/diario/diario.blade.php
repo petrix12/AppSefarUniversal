@@ -8,6 +8,12 @@
 
 @section('content')
     <x-app-layout>
+        <!-- Flatpickr CSS -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+        <!-- Flatpickr JS -->
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
         <div class="flex flex-col">
             <div class="">
                 <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
@@ -24,57 +30,39 @@
             </div>
         </div>
             <center>
-                <form action="{{ route('getreportediario') }}" method="POST" class="max-w-md mt-8">
-                    @csrf
-                    <div class="mb-4">
-                        <label for="dia" class="block text-gray-700 text-sm font-bold mb-2">Día:</label>
-                        <select name="dia" id="dia" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                            @for ($i = 1; $i <= now()->daysInMonth; $i++)
-                                <option value="{{ $i }}" {{ $i == now()->day ? 'selected' : '' }}>{{ $i }}</option>
-                            @endfor
-                        </select>
-                    </div>
+            <form action="{{ route('getreportediario') }}" method="POST" class="max-w-md mt-8">
+                @csrf
+                <div class="mb-4">
+                    <label for="fecha" class="block text-gray-700 text-sm font-bold mb-2">Fecha:</label>
+                    <input type="text" id="fecha" name="fecha" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
 
-                    <div class="mb-4">
-                        <label for="mes" class="block text-gray-700 text-sm font-bold mb-2">Mes:</label>
-                        <select name="mes" id="mes" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                            @for ($i = 1; $i <= 12; $i++)
-                                <option value="{{ $i }}" {{ $i == now()->month ? 'selected' : '' }}>{{ $i }}</option>
-                            @endfor
-                        </select>
-                    </div>
-
-                    <div class="mb-6">
-                        <label for="año" class="block text-gray-700 text-sm font-bold mb-2">Año:</label>
-                        <input type="number" name="año" id="año" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" min="{{ now()->subYears(10)->year }}" max="{{ now()->year }}" value="{{ now()->year }}">
-                    </div>
-
-                    <div class="flex items-center justify-center">
-                        <button type="submit" class="cfrSefar text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                            Generar Reporte
-                        </button>
-                    </div>
-                </form>
+                <div class="flex items-center justify-center">
+                    <button type="submit" class="cfrSefar text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Generar Reporte
+                    </button>
+                </div>
+            </form>
             </center>
 
             <script>
-                // Actualizar el campo "día" cuando cambia el mes
-                const mesSelect = document.getElementById('mes');
-                const diaSelect = document.getElementById('dia');
-
-                mesSelect.addEventListener('change', () => {
-                    const año = document.getElementById('año').value;
-                    const mes = mesSelect.value;
-                    const diasEnMes = new Date(año, mes, 0).getDate();
-
-                    diaSelect.innerHTML = ''; // Limpiar opciones existentes
-
-                    for (let i = 1; i <= diasEnMes; i++) {
-                        const option = document.createElement('option');
-                        option.value = i;
-                        option.text = i;
-                        diaSelect.add(option);
-                    }
+                document.addEventListener('DOMContentLoaded', function() {
+                    flatpickr("#fecha", {
+                        dateFormat: "Y-m-d",  // Formato de la fecha
+                        defaultDate: "{{ now()->format('Y-m-d') }}",  // Fecha por defecto: hoy
+                        maxDate: "{{ now()->format('Y-m-d') }}",  // Fecha máxima: hoy
+                        locale: {
+                            firstDayOfWeek: 1,
+                            weekdays: {
+                            shorthand: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
+                            longhand: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+                            },
+                            months: {
+                            shorthand: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Оct', 'Nov', 'Dic'],
+                            longhand: ['Enero', 'Febreo', 'Мarzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+                            },
+                        },
+                    });
                 });
             </script>
 
