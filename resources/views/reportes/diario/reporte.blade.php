@@ -300,6 +300,30 @@
                 </table>
             </div>
         </div>
+
+        <div class="card p-4">
+            <center>
+                <h3 style="margin-bottom: 0rem;">Cantidad de usuarios registrados por servicio:</h3><br>
+            </center>
+            <div class="table-responsive">
+                <table class="table" style="margin:0 auto; width:50%!important;">
+                    <thead class="theadreport">
+                        <tr>
+                            <th>Servicio</th>
+                            <th>Cantidad de Usuarios Registrados</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($usuariosPorServicio as $servicio => $cantidad)
+                        <tr>
+                            <td>{{ $servicio }}</td>
+                            <td>{{ $cantidad }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
         <div class="flex justify-between max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:py-6 lg:px-8">
             <!-- Botón de día anterior -->
             <button onclick="navigateToReport(-1)" class="cfrSefar text-white bg-indigo-600 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">

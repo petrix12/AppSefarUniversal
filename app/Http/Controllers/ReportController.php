@@ -318,6 +318,27 @@ class ReportController extends Controller
         $chartUrl = 'https://quickchart.io/chart?c=' . urlencode(json_encode($chartConfig));
         $chartNight = 'https://quickchart.io/chart?c=' . urlencode(json_encode($chartConfignight));
 
+        $usuariosPorServicio = [];
+
+        foreach ($usuariosHoy as $usuario) {
+            $servicioHsIds = $usuario->compras->pluck('servicio_hs_id')->join(', ');
+
+            if ($servicioHsIds) {
+                foreach (explode(', ', $servicioHsIds) as $servicio) {
+                    if (!isset($usuariosPorServicio[$servicio])) {
+                        $usuariosPorServicio[$servicio] = 0;
+                    }
+                    $usuariosPorServicio[$servicio]++;
+                }
+            } else {
+                $servicio = $usuario->servicio;
+                if (!isset($usuariosPorServicio[$servicio])) {
+                    $usuariosPorServicio[$servicio] = 0;
+                }
+                $usuariosPorServicio[$servicio]++;
+            }
+        }
+
         return view('reportes.diario.reporte', compact(
             'peticion',
             'usuariosHoy',
@@ -331,7 +352,8 @@ class ReportController extends Controller
             'datosgraficosporcentaje',
             'registrations',
             'chartUrl',
-            'chartNight'
+            'chartNight',
+            'usuariosPorServicio'
         ));
     }
 
