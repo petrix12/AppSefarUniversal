@@ -177,20 +177,6 @@
 
             <div class="chart-container">
                 <div class="chart">
-                    <h3>{{$nombreMesActual}} - {{$peticion["año"]}}</h3><br>
-                    <div class="bar-container">
-                        <div class="bar" style="width: {{$datosgraficosporcentaje['mes_actual']['promedio']}}%;"></div>
-                        <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_actual']['promedio']}}%;">{{$datosgraficosporcentaje['mes_actual']['promedio']}}%</div>
-                    </div>
-                    <br>
-                    <p>
-                        <strong>Mínimo:</strong> {{$datosgraficos['mes_actual']['minimo']}}<br>
-                        <strong>Máximo:</strong> {{$datosgraficos['mes_actual']['maximo']}}<br>
-                        <strong>Promedio:</strong> {{$datosgraficos['mes_actual']['promedio']}}<br>
-                        <strong>Total Registrados (Mes Actual - {{$peticion["año"]}}):</strong> {{$datosgraficos['mes_actual']['total']}}<br>
-                    </p>
-                </div>
-                <div class="chart">
                     <h3>{{$nombreMesAnterior}} - {{$peticion["año"]}}</h3><br>
                     <div class="bar-container">
                         <div class="bar" style="width: {{$datosgraficosporcentaje['mes_anterior']['promedio']}}%;"></div>
@@ -204,22 +190,24 @@
                         <strong>Total Registrados (Mes Anterior - {{$peticion["año"]}}):</strong> {{$datosgraficos['mes_anterior']['total']}}<br>
                     </p>
                 </div>
-            </div>
-            <div class="chart-container">
                 <div class="chart">
-                    <h3>{{$nombreMesActual}} - {{$peticion["año"] - 1}}</h3><br>
+                    <h3>{{$nombreMesActual}} - {{$peticion["año"]}}</h3><br>
                     <div class="bar-container">
-                        <div class="bar" style="width: {{$datosgraficosporcentaje['mes_actual_aa']['promedio']}}%;"></div>
-                        <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_actual_aa']['promedio']}}%;">{{$datosgraficosporcentaje['mes_actual_aa']['promedio']}}%</div>
+                        <div class="bar" style="width: {{$datosgraficosporcentaje['mes_actual']['promedio']}}%;"></div>
+                        <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_actual']['promedio']}}%;">{{$datosgraficosporcentaje['mes_actual']['promedio']}}%</div>
                     </div>
                     <br>
                     <p>
-                        <strong>Mínimo:</strong> {{$datosgraficos['mes_actual_aa']['minimo']}}<br>
-                        <strong>Máximo:</strong> {{$datosgraficos['mes_actual_aa']['maximo']}}<br>
-                        <strong>Promedio:</strong> {{$datosgraficos['mes_actual_aa']['promedio']}}<br>
-                        <strong>Total Registrados (Mes Actual - {{$peticion["año"] - 1}}):</strong> {{$datosgraficos['mes_actual_aa']['total']}}<br>
+                        <strong>Mínimo:</strong> {{$datosgraficos['mes_actual']['minimo']}}<br>
+                        <strong>Máximo:</strong> {{$datosgraficos['mes_actual']['maximo']}}<br>
+                        <strong>Promedio:</strong> {{$datosgraficos['mes_actual']['promedio']}}<br>
+                        <strong>Total Registrados (Mes Actual - {{$peticion["año"]}}):</strong> {{$datosgraficos['mes_actual']['total']}}<br>
                     </p>
                 </div>
+
+            </div>
+            <div class="chart-container">
+
                 <div class="chart">
                     <h3>{{$nombreMesAnterior}} - {{$peticion["año"] - 1}}</h3><br>
                     <div class="bar-container">
@@ -232,6 +220,20 @@
                         <strong>Máximo:</strong> {{$datosgraficos['mes_anterior_aa']['maximo']}}<br>
                         <strong>Promedio:</strong> {{$datosgraficos['mes_anterior_aa']['promedio']}}<br>
                         <strong>Total Registrados (Mes Anterior - {{$peticion["año"] - 1}}):</strong> {{$datosgraficos['mes_anterior_aa']['total']}}<br>
+                    </p>
+                </div>
+                <div class="chart">
+                    <h3>{{$nombreMesActual}} - {{$peticion["año"] - 1}}</h3><br>
+                    <div class="bar-container">
+                        <div class="bar" style="width: {{$datosgraficosporcentaje['mes_actual_aa']['promedio']}}%;"></div>
+                        <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_actual_aa']['promedio']}}%;">{{$datosgraficosporcentaje['mes_actual_aa']['promedio']}}%</div>
+                    </div>
+                    <br>
+                    <p>
+                        <strong>Mínimo:</strong> {{$datosgraficos['mes_actual_aa']['minimo']}}<br>
+                        <strong>Máximo:</strong> {{$datosgraficos['mes_actual_aa']['maximo']}}<br>
+                        <strong>Promedio:</strong> {{$datosgraficos['mes_actual_aa']['promedio']}}<br>
+                        <strong>Total Registrados (Mes Actual - {{$peticion["año"] - 1}}):</strong> {{$datosgraficos['mes_actual_aa']['total']}}<br>
                     </p>
                 </div>
             </div>
