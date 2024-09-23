@@ -151,14 +151,14 @@ class UserController extends Controller
                                     $usuario_mdy["tabla_nombre"] = $mondayboards_temp["boards"][0]["name"];
                                 }
                                 break;
-                            } 
+                            }
                         }
                         if($vartest==1){
                             break;
                         }
                     };
                 }
-                
+
             }
 
             if($vartest==1){
@@ -811,7 +811,7 @@ class UserController extends Controller
         $batchInputPublicObjectId = new BatchInputPublicObjectId([
             'inputs' => [$publicObjectId1],
         ]);
-        
+
         //Obtener los Deals del Cliente
 
         $dealIdsHS = $hubspot->crm()->associations()->batchApi()->read('contact', 'deal', $batchInputPublicObjectId);
@@ -1341,14 +1341,14 @@ class UserController extends Controller
                                     $usuario_mdy["tabla_nombre"] = $mondayboards_temp["boards"][0]["name"];
                                 }
                                 break;
-                            } 
+                            }
                         }
                         if($vartest==1){
                             break;
                         }
                     };
                 }
-                
+
             }
 
             if($vartest==1){
@@ -2007,7 +2007,7 @@ class UserController extends Controller
         $batchInputPublicObjectId = new BatchInputPublicObjectId([
             'inputs' => [$publicObjectId1],
         ]);
-        
+
         //Obtener los Deals del Cliente
 
         $dealIdsHS = $hubspot->crm()->associations()->batchApi()->read('contact', 'deal', $batchInputPublicObjectId);
@@ -2535,14 +2535,14 @@ class UserController extends Controller
                                     $usuario_mdy["tabla_nombre"] = $mondayboards_temp["boards"][0]["name"];
                                 }
                                 break;
-                            } 
+                            }
                         }
                         if($vartest==1){
                             break;
                         }
                     };
                 }
-                
+
             }
 
             if($vartest==1){
@@ -3201,7 +3201,7 @@ class UserController extends Controller
         $batchInputPublicObjectId = new BatchInputPublicObjectId([
             'inputs' => [$publicObjectId1],
         ]);
-        
+
         //Obtener los Deals del Cliente
 
         $dealIdsHS = $hubspot->crm()->associations()->batchApi()->read('contact', 'deal', $batchInputPublicObjectId);
@@ -3679,7 +3679,8 @@ class UserController extends Controller
         $compras = Compras::where('id_user', $user->id)->get();
         $roles = Role::all();
         $permissions = Permission::all();
-        return view('crud.users.edit', compact('user', 'roles', 'permissions', 'compras'));
+        $servicios = Servicio::all();
+        return view('crud.users.edit', compact('user', 'roles', 'permissions', 'compras', 'servicios'));
     }
 
     /**
@@ -3808,5 +3809,5 @@ class UserController extends Controller
         }
     }
 
-    
+
 }

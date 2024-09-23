@@ -166,62 +166,9 @@
                                     <label for="servicio" class="block text-sm font-medium text-gray-700">{{ __('Servicio') }}</label>
                                     <select name="servicio" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                         <option></option>
-                                        @php
-                                            echo '<option ' . (($user->servicio == 'Española - Carta de Naturaleza') ? 'selected' : '') . '>Española - Carta de Naturaleza</option>'
-                                        @endphp
-                                        @php
-                                            echo '<option ' . (($user->servicio == 'Española LMD') ? 'selected' : '') . '>Española LMD</option>'
-                                        @endphp
-                                        @php
-                                            echo '<option ' . (($user->servicio == 'Española Sefardi') ? 'selected' : '') . '>Española Sefardi</option>'
-                                        @endphp
-                                        @php
-                                            echo '<option ' . (($user->servicio == 'Española Sefardi - Subsanación') ? 'selected' : '') . '>Española Sefardi - Subsanación</option>'
-                                        @endphp
-                                        @php
-                                            echo '<option ' . (($user->servicio == 'Italiana') ? 'selected' : '') . '>Italiana</option>'
-                                        @endphp
-                                        @php
-                                            echo '<option ' . (($user->servicio == 'Ley Memoria Democratica') ? 'selected' : '') . '>Ley Memoria Democratica</option>'
-                                        @endphp
-                                        @php
-                                            echo '<option ' . (($user->servicio == 'Portuguesa Sefardi') ? 'selected' : '') . '>Portuguesa Sefardi</option>'
-                                        @endphp
-                                        @php
-                                            echo '<option ' . (($user->servicio == 'Portuguesa Sefardi - Subsanación') ? 'selected' : '') . '>Portuguesa Sefardi - Subsanación</option>'
-                                        @endphp
-
-                                        @php
-                                            echo '<option ' . (($user->servicio == 'Análisis por semana') ? 'selected' : '') . '>Análisis por semana</option>'
-                                        @endphp
-                                        @php
-                                            echo '<option ' . (($user->servicio == 'Recurso de Alzada') ? 'selected' : '') . '>Recurso de Alzada</option>'
-                                        @endphp
-                                        @php
-                                            echo '<option ' . (($user->servicio == 'Gestión Documental') ? 'selected' : '') . '>Gestión Documental</option>'
-                                        @endphp
-                                        @php
-                                            echo '<option ' . (($user->servicio == 'Constitución de Empresa') ? 'selected' : '') . '>Constitución de Empresa</option>'
-                                        @endphp
-                                        @php
-                                            echo '<option ' . (($user->servicio == 'Representante Fiscal') ? 'selected' : '') . '>Representante Fiscal</option>'
-                                        @endphp
-                                        @php
-                                            echo '<option ' . (($user->servicio == 'Codigo  Fiscal') ? 'selected' : '') . '>Codigo  Fiscal</option>'
-                                        @endphp
-                                        @php
-                                            echo '<option ' . (($user->servicio == 'Apertura de cuenta') ? 'selected' : '') . '>Apertura de cuenta</option>'
-                                        @endphp
-                                        @php
-                                            echo '<option ' . (($user->servicio == 'Trimestre contable') ? 'selected' : '') . '>Trimestre contable</option>'
-                                        @endphp
-
-                                        @php
-                                            echo '<option ' . (($user->servicio == 'Cooperativa 10 años') ? 'selected' : '') . '>Cooperativa 10 años</option>'
-                                        @endphp
-                                        @php
-                                            echo '<option ' . (($user->servicio == 'Cooperativa 5 años') ? 'selected' : '') . '>Cooperativa 5 años</option>'
-                                        @endphp
+                                        @foreach ($servicios as $servicio)
+                                            <option {{ $user->servicio == $servicio->id_hubspot ? 'selected' : '' }} > {{$servicio->id_hubspot}}</option>
+                                        @endforeach
                                     </select>
                                 </div>
 
