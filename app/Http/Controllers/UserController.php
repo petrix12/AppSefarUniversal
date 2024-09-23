@@ -3713,6 +3713,7 @@ class UserController extends Controller
         $user->passport = $request->passport;
         $user->pay = $request->pay;
         $user->servicio = $request->servicio;
+        $user->contrato = $request->contrato;
         if($request->two_factor){
             $user->two_factor_secret = null;
             $user->two_factor_recovery_codes = null;

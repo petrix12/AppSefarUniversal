@@ -172,6 +172,18 @@
                                     </select>
                                 </div>
 
+                                <div class="col-span-8 md:col-span-4 col-start-1">
+                                    @if ($user->contrato)
+                                        <input name="contrato" type="checkbox" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded" checked>
+                                        <label for="contrato" class="m-1 text-gray-700">Contrato Firmado</label>
+                                    @else
+                                        <input name="contrato" type="checkbox" class="focus:ring-indigo-500 h-4 w-4 text-gray-600 border-gray-300 rounded">
+                                        <label for="contrato" class="m-1 text-gray-500">Contrato Firmado</label>
+                                    @endif
+                                </div>
+
+                                <br>
+
                                 {{-- Desactivar verificación en dos pasos --}}
                                 <div class="col-span-8 md:col-span-4 col-start-1">
                                     @if ($user->two_factor_secret)
