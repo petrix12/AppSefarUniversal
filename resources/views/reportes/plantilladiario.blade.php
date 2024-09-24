@@ -35,7 +35,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte Diario</title>
+    <title>Reporte Semanal</title>
     <style>
         html, body {
             margin: 0;
@@ -43,14 +43,23 @@
             width: 100%;
             height: 100%;
         }
-        .background-pages {
+
+        body:before {
+            display: block;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            background: url('{{ public_path("/img/reportes/diario.png") }}') no-repeat center center;
+            top: -1in; right: -1in; bottom: -1in; left: -1.5in;
+            background-image: url('{{ public_path("/img/reportes/diario.png") }}');
+            background-size: cover;
+            background-repeat: no-repeat;
+            content: "";
+            z-index: -1000;
+        }
+
+        @page {
+            margin: 2cm 1.8cm 2cm 2.8cm!important;
+            background-image: ;
+            background-repeat: no-repeat;
+            background-position: center;
             background-size: cover;
         }
 
@@ -64,8 +73,6 @@
 
         .card {
             border: 0;
-            padding: 2cm 1.8cm 2cm 2.8cm;
-            margin-bottom: 16px;
         }
 
         .chart-container {
@@ -112,150 +119,151 @@
     </style>
 </head>
 <body>
-    <div class="background-pages"></div>
-    <div class="card">
-        <center>
-            <img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
-            <h2>Reporte Diario - {{$peticion["dia"]}}/{{$peticion["mes"]}}/{{$peticion["año"]}}</h2>
-        </center>
-        <h3>Usuarios registrados en el día: {{$registrosHoy}}</h3>
-        <table style="border: none;">
-            <tr>
-                <td>
-                    <center>
-                    <h3>{{$nombreMesAnterior}} - {{$peticion["año"]}}</h3>
-                    <div class="bar-container">
-                        <div class="bar" style="width: {{$datosgraficosporcentaje['mes_anterior']['promedio']}}%;"></div>
-                        <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_anterior']['promedio']}}%;">{{$datosgraficosporcentaje['mes_anterior']['promedio']}}%</div>
-                    </div>
-                    <p>
-                        <strong>Mínimo:</strong> {{$datosgraficos['mes_anterior']['minimo']}}<br>
-                        <strong>Máximo:</strong> {{$datosgraficos['mes_anterior']['maximo']}}<br>
-                        <strong>Promedio:</strong> {{$datosgraficos['mes_anterior']['promedio']}}<br>
-                        <strong>Total (Mes Anterior - {{$nombreMesAnterior}}):</strong> {{$datosgraficos['mes_anterior']['total']}}<br>
-                    </p>
-                    </center>
-                </td>
-                <td>
-                    <center>
-                    <h3>{{$nombreMesActual}} - {{$peticion["año"]}}</h3>
-                    <div class="bar-container">
-                        <div class="bar" style="width: {{$datosgraficosporcentaje['mes_actual']['promedio']}}%;"></div>
-                        <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_actual']['promedio']}}%;">{{$datosgraficosporcentaje['mes_actual']['promedio']}}%</div>
-                    </div>
-                    <p>
-                        <strong>Mínimo:</strong> {{$datosgraficos['mes_actual']['minimo']}}<br>
-                        <strong>Máximo:</strong> {{$datosgraficos['mes_actual']['maximo']}}<br>
-                        <strong>Promedio:</strong> {{$datosgraficos['mes_actual']['promedio']}}<br>
-                        <strong>Total ({{$nombreMesActual}} - {{$peticion["año"]}}):</strong> {{$datosgraficos['mes_actual']['total']}}<br>
-                    </p>
-                    </center>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <center>
-                        <h3>{{$nombreMesAnterior}} - {{$peticion["año"] - 1}}</h3>
+    <div class="content">
+        <div class="card">
+            <center>
+                <img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
+                <h2>Reporte Diario - {{$peticion["dia"]}}/{{$peticion["mes"]}}/{{$peticion["año"]}}</h2>
+            </center>
+            <h3>Usuarios registrados en el día: {{$registrosHoy}}</h3>
+            <table style="border: none;">
+                <tr>
+                    <td>
+                        <center>
+                        <h3>{{$nombreMesAnterior}} - {{$peticion["año"]}}</h3>
                         <div class="bar-container">
                             <div class="bar" style="width: {{$datosgraficosporcentaje['mes_anterior']['promedio']}}%;"></div>
                             <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_anterior']['promedio']}}%;">{{$datosgraficosporcentaje['mes_anterior']['promedio']}}%</div>
                         </div>
                         <p>
-                            <strong>Mínimo:</strong> {{$datosgraficos['mes_anterior_aa']['minimo']}}<br>
-                            <strong>Máximo:</strong> {{$datosgraficos['mes_anterior_aa']['maximo']}}<br>
-                            <strong>Promedio:</strong> {{$datosgraficos['mes_anterior_aa']['promedio']}}<br>
-                            <strong>Total ({{$nombreMesAnterior}} - {{$peticion["año"] - 1}}):</strong> {{$datosgraficos['mes_anterior_aa']['total']}}<br>
+                            <strong>Mínimo:</strong> {{$datosgraficos['mes_anterior']['minimo']}}<br>
+                            <strong>Máximo:</strong> {{$datosgraficos['mes_anterior']['maximo']}}<br>
+                            <strong>Promedio:</strong> {{$datosgraficos['mes_anterior']['promedio']}}<br>
+                            <strong>Total (Mes Anterior - {{$nombreMesAnterior}}):</strong> {{$datosgraficos['mes_anterior']['total']}}<br>
                         </p>
-                    </center>
-                </td>
-                <td>
-                    <center>
-                        <h3>{{$nombreMesActual}} - {{$peticion["año"] - 1}}</h3>
+                        </center>
+                    </td>
+                    <td>
+                        <center>
+                        <h3>{{$nombreMesActual}} - {{$peticion["año"]}}</h3>
                         <div class="bar-container">
                             <div class="bar" style="width: {{$datosgraficosporcentaje['mes_actual']['promedio']}}%;"></div>
                             <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_actual']['promedio']}}%;">{{$datosgraficosporcentaje['mes_actual']['promedio']}}%</div>
                         </div>
                         <p>
-                            <strong>Mínimo:</strong> {{$datosgraficos['mes_actual_aa']['minimo']}}<br>
-                            <strong>Máximo:</strong> {{$datosgraficos['mes_actual_aa']['maximo']}}<br>
-                            <strong>Promedio:</strong> {{$datosgraficos['mes_actual_aa']['promedio']}}<br>
-                            <strong>Total ({{$nombreMesActual}} - {{$peticion["año"] - 1}}):</strong> {{$datosgraficos['mes_actual_aa']['total']}}<br>
+                            <strong>Mínimo:</strong> {{$datosgraficos['mes_actual']['minimo']}}<br>
+                            <strong>Máximo:</strong> {{$datosgraficos['mes_actual']['maximo']}}<br>
+                            <strong>Promedio:</strong> {{$datosgraficos['mes_actual']['promedio']}}<br>
+                            <strong>Total ({{$nombreMesActual}} - {{$peticion["año"]}}):</strong> {{$datosgraficos['mes_actual']['total']}}<br>
                         </p>
-                    </center>
-                </td>
-            </tr>
-        </table>
-    </div>
-    <div style="page-break-before: always;"></div>
-    <div class="card">
-    <center><img class='logo' src='{{ public_path("/img/logonormal.png") }}' /></center>
-        <div style="text-align: center;">
-            <img src="{{$chartUrl}}" alt="Gráfico Diario" style="width: 100%; height: auto;">
+                        </center>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <center>
+                            <h3>{{$nombreMesAnterior}} - {{$peticion["año"] - 1}}</h3>
+                            <div class="bar-container">
+                                <div class="bar" style="width: {{$datosgraficosporcentaje['mes_anterior']['promedio']}}%;"></div>
+                                <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_anterior']['promedio']}}%;">{{$datosgraficosporcentaje['mes_anterior']['promedio']}}%</div>
+                            </div>
+                            <p>
+                                <strong>Mínimo:</strong> {{$datosgraficos['mes_anterior_aa']['minimo']}}<br>
+                                <strong>Máximo:</strong> {{$datosgraficos['mes_anterior_aa']['maximo']}}<br>
+                                <strong>Promedio:</strong> {{$datosgraficos['mes_anterior_aa']['promedio']}}<br>
+                                <strong>Total ({{$nombreMesAnterior}} - {{$peticion["año"] - 1}}):</strong> {{$datosgraficos['mes_anterior_aa']['total']}}<br>
+                            </p>
+                        </center>
+                    </td>
+                    <td>
+                        <center>
+                            <h3>{{$nombreMesActual}} - {{$peticion["año"] - 1}}</h3>
+                            <div class="bar-container">
+                                <div class="bar" style="width: {{$datosgraficosporcentaje['mes_actual']['promedio']}}%;"></div>
+                                <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_actual']['promedio']}}%;">{{$datosgraficosporcentaje['mes_actual']['promedio']}}%</div>
+                            </div>
+                            <p>
+                                <strong>Mínimo:</strong> {{$datosgraficos['mes_actual_aa']['minimo']}}<br>
+                                <strong>Máximo:</strong> {{$datosgraficos['mes_actual_aa']['maximo']}}<br>
+                                <strong>Promedio:</strong> {{$datosgraficos['mes_actual_aa']['promedio']}}<br>
+                                <strong>Total ({{$nombreMesActual}} - {{$peticion["año"] - 1}}):</strong> {{$datosgraficos['mes_actual_aa']['total']}}<br>
+                            </p>
+                        </center>
+                    </td>
+                </tr>
+            </table>
         </div>
-    </div>
-    <div style="page-break-before: always;"></div>
-    <div class="card">
-    <center><img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
-        <h3>Usuarios registrados:</h3></center>
-        <table>
-            <thead class="theadreport">
-                <tr>
-                    <th>Nombre</th>
-                    <th>Apellido</th>
-                    <th>Servicio</th>
-                    <th>Estado de Pago</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($usuariosHoy as $usuario)
-                <tr>
-                    <td>{{ $usuario->nombres }}</td>
-                    <td>{{ $usuario->apellidos }}</td>
-                    <td>
-                        @php
-                            $servicioHsIds = $usuario->compras->pluck('servicio_hs_id')->join(', ');
-                        @endphp
+        <div style="page-break-before: always;"></div>
+        <div class="card">
+        <center><img class='logo' src='{{ public_path("/img/logonormal.png") }}' /></center>
+            <div style="text-align: center;">
+                <img src="{{$chartUrl}}" alt="Gráfico Diario" style="width: 100%; height: auto;">
+            </div>
+        </div>
+        <div style="page-break-before: always;"></div>
+        <div class="card">
+        <center><img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
+            <h3>Usuarios registrados:</h3></center>
+            <table>
+                <thead class="theadreport">
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Servicio</th>
+                        <th>Estado de Pago</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($usuariosHoy as $usuario)
+                    <tr>
+                        <td>{{ $usuario->nombres }}</td>
+                        <td>{{ $usuario->apellidos }}</td>
+                        <td>
+                            @php
+                                $servicioHsIds = $usuario->compras->pluck('servicio_hs_id')->join(', ');
+                            @endphp
 
-                        {{ $servicioHsIds ? $servicioHsIds : $usuario->servicio }}
-                    </td>
-                    <td>
-                        @if ($usuario->pay == 0)
-                            No ha pagado
-                        @elseif ($usuario->pay == 1)
-                            Pagó pero no completó información
-                        @elseif ($usuario->pay == 2)
-                            @if ($usuario->contrato == 0)
-                                Pagó y completó información
-                            @elseif ($usuario->contrato == 1)
-                                Pagó, completó información y firmó contrato
+                            {{ $servicioHsIds ? $servicioHsIds : $usuario->servicio }}
+                        </td>
+                        <td>
+                            @if ($usuario->pay == 0)
+                                No ha pagado
+                            @elseif ($usuario->pay == 1)
+                                Pagó pero no completó información
+                            @elseif ($usuario->pay == 2)
+                                @if ($usuario->contrato == 0)
+                                    Pagó y completó información
+                                @elseif ($usuario->contrato == 1)
+                                    Pagó, completó información y firmó contrato
+                                @endif
                             @endif
-                        @endif
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-    <div style="page-break-before: always;"></div>
-    <div class="card">
-    <center><img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
-        <h3>Cantidad de usuarios registrados por servicio:</h3></center>
-        <table>
-            <thead class="theadreport">
-                <tr>
-                    <th>Servicio</th>
-                    <th>Cantidad de Usuarios Registrados</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($usuariosPorServicio as $servicio => $cantidad)
-                <tr>
-                    <td>{{ $servicio }}</td>
-                    <td>{{ $cantidad }}</td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        <div style="page-break-before: always;"></div>
+        <div class="card">
+        <center><img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
+            <h3>Cantidad de usuarios registrados por servicio:</h3></center>
+            <table>
+                <thead class="theadreport">
+                    <tr>
+                        <th>Servicio</th>
+                        <th>Cantidad de Usuarios Registrados</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($usuariosPorServicio as $servicio => $cantidad)
+                    <tr>
+                        <td>{{ $servicio }}</td>
+                        <td>{{ $cantidad }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
     </div>
 </body>
 </html>
