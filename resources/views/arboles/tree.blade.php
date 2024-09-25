@@ -100,11 +100,11 @@
                                         @foreach ($columnasparatabla  as $key1 => $columna)
                                             @foreach ($columna as $key2 => $persona)
                                                 @if ($persona["showbtn"]==2)
-                                                <option value="{{ $persona['id'] }}">{{$persona["Nombres"] . ' ' . $persona["Apellidos"]}} 
+                                                <option value="{{ $persona['id'] }}">{{$persona["Nombres"] . ' ' . $persona["Apellidos"]}}
                                                     @if($checkBtn == "si")
                                                         @if ($key1+$generacionBase == 1)
-                                                            @if ($key2 == 0)  
-                                                                (Padre)               
+                                                            @if ($key2 == 0)
+                                                                (Padre)
                                                             @else
                                                                 (Madre)
                                                             @endif
@@ -112,11 +112,11 @@
                                                             ({{$parentescos[$key1-2+$generacionBase][$persona['PersonaIDNew']]}})
                                                         @endif
                                                     @else
-                                                        @if ($key1 == 0)  
-                                                            (Cliente)                                         
+                                                        @if ($key1 == 0)
+                                                            (Cliente)
                                                         @elseif ($key1 == 1)
-                                                            @if ($key2 == 0)  
-                                                                (Padre)               
+                                                            @if ($key2 == 0)
+                                                                (Padre)
                                                             @else
                                                                 (Madre)
                                                             @endif
@@ -150,11 +150,11 @@
                             @endif
                         </div>
                     </div>
-                </div> 
-                
+                </div>
+
                 <div style="width: 100%; height: 80vh; overflow: auto;" id="containertree">
                     <div class="treecont_minimized" id="zoomableContent" style="position:relative;">
-                        <div id="mylines" class="mylines"></div>  
+                        <div id="mylines" class="mylines"></div>
                         <div class="arbolflex">
                             <div style="width:20px">
                                 <div style="width:20px">
@@ -189,7 +189,7 @@
             <form action="{{route('agclientesnew.store')}}" method="POST" data-hs-cf-bound="true">
                 @csrf
                 <input name="Origen" type="hidden" value="arbol">
-                <input name="Sexo" id="sexaddform" type="hidden"> 
+                <input name="Sexo" id="sexaddform" type="hidden">
                 <input name="IDCliente" type="hidden" value="{{$columnasparatabla[0][0]["IDCliente"]}}" >
                 <input name="id_hijo" id="id_hijo" type="hidden">
                 <div class="container">
@@ -391,7 +391,7 @@
                                     <option>República Dominicana</option>
                                     <option>Suecia</option>
                                     <option>Venezuela</option>
-                                    
+
                                     <option>Honduras</option>
                                     <option>Rusia</option>
                                     <option>Alemania</option>
@@ -473,7 +473,7 @@
                                     <option>República Dominicana</option>
                                     <option>Suecia</option>
                                     <option>Venezuela</option>
-                                    
+
                                     <option>Honduras</option>
                                     <option>Rusia</option>
                                     <option>Alemania</option>
@@ -555,7 +555,7 @@
                                     <option>República Dominicana</option>
                                     <option>Suecia</option>
                                     <option>Venezuela</option>
-                                    
+
                                     <option>Honduras</option>
                                     <option>Rusia</option>
                                     <option>Alemania</option>
@@ -976,7 +976,7 @@
                                     <option>República Dominicana</option>
                                     <option>Suecia</option>
                                     <option>Venezuela</option>
-                                    
+
                                     <option>Honduras</option>
                                     <option>Rusia</option>
                                     <option>Alemania</option>
@@ -1058,7 +1058,7 @@
                                     <option>República Dominicana</option>
                                     <option>Suecia</option>
                                     <option>Venezuela</option>
-                                    
+
                                     <option>Honduras</option>
                                     <option>Rusia</option>
                                     <option>Alemania</option>
@@ -1200,7 +1200,7 @@
             <input type="hidden" id="f_IDCliente" value="{{$columnasparatabla[0][0]["IDCliente"]}}"/>
             <input type="hidden" id="f_IDPersonaNew">
             <div class="contentfiles">
-                
+
             </div>
             <div class="px-4 py-3 w-full text-right sm:px-6">
                 <button type="button" id="addNewFile" class="cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
@@ -1224,7 +1224,7 @@
             </div>
             <form id="subirArchivo" action="{{route('storefile')}}" method="POST" enctype="multipart/form-data">
                 @csrf
-                <input name="IDPersonaNew" id="up_IDPersonaNew" type="hidden"> 
+                <input name="IDPersonaNew" id="up_IDPersonaNew" type="hidden">
                 <input name="IDCliente" id="up_IDCliente" type="hidden" >
                 <div class="container">
                     <div class="md:flex ms:flex-wrap">
@@ -1281,9 +1281,9 @@
             </div>
             <form id="editarArchivo" action="{{route('getfileupdate')}}" method="POST" enctype="multipart/form-data">
                 @csrf
-                <input name="IDPersonaNew" id="ed_IDPersonaNew" type="hidden"> 
+                <input name="IDPersonaNew" id="ed_IDPersonaNew" type="hidden">
                 <input name="IDCliente" id="ed_IDCliente" type="hidden" >
-                <input name="id" id="edit_id" type="hidden"> 
+                <input name="id" id="edit_id" type="hidden">
                 <div class="container">
                     <div class="md:flex ms:flex-wrap">
                         <div class="px-1 py-2 m-2 flex-1">
@@ -1614,18 +1614,18 @@
         dialog[open] {
             animation: appear .15s cubic-bezier(0, 1.8, 1, 1.8);
         }
-    
+
         dialog::backdrop {
             background: linear-gradient(45deg, rgba(121, 22, 15, 0.5), rgba(63, 61, 61, 0.5));
             backdrop-filter: blur(3px);
         }
-        
+
         @keyframes appear {
             from {
                 opacity: 0;
                 transform: translateX(-3rem);
             }
-    
+
             to {
                 opacity: 1;
                 transform: translateX(0);
@@ -1640,9 +1640,45 @@
   integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
   crossorigin="anonymous"></script>
 <script>
+    const container = document.getElementById('containertree');
     const zoomableContent = document.getElementById('zoomableContent');
+
     const containerTree = document.getElementById('containertree');
     let zoomLevel = 1;
+
+    let isDragging = false;
+    let startX, startY, scrollLeft, scrollTop;
+
+    // Al hacer clic y arrastrar
+    container.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        container.style.cursor = 'grabbing';
+        startX = e.pageX - container.offsetLeft;
+        startY = e.pageY - container.offsetTop;
+        scrollLeft = container.scrollLeft;
+        scrollTop = container.scrollTop;
+    });
+
+    container.addEventListener('mouseleave', () => {
+        isDragging = false;
+        container.style.cursor = 'grab';
+    });
+
+    container.addEventListener('mouseup', () => {
+        isDragging = false;
+        container.style.cursor = 'grab';
+    });
+
+    container.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        const x = e.pageX - container.offsetLeft;
+        const y = e.pageY - container.offsetTop;
+        const walkX = (x - startX) * 1; // Ajusta la sensibilidad del desplazamiento
+        const walkY = (y - startY) * 1;
+        container.scrollLeft = scrollLeft - walkX;
+        container.scrollTop = scrollTop - walkY;
+    });
 
     function adjustZoom() {
         zoomableContent.style.zoom = zoomLevel;
@@ -1823,7 +1859,7 @@
             alert('Por favor, selecciona un archivo y un tipo de archivo.');
         } else {
             // Si la validación es exitosa, enviar el formulario
-            $('#subirArchivo').submit(); 
+            $('#subirArchivo').submit();
         }
     });
 
@@ -1836,13 +1872,13 @@
             alert('Por favor, selecciona un tipo de archivo.');
         } else {
             // Si la validación es exitosa, enviar el formulario
-            $('#editarArchivo').submit(); 
+            $('#editarArchivo').submit();
         }
     });
 
     $(".addbtn").click(function(){
         $('input[type="text"], input[type="number"], textarea').val('');
-        $('select').prop('selectedIndex', 0); 
+        $('select').prop('selectedIndex', 0);
         $(".modaladdfamiliar").show();
         const contentModal = document.querySelector('.contentmodaladdfamiliar');
         contentModal.scrollTop = 0;
@@ -1863,9 +1899,9 @@
         var csrfToken = $('meta[name="csrf-token"]').attr('content');
 
         $.ajax({
-            url: "{{ route('updatefiletype') }}", 
-            method: "POST", 
-            data: { 
+            url: "{{ route('updatefiletype') }}",
+            method: "POST",
+            data: {
                 id : id,
                 tipo : valorSeleccionado
             },
@@ -1885,9 +1921,9 @@
         var csrfToken = $('meta[name="csrf-token"]').attr('content');
 
         $.ajax({
-            url: "{{ route('getclientfiles') }}", 
-            method: "POST", 
-            data: { 
+            url: "{{ route('getclientfiles') }}",
+            method: "POST",
+            data: {
                 clienteid : cliente,
                 familiarid : familiar
             },
@@ -1902,7 +1938,7 @@
                 var tipoarchivos = response.tipodearchivos;
                 html = "";
                 if (archivos.length > 0){
-                    
+
 
                     archivos.forEach(function(archivo) {
                         html += "<div class='rowfile'>"
@@ -1936,7 +1972,7 @@
                         html += "</div>"
                     });
 
-                    
+
                 } else {
                     html += "<h3>No hay documentos registrados para esta persona.</h3>"
                 }
@@ -1954,10 +1990,10 @@
     function borrararchivo(fileId) {
         if (confirm('¿Estás seguro de que quieres eliminar este archivo?')) {
             $.ajax({
-                url: '{{ route('deletefile') }}', 
+                url: '{{ route('deletefile') }}',
                 method: 'POST',
-                data: { 
-                    fileId: fileId, 
+                data: {
+                    fileId: fileId,
                     _token: '{{ csrf_token() }}' // Asegúrate de tener el token CSRF en tu vista
                 },
                 success: function(response) {
@@ -1972,10 +2008,10 @@
 
     function editarArchivo(fileId){
         $.ajax({
-            url: '{{ route('getfileedit') }}', 
+            url: '{{ route('getfileedit') }}',
             method: 'POST',
-            data: { 
-                fileId: fileId, 
+            data: {
+                fileId: fileId,
                 _token: '{{ csrf_token() }}' // Asegúrate de tener el token CSRF en tu vista
             },
             success: function(response) {
