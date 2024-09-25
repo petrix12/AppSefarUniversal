@@ -14,7 +14,7 @@ class ActualizarYLimpiar extends Command
     {
         // Ejecutar git pull y capturar la salida
         $output = [];
-        exec('cd /home/u530524868/public_html/public_html && git pull', $output);
+        exec('cd /home/u530524868/public_html/public_html && git pull 2>&1', $output);
 
         print_r($output);
 
