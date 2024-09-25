@@ -16,8 +16,6 @@ class ActualizarYLimpiar extends Command
         $output = [];
         exec('cd /home/u530524868/public_html/public_html/app && git pull 2>&1', $output);
 
-        print_r($output);
-
         // Unir la salida en un solo string para verificar el mensaje
         $outputString = implode("\n", $output);
 
