@@ -12,13 +12,9 @@ class ActualizarYLimpiar extends Command
 
     public function handle()
     {
-        // Cambiar al directorio raíz del proyecto
-        $projectRoot = '/home/u530524868/public_html/public_html';
-        chdir($projectRoot);
-
         // Ejecutar git pull y capturar la salida
         $output = [];
-        exec('git pull', $output);
+        exec('cd /home/u530524868/public_html/public_html && git pull', $output);
 
         // Unir la salida en un solo string para verificar el mensaje
         $outputString = implode("\n", $output);
