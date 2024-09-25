@@ -16,6 +16,8 @@ class ActualizarYLimpiar extends Command
         $output = [];
         exec('cd /home/u530524868/public_html/public_html && git pull', $output);
 
+        print_r($output);
+
         // Unir la salida en un solo string para verificar el mensaje
         $outputString = implode("\n", $output);
 
@@ -25,7 +27,7 @@ class ActualizarYLimpiar extends Command
             $this->info('El código ya está actualizado. No es necesario limpiar la caché.');
         } else {
             // Hay cambios, proceder con la limpieza de caché
-            Artisan::call('optimize:clear', ['--output' => 'log.txt']);
+            Artisan::call('optimize:clear');
             $this->info('Código actualizado y caché limpiada.');
         }
     }
