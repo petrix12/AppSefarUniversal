@@ -27,6 +27,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('send:dailyreport')->dailyAt('12:00')->timezone('UTC');
         $schedule->command('send:weklyreport')->weekly()->mondays()->at('12:00')->timezone('UTC');
         $schedule->command('send:monthreport')->monthlyOn(1, '12:00')->timezone('UTC');
+        $schedule->command('app:actualizar-y-limpiar')->everyMinute()->timezone('UTC');
     }
 
     /**
