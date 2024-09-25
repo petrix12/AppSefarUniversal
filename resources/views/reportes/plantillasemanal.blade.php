@@ -128,7 +128,7 @@
             <h3>Usuarios registrados en la semana: {{$registrosHoy}}</h3>
             <table style="border: none;">
                 <tr>
-                    <td>
+                    <td style="width:50%">
                         <center>
                         <h3>{{$nombreMesAnterior}} - {{$peticion["año"]}}</h3>
                         <div class="bar-container">
@@ -143,7 +143,7 @@
                         </p>
                         </center>
                     </td>
-                    <td>
+                    <td style="width:50%">
                         <center>
                         <h3>{{$nombreMesActual}} - {{$peticion["año"]}}</h3>
                         <div class="bar-container">
