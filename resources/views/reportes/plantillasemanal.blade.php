@@ -269,6 +269,9 @@
         <center><img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
             <h3>Cantidad de Monto por Servicio:</h3>
             </center>
+            @php
+                $totalMonto = array_sum($facturas);
+            @endphp
             <table>
                 <thead class="theadreport">
                     <tr>
