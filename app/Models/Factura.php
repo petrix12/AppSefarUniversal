@@ -16,4 +16,9 @@ class Factura extends Model
         'idcus',
         'idcharge'
     ];
+
+    public function compras()
+    {
+        return $this->hasMany(Compras::class, 'hash_factura', 'hash_factura');
+    }
 }

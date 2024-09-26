@@ -6,6 +6,8 @@ use Illuminate\Console\Command;
 use PDF;
 use Mail;
 use App\Models\User;
+use App\Models\Factura;
+use App\Models\Compras;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -64,6 +66,29 @@ class SendMonthReportEmails extends Command
         $usuariosHoy = User::with('compras')
             ->whereBetween('created_at', [$fechaInicio, $fechaFin])
             ->get();
+
+        $facturas = json_decode(
+            json_encode(
+                Factura::where('met', 'stripe')
+                    ->whereHas('compras', function($query) {
+                        $query->where('pagado', 1);
+                    })
+                    ->whereBetween('created_at', [$fechaInicio, $fechaFin])
+                    ->with(['compras' => function($query) {
+                        $query->where('pagado', 1)
+                                ->select('servicio_hs_id', 'monto', 'hash_factura');
+                    }])
+                    ->get()
+                    ->flatMap(function($factura) {
+                        return $factura->compras;
+                    })
+                    ->groupBy('servicio_hs_id')
+                    ->map(function($compras) {
+                        return $compras->sum('monto');
+                    })
+            ),
+            true
+        );
 
         // Usuarios registrados en los últimos 30 días
         $usuariosUltimos30Dias = User::where('created_at', '>=', $fechaActual->subDays(30))->get();
@@ -390,7 +415,8 @@ class SendMonthReportEmails extends Command
             'fechaFin',
             'fechaInicioFormato',
             'fechaFinFormato',
-            'nombreMes'
+            'nombreMes',
+            'facturas'
         ));
         $pdfContent = $pdf->output();
 

@@ -27,4 +27,9 @@ class Compras extends Model
     {
         return $this->belongsTo(User::class, 'id_user');
     }
+
+    public function factura()
+    {
+        return $this->belongsTo(Factura::class, 'hash_factura', 'hash_factura');
+    }
 }

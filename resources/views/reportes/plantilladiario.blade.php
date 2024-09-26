@@ -264,6 +264,36 @@
                 </tbody>
             </table>
         </div>
+        <div style="page-break-before: always;"></div>
+        <div class="card">
+        <center><img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
+            <h3>Cantidad de Monto por Servicio:</h3>
+            </center>
+            @php
+                $totalMonto = array_sum($facturas);
+            @endphp
+            <table>
+                <thead class="theadreport">
+                    <tr>
+                        <th>Servicio</th>
+                        <th>Monto Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($facturas as $servicio => $monto)
+                        <tr>
+                            <td>{{ $servicio }}</td>
+                            <td>{{ $monto }}€</td>
+                        </tr>
+                    @endforeach
+                    <tr class="theadreport">
+                        <td><strong>Total General:</strong></td>
+                        <td><strong>{{ $totalMonto }}€</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+            <p><small>* Solo se consideran los pagos hechos a través de la pasarela de pago de <a href="https://app.sefaruniversal.com" target="_blank">app.sefaruniversal.com</a></small></p>
+        </div>
     </div>
 </body>
 </html>
