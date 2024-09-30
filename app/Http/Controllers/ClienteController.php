@@ -103,7 +103,7 @@ class ClienteController extends Controller
             }
         }
 
-        //Eliminar basura de los ids de los padres        
+        //Eliminar basura de los ids de los padres
         foreach ($people as $key => $person) {
             if ($person['IDMadre']<1){
                 $people[$key]['IDMadre']=null;
@@ -153,7 +153,7 @@ class ClienteController extends Controller
                 $generaciones[$persona["id"]] = 1;
             }
         }
-        
+
         $cambio = true;
         while ($cambio) {
             $cambio = false;
@@ -161,7 +161,7 @@ class ClienteController extends Controller
                 $generacionPadre = isset($generaciones[$persona['idPadreNew']]) ? $generaciones[$persona['idPadreNew']] : 0;
                 $generacionMadre = isset($generaciones[$persona['idMadreNew']]) ? $generaciones[$persona['idMadreNew']] : 0;
                 $generacionActual = max($generacionPadre, $generacionMadre) + 1;
-                
+
                 if (!isset($generaciones[$persona["id"]]) || $generaciones[$persona["id"]] != $generacionActual) {
                     $generaciones[$persona["id"]] = $generacionActual;
                     $cambio = true;
@@ -182,10 +182,10 @@ class ClienteController extends Controller
                 }
 
                 $columnasparatabla[$i][] =  $arreglo[0];
-                $columnasparatabla[$i][0]["showbtn"] = 2;  //2 es persona, 1 es boton de añadir, 0 es nada 
+                $columnasparatabla[$i][0]["showbtn"] = 2;  //2 es persona, 1 es boton de añadir, 0 es nada
             } else {
                 foreach ($columnasparatabla[$i-1] as $key2 => $persona2){
-                        
+
                     if(!isset($columnasparatabla[$i])){
                         $columnasparatabla[$i] = [];
                         $j = 0;
@@ -194,7 +194,7 @@ class ClienteController extends Controller
                     }
 
                     //padre
-                    
+
                     if (@$persona2["idPadreNew"]==null){
 
                         if ($persona2["showbtn"] == 0) {
@@ -253,14 +253,14 @@ class ClienteController extends Controller
 
         $parentescos = [];
         $parentescos_post_padres = [
-            "Abuel", 
-            "Bisabuel", 
-            "Tatarabuel", 
-            "Trastatarabuel", 
-            "Retatarabuel", 
-            "Sestarabuel", 
-            "Setatarabuel", 
-            "Octatarabuel", 
+            "Abuel",
+            "Bisabuel",
+            "Tatarabuel",
+            "Trastatarabuel",
+            "Retatarabuel",
+            "Sestarabuel",
+            "Setatarabuel",
+            "Octatarabuel",
             "Nonatarabuel",
             "Decatarabuel",
             "Undecatarabuel",
@@ -373,7 +373,7 @@ class ClienteController extends Controller
 
         $usermain = User::where('id', '=', auth()->user()->id)->get();
         $hermanos = Hermano::with('usuarioPrincipal', 'hermano')->where('id_main', '=', auth()->user()->id)->get();
-        
+
         return view('clientes.hermanos', compact('usermain', 'hermanos'));
     }
 
@@ -633,8 +633,18 @@ class ClienteController extends Controller
             $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
 
             $link = 'https://app.sefaruniversal.com/tree/' . auth()->user()->passport;
-            
+
             $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
+
+            foreach ($productos as $key => $value) {
+                if (isset($value)) {
+                    $servicio_hs_id = $value['servicio_hs_id'];
+
+                    if (isset($servicio_hs_id) && ($servicio_hs_id === "Española LMD" || $servicio_hs_id == "Española LMD")) {
+                        $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 765394861, group_id: "grupo_nuevo97011", item_name:$myItemName, column_values:$columnVals) { id } }';
+                    }
+                }
+            }
 
             if (is_null(auth()->user()->apellidos) || is_null(auth()->user()->nombres)){
                 $clientname = auth()->user()->name;
@@ -670,7 +680,7 @@ class ClienteController extends Controller
             echo json_encode($responseContent);
         }
 
-        
+
 
     }
 
@@ -867,7 +877,7 @@ class ClienteController extends Controller
 
                     foreach ($compras as $key => $compra) {
                         $servicio = Servicio::where('id_hubspot', $compra["servicio_hs_id"])->get();
-                        if ($compra["servicio_hs_id"] == 'Árbol genealógico de Deslinde' || $compra["servicio_hs_id"] == 'Acumulación de linajes' || $compra["servicio_hs_id"] == 'Procedimiento de Urgencia' || $compra["servicio_hs_id"] == 'Recurso de Alzada' || $compra["servicio_hs_id"] == 'Gestión Documental' || $servicio[0]['tipov']==1){                     
+                        if ($compra["servicio_hs_id"] == 'Árbol genealógico de Deslinde' || $compra["servicio_hs_id"] == 'Acumulación de linajes' || $compra["servicio_hs_id"] == 'Procedimiento de Urgencia' || $compra["servicio_hs_id"] == 'Recurso de Alzada' || $compra["servicio_hs_id"] == 'Gestión Documental' || $servicio[0]['tipov']==1){
                             $setto2 = 1;
                         } else {
                             $setto2 = 0;
@@ -879,10 +889,10 @@ class ClienteController extends Controller
                         DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]);
                         auth()->user()->revokePermissionTo('finish.register');
                     }
-                    
+
                     DB::table('coupons')->where('couponcode', $cupon["couponcode"])->update(['enabled' => 0]);
                     auth()->user()->revokePermissionTo('pay.services');
-                    
+
                     $idcontact = "";
 
                     $filter = new \HubSpot\Client\Crm\Contacts\Model\Filter();
@@ -923,7 +933,7 @@ class ClienteController extends Controller
                         $simplePublicObjectInput = new SimplePublicObjectInput([
                             'properties' => $properties1,
                         ]);
-                        
+
                         $apiResponse = $hubspot->crm()->contacts()->basicApi()->update($idcontact, $simplePublicObjectInput);
 
                         $dealInput = new \HubSpot\Client\Crm\Deals\Model\SimplePublicObjectInput();
@@ -932,11 +942,11 @@ class ClienteController extends Controller
                             $dealInput->setProperties([
                                 'dealname' => auth()->user()->name . ' - ' . $compra['servicio_hs_id'],
                                 'pipeline' => "94794",
-                                'dealstage' => "429097",          
+                                'dealstage' => "429097",
                                 'servicio_solicitado' => $compra['servicio_hs_id'],
                                 'servicio_solicitado2' => $compra['servicio_hs_id'],
                             ]);
-                            
+
                             $apiResponse = json_decode(json_encode($hubspot->crm()->deals()->basicApi()->create($dealInput)),true);
 
                             $iddeal = $apiResponse["id"];
@@ -954,13 +964,13 @@ class ClienteController extends Controller
                     $user = User::findOrFail(auth()->user()->id);
                     $pdfContent = createPDF($hash_factura);
 
-                    Mail::send('mail.comprobante-mail', ['user' => $user], function ($m) use ($pdfContent, $request, $user) { 
+                    Mail::send('mail.comprobante-mail', ['user' => $user], function ($m) use ($pdfContent, $request, $user) {
                         $m->to([
                             auth()->user()->email
                         ])->subject('SEFAR UNIVERSAL - Hemos procesado su pago satisfactoriamente')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
                     });
 
-                    Mail::send('mail.comprobante-mail-intel', ['user' => $user], function ($m) use ($pdfContent, $request, $user) { 
+                    Mail::send('mail.comprobante-mail-intel', ['user' => $user], function ($m) use ($pdfContent, $request, $user) {
                         $m->to([
                             'pedro.bazo@sefarvzla.com',
                             'gerenciait@sefarvzla.com',
@@ -975,7 +985,7 @@ class ClienteController extends Controller
                             'organizacionrrhh@sefarvzla.com',
                             '20053496@bcc.hubspot.com',
                             'contabilidad@sefaruniversal.com',
-                        ])->subject(strtoupper($user->name) . ' (ID: ' . 
+                        ])->subject(strtoupper($user->name) . ' (ID: ' .
                             strtoupper($user->passport) . ') HA REALIZADO UN PAGO EN App Sefar Universal')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
                     });
 
@@ -999,13 +1009,13 @@ class ClienteController extends Controller
                         $token = env('MONDAY_TOKEN');
                         $apiUrl = 'https://api.monday.com/v2';
                         $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
-                        
+
                         $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
-                        
+
                         $link = 'https://app.sefaruniversal.com/tree/' . auth()->user()->passport;
 
                         $vars = [
-                            'myItemName' => auth()->user()->apellidos." ".auth()->user()->nombres, 
+                            'myItemName' => auth()->user()->apellidos." ".auth()->user()->nombres,
                             'columnVals' => json_encode([
                                 'texto' => auth()->user()->passport,
                                 'enlace' => $link . " " . $link,
@@ -1049,7 +1059,7 @@ class ClienteController extends Controller
         } else {
             Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
         }
-        
+
 
         $variable = json_decode(json_encode($request->all()),true);
 
@@ -1238,7 +1248,7 @@ class ClienteController extends Controller
                     DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]);
                     auth()->user()->revokePermissionTo('finish.register');
                 }
-                
+
                 auth()->user()->revokePermissionTo('pay.services');
                 $idcontact = "";
 
@@ -1271,7 +1281,7 @@ class ClienteController extends Controller
                     $idcontact = $contactHS['results'][0]['id'];
 
                     DB::table('users')->where('id', auth()->user()->id)->update(['hs_id' => $idcontact]);
-                    
+
                     $properties1 = [
                         'registro_pago' => $servicio[0]["precio"],
                         'registro_cupon' => $cupones,
@@ -1281,7 +1291,7 @@ class ClienteController extends Controller
                     $simplePublicObjectInput = new SimplePublicObjectInput([
                         'properties' => $properties1,
                     ]);
-                    
+
                     $apiResponse = $hubspot->crm()->contacts()->basicApi()->update($idcontact, $simplePublicObjectInput);
 
                     $dealInput = new \HubSpot\Client\Crm\Deals\Model\SimplePublicObjectInput();
@@ -1294,7 +1304,7 @@ class ClienteController extends Controller
                             'servicio_solicitado' => $compra['servicio_hs_id'],
                             'servicio_solicitado2' => $compra['servicio_hs_id'],
                         ]);
-                        
+
                         $apiResponse = json_decode(json_encode($hubspot->crm()->deals()->basicApi()->create($dealInput)),true);
 
                         $iddeal = $apiResponse["id"];
@@ -1312,7 +1322,7 @@ class ClienteController extends Controller
                 $user = User::findOrFail(auth()->user()->id);
                 $pdfContent = createPDF($hash_factura);
 
-                Mail::send('mail.comprobante-mail', ['user' => $user], function ($m) use ($pdfContent, $request, $user) { 
+                Mail::send('mail.comprobante-mail', ['user' => $user], function ($m) use ($pdfContent, $request, $user) {
                     $m->to([
                         auth()->user()->email
                     ])->subject('SEFAR UNIVERSAL - Hemos procesado su pago satisfactoriamente')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
@@ -1320,7 +1330,7 @@ class ClienteController extends Controller
 
                 $pdfContent2 = createPDFintel($hash_factura);
 
-                Mail::send('mail.comprobante-mail-intel', ['user' => $user], function ($m) use ($pdfContent2, $request, $user) { 
+                Mail::send('mail.comprobante-mail-intel', ['user' => $user], function ($m) use ($pdfContent2, $request, $user) {
                     $m->to([
                         'pedro.bazo@sefarvzla.com',
                         'gerenciait@sefarvzla.com',
@@ -1335,7 +1345,7 @@ class ClienteController extends Controller
                         'organizacionrrhh@sefarvzla.com',
                         '20053496@bcc.hubspot.com',
                         'contabilidad@sefaruniversal.com',
-                    ])->subject(strtoupper($user->name) . ' (ID: ' . 
+                    ])->subject(strtoupper($user->name) . ' (ID: ' .
                         strtoupper($user->passport) . ') HA REALIZADO UN PAGO EN App Sefar Universal')->attachData($pdfContent2, 'Comprobante.pdf', ['mime' => 'application/pdf']);
                 });
 
@@ -1359,13 +1369,13 @@ class ClienteController extends Controller
                     $token = env('MONDAY_TOKEN');
                     $apiUrl = 'https://api.monday.com/v2';
                     $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
-                    
+
                     $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
-                    
+
                     $link = 'https://app.sefaruniversal.com/tree/' . auth()->user()->passport;
 
                     $vars = [
-                        'myItemName' => auth()->user()->apellidos." ".auth()->user()->nombres, 
+                        'myItemName' => auth()->user()->apellidos." ".auth()->user()->nombres,
                         'columnVals' => json_encode([
                             'texto' => auth()->user()->passport,
                             'enlace' => $link . " " . $link,
@@ -1445,10 +1455,10 @@ class ClienteController extends Controller
 
                 $familiares = 1 + $request->cantidad_alzada;
                 DB::table('users')->where('email', $request->email)->update([
-                    'pay' => 0, 
-                    'servicio' => $request->nacionalidad_solicitada, 
-                    'cantidad_alzada' => $cantidad + 1, 
-                    "antepasados" => $antepasados, 
+                    'pay' => 0,
+                    'servicio' => $request->nacionalidad_solicitada,
+                    'cantidad_alzada' => $cantidad + 1,
+                    "antepasados" => $antepasados,
                     'vinculo_antepasados' => $vinculo_antepasados,
                     'estado_de_datos_y_documentos_de_los_antepasados' => $estado_de_datos_y_documentos_de_los_antepasados
                 ]);
@@ -1522,7 +1532,7 @@ class ClienteController extends Controller
                             ]);
                         }
 
-                        
+
 
                         $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
@@ -1637,7 +1647,7 @@ class ClienteController extends Controller
                 $simplePublicObjectInput = new SimplePublicObjectInput([
                     'properties' => $properties1,
                 ]);
-                
+
                 $apiResponse = $hubspot->crm()->contacts()->basicApi()->update($idcontact, $simplePublicObjectInput);
             }
 
@@ -1664,9 +1674,9 @@ class ClienteController extends Controller
         $token = env('MONDAY_TOKEN');
         $apiUrl = 'https://api.monday.com/v2';
         $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
-        
+
         $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
-        
+
         $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
         $hash_factura = "PRUEBA".generate_string($permitted_chars, 10);
@@ -1674,7 +1684,7 @@ class ClienteController extends Controller
         $link = 'https://app.sefaruniversal.com/tree/' . $hash_factura;
 
         $vars = [
-            'myItemName' => 'PRUEBAS PRUEBAS', 
+            'myItemName' => 'PRUEBAS PRUEBAS',
             'columnVals' => json_encode([
                 'texto' => $hash_factura,
                 'link' => $link . " " . $link,
@@ -1702,7 +1712,7 @@ function generate_string($input, $strength = 16) {
         $random_character = $input[mt_rand(0, $input_length - 1)];
         $random_string .= $random_character;
     }
- 
+
     return $random_string;
 }
 
