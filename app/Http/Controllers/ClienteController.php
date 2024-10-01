@@ -761,20 +761,20 @@ class ClienteController extends Controller
         $currentMonth = date('m');
         $currentYear = date('Y');
 
-        if ($cupontest == "SEPTIEMBRESEFAR" && $currentMonth == '09' && $currentYear == '2024') {
+        if ($cupontest == "OCTUBRESEFAR" && $currentMonth == '10' && $currentYear == '2024') {
             foreach ($compras as $compra) {
 
                 $compra->update([
                     'monto' => 99,
                     'cuponaplicado' => 1,
                     'montooriginal' => $compra->monto,
-                    'porcentajedescuento' => "Oferta Mes de Septiembre 2024"
+                    'porcentajedescuento' => "Oferta Mes de Octubre 2024"
                 ]);
 
             }
             return response()->json([
                 'status' => "promo",
-                'percentage' => "Oferta Mes de Septiembre 2024"
+                'percentage' => "Oferta Mes de Octubre 2024"
             ]);
         }
 

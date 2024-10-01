@@ -93,7 +93,7 @@
     <form action="" method="POST" class="require-validation" data-cc-on-file="false" data-stripe-publishable-key="{{ env('STRIPE_KEY_PORT') }}" id="payment-form">
     @else
     <form action="" method="POST" class="require-validation" data-cc-on-file="false" data-stripe-publishable-key="{{ env('STRIPE_KEY') }}" id="payment-form">
-    @endif 
+    @endif
         <div class="container p-8 row" style="display:flex;">
             <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
 
@@ -114,8 +114,8 @@
                 @if ($currentMonth == '09' && $currentYear == '2024')
                 $(document).ready(function() {
                     Swal.fire({
-                        imageUrl: 'http://sefaruniversal.com/wp-content/uploads/2024/09/CUPON-SEPTIEMBRESEFAR-1.jpg',
-                        imageAlt: 'Cupón de descuento de agosto', // Añade un texto alternativo descriptivo
+                        imageUrl: 'http://sefaruniversal.com/wp-content/uploads/2024/10/CUPON-OCTUBRESEFAR-2.jpg',
+                        imageAlt: 'Cupón de descuento de Octubre', // Añade un texto alternativo descriptivo
                         showConfirmButton: true // Ocultamos el botón de confirmación
                     });
                 });
@@ -351,7 +351,7 @@
                                     <td style="">{{$compra["monto"]}}€</td>
                                     @if (count($compras)>1)
                                     <td style="">
-                                        <a style="color: white;" 
+                                        <a style="color: white;"
                                             class="deletedesc btn btn-danger"
                                             id="{{$compra['id']}}"
                                             ><i class="fas fa-trash"></i>
@@ -388,7 +388,7 @@
 
                         ?>
                     </center>
-                    
+
                     <input type="hidden" id="idproducto" name="idproducto" value="{{isset($servicio[0]['id']) ? $servicio[0]['id'] : ''}}">
                 </div>
             </div>
