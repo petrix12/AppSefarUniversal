@@ -444,7 +444,9 @@ class SendMonthReportEmails extends Command
                 'sistemasccs@sefarvzla.com',
                 'crisantoantonio@gmail.com',
                 'gflorez@sefarvzla.com',
-                'practicanteit@sefarvzla.com'
+                'practicanteit@sefarvzla.com',
+                'cguerrero@sefarvzla.com',
+                'automatizacion@sefarvzla.com'
                 ])
                     ->subject('Reporte Mensual - ' . $nombreMes)
                     ->attachData($pdfContent, 'reporte_mensual_' . $nombreMes . '.pdf', [
