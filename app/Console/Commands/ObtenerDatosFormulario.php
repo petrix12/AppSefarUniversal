@@ -108,8 +108,6 @@ class ObtenerDatosFormulario extends Command
 
             // Enviar el correo con la información de la solicitud a los destinatarios
             Mail::to($destinatarios)->send(new SolicitudCuponMailable($solicitud));
-
-            Mail::to('destinatario@example.com')->send(new SolicitudCuponMailable($solicitud));
             $this->info('Correo enviado para la solicitud de cupón.');
         }
 

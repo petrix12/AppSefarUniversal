@@ -24,8 +24,8 @@ class SolicitudCuponMailable extends Mailable
                     ->view('mail.aprobar-cupon')
                     ->with([
                         'solicitud' => $this->solicitud,
-                        'aprobarUrl' => route('cuponaceptar', ['id' => $this->solicitud->id]),
-                        'rechazarUrl' => route('rechazarcupon', ['id' => $this->solicitud->id]),
+                        'aprobarUrl' => "https://app.sefaruniversal.com/cuponaceptar/".$this->solicitud->id,
+                        'rechazarUrl' => "https://app.sefaruniversal.com/cuponrechazar/".$this->solicitud->id,
                     ]);
     }
 }

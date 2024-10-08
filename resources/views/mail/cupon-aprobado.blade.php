@@ -46,42 +46,24 @@
                                 <tr>
                                     <td class="content-cell" style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; max-width: 100vw; padding: 32px;">
                                         <h1 style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; color: #3d4852; font-size: 18px; font-weight: bold; margin-top: 0; text-align: left;">
-                                            ¡Tienes una solicitud de cupón pendiente por aprobar!
+                                            ¡Cupón aprobado!
                                         </h1>
                                         <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
-                                        Se ha recibido una nueva solicitud para aprobar un cupón.
+                                        Se ha aprobado tu solicitud por un cupón.
                                         </p>
 
                                         <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
-                                            <strong>Nombre del Solicitante:</strong> {{ $solicitud->nombre_solicitante }} {{ $solicitud->apellidos_solicitante }}
+                                            <strong>Cliente:</strong> {{ $nombreCliente }}
                                         </p>
                                         <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
-                                            <strong>Correo del Solicitante:</strong> {{ $solicitud->correo_solicitante }}
+                                            <strong>Solicitante:</strong> {{ $nombreSolicitante }}
                                         </p>
                                         <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
-                                            <strong>Motivo de la Solicitud:</strong> {{ $solicitud->motivo_solicitud }}
+                                            <strong>Cupón:</strong> {{ $couponCode }}
                                         </p>
                                         <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
-                                            <strong>Tipo de Cupón:</strong> {{ $solicitud->tipo_cupon }}
+                                            <strong>Fecha de Vencimiento:</strong> {{ $fechaVencimiento }}
                                         </p>
-                                        <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
-                                            <strong>Porcentaje de Descuento:</strong> {{ $solicitud->porcentaje_descuento }}%
-                                        </p>
-
-                                        <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
-                                            <a href="{{ $aprobarUrl }}" style="padding: 10px; color: white; background-color: green; text-decoration: none;">Aprobar</a>
-                                            <a href="{{ $rechazarUrl }}" style="padding: 10px; color: white; background-color: red; text-decoration: none;">Rechazar</a>
-                                        </p>
-
-                                        @if (!empty($solicitud->comprobante_pago))
-                                            <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
-                                                <strong>Comprobante de Pago:</strong>
-                                                @foreach (explode(',', $solicitud->comprobante_pago) as $fileUrl)
-                                                    <a href="{{ $fileUrl }}" style="color: blue; text-decoration: underline;">Ver Comprobante</a>
-                                                @endforeach
-                                            </p>
-                                        @endif
-                                        <br>
                                         <br>
                                         <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
                                             Atentamente,
