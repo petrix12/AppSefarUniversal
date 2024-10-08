@@ -364,7 +364,7 @@ return [
 
         /* *** CUPONES *** */
         [
-            'text'        => 'Monday',
+            'text'        => 'Cupones',
             'icon'        => 'fa-fw fa fa-gift',
             'icon_color'  => 'white',
             'can'  => 'crud.coupons.index',
@@ -373,7 +373,7 @@ return [
                     'text'          => 'Solicitudes de Cupones',
                     'icon'          => 'fa-fw fas fa-calendar-check',
                     'icon_color'    => 'white',
-                    'url'           => 'mondayreportes',
+                    'url'           => 'solicitudcupones',
                     'can'           => 'crud.solicitudcupones.index',
                 ],
                 [
