@@ -364,11 +364,26 @@ return [
 
         /* *** CUPONES *** */
         [
-            'text'          => 'Cupones',
-            'icon'          => 'fa-fw fa fa-gift',
-            'icon_color'    => 'white',
-            'url'           => 'coupons',
-            'can'           => 'crud.coupons.index',
+            'text'        => 'Monday',
+            'icon'        => 'fa-fw fa fa-gift',
+            'icon_color'  => 'white',
+            'can'  => 'crud.coupons.index',
+            'submenu' => [
+                [
+                    'text'          => 'Solicitudes de Cupones',
+                    'icon'          => 'fa-fw fas fa-calendar-check',
+                    'icon_color'    => 'white',
+                    'url'           => 'mondayreportes',
+                    'can'           => 'crud.solicitudcupones.index',
+                ],
+                [
+                    'text'          => 'Cupones Generados',
+                    'icon'          => 'fa-fw fas fa-calendar-check',
+                    'icon_color'    => 'white',
+                    'url'           => 'coupons',
+                    'can'           => 'crud.coupons.index',
+                ]
+            ],
         ],
 
         /* *** Servicios *** */

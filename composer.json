@@ -17,6 +17,7 @@
         "hubspot/api-client": "^9.4",
         "hubspot/hubspot-php": "^5.0",
         "irazasyed/telegram-bot-sdk": "^3.9",
+        "izniburak/laravel-jotform": "^1.0",
         "jeroennoten/laravel-adminlte": "^3.5",
         "justijndepover/teamleader-api": "^0.7.0",
         "laravel-lang/lang": "~7.0",

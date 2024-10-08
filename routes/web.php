@@ -33,6 +33,7 @@ use App\Http\Controllers\GedcomController;
 use App\Http\Controllers\TeamLeaderController;
 use App\Http\Controllers\HermanoController;
 use App\Http\Controllers\AgClienteNewController;
+use App\Http\Controllers\SolicitudCuponController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -89,8 +90,10 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
             ->middleware('can:crud.reports.index');
     Route::resource('hsreferidos', HsReferidoController::class)->names('hsreferidos')
             ->middleware('can:crud.hsreferidos.index');
-    Route::resource('comprobantes', FacturaController::class)->names('hsreferidos')
+    Route::resource('comprobantes', FacturaController::class)->names('comprobantes')
             ->middleware('can:crud.comprobantes.index');
+    Route::resource('solicitudcupones', SolicitudCuponController::class)->names('solicitudcupones')
+            ->middleware('can:crud.solicitudcupones.index');
 });
 
 Route::post('agclientesnew', [AgClienteNewController::class, 'storeNotCliente'])->name('agclientesnew.store');
@@ -147,6 +150,9 @@ Route::get('/fixpassport', [UserController::class, 'fixpassport'])->name('fixpas
 Route::post('/fixpassport', [UserController::class, 'fixpassportprocess'])->name('fixpassportprocess');
 
 //AJAX para activar y desactivar cupones
+
+Route::get('cuponaceptar/{id}',[SolicitudCuponController::class, 'aprobarcupon'])->name('cuponaceptar');
+Route::get('cuponrechazar/{id}',[SolicitudCuponController::class, 'rechazarcupon'])->name('rechazarcupon');
 
 Route::post('cuponenable',[CouponController::class, 'enable'])->name('cuponenable');
 
@@ -247,7 +253,7 @@ Route::group(['middleware' => ['auth'], 'as' => 'clientes.'], function(){
         ->middleware('can:cliente');
     Route::get('pay', [ClienteController::class, 'pay'])->name('pay')
         ->middleware('can:cliente');
-    
+
 });
 
 Route::get('testcorreos', [CorreoController::class, 'testcorreos'])->name('testcorreos');

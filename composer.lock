@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "de03b02a568c12b00e9c143d34bff2bb",
+    "content-hash": "128bc1b96e3bab71ded1cf42eaa708e2",
     "packages": [
         {
             "name": "almasaeed2010/adminlte",
@@ -1960,6 +1960,71 @@
             "time": "2022-08-02T19:46:39+00:00"
         },
         {
+            "name": "izniburak/laravel-jotform",
+            "version": "v1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/izniburak/laravel-jotform.git",
+                "reference": "dacd259c3983e53294c8dc95f7bd7b0c5f3a8287"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/izniburak/laravel-jotform/zipball/dacd259c3983e53294c8dc95f7bd7b0c5f3a8287",
+                "reference": "dacd259c3983e53294c8dc95f7bd7b0c5f3a8287",
+                "shasum": ""
+            },
+            "require": {
+                "jotform/jotform-api-php": "dev-master",
+                "php": "^7.2.5|^8.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.0",
+                "phpunit/phpunit": "^8.5.19|^9.5.8"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Jotform\\JotformServiceProvider"
+                    ],
+                    "aliases": {
+                        "Jotform": "Jotform\\Facade\\Jotform"
+                    }
+                }
+            },
+            "autoload": {
+                "files": [
+                    "src/helpers.php"
+                ],
+                "psr-4": {
+                    "Jotform\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "İzni Burak Demirtaş",
+                    "email": "info@burakdemirtas.org",
+                    "homepage": "https://burakdemirtas.org"
+                }
+            ],
+            "description": "Jotform Laravel Package",
+            "homepage": "https://github.com/izniburak/laravel-jotform",
+            "keywords": [
+                "form",
+                "jotform",
+                "laravel"
+            ],
+            "support": {
+                "issues": "https://github.com/izniburak/laravel-jotform/issues",
+                "source": "https://github.com/izniburak/laravel-jotform/tree/v1.0.0"
+            },
+            "time": "2021-11-04T17:50:58+00:00"
+        },
+        {
             "name": "jaybizzle/crawler-detect",
             "version": "v1.2.119",
             "source": {
@@ -2152,6 +2217,43 @@
                 "source": "https://github.com/jeroennoten/Laravel-AdminLTE/tree/v3.13.0"
             },
             "time": "2024-08-04T14:57:59+00:00"
+        },
+        {
+            "name": "jotform/jotform-api-php",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/jotform/jotform-api-php.git",
+                "reference": "1abac89b83bbb46e82ab1474b6bf75b0be2b8fe6"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/jotform/jotform-api-php/zipball/1abac89b83bbb46e82ab1474b6bf75b0be2b8fe6",
+                "reference": "1abac89b83bbb46e82ab1474b6bf75b0be2b8fe6",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "default-branch": true,
+            "type": "library",
+            "autoload": {
+                "classmap": [
+                    "JotForm.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-3.0+"
+            ],
+            "homepage": "http://api.jotform.com",
+            "support": {
+                "email": "api@jotform.com",
+                "issues": "https://github.com/jotform/jotform-api-php/issues",
+                "source": "https://github.com/jotform/jotform-api-php/tree/master",
+                "wiki": "http://api.jotform.com"
+            },
+            "time": "2022-02-16T08:47:58+00:00"
         },
         {
             "name": "justijndepover/teamleader-api",
