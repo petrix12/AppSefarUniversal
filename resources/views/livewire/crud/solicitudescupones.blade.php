@@ -76,7 +76,9 @@
                 </td>
 
                 <td class="whitespace-nowrap" style="padding: 5px 15px;">
-                    <a style="text-align: center; align-content: center;" class="cfrSefar mr-2 mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md px-2 py-2">Ver Comprobante</a>
+                    @if(isset($cupon->comprobante_pago))
+                    <a href="{{$cupon->comprobante_pago}}" style="text-align: center; align-content: center;" class="cfrSefar mr-2 mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md px-2 py-2">Ver Comprobante</a>
+                    @endif
                 </td>
 
                 <td class="whitespace-nowrap" style="padding: 5px 15px;">

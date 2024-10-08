@@ -23,7 +23,11 @@ class SolicitudCuponController extends Controller
         $cuponsol = SolicitudCupon::find($id);
 
         if ($cuponsol->estatus_cupon == 1) {
-            return;
+            return view('alertasolicitudes', [
+                'title' => 'Información',
+                'message' => 'El cupón ya ha sido procesado.',
+                'icon' => 'info'
+            ]);
         }
 
         $cuponsol->estatus_cupon = 1;
@@ -59,6 +63,12 @@ class SolicitudCuponController extends Controller
                 $cuponsol->nombre_solicitante." ".$cuponsol->apellidos_solicitante,
                 $date
             ));
+
+            return view('alertasolicitudes', [
+                'title' => '¡Éxito!',
+                'message' => '¡Solicitud aprobada exitosamente!',
+                'icon' => 'success'
+            ]);
         } catch (\Illuminate\Database\QueryException $ex) {
             Alert::error('Error', 'El cupón ya existe');
             return back();
@@ -67,22 +77,46 @@ class SolicitudCuponController extends Controller
 
     public function rechazarcupon($id){
         $cuponsol = SolicitudCupon::find($id);
+
+        if ($cuponsol->estatus_cupon == 1) {
+            return view('alertasolicitudes', [
+                'title' => 'Información',
+                'message' => 'El cupón ya ha sido procesado.',
+                'icon' => 'info'
+            ]);
+        }
+
         $cuponsol->estatus_cupon = 1; // Cambia estatus a aprobado o rechazado
         $cuponsol->aprobado = 0; // Rechazado
         $cuponsol->save();
+
+        $destinatarios = [];
+        if ($cuponsol->tipo_cupon == "Cupones de registro 100% - Gratuitos por pagos en efectivo o transferencia.") {
+            $destinatarios = ['admin.sefar@sefarvzla.com', $cuponsol->correo_solicitante];
+        } else {
+            $destinatarios = ['veronica.poletto@sefarvzla.com', 'yeinsondiaz@sefarvzla.com', $cuponsol->correo_solicitante]; // Verónica y Yeinson - Ventas
+        }
 
         Mail::to($destinatarios)->send(new CuponRechazadoMailable(
             $cuponsol->nombre_cliente." ".$cuponsol->apellidos_cliente,
             $cuponsol->nombre_solicitante." ".$cuponsol->apellidos_solicitante,
         ));
+
+        return view('alertasolicitudes', [
+            'title' => 'Rechazado',
+            'message' => '¡Solicitud rechazada!',
+            'icon' => 'error'
+        ]);
     }
+
+    private function generateUniqueCouponCode(){
+        do {
+            $couponCode = strtoupper(substr(str_shuffle("ABCDEFGHIJKLMNOPQRSTUVWXYZ"), 0, 4)) .
+                          substr(str_shuffle("0123456789"), 0, 4);
+        } while (DB::table('coupons')->where('couponcode', $couponCode)->exists());
+
+        return $couponCode;
+    }
+
 }
 
-private function generateUniqueCouponCode(){
-    do {
-        $couponCode = strtoupper(substr(str_shuffle("ABCDEFGHIJKLMNOPQRSTUVWXYZ"), 0, 4)) .
-                      substr(str_shuffle("0123456789"), 0, 4);
-    } while (DB::table('coupons')->where('couponcode', $couponCode)->exists());
-
-    return $couponCode;
-}

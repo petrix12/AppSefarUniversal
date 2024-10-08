@@ -5,6 +5,13 @@ namespace App\Http\Livewire\Crud;
 use Livewire\Component;
 use App\Models\SolicitudCupon;
 use Livewire\WithPagination;
+use App\Models\Coupon;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+
+use App\Mail\CuponAprobadoMailable;
+use App\Mail\CuponRechazadoMailable;
+use Illuminate\Support\Facades\Mail;
 
 class SolicitudesCupones extends Component
 {
@@ -52,23 +59,98 @@ class SolicitudesCupones extends Component
 
     public function approve($id)
     {
-        $cupon = SolicitudCupon::findOrFail($id);
-        $cupon->estatus_cupon = 1; // Cambia estatus a aprobado o rechazado
-        $cupon->aprobado = 1; // Aprobado
-        $cupon->save();
+        $cuponsol = SolicitudCupon::find($id);
 
-        session()->flash('message', 'Cupón aprobado exitosamente.');
+        if ($cuponsol->estatus_cupon == 1) {
+            // Si el cupón ya está aprobado, no hacer nada
+            return;
+        }
+
+        // Aprobar cupón
+        $cuponsol->estatus_cupon = 1; // Cambia estatus a aprobado
+        $cuponsol->aprobado = 1; // Aprobado
+        $cuponsol->save();
+
+        // Generar la fecha de vencimiento
+        $date = Carbon::now()->addDays(30)->format('Y-m-d');
+        // Generar código único
+        $couponCode = $this->generateUniqueCouponCode();
+
+        try {
+            // Crear el cupón
+            Coupon::create([
+                'couponcode' => $couponCode,
+                'percentage' => $cuponsol->porcentaje_descuento,
+                'expire' => $date,
+                'name' => "Aprobado por Administracion",
+                'solicitante' => $cuponsol->nombre_solicitante . " " . $cuponsol->apellidos_solicitante . " (" . $cuponsol->correo_solicitante . ")",
+                'cliente' => $cuponsol->nombre_cliente . " " . $cuponsol->apellidos_cliente . " (" . $cuponsol->correo_cliente . ")",
+                'motivo' => $cuponsol->motivo_solicitud,
+                'enabled' => 1
+            ]);
+
+            // Definir destinatarios según el tipo de cupón
+            $destinatarios = [];
+            if ($cuponsol->tipo_cupon == "Cupones de registro 100% - Gratuitos por pagos en efectivo o transferencia.") {
+                $destinatarios = ['admin.sefar@sefarvzla.com', $cuponsol->correo_solicitante];
+            } else {
+                $destinatarios = ['veronica.poletto@sefarvzla.com', 'yeinsondiaz@sefarvzla.com', $cuponsol->correo_solicitante];
+            }
+
+            // Enviar el correo de confirmación de aprobación
+            Mail::to($destinatarios)->send(new CuponAprobadoMailable(
+                $couponCode,
+                $cuponsol->nombre_cliente . " " . $cuponsol->apellidos_cliente,
+                $cuponsol->nombre_solicitante . " " . $cuponsol->apellidos_solicitante,
+                $date
+            ));
+
+            session()->flash('message', 'Cupón aprobado exitosamente.');
+        } catch (\Illuminate\Database\QueryException $ex) {
+            Alert::error('Error', 'El cupón ya existe');
+        }
     }
 
-    // Método para rechazar el cupón
     public function reject($id)
     {
-        $cupon = SolicitudCupon::findOrFail($id);
-        $cupon->estatus_cupon = 1; // Cambia estatus a aprobado o rechazado
-        $cupon->aprobado = 0; // Rechazado
-        $cupon->save();
+        $cuponsol = SolicitudCupon::find($id);
+
+        // Si el cupón ya está aprobado o rechazado, no hacer nada
+        if ($cuponsol->estatus_cupon == 1) {
+            return;
+        }
+
+        // Rechazar cupón
+        $cuponsol->estatus_cupon = 1; // Cambia estatus a rechazado
+        $cuponsol->aprobado = 0; // Rechazado
+        $cuponsol->save();
+
+        // Definir destinatarios según el tipo de cupón
+        $destinatarios = [];
+        if ($cuponsol->tipo_cupon == "Cupones de registro 100% - Gratuitos por pagos en efectivo o transferencia.") {
+            $destinatarios = ['admin.sefar@sefarvzla.com', $cuponsol->correo_solicitante];
+        } else {
+            $destinatarios = ['veronica.poletto@sefarvzla.com', 'yeinsondiaz@sefarvzla.com', $cuponsol->correo_solicitante];
+        }
+
+        // Enviar el correo de confirmación de rechazo
+        Mail::to($destinatarios)->send(new CuponRechazadoMailable(
+            $cuponsol->nombre_cliente . " " . $cuponsol->apellidos_cliente,
+            $cuponsol->nombre_solicitante . " " . $cuponsol->apellidos_solicitante
+        ));
 
         session()->flash('message', 'Cupón rechazado exitosamente.');
+    }
+
+    // Función para generar código de cupón único
+    private function generateUniqueCouponCode()
+    {
+        do {
+            $couponCode = strtoupper(substr(str_shuffle("ABCDEFGHIJKLMNOPQRSTUVWXYZ"), 0, 4)) .
+                        substr(str_shuffle("0123456789"), 0, 4);
+        } while (DB::table('coupons')->where('couponcode', $couponCode)->exists());
+
+        return $couponCode;
     }
 
     public function updatingSearch()

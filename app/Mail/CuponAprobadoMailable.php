@@ -25,8 +25,8 @@ class CuponAprobadoMailable extends Mailable
 
     public function build()
     {
-        return $this->subject('Cupón aprobado para ' . $this->nombreCliente)
-                    ->view('mail.cupon_aprobado')
+        return $this->subject('AVISO - Cupón aprobado para ' . $this->nombreCliente)
+                    ->view('mail.cupon-aprobado')
                     ->with([
                         'couponCode' => $this->couponCode,
                         'nombreCliente' => $this->nombreCliente,

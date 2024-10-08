@@ -13,16 +13,16 @@ class CuponRechazadoMailable extends Mailable
     public $nombreCliente;
     public $nombreSolicitante;
 
-    public function __construct($couponCode, $nombreCliente, $nombreSolicitante, $fechaVencimiento)
+    public function __construct($nombreCliente, $nombreSolicitante)
     {
         $this->nombreCliente = $nombreCliente;
-        $this->nombreSolicitante = $nombreSolicitante
+        $this->nombreSolicitante = $nombreSolicitante;
     }
 
     public function build()
     {
-        return $this->subject('Cupón rechazado para ' . $this->nombreCliente)
-                    ->view('mail.cupon_rechazado')
+        return $this->subject('AVISO - Cupón rechazado para ' . $this->nombreCliente)
+                    ->view('mail.cupon-rechazado')
                     ->with([
                         'nombreCliente' => $this->nombreCliente,
                         'nombreSolicitante' => $this->nombreSolicitante

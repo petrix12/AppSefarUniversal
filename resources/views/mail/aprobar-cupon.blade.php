@@ -69,8 +69,8 @@
                                         </p>
 
                                         <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
-                                            <a href="{{ $aprobarUrl }}" style="padding: 10px; color: white; background-color: green; text-decoration: none;">Aprobar</a>
-                                            <a href="{{ $rechazarUrl }}" style="padding: 10px; color: white; background-color: red; text-decoration: none;">Rechazar</a>
+                                            <a href="{{ $aprobarUrl }}" target="_blank" style="padding: 10px; color: white; background-color: green; text-decoration: none;">Aprobar</a>
+                                            <a href="{{ $rechazarUrl }}" target="_blank" style="padding: 10px; color: white; background-color: red; text-decoration: none;">Rechazar</a>
                                         </p>
 
                                         @if (!empty($solicitud->comprobante_pago))
