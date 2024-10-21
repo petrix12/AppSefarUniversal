@@ -3,7 +3,6 @@
 @section('title', 'Reporte Diario')
 
 @section('content_header')
-
 @stop
 
 @section('content')
@@ -29,7 +28,7 @@
                 </div>
             </div>
         </div>
-            <center>
+        <center>
             <form action="{{ route('getreportediario') }}" method="POST" class="max-w-md mt-8">
                 @csrf
                 <div class="mb-4">
@@ -38,36 +37,53 @@
                 </div>
 
                 <div class="flex items-center justify-center">
-                    <button type="submit" class="cfrSefar text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    <button id="submitButton" type="submit" class="cfrSefar text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
                         Generar Reporte
                     </button>
                 </div>
             </form>
-            </center>
+        </center>
 
-            <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    flatpickr("#fecha", {
-                        dateFormat: "Y-m-d",  // Formato de la fecha
-                        defaultDate: "{{ now()->format('Y-m-d') }}",  // Fecha por defecto: hoy
-                        maxDate: "{{ now()->format('Y-m-d') }}",  // Fecha máxima: hoy
-                        locale: {
-                            firstDayOfWeek: 1,
-                            weekdays: {
+        <!-- SweetAlert2 -->
+        <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+        <!-- Flatpickr Initialization and Form Validation -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Inicializar Flatpickr
+                flatpickr("#fecha", {
+                    dateFormat: "Y-m-d",
+                    defaultDate: "{{ now()->format('Y-m-d') }}",
+                    maxDate: "{{ now()->format('Y-m-d') }}",
+                    locale: {
+                        firstDayOfWeek: 1,
+                        weekdays: {
                             shorthand: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
                             longhand: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
-                            },
-                            months: {
-                            shorthand: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Оct', 'Nov', 'Dic'],
-                            longhand: ['Enero', 'Febreo', 'Мarzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
-                            },
                         },
-                    });
+                        months: {
+                            shorthand: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+                            longhand: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+                        },
+                    },
                 });
-            </script>
 
-        <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.2/jquery.min.js" integrity="sha512-tWHlutFnuG0C6nQRlpvrEhE4QpkG1nn2MOUMWmUeRePl4e3Aki0VB6W1v3oLjFtd0hVOtRQ9PHpSfN6u6/QXkQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+                // Agregar controlador de evento para el envío del formulario
+                const form = document.querySelector('form');
+                form.addEventListener('submit', function(event) {
+                    const fechaInput = document.getElementById('fecha');
+                    if (fechaInput.value.trim() === '') {
+                        event.preventDefault(); // Evitar que el formulario se envíe
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Por favor, seleccione una fecha.',
+                        });
+                    }
+                });
+            });
+        </script>
+
     </x-app-layout>
 @stop
 
@@ -76,5 +92,5 @@
 @stop
 
 @section('js')
-
+    <!-- Puedes agregar scripts adicionales aquí si es necesario -->
 @stop

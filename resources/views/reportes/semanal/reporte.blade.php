@@ -39,33 +39,9 @@
                 if (fechaSeleccionada) {
                     // Divide la fecha en partes: año, mes y día (el formato es "YYYY-MM-DD")
                     const partesFecha = fechaSeleccionada.split('-');
-                    const nuevoAño = partesFecha[0];
+                    const nuevoAño = partesFecha[2];
                     const nuevoMes = partesFecha[1];
-                    const nuevoDia = partesFecha[2];
-
-                    // Actualiza los campos del formulario oculto
-                    document.getElementById('hiddenDia').value = nuevoDia;
-                    document.getElementById('hiddenMes').value = nuevoMes;
-                    document.getElementById('hiddenAño').value = nuevoAño;
-
-                    // Envía el formulario
-                    document.getElementById('dateForm').submit();
-                } else {
-                    console.error("No se ha seleccionado una fecha.");
-                }
-            }
-
-            function goToReport1() {
-                // Obtiene el valor del input de fecha
-                const fechaSeleccionada = document.getElementById('fecha1').value;
-
-                // Asegura que haya una fecha seleccionada
-                if (fechaSeleccionada) {
-                    // Divide la fecha en partes: año, mes y día (el formato es "YYYY-MM-DD")
-                    const partesFecha = fechaSeleccionada.split('-');
-                    const nuevoAño = partesFecha[0];
-                    const nuevoMes = partesFecha[1];
-                    const nuevoDia = partesFecha[2];
+                    const nuevoDia = partesFecha[0];
 
                     // Actualiza los campos del formulario oculto
                     document.getElementById('hiddenDia').value = nuevoDia;
@@ -80,70 +56,58 @@
             }
 
             function navigateToReport(dias) {
-                // Obtener los valores actuales de año, mes y día del formulario oculto
-                const currentYear = parseInt(document.getElementById('hiddenAño').value);
-                const currentMonth = parseInt(document.getElementById('hiddenMes').value) - 1; // Meses en JavaScript van de 0 a 11
-                const currentDay = parseInt(document.getElementById('hiddenDia').value);
+                // Convierte la fecha del formato dd/mm/yyyy a un objeto Date
+                const partesFecha = "{{$fechaInicioFormato}}".split('/');
+                const dia = parseInt(partesFecha[0], 10);
+                const mes = parseInt(partesFecha[1], 10) - 1; // Meses en JavaScript van de 0 a 11
+                const año = parseInt(partesFecha[2], 10);
 
-                // Crear una nueva fecha basada en los valores actuales
-                const fecha = new Date(currentYear, currentMonth, currentDay);
+                let fecha = new Date(año, mes, dia);
 
-                // Ajustar la fecha sumando o restando los días
-                fecha.setDate(fecha.getDate() + dias);
+                // Modificar la fecha sumando o restando días (7 días por semana)
+                fecha.setDate(fecha.getDate() + (dias * 7));
 
-                // Obtener los nuevos valores de año, mes y día
-                const nuevoDia = fecha.getDate();
-                const nuevoMes = fecha.getMonth() + 1; // Ajustamos el mes para obtener el valor de 1 a 12
+                // Formatear los valores de día y mes para mantener el formato de dos dígitos
+                const nuevoDia = fecha.getDate().toString().padStart(2, '0');
+                const nuevoMes = (fecha.getMonth() + 1).toString().padStart(2, '0'); // Sumar 1 al mes y formatearlo con dos dígitos
                 const nuevoAño = fecha.getFullYear();
 
-                // Actualizar los campos del formulario oculto
+                // Actualiza los campos del formulario oculto
                 document.getElementById('hiddenDia').value = nuevoDia;
                 document.getElementById('hiddenMes').value = nuevoMes;
                 document.getElementById('hiddenAño').value = nuevoAño;
 
-                // Enviar el formulario
+                // Envía el formulario
                 document.getElementById('dateForm').submit();
             }
 
-
             document.addEventListener('DOMContentLoaded', function() {
                 flatpickr("#fecha", {
-                    dateFormat: "Y-m-d",  // Formato de la fecha
-                    defaultDate: "{{$peticion['año']}}-{{$peticion['mes']}}-{{$peticion['dia']}}",  // Fecha por defecto: hoy
-                    maxDate: "{{ now()->format('Y-m-d') }}",  // Fecha máxima: hoy
+                    dateFormat: "d-m-Y",  // Formato de la fecha
+                    enable: [
+                        function(date) {
+                            // Habilitar solo los lunes (getDay() devuelve 1 para lunes)
+                            return date.getDay() == 1;
+                        }
+                    ],
+                    maxDate: new Date(),
+                    disable: [],  // Asegúrate de que no haya fechas bloqueadas
                     locale: {
-                        firstDayOfWeek: 1,
+                        firstDayOfWeek: 1,  // Comienza la semana el lunes
                         weekdays: {
-                        shorthand: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
-                        longhand: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+                            shorthand: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
+                            longhand: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
                         },
                         months: {
-                        shorthand: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Оct', 'Nov', 'Dic'],
-                        longhand: ['Enero', 'Febreo', 'Мarzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
-                        },
-                    },
-                });
-
-                flatpickr("#fecha1", {
-                    dateFormat: "Y-m-d",  // Formato de la fecha
-                    defaultDate: "{{$peticion['año']}}-{{$peticion['mes']}}-{{$peticion['dia']}}",  // Fecha por defecto: hoy
-                    maxDate: "{{ now()->format('Y-m-d') }}",  // Fecha máxima: hoy
-                    locale: {
-                        firstDayOfWeek: 1,
-                        weekdays: {
-                        shorthand: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
-                        longhand: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
-                        },
-                        months: {
-                        shorthand: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Оct', 'Nov', 'Dic'],
-                        longhand: ['Enero', 'Febreo', 'Мarzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+                            shorthand: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+                            longhand: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
                         },
                     },
                 });
             });
         </script>
 
-        <form id="dateForm" action="{{ route('getreportediario') }}" method="POST" style="display: none;">
+        <form id="dateForm" action="{{ route('getreportesemanal') }}" method="POST" style="display: none;">
             @csrf
             <input type="hidden" name="dia" id="hiddenDia" value="{{$peticion['dia']}}">
             <input type="hidden" name="mes" id="hiddenMes" value="{{$peticion['mes']}}">
@@ -158,7 +122,7 @@
                         <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:py-6 lg:px-8 lg:flex lg:items-center lg:justify-between">
                             <center>
                                 <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-                                    <span class="ctvSefar block text-indigo-600">Reporte Diario - {{$peticion["dia"]}}/{{$peticion["mes"]}}/{{$peticion["año"]}}</span>
+                                    <span class="ctvSefar block text-indigo-600">Reporte Semanal - {{$fechaInicioFormato}} - {{$fechaFinFormato}}</span>
                                 </h2>
                             </center>
                         </div>
@@ -172,20 +136,20 @@
             <div class="flex justify-between max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:py-6 lg:px-8">
                 <!-- Botón de día anterior -->
                 <button onclick="navigateToReport(-1)" class="cfrSefar text-white bg-indigo-600 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                    Día Anterior
+                    Semana Anterior
                 </button>
 
                 <input type="text" onchange="goToReport()" id="fecha" class="cfrSefar text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" placeholder="Selecciona una fecha">
 
                 <!-- Botón de día siguiente -->
                 <button onclick="navigateToReport(1)" class="cfrSefar text-white bg-indigo-600 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                    Día Siguiente
+                    Semana Siguiente
                 </button>
             </div>
 
             <div class="card p-4">
                 <center>
-                    <h3 style="margin-bottom: 0rem;">Usuarios registrados en el día: {{$registrosHoy}}</h3>
+                    <h3 style="margin-bottom: 0rem;">Usuarios registrados en la semana: {{$registrosHoy}}</h3>
                 </center>
 
                 <div class="chart-container">

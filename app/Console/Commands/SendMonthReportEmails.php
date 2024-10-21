@@ -64,7 +64,8 @@ class SendMonthReportEmails extends Command
         $peticion['año'] = $fechaInicio->year;
 
         $usuariosHoy = User::with('compras')
-            ->whereBetween('created_at', [$fechaInicio, $fechaFin])
+            ->whereMonth('created_at', $peticion['mes'])
+            ->whereYear('created_at', $peticion['año'])
             ->get();
 
         $facturas = json_decode(
@@ -91,7 +92,7 @@ class SendMonthReportEmails extends Command
         );
 
         // Usuarios registrados en los últimos 30 días
-        $usuariosUltimos30Dias = User::where('created_at', '>=', $fechaActual->subDays(30))->get();
+        $usuariosUltimos30Dias = User::where('created_at', '>=', $fechaActual->copy()->subDays(30))->get();
 
         // Número de personas registradas hoy
         $registrosHoy = $usuariosHoy->count();
@@ -99,7 +100,7 @@ class SendMonthReportEmails extends Command
         // Promedio de registros en el mes actual
         $promedioMesActual = User::whereMonth('created_at', $peticion['mes'])
                                 ->whereYear('created_at', $peticion['año'])
-                                ->count() / $fechaActual->daysInMonth;
+                                ->count() / $fechaActual->copy()->daysInMonth;
 
         $diaMasRegistrosMesActual = User::whereMonth('created_at', $peticion['mes'])
                                 ->whereYear('created_at', $peticion['año'])
@@ -117,7 +118,7 @@ class SendMonthReportEmails extends Command
 
 
         // Promedio de registros en el mes anterior
-        $mesAnterior = $fechaActual->subMonth();
+        $mesAnterior = $fechaActual->copy()->subMonth();
         $promedioMesAnterior = User::whereMonth('created_at', $mesAnterior->month)
                                     ->whereYear('created_at', $mesAnterior->year)
                                     ->count() / $mesAnterior->daysInMonth;
@@ -137,7 +138,7 @@ class SendMonthReportEmails extends Command
                                     ->first();
 
         // Promedio de registros en el mismo mes del año anterior
-        $añoAnterior = $fechaActual->subYear();
+        $añoAnterior = $fechaActual->copy()->subYear();
         $promedioMismoMesAñoAnterior = User::whereMonth('created_at', $peticion['mes'])
                                             ->whereYear('created_at', $añoAnterior->year)
                                             ->count() / $fechaActual->daysInMonth;
@@ -373,6 +374,10 @@ class SendMonthReportEmails extends Command
         $chartNight = 'https://quickchart.io/chart?c=' . urlencode(json_encode($chartConfignight));
 
         $usuariosPorServicio = [];
+
+        $usuariosHoy = User::with('compras')
+            ->whereBetween('created_at', [$fechaInicio, $fechaFin])
+            ->get();
 
         foreach ($usuariosHoy as $usuario) {
             $servicioHsIds = $usuario->compras->pluck('servicio_hs_id')->join(', ');

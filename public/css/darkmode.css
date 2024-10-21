@@ -60,3 +60,7 @@ body.dark-mode #nightlygraph{
 body.dark-mode .flatpickr-calendar {
     background-color: #343A40!important;
 }
+
+body.dark-mode .flatpickr-disabled {
+    color:#777777!important;
+}

@@ -88,7 +88,7 @@ class SendWeeklyReportEmails extends Command
         );
 
         // Usuarios registrados en los últimos 30 días
-        $usuariosUltimos30Dias = User::where('created_at', '>=', $fechaActual->subDays(30))->get();
+        $usuariosUltimos30Dias = User::where('created_at', '>=', $fechaActual->copy()->subDays(30))->get();
 
         // Número de personas registradas hoy
         $registrosHoy = $usuariosHoy->count();
@@ -114,7 +114,7 @@ class SendWeeklyReportEmails extends Command
 
 
         // Promedio de registros en el mes anterior
-        $mesAnterior = $fechaActual->subMonth();
+        $mesAnterior = $fechaActual->copy()->subMonth();
         $promedioMesAnterior = User::whereMonth('created_at', $mesAnterior->month)
                                     ->whereYear('created_at', $mesAnterior->year)
                                     ->count() / $mesAnterior->daysInMonth;
@@ -134,7 +134,7 @@ class SendWeeklyReportEmails extends Command
                                     ->first();
 
         // Promedio de registros en el mismo mes del año anterior
-        $añoAnterior = $fechaActual->subYear();
+        $añoAnterior = $fechaActual->copy()->subYear();
         $promedioMismoMesAñoAnterior = User::whereMonth('created_at', $peticion['mes'])
                                             ->whereYear('created_at', $añoAnterior->year)
                                             ->count() / $fechaActual->daysInMonth;

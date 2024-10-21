@@ -109,8 +109,10 @@ Route::post('getfileupdate', [AgClienteNewController::class, 'getfileupdate'])->
 Route::get('diarioindex',[ReportController::class, 'diarioindex'])->name('diarioindex')->middleware('can:reportes.index');
 Route::get('mensualindex',[ReportController::class, 'mensualindex'])->name('mensualindex')->middleware('can:reportes.index');
 Route::get('anualindex',[ReportController::class, 'anualindex'])->name('anualindex')->middleware('can:reportes.index');
+Route::get('semanalindex',[ReportController::class, 'semanalindex'])->name('semanalindex')->middleware('can:reportes.index');
 Route::post('getreportediario',[ReportController::class, 'getreportediario'])->name('getreportediario')->middleware('can:reportes.index');
 Route::post('getreportemensual',[ReportController::class, 'getreportemensual'])->name('getreportemensual')->middleware('can:reportes.index');
+Route::post('getreportesemanal',[ReportController::class, 'getreportesemanal'])->name('getreportesemanal')->middleware('can:reportes.index');
 Route::post('getreporteanual',[ReportController::class, 'getreporteanual'])->name('getreporteanual')->middleware('can:reportes.index');
 
 

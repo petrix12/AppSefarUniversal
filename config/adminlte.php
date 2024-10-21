@@ -408,14 +408,21 @@ return [
                     'icon_color'    => 'white',
                     'url'           => 'diarioindex',
                     'can'           => 'reportes.index',
-                ],/*
+                ],
+                [
+                    'text'          => 'Reportes Semanales',
+                    'icon'          => 'fa-fw fa fa-file',
+                    'icon_color'    => 'white',
+                    'url'           => 'semanalindex',
+                    'can'           => 'administrador',
+                ],
                 [
                     'text'          => 'Reportes Mensuales',
                     'icon'          => 'fa-fw fa fa-file',
                     'icon_color'    => 'white',
                     'url'           => 'mensualindex',
                     'can'           => 'administrador',
-                ],
+                ],/*
                 [
                     'text'          => 'Reportes Anuales',
                     'icon'          => 'fa-fw fa fa-file',
