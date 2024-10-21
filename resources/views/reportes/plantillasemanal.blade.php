@@ -245,6 +245,39 @@
         </div>
         <div style="page-break-before: always;"></div>
         <div class="card">
+            <center>
+                <img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
+                <h3>Usuarios registrados por estatus:</h3>
+            </center>
+            <table>
+                <thead class="theadreport">
+                    <tr>
+                        <th>Estatus</th>
+                        <th>Cantidad</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @php
+                        // Agrupar usuarios por su estatus de pago
+                        $estatusCount = [
+                            'No ha pagado' => $usuariosHoy->where('pay', 0)->count(),
+                            'Pagó pero no completó información' => $usuariosHoy->where('pay', 1)->count(),
+                            'Pagó y completó información, pero no firmó contrato' => $usuariosHoy->where('pay', 2)->where('contrato', 0)->count(),
+                            'Pagó, completó información y firmó contrato' => $usuariosHoy->where('pay', 2)->where('contrato', 1)->count(),
+                        ];
+                    @endphp
+
+                    @foreach ($estatusCount as $estatus => $cantidad)
+                        <tr>
+                            <td>{{ $estatus }}</td>
+                            <td>{{ $cantidad }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        <div style="page-break-before: always;"></div>
+        <div class="card">
         <center><img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
             <h3>Cantidad de usuarios registrados por servicio:</h3></center>
             <table>

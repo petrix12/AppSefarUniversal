@@ -790,18 +790,43 @@ class ReportController extends Controller
 
     public function getreportemensual(Request $request)
     {
-        $mesTexto = $request->mes;
-        list($fechaInicioSTR, $fechaFinSTR) = convertirMesAFecha($mesTexto);
-        $fechaInicio = Carbon::parse($fechaInicioSTR);
-        $fechaFin = Carbon::parse($fechaFinSTR);
 
-        $fechaActual = $fechaInicio->copy();
+        $timezone = 'America/Bogota';
 
-        $nombreMes = ucfirst($fechaInicio->translatedFormat('F Y'));
+        if(isset($request->dia)){
 
-        $peticion['dia'] = $fechaInicio->day;
-        $peticion['mes'] = $fechaInicio->month;
-        $peticion['año'] = $fechaInicio->year;
+            $fechaActual = Carbon::createFromDate($request->año, $request->mes, $request->dia, $timezone);
+
+            // Obtener el primer día del mes
+            $fechaInicio = $fechaActual->copy()->startOfMonth()->startOfDay();
+
+            // Obtener el último día del mes
+            $fechaFin = $fechaActual->copy()->endOfMonth()->endOfDay();
+
+            // Asignar los valores de fecha de inicio
+            $peticion['dia'] = $fechaInicio->day;
+            $peticion['mes'] = $fechaInicio->month;
+            $peticion['año'] = $fechaInicio->year;
+
+            // Obtener el nombre del mes en formato 'Mes Año' (Ej: 'Enero 2024')
+            $nombreMes = ucfirst($fechaInicio->translatedFormat('F Y'));
+
+        } else {
+
+            $mesTexto = $request->mes;
+            list($fechaInicioSTR, $fechaFinSTR) = convertirMesAFecha($mesTexto);
+            $fechaInicio = Carbon::parse($fechaInicioSTR);
+            $fechaFin = Carbon::parse($fechaFinSTR);
+
+            $fechaActual = $fechaInicio->copy();
+
+            $nombreMes = ucfirst($fechaInicio->translatedFormat('F Y'));
+
+            $peticion['dia'] = $fechaInicio->day;
+            $peticion['mes'] = $fechaInicio->month;
+            $peticion['año'] = $fechaInicio->year;
+
+        }
 
         $usuariosHoy = User::with('compras')->whereMonth('created_at', $peticion['mes'])
         ->whereYear('created_at', $peticion['año'])

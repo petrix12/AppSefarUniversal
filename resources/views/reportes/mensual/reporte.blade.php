@@ -22,6 +22,118 @@
     $nombreMesAnterior = ucfirst(strftime('%B', mktime(0, 0, 0, $mesAnterior, 10)));
 @endphp
     <x-app-layout>
+        <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.2/jquery.min.js" integrity="sha512-tWHlutFnuG0C6nQRlpvrEhE4QpkG1nn2MOUMWmUeRePl4e3Aki0VB6W1v3oLjFtd0hVOtRQ9PHpSfN6u6/QXkQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
+
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
+
+        <script>
+            const monthNames = {
+                'Enero': '01',
+                'Febrero': '02',
+                'Marzo': '03',
+                'Abril': '04',
+                'Mayo': '05',
+                'Junio': '06',
+                'Julio': '07',
+                'Agosto': '08',
+                'Septiembre': '09',
+                'Octubre': '10',
+                'Noviembre': '11',
+                'Diciembre': '12'
+            };
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const year = "{{$peticion['año']}}";
+                const month = "{{$peticion['mes']}}";
+
+                // Crear la fecha a partir de año y mes
+                const defaultDate = new Date(year, month - 1);
+
+                flatpickr("#fecha", {
+                    defaultDate: defaultDate,
+                    plugins: [
+                        new monthSelectPlugin({
+                            shorthand: false, // Mostrar el mes en formato completo
+                            dateFormat: "F \\de Y", // Formato para el valor almacenado (puedes ajustar según tus necesidades)
+                            altFormat: "F \\de Y", // Formato alternativo para mostrar el mes completo y año
+                        })
+                    ],
+                    locale: {
+                        firstDayOfWeek: 1,
+                        months: {
+                            shorthand: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+                            longhand: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+                        },
+                    },
+                });
+            });
+
+            function navigateToReport(offset) {
+                // Obtener los valores actuales de año y mes desde los campos ocultos o las variables PHP
+                let currentYear = parseInt(document.getElementById('hiddenAño').value || "{{$peticion['año']}}");
+                let currentMonth = parseInt(document.getElementById('hiddenMes').value || "{{$peticion['mes']}}");
+
+                // Ajustar el mes basado en el offset (puede ser -1 para mes anterior o 1 para mes siguiente)
+                currentMonth += offset;
+
+                // Si el mes es menor a 1, retrocedemos un año y ponemos el mes en diciembre (mes 12)
+                if (currentMonth < 1) {
+                    currentMonth = 12;
+                    currentYear -= 1;
+                }
+
+                // Si el mes es mayor a 12, avanzamos un año y ponemos el mes en enero (mes 1)
+                if (currentMonth > 12) {
+                    currentMonth = 1;
+                    currentYear += 1;
+                }
+
+                // Formatear los valores del mes y año a un formato que flatpickr pueda entender (mes debe ser en dos dígitos)
+                const nuevoMes = currentMonth.toString().padStart(2, '0');
+                const nuevoAño = currentYear;
+
+                // Actualizar los campos ocultos con los nuevos valores
+                document.getElementById('hiddenDia').value = '01'; // Usamos el día 1 por defecto para el nuevo mes
+                document.getElementById('hiddenMes').value = nuevoMes;
+                document.getElementById('hiddenAño').value = nuevoAño;
+
+                // Enviar el formulario con los nuevos valores para cargar el reporte del mes ajustado
+                document.getElementById('dateForm').submit();
+            }
+
+            function goToReport() {
+                const fechaSeleccionada = document.getElementById('fecha').value;
+
+                // Asegura que haya una fecha seleccionada
+                if (fechaSeleccionada) {
+                    // Divide la fecha seleccionada en partes: mes y año (Ej: "Enero de 2024")
+                    const partesFecha = fechaSeleccionada.split(' de ');
+                    const nombreMes = partesFecha[0];
+                    const nuevoAño = partesFecha[1];
+
+                    // Convierte el nombre del mes a su valor numérico
+                    const nuevoMes = monthNames[nombreMes];
+
+                    // Asignamos un día por defecto (día 01) ya que solo estamos manejando meses y años
+                    const nuevoDia = '01';
+
+                    // Actualiza los campos del formulario oculto
+                    document.getElementById('hiddenDia').value = nuevoDia;
+                    document.getElementById('hiddenMes').value = nuevoMes;
+                    document.getElementById('hiddenAño').value = nuevoAño;
+
+                    // Envía el formulario
+                    document.getElementById('dateForm').submit();
+                } else {
+                    console.error("No se ha seleccionado una fecha.");
+                }
+            }
+        </script>
         <div class="flex flex-col">
             <div class="">
                 <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
@@ -39,9 +151,27 @@
                 </div>
             </div>
         </div>
-
+        <form id="dateForm" action="{{ route('getreportemensual') }}" method="POST" style="display: none;">
+            @csrf
+            <input type="hidden" name="dia" id="hiddenDia" value="{{$peticion['dia']}}">
+            <input type="hidden" name="mes" id="hiddenMes" value="{{$peticion['mes']}}">
+            <input type="hidden" name="año" id="hiddenAño" value="{{$peticion['año']}}">
+        </form>
 
         <center>
+            <div class="flex justify-between max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:py-6 lg:px-8">
+                <!-- Botón de día anterior -->
+                <button onclick="navigateToReport(-1)" class="cfrSefar text-white bg-indigo-600 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Mes Anterior
+                </button>
+
+                <input type="text" onchange="goToReport()" id="fecha" class="cfrSefar text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" placeholder="Selecciona una fecha">
+
+                <!-- Botón de día siguiente -->
+                <button onclick="navigateToReport(1)" class="cfrSefar text-white bg-indigo-600 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Mes Siguiente
+                </button>
+            </div>
             <div class="card p-4">
                 <h3>Usuarios registrados en el mes: {{$registrosHoy}}</h3>
                 <div class="chart-container">
