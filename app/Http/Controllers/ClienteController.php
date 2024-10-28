@@ -636,16 +636,6 @@ class ClienteController extends Controller
 
             $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
 
-            foreach ($productos as $key => $value) {
-                if (isset($value)) {
-                    $servicio_hs_id = $value['servicio_hs_id'];
-
-                    if (isset($servicio_hs_id) && ($servicio_hs_id === "Española LMD" || $servicio_hs_id == "Española LMD")) {
-                        $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 765394861, group_id: "grupo_nuevo97011", item_name:$myItemName, column_values:$columnVals) { id } }';
-                    }
-                }
-            }
-
             if (is_null(auth()->user()->apellidos) || is_null(auth()->user()->nombres)){
                 $clientname = auth()->user()->name;
             } else {
@@ -665,6 +655,30 @@ class ClienteController extends Controller
                     'texto4' => auth()->user()->hs_id
                 ])
             ];
+
+            foreach ($productos as $key => $value) {
+                if (isset($value)) {
+                    $servicio_hs_id = $value['servicio_hs_id'];
+
+                    if (isset($servicio_hs_id) && ($servicio_hs_id === "Española LMD" || $servicio_hs_id == "Española LMD")) {
+                        $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 765394861, group_id: "grupo_nuevo97011", item_name:$myItemName, column_values:$columnVals) { id } }';
+
+                        $vars = [
+                            'myItemName' => $clientname,
+                            'columnVals' => json_encode([
+                                'texto' => auth()->user()->passport,
+                                'fecha75' => ['date' => date("Y-m-d", strtotime($input['fecha_nac']))],
+                                'texto_largo8' => $nombres_y_apellidos_del_padre,
+                                'texto_largo75' => $nombres_y_apellidos_de_madre,
+                                'enlace' => $link . " " . $link,
+                                'estado54' => 'Arbol Incompleto',
+                                'texto1' => $servicios,
+                                'texto6' => auth()->user()->hs_id
+                            ])
+                        ];
+                    }
+                }
+            }
 
             $data = @file_get_contents($apiUrl, false, stream_context_create([
                     'http' => [
