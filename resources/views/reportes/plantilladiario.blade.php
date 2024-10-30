@@ -267,7 +267,7 @@
         <div style="page-break-before: always;"></div>
         <div class="card">
         <center><img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
-            <h3>Monto Acumulado Pagado por Servicio:</h3>
+            <h3>Pagos realizados durante el dia::</h3>
             </center>
             @php
                 $totalMonto = array_sum($facturas);

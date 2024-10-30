@@ -349,7 +349,7 @@
 
                 <div class="card p-4">
                     <center>
-                        <h3 style="margin-bottom: 1rem;">Monto Acumulado Pagado por Servicio:</h3>
+                        <h3 style="margin-bottom: 1rem;">Pagos realizados durante el dia:</h3>
                     </center>
                     @php
                         $totalMonto = array_sum($facturas);
