@@ -21,7 +21,6 @@
 @endphp
 
 <div class="cliente" style="margin: auto 25px auto 0; height: {{$height}}px;" >
-
         @foreach ($columna as $key2 => $persona)
             @if ($persona["showbtn"]==2)
             	<div class="contnodo" style="height: {{$boxheight}}px;">
@@ -161,8 +160,7 @@
         			$varcalc++;
         		}
         	@endphp
-         @endforeach
-
+        @endforeach
 </div>
 
 @php $key++; $sizeheight = $sizeheight * 2; @endphp
