@@ -121,7 +121,13 @@
                                                                 (Madre)
                                                             @endif
                                                         @else
-                                                            ({{$parentescos[$key1-2+$generacionBase][$persona['PersonaIDNew']]}})
+                                                            @if(isset($parentescos[$key1 - 2 + $generacionBase][$persona['PersonaIDNew']]))
+                                                                ({{ $parentescos[$key1 - 2 + $generacionBase][$persona['PersonaIDNew']] }})
+                                                            @else
+                                                                <script>
+                                                                    window.location.reload();
+                                                                </script>
+                                                            @endif
                                                         @endif
                                                     @endif
                                                 </option>

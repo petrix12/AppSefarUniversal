@@ -1,11 +1,11 @@
 @php $key = 0; $sizeheight = 1; $height = 0; $boxheight = 120; @endphp
 
 @foreach ($columnasparatabla as $columna)
-    @php 
+    @php
         $tienePersonaConShowBtn2 = array_reduce($columna, function ($carry, $persona) {
             return $carry || $persona["showbtn"] === 2;
         }, false);
-        if ($tienePersonaConShowBtn2) { $height = (($boxheight+10) * $sizeheight); } 
+        if ($tienePersonaConShowBtn2) { $height = (($boxheight+10) * $sizeheight); }
         $sizeheight = $sizeheight * 2;
     @endphp
 @endforeach
@@ -14,14 +14,14 @@
 
 @foreach ($columnasparatabla as $key1 => $columna)
 
-@php 
+@php
     $tienePersonaConShowBtn2 = array_reduce($columna, function ($carry, $persona) {
         return $carry || $persona["showbtn"] === 2;
     }, false);
 @endphp
 
 <div class="cliente" style="margin: auto 25px auto 0; height: {{$height}}px;" >
-    	
+
         @foreach ($columna as $key2 => $persona)
             @if ($persona["showbtn"]==2)
             	<div class="contnodo" style="height: {{$boxheight}}px;">
@@ -30,8 +30,8 @@
 	                        {{$persona["Nombres"] . ' ' . $persona["Apellidos"]}}<br>
 	                        @if($checkBtn == "si")
 	                        	@if ($key1+$generacionBase == 1)
-		                            @if ($key2 == 0)  
-		                                (Padre)               
+		                            @if ($key2 == 0)
+		                                (Padre)
 		                            @else
 		                                (Madre)
 		                            @endif
@@ -39,17 +39,23 @@
 	                        		({{$parentescos[$key1-2+$generacionBase][$persona['PersonaIDNew']]}})
 	                        	@endif
 	                        @else
-		                        @if ($key1 == 0)  
-		                            (Cliente)                                         
+		                        @if ($key1 == 0)
+		                            (Cliente)
 		                        @elseif ($key1 == 1)
-		                            @if ($key2 == 0)  
-		                                (Padre)               
+		                            @if ($key2 == 0)
+		                                (Padre)
 		                            @else
 		                                (Madre)
 		                            @endif
 		                        @else
-		                            ({{$parentescos[$key1-2+$generacionBase][$persona['PersonaIDNew']]}})
-		                        @endif
+                                    @if(isset($parentescos[$key1 - 2 + $generacionBase][$persona['PersonaIDNew']]))
+                                        ({{ $parentescos[$key1 - 2 + $generacionBase][$persona['PersonaIDNew']] }})
+                                    @else
+                                        <script>
+                                            window.location.reload();
+                                        </script>
+                                    @endif
+                                @endif
 		                    @endif
 	                    </div>
 	                    <div id="datacopy_{{ $persona['id'] }}" style="display: none;">
@@ -110,7 +116,7 @@
 	                            <p><strong>Lugar de Defunción:</strong> {{ $persona['LugarDef'] }}|</p>
 	                        @endif
 
-	                 
+
 	                    </div>
 	                    <div class="continfo">
 	                        @if (!empty($persona['AnhoNac']))
@@ -150,13 +156,13 @@
                 <div class="cajaperemptynew_min" <?php if ($tienePersonaConShowBtn2) { ?> style = "min-height: {{$boxheight}}px!important;" <?php } else { ?> style = "height: {{$boxheight /4}}px!important;" <?php } ?> >
                 </div>
             @endif
-            @php 
+            @php
         		if ($varcalc == 0){
-        			$varcalc++; 
+        			$varcalc++;
         		}
         	@endphp
          @endforeach
-     
+
 </div>
 
 @php $key++; $sizeheight = $sizeheight * 2; @endphp
