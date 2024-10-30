@@ -267,27 +267,37 @@
         <div style="page-break-before: always;"></div>
         <div class="card">
         <center><img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
-            <h3>Pagos realizados durante el dia::</h3>
+            <h3>Pagos realizados durante el dia:</h3>
             </center>
-            @php
-                $totalMonto = array_sum($facturas);
-            @endphp
             <table>
                 <thead class="theadreport">
                     <tr>
+                        <th>Cliente</th>
                         <th>Servicio</th>
-                        <th>Monto Total</th>
+                        <th>Monto</th>
+                        <th>Método de Pago</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($facturas as $servicio => $monto)
-                        <tr>
-                            <td>{{ $servicio }}</td>
-                            <td>{{ $monto }}€</td>
-                        </tr>
+                    @php
+                        $totalMonto = 0;
+                    @endphp
+                    @foreach ($facturas as $factura)
+                        @foreach ($factura['compras'] as $compra)
+                            <tr>
+                                <td>{{ $factura['usuario']['name'] }}</td>
+                                <td>{{ $compra['servicio_hs_id'] }}</td>
+                                <td>{{ $compra['monto'] }}€</td>
+                                <td>{{ $factura['met'] }}</td>
+                            </tr>
+                            @php
+                                $totalMonto = $totalMonto + $compra['monto'];
+                            @endphp
+                        @endforeach
                     @endforeach
                     <tr class="theadreport">
                         <td><strong>Total General:</strong></td>
+                        <td colspan="2"></td>
                         <td><strong>{{ $totalMonto }}€</strong></td>
                     </tr>
                 </tbody>

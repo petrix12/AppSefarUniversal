@@ -40,8 +40,7 @@ class SendDailyReportEmails extends Command
         $usuariosHoy = User::with('compras')->whereDate('created_at', $fechaActual)->get();
         $facturas = json_decode(
             json_encode(
-                Factura::where('met', 'stripe')
-                    ->whereHas('compras', function($query) {
+                Factura::whereHas('compras', function($query) {
                         $query->where('pagado', 1);
                     })
                     ->whereDate('created_at', $fechaActual)
@@ -50,13 +49,6 @@ class SendDailyReportEmails extends Command
                               ->select('servicio_hs_id', 'monto', 'hash_factura');
                     }])
                     ->get()
-                    ->flatMap(function($factura) {
-                        return $factura->compras;
-                    })
-                    ->groupBy('servicio_hs_id')
-                    ->map(function($compras) {
-                        return $compras->sum('monto');
-                    })
             ),
             true
         );

@@ -21,4 +21,17 @@ class Factura extends Model
     {
         return $this->hasMany(Compras::class, 'hash_factura', 'hash_factura');
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'id_cliente');
+    }
+
+    // Accesor para incluir el usuario en el array/JSON
+    public function getUsuarioAttribute()
+    {
+        return $this->user;
+    }
+
+    protected $appends = ['usuario'];
 }
