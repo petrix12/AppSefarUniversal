@@ -153,197 +153,239 @@
                 </center>
 
                 <div class="chart-container">
-                        <div class="chart">
-                            <h3>{{$nombreMesAnterior}} - {{$peticion["año"]}}</h3><br>
-                            <div class="bar-container">
-                                <div class="bar" style="width: {{$datosgraficosporcentaje['mes_anterior']['promedio']}}%;"></div>
-                                <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_anterior']['promedio']}}%;">{{$datosgraficosporcentaje['mes_anterior']['promedio']}}%</div>
-                            </div>
-                            <br>
-                            <p>
-                                <strong>Mínimo:</strong> {{$datosgraficos['mes_anterior']['minimo']}}<br>
-                                <strong>Máximo:</strong> {{$datosgraficos['mes_anterior']['maximo']}}<br>
-                                <strong>Promedio:</strong> {{$datosgraficos['mes_anterior']['promedio']}}<br>
-                                <strong>Total Registrados (Mes Anterior - {{$peticion["año"]}}):</strong> {{$datosgraficos['mes_anterior']['total']}}<br>
-                            </p>
+                    <div class="chart">
+                        <h3>{{$nombreMesAnterior}} - {{$peticion["año"]}}</h3><br>
+                        <div class="bar-container">
+                            <div class="bar" style="width: {{$datosgraficosporcentaje['mes_anterior']['promedio']}}%;"></div>
+                            <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_anterior']['promedio']}}%;">{{$datosgraficosporcentaje['mes_anterior']['promedio']}}%</div>
                         </div>
-                        <div class="chart">
-                            <h3>{{$nombreMesActual}} - {{$peticion["año"]}}</h3><br>
-                            <div class="bar-container">
-                                <div class="bar" style="width: {{$datosgraficosporcentaje['mes_actual']['promedio']}}%;"></div>
-                                <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_actual']['promedio']}}%;">{{$datosgraficosporcentaje['mes_actual']['promedio']}}%</div>
-                            </div>
-                            <br>
-                            <p>
-                                <strong>Mínimo:</strong> {{$datosgraficos['mes_actual']['minimo']}}<br>
-                                <strong>Máximo:</strong> {{$datosgraficos['mes_actual']['maximo']}}<br>
-                                <strong>Promedio:</strong> {{$datosgraficos['mes_actual']['promedio']}}<br>
-                                <strong>Total Registrados (Mes Actual - {{$peticion["año"]}}):</strong> {{$datosgraficos['mes_actual']['total']}}<br>
-                            </p>
-                        </div>
-
+                        <br>
+                        <p>
+                            <strong>Mínimo:</strong> {{$datosgraficos['mes_anterior']['minimo']}}<br>
+                            <strong>Máximo:</strong> {{$datosgraficos['mes_anterior']['maximo']}}<br>
+                            <strong>Promedio:</strong> {{$datosgraficos['mes_anterior']['promedio']}}<br>
+                            <strong>Total Registrados (Mes Anterior - {{$peticion["año"]}}):</strong> {{$datosgraficos['mes_anterior']['total']}}<br>
+                        </p>
                     </div>
-                    <div class="chart-container">
+                    <div class="chart">
+                        <h3>{{$nombreMesActual}} - {{$peticion["año"]}}</h3><br>
+                        <div class="bar-container">
+                            <div class="bar" style="width: {{$datosgraficosporcentaje['mes_actual']['promedio']}}%;"></div>
+                            <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_actual']['promedio']}}%;">{{$datosgraficosporcentaje['mes_actual']['promedio']}}%</div>
+                        </div>
+                        <br>
+                        <p>
+                            <strong>Mínimo:</strong> {{$datosgraficos['mes_actual']['minimo']}}<br>
+                            <strong>Máximo:</strong> {{$datosgraficos['mes_actual']['maximo']}}<br>
+                            <strong>Promedio:</strong> {{$datosgraficos['mes_actual']['promedio']}}<br>
+                            <strong>Total Registrados (Mes Actual - {{$peticion["año"]}}):</strong> {{$datosgraficos['mes_actual']['total']}}<br>
+                        </p>
+                    </div>
 
-                        <div class="chart">
-                            <h3>{{$nombreMesAnterior}} - {{$peticion["año"] - 1}}</h3><br>
-                            <div class="bar-container">
-                                <div class="bar" style="width: {{$datosgraficosporcentaje['mes_anterior_aa']['promedio']}}%;"></div>
-                                <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_anterior_aa']['promedio']}}%;">{{$datosgraficosporcentaje['mes_anterior_aa']['promedio']}}%</div>
-                            </div>
-                            <br>
-                            <p>
-                                <strong>Mínimo:</strong> {{$datosgraficos['mes_anterior_aa']['minimo']}}<br>
-                                <strong>Máximo:</strong> {{$datosgraficos['mes_anterior_aa']['maximo']}}<br>
-                                <strong>Promedio:</strong> {{$datosgraficos['mes_anterior_aa']['promedio']}}<br>
-                                <strong>Total Registrados (Mes Anterior - {{$peticion["año"] - 1}}):</strong> {{$datosgraficos['mes_anterior_aa']['total']}}<br>
-                            </p>
+                </div>
+                <div class="chart-container">
+
+                    <div class="chart">
+                        <h3>{{$nombreMesAnterior}} - {{$peticion["año"] - 1}}</h3><br>
+                        <div class="bar-container">
+                            <div class="bar" style="width: {{$datosgraficosporcentaje['mes_anterior_aa']['promedio']}}%;"></div>
+                            <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_anterior_aa']['promedio']}}%;">{{$datosgraficosporcentaje['mes_anterior_aa']['promedio']}}%</div>
                         </div>
-                        <div class="chart">
-                            <h3>{{$nombreMesActual}} - {{$peticion["año"] - 1}}</h3><br>
-                            <div class="bar-container">
-                                <div class="bar" style="width: {{$datosgraficosporcentaje['mes_actual_aa']['promedio']}}%;"></div>
-                                <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_actual_aa']['promedio']}}%;">{{$datosgraficosporcentaje['mes_actual_aa']['promedio']}}%</div>
-                            </div>
-                            <br>
-                            <p>
-                                <strong>Mínimo:</strong> {{$datosgraficos['mes_actual_aa']['minimo']}}<br>
-                                <strong>Máximo:</strong> {{$datosgraficos['mes_actual_aa']['maximo']}}<br>
-                                <strong>Promedio:</strong> {{$datosgraficos['mes_actual_aa']['promedio']}}<br>
-                                <strong>Total Registrados (Mes Actual - {{$peticion["año"] - 1}}):</strong> {{$datosgraficos['mes_actual_aa']['total']}}<br>
-                            </p>
+                        <br>
+                        <p>
+                            <strong>Mínimo:</strong> {{$datosgraficos['mes_anterior_aa']['minimo']}}<br>
+                            <strong>Máximo:</strong> {{$datosgraficos['mes_anterior_aa']['maximo']}}<br>
+                            <strong>Promedio:</strong> {{$datosgraficos['mes_anterior_aa']['promedio']}}<br>
+                            <strong>Total Registrados (Mes Anterior - {{$peticion["año"] - 1}}):</strong> {{$datosgraficos['mes_anterior_aa']['total']}}<br>
+                        </p>
+                    </div>
+                    <div class="chart">
+                        <h3>{{$nombreMesActual}} - {{$peticion["año"] - 1}}</h3><br>
+                        <div class="bar-container">
+                            <div class="bar" style="width: {{$datosgraficosporcentaje['mes_actual_aa']['promedio']}}%;"></div>
+                            <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_actual_aa']['promedio']}}%;">{{$datosgraficosporcentaje['mes_actual_aa']['promedio']}}%</div>
                         </div>
+                        <br>
+                        <p>
+                            <strong>Mínimo:</strong> {{$datosgraficos['mes_actual_aa']['minimo']}}<br>
+                            <strong>Máximo:</strong> {{$datosgraficos['mes_actual_aa']['maximo']}}<br>
+                            <strong>Promedio:</strong> {{$datosgraficos['mes_actual_aa']['promedio']}}<br>
+                            <strong>Total Registrados (Mes Actual - {{$peticion["año"] - 1}}):</strong> {{$datosgraficos['mes_actual_aa']['total']}}<br>
+                        </p>
                     </div>
                 </div>
+            </div>
 
-                <div class="card p-4">
+            <div class="card p-4">
                 <center>
                     <h3 style="margin-bottom: 1rem;">Registros de Usuarios en los Últimos 30 Días</h3>
                 </center>
-                    <div style="width:100%">
-                        <center>
-                            <style>
-                                #dailygraph{
-                                    display: block!important;height: 100%
-                                }
-
-                                #nightlygraph{
-                                    display: none!important;height: 100%
-                                }
-                            </style>
-                            <div id="chart_div" style="height: 500px;">
-                                <img id="dailygraph" src="{{$chartUrl}}">
-                                <img id="nightlygraph" src="{{$chartNight}}">
-                            </div>
-                        </center>
-                    </div>
-                </div>
-
-                <div class="card p-4">
+                <div style="width:100%">
                     <center>
-                        <h3 style="margin-bottom: 1rem;">Usuarios registrados:</h3>
+                        <style>
+                            #dailygraph{
+                                display: block!important;height: 100%
+                            }
+
+                            #nightlygraph{
+                                display: none!important;height: 100%
+                            }
+                        </style>
+                        <div id="chart_div" style="height: 500px;">
+                            <img id="dailygraph" src="{{$chartUrl}}">
+                            <img id="nightlygraph" src="{{$chartNight}}">
+                        </div>
                     </center>
+                </div>
+            </div>
+
+            <div class="card p-4">
+                <center>
+                    <h3 style="margin-bottom: 1rem;">Usuarios registrados:</h3>
+                </center>
+                <div class="table-responsive">
+                    <table class="table" style="margin:0 auto; width:90%!important;">
+                        <thead class="theadreport">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Apellido</th>
+                                <th>Servicio</th>
+                                <th>Estado de Pago</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($usuariosHoy as $usuario)
+                            @php
+                                $servicioHsIds = $usuario->compras->pluck('servicio_hs_id')->join(', ') ?? $usuario->servicio;
+                            @endphp
+                            @if (isset($servicioHsIds) && $servicioHsIds != "")
+                            <tr>
+
+                                <td>{{ $usuario->nombres }}</td>
+                                <td>{{ $usuario->apellidos }}</td>
+                                <td>
+
+
+                                    {{ $servicioHsIds}}
+                                </td>
+                                <td>
+                                    @if ($usuario->pay == 0)
+                                        No ha pagado
+                                    @elseif ($usuario->pay == 1)
+                                        Pagó pero no completó información
+                                    @elseif ($usuario->pay == 2)
+                                        @if ($usuario->contrato == 0)
+                                            Pagó y completó información
+                                        @elseif ($usuario->contrato == 1)
+                                            Pagó, completó información y firmó contrato
+                                        @endif
+                                    @endif
+                                </td>
+                            </tr>
+                            @endif
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card p-4">
+                <center>
+                    <h3 style="margin-bottom: 1rem;">Cantidad de usuarios registrados por servicio:</h3></center>
                     <div class="table-responsive">
-                        <table class="table" style="margin:0 auto; width:90%!important;">
+                        <table class="table" style="margin:0 auto; width:50%!important;">
                             <thead class="theadreport">
                                 <tr>
-                                    <th>Nombre</th>
-                                    <th>Apellido</th>
                                     <th>Servicio</th>
-                                    <th>Estado de Pago</th>
+                                    <th>Cantidad de Usuarios Registrados</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($usuariosHoy as $usuario)
+                                @foreach ($usuariosPorServicio as $servicio => $cantidad)
+                                @if (isset($servicio) && $servicio != "")
                                 <tr>
-                                    <td>{{ $usuario->nombres }}</td>
-                                    <td>{{ $usuario->apellidos }}</td>
-                                    <td>
-                                        @php
-                                            $servicioHsIds = $usuario->compras->pluck('servicio_hs_id')->join(', ');
-                                        @endphp
-
-                                        {{ $servicioHsIds ? $servicioHsIds : $usuario->servicio }}
-                                    </td>
-                                    <td>
-                                        @if ($usuario->pay == 0)
-                                            No ha pagado
-                                        @elseif ($usuario->pay == 1)
-                                            Pagó pero no completó información
-                                        @elseif ($usuario->pay == 2)
-                                            @if ($usuario->contrato == 0)
-                                                Pagó y completó información
-                                            @elseif ($usuario->contrato == 1)
-                                                Pagó, completó información y firmó contrato
-                                            @endif
-                                        @endif
-                                    </td>
+                                    <td>{{ $servicio }}</td>
+                                    <td>{{ $cantidad }}</td>
                                 </tr>
+                                @endif
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
-                </div>
 
-                <div class="card p-4">
-                    <center>
-                        <h3 style="margin-bottom: 1rem;">Cantidad de usuarios registrados por servicio:</h3></center>
-                        <div class="table-responsive">
-                            <table class="table" style="margin:0 auto; width:50%!important;">
-                                <thead class="theadreport">
-                                    <tr>
-                                        <th>Servicio</th>
-                                        <th>Cantidad de Usuarios Registrados</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($usuariosPorServicio as $servicio => $cantidad)
+                    <p><small>* Un usuario puede contratar multiples servicios en Sefar Universal, por lo que puede ser que hay mas elementos en esta tabla que en la tabla de Usuarios Registrados por Estatus</small></p>
+                </center>
+            </div>
+
+            <div class="card p-4">
+                <center>
+                    <h3 style="margin-bottom: 1rem;">Pagos realizados durante la semana (Stripe):</h3>
+                </center>
+                @php
+                    $totalMonto = array_sum($facturas);
+                @endphp
+                <center>
+                    <div class="table-responsive">
+                        <table class="table" style="margin:0 auto; width:50%!important;">
+                            <thead class="theadreport">
+                                <tr>
+                                    <th>Servicio</th>
+                                    <th>Monto Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($facturas as $servicio => $monto)
                                     <tr>
                                         <td>{{ $servicio }}</td>
-                                        <td>{{ $cantidad }}</td>
+                                        <td>{{ $monto }}€</td>
                                     </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
+                                @endforeach
+                                <tr class="theadreport">
+                                    <td><strong>Total General:</strong></td>
+                                    <td><strong>{{ $totalMonto }}€</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p><small>* Solo se consideran los pagos hechos a través de la pasarela de pago de <a href="https://app.sefaruniversal.com" target="_blank">app.sefaruniversal.com</a></small></p>
+                </center>
+            </div>
 
-                        <p><small>* Un usuario puede contratar multiples servicios en Sefar Universal, por lo que puede ser que hay mas elementos en esta tabla que en la tabla de Usuarios Registrados por Estatus</small></p>
-                    </center>
+            <div class="card p-4">
+                <center>
+                    <h3 style="margin-bottom: 1rem;">Pagos de la semana con Cupon</h3>
+                </center>
+                @php
+                    $totalMonto = array_sum($facturasCupones);
+                @endphp
+                <center>
+                <div class="table-responsive">
+                    <table class="table" style="margin:0 auto; width:50%!important;">
+                        <thead class="theadreport">
+                            <tr>
+                                <th>Servicio</th>
+                                <th>Monto Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($facturasCupones as $servicio => $monto)
+                                @if(isset($servicio) && $servicio != "")
+                                <tr>
+                                    <td>{{ $servicio }}</td>
+                                    <td>{{ $monto }}€</td>
+                                </tr>
+                                @endif
+                            @endforeach
+                            <tr class="theadreport">
+                                <td><strong>Total General:</strong></td>
+                                <td><strong>{{ $totalMonto }}€</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-
-                <div class="card p-4">
-                    <center>
-                        <h3 style="margin-bottom: 1rem;">Monto Acumulado Pagado por Servicio:</h3>
-                    </center>
-                    @php
-                        $totalMonto = array_sum($facturas);
-                    @endphp
-                    <center>
-                        <div class="table-responsive">
-                            <table class="table" style="margin:0 auto; width:50%!important;">
-                                <thead class="theadreport">
-                                    <tr>
-                                        <th>Servicio</th>
-                                        <th>Monto Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($facturas as $servicio => $monto)
-                                        <tr>
-                                            <td>{{ $servicio }}</td>
-                                            <td>{{ $monto }}€</td>
-                                        </tr>
-                                    @endforeach
-                                    <tr class="theadreport">
-                                        <td><strong>Total General:</strong></td>
-                                        <td><strong>{{ $totalMonto }}€</strong></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <p><small>* Solo se consideran los pagos hechos a través de la pasarela de pago de <a href="https://app.sefaruniversal.com" target="_blank">app.sefaruniversal.com</a></small></p>
-                    </center>
-                </div>
+                <p><small>* Solo se consideran los pagos hechos a través de la pasarela de pago de <a href="https://app.sefaruniversal.com" target="_blank">app.sefaruniversal.com</a></small></p>
+                <p><small>* Solo se consideran descuentos del 100%</a></small></p>
+                </center>
             </div>
         </center>
 

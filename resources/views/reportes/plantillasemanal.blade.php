@@ -214,33 +214,37 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($usuariosHoy as $usuario)
-                    <tr>
-                        <td>{{ $usuario->nombres }}</td>
-                        <td>{{ $usuario->apellidos }}</td>
-                        <td>
+                            @foreach ($usuariosHoy as $usuario)
                             @php
-                                $servicioHsIds = $usuario->compras->pluck('servicio_hs_id')->join(', ');
+                                $servicioHsIds = $usuario->compras->pluck('servicio_hs_id')->join(', ') ?? $usuario->servicio;
                             @endphp
+                            @if (isset($servicioHsIds) && $servicioHsIds != "")
+                            <tr>
 
-                            {{ $servicioHsIds ? $servicioHsIds : $usuario->servicio }}
-                        </td>
-                        <td>
-                            @if ($usuario->pay == 0)
-                                No ha pagado
-                            @elseif ($usuario->pay == 1)
-                                Pagó pero no completó información
-                            @elseif ($usuario->pay == 2)
-                                @if ($usuario->contrato == 0)
-                                    Pagó y completó información
-                                @elseif ($usuario->contrato == 1)
-                                    Pagó, completó información y firmó contrato
-                                @endif
+                                <td>{{ $usuario->nombres }}</td>
+                                <td>{{ $usuario->apellidos }}</td>
+                                <td>
+
+
+                                    {{ $servicioHsIds}}
+                                </td>
+                                <td>
+                                    @if ($usuario->pay == 0)
+                                        No ha pagado
+                                    @elseif ($usuario->pay == 1)
+                                        Pagó pero no completó información
+                                    @elseif ($usuario->pay == 2)
+                                        @if ($usuario->contrato == 0)
+                                            Pagó y completó información
+                                        @elseif ($usuario->contrato == 1)
+                                            Pagó, completó información y firmó contrato
+                                        @endif
+                                    @endif
+                                </td>
+                            </tr>
                             @endif
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
+                            @endforeach
+                        </tbody>
             </table>
         </div>
         <div style="page-break-before: always;"></div>
@@ -288,19 +292,22 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($usuariosPorServicio as $servicio => $cantidad)
-                    <tr>
-                        <td>{{ $servicio }}</td>
-                        <td>{{ $cantidad }}</td>
-                    </tr>
-                    @endforeach
-                </tbody>
+                                @foreach ($usuariosPorServicio as $servicio => $cantidad)
+                                @if (isset($servicio) && $servicio != "")
+                                <tr>
+                                    <td>{{ $servicio }}</td>
+                                    <td>{{ $cantidad }}</td>
+                                </tr>
+                                @endif
+                                @endforeach
+                            </tbody>
             </table>
         </div>
         <div style="page-break-before: always;"></div>
         <div class="card">
-        <center><img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
-            <h3>Monto Acumulado Pagado por Servicio:</h3>
+            <center>
+                <img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
+                <h3>Pagos realizados durante la semana (Stripe):</h3>
             </center>
             @php
                 $totalMonto = array_sum($facturas);
@@ -326,6 +333,39 @@
                 </tbody>
             </table>
             <p><small>* Solo se consideran los pagos hechos a través de la pasarela de pago de <a href="https://app.sefaruniversal.com" target="_blank">app.sefaruniversal.com</a></small></p>
+        </div>
+
+        <div style="page-break-before: always;"></div>
+        <div class="card">
+            <center>
+                <img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
+                <h3>Pagos de la semana con Cupon</h3>
+            </center>
+            @php
+                $totalMonto = array_sum($facturasCupones);
+            @endphp
+            <table>
+                <thead class="theadreport">
+                    <tr>
+                        <th>Servicio</th>
+                        <th>Monto Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($facturasCupones as $servicio => $monto)
+                        <tr>
+                            <td>{{ $servicio }}</td>
+                            <td>{{ $monto }}€</td>
+                        </tr>
+                    @endforeach
+                    <tr class="theadreport">
+                        <td><strong>Total General:</strong></td>
+                        <td><strong>{{ $totalMonto }}€</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+            <p><small>* Solo se consideran los pagos hechos a través de la pasarela de pago de <a href="https://app.sefaruniversal.com" target="_blank">app.sefaruniversal.com</a></small></p>
+            <p><small>* Solo se consideran descuentos del 100%</small></p>
         </div>
     </div>
 </body>

@@ -87,8 +87,34 @@ class SendWeeklyReportEmails extends Command
             true
         );
 
+        $facturasCupones = json_decode(
+            json_encode(
+                Factura::where('met', 'cupon')
+                    ->whereHas('compras', function($query) {
+                        $query->where('pagado', 1);
+                    })
+                    ->whereBetween('created_at', [$fechaInicio, $fechaFin])
+                    ->with(['compras' => function($query) {
+                        $query->where('pagado', 1)
+                                ->select('servicio_hs_id', 'monto', 'hash_factura');
+                    }])
+                    ->get()
+                    ->flatMap(function($factura) {
+                        return $factura->compras;
+                    })
+                    ->groupBy('servicio_hs_id')
+                    ->map(function($compras) {
+                        return $compras->sum('monto');
+                    })
+            ),
+            true
+        );
+
         // Usuarios registrados en los últimos 30 días
-        $usuariosUltimos30Dias = User::where('created_at', '>=', $fechaActual->copy()->subDays(30))->get();
+        $usuariosUltimos30Dias = User::where('created_at', '>=', $fechaActual->copy()->subDays(30))
+        ->where('email', 'not like', '%sefarvzla%')
+        ->where('email', 'not like', '%sefaruniversal%')
+        ->where('name', 'not like', '%prueba%')->get();
 
         // Número de personas registradas hoy
         $registrosHoy = $usuariosHoy->count();
@@ -96,10 +122,16 @@ class SendWeeklyReportEmails extends Command
         // Promedio de registros en el mes actual
         $promedioMesActual = User::whereMonth('created_at', $peticion['mes'])
                                 ->whereYear('created_at', $peticion['año'])
+    ->where('email', 'not like', '%sefarvzla%')
+    ->where('email', 'not like', '%sefaruniversal%')
+    ->where('name', 'not like', '%prueba%')
                                 ->count() / $fechaActual->daysInMonth;
 
         $diaMasRegistrosMesActual = User::whereMonth('created_at', $peticion['mes'])
                                 ->whereYear('created_at', $peticion['año'])
+    ->where('email', 'not like', '%sefarvzla%')
+    ->where('email', 'not like', '%sefaruniversal%')
+    ->where('name', 'not like', '%prueba%')
                                 ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
                                 ->groupBy('dia')
                                 ->orderBy('registros', 'desc')
@@ -107,6 +139,9 @@ class SendWeeklyReportEmails extends Command
 
         $diaMenosRegistrosMesActual = User::whereMonth('created_at', $peticion['mes'])
                                     ->whereYear('created_at', $peticion['año'])
+    ->where('email', 'not like', '%sefarvzla%')
+    ->where('email', 'not like', '%sefaruniversal%')
+    ->where('name', 'not like', '%prueba%')
                                     ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
                                     ->groupBy('dia')
                                     ->orderBy('registros', 'asc')
@@ -117,10 +152,16 @@ class SendWeeklyReportEmails extends Command
         $mesAnterior = $fechaActual->copy()->subMonth();
         $promedioMesAnterior = User::whereMonth('created_at', $mesAnterior->month)
                                     ->whereYear('created_at', $mesAnterior->year)
+    ->where('email', 'not like', '%sefarvzla%')
+    ->where('email', 'not like', '%sefaruniversal%')
+    ->where('name', 'not like', '%prueba%')
                                     ->count() / $mesAnterior->daysInMonth;
 
         $diaMasRegistrosMesAnterior = User::whereMonth('created_at', $mesAnterior->month)
                                 ->whereYear('created_at', $mesAnterior->year)
+    ->where('email', 'not like', '%sefarvzla%')
+    ->where('email', 'not like', '%sefaruniversal%')
+    ->where('name', 'not like', '%prueba%')
                                 ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
                                 ->groupBy('dia')
                                 ->orderBy('registros', 'desc')
@@ -128,6 +169,9 @@ class SendWeeklyReportEmails extends Command
 
         $diaMenosRegistrosMesAnterior = User::whereMonth('created_at', $mesAnterior->month)
                                     ->whereYear('created_at', $mesAnterior->year)
+    ->where('email', 'not like', '%sefarvzla%')
+    ->where('email', 'not like', '%sefaruniversal%')
+    ->where('name', 'not like', '%prueba%')
                                     ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
                                     ->groupBy('dia')
                                     ->orderBy('registros', 'asc')
@@ -137,10 +181,16 @@ class SendWeeklyReportEmails extends Command
         $añoAnterior = $fechaActual->copy()->subYear();
         $promedioMismoMesAñoAnterior = User::whereMonth('created_at', $peticion['mes'])
                                             ->whereYear('created_at', $añoAnterior->year)
+    ->where('email', 'not like', '%sefarvzla%')
+    ->where('email', 'not like', '%sefaruniversal%')
+    ->where('name', 'not like', '%prueba%')
                                             ->count() / $fechaActual->daysInMonth;
 
         $diaMasRegistrosMesActual_aa = User::whereMonth('created_at', $peticion['mes'])
                                 ->whereYear('created_at', $añoAnterior->year)
+    ->where('email', 'not like', '%sefarvzla%')
+    ->where('email', 'not like', '%sefaruniversal%')
+    ->where('name', 'not like', '%prueba%')
                                 ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
                                 ->groupBy('dia')
                                 ->orderBy('registros', 'desc')
@@ -148,6 +198,9 @@ class SendWeeklyReportEmails extends Command
 
         $diaMenosRegistrosMesActual_aa = User::whereMonth('created_at', $peticion['mes'])
                                 ->whereYear('created_at', $añoAnterior->year)
+    ->where('email', 'not like', '%sefarvzla%')
+    ->where('email', 'not like', '%sefaruniversal%')
+    ->where('name', 'not like', '%prueba%')
                                 ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
                                 ->groupBy('dia')
                                 ->orderBy('registros', 'asc')
@@ -157,10 +210,16 @@ class SendWeeklyReportEmails extends Command
         $mesAnteriorAñoAnterior = $añoAnterior->subMonth();
         $promedioMesAnteriorAñoAnterior = User::whereMonth('created_at', $mesAnteriorAñoAnterior->month)
                                                 ->whereYear('created_at', $mesAnteriorAñoAnterior->year)
+    ->where('email', 'not like', '%sefarvzla%')
+    ->where('email', 'not like', '%sefaruniversal%')
+    ->where('name', 'not like', '%prueba%')
                                                 ->count() / $mesAnteriorAñoAnterior->daysInMonth;
 
         $diaMasRegistrosMesAnterior_aa = User::whereMonth('created_at', $mesAnteriorAñoAnterior->month)
                                 ->whereYear('created_at', $mesAnteriorAñoAnterior->year)
+    ->where('email', 'not like', '%sefarvzla%')
+    ->where('email', 'not like', '%sefaruniversal%')
+    ->where('name', 'not like', '%prueba%')
                                 ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
                                 ->groupBy('dia')
                                 ->orderBy('registros', 'desc')
@@ -168,6 +227,9 @@ class SendWeeklyReportEmails extends Command
 
         $diaMenosRegistrosMesAnterior_aa = User::whereMonth('created_at', $mesAnteriorAñoAnterior->month)
                                 ->whereYear('created_at', $mesAnteriorAñoAnterior->year)
+    ->where('email', 'not like', '%sefarvzla%')
+    ->where('email', 'not like', '%sefaruniversal%')
+    ->where('name', 'not like', '%prueba%')
                                 ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
                                 ->groupBy('dia')
                                 ->orderBy('registros', 'asc')
@@ -230,6 +292,9 @@ class SendWeeklyReportEmails extends Command
                 'minimo' => $diaMenosRegistrosMesActual->registros,
                 'total' => User::whereMonth('created_at', $peticion['mes'])
                         ->whereYear('created_at', $peticion['año'])
+    ->where('email', 'not like', '%sefarvzla%')
+    ->where('email', 'not like', '%sefaruniversal%')
+    ->where('name', 'not like', '%prueba%')
                         ->count()
             ],
             'mes_anterior' => [
@@ -238,6 +303,9 @@ class SendWeeklyReportEmails extends Command
                 'minimo' => $diaMenosRegistrosMesAnterior->registros,
                 'total' => User::whereMonth('created_at', $peticion['mes'] == 1 ? 12 : $peticion['mes'] - 1)
                         ->whereYear('created_at', $peticion['año'])
+    ->where('email', 'not like', '%sefarvzla%')
+    ->where('email', 'not like', '%sefaruniversal%')
+    ->where('name', 'not like', '%prueba%')
                         ->count()
             ],
             'mes_actual_aa' => [
@@ -246,6 +314,9 @@ class SendWeeklyReportEmails extends Command
                 'minimo' => $diaMenosRegistrosMesActual_aa->registros,
                 'total' => User::whereMonth('created_at', $peticion['mes'])
                         ->whereYear('created_at', $añoAnterior->year)
+    ->where('email', 'not like', '%sefarvzla%')
+    ->where('email', 'not like', '%sefaruniversal%')
+    ->where('name', 'not like', '%prueba%')
                         ->count()
             ],
             'mes_anterior_aa' => [
@@ -254,6 +325,9 @@ class SendWeeklyReportEmails extends Command
                 'minimo' => $diaMenosRegistrosMesAnterior_aa->registros,
                 'total' => User::whereMonth('created_at', $peticion['mes'] == 1 ? 12 : $peticion['mes'] - 1)
                         ->whereYear('created_at', $peticion['año']-1)
+    ->where('email', 'not like', '%sefarvzla%')
+    ->where('email', 'not like', '%sefaruniversal%')
+    ->where('name', 'not like', '%prueba%')
                         ->count()
             ]
         ];
@@ -412,7 +486,8 @@ class SendWeeklyReportEmails extends Command
             'fechaFin',
             'fechaInicioFormato',
             'fechaFinFormato',
-            'facturas'
+            'facturas',
+            'facturasCupones'
         ));
         $pdfContent = $pdf->output();
 

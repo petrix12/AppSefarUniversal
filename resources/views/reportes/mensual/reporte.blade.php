@@ -323,7 +323,7 @@
 
             <div class="card p-4">
                 <center>
-                    <h3 style="margin-bottom: 1rem;">Monto Acumulado Pagado por Servicio:</h3>
+                    <h3 style="margin-bottom: 1rem;">Pagos registrados durante el mes (Stripe)</h3>
                 </center>
                 @php
                     $totalMonto = array_sum($facturas);
@@ -352,6 +352,41 @@
                     </table>
                 </div>
                 <p><small>* Solo se consideran los pagos hechos a través de la pasarela de pago de <a href="https://app.sefaruniversal.com" target="_blank">app.sefaruniversal.com</a></small></p>
+                </center>
+            </div>
+
+            <div class="card p-4">
+                <center>
+                    <h3 style="margin-bottom: 1rem;">Pagos del mes con Cupon</h3>
+                </center>
+                @php
+                    $totalMonto = array_sum($facturasCupones);
+                @endphp
+                <center>
+                <div class="table-responsive">
+                    <table class="table" style="margin:0 auto; width:50%!important;">
+                        <thead class="theadreport">
+                            <tr>
+                                <th>Servicio</th>
+                                <th>Monto Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($facturasCupones as $servicio => $monto)
+                                <tr>
+                                    <td>{{ $servicio }}</td>
+                                    <td>{{ $monto }}€</td>
+                                </tr>
+                            @endforeach
+                            <tr class="theadreport">
+                                <td><strong>Total General:</strong></td>
+                                <td><strong>{{ $totalMonto }}€</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p><small>* Solo se consideran los pagos hechos a través de la pasarela de pago de <a href="https://app.sefaruniversal.com" target="_blank">app.sefaruniversal.com</a></small></p>
+                <p><small>* Solo se consideran descuentos del 100%</a></small></p>
                 </center>
             </div>
         </center>

@@ -291,30 +291,35 @@
                             </thead>
                             <tbody>
                                 @foreach ($usuariosHoy as $usuario)
-                                <tr>
-                                    <td>{{ $usuario->nombres }}</td>
-                                    <td>{{ $usuario->apellidos }}</td>
-                                    <td>
-                                        @php
-                                            $servicioHsIds = $usuario->compras->pluck('servicio_hs_id')->join(', ');
-                                        @endphp
+                                    @php
+                                        $servicioHsIds = $usuario->compras->pluck('servicio_hs_id')->join(', ') ?? $usuario->servicio;
+                                    @endphp
+                                    @if (isset($servicioHsIds)  && $servicioHsIds  != "")
+                                    <tr>
+                                        <td>{{ $usuario->nombres }}</td>
+                                        <td>{{ $usuario->apellidos }}</td>
+                                        <td>
+                                            @php
+                                                $servicioHsIds = $usuario->compras->pluck('servicio_hs_id')->join(', ');
+                                            @endphp
 
-                                        {{ $servicioHsIds ? $servicioHsIds : $usuario->servicio }}
-                                    </td>
-                                    <td>
-                                        @if ($usuario->pay == 0)
-                                            No ha pagado
-                                        @elseif ($usuario->pay == 1)
-                                            Pagó pero no completó información
-                                        @elseif ($usuario->pay == 2)
-                                            @if ($usuario->contrato == 0)
-                                                Pagó y completó información
-                                            @elseif ($usuario->contrato == 1)
-                                                Pagó, completó información y firmó contrato
+                                            {{ $servicioHsIds }}
+                                        </td>
+                                        <td>
+                                            @if ($usuario->pay == 0)
+                                                No ha pagado
+                                            @elseif ($usuario->pay == 1)
+                                                Pagó pero no completó información
+                                            @elseif ($usuario->pay == 2)
+                                                @if ($usuario->contrato == 0)
+                                                    Pagó y completó información
+                                                @elseif ($usuario->contrato == 1)
+                                                    Pagó, completó información y firmó contrato
+                                                @endif
                                             @endif
-                                        @endif
-                                    </td>
-                                </tr>
+                                        </td>
+                                    </tr>
+                                    @endif
                                 @endforeach
                             </tbody>
                         </table>
@@ -334,10 +339,12 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($usuariosPorServicio as $servicio => $cantidad)
-                                    <tr>
-                                        <td>{{ $servicio }}</td>
-                                        <td>{{ $cantidad }}</td>
-                                    </tr>
+                                        @if(isset($servicio) && $servicio != "")
+                                        <tr>
+                                            <td>{{ $servicio }}</td>
+                                            <td>{{ $cantidad }}</td>
+                                        </tr>
+                                        @endif
                                     @endforeach
                                 </tbody>
                             </table>
@@ -347,9 +354,9 @@
                     </center>
                 </div>
 
-                <div class="card p-4">
+                <div class="card p-4 mt-4">
                     <center>
-                        <h3 style="margin-bottom: 1rem;">Pagos realizados durante el dia:</h3>
+                        <h3 style="margin-bottom: 1rem;">Pagos realizados con Stripe durante el día:</h3>
                     </center>
                     <center>
                         <div class="table-responsive">
@@ -364,25 +371,27 @@
                                 </thead>
                                 <tbody>
                                     @php
-                                        $totalMonto = 0;
+                                        $totalMontoStripe = 0;
                                     @endphp
                                     @foreach ($facturas as $factura)
-                                        @foreach ($factura['compras'] as $compra)
-                                            <tr>
-                                                <td>{{ $factura['usuario']['name'] }}</td>
-                                                <td>{{ $compra['servicio_hs_id'] }}</td>
-                                                <td>{{ $compra['monto'] }}€</td>
-                                                <td>{{ $factura['met'] }}</td>
-                                            </tr>
-                                            @php
-                                                $totalMonto = $totalMonto + $compra['monto'];
-                                            @endphp
-                                        @endforeach
+                                        @if ($factura['met'] == 'stripe')
+                                            @foreach ($factura['compras'] as $compra)
+                                                <tr>
+                                                    <td>{{ $factura['usuario']['name'] }}</td>
+                                                    <td>{{ $compra['servicio_hs_id'] }}</td>
+                                                    <td>{{ $compra['monto'] }}€</td>
+                                                    <td>{{ $factura['met'] }}</td>
+                                                </tr>
+                                                @php
+                                                    $totalMontoStripe += $compra['monto'];
+                                                @endphp
+                                            @endforeach
+                                        @endif
                                     @endforeach
                                     <tr class="theadreport">
                                         <td><strong>Total General:</strong></td>
                                         <td colspan="2"></td>
-                                        <td><strong>{{ $totalMonto }}€</strong></td>
+                                        <td><strong>{{ $totalMontoStripe }}€</strong></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -390,6 +399,55 @@
                         <p><small>* Solo se consideran los pagos hechos a través de la pasarela de pago de <a href="https://app.sefaruniversal.com" target="_blank">app.sefaruniversal.com</a></small></p>
                     </center>
                 </div>
+
+                <div class="card p-4">
+                    <center>
+                        <h3 style="margin-bottom: 1rem;">Pagos del día con cupón:</h3>
+                    </center>
+                    <center>
+                        <div class="table-responsive">
+                            <table class="table" style="margin:0 auto; width:70%!important;">
+                                <thead class="theadreport">
+                                    <tr>
+                                        <th>Cliente</th>
+                                        <th>Servicio</th>
+                                        <th>Monto</th>
+                                        <th>Método de Pago</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php
+                                        $totalMontoCupon = 0;
+                                    @endphp
+                                    @foreach ($facturas as $factura)
+                                        @if ($factura['met'] == 'cupon')
+                                            @foreach ($factura['compras'] as $compra)
+                                                <tr>
+                                                    <td>{{ $factura['usuario']['name'] }}</td>
+                                                    <td>{{ $compra['servicio_hs_id'] }}</td>
+                                                    <td>{{ $compra['monto'] }}€</td>
+                                                    <td>{{ $factura['met'] }}</td>
+                                                </tr>
+                                                @php
+                                                    $totalMontoCupon += $compra['monto'];
+                                                @endphp
+                                            @endforeach
+                                        @endif
+                                    @endforeach
+                                    <tr class="theadreport">
+                                        <td><strong>Total General:</strong></td>
+                                        <td colspan="2"></td>
+                                        <td><strong>{{ $totalMontoCupon }}€</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p><small>* Solo se consideran los pagos hechos a través de la pasarela de pago de <a href="https://app.sefaruniversal.com" target="_blank">app.sefaruniversal.com</a></small></p>
+                        <p><small>* Solo se consideran descuentos del 100%</a></small></p>
+                    </center>
+                </div>
+
+
 
             </div>
         </center>
