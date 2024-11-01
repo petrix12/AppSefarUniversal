@@ -34,6 +34,7 @@ use App\Http\Controllers\TeamLeaderController;
 use App\Http\Controllers\HermanoController;
 use App\Http\Controllers\AgClienteNewController;
 use App\Http\Controllers\SolicitudCuponController;
+use App\Http\Controllers\AlertController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -95,6 +96,11 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
     Route::resource('solicitudcupones', SolicitudCuponController::class)->names('solicitudcupones')
             ->middleware('can:crud.solicitudcupones.index');
 });
+
+Route::get('alerts', [AlertController::class, 'index'])->name('alerts.index')->middleware('can:alertasapp.index');
+Route::get('alerts/create', [AlertController::class, 'create'])->name('alerts.create')->middleware('can:alertasapp.create');
+Route::post('alerts', [AlertController::class, 'store'])->name('alerts.store')->middleware('can:alertasapp.create');
+Route::delete('alerts/{alert}', [AlertController::class, 'destroy'])->name('alerts.destroy')->middleware('can:alertasapp.delete');
 
 Route::post('agclientesnew', [AgClienteNewController::class, 'storeNotCliente'])->name('agclientesnew.store');
 Route::post('agclientesupdate', [AgClienteNewController::class, 'updateNotCliente'])->name('agclientesnew.update');

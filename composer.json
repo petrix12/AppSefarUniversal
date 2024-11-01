@@ -16,6 +16,7 @@
         "guzzlehttp/guzzle": "^7.0.1",
         "hubspot/api-client": "^9.4",
         "hubspot/hubspot-php": "^5.0",
+        "intervention/image": "^3.9",
         "irazasyed/telegram-bot-sdk": "^3.9",
         "izniburak/laravel-jotform": "^1.0",
         "jeroennoten/laravel-adminlte": "^3.5",

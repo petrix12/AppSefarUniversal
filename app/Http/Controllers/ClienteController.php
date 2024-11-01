@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Models\File;
 use App\Models\TFile;
 use App\Models\Hermano;
+use App\Models\Alert as Alertas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Stripe;
@@ -37,6 +38,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Mail;
 use Illuminate\Support\Facades\Mail as Mail2;
 use Monday;
+use Carbon\Carbon;
 
 class ClienteController extends Controller
 {
@@ -757,7 +759,12 @@ class ClienteController extends Controller
             $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->get();
         }
 
-        return view('clientes.pay', compact('servicio', 'compras'));
+        $alertas = $today = Carbon::today();
+        $alertas = Alertas::where('start_date', '<=', $today)
+                        ->where('end_date', '>=', $today)
+                        ->get();
+
+        return view('clientes.pay', compact('servicio', 'compras', 'alertas'));
     }
 
     public function revisarcupon(Request $request){
@@ -775,20 +782,20 @@ class ClienteController extends Controller
         $currentMonth = date('m');
         $currentYear = date('Y');
 
-        if ($cupontest == "OCTUBRESEFAR" && $currentMonth == '10' && $currentYear == '2024') {
+        if ($cupontest == "NOVIEMBRESEFAR" && $currentMonth == '11' && $currentYear == '2024') {
             foreach ($compras as $compra) {
 
                 $compra->update([
                     'monto' => 99,
                     'cuponaplicado' => 1,
                     'montooriginal' => $compra->monto,
-                    'porcentajedescuento' => "Oferta Mes de Octubre 2024"
+                    'porcentajedescuento' => "Oferta Mes de NOVIEMBRE 2024"
                 ]);
 
             }
             return response()->json([
                 'status' => "promo",
-                'percentage' => "Oferta Mes de Octubre 2024"
+                'percentage' => "Oferta Mes de NOVIEMBRE 2024"
             ]);
         }
 

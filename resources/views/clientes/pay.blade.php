@@ -100,26 +100,38 @@
             <script src="https://cdnjs.cloudflare.com/ajax/libs/cleave.js/1.6.0/cleave.min.js"></script>
 
             <style>
-                .swal2-image {
-                  max-height: 70vh; /* Establecemos un máximo de 80% de la altura de la ventana */
-                  object-fit: contain; /* Hacemos que la imagen se ajuste al contenedor sin distorsionar */
+                /* Estilos específicos para las alertas en el foreach */
+                .custom-swal-popup {
+                    width: 50em !important;
+                }
+                .custom-swal-image {
+                    min-height: 70vh;
+                    max-height: 70vh;
+                    min-width: 100%;
+                    max-width: 100%;
+                    object-fit: contain;
                 }
             </style>
 
+            @if ($alertas->isNotEmpty())
+                @foreach ($alertas as $alerta)
+                    <script>
+                        $(document).ready(function() {
+                            Swal.fire({
+                                imageUrl: '{{ $alerta->image ?? $alerta["image"] }}',
+                                imageAlt: '{{ $alerta->title ?? $alerta["title"] }}',
+                                showConfirmButton: true,
+                                confirmButtonText: 'Cerrar',
+                                customClass: {
+                                    popup: 'custom-swal-popup',      // Clase personalizada para el popup
+                                    image: 'custom-swal-image'       // Clase personalizada para la imagen
+                                }
+                            });
+                        });
+                    </script>
+                @endforeach
+            @endif
             <script>
-                @php
-                    $currentMonth = date('m');
-                    $currentYear = date('Y');
-                @endphp
-                @if ($currentMonth == '09' && $currentYear == '2024')
-                $(document).ready(function() {
-                    Swal.fire({
-                        imageUrl: 'http://sefaruniversal.com/wp-content/uploads/2024/10/CUPON-OCTUBRESEFAR-2.jpg',
-                        imageAlt: 'Cupón de descuento de Octubre', // Añade un texto alternativo descriptivo
-                        showConfirmButton: true // Ocultamos el botón de confirmación
-                    });
-                });
-                @endif
 
                 document.addEventListener('DOMContentLoaded', () => {
 
@@ -170,9 +182,9 @@
                                     $("#ajaxload").hide();
                                     Swal.fire({
                                         icon: 'success',
-                                        title: 'Se ha aplicado un descuento de un ' + response["percentage"] + '%. En un momento recargaré la página.',
+                                        title: 'Se ha aplicado un descuento de un ' + response["percentage"] + '%.',
                                         showConfirmButton: false,
-                                        timer: 5000
+                                        timer: 3000
                                     }).then(function() {
                                         window.location.reload();
                                     });
@@ -180,9 +192,9 @@
                                     $("#ajaxload").hide();
                                     Swal.fire({
                                         icon: 'success',
-                                        title: 'Se ha aplicado un descuento: ' + response["percentage"] + '. En un momento recargaré la página.',
+                                        title: 'Se ha aplicado un descuento: ' + response["percentage"] + '.',
                                         showConfirmButton: false,
-                                        timer: 5000
+                                        timer: 3000
                                     }).then(function() {
                                         window.location.reload();
                                     });

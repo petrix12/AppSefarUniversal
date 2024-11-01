@@ -395,6 +395,16 @@ return [
             'url'           => 'servicios',
         ],
 
+        /* *** Alertas *** */
+        [
+            'text'          => 'Alertas',
+            'icon'          => 'fa-fw fa fa-exclamation-triangle',
+            'icon_color'    => 'white',
+            'can'           => 'alertasapp.index',
+            'url'           => 'alerts',
+        ],
+
+
         /* *** Reportes *** */
         [
             'text'        => 'Reportes',
