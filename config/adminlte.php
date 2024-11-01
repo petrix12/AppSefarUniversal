@@ -370,6 +370,13 @@ return [
             'can'  => 'crud.coupons.index',
             'submenu' => [
                 [
+                    'text'          => 'Cupones Generales',
+                    'icon'          => 'fa-fw fas fa-calendar-check',
+                    'icon_color'    => 'white',
+                    'url'           => 'generalcoupons',
+                    'can'           => 'generalcoupons.index',
+                ],
+                [
                     'text'          => 'Solicitudes de Cupones',
                     'icon'          => 'fa-fw fas fa-calendar-check',
                     'icon_color'    => 'white',

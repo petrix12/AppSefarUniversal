@@ -35,6 +35,7 @@ use App\Http\Controllers\HermanoController;
 use App\Http\Controllers\AgClienteNewController;
 use App\Http\Controllers\SolicitudCuponController;
 use App\Http\Controllers\AlertController;
+use App\Http\Controllers\GeneralCouponController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -101,6 +102,11 @@ Route::get('alerts', [AlertController::class, 'index'])->name('alerts.index')->m
 Route::get('alerts/create', [AlertController::class, 'create'])->name('alerts.create')->middleware('can:alertasapp.create');
 Route::post('alerts', [AlertController::class, 'store'])->name('alerts.store')->middleware('can:alertasapp.create');
 Route::delete('alerts/{alert}', [AlertController::class, 'destroy'])->name('alerts.destroy')->middleware('can:alertasapp.delete');
+
+Route::get('generalcoupons', [GeneralCouponController::class, 'index'])->name('generalcoupons.index')->middleware('can:generalcoupons.index');
+Route::get('generalcoupons/create', [GeneralCouponController::class, 'create'])->name('generalcoupons.create')->middleware('can:generalcoupons.create');
+Route::post('generalcoupons', [GeneralCouponController::class, 'store'])->name('generalcoupons.store')->middleware('can:generalcoupons.create');
+Route::delete('generalcoupons/{generalCoupon}', [GeneralCouponController::class, 'destroy'])->name('generalcoupons.destroy')->middleware('can:generalcoupons.delete');
 
 Route::post('agclientesnew', [AgClienteNewController::class, 'storeNotCliente'])->name('agclientesnew.store');
 Route::post('agclientesupdate', [AgClienteNewController::class, 'updateNotCliente'])->name('agclientesnew.update');

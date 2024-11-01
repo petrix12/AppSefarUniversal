@@ -15,6 +15,7 @@ use App\Models\File;
 use App\Models\TFile;
 use App\Models\Hermano;
 use App\Models\Alert as Alertas;
+use App\Models\GeneralCoupon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Stripe;
@@ -779,23 +780,23 @@ class ClienteController extends Controller
 
         $cupontest = strtoupper(str_replace(' ', '', $data["cpn"]));
 
-        $currentMonth = date('m');
-        $currentYear = date('Y');
+        $couponGENERAL = GeneralCoupon::where('title', $cupontest)
+            ->whereDate('start_date', '<=', now())
+            ->whereDate('end_date', '>=', now())
+            ->first();
 
-        if ($cupontest == "NOVIEMBRESEFAR" && $currentMonth == '11' && $currentYear == '2024') {
+        if ($couponGENERAL) {
             foreach ($compras as $compra) {
-
                 $compra->update([
-                    'monto' => 99,
+                    'monto' => $couponGENERAL->newdiscount,
                     'cuponaplicado' => 1,
                     'montooriginal' => $compra->monto,
-                    'porcentajedescuento' => "Oferta Mes de NOVIEMBRE 2024"
+                    'porcentajedescuento' => "Oferta: {$couponGENERAL->title}"
                 ]);
-
             }
             return response()->json([
                 'status' => "promo",
-                'percentage' => "Oferta Mes de NOVIEMBRE 2024"
+                'percentage' => "Oferta: {$couponGENERAL->title}"
             ]);
         }
 
