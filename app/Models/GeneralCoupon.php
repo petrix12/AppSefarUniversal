@@ -15,4 +15,12 @@ class GeneralCoupon extends Model
         'end_date',
         'newdiscount'
     ];
+
+    public function setTitleAttribute($value)
+    {
+        // Eliminar todos los tipos de espacios en blanco
+        $value = preg_replace('/\s+/', '', $value);
+        // Convertir a mayúsculas
+        $this->attributes['title'] = strtoupper($value);
+    }
 }

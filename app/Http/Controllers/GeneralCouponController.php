@@ -47,6 +47,7 @@ class GeneralCouponController extends Controller
 
         // Inicializar datos de la alerta
         $data = $request->only(['title', 'newdiscount', 'start_date', 'end_date']);
+        $data['title'] = strtoupper(preg_replace('/\s+/', '', $data['title']));
 
         // Crear la alerta en la base de datos
         GeneralCoupon::create($data);
