@@ -22,6 +22,19 @@ class AlertController extends Controller
         return view('crud.alerts.index', compact('alertas'));
     }
 
+    public function getactivealerts()
+    {
+        $today = now()->toDateString(); // Obtener la fecha actual en formato 'Y-m-d'
+
+        // Consultar las alertas activas en el día actual
+        $activeAlerts = Alert::where('start_date', '<=', $today)
+                            ->where('end_date', '>=', $today)
+                            ->get();
+
+        // Retornar el resultado en formato JSON
+        return response()->json($activeAlerts);
+    }
+
     /**
      * Show the form for creating a new resource.
      *
