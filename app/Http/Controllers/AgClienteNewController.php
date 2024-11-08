@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Agcliente;
 use App\Models\Country;
 use App\Models\User;
+use App\Models\Compras as Compra;
 use App\Models\File;
 use App\Models\TFile;
 
@@ -56,7 +57,7 @@ class AgClienteNewController extends Controller
 
         // Creando persona en agcliente
         $agcliente = Agcliente::create([
-            'IDCliente' => trim($request->IDCliente), 
+            'IDCliente' => trim($request->IDCliente),
             'Nombres' => trim($request->Nombres),
             'Apellidos' => trim($request->Apellidos),
 
@@ -110,7 +111,7 @@ class AgClienteNewController extends Controller
             'LNacimiento' => $LNacimiento,
             'Familiares' => $Familiares,
             'FUpdate' => $FUpdate,
-            'Usuario' => $Usuario,  
+            'Usuario' => $Usuario,
         ]);
 
         $update = Agcliente::find($request->id_hijo);
@@ -132,7 +133,7 @@ class AgClienteNewController extends Controller
                 $generaciones[$persona["id"]] = 1;
             }
         }
-        
+
         $cambio = true;
         while ($cambio) {
             $cambio = false;
@@ -140,7 +141,7 @@ class AgClienteNewController extends Controller
                 $generacionPadre = isset($generaciones[$persona['idPadreNew']]) ? $generaciones[$persona['idPadreNew']] : 0;
                 $generacionMadre = isset($generaciones[$persona['idMadreNew']]) ? $generaciones[$persona['idMadreNew']] : 0;
                 $generacionActual = max($generacionPadre, $generacionMadre) + 1;
-                
+
                 if (!isset($generaciones[$persona["id"]]) || $generaciones[$persona["id"]] != $generacionActual) {
                     $generaciones[$persona["id"]] = $generacionActual;
                     $cambio = true;
@@ -160,10 +161,10 @@ class AgClienteNewController extends Controller
                 }
 
                 $columnasparatabla[$i][] =  $arreglo[0];
-                $columnasparatabla[$i][0]["showbtn"] = 2;  //2 es persona, 1 es boton de añadir, 0 es nada 
+                $columnasparatabla[$i][0]["showbtn"] = 2;  //2 es persona, 1 es boton de añadir, 0 es nada
             } else {
                 foreach ($columnasparatabla[$i-1] as $key2 => $persona2){
-                        
+
                     if(!isset($columnasparatabla[$i])){
                         $columnasparatabla[$i] = [];
                         $j = 0;
@@ -172,7 +173,7 @@ class AgClienteNewController extends Controller
                     }
 
                     //padre
-                    
+
                     if (@$persona2["idPadreNew"]==null){
 
                         if ($persona2["showbtn"] == 0) {
@@ -231,14 +232,14 @@ class AgClienteNewController extends Controller
 
         $parentescos = [];
         $parentescos_post_padres = [
-            "Abuel", 
-            "Bisabuel", 
-            "Tatarabuel", 
-            "Trastatarabuel", 
-            "Retatarabuel", 
-            "Sestarabuel", 
-            "Setatarabuel", 
-            "Octatarabuel", 
+            "Abuel",
+            "Bisabuel",
+            "Tatarabuel",
+            "Trastatarabuel",
+            "Retatarabuel",
+            "Sestarabuel",
+            "Setatarabuel",
+            "Octatarabuel",
             "Nonatarabuel",
             "Decatarabuel",
             "Undecatarabuel",
@@ -318,25 +319,78 @@ class AgClienteNewController extends Controller
             }
         }
 
-        $mail_sefar = new CargaSefar(auth()->user());
-        Mail2::to([
+        // $mail_sefar = new CargaSefar(auth()->user());
+        // Mail2::to([
+        //     'pedro.bazo@sefarvzla.com',
+        //     'gerenciait@sefarvzla.com',
+        //     'sistemasccs@sefarvzla.com',
+        //     'automatizacion@sefarvzla.com',
+        //     'sistemascol@sefarvzla.com',
+        //     /* 'egonzalez@sefarvzla.com', */
+        //     'analisisgenealogico@sefarvzla.com',
+        //     /* 'arosales@sefarvzla.com', */
+        //     'asistentedeproduccion@sefarvzla.com',
+        //     'gcuriel@sefarvzla.com',
+        //     'organizacionrrhh@sefarvzla.com',
+        //     'arodriguez@sefarvzla.com',
+        //     '20053496@bcc.hubspot.com'
+        //     /* 'organizacionrrhh@sefarvzla.com' */
+        // ])->send($mail_sefar);
+
+        $user = auth()->user();
+        $recipients = [
             'pedro.bazo@sefarvzla.com',
             'gerenciait@sefarvzla.com',
             'sistemasccs@sefarvzla.com',
             'automatizacion@sefarvzla.com',
             'sistemascol@sefarvzla.com',
-            /* 'egonzalez@sefarvzla.com', */
             'analisisgenealogico@sefarvzla.com',
-            /* 'arosales@sefarvzla.com', */
             'asistentedeproduccion@sefarvzla.com',
             'gcuriel@sefarvzla.com',
             'organizacionrrhh@sefarvzla.com',
             'arodriguez@sefarvzla.com',
             '20053496@bcc.hubspot.com'
-            /* 'organizacionrrhh@sefarvzla.com' */
-        ])->send($mail_sefar);
-        
-        return redirect()->back()->withInput()->with('refresh', true); 
+        ];
+
+        // Verifica si el usuario es un cliente
+        if ($user->hasRole('Cliente')) {
+            // Verifica si el usuario cumple con las condiciones del servicio "Española LMD"
+            if (
+                $user->servicio == "Española LMD" ||
+                Compra::where('id_user', $user->id)
+                    ->where('servicio_hs_id', "Española LMD")
+                    ->exists()
+            ) {
+                $additionalEmail = 'lguzmanposso@sefarvzla.com';
+                $recipients[] = $additionalEmail;
+            }
+            // Genera el objeto $mail_sefar para un cliente
+            $mail_sefar = new CargaSefar($user);
+        } else {
+            // Busca el usuario que tenga el elemento passport igual a $request->IDCliente
+            $clientUser = User::where('passport', $request->IDCliente)->first();
+            if ($clientUser) {
+                // Verifica si el cliente cumple con las condiciones del servicio "Española LMD"
+                if (
+                    $clientUser->servicio == "Española LMD" ||
+                    Compra::where('id_user', $clientUser->id)
+                        ->where('servicio_hs_id', "Española LMD")
+                        ->exists()
+                ) {
+                    $additionalEmail = 'lguzmanposso@sefarvzla.com';
+                    $recipients[] = $additionalEmail;
+                }
+                // Genera el objeto $mail_sefar para un usuario que no es el loggeado
+                $mail_sefar = new CargaSefar($clientUser);
+            }
+        }
+
+        // Enviar el correo si $mail_sefar está definido
+        if (isset($mail_sefar)) {
+            Mail2::to($recipients)->send($mail_sefar);
+        }
+
+        return redirect()->back()->withInput()->with('refresh', true);
     }
 
     public function updateNotCliente(Request $request)
@@ -378,7 +432,7 @@ class AgClienteNewController extends Controller
             'Apellidos' => trim($request->Apellidos),
         ]);
 
-        return redirect()->back()->withInput()->with('refresh', true); 
+        return redirect()->back()->withInput()->with('refresh', true);
     }
 
     public function getClientFiles(Request $request)
@@ -437,7 +491,7 @@ class AgClienteNewController extends Controller
             'IDPersonaNew' => $request->IDPersonaNew,
             'IDCliente' => $request->IDCliente,
             'tipo' => $request->tipo,
-            'file' => $originalFileName, 
+            'file' => $originalFileName,
             'location' => $path,
             'notas' => $request->notas,
             'Propietario' => $user->name,
