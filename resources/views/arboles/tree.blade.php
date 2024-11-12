@@ -718,17 +718,20 @@
                             </div>
                         </div>
                     </div>
+                    @php
+                        $isClient = auth()->user()->role === 'Cliente'; // Asegúrate de que 'Cliente' coincide con el rol real
+                    @endphp
                     <div class="md:flex ms:flex-wrap">
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
                                 <label for="NPasaporte" class="block text-sm font-medium text-gray-700">Pasaporte</label>
-                                <input value="" id="editNPasaporte" type="text" name="NPasaporte" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input value="" id="editNPasaporte" type="text" @if($isClient) readonly @endif name="NPasaporte" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
                                 <label for="PaisPasaporte" class="block text-sm font-medium text-gray-700">Pais de Doc. Id</label>
-                                <select name="PaisPasaporte" id="editPaisPasaporte" autocomplete="country" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <select name="PaisPasaporte" id="editPaisPasaporte" autocomplete="country" @if($isClient) readonly @endif class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                     <option></option>
                                     <option>Argentina</option>
                                     <option>Australia</option>
@@ -783,13 +786,13 @@
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
                                 <label for="NDocIdent" class="block text-sm font-medium text-gray-700">Doc. Identidad</label>
-                                <input value="" id="editNDocIdent" type="text" name="NDocIdent" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input value="" id="editNDocIdent" type="text" @if($isClient) readonly @endif name="NDocIdent" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
                                 <label for="PaisDocIdent" class="block text-sm font-medium text-gray-700">Pais de Doc. Id</label>
-                                <select name="PaisDocIdent" id="editPaisDocIdent" autocomplete="country" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <select name="PaisDocIdent" id="editPaisDocIdent" @if($isClient) readonly @endif autocomplete="country" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                     <option></option>
                                     <option>Argentina</option>
                                     <option>Australia</option>
