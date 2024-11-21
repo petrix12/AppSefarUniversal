@@ -4,9 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\Teamleader\TeamleaderFocusProvider;
+use App\Models\TeamleaderToken;
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http; // Asegúrate de importar Http
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Auth;
 
 class TeamleaderController extends Controller
 {
@@ -57,22 +58,28 @@ class TeamleaderController extends Controller
     // Método para almacenar los tokens
     private function storeTokens($accessToken)
     {
-        // Almacenar en caché (considera una solución más persistente para producción)
-        Cache::put('teamleader_access_token', Crypt::encryptString($accessToken->getToken()), now()->addMinutes(30));
-        Cache::put('teamleader_refresh_token', Crypt::encryptString($accessToken->getRefreshToken()), now()->addDays(30));
-        Cache::put('teamleader_token_expires', $accessToken->getExpires(), now()->addMinutes(30));
+        TeamleaderToken::updateOrCreate(
+            ['id' => 1], // Asumimos que solo habrá un registro
+            [
+                'access_token' => Crypt::encryptString($accessToken->getToken()),
+                'refresh_token' => Crypt::encryptString($accessToken->getRefreshToken()),
+                'expires' => $accessToken->getExpires(),
+            ]
+        );
     }
 
     // Método para obtener un token de acceso válido
     private function getAccessToken()
     {
-        $encryptedToken = Cache::get('teamleader_access_token');
-        $encryptedRefreshToken = Cache::get('teamleader_refresh_token');
-        $expires = Cache::get('teamleader_token_expires');
+        $tokenRecord = TeamleaderToken::find(1);
 
-        if (!$encryptedToken || !$expires || time() >= $expires) {
-            // El token ha expirado o no está disponible, renovarlo
-            $refreshToken = Crypt::decryptString($encryptedRefreshToken);
+        if (!$tokenRecord) {
+            throw new \Exception('No se encontraron tokens. Por favor, autentica primero.');
+        }
+
+        if (time() >= $tokenRecord->expires) {
+            // El token ha expirado, renovarlo
+            $refreshToken = Crypt::decryptString($tokenRecord->refresh_token);
             $newAccessToken = $this->provider->getAccessToken('refresh_token', [
                 'refresh_token' => $refreshToken,
             ]);
@@ -83,9 +90,11 @@ class TeamleaderController extends Controller
             return $newAccessToken->getToken();
         } else {
             // El token es válido
-            return Crypt::decryptString($encryptedToken);
+            return Crypt::decryptString($tokenRecord->access_token);
         }
     }
+
+
 
     // Método de ejemplo para realizar una petición GET a Teamleader
     public function getContacts()

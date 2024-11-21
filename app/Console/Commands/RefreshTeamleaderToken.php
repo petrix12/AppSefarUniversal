@@ -3,9 +3,9 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use App\Models\TeamleaderToken;
 use App\Services\Teamleader\TeamleaderFocusProvider;
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Cache;
 
 class RefreshTeamleaderToken extends Command
 {
@@ -27,32 +27,40 @@ class RefreshTeamleaderToken extends Command
 
     public function handle()
     {
-        $encryptedRefreshToken = Cache::get('teamleader_refresh_token');
+        $tokenRecord = TeamleaderToken::find(1);
 
-        if (!$encryptedRefreshToken) {
-            $this->error('No se encontró el refresh token. Por favor, autentica primero.');
+        if (!$tokenRecord) {
+            $this->error('No se encontraron tokens. Por favor, autentica primero.');
             return 1;
         }
 
-        try {
-            $refreshToken = Crypt::decryptString($encryptedRefreshToken);
+        $expires = $tokenRecord->expires;
 
-            $newAccessToken = $this->provider->getAccessToken('refresh_token', [
-                'refresh_token' => $refreshToken,
-            ]);
+        if (time() >= $expires) {
+            try {
+                $refreshToken = Crypt::decryptString($tokenRecord->refresh_token);
 
-            // Almacenar los nuevos tokens
-            Cache::put('teamleader_access_token', Crypt::encryptString($newAccessToken->getToken()), now()->addMinutes(30));
-            Cache::put('teamleader_refresh_token', Crypt::encryptString($newAccessToken->getRefreshToken()), now()->addDays(30));
-            Cache::put('teamleader_token_expires', $newAccessToken->getExpires(), now()->addMinutes(30));
+                $newAccessToken = $this->provider->getAccessToken('refresh_token', [
+                    'refresh_token' => $refreshToken,
+                ]);
 
-            $this->info('Token de acceso de Teamleader actualizado exitosamente.');
+                // Almacenar los nuevos tokens
+                $tokenRecord->update([
+                    'access_token' => Crypt::encryptString($newAccessToken->getToken()),
+                    'refresh_token' => Crypt::encryptString($newAccessToken->getRefreshToken()),
+                    'expires' => $newAccessToken->getExpires(),
+                ]);
 
+                $this->info('Token de acceso de Teamleader actualizado exitosamente.');
+                return 0;
+
+            } catch (\Exception $e) {
+                $this->error('Error al actualizar el token de acceso: ' . $e->getMessage());
+                return 1;
+            }
+        } else {
+            $this->info('El token de acceso aún es válido.');
             return 0;
-
-        } catch (\Exception $e) {
-            $this->error('Error al actualizar el token de acceso: ' . $e->getMessage());
-            return 1;
         }
     }
 }
