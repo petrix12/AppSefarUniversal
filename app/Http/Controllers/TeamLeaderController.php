@@ -97,27 +97,37 @@ class TeamleaderController extends Controller
 
 
     // Método de ejemplo para realizar una petición GET a Teamleader
-    public function getContacts()
+    public function getContacts(Request $request)
     {
         try {
+            // Obtener un token de acceso válido
             $accessToken = $this->getAccessToken();
 
+            // Opcional: Manejar paginación
+            $pageNumber = $request->input('page', 1);
+
+            // Realizar la solicitud a la API de Teamleader
             $response = Http::withToken($accessToken)
                 ->post('https://api.focus.teamleader.eu/contacts.list', [
                     'page' => [
                         'size' => 10,
+                        'number' => $pageNumber,
                     ],
                 ]);
 
             if ($response->successful()) {
                 $contacts = $response->json();
-                // Procesar los contactos
+                // Procesar los contactos según tus necesidades
                 return response()->json($contacts);
             } else {
-                return response()->json(['error' => 'Error al obtener los contactos'], $response->status());
+                // Manejar errores de la API
+                $error = $response->json();
+                $errorMessage = isset($error['errors'][0]['title']) ? $error['errors'][0]['title'] : 'Error desconocido';
+                return response()->json(['error' => 'Error al obtener los contactos: ' . $errorMessage], $response->status());
             }
 
         } catch (\Exception $e) {
+            // Manejar excepciones generales
             return response()->json(['error' => 'Error: ' . $e->getMessage()], 500);
         }
     }
