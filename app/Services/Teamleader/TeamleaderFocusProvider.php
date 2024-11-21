@@ -8,17 +8,17 @@ use Psr\Http\Message\ResponseInterface;
 
 class TeamleaderFocusProvider extends AbstractProvider
 {
-    protected function getBaseAuthorizationUrl()
+    public function getBaseAuthorizationUrl()
     {
         return 'https://focus.teamleader.eu/oauth2/authorize';
     }
 
-    protected function getBaseAccessTokenUrl(array $params)
+    public function getBaseAccessTokenUrl(array $params)
     {
         return 'https://focus.teamleader.eu/oauth2/access_token';
     }
 
-    protected function getResourceOwnerDetailsUrl($token)
+    public function getResourceOwnerDetailsUrl($token)
     {
         // No es necesario para nuestro caso
     }
