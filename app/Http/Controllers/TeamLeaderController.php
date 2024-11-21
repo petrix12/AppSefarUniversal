@@ -3,133 +3,119 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Justijndepover\Teamleader\Teamleader;
-use Justijndepover\Teamleader\Exceptions\ApiException as TeamleaderException;
+use App\Services\Teamleader\TeamleaderFocusProvider;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http; // Asegúrate de importar Http
 
-class TeamLeaderController extends Controller
+class TeamleaderController extends Controller
 {
-    public function checkteamleader()
-    {
-        $teamleader = new Teamleader(env('TEAMLEADER_CLIENT_ID'), env('TEAMLEADER_CLIENT_SECRET'), env('TEAMLEADER_REDIRECT_URI'), 'FtvPC1SE2h3LVPEJZIsrfaVWTwwn7T0R');
+    protected $provider;
 
-        header("Location: {$teamleader->redirectForAuthorizationUrl()}");
-        exit;
+    public function __construct()
+    {
+        $this->provider = new TeamleaderFocusProvider([
+            'clientId'     => env('TEAMLEADER_CLIENT_ID'),
+            'clientSecret' => env('TEAMLEADER_CLIENT_SECRET'),
+            'redirectUri'  => env('TEAMLEADER_REDIRECT_URI'),
+        ]);
     }
 
-    public function tlprocess()
+    public function redirectToProvider()
     {
-        $teamleader = new Teamleader(env('TEAMLEADER_CLIENT_ID'), env('TEAMLEADER_CLIENT_SECRET'), env('TEAMLEADER_REDIRECT_URI'), 'FtvPC1SE2h3LVPEJZIsrfaVWTwwn7T0R');
+        $authorizationUrl = $this->provider->getAuthorizationUrl();
+        session(['oauth2state' => $this->provider->getState()]);
 
-        if (isset($_GET['error'])) {
-            return "hubo un error al conectarse a TL";
-        }
-
-        if (isset($_GET['state']) && $_GET['state'] != $teamleader->getState()) {
-            return "hubo un error revisando el State";
-        }
-
-        $teamleader->setAuthorizationCode($_GET['code']);
-        $teamleader->connect();
-
-        // store these values:
-        $tokens["accessToken"] = $teamleader->getAccessToken();
-        $tokens["refreshToken"] = $teamleader->getRefreshToken();
-        $tokens["expiresAt"] = $teamleader->getTokenExpiresAt();
-
-        Storage::disk('local')->put('loginTeamLeader.json', json_encode($tokens));
-
-        return redirect()->route('queryTL');
+        return redirect($authorizationUrl);
     }
 
-    public function queryTL()
+    public function handleProviderCallback(Request $request)
     {
-        $time=0.75;
-        if (!Storage::disk('local')->exists('loginTeamLeader.json')) {
-            return redirect()->route('checkteamleader');
+        // Verificar el parámetro state
+        $state = $request->input('state');
+        if (empty($state) || $state !== session('oauth2state')) {
+            session()->forget('oauth2state');
+            return redirect()->route('teamleader.redirect')->withErrors('Estado inválido.');
         }
 
-        $myarray = json_decode(Storage::disk('local')->get('loginTeamLeader.json'), true);
+        // Obtener el token de acceso
+        try {
+            $accessToken = $this->provider->getAccessToken('authorization_code', [
+                'code' => $request->input('code'),
+            ]);
 
-        if ($myarray["expiresAt"] < time()) {
-            return redirect()->route('checkteamleader');
+            // Almacenar los tokens de forma segura
+            $this->storeTokens($accessToken);
+
+            return redirect()->route('teamleader.success');
+
+        } catch (\Exception $e) {
+            return redirect()->route('teamleader.redirect')->withErrors('Error al obtener el token de acceso: ' . $e->getMessage());
         }
+    }
 
-        $teamleader = new Teamleader(env('TEAMLEADER_CLIENT_ID'), env('TEAMLEADER_CLIENT_SECRET'), env('TEAMLEADER_REDIRECT_URI'), 'FtvPC1SE2h3LVPEJZIsrfaVWTwwn7T0R');
-        $teamleader->setAccessToken($myarray["accessToken"]);
-        $teamleader->setRefreshToken($myarray["refreshToken"]);
-        $teamleader->setTokenExpiresAt($myarray["expiresAt"]);
+    // Método para almacenar los tokens
+    private function storeTokens($accessToken)
+    {
+        // Almacenar en caché (considera una solución más persistente para producción)
+        Cache::put('teamleader_access_token', Crypt::encryptString($accessToken->getToken()), now()->addMinutes(30));
+        Cache::put('teamleader_refresh_token', Crypt::encryptString($accessToken->getRefreshToken()), now()->addDays(30));
+        Cache::put('teamleader_token_expires', $accessToken->getExpires(), now()->addMinutes(30));
+    }
 
-        
-        if (Storage::disk('local')->exists('Fields-TeamLeaderData.json')) {
-            $alldata = json_decode(Storage::disk('local')->get('Fields-TeamLeaderData.json'), true);
+    // Método para obtener un token de acceso válido
+    private function getAccessToken()
+    {
+        $encryptedToken = Cache::get('teamleader_access_token');
+        $encryptedRefreshToken = Cache::get('teamleader_refresh_token');
+        $expires = Cache::get('teamleader_token_expires');
+
+        if (!$encryptedToken || !$expires || time() >= $expires) {
+            // El token ha expirado o no está disponible, renovarlo
+            $refreshToken = Crypt::decryptString($encryptedRefreshToken);
+            $newAccessToken = $this->provider->getAccessToken('refresh_token', [
+                'refresh_token' => $refreshToken,
+            ]);
+
+            // Almacenar los nuevos tokens
+            $this->storeTokens($newAccessToken);
+
+            return $newAccessToken->getToken();
         } else {
-            $alldata = [];
+            // El token es válido
+            return Crypt::decryptString($encryptedToken);
+        }
+    }
 
-            $i = 1+0;
-            $j = 0;
+    // Método de ejemplo para realizar una petición GET a Teamleader
+    public function getContacts()
+    {
+        try {
+            $accessToken = $this->getAccessToken();
 
-            while ($j == 0) {
-                $forfetch = '{
-                  "page": {
-                    "size": 100,
-                    "number": ' . $i . '
-                  }
-                }';
-                $fetched = $teamleader->get('customFieldDefinitions.list', json_decode($forfetch, true));
-                $alldata = array_merge($alldata, $fetched['data']);
+            $response = Http::withToken($accessToken)
+                ->post('https://api.focus.teamleader.eu/contacts.list', [
+                    'page' => [
+                        'size' => 10,
+                    ],
+                ]);
 
-                if(sizeof($fetched['data'])!=100){
-                    $j = 1;
-                } else {
-                    $i = $i + 1;
-                }
-                
-                sleep($time);
+            if ($response->successful()) {
+                $contacts = $response->json();
+                // Procesar los contactos
+                return response()->json($contacts);
+            } else {
+                return response()->json(['error' => 'Error al obtener los contactos'], $response->status());
             }
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error: ' . $e->getMessage()], 500);
         }
+    }
 
-        $tokens["accessToken"] = $teamleader->getAccessToken();
-        $tokens["refreshToken"] = $teamleader->getRefreshToken();
-        $tokens["expiresAt"] = $teamleader->getTokenExpiresAt();
-
-        Storage::disk('local')->put('Fields-TeamLeaderData.json', json_encode($alldata));
-
-        $i = 0;
-
-        /*
-
-        foreach ($alldata as $key => $contact) {
-            if (!array_key_exists('extended_data', $alldata[$key])) {
-                $variables = '{
-                    "id": "'.$contact["id"].'"
-                }';
-
-                $fetched = $teamleader->get('customFieldDefinitions.info', json_decode($variables, true));
-                $alldata[$key]["extended_data"] = $fetched["data"];
-                
-                sleep($time);
-
-                $i = $i + 1;
-
-                if ($i==500){
-                    Storage::disk('local')->put('Fields-TeamLeaderData.json', json_encode($alldata));
-                    $i = 0;
-                }
-            }            
-        }
-
-
-
-        // you should always store your tokens at the end of a call
-        $tokens["accessToken"] = $teamleader->getAccessToken();
-        $tokens["refreshToken"] = $teamleader->getRefreshToken();
-        $tokens["expiresAt"] = $teamleader->getTokenExpiresAt();
-
-        */
-
-        Storage::disk('local')->put('loginTeamLeader.json', json_encode($tokens));
-
-        Storage::disk('local')->put('Fields-TeamLeaderData.json', json_encode($alldata));
+    // Ruta de éxito después de la autenticación inicial
+    public function success()
+    {
+        return '¡Integración con Teamleader configurada exitosamente!';
     }
 }

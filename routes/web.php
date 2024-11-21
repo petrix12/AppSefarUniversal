@@ -129,9 +129,13 @@ Route::post('getreporteanual',[ReportController::class, 'getreporteanual'])->nam
 
 
 //TeamleaderTest
-Route::get('/tltest', [TeamLeaderController::class, 'checkteamleader'])->name('checkteamleader');
-Route::get('/tlprocess', [TeamLeaderController::class, 'tlprocess'])->name('tlprocess');
-Route::get('/queryTL', [TeamLeaderController::class, 'queryTL'])->name('queryTL');
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/teamleader/redirect', [TeamleaderController::class, 'redirectToProvider'])->name('teamleader.redirect');
+    Route::get('/teamleader/callback', [TeamleaderController::class, 'handleProviderCallback'])->name('teamleader.callback');
+});
+Route::get('/teamleader/success', [TeamleaderController::class, 'success'])->name('teamleader.success');
+Route::get('/teamleader/contacts', [TeamleaderController::class, 'getContacts'])->name('teamleader.contacts');
 
 //checkRegMondayTest
 Route::get('/checkMondayTest', [ClienteController::class, 'checkMondayTest'])->name('checkMondayTest');

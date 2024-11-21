@@ -30,4 +30,10 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'teamleader' => [
+        'client_id' => env('TEAMLEADER_CLIENT_ID'),
+        'client_secret' => env('TEAMLEADER_CLIENT_SECRET'),
+        'redirect' => env('TEAMLEADER_REDIRECT_URI'),
+    ],
+
 ];
