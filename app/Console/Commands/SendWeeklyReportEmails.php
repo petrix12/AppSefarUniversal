@@ -518,7 +518,9 @@ class SendWeeklyReportEmails extends Command
                 'gflorez@sefarvzla.com',
                 'practicanteit@sefarvzla.com',
                 'cguerrero@sefarvzla.com',
-                'automatizacion@sefarvzla.com'
+                'automatizacion@sefarvzla.com',
+                'admin.sefar@sefarvzla.com',
+                'yeinsondiaz@sefarvzla.com'
                 ])
                     ->subject('Reporte Semanal - ' . Carbon::parse($fechaInicio)->format('d/m/Y') . " - " . Carbon::parse($fechaFin)->format('d/m/Y'))
                     ->attachData($pdfContent, 'reporte_semanal_' . Carbon::parse($fechaInicio)->format('d/m/Y') . '-' . Carbon::parse($fechaFin)->format('d/m/Y') . '.pdf', [

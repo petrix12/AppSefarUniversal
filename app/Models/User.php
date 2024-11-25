@@ -49,6 +49,7 @@ class User extends Authenticatable implements MustVerifyEmail
 		'id_pago',
         'hs_id',
         'tl_id',
+        'monday_id',
         'cantidad_alzada',
         'pago_registro_hist',
         'antepasados',

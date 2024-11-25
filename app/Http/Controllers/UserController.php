@@ -104,18 +104,15 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
-        if (is_null($user->tl_id)){
+        if (is_null($user->tl_id)) {
             $TLcontactByEmail = $this->teamleaderService->searchContactByEmail($user->email);
             $user->tl_id = $TLcontactByEmail["id"];
-
             $user->save();
         }
-        // Buscar el contacto en Teamleader por correo electrónico
 
         $TLcontact = $this->teamleaderService->getContactById($user->tl_id);
 
-        // Nueva lógica para HubSpot
-        if (is_null($user->hs_id)){
+        if (is_null($user->hs_id)) {
             $HScontactByEmail = $this->hubspotService->searchContactByEmail($user->email);
             $user->hs_id = $HScontactByEmail['id'];
             $user->save();
@@ -123,8 +120,26 @@ class UserController extends Controller
 
         $HScontact = $this->hubspotService->getContactById($user->hs_id);
 
-        // Pasar los datos a la vista
-        return view('crud.users.status', compact('TLcontact', 'HScontact'));
+        // Si el monday_id existe, buscar directamente usando el ID
+        if ($user->monday_id) {
+            $query = "
+                items(ids: [{$user->monday_id}]) {
+                    id
+                    name
+                    column_values {
+                        id
+                        text
+                    }
+                }
+            ";
+
+            $result = json_decode(json_encode(Monday::customQuery($query)), true);
+            $mondayUserDetails = $result['items'][0] ?? null;
+        } else {
+            $mondayUserDetails = $this->searchUserInMonday($user->passport, $user);
+        }
+
+        return view('crud.users.status', compact('TLcontact', 'HScontact', 'mondayUserDetails'));
     }
 
     public function getuserstatus_ventas(Agcliente $agcliente)
@@ -1472,5 +1487,48 @@ class UserController extends Controller
         }
     }
 
+    private function searchUserInMonday($passport, User $user)
+    {
+        $boardIds = [
+            6524058079, 3950637564, 3639222742, 3469085450, 2213224176,
+            1910043474, 1845710504, 1845706367, 1845701215, 1016436921,
+            1026956491, 878831315, 815474056, 815471640, 807173414,
+            803542982, 765394861, 742896377, 708128239, 708123651,
+            669590637, 625187241
+        ];
+
+        $searchUrl = "https://app.sefaruniversal.com/tree/" . $passport;
+
+        foreach ($boardIds as $boardId) {
+            $query = "
+                items_page_by_column_values(
+                    limit: 50,
+                    board_id: {$boardId},
+                    columns: [{column_id: \"enlace\", column_values: [\"{$searchUrl}\"]}]
+                ) {
+                    cursor
+                    items {
+                        id
+                        name
+                        column_values {
+                            id
+                            text
+                        }
+                    }
+                }
+            ";
+
+            $result = json_decode(json_encode(Monday::customQuery($query)), true);
+
+            if (!empty($result['items_page_by_column_values']['items'])) {
+                $item = $result['items_page_by_column_values']['items'][0];
+                $user->monday_id = $item['id']; // Guardar el ID de Monday
+                $user->save();
+                return $item;
+            }
+        }
+
+        return null;
+    }
 
 }

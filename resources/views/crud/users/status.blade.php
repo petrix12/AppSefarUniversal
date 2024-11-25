@@ -25,6 +25,15 @@
            {{ json_encode($HScontact) }}
         </div>
     </div>
+
+    <div style="padding:30px 50px;">
+        <div class="card" style="padding:35px;">
+            <center>
+                <img src="/vendor/adminlte/dist/img/LogoSefar.png" style="width:50px;">
+            </center>
+           {{ json_encode($mondayUserDetails) }}
+        </div>
+    </div>
 @stop
 
 @section('css')

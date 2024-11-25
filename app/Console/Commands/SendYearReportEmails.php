@@ -401,7 +401,9 @@ class SendYearReportEmails extends Command
                 'gflorez@sefarvzla.com',
                 'practicanteit@sefarvzla.com',
                 'cguerrero@sefarvzla.com',
-                'automatizacion@sefarvzla.com'
+                'automatizacion@sefarvzla.com',
+                'admin.sefar@sefarvzla.com',
+                'yeinsondiaz@sefarvzla.com'
                 ])
                     ->subject('Reporte Diario - ' . $peticion["dia"] . '/' . $peticion["mes"] . '/' . $peticion["año"])
                     ->attachData($pdfContent, 'reporte_diario_' . $peticion["dia"] . '-' . $peticion["mes"] . '-' . $peticion["año"] . '.pdf', [
