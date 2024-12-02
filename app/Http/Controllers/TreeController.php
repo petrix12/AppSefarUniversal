@@ -80,7 +80,7 @@ class TreeController extends Controller
                 return view('crud.agclientes.index');
             }
         }
-        
+
         // Si el usuario tiene el rol MG Tours
         if(Auth()->user()->hasRole('MG-Tours')){
             $autorizado = Agcliente::where('referido','LIKE','MG Tours')
@@ -139,7 +139,7 @@ class TreeController extends Controller
                 }
             }
 
-            //Eliminar basura de los ids de los padres        
+            //Eliminar basura de los ids de los padres
             foreach ($people as $key => $person) {
                 if ($person['IDMadre']<1){
                     $people[$key]['IDMadre']=null;
@@ -198,7 +198,7 @@ class TreeController extends Controller
             // Iterar sobre cada generación hacia atrás (padres, abuelos, bisabuelos, etc.)
             while (!empty($padresPorRevisar)) {
                 $nuevosPadres = [];
-                
+
                 foreach ($padresPorRevisar as $persona) {
                     // Verificar y añadir el padre a la lista si existe
                     if ($persona['idPadreNew'] !== null) {
@@ -224,7 +224,7 @@ class TreeController extends Controller
                         }
                     }
                 }
-                
+
                 // Continuar con los nuevos padres encontrados
                 $padresPorRevisar = $nuevosPadres;
             }
@@ -236,7 +236,7 @@ class TreeController extends Controller
                     $generacionPadre = isset($generaciones[$persona['idPadreNew']]) ? $generaciones[$persona['idPadreNew']] : 0;
                     $generacionMadre = isset($generaciones[$persona['idMadreNew']]) ? $generaciones[$persona['idMadreNew']] : 0;
                     $generacionActual = max($generacionPadre, $generacionMadre) + 1;
-                    
+
                     if (!isset($generaciones[$persona["id"]]) || $generaciones[$persona["id"]] != $generacionActual) {
                         $generaciones[$persona["id"]] = $generacionActual;
                         $cambio = true;
@@ -257,10 +257,10 @@ class TreeController extends Controller
                     }
 
                     $columnasparatabla[$i][] =  $arreglo[0];
-                    $columnasparatabla[$i][0]["showbtn"] = 2;  //2 es persona, 1 es boton de añadir, 0 es nada 
+                    $columnasparatabla[$i][0]["showbtn"] = 2;  //2 es persona, 1 es boton de añadir, 0 es nada
                 } else {
                     foreach ($columnasparatabla[$i-1] as $key2 => $persona2){
-                            
+
                         if(!isset($columnasparatabla[$i])){
                             $columnasparatabla[$i] = [];
                             $j = 0;
@@ -269,7 +269,7 @@ class TreeController extends Controller
                         }
 
                         //padre
-                        
+
                         if (@$persona2["idPadreNew"]==null){
 
                             if ($persona2["showbtn"] == 0) {
@@ -326,14 +326,14 @@ class TreeController extends Controller
 
             $parentescos = [];
             $parentescos_post_padres = [
-                "Abuel", 
-                "Bisabuel", 
-                "Tatarabuel", 
-                "Trastatarabuel", 
-                "Retatarabuel", 
-                "Sestarabuel", 
-                "Setatarabuel", 
-                "Octatarabuel", 
+                "Abuel",
+                "Bisabuel",
+                "Tatarabuel",
+                "Trastatarabuel",
+                "Retatarabuel",
+                "Sestarabuel",
+                "Setatarabuel",
+                "Octatarabuel",
                 "Nonatarabuel",
                 "Decatarabuel",
                 "Undecatarabuel",
@@ -404,7 +404,7 @@ class TreeController extends Controller
             $cliente = json_decode(json_encode(User::where("passport",$IDCliente)->get()),true);
 
             $temparr = [];
-            $var = 7;
+            $var = 5;
             foreach ($columnasparatabla as $key => $columna){
                 if($key<$var){
                     $temparr[] = $columna;
@@ -498,7 +498,7 @@ class TreeController extends Controller
                 return view('crud.agclientes.index');
             }
         }
-        
+
         // Si el usuario tiene el rol MG Tours
         if(Auth()->user()->hasRole('MG-Tours')){
             $autorizado = Agcliente::where('referido','LIKE','MG Tours')
@@ -557,7 +557,7 @@ class TreeController extends Controller
                 }
             }
 
-            //Eliminar basura de los ids de los padres        
+            //Eliminar basura de los ids de los padres
             foreach ($people as $key => $person) {
                 if ($person['IDMadre']<1){
                     $people[$key]['IDMadre']=null;
@@ -607,7 +607,7 @@ class TreeController extends Controller
                     $generaciones[$persona["id"]] = 1;
                 }
             }
-            
+
             $cambio = true;
             while ($cambio) {
                 $cambio = false;
@@ -615,7 +615,7 @@ class TreeController extends Controller
                     $generacionPadre = isset($generaciones[$persona['idPadreNew']]) ? $generaciones[$persona['idPadreNew']] : 0;
                     $generacionMadre = isset($generaciones[$persona['idMadreNew']]) ? $generaciones[$persona['idMadreNew']] : 0;
                     $generacionActual = max($generacionPadre, $generacionMadre) + 1;
-                    
+
                     if (!isset($generaciones[$persona["id"]]) || $generaciones[$persona["id"]] != $generacionActual) {
                         $generaciones[$persona["id"]] = $generacionActual;
                         $cambio = true;
@@ -636,10 +636,10 @@ class TreeController extends Controller
                     }
 
                     $columnasparatabla[$i][] =  $arreglo[0];
-                    $columnasparatabla[$i][0]["showbtn"] = 2;  //2 es persona, 1 es boton de añadir, 0 es nada 
+                    $columnasparatabla[$i][0]["showbtn"] = 2;  //2 es persona, 1 es boton de añadir, 0 es nada
                 } else {
                     foreach ($columnasparatabla[$i-1] as $key2 => $persona2){
-                            
+
                         if(!isset($columnasparatabla[$i])){
                             $columnasparatabla[$i] = [];
                             $j = 0;
@@ -648,7 +648,7 @@ class TreeController extends Controller
                         }
 
                         //padre
-                        
+
                         if (@$persona2["idPadreNew"]==null){
 
                             if ($persona2["showbtn"] == 0) {
@@ -705,14 +705,14 @@ class TreeController extends Controller
 
             $parentescos = [];
             $parentescos_post_padres = [
-                "Abuel", 
-                "Bisabuel", 
-                "Tatarabuel", 
-                "Trastatarabuel", 
-                "Retatarabuel", 
-                "Sestarabuel", 
-                "Setatarabuel", 
-                "Octatarabuel", 
+                "Abuel",
+                "Bisabuel",
+                "Tatarabuel",
+                "Trastatarabuel",
+                "Retatarabuel",
+                "Sestarabuel",
+                "Setatarabuel",
+                "Octatarabuel",
                 "Nonatarabuel",
                 "Decatarabuel",
                 "Undecatarabuel",
