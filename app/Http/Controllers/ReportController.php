@@ -71,9 +71,10 @@ class ReportController extends Controller
         );
 
         // Usuarios registrados en los últimos 30 días
-        $usuariosUltimos30Dias = User::where('created_at', '>=', $fechaActual->copy()->where('email', 'not like', '%sefarvzla%')
+        $usuariosUltimos30Dias = User::where('created_at', '>=', $fechaActual->copy()->subDays(30))
+        ->where('email', 'not like', '%sefarvzla%')
         ->where('email', 'not like', '%sefaruniversal%')
-        ->where('name', 'not like', '%prueba%')->subDays(30))->get();
+        ->where('name', 'not like', '%prueba%')->get();
 
         // Número de personas registradas hoy
         $registrosHoy = $usuariosHoy->count();
