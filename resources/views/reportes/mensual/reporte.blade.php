@@ -54,7 +54,7 @@
                 // Crear la fecha a partir de año y mes
                 const defaultDate = new Date(year, month - 1);
 
-                flatpickr("#fecha", {
+                flatpickr(".fecha", {
                     defaultDate: defaultDate,
                     plugins: [
                         new monthSelectPlugin({
@@ -106,8 +106,8 @@
                 document.getElementById('dateForm').submit();
             }
 
-            function goToReport() {
-                const fechaSeleccionada = document.getElementById('fecha').value;
+            function goToReport(id) {
+                const fechaSeleccionada = document.getElementById(id).value;
 
                 // Asegura que haya una fecha seleccionada
                 if (fechaSeleccionada) {
@@ -165,7 +165,7 @@
                     Mes Anterior
                 </button>
 
-                <input type="text" onchange="goToReport()" id="fecha" class="cfrSefar text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" placeholder="Selecciona una fecha">
+                <input type="text" onchange="goToReport('primero')" id="primero" class="fecha cfrSefar text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" placeholder="Selecciona una fecha">
 
                 <!-- Botón de día siguiente -->
                 <button onclick="navigateToReport(1)" class="cfrSefar text-white bg-indigo-600 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
@@ -388,6 +388,20 @@
                 <p><small>* Solo se consideran los pagos hechos a través de la pasarela de pago de <a href="https://app.sefaruniversal.com" target="_blank">app.sefaruniversal.com</a></small></p>
                 <p><small>* Solo se consideran descuentos del 100%</a></small></p>
                 </center>
+            </div>
+
+            <div class="flex justify-between max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:py-6 lg:px-8">
+                <!-- Botón de día anterior -->
+                <button onclick="navigateToReport(-1)" class="cfrSefar text-white bg-indigo-600 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Mes Anterior
+                </button>
+
+                <input type="text" onchange="goToReport('final')" id="final" class="fecha cfrSefar text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" placeholder="Selecciona una fecha">
+
+                <!-- Botón de día siguiente -->
+                <button onclick="navigateToReport(1)" class="cfrSefar text-white bg-indigo-600 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Mes Siguiente
+                </button>
             </div>
         </center>
 
