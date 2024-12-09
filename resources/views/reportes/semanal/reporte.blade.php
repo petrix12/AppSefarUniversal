@@ -6,6 +6,10 @@
 
 @stop
 
+@php
+    $fechaInicioFormatoConvertida = str_replace('/', '-', $fechaInicioFormato);
+@endphp
+
 @section('content')
     <x-app-layout>
         @php
@@ -31,9 +35,9 @@
         <script type="text/javascript">
             const fechaActual = new Date("{{$peticion['año']}}-{{$peticion['mes']}}-{{$peticion['dia']}}");
 
-            function goToReport() {
+            function goToReport(id) {
                 // Obtiene el valor del input de fecha
-                const fechaSeleccionada = document.getElementById('fecha').value;
+                const fechaSeleccionada = document.getElementById(id).value;
 
                 // Asegura que haya una fecha seleccionada
                 if (fechaSeleccionada) {
@@ -81,19 +85,23 @@
                 document.getElementById('dateForm').submit();
             }
 
-            document.addEventListener('DOMContentLoaded', function() {
-                flatpickr("#fecha", {
-                    dateFormat: "d-m-Y",  // Formato de la fecha
+            document.addEventListener('DOMContentLoaded', function () {
+                // Valor de la fecha predeterminada desde PHP
+                const fechaInicioFormato = "{{ $fechaInicioFormatoConvertida }}";
+
+                // Inicializa flatpickr
+                flatpickr(".fecha", {
+                    dateFormat: "d-m-Y", // Formato de la fecha
+                    defaultDate: fechaInicioFormato, // Establece la fecha predeterminada
                     enable: [
-                        function(date) {
+                        function (date) {
                             // Habilitar solo los lunes (getDay() devuelve 1 para lunes)
-                            return date.getDay() == 1;
-                        }
+                            return date.getDay() === 1;
+                        },
                     ],
-                    maxDate: new Date(),
-                    disable: [],  // Asegúrate de que no haya fechas bloqueadas
+                    maxDate: new Date(), // No permitir fechas futuras
                     locale: {
-                        firstDayOfWeek: 1,  // Comienza la semana el lunes
+                        firstDayOfWeek: 1, // Comienza la semana el lunes
                         weekdays: {
                             shorthand: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
                             longhand: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
@@ -105,6 +113,7 @@
                     },
                 });
             });
+
         </script>
 
         <form id="dateForm" action="{{ route('getreportesemanal') }}" method="POST" style="display: none;">
@@ -139,7 +148,7 @@
                     Semana Anterior
                 </button>
 
-                <input type="text" onchange="goToReport()" id="fecha" class="cfrSefar text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" placeholder="Selecciona una fecha">
+                <input type="text" id="superior" onchange="goToReport('superior')" class="fecha cfrSefar text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" placeholder="Selecciona una fecha">
 
                 <!-- Botón de día siguiente -->
                 <button onclick="navigateToReport(1)" class="cfrSefar text-white bg-indigo-600 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
@@ -386,6 +395,20 @@
                 <p><small>* Solo se consideran los pagos hechos a través de la pasarela de pago de <a href="https://app.sefaruniversal.com" target="_blank">app.sefaruniversal.com</a></small></p>
                 <p><small>* Solo se consideran descuentos del 100%</a></small></p>
                 </center>
+            </div>
+
+            <div class="flex justify-between max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:py-6 lg:px-8">
+                <!-- Botón de día anterior -->
+                <button onclick="navigateToReport(-1)" class="cfrSefar text-white bg-indigo-600 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Semana Anterior
+                </button>
+
+                <input type="text" id="inferior" onchange="goToReport('inferior')" class="fecha cfrSefar text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" placeholder="Selecciona una fecha">
+
+                <!-- Botón de día siguiente -->
+                <button onclick="navigateToReport(1)" class="cfrSefar text-white bg-indigo-600 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Semana Siguiente
+                </button>
             </div>
         </center>
 
