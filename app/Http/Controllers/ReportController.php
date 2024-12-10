@@ -1334,6 +1334,184 @@ class ReportController extends Controller
         ));
     }
 
+    public function getreporteanual(Request $request)
+    {
+        $anio = $request->input('anio', date('Y')); // Año solicitado, por defecto el año actual
+        $anioAnterior = $anio - 1;
+
+        // Definir fechas de inicio y fin para ambos años
+        $fechaInicioAnio = Carbon::createFromDate($anio, 1, 1)->startOfDay();
+        $fechaFinAnio = Carbon::createFromDate($anio, 12, 31)->endOfDay();
+        $fechaInicioAnioAnterior = Carbon::createFromDate($anioAnterior, 1, 1)->startOfDay();
+        $fechaFinAnioAnterior = Carbon::createFromDate($anioAnterior, 12, 31)->endOfDay();
+
+        // Usuarios registrados en el año actual
+        $usuariosAnioActual = User::whereBetween('created_at', [$fechaInicioAnio, $fechaFinAnio])
+            ->where('email', 'not like', '%sefarvzla%')
+            ->where('email', 'not like', '%sefaruniversal%')
+            ->where('name', 'not like', '%prueba%')
+            ->get();
+
+        $usuariosRegistrados = $usuariosAnioActual->count();
+
+        // Usuarios registrados en el año anterior
+        $usuariosAnioAnterior = User::whereBetween('created_at', [$fechaInicioAnioAnterior, $fechaFinAnioAnterior])
+            ->where('email', 'not like', '%sefarvzla%')
+            ->where('email', 'not like', '%sefaruniversal%')
+            ->where('name', 'not like', '%prueba%')
+            ->get();
+
+        // Calcular promedios de usuarios por día para ambos años
+        $promedioAnioActual = $usuariosRegistrados / $fechaInicioAnio->daysInYear;
+        $promedioAnioAnterior = $usuariosAnioAnterior->count() / $fechaInicioAnioAnterior->daysInYear;
+
+        // Calcular usuarios registrados por servicio
+        $usuariosPorServicioAnioActual = $usuariosAnioActual->groupBy('servicio')->map->count();
+        $usuariosPorServicioAnioAnterior = $usuariosAnioAnterior->groupBy('servicio')->map->count();
+
+        // Calcular estatus de los usuarios
+        $estatusCount = [
+            'No ha pagado' => $usuariosAnioActual->where('pay', 0)->count(),
+            'Pagó pero no completó información' => $usuariosAnioActual->where('pay', 1)->count(),
+            'Pagó y completó información, pero no firmó contrato' => $usuariosAnioActual->where('pay', 2)->where('contrato', 0)->count(),
+            'Pagó, completó información y firmó contrato' => $usuariosAnioActual->where('pay', 2)->where('contrato', 1)->count(),
+        ];
+
+        // Generar datos para gráficos de registros por mes
+        $labels = [];
+        $dataActual = [];
+        $dataAnterior = [];
+
+        for ($mes = 1; $mes <= 12; $mes++) {
+            $inicioMesActual = Carbon::create($anio, $mes, 1)->startOfDay();
+            $finMesActual = $inicioMesActual->copy()->endOfMonth();
+            $inicioMesAnterior = Carbon::create($anioAnterior, $mes, 1)->startOfDay();
+            $finMesAnterior = $inicioMesAnterior->copy()->endOfMonth();
+
+            $labels[] = $inicioMesActual->translatedFormat('F');
+            $dataActual[] = User::whereBetween('created_at', [$inicioMesActual, $finMesActual])
+                ->where('email', 'not like', '%sefarvzla%')
+                ->where('email', 'not like', '%sefaruniversal%')
+                ->where('name', 'not like', '%prueba%')->count();
+
+            $dataAnterior[] = User::whereBetween('created_at', [$inicioMesAnterior, $finMesAnterior])
+                ->where('email', 'not like', '%sefarvzla%')
+                ->where('email', 'not like', '%sefaruniversal%')
+                ->where('name', 'not like', '%prueba%')->count();
+        }
+
+        // Configuración para gráficos diurnos y nocturnos
+        $chartConfig = [
+            'type' => 'line',
+            'data' => [
+                'labels' => $labels,
+                'datasets' => [
+                    [
+                        'label' => "Registros en $anio",
+                        'data' => $dataActual,
+                        'borderColor' => 'rgba(0, 0, 0, 0.5)',
+                        'backgroundColor' => '#093143',
+                        'fill' => false,
+                    ],
+                    [
+                        'label' => "Registros en $anioAnterior",
+                        'data' => $dataAnterior,
+                        'borderColor' => 'rgba(0, 123, 255, 0.5)',
+                        'backgroundColor' => '#007bff',
+                        'fill' => false,
+                    ],
+                ],
+            ],
+        ];
+
+        $chartConfignight = $chartConfig;
+        $chartConfignight['data']['datasets'][0]['borderColor'] = 'rgba(255, 255, 255, 0.5)';
+        $chartConfignight['data']['datasets'][1]['borderColor'] = 'rgba(123, 255, 255, 0.5)';
+        $chartConfignight['options']['scales'] = [
+            'xAxes' => [['ticks' => ['fontColor' => '#eeeeee']]],
+            'yAxes' => [['ticks' => ['fontColor' => '#eeeeee']]],
+        ];
+
+        $chartUrl = 'https://quickchart.io/chart?c=' . urlencode(json_encode($chartConfig));
+        $chartNight = 'https://quickchart.io/chart?c=' . urlencode(json_encode($chartConfignight));
+
+        // Datos para gráficos de barras
+        $datosgraficos = [
+            'anio_actual' => [
+                'promedio' => round($promedioAnioActual, 2),
+                'maximo' => max($dataActual),
+                'minimo' => min($dataActual),
+                'total' => array_sum($dataActual),
+            ],
+            'anio_anterior' => [
+                'promedio' => round($promedioAnioAnterior, 2),
+                'maximo' => max($dataAnterior),
+                'minimo' => min($dataAnterior),
+                'total' => array_sum($dataAnterior),
+            ],
+        ];
+
+        $datosgraficosporcentaje = [
+            'anio_actual' => [
+                'promedio' => round(($promedioAnioActual * 100) / max($dataActual), 2),
+            ],
+            'anio_anterior' => [
+                'promedio' => round(($promedioAnioAnterior * 100) / max($dataAnterior), 2),
+            ],
+        ];
+
+        // Facturas (Stripe)
+        $facturas = Factura::where('met', 'stripe')
+        ->whereBetween('created_at', [$fechaInicioAnio, $fechaFinAnio])
+        ->with(['compras' => function ($query) {
+            $query->select('servicio_hs_id', 'monto', 'hash_factura');
+        }])
+        ->get()
+        ->flatMap(function ($factura) {
+            return $factura->compras;
+        })
+        ->groupBy('servicio_hs_id')
+        ->map(function ($compras) {
+            return $compras->sum('monto');
+        })
+        ->toArray();
+
+        // Facturas con Cupones
+        $facturasCupones = Factura::where('met', 'cupon')
+        ->whereBetween('created_at', [$fechaInicioAnio, $fechaFinAnio])
+        ->with(['compras' => function ($query) {
+            $query->select('servicio_hs_id', 'monto', 'hash_factura');
+        }])
+        ->get()
+        ->flatMap(function ($factura) {
+            return $factura->compras;
+        })
+        ->groupBy('servicio_hs_id')
+        ->map(function ($compras) {
+            return $compras->sum('monto');
+        })
+        ->toArray();
+
+        return view('reportes.anual.reporte', compact(
+            'anio',
+            'anioAnterior',
+            'usuariosAnioActual',
+            'usuariosAnioAnterior',
+            'usuariosPorServicioAnioActual',
+            'usuariosPorServicioAnioAnterior',
+            'estatusCount',
+            'promedioAnioActual',
+            'promedioAnioAnterior',
+            'datosgraficos',
+            'datosgraficosporcentaje',
+            'chartUrl',
+            'chartNight',
+            'usuariosRegistrados',
+            'facturas',
+            'facturasCupones'
+        ));
+    }
+
     public function makeReport() {
         $dayscount = "4";
         $path = "/pdfReportes/";
