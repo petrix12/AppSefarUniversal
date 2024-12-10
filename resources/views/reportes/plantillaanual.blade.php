@@ -1,33 +1,5 @@
 @php
-    // Configura la localización a español
-    setlocale(LC_TIME, 'es_ES', 'Spanish_Spain', 'es_ES.UTF-8');
-
-    // Convertimos el número del mes actual en su nombre en español
-    $nombreMesActual = ucfirst(strftime('%B', mktime(0, 0, 0, $peticion["mes"], 10)));
-
-    // Calculamos el mes anterior (si es enero, va a diciembre del año anterior)
-    $mesAnterior = $peticion["mes"] - 1;
-    if ($mesAnterior < 1) {
-        $mesAnterior = 12;
-    }
-    $nombreMesAnterior = ucfirst(strftime('%B', mktime(0, 0, 0, $mesAnterior, 10)));
-
-    function mostrarGraficoQuickChart($url) {
-        // Intentar obtener la imagen
-        $imageData = file_get_contents($url);
-
-        // Verificar si la solicitud fue exitosa
-        if ($imageData !== false) {
-            // Crear una imagen temporal
-            $tmpfile = tempnam(sys_get_temp_dir(), 'chart');
-            file_put_contents($tmpfile, $imageData);
-
-            // Mostrar la imagen
-            echo '<img src="' . $tmpfile . '" alt="Gráfico Diario" style="width: 100%; height: auto;">';
-        } else {
-            echo '<p>No se pudo cargar el gráfico. Por favor, inténtalo más tarde.</p>';
-        }
-    }
+    $actualanio = $anio;
 @endphp
 
 <!DOCTYPE html>
@@ -35,7 +7,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte Diario</title>
+    <title>Reporte Anual</title>
     <style>
         html, body {
             margin: 0;
@@ -43,14 +15,23 @@
             width: 100%;
             height: 100%;
         }
-        .background-pages {
+
+        body:before {
+            display: block;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            background: url('{{ public_path("/img/reportes/semanal.png") }}') no-repeat center center;
+            top: -1in; right: -1in; bottom: -1in; left: -1.5in;
+            background-image: url('{{ public_path("/img/reportes/anual.png") }}');
+            background-size: cover;
+            background-repeat: no-repeat;
+            content: "";
+            z-index: -1000;
+        }
+
+        @page {
+            margin: 2cm 1.8cm 2cm 2.8cm!important;
+            background-image: ;
+            background-repeat: no-repeat;
+            background-position: center;
             background-size: cover;
         }
 
@@ -64,8 +45,6 @@
 
         .card {
             border: 0;
-            padding: 2cm 1.8cm 2cm 2.8cm;
-            margin-bottom: 16px;
         }
 
         .chart-container {
@@ -105,157 +84,171 @@
         }
 
         th, td {
-            padding: 8px;
+            padding: 6px 8px;
             text-align: left;
             border: 1px solid #ddd;
         }
     </style>
 </head>
 <body>
-    <div class="background-pages"></div>
-    <div class="card">
+    <div class="content">
         <center>
-            <img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
-            <h2>Reporte Diario - {{$peticion["dia"]}}/{{$peticion["mes"]}}/{{$peticion["año"]}}</h2>
-        </center>
-        <h3>Usuarios registrados en el día: {{$registrosHoy}}</h3>
-        <table style="border: none;">
-            <tr>
-                <td style="width:50%;">
-                    <center>
-                    <h3>{{$nombreMesAnterior}} - {{$peticion["año"]}}</h3>
-                    <div class="bar-container">
-                        <div class="bar" style="width: {{$datosgraficosporcentaje['mes_anterior']['promedio']}}%;"></div>
-                        <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_anterior']['promedio']}}%;">{{$datosgraficosporcentaje['mes_anterior']['promedio']}}%</div>
-                    </div>
-                    <p>
-                        <strong>Mínimo:</strong> {{$datosgraficos['mes_anterior']['minimo']}}<br>
-                        <strong>Máximo:</strong> {{$datosgraficos['mes_anterior']['maximo']}}<br>
-                        <strong>Promedio:</strong> {{$datosgraficos['mes_anterior']['promedio']}}<br>
-                        <strong>Total (Mes Anterior - {{$nombreMesAnterior}}):</strong> {{$datosgraficos['mes_anterior']['total']}}<br>
-                    </p>
-                    </center>
-                </td>
-                <td style="width:50%;">
-                    <center>
-                    <h3>{{$nombreMesActual}} - {{$peticion["año"]}}</h3>
-                    <div class="bar-container">
-                        <div class="bar" style="width: {{$datosgraficosporcentaje['mes_actual']['promedio']}}%;"></div>
-                        <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_actual']['promedio']}}%;">{{$datosgraficosporcentaje['mes_actual']['promedio']}}%</div>
-                    </div>
-                    <p>
-                        <strong>Mínimo:</strong> {{$datosgraficos['mes_actual']['minimo']}}<br>
-                        <strong>Máximo:</strong> {{$datosgraficos['mes_actual']['maximo']}}<br>
-                        <strong>Promedio:</strong> {{$datosgraficos['mes_actual']['promedio']}}<br>
-                        <strong>Total ({{$nombreMesActual}} - {{$peticion["año"]}}):</strong> {{$datosgraficos['mes_actual']['total']}}<br>
-                    </p>
-                    </center>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <center>
-                        <h3>{{$nombreMesAnterior}} - {{$peticion["año"] - 1}}</h3>
-                        <div class="bar-container">
-                            <div class="bar" style="width: {{$datosgraficosporcentaje['mes_anterior']['promedio']}}%;"></div>
-                            <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_anterior']['promedio']}}%;">{{$datosgraficosporcentaje['mes_anterior']['promedio']}}%</div>
-                        </div>
-                        <p>
-                            <strong>Mínimo:</strong> {{$datosgraficos['mes_anterior_aa']['minimo']}}<br>
-                            <strong>Máximo:</strong> {{$datosgraficos['mes_anterior_aa']['maximo']}}<br>
-                            <strong>Promedio:</strong> {{$datosgraficos['mes_anterior_aa']['promedio']}}<br>
-                            <strong>Total ({{$nombreMesAnterior}} - {{$peticion["año"] - 1}}):</strong> {{$datosgraficos['mes_anterior_aa']['total']}}<br>
-                        </p>
-                    </center>
-                </td>
-                <td>
-                    <center>
-                        <h3>{{$nombreMesActual}} - {{$peticion["año"] - 1}}</h3>
-                        <div class="bar-container">
-                            <div class="bar" style="width: {{$datosgraficosporcentaje['mes_actual']['promedio']}}%;"></div>
-                            <div class="bar-label" style="left: {{$datosgraficosporcentaje['mes_actual']['promedio']}}%;">{{$datosgraficosporcentaje['mes_actual']['promedio']}}%</div>
-                        </div>
-                        <p>
-                            <strong>Mínimo:</strong> {{$datosgraficos['mes_actual_aa']['minimo']}}<br>
-                            <strong>Máximo:</strong> {{$datosgraficos['mes_actual_aa']['maximo']}}<br>
-                            <strong>Promedio:</strong> {{$datosgraficos['mes_actual_aa']['promedio']}}<br>
-                            <strong>Total ({{$nombreMesActual}} - {{$peticion["año"] - 1}}):</strong> {{$datosgraficos['mes_actual_aa']['total']}}<br>
-                        </p>
-                    </center>
-                </td>
-            </tr>
-        </table>
-    </div>
-    <div style="page-break-before: always;"></div>
-    <div class="card">
-    <center><img class='logo' src='{{ public_path("/img/logonormal.png") }}' /></center>
-        <div style="text-align: center;">
-            <img src="{{$chartUrl}}" alt="Gráfico Diario" style="width: 100%; height: auto;">
-        </div>
-    </div>
-    <div style="page-break-before: always;"></div>
-    <div class="card">
-    <center><img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
-        <h3>Usuarios registrados:</h3></center>
-        <table>
-            <thead class="theadreport">
-                <tr>
-                    <th>Nombre</th>
-                    <th>Apellido</th>
-                    <th>Servicio</th>
-                    <th>Estado de Pago</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($usuariosHoy as $usuario)
-                <tr>
-                    <td>{{ $usuario->nombres }}</td>
-                    <td>{{ $usuario->apellidos }}</td>
-                    <td>
-                        @php
-                            $servicioHsIds = $usuario->compras->pluck('servicio_hs_id')->join(', ');
-                        @endphp
+            <div class="card">
+                <center>
+                    <img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
+                    <h2>Reporte Anual - {{$anio}}</h2>
+                </center>
+                <h3>Usuarios registrados durante el año: {{ $usuariosRegistrados }}</h3>
+                <table style="border: none;">
+                    <tr>
+                        <td style="width:50%">
+                            <center>
+                            <h3>{{$anioAnterior}}</h3>
+                            <div class="bar-container">
+                                <div class="bar" style="width: {{$datosgraficosporcentaje['anio_anterior']['promedio']}}%;"></div>
+                                <div class="bar-label" style="left: {{$datosgraficosporcentaje['anio_anterior']['promedio']}}%;">{{$datosgraficosporcentaje['anio_anterior']['promedio']}}%</div>
+                            </div>
+                            <p>
+                                <strong>Mínimo:</strong> {{$datosgraficos['anio_anterior']['minimo']}}<br>
+                                <strong>Máximo:</strong> {{$datosgraficos['anio_anterior']['maximo']}}<br>
+                                <strong>Promedio:</strong> {{$datosgraficos['anio_anterior']['promedio']}}<br>
+                                <strong>Total {{$anioAnterior}}:</strong> {{$datosgraficos['anio_anterior']['total']}}<br>
+                            </p>
+                            </center>
+                        </td>
+                        <td style="width:50%">
+                            <center>
+                            <h3>{{$anio}}</h3>
+                            <div class="bar-container">
+                                <div class="bar" style="width: {{$datosgraficosporcentaje['anio_actual']['promedio']}}%;"></div>
+                                <div class="bar-label" style="left: {{$datosgraficosporcentaje['anio_actual']['promedio']}}%;">{{$datosgraficosporcentaje['anio_actual']['promedio']}}%</div>
+                            </div>
+                            <p>
+                                <strong>Mínimo:</strong> {{$datosgraficos['anio_actual']['minimo']}}<br>
+                                <strong>Máximo:</strong> {{$datosgraficos['anio_actual']['maximo']}}<br>
+                                <strong>Promedio:</strong> {{$datosgraficos['anio_actual']['promedio']}}<br>
+                                <strong>Total {{$anio}}:</strong> {{$datosgraficos['anio_actual']['total']}}<br>
+                            </p>
+                            </center>
+                        </td>
+                    </tr>
+                </table>
+                <h3 style="margin-top:25px;">Gráfico Comparativo de Registros ({{ $anio }} vs {{ $anioAnterior }})</h3>
+                <img src="{{ $chartUrl }}" alt="Gráfico Comparativo" style="width:100%;">
+            </div>
 
-                        {{ $servicioHsIds ? $servicioHsIds : $usuario->servicio }}
-                    </td>
-                    <td>
-                        @if ($usuario->pay == 0)
-                            No ha pagado
-                        @elseif ($usuario->pay == 1)
-                            Pagó pero no completó información
-                        @elseif ($usuario->pay == 2)
-                            @if ($usuario->contrato == 0)
-                                Pagó y completó información
-                            @elseif ($usuario->contrato == 1)
-                                Pagó, completó información y firmó contrato
-                            @endif
-                        @endif
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-    <div style="page-break-before: always;"></div>
-    <div class="card">
-    <center><img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
-        <h3>Cantidad de usuarios registrados por servicio:</h3></center>
-        <table>
-            <thead class="theadreport">
-                <tr>
-                    <th>Servicio</th>
-                    <th>Cantidad de Usuarios Registrados</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($usuariosPorServicio as $servicio => $cantidad)
-                <tr>
-                    <td>{{ $servicio }}</td>
-                    <td>{{ $cantidad }}</td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+            <div style="page-break-before: always;"></div>
+
+            <div class="card">
+                <center>
+                    <img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
+                </center>
+                <h3>Usuarios registrados por estatus</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Estatus</th>
+                            <th>Cantidad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($estatusCount as $estatus => $cantidad)
+                            <tr>
+                                <td>{{ $estatus }}</td>
+                                <td>{{ $cantidad }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="page-break-before: always;"></div>
+
+            <div class="card">
+                <center>
+                    <img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
+                </center>
+                <h3>Usuarios registrados por servicio</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Servicio</th>
+                            <th>Cantidad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($usuariosPorServicioAnioActual as $servicio => $cantidad)
+                            <tr>
+                                <td>{{ $servicio }}</td>
+                                <td>{{ $cantidad }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+                <p><small>* Un usuario puede contratar multiples servicios en Sefar Universal, por lo que puede ser que hay mas elementos en esta tabla que en la tabla de Usuarios Registrados por Estatus</small></p>
+            </div>
+
+            <div style="page-break-before: always;"></div>
+
+            <div class="card">
+                <center>
+                    <img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
+                </center>
+                <h3>Pagos registrados durante el año (Stripe)</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Servicio</th>
+                            <th>Monto Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($facturas as $servicio => $monto)
+                            <tr>
+                                <td>{{ $servicio }}</td>
+                                <td>{{ $monto }}€</td>
+                            </tr>
+                        @endforeach
+                        <tr>
+                            <td><strong>Total General:</strong></td>
+                            <td><strong>{{ array_sum($facturas) }}€</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p><small>* Solo se consideran los pagos hechos a través de la pasarela de pago de <a href="https://app.sefaruniversal.com" target="_blank">app.sefaruniversal.com</a></small></p>
+            </div>
+
+            <div style="page-break-before: always;"></div>
+
+            <div class="card">
+                <center>
+                    <img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
+                </center>
+                <h3>Pagos registrados con Cupon</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Servicio</th>
+                            <th>Monto Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($facturasCupones as $servicio => $monto)
+                            <tr>
+                                <td>{{ $servicio }}</td>
+                                <td>{{ $monto }}€</td>
+                            </tr>
+                        @endforeach
+                        <tr>
+                            <td><strong>Total General:</strong></td>
+                            <td><strong>{{ array_sum($facturasCupones) }}€</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p><small>* Solo se consideran los pagos hechos a través de la pasarela de pago de <a href="https://app.sefaruniversal.com" target="_blank">app.sefaruniversal.com</a></small></p>
+                <p><small>* Solo se consideran descuentos del 100%</small></p>
+            </div>
+        </center>
     </div>
 </body>
 </html>

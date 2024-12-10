@@ -6,6 +6,8 @@ use Illuminate\Console\Command;
 use PDF;
 use Mail;
 use App\Models\User;
+use App\Models\Factura;
+use App\Models\Compras;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -41,359 +43,201 @@ class SendYearReportEmails extends Command
 
     public function handle()
     {
-        $peticion = [];
+        $anio = date('Y') - 1; // Año pasado
+        $anioAnterior = $anio - 1;
 
-        $fechaActual = Carbon::now()->setTimezone('UTC');
+        // Definir fechas de inicio y fin para ambos años
+        $fechaInicioAnio = Carbon::createFromDate($anio, 1, 1)->startOfDay();
+        $fechaFinAnio = Carbon::createFromDate($anio, 12, 31)->endOfDay();
+        $fechaInicioAnioAnterior = Carbon::createFromDate($anioAnterior, 1, 1)->startOfDay();
+        $fechaFinAnioAnterior = Carbon::createFromDate($anioAnterior, 12, 31)->endOfDay();
 
-        $fechaInicio = Carbon::now()->startOfWeek(Carbon::MONDAY)->subWeek()->setTime(0, 0, 0)->setTimezone('UTC');
-
-        $fechaFin = Carbon::now()->startOfWeek(Carbon::MONDAY)->subWeek()->endOfWeek()->setTime(23, 59, 59)->setTimezone('UTC');
-
-        $peticion['dia'] = $fechaInicio->day;
-        $peticion['mes'] = $fechaInicio->month;
-        $peticion['año'] = $fechaInicio->year;
-
-        $usuariosSemanaPasada = User::with('compras')
-            ->whereBetween('created_at', [$fechaInicio, $fechaFin])
+        // Usuarios registrados en el año actual
+        $usuariosAnioActual = User::whereBetween('created_at', [$fechaInicioAnio, $fechaFinAnio])
+            ->where('email', 'not like', '%sefarvzla%')
+            ->where('email', 'not like', '%sefaruniversal%')
+            ->where('name', 'not like', '%prueba%')
             ->get();
 
-        // Usuarios registrados en los últimos 30 días
-        $usuariosUltimos30Dias = User::where('created_at', '>=', $fechaActual->subDays(30))->get();
+        $usuariosRegistrados = $usuariosAnioActual->count();
 
-        // Número de personas registradas hoy
-        $registrosHoy = $usuariosHoy->count();
+        // Usuarios registrados en el año anterior
+        $usuariosAnioAnterior = User::whereBetween('created_at', [$fechaInicioAnioAnterior, $fechaFinAnioAnterior])
+            ->where('email', 'not like', '%sefarvzla%')
+            ->where('email', 'not like', '%sefaruniversal%')
+            ->where('name', 'not like', '%prueba%')
+            ->get();
 
-        // Promedio de registros en el mes actual
-        $promedioMesActual = User::whereMonth('created_at', $peticion['mes'])
-                                ->whereYear('created_at', $peticion['año'])
-                                ->count() / $fechaActual->daysInMonth;
+        // Calcular promedios de usuarios por día para ambos años
+        $promedioAnioActual = $usuariosRegistrados / $fechaInicioAnio->daysInYear;
+        $promedioAnioAnterior = $usuariosAnioAnterior->count() / $fechaInicioAnioAnterior->daysInYear;
 
-        $diaMasRegistrosMesActual = User::whereMonth('created_at', $peticion['mes'])
-                                ->whereYear('created_at', $peticion['año'])
-                                ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
-                                ->groupBy('dia')
-                                ->orderBy('registros', 'desc')
-                                ->first();
+        // Calcular usuarios registrados por servicio
+        $usuariosPorServicioAnioActual = $usuariosAnioActual->groupBy('servicio')->map->count();
+        $usuariosPorServicioAnioAnterior = $usuariosAnioAnterior->groupBy('servicio')->map->count();
 
-        $diaMenosRegistrosMesActual = User::whereMonth('created_at', $peticion['mes'])
-                                    ->whereYear('created_at', $peticion['año'])
-                                    ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
-                                    ->groupBy('dia')
-                                    ->orderBy('registros', 'asc')
-                                    ->first();
-
-
-        // Promedio de registros en el mes anterior
-        $mesAnterior = $fechaActual->subMonth();
-        $promedioMesAnterior = User::whereMonth('created_at', $mesAnterior->month)
-                                    ->whereYear('created_at', $mesAnterior->year)
-                                    ->count() / $mesAnterior->daysInMonth;
-
-        $diaMasRegistrosMesAnterior = User::whereMonth('created_at', $mesAnterior->month)
-                                ->whereYear('created_at', $mesAnterior->year)
-                                ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
-                                ->groupBy('dia')
-                                ->orderBy('registros', 'desc')
-                                ->first();
-
-        $diaMenosRegistrosMesAnterior = User::whereMonth('created_at', $mesAnterior->month)
-                                    ->whereYear('created_at', $mesAnterior->year)
-                                    ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
-                                    ->groupBy('dia')
-                                    ->orderBy('registros', 'asc')
-                                    ->first();
-
-        // Promedio de registros en el mismo mes del año anterior
-        $añoAnterior = $fechaActual->subYear();
-        $promedioMismoMesAñoAnterior = User::whereMonth('created_at', $peticion['mes'])
-                                            ->whereYear('created_at', $añoAnterior->year)
-                                            ->count() / $fechaActual->daysInMonth;
-
-        $diaMasRegistrosMesActual_aa = User::whereMonth('created_at', $peticion['mes'])
-                                ->whereYear('created_at', $añoAnterior->year)
-                                ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
-                                ->groupBy('dia')
-                                ->orderBy('registros', 'desc')
-                                ->first();
-
-        $diaMenosRegistrosMesActual_aa = User::whereMonth('created_at', $peticion['mes'])
-                                ->whereYear('created_at', $añoAnterior->year)
-                                ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
-                                ->groupBy('dia')
-                                ->orderBy('registros', 'asc')
-                                ->first();
-
-        // Promedio de registros en el mes anterior al mes actual del año anterior
-        $mesAnteriorAñoAnterior = $añoAnterior->subMonth();
-        $promedioMesAnteriorAñoAnterior = User::whereMonth('created_at', $mesAnteriorAñoAnterior->month)
-                                                ->whereYear('created_at', $mesAnteriorAñoAnterior->year)
-                                                ->count() / $mesAnteriorAñoAnterior->daysInMonth;
-
-        $diaMasRegistrosMesAnterior_aa = User::whereMonth('created_at', $mesAnteriorAñoAnterior->month)
-                                ->whereYear('created_at', $mesAnteriorAñoAnterior->year)
-                                ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
-                                ->groupBy('dia')
-                                ->orderBy('registros', 'desc')
-                                ->first();
-
-        $diaMenosRegistrosMesAnterior_aa = User::whereMonth('created_at', $mesAnteriorAñoAnterior->month)
-                                ->whereYear('created_at', $mesAnteriorAñoAnterior->year)
-                                ->selectRaw('DAY(created_at) as dia, COUNT(*) as registros')
-                                ->groupBy('dia')
-                                ->orderBy('registros', 'asc')
-                                ->first();
-
-        $fechaActual = Carbon::create($peticion['año'], $peticion['mes'], $peticion['dia']);
-
-        $lastMonth = $fechaActual->copy()->subDays(40);
-        $fechaSiguiente = $fechaActual->copy()->addDay();
-
-        $lastMonthStr = $lastMonth->format('Y-m-d');
-        $fechaSiguienteStr = $fechaSiguiente->format('Y-m-d');
-
-        $datesInRange = [];
-        $currentDate = $lastMonth->copy();
-        while ($currentDate < $fechaSiguiente) {
-            $datesInRange[$currentDate->format('Y-m-d')] = 0; // Inicializa con 0 registros
-            $currentDate->addDay();
-        }
-
-        // Ejecuta la consulta
-        $registrations = DB::select(
-            DB::raw("
-                SELECT DATE(created_at) as date, COUNT(*) as count
-                FROM users
-                WHERE created_at >= :lastMonth AND created_at < :fechaSiguiente
-                GROUP BY DATE(created_at)
-                ORDER BY date ASC
-            "),
-            [
-                'lastMonth' => $lastMonthStr,
-                'fechaSiguiente' => $fechaSiguienteStr
-            ]
-        );
-
-        // Asigna los registros obtenidos a las fechas correspondientes
-        foreach ($registrations as $registration) {
-            $date = $registration->date;
-            $count = $registration->count;
-            $datesInRange[$date] = $count;
-        }
-
-        // Convierte el resultado a un array de objetos para una respuesta consistente
-        $last30Registrations = [];
-        foreach ($datesInRange as $date => $count) {
-            $last30Registrations[] = (object)[
-                'date' => $date,
-                'count' => $count
-            ];
-        }
-
-        $last30Registrations = array_slice($registrations, -30);
-
-
-
-        $datosgraficos = [
-            'mes_actual' => [
-                'promedio' => round($promedioMesActual, 2),
-                'maximo' => $diaMasRegistrosMesActual->registros,
-                'minimo' => $diaMenosRegistrosMesActual->registros,
-                'total' => User::whereMonth('created_at', $peticion['mes'])
-                        ->whereYear('created_at', $peticion['año'])
-                        ->count()
-            ],
-            'mes_anterior' => [
-                'promedio' => round($promedioMesAnterior, 2),
-                'maximo' => $diaMasRegistrosMesAnterior->registros,
-                'minimo' => $diaMenosRegistrosMesAnterior->registros,
-                'total' => User::whereMonth('created_at', $peticion['mes'] == 1 ? 12 : $peticion['mes'] - 1)
-                        ->whereYear('created_at', $peticion['año'])
-                        ->count()
-            ],
-            'mes_actual_aa' => [
-                'promedio' => round($promedioMismoMesAñoAnterior, 2),
-                'maximo' => $diaMasRegistrosMesActual_aa->registros,
-                'minimo' => $diaMenosRegistrosMesActual_aa->registros,
-                'total' => User::whereMonth('created_at', $peticion['mes'])
-                        ->whereYear('created_at', $añoAnterior->year)
-                        ->count()
-            ],
-            'mes_anterior_aa' => [
-                'promedio' => round($promedioMesAnteriorAñoAnterior, 2),
-                'maximo' => $diaMasRegistrosMesAnterior_aa->registros,
-                'minimo' => $diaMenosRegistrosMesAnterior_aa->registros,
-                'total' => User::whereMonth('created_at', $peticion['mes'] == 1 ? 12 : $peticion['mes'] - 1)
-                        ->whereYear('created_at', $peticion['año']-1)
-                        ->count()
-            ]
+        // Calcular estatus de los usuarios
+        $estatusCount = [
+            'No ha pagado' => $usuariosAnioActual->where('pay', 0)->count(),
+            'Pagó pero no completó información' => $usuariosAnioActual->where('pay', 1)->count(),
+            'Pagó y completó información, pero no firmó contrato' => $usuariosAnioActual->where('pay', 2)->where('contrato', 0)->count(),
+            'Pagó, completó información y firmó contrato' => $usuariosAnioActual->where('pay', 2)->where('contrato', 1)->count(),
         ];
 
-        $datosgraficosporcentaje = [
-            'mes_actual' => [
-                'promedio' => round($promedioMesActual*100/$diaMasRegistrosMesActual->registros, 2),
-                'maximo' => 100,
-                'minimo' => 0,
-            ],
-            'mes_anterior' => [
-                'promedio' => round($promedioMesAnterior*100/$diaMasRegistrosMesAnterior->registros, 2),
-                'maximo' => 100,
-                'minimo' => 0,
-            ],
-            'mes_actual_aa' => [
-                'promedio' => round($promedioMismoMesAñoAnterior*100/$diaMasRegistrosMesActual_aa->registros, 2),
-                'maximo' => 100,
-                'minimo' => 0,
-            ],
-            'mes_anterior_aa' => [
-                'promedio' => round($promedioMesAnteriorAñoAnterior*100/$diaMasRegistrosMesAnterior_aa->registros, 2),
-                'maximo' => 100,
-                'minimo' => 0,
-            ]
-        ];
-
+        // Generar datos para gráficos de registros por mes
         $labels = [];
-        $data = [];
-        foreach ($last30Registrations as $registration) {
-            $labels[] = $registration->date;
-            $data[] = $registration->count;
+        $dataActual = [];
+        $dataAnterior = [];
+
+        for ($mes = 1; $mes <= 12; $mes++) {
+            $inicioMesActual = Carbon::create($anio, $mes, 1)->startOfDay();
+            $finMesActual = $inicioMesActual->copy()->endOfMonth();
+            $inicioMesAnterior = Carbon::create($anioAnterior, $mes, 1)->startOfDay();
+            $finMesAnterior = $inicioMesAnterior->copy()->endOfMonth();
+
+            $labels[] = $inicioMesActual->translatedFormat('F');
+            $dataActual[] = User::whereBetween('created_at', [$inicioMesActual, $finMesActual])
+                ->where('email', 'not like', '%sefarvzla%')
+                ->where('email', 'not like', '%sefaruniversal%')
+                ->where('name', 'not like', '%prueba%')->count();
+
+            $dataAnterior[] = User::whereBetween('created_at', [$inicioMesAnterior, $finMesAnterior])
+                ->where('email', 'not like', '%sefarvzla%')
+                ->where('email', 'not like', '%sefaruniversal%')
+                ->where('name', 'not like', '%prueba%')->count();
         }
 
+        // Configuración para gráficos diurnos y nocturnos
         $chartConfig = [
             'type' => 'line',
             'data' => [
                 'labels' => $labels,
-                'datasets' => [[
-                    'label' => 'Registros',
-                    'data' => $data,
-                    'fill' => false,
-                    'borderColor' => 'rgba(0, 0, 0, 0.5)',
-                    'backgroundColor' => '#093143'
-                ]]
-            ],
-            'options' => [
-                'title' => [
-                    'display' => true,
-                    'text' => 'Registros de Usuarios en los Últimos 30 Días'
+                'datasets' => [
+                    [
+                        'label' => "Registros en $anio",
+                        'data' => $dataActual,
+                        'borderColor' => 'rgba(0, 0, 0, 0.5)',
+                        'backgroundColor' => '#093143',
+                        'fill' => false,
+                    ],
+                    [
+                        'label' => "Registros en $anioAnterior",
+                        'data' => $dataAnterior,
+                        'borderColor' => 'rgba(0, 123, 255, 0.5)',
+                        'backgroundColor' => '#007bff',
+                        'fill' => false,
+                    ],
                 ],
-                'scales' => [
-                    'xAxes' => [[
-                        'scaleLabel' => [
-                            'display' => true,
-                            'labelString' => 'Fecha'
-                        ]
-                    ]],
-                    'yAxes' => [[
-                        'scaleLabel' => [
-                            'display' => true,
-                            'labelString' => 'Cantidad de Registros'
-                        ]
-                    ]]
-                ]
-            ]
+            ],
         ];
 
-        $chartConfignight = [
-            'type' => 'line',
-            'data' => [
-                'labels' => $labels,
-                'datasets' => [[
-                    'label' => 'Registros',
-                    'data' => $data,
-                    'fill' => false,
-                    'borderColor' => 'rgba(255, 255, 255, 0.5)', // Color del borde
-                    'backgroundColor' => '#093143',
-                    'color' => '#eeeeee'
-                ]]
-            ],
-            'options' => [
-                'legend' => [
-                    'labels' => [
-                        'fontColor' => '#eeeeee' // Color del texto de la leyenda
-                    ]
-                ],
-                'scales' => [
-                    'xAxes' => [[
-                        'scaleLabel' => [
-                            'display' => true,
-                            'labelString' => 'Fecha',
-                            'fontColor' => '#eeeeee' // Color del texto del eje X
-                        ],
-                        'ticks' => [
-                            'fontColor' => '#eeeeee' // Color del texto de las etiquetas del eje X
-                        ]
-                    ]],
-                    'yAxes' => [[
-                        'scaleLabel' => [
-                            'display' => true,
-                            'labelString' => 'Cantidad de Registros',
-                            'fontColor' => '#eeeeee' // Color del texto del eje Y
-                        ],
-                        'ticks' => [
-                            'fontColor' => '#eeeeee' // Color del texto de las etiquetas del eje Y
-                        ]
-                    ]]
-                ]
-            ]
+        $chartConfignight = $chartConfig;
+        $chartConfignight['data']['datasets'][0]['borderColor'] = 'rgba(255, 255, 255, 0.5)';
+        $chartConfignight['data']['datasets'][1]['borderColor'] = 'rgba(123, 255, 255, 0.5)';
+        $chartConfignight['options']['scales'] = [
+            'xAxes' => [['ticks' => ['fontColor' => '#eeeeee']]],
+            'yAxes' => [['ticks' => ['fontColor' => '#eeeeee']]],
         ];
 
-        $chartUrl = mostrarGraficoQuickChartAnual('https://quickchart.io/chart?c=' . urlencode(json_encode($chartConfig)));
+        $chartUrl = mostrarGraficoQuickChartMonth('https://quickchart.io/chart?c=' . urlencode(json_encode($chartConfig)));
         $chartNight = 'https://quickchart.io/chart?c=' . urlencode(json_encode($chartConfignight));
 
-        $usuariosPorServicio = [];
+        // Datos para gráficos de barras
+        $datosgraficos = [
+            'anio_actual' => [
+                'promedio' => round($promedioAnioActual, 2),
+                'maximo' => max($dataActual),
+                'minimo' => min($dataActual),
+                'total' => array_sum($dataActual),
+            ],
+            'anio_anterior' => [
+                'promedio' => round($promedioAnioAnterior, 2),
+                'maximo' => max($dataAnterior),
+                'minimo' => min($dataAnterior),
+                'total' => array_sum($dataAnterior),
+            ],
+        ];
 
-        foreach ($usuariosHoy as $usuario) {
-            $servicioHsIds = $usuario->compras->pluck('servicio_hs_id')->join(', ');
+        $datosgraficosporcentaje = [
+            'anio_actual' => [
+                'promedio' => round(($promedioAnioActual * 100) / max($dataActual), 2),
+            ],
+            'anio_anterior' => [
+                'promedio' => round(($promedioAnioAnterior * 100) / max($dataAnterior), 2),
+            ],
+        ];
 
-            if ($servicioHsIds) {
-                foreach (explode(', ', $servicioHsIds) as $servicio) {
-                    if (!isset($usuariosPorServicio[$servicio])) {
-                        $usuariosPorServicio[$servicio] = 0;
-                    }
-                    $usuariosPorServicio[$servicio]++;
-                }
-            } else {
-                $servicio = $usuario->servicio;
-                if (!isset($usuariosPorServicio[$servicio])) {
-                    $usuariosPorServicio[$servicio] = 0;
-                }
-                $usuariosPorServicio[$servicio]++;
-            }
-        }
+        // Facturas (Stripe)
+        $facturas = Factura::where('met', 'stripe')
+        ->whereBetween('created_at', [$fechaInicioAnio, $fechaFinAnio])
+        ->with(['compras' => function ($query) {
+            $query->select('servicio_hs_id', 'monto', 'hash_factura');
+        }])
+        ->get()
+        ->flatMap(function ($factura) {
+            return $factura->compras;
+        })
+        ->groupBy('servicio_hs_id')
+        ->map(function ($compras) {
+            return $compras->sum('monto');
+        })
+        ->toArray();
 
-        $pdf = PDF::loadView('reportes.plantilladiario', compact(
-            'peticion',
-            'usuariosHoy',
-            'usuariosUltimos30Dias',
-            'registrosHoy',
-            'promedioMesActual',
-            'promedioMesAnterior',
-            'promedioMismoMesAñoAnterior',
-            'promedioMesAnteriorAñoAnterior',
+        // Facturas con Cupones
+        $facturasCupones = Factura::where('met', 'cupon')
+        ->whereBetween('created_at', [$fechaInicioAnio, $fechaFinAnio])
+        ->with(['compras' => function ($query) {
+            $query->select('servicio_hs_id', 'monto', 'hash_factura');
+        }])
+        ->get()
+        ->flatMap(function ($factura) {
+            return $factura->compras;
+        })
+        ->groupBy('servicio_hs_id')
+        ->map(function ($compras) {
+            return $compras->sum('monto');
+        })
+        ->toArray();
+
+        $pdf = PDF::loadView('reportes.plantillaanual', compact(
+            'anio',
+            'anioAnterior',
+            'usuariosAnioActual',
+            'usuariosAnioAnterior',
+            'usuariosPorServicioAnioActual',
+            'usuariosPorServicioAnioAnterior',
+            'estatusCount',
+            'promedioAnioActual',
+            'promedioAnioAnterior',
             'datosgraficos',
             'datosgraficosporcentaje',
-            'registrations',
             'chartUrl',
             'chartNight',
-            'usuariosPorServicio'
+            'usuariosRegistrados',
+            'facturas',
+            'facturasCupones'
         ));
+
         $pdfContent = $pdf->output();
 
-        Mail::send('mail.reporte-diario', compact(
-            'peticion',
-            'usuariosHoy',
-            'usuariosUltimos30Dias',
-            'registrosHoy',
-            'promedioMesActual',
-            'promedioMesAnterior',
-            'promedioMismoMesAñoAnterior',
-            'promedioMesAnteriorAñoAnterior',
+        Mail::send('mail.reporte-yearly', compact(
+            'anio',
+            'anioAnterior',
+            'usuariosAnioActual',
+            'usuariosAnioAnterior',
+            'usuariosPorServicioAnioActual',
+            'usuariosPorServicioAnioAnterior',
+            'estatusCount',
+            'promedioAnioActual',
+            'promedioAnioAnterior',
             'datosgraficos',
             'datosgraficosporcentaje',
-            'registrations',
             'chartUrl',
             'chartNight',
-            'usuariosPorServicio'
-        ), function ($message) use ($pdfContent, $peticion) {
+            'usuariosRegistrados',
+            'facturas',
+            'facturasCupones'
+        ), function ($message) use ($pdfContent, $anio) {
             $message->to([
                 'dpm.ladera@sefarvzla.com',
                 'sistemasccs@sefarvzla.com',
@@ -405,13 +249,13 @@ class SendYearReportEmails extends Command
                 'admin.sefar@sefarvzla.com',
                 'yeinsondiaz@sefarvzla.com'
                 ])
-                    ->subject('Reporte Diario - ' . $peticion["dia"] . '/' . $peticion["mes"] . '/' . $peticion["año"])
-                    ->attachData($pdfContent, 'reporte_diario_' . $peticion["dia"] . '-' . $peticion["mes"] . '-' . $peticion["año"] . '.pdf', [
+                    ->subject('Reporte anual - ' . $anio)
+                    ->attachData($pdfContent, 'reporte_' . $anio . '.pdf', [
                         'mime' => 'application/pdf',
                     ]);
         });
 
-        $this->info('Reporte diario generado y enviado con éxito.');
+        $this->info('Reporte anual generado y enviado con éxito.');
     }
 }
 
