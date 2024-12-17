@@ -431,38 +431,64 @@ class SendDailyReportEmails extends Command
         ));
         $pdfContent = $pdf->output();
 
-        Mail::send('mail.reporte-diario', compact(
-            'peticion',
-            'usuariosHoy',
-            'usuariosUltimos30Dias',
-            'registrosHoy',
-            'promedioMesActual',
-            'promedioMesAnterior',
-            'promedioMismoMesAñoAnterior',
-            'promedioMesAnteriorAñoAnterior',
-            'datosgraficos',
-            'datosgraficosporcentaje',
-            'registrations',
-            'chartUrl',
-            'chartNight',
-            'usuariosPorServicio'
-        ), function ($message) use ($pdfContent, $peticion) {
-            $message->to([
-                'dpm.ladera@sefarvzla.com',
-                'sistemasccs@sefarvzla.com',
-                'crisantoantonio@gmail.com',
-                'gflorez@sefarvzla.com',
-                'practicanteit@sefarvzla.com',
-                'cguerrero@sefarvzla.com',
-                'automatizacion@sefarvzla.com',
-                'admin.sefar@sefarvzla.com',
-                'yeinsondiaz@sefarvzla.com'
-                ])
-                    ->subject('Reporte Diario - ' . $peticion["dia"] . '/' . $peticion["mes"] . '/' . $peticion["año"])
-                    ->attachData($pdfContent, 'reporte_diario_' . $peticion["dia"] . '-' . $peticion["mes"] . '-' . $peticion["año"] . '.pdf', [
-                        'mime' => 'application/pdf',
-                    ]);
-        });
+        $emails = [
+            'dpm.ladera@sefarvzla.com',
+            'sistemasccs@sefarvzla.com',
+            'crisantoantonio@gmail.com',
+            'gflorez@sefarvzla.com',
+            'practicanteit@sefarvzla.com',
+            'cguerrero@sefarvzla.com',
+            'automatizacion@sefarvzla.com',
+            'admin.sefar@sefarvzla.com',
+            'yeinsondiaz@sefarvzla.com'
+        ];
+
+        $failedEmails = []; // Para almacenar correos que no se pudieron enviar
+
+        foreach ($emails as $email) {
+            try {
+
+                Mail::send('mail.reporte-diario', compact(
+                    'peticion',
+                    'usuariosHoy',
+                    'usuariosUltimos30Dias',
+                    'registrosHoy',
+                    'promedioMesActual',
+                    'promedioMesAnterior',
+                    'promedioMismoMesAñoAnterior',
+                    'promedioMesAnteriorAñoAnterior',
+                    'datosgraficos',
+                    'datosgraficosporcentaje',
+                    'registrations',
+                    'chartUrl',
+                    'chartNight',
+                    'usuariosPorServicio'
+                ), function ($message) use ($pdfContent, $peticion,$email) {
+                    $message->to($email)
+                            ->subject('Reporte Diario - ' . $peticion["dia"] . '/' . $peticion["mes"] . '/' . $peticion["año"])
+                            ->attachData($pdfContent, 'reporte_diario_' . $peticion["dia"] . '-' . $peticion["mes"] . '-' . $peticion["año"] . '.pdf', [
+                                'mime' => 'application/pdf',
+                            ]);
+                        });
+            // Registro de éxito (opcional)
+                echo "Correo enviado a: {$email}\n";
+
+            } catch (\Exception $e) {
+                // Captura el error y guarda el correo fallido
+                $failedEmails[] = $email;
+                echo "Error enviando correo a {$email}: {$e->getMessage()}\n";
+            }
+        }
+
+        // Verificar si hubo errores
+        if (!empty($failedEmails)) {
+            echo "No se pudo enviar correo a las siguientes direcciones:\n";
+            foreach ($failedEmails as $failed) {
+                echo "- {$failed}\n";
+            }
+        } else {
+            echo "Todos los correos se enviaron correctamente.\n";
+        }
 
         $this->info('Reporte diario generado y enviado con éxito.');
     }
