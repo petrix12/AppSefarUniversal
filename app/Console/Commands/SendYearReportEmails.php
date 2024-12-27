@@ -232,51 +232,30 @@ class SendYearReportEmails extends Command
             'yeinsondiaz@sefarvzla.com'
         ];
 
-        $failedEmails = []; // Para almacenar correos que no se pudieron enviar
-
-        foreach ($emails as $email) {
-            try {
-
-                Mail::send('mail.reporte-yearly', compact(
-                    'anio',
-                    'anioAnterior',
-                    'usuariosAnioActual',
-                    'usuariosAnioAnterior',
-                    'usuariosPorServicioAnioActual',
-                    'usuariosPorServicioAnioAnterior',
-                    'estatusCount',
-                    'promedioAnioActual',
-                    'promedioAnioAnterior',
-                    'datosgraficos',
-                    'datosgraficosporcentaje',
-                    'chartUrl',
-                    'chartNight',
-                    'usuariosRegistrados',
-                    'facturas',
-                    'facturasCupones'
-                ), function ($message) use ($pdfContent, $anio, $email) {
-                    $message->to($email)
-                    ->subject('Reporte anual - ' . $anio)
-                    ->attachData($pdfContent, 'reporte_' . $anio . '.pdf', [
-                        'mime' => 'application/pdf',
-                    ]);
-                });
-            } catch (\Exception $e) {
-                // Captura el error y guarda el correo fallido
-                $failedEmails[] = $email;
-                echo "Error enviando correo a {$email}: {$e->getMessage()}\n";
-            }
-        }
-
-        // Verificar si hubo errores
-        if (!empty($failedEmails)) {
-            echo "No se pudo enviar correo a las siguientes direcciones:\n";
-            foreach ($failedEmails as $failed) {
-                echo "- {$failed}\n";
-            }
-        } else {
-            echo "Todos los correos se enviaron correctamente.\n";
-        }
+        Mail::send('mail.reporte-yearly', compact(
+            'anio',
+            'anioAnterior',
+            'usuariosAnioActual',
+            'usuariosAnioAnterior',
+            'usuariosPorServicioAnioActual',
+            'usuariosPorServicioAnioAnterior',
+            'estatusCount',
+            'promedioAnioActual',
+            'promedioAnioAnterior',
+            'datosgraficos',
+            'datosgraficosporcentaje',
+            'chartUrl',
+            'chartNight',
+            'usuariosRegistrados',
+            'facturas',
+            'facturasCupones'
+        ), function ($message) use ($pdfContent, $anio, $emails) {
+            $message->to($emails)
+            ->subject('Reporte anual - ' . $anio)
+            ->attachData($pdfContent, 'reporte_' . $anio . '.pdf', [
+                'mime' => 'application/pdf',
+            ]);
+        });
 
         $this->info('Reporte anual generado y enviado con éxito.');
     }
