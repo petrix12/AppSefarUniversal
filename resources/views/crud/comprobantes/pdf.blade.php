@@ -47,7 +47,7 @@
         background-color:#093143 !important;
     }
     footer {
-        position: fixed; 
+        position: fixed;
         bottom: 1px;
         margin-bottom: -30px;
     }
@@ -62,7 +62,7 @@
 
 <body>
     <header>
-        <img src="{{asset('/img/logonormal.png')}}" style="height:10%;">
+        <img src="{{ public_path('img/logonormal.png') }}" style="height:10%;">
     </header>
 
     <footer style="text-align: right;">
@@ -79,7 +79,7 @@
             @elseif($datos_factura[0]["met"]=="cupon")
                 <b>Forma de Pago:</b> Cupón<br>
             @endif
-            
+
             <p style="width: 100%; text-align: right;"><b>Fecha de Comprobante:</b> <?php echo(date("d-m-Y", strtotime($datos_factura[0]["created_at"]))); ?><br></p>
             <table class="styled-table">
                 <thead>

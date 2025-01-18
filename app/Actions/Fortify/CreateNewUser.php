@@ -124,14 +124,11 @@ class CreateNewUser implements CreatesNewUsers
             $mail_sefar = new RegistroSefar($user);
             Mail::to([
                 'pedro.bazo@sefarvzla.com',
-                'gerenciait@sefarvzla.com',
                 'sistemasccs@sefarvzla.com',
                 'automatizacion@sefarvzla.com',
                 'sistemascol@sefarvzla.com',
-                'analisisgenealogico@sefarvzla.com',
                 'asistentedeproduccion@sefarvzla.com',
                 'organizacionrrhh@sefarvzla.com',
-                'gcuriel@sefarvzla.com',
                 'organizacionrrhh@sefarvzla.com',
                 '20053496@bcc.hubspot.com'
             ])->send($mail_sefar);
@@ -150,6 +147,6 @@ function generate_string($input, $strength = 16) {
         $random_character = $input[mt_rand(0, $input_length - 1)];
         $random_string .= $random_character;
     }
- 
+
     return $random_string;
 }

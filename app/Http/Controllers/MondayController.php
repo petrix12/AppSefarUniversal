@@ -119,13 +119,13 @@ class MondayController extends Controller
         if (sizeof($users)>0){
             $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND b.passport='".$passport."' ORDER BY a.id DESC LIMIT 1;";
 
-            $datos_factura = json_decode(json_encode(DB::select(DB::raw($query))),true);
+            $datos_factura = json_decode(json_encode(DB::select($query)),true);
 
             if (sizeof($datos_factura)>1){
 
                 $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
                 $servicios = "";
-        
+
                 foreach ($productos as $key => $value) {
                     $servicios = $servicios . $value["servicio_hs_id"];
                     if ($key != count($productos)-1){
@@ -150,7 +150,7 @@ class MondayController extends Controller
                     $nombres_y_apellidos_de_madre = $familiarescheck[1]["Nombres"] . " " . $familiarescheck[1]["Apellidos"];
                 }
             }
-            
+
 
             $fechanacimiento = $familiarescheck[0]["AnhoNac"]."-".$familiarescheck[0]["MesNac"]."-".$familiarescheck[0]["DiaNac"];
 
@@ -159,9 +159,9 @@ class MondayController extends Controller
             $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
 
             $link = 'https://app.sefaruniversal.com/tree/' . $passport;
-            
+
             $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
-             
+
             if (is_null($users[0]["apellidos"]) || is_null($users[0]["nombres"])){
                 $clientname = $users[0]["name"];
             } else {
@@ -169,7 +169,7 @@ class MondayController extends Controller
             }
 
             $vars = [
-                'myItemName' => $clientname, 
+                'myItemName' => $clientname,
                 'columnVals' => json_encode([
                     'texto' => $passport,
                     'fecha75' => ['date' => date("Y-m-d", strtotime($fechanacimiento))],
@@ -195,6 +195,6 @@ class MondayController extends Controller
         } else {
             return redirect()->route('mondayregistrar')->with("status","error");
         }
-        
+
     }
 }

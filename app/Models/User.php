@@ -27,39 +27,7 @@ class User extends Authenticatable implements MustVerifyEmail
      *
      * @var array
      */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'password_md5',
-        'passport',
-        'email_verified_at',
-        'phone',
-        'servicio',
-		'pay',
-		'date_of_birth',
-		'nombres',
-		'apellidos',
-		'genero',
-		'pais_de_nacimiento',
-		'ciudad_de_nacimiento',
-		'referido_por',
-		'pago_registro',
-		'pago_cupon',
-		'id_pago',
-        'hs_id',
-        'tl_id',
-        'monday_id',
-        'cantidad_alzada',
-        'pago_registro_hist',
-        'antepasados',
-        'vinculo_antepasados',
-        'estado_de_datos_y_documentos_de_los_antepasados',
-        'contrato',
-        'stripe_cus_id',
-        'tiene_hermanos',
-        'dark_mode'
-    ];
+    protected $guarded = [];
 
     /**
      * The attributes that should be hidden for arrays.

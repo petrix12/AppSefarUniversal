@@ -322,15 +322,12 @@ class AgClienteNewController extends Controller
         // $mail_sefar = new CargaSefar(auth()->user());
         // Mail2::to([
         //     'pedro.bazo@sefarvzla.com',
-        //     'gerenciait@sefarvzla.com',
         //     'sistemasccs@sefarvzla.com',
         //     'automatizacion@sefarvzla.com',
         //     'sistemascol@sefarvzla.com',
         //     /* 'egonzalez@sefarvzla.com', */
-        //     'analisisgenealogico@sefarvzla.com',
         //     /* 'arosales@sefarvzla.com', */
         //     'asistentedeproduccion@sefarvzla.com',
-        //     'gcuriel@sefarvzla.com',
         //     'organizacionrrhh@sefarvzla.com',
         //     'arodriguez@sefarvzla.com',
         //     '20053496@bcc.hubspot.com'
@@ -340,13 +337,10 @@ class AgClienteNewController extends Controller
         $user = auth()->user();
         $recipients = [
             'pedro.bazo@sefarvzla.com',
-            'gerenciait@sefarvzla.com',
             'sistemasccs@sefarvzla.com',
             'automatizacion@sefarvzla.com',
             'sistemascol@sefarvzla.com',
-            'analisisgenealogico@sefarvzla.com',
             'asistentedeproduccion@sefarvzla.com',
-            'gcuriel@sefarvzla.com',
             'organizacionrrhh@sefarvzla.com',
             'arodriguez@sefarvzla.com',
             '20053496@bcc.hubspot.com'

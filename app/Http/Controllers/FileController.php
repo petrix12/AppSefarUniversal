@@ -185,6 +185,28 @@ class FileController extends Controller
         return redirect(Storage::disk('s3')->url($file->location . '/' . $file->file));
     }
 
+    public function viewfile($id)
+    {
+        $file = File::findOrFail($id);
+        // Verificar si el usuario es administrador
+        if (!auth()->user()->hasRole('Administrador')) {
+            // Si no es administrador, verificar que el archivo pertenece al usuario
+            if ($file->IDCliente !== auth()->user()->passport) {
+                abort(404);
+            }
+        }
+
+        $fileroute = preg_replace('/\/+/', '/', $file->location . "/" . $file->file);
+
+        // Verificar si el archivo existe en S3
+        if (!Storage::disk('s3')->exists($fileroute)) {
+            abort(404);
+        }
+
+        // Redirigir a la URL del archivo en S3
+        return redirect(Storage::disk('s3')->url($fileroute));
+    }
+
     /**
      * Show the form for editing the specified resource.
      *

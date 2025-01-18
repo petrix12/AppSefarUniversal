@@ -68,12 +68,7 @@
                         <x-slot name="trigger">
                             @if (Laravel\Jetstream\Jetstream::managesProfilePhotos())
                                 <button class="flex text-sm border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300 transition duration-150 ease-in-out">
-                                    <img
-                                        class="h-8 w-8 rounded-full object-cover"
-                                        src="{{ Auth::user()->profile_photo_url }}"
-                                        onerror="this.src='{{ Storage::disk('s3')->url('imagenes/auxiliar/user.png') }}'"
-                                        alt="{{ Auth::user()->name }}"
-                                    />
+
                                     {{-- @dump(Auth::user()->profile_photo_url) --}}
                                 </button>
                             @else

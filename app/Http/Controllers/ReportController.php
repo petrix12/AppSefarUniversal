@@ -200,13 +200,13 @@ class ReportController extends Controller
 
         // Ejecuta la consulta
         $registrations = DB::select(
-            DB::raw("
+            "
                 SELECT DATE(created_at) as date, COUNT(*) as count
                 FROM users
                 WHERE created_at >= :lastMonth AND created_at < :fechaSiguiente
                 GROUP BY DATE(created_at)
                 ORDER BY date ASC
-            "),
+            ",
             [
                 'lastMonth' => $lastMonthStr,
                 'fechaSiguiente' => $fechaSiguienteStr
@@ -648,13 +648,13 @@ class ReportController extends Controller
 
         // Ejecuta la consulta
         $registrations = DB::select(
-            DB::raw("
+            "
                 SELECT DATE(created_at) as date, COUNT(*) as count
                 FROM users
                 WHERE created_at >= :lastMonth AND created_at < :fechaSiguiente
                 GROUP BY DATE(created_at)
                 ORDER BY date ASC
-            "),
+            ",
             [
                 'lastMonth' => $lastMonthStr,
                 'fechaSiguiente' => $fechaSiguienteStr
@@ -1102,13 +1102,13 @@ class ReportController extends Controller
 
         // Ejecuta la consulta
         $registrations = DB::select(
-            DB::raw("
+            "
                 SELECT DATE(created_at) as date, COUNT(*) as count
                 FROM users
                 WHERE created_at >= :lastMonth AND created_at < :fechaSiguiente
                 GROUP BY DATE(created_at)
                 ORDER BY date ASC
-            "),
+            ",
             [
                 'lastMonth' => $lastMonthStr,
                 'fechaSiguiente' => $fechaSiguienteStr
@@ -1516,7 +1516,7 @@ class ReportController extends Controller
         $dayscount = "4";
         $path = "/pdfReportes/";
 
-        $globalcount = json_decode(json_encode(DB::select(DB::raw("SELECT DATE_FORMAT(DATE(`created_at`), '%M') as nombre, DATE_FORMAT(DATE(`created_at`), '%Y') as fecha, COUNT(id) as contador FROM users GROUP BY YEAR(`created_at`), MONTH(`created_at`);"))),true);
+        $globalcount = json_decode(json_encode(DB::select("SELECT DATE_FORMAT(DATE(`created_at`), '%M') as nombre, DATE_FORMAT(DATE(`created_at`), '%Y') as fecha, COUNT(id) as contador FROM users GROUP BY YEAR(`created_at`), MONTH(`created_at`);")),true);
 
         foreach ($globalcount as $key => $value) {
             switch ($value["nombre"]) {
@@ -1581,7 +1581,7 @@ class ReportController extends Controller
 
         $yesterdayquery = date('Y-m-d', strtotime("-".$dayscount." days"));
 
-        $users = DB::select(DB::raw("SELECT a.*, b.nombre as nombre_referido FROM users as a, hs_referidos as b WHERE b.correo=a.referido_por and a.created_at LIKE '%".$yesterdayquery."%' GROUP BY a.passport"));
+        $users = DB::select("SELECT a.*, b.nombre as nombre_referido FROM users as a, hs_referidos as b WHERE b.correo=a.referido_por and a.created_at LIKE '%".$yesterdayquery."%' GROUP BY a.passport");
 
         $day = date('d');
         $month = date('m');
@@ -1611,9 +1611,9 @@ class ReportController extends Controller
             $yesterdayw = date('Y-m-d', strtotime("-".$dayscount." days"));
             $owago = date('Y-m-d', strtotime("-7 days"));
 
-            $users = DB::select(DB::raw("SELECT a.*, b.nombre as nombre_referido, b.tipo as tipo_referido FROM users as a, hs_referidos as b WHERE b.correo=a.referido_por and a.created_at>='".$owago."' AND a.created_at<='".$yesterdayw."' GROUP BY a.passport;"));
+            $users = DB::select("SELECT a.*, b.nombre as nombre_referido, b.tipo as tipo_referido FROM users as a, hs_referidos as b WHERE b.correo=a.referido_por and a.created_at>='".$owago."' AND a.created_at<='".$yesterdayw."' GROUP BY a.passport;");
 
-            $users_ftb = DB::select(DB::raw("SELECT a.*, b.nombre as nombre_referido, b.tipo as tipo_referido FROM users as a, hs_referidos as b WHERE b.correo=a.referido_por and a.created_at>='".$year."-01-01' AND a.created_at<='".$yesterdayw."' GROUP BY a.passport;"));
+            $users_ftb = DB::select("SELECT a.*, b.nombre as nombre_referido, b.tipo as tipo_referido FROM users as a, hs_referidos as b WHERE b.correo=a.referido_por and a.created_at>='".$year."-01-01' AND a.created_at<='".$yesterdayw."' GROUP BY a.passport;");
 
             $data['usuarios'] = json_decode(json_encode($users),true);
             $data['users_ftb'] = json_decode(json_encode($users_ftb),true);

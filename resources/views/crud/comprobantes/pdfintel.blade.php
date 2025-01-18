@@ -47,7 +47,7 @@
         background-color:#093143 !important;
     }
     footer {
-        position: fixed; 
+        position: fixed;
         bottom: 1px;
         margin-bottom: -30px;
     }
@@ -62,7 +62,7 @@
 
 <body>
     <header>
-        <img src="{{asset('/img/logonormal.png')}}" style="height:10%;">
+        <img src="{{ public_path('img/logonormal.png') }}" style="height:10%;">
     </header>
 
     <footer style="text-align: right;">
@@ -85,7 +85,7 @@
             @if(!is_null($datos_factura[0]["idcharge"]))
                 <b>ID de Pago:</b> {{$datos_factura[0]["idcharge"]}}<br>
             @endif
-            
+
             <p style="width: 100%; text-align: right;"><b>Fecha de Comprobante:</b> <?php echo(date("d-m-Y", strtotime($datos_factura[0]["created_at"]))); ?><br></p>
             <table class="styled-table">
                 <thead>

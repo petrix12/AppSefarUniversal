@@ -12,6 +12,7 @@ use App\Http\Controllers\FileController;
 use App\Http\Controllers\FormatController;
 use App\Http\Controllers\LadoController;
 use App\Http\Controllers\LibraryController;
+use App\Http\Controllers\EtiquetaGenealogiaController;
 use App\Http\Controllers\MiscelaneoController;
 use App\Http\Controllers\OlivoController;
 use App\Http\Controllers\OnidexController;
@@ -118,6 +119,8 @@ Route::post('deletefile', [AgClienteNewController::class, 'deletefile'])->name('
 Route::post('getfileedit', [AgClienteNewController::class, 'getfileedit'])->name('getfileedit');
 Route::post('getfileupdate', [AgClienteNewController::class, 'getfileupdate'])->name('getfileupdate');
 
+Route::post('etiquetasgenealogiamonday', [EtiquetaGenealogiaController::class, 'update'])->name('etiquetasgenealogiamonday');
+
 Route::get('diarioindex',[ReportController::class, 'diarioindex'])->name('diarioindex')->middleware('can:reportes.index');
 Route::get('mensualindex',[ReportController::class, 'mensualindex'])->name('mensualindex')->middleware('can:reportes.index');
 Route::get('anualindex',[ReportController::class, 'anualindex'])->name('anualindex')->middleware('can:reportes.index');
@@ -149,8 +152,11 @@ Route::get('/downloadExcel/{id}', [GedcomController::class, 'getExcelCliente'])-
 //Ruta api GetEmail
 Route::get('/api/getemail/{id}', [UserController::class, 'getemail'])->name('getemail');
 
+Route::get('/viewfile/{id}', [FileController::class, 'viewFile'])->name('viewfile');
+
 //Ruta Comprobantes de Pago
 Route::get('/viewcomprobante/{id}', [FacturaController::class, 'viewcomprobante'])->name('viewcomprobante');
+Route::get('/viewcomprobantecliente/{id}', [FacturaController::class, 'viewcomprobantecliente'])->name('viewcomprobantecliente');
 
 //panel administrativo status
 Route::get('/users/status/{id}', [UserController::class, 'getuserstatus'])->name('getuserstatus');

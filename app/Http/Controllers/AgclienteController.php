@@ -50,7 +50,7 @@ class AgclienteController extends Controller
             Alert::error('¡Warning!', 'La persona que intenta añadir ya existe');
             return back();
         }
-        
+
         // Validación
         $request->validate([
             'IDCliente' => 'required|max:50',
@@ -65,11 +65,11 @@ class AgclienteController extends Controller
             'AnhoBtzo' => 'nullable|numeric',
             'MesBtzo' => 'nullable|numeric',
             'DiaBtzo' => 'nullable|numeric',
-            
+
             'AnhoMatr' => 'nullable|numeric',
             'MesMatr' => 'nullable|numeric',
             'DiaMatr' => 'nullable|numeric',
-            
+
             'AnhoDef' => 'nullable|numeric',
             'MesDef' => 'nullable|numeric',
             'DiaDef' => 'nullable|numeric'
@@ -112,7 +112,7 @@ class AgclienteController extends Controller
 
         // Creando persona en agcliente
         $agcliente = Agcliente::create([
-            'IDCliente' => trim($request->IDCliente), 
+            'IDCliente' => trim($request->IDCliente),
             'Nombres' => trim($request->Nombres),
             'Apellidos' => trim($request->Apellidos),
 
@@ -165,7 +165,7 @@ class AgclienteController extends Controller
             'LNacimiento' => $LNacimiento,
             'Familiares' => $Familiares,
             'FUpdate' => $FUpdate,
-            'Usuario' => $Usuario,  
+            'Usuario' => $Usuario,
         ]);
 
         // Verifica si el usuario existe, y si no lo crea
@@ -177,28 +177,23 @@ class AgclienteController extends Controller
                 'email' => 'correo' . $agcliente->id . '@' . strtolower(Auth()->user()->getRoleNames()[0]) . '.aux',
                 'password' => bcrypt('sefar2021'),
                 'passport' => $request->IDCliente,
-            ])->assignRole('Cliente');        
+            ])->assignRole('Cliente');
         }
 
         $mail_sefar = new CargaSefar(Auth::user());
         Mail2::to([
             'pedro.bazo@sefarvzla.com',
-            'gerenciait@sefarvzla.com',
             'sistemasccs@sefarvzla.com',
             'automatizacion@sefarvzla.com',
             'sistemascol@sefarvzla.com',
-            /* 'egonzalez@sefarvzla.com', */
-            'analisisgenealogico@sefarvzla.com',
-            /* 'arosales@sefarvzla.com', */
             'asistentedeproduccion@sefarvzla.com',
-            'gcuriel@sefarvzla.com',
             'organizacionrrhh@sefarvzla.com',
             'arodriguez@sefarvzla.com',
             '20053496@bcc.hubspot.com'
             /* 'organizacionrrhh@sefarvzla.com' */
         ])->send($mail_sefar);
 
-        // Mensaje 
+        // Mensaje
         Alert::success('¡Éxito!', 'Se ha añadido a la lista: ' . $request->Nombres . ' ' . $request->Apellidos);
         // Redireccionar a la vista index
         //return redirect()->route('crud.agclientes.index');
@@ -257,11 +252,11 @@ class AgclienteController extends Controller
             'AnhoBtzo' => 'nullable|numeric',
             'MesBtzo' => 'nullable|numeric',
             'DiaBtzo' => 'nullable|numeric',
-            
+
             'AnhoMatr' => 'nullable|numeric',
             'MesMatr' => 'nullable|numeric',
             'DiaMatr' => 'nullable|numeric',
-            
+
             'AnhoDef' => 'nullable|numeric',
             'MesDef' => 'nullable|numeric',
             'DiaDef' => 'nullable|numeric'
@@ -278,7 +273,7 @@ class AgclienteController extends Controller
         $agcliente->IDPadre = GetIDPadre($request->IDPersona);
         $agcliente->IDMadre = $agcliente->IDPadre + 1;
         $agcliente->FUpdate = date('Y-m-d H:i:s');
-        
+
         $agcliente->IDCliente = trim($request->IDCliente);
         $agcliente->Nombres = trim($request->Nombres);
         $agcliente->Apellidos = trim($request->Apellidos);
@@ -331,9 +326,9 @@ class AgclienteController extends Controller
 
         $agcliente->save();
 
-        // Mensaje 
+        // Mensaje
         Alert::success('¡Éxito!', 'Se ha actualizado la información de: ' . $request->Nombres . ' ' . $request->Apellidos);
-        
+
         // Si a este método lo llamó una vista árbol: lo retorna
         if($Origen == "arbol"){
             return back();
@@ -352,7 +347,7 @@ class AgclienteController extends Controller
     public function destroy(Agcliente $agcliente)
     {
         $nombre = $agcliente->Nombres . ' ' . $agcliente->Apellidos;
-        
+
         $agcliente->delete();
 
         Alert::info('¡Advertencia!', 'Se ha eliminado de la lista la persona: ' . $nombre);

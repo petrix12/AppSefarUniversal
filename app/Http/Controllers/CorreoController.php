@@ -30,7 +30,7 @@ class CorreoController extends Controller
 
 function createPDF($dato){
     $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND a.hash_factura='$dato';";
-    $datos_factura = json_decode(json_encode(DB::select(DB::raw($query))),true);
+    $datos_factura = json_decode(json_encode(DB::select($query)),true);
 
     $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
 

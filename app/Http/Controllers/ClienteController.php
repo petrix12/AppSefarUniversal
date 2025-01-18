@@ -409,15 +409,10 @@ class ClienteController extends Controller
         $mail_sefar = new CargaSefar(Auth::user());
         Mail2::to([
             'pedro.bazo@sefarvzla.com',
-            'gerenciait@sefarvzla.com',
             'sistemasccs@sefarvzla.com',
             'automatizacion@sefarvzla.com',
             'sistemascol@sefarvzla.com',
-            /* 'egonzalez@sefarvzla.com', */
-            'analisisgenealogico@sefarvzla.com',
-            /* 'arosales@sefarvzla.com', */
             'asistentedeproduccion@sefarvzla.com',
-            'gcuriel@sefarvzla.com',
             'organizacionrrhh@sefarvzla.com',
             'arodriguez@sefarvzla.com',
             '20053496@bcc.hubspot.com'
@@ -618,7 +613,7 @@ class ClienteController extends Controller
             /* Añade info a Monday */
             $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND b.passport='".$user->passport."' ORDER BY a.id DESC LIMIT 1;";
 
-            $datos_factura = json_decode(json_encode(DB::select(DB::raw($query))),true);
+            $datos_factura = json_decode(json_encode(DB::select($query)),true);
 
             $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
 
@@ -995,15 +990,12 @@ class ClienteController extends Controller
                     Mail::send('mail.comprobante-mail-intel', ['user' => $user], function ($m) use ($pdfContent, $request, $user) {
                         $m->to([
                             'pedro.bazo@sefarvzla.com',
-                            'gerenciait@sefarvzla.com',
                             'sistemasccs@sefarvzla.com',
                             'crisantoantonio@gmail.com',
                             'automatizacion@sefarvzla.com',
                             'sistemascol@sefarvzla.com',
-                            'analisisgenealogico@sefarvzla.com',
                             'asistentedeproduccion@sefarvzla.com',
                             'organizacionrrhh@sefarvzla.com',
-                            'gcuriel@sefarvzla.com',
                             'organizacionrrhh@sefarvzla.com',
                             '20053496@bcc.hubspot.com',
                             'contabilidad@sefaruniversal.com',
@@ -1015,7 +1007,7 @@ class ClienteController extends Controller
 
                         $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND b.passport='".$user->passport."' ORDER BY a.id DESC LIMIT 1;";
 
-                        $datos_factura = json_decode(json_encode(DB::select(DB::raw($query))),true);
+                        $datos_factura = json_decode(json_encode(DB::select($query)),true);
 
                         $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
 
@@ -1355,15 +1347,12 @@ class ClienteController extends Controller
                 Mail::send('mail.comprobante-mail-intel', ['user' => $user], function ($m) use ($pdfContent2, $request, $user) {
                     $m->to([
                         'pedro.bazo@sefarvzla.com',
-                        'gerenciait@sefarvzla.com',
                         'crisantoantonio@gmail.com',
                         'sistemasccs@sefarvzla.com',
                         'automatizacion@sefarvzla.com',
                         'sistemascol@sefarvzla.com',
-                        'analisisgenealogico@sefarvzla.com',
                         'asistentedeproduccion@sefarvzla.com',
                         'organizacionrrhh@sefarvzla.com',
-                        'gcuriel@sefarvzla.com',
                         'organizacionrrhh@sefarvzla.com',
                         '20053496@bcc.hubspot.com',
                         'contabilidad@sefaruniversal.com',
@@ -1375,7 +1364,7 @@ class ClienteController extends Controller
 
                     $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND b.passport='".$user->passport."' ORDER BY a.id DESC LIMIT 1;";
 
-                    $datos_factura = json_decode(json_encode(DB::select(DB::raw($query))),true);
+                    $datos_factura = json_decode(json_encode(DB::select($query)),true);
 
                     $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
 
@@ -1626,7 +1615,7 @@ class ClienteController extends Controller
         $hubspot = HubSpot\Factory::createWithAccessToken(env('HUBSPOT_KEY'));
         $query = 'SELECT id, email, pago_cupon, pago_registro, hs_id FROM users where pago_cupon = "NOPAY" or id_pago = "NOPAY"';
 
-        $globalcount = json_decode(json_encode(DB::select(DB::raw($query))),true);
+        $globalcount = json_decode(json_encode(DB::select($query)),true);
 
         foreach ($globalcount as $key => $value) {
             $idcontact = "";
@@ -1740,7 +1729,7 @@ function generate_string($input, $strength = 16) {
 
 function createPDF($dato){
     $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND a.hash_factura='$dato';";
-    $datos_factura = json_decode(json_encode(DB::select(DB::raw($query))),true);
+    $datos_factura = json_decode(json_encode(DB::select($query)),true);
 
     $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
 
@@ -1751,7 +1740,7 @@ function createPDF($dato){
 
 function createPDFintel($dato){
     $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND a.hash_factura='$dato';";
-    $datos_factura = json_decode(json_encode(DB::select(DB::raw($query))),true);
+    $datos_factura = json_decode(json_encode(DB::select($query)),true);
 
     $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
 

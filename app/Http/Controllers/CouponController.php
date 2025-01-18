@@ -62,7 +62,7 @@ class CouponController extends Controller
             $date = $request->expire;
         }
 
-        try { 
+        try {
             Coupon::create([
                 'couponcode' => trim($request->couponcode),
                 'percentage' => trim($request->percentage),
@@ -73,12 +73,12 @@ class CouponController extends Controller
                 'motivo' => trim($request->motivo),
                 'enabled' => 1
             ]);
-        } catch(\Illuminate\Database\QueryException $ex){ 
+        } catch(\Illuminate\Database\QueryException $ex){
             Alert::error('Error', 'El cupón ya existe');
             return back();
         }
 
-        // Mensaje 
+        // Mensaje
         Alert::success('¡Éxito!', 'Se ha añadido el cupón: ' . $request->couponcode);
 
         // Redireccionar a la vista que invocó este método
@@ -140,16 +140,16 @@ class CouponController extends Controller
         $coupon->cliente = trim($request->cliente);
         $coupon->motivo = trim($request->motivo);
 
-        try { 
+        try {
             $coupon->save();
-        } catch(\Illuminate\Database\QueryException $ex){ 
+        } catch(\Illuminate\Database\QueryException $ex){
             Alert::error('Error', 'El cupón ya existe. No puedes duplicarlo.');
             return back();
         }
 
-        // Mensaje 
+        // Mensaje
         Alert::success('¡Éxito!', 'Se ha actualizado el cupón: ' . $request->couponcode);
-        
+
         // Redireccionar a la vista que invocó este método
         $coupons = Coupon::orderBy('enabled', 'desc')
                 ->orderBy('created_at', 'desc')
@@ -166,11 +166,11 @@ class CouponController extends Controller
     public function destroy(Coupon $coupon)
     {
         $titulo = $coupon->couponcode;
-        
+
         $coupon->delete();
 
         Alert::info('¡Advertencia!', 'Se ha eliminado el cupón: ' . $titulo);
-        
+
         $coupons = Coupon::orderBy('enabled', 'desc')
                 ->orderBy('created_at', 'desc')
                 ->get();
@@ -196,7 +196,7 @@ class CouponController extends Controller
         $hubspot = HubSpot\Factory::createWithAccessToken(env('HUBSPOT_KEY'));
         $query = 'SELECT id, email, pago_cupon, hs_id FROM users where pay>0 and pago_cupon <> "" and pago_cupon is not null and email not like "%sefarvzla.com%" and hs_id is null';
 
-        $globalcount = json_decode(json_encode(DB::select(DB::raw($query))),true);
+        $globalcount = json_decode(json_encode(DB::select($query)),true);
 
         foreach ($globalcount as $key => $value) {
             $idcontact = "";
@@ -238,7 +238,7 @@ class CouponController extends Controller
                     $simplePublicObjectInput = new SimplePublicObjectInput([
                         'properties' => $properties1,
                     ]);
-                    
+
                     $apiResponse = $hubspot->crm()->contacts()->basicApi()->update($idcontact, $simplePublicObjectInput);
                 }
             }
