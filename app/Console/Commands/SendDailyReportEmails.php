@@ -198,13 +198,13 @@ class SendDailyReportEmails extends Command
 
         // Ejecuta la consulta
         $registrations = DB::select(
-            DB::raw("
+            "
                 SELECT DATE(created_at) as date, COUNT(*) as count
                 FROM users
                 WHERE created_at >= :lastMonth AND created_at < :fechaSiguiente
                 GROUP BY DATE(created_at)
                 ORDER BY date ASC
-            "),
+            ",
             [
                 'lastMonth' => $lastMonthStr,
                 'fechaSiguiente' => $fechaSiguienteStr
