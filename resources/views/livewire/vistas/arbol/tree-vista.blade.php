@@ -20,7 +20,7 @@
                 <div class="text-left">
                     <label for="Modo" class="px-3 block text-sm font-medium text-gray-700"
                         title="Indicar línea genealógica">Modo</label>
-                    <select wire:model="Modo" name="Modo"
+                    <select wire:model.live="Modo" name="Modo"
                         class="w-44 mt-1 block py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         <option value="0">Expandido</option>
                         <option value="1">Compacto</option>
@@ -33,7 +33,7 @@
                     <div class="justify-center">
                         <label for="Familiares" class="px-3 block text-sm font-medium text-gray-700"
                             title="Familiares en el proceso">Familiares</label>
-                        <select wire:model="IDFamiliar" style="min-width:350px; max-width:450px" name="Familiares"
+                        <select wire:model.live="IDFamiliar" style="min-width:350px; max-width:450px" name="Familiares"
                             class="w-44 mt-1 block py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             <option value="{{ null }}">-</option>
                             @foreach ($families as $family)

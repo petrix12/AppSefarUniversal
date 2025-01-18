@@ -30,14 +30,14 @@
                 <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
                     <div class="flex bg-white px-4 py-3 sm:px-6">
                         <input
-                            wire:model="search"
+                            wire:model.live="search"
                             type="text"
                             placeholder="Buscar..."
                             class="mr-2 mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                             {{-- class="form-input rounded-md shadow-sm mt-1 block w-full" --}}
                         >
                         <div class="col-span-6 sm:col-span-3">
-                            <select wire:model="perPage" class="py-2 px-2 mt-1 mr-10 block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <select wire:model.live="perPage" class="py-2 px-2 mt-1 mr-10 block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                 <option value="5">5 por pág. </option>
                                 <option value="10">10 por pág.</option>
                                 <option value="15">15 por pág.</option>

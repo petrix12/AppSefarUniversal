@@ -43,10 +43,12 @@
 
           gtag('config', 'UA-189067277-1');
         </script>
+        @livewireStyles
     </head>
     <body>
         <div class="font-sans text-gray-900 antialiased">
             {{ $slot }}
         </div>
     </body>
+    @livewireScripts
 </html>

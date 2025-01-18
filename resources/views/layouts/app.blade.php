@@ -54,9 +54,10 @@
 
           gtag('config', 'UA-189067277-1');
         </script>
+
     </head>
     <body class="font-sans antialiased">
-        <x-jet-banner />
+        <x-banner />
 
         <div class="min-h-screen bg-gray-100">
             @livewire('navigation-menu')
