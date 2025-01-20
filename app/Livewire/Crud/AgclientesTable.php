@@ -21,7 +21,8 @@ class AgclientesTable extends Component
     public $solo_clientes = true;
     public $ordenar = 'FRegistro';
     public $asc = 'DESC';
-    
+    public $page = '1';
+
     public function render()
     {
         //$rol = Auth()->user()->hasRole('Traviesoevans');
@@ -55,7 +56,7 @@ class AgclientesTable extends Component
                 ->orderBy($this->ordenar,$this->asc)
                 ->orderBy('IDPersona','ASC')
                 ->paginate($this->perPage);
-       
+
         return view('livewire.crud.agclientes-table', compact('agclientes'));
     }
 

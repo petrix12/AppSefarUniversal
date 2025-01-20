@@ -17,7 +17,8 @@ class CountriesTable extends Component
 
     public $search = '';
     public $perPage = '10';
-    
+    public $page = '1';
+
     public function render()
     {
         return view('livewire.crud.countries-table', [

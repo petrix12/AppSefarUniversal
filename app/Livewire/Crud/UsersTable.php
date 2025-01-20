@@ -16,9 +16,10 @@ class UsersTable extends Component
         'perPage' => ['except' => '10']
     ];
 
+    public $page = '1';
     public $search = '';
     public $perPage = '10';
-    
+
     public function render()
     {
         return view('livewire.crud.users-table', [

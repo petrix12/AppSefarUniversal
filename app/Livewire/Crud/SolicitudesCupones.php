@@ -22,6 +22,7 @@ class SolicitudesCupones extends Component
     public $filtro = 'por_aprobar'; // Valor por defecto
     public $search = ''; // Campo de búsqueda
     public $perPage = 10; // Paginación
+    public $page = '1';
 
     public function render()
     {

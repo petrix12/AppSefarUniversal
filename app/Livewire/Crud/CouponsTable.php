@@ -12,7 +12,8 @@ class CouponsTable extends Component
 
     public $search = '';
     public $perPage = '15';
-    
+    public $page = '1';
+
     public function render()
     {
         //$rol = Auth()->user()->hasRole('Traviesoevans');
@@ -26,7 +27,7 @@ class CouponsTable extends Component
                 ->orderBy('enabled', 'desc')
                 ->orderBy('created_at', 'desc')
                 ->paginate($this->perPage);
-       
+
         return view('livewire.crud.coupons-table', compact('coupons'));
     }
 }

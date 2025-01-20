@@ -17,7 +17,8 @@ class PermissionsTable extends Component
 
     public $search = '';
     public $perPage = '5';
-    
+    public $page = '1';
+
     public function render()
     {
         return view('livewire.crud.permissions-table', [

@@ -409,7 +409,7 @@ class HubspotService
             //      pásalas en el segundo parámetro de getById con implode()
             //    - Ejemplo: "mi_archivo_cv,foto_del_contacto"
 
-            $fileProperties = ["pasaporte__documento_", "partida_de_nacimiento_simple__"];
+            $fileProperties = ["pasaporte__documento_", "partida_de_nacimiento_simple__", "documentos_adicionales"];
             $propertiesToRequest = implode(',', $fileProperties);
 
             //    - OJO: Usa basicApi()->getById(...) de la CRM v3

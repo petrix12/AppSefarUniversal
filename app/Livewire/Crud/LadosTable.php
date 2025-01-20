@@ -17,7 +17,8 @@ class LadosTable extends Component
 
     public $search = '';
     public $perPage = '5';
-    
+    public $page = '1';
+
     public function render()
     {
         $lados = Lado::where('Lado','LIKE',"%$this->search%")

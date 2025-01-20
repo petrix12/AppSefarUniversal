@@ -19,6 +19,7 @@ class FilesTable extends Component
 
     public $search = '';
     public $perPage = '25';
+    public $page = '1';
 
     public function render()
     {

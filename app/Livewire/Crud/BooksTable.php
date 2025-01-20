@@ -17,9 +17,10 @@ class BooksTable extends Component
 
     public $search = '';
     public $perPage = '10';
-    
+    public $page = '1';
+
     public function render()
-    {	
+    {
         $books = Book::where('titulo','LIKE',"%$this->search%")
                     ->orWhere('subtitulo','LIKE',"%$this->search%")
                     ->orWhere('autor','LIKE',"%$this->search%")

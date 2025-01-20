@@ -17,7 +17,8 @@ class ParentescosTable extends Component
 
     public $search = '';
     public $perPage = '10';
-    
+    public $page = '1';
+
     public function render()
     {
         $parentescos = Parentesco::where('Parentesco','LIKE',"%$this->search%")

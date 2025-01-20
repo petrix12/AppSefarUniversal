@@ -15,9 +15,10 @@ class TFilesTable extends Component
         'perPage' => ['except' => '10']
     ];
 
+    public $page = '1';
     public $search = '';
     public $perPage = '10';
-    
+
     public function render()
     {
         $t_files = TFile::where('tipo','LIKE',"%$this->search%")

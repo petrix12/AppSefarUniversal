@@ -17,7 +17,8 @@ class MiscelaneosTable extends Component
 
     public $search = '';
     public $perPage = '10';
-    
+    public $page = '1';
+
     public function render()
     {
         $miscelaneos = Miscelaneo::where('titulo','LIKE',"%$this->search%")

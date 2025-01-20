@@ -77,31 +77,67 @@ class EtiquetaGenealogiaController extends Controller
      */
     public function update(Request $request)
     {
-        $datos = $request->all();
+        try {
+            // Validar los datos del formulario
+            $validatedData = $request->validate([
+                'boardId' => 'required|integer',
+                'user_id' => 'required|exists:users,id',
+                // Puedes añadir más validaciones según los campos del formulario
+            ]);
 
-        $user = User::find($request->user_id);
+            // Obtener datos del usuario
+            $user = User::findOrFail($request->user_id);
+            $monday_id = $user->monday_id;
+            $boardId = $request->boardId;
 
-        $monday_id = $user->monday_id;
+            // Eliminar campos no necesarios para la mutación
+            $datos = $request->except(['_token', 'boardId', 'user_id']);
 
-        $boardId = $request->boardId;
+            // Construir la consulta de mutación
+            $query = '
+            change_multiple_column_values(
+                board_id: '.$boardId.',
+                item_id: '.$monday_id.',
+                column_values: '.json_encode(json_encode($datos)).'
+            ) {
+                id
+            }
+            ';
 
-        unset($datos['_token'], $datos['boardId'], $datos['user_id']);
+            // Ejecutar la mutación en Monday
+            $updateResult = json_decode(json_encode(Monday::customMutation($query)), true);
 
-        $query = '
-        change_multiple_column_values(
-            board_id: '.$boardId.',
-            item_id: '.$monday_id.',
-            column_values: '.json_encode(json_encode($datos)).'
-        ) {
-            id
+            // Verificar si la mutación fue exitosa
+            if (isset($updateResult['change_multiple_column_values']['id'])) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Datos actualizados correctamente.',
+                    'data' => $updateResult['change_multiple_column_values'],
+                ], 200);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pudo actualizar los datos en Monday.',
+                    'errors' => $updateResult['errors'] ?? ['Error desconocido.'],
+                ], 500);
+            }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Retornar errores de validación
+            return response()->json([
+                'success' => false,
+                'message' => 'Errores de validación.',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            // Retornar errores generales
+            return response()->json([
+                'success' => false,
+                'message' => 'Ocurrió un error inesperado.',
+                'errors' => [$e->getMessage()],
+            ], 500);
         }
-        ';
-
-        $updateResult = json_decode(json_encode(Monday::customMutation($query)), true);
-
-        dd($updateResult);
-
     }
+
 
     /**
      * Remove the specified resource from storage.

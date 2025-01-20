@@ -130,6 +130,8 @@ Route::post('getreportemensual',[ReportController::class, 'getreportemensual'])-
 Route::post('getreportesemanal',[ReportController::class, 'getreportesemanal'])->name('getreportesemanal')->middleware('can:reportes.index');
 Route::post('getreporteanual',[ReportController::class, 'getreporteanual'])->name('getreporteanual')->middleware('can:reportes.index');
 
+Route::post('mypassword',[UserController::class, 'mypassword'])->name('mypassword');
+Route::post('adminchangepassword',[UserController::class, 'adminchangepassword'])->name('adminchangepassword');
 
 //TeamleaderTest
 

@@ -17,7 +17,8 @@ class ConnectionsTable extends Component
 
     public $search = '';
     public $perPage = '5';
-    
+    public $page = '1';
+
     public function render()
     {
         /* $this->page = 1; */
