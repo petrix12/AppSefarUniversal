@@ -116,20 +116,18 @@
                                     class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                     id="genero"
                                     name="genero">
-                                    <option value="" {{ old('genero', $user->genero) === '' ? 'selected' : '' }}></option>
+
+                                    <option value="" {{ old('genero', $user->genero ?? '') === '' ? 'selected' : '' }}></option>
                                     <option value="FEMENINO / FEMALE"
-                                        <?php if(trim($user->genero) == "FEMENINO" || $user->genero == "FEMENINO / FEMALE") { echo "selected"; } ?>
-                                    >
+                                        {{ old('genero', $user->genero ?? '') === 'FEMENINO' || old('genero', $user->genero ?? '') === 'FEMENINO / FEMALE' ? 'selected' : '' }}>
                                         FEMENINO / FEMALE
                                     </option>
                                     <option value="MASCULINO / MALE"
-                                        <?php if(trim($user->genero) == "MASCULINO" || $user->genero == "MASCULINO / MALE") { echo "selected"; } ?>
-                                    >
+                                        {{ old('genero', $user->genero ?? '') === 'MASCULINO' || old('genero', $user->genero ?? '') === 'MASCULINO / MALE' ? 'selected' : '' }}>
                                         MASCULINO / MALE
                                     </option>
                                     <option value="OTROS / OTHERS"
-                                        <?php if(trim($user->genero) == "OTRO" || $user->genero == "OTROS" || $user->genero == "OTROS / OTHERS"  || $user->genero == "OTROS / OT" ) { echo "selected"; } ?>
-                                    >
+                                        {{ in_array((string) old('genero', $user->genero ?? ''), ['OTRO', 'OTROS', 'OTROS / OTHERS', 'OTROS / OT']) ? 'selected' : '' }}>
                                         OTROS / OTHERS
                                     </option>
                                 </select>
@@ -808,6 +806,7 @@
                 </div>
 
                 <div class="tab-pane fade" id="etiquetado" role="tabpanel" aria-labelledby="etiquetado-tab">
+                    @if ($boardId != 0)
                     <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4 mb-4">
                         <span class="ctvSefar block text-indigo-600">Tablero actual: {{ $boardName }}</span>
                     </h2>
@@ -946,6 +945,11 @@
                             </button>
                         </div>
                     </form>
+                    @else
+                        <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4 mb-4">
+                            <span class="ctvSefar block text-indigo-600">Este cliente no se encuentra en Monday</span>
+                        </h2>
+                    @endif
                 </div>
             </div>
         </div>

@@ -1692,21 +1692,36 @@ class UserController extends Controller
             if ($boardId) {
                 $this->storeMondayBoardColumns($boardId);
             }
-        }
 
-        $mondayData = json_decode(MondayData::where('user_id', $user->id)->first(), true);
-        $mondayData["data"] = json_decode($mondayData["data"], true);
+            $mondayData = json_decode(MondayData::where('user_id', $user->id)->first(), true);
+            $mondayData["data"] = json_decode($mondayData["data"] , true);
 
-        $dataMonday = [];
+            $dataMonday = [];
 
-        foreach($mondayData["data"]["column_values"] as $key => $campo){
-            $dataMonday[$campo["id"]] = $campo["text"];
-        }
+            foreach($mondayData["data"]["column_values"] as $key => $campo){
+                $dataMonday[$campo["id"]] = $campo["text"];
+            }
 
-        $mondayFormBuilder = json_decode(MondayFormBuilder::where('board_id', $boardId)->get(), true);
+            $mondayFormBuilder = json_decode(MondayFormBuilder::where('board_id', $boardId)->get(), true);
 
-        foreach($mondayFormBuilder as $key=>$campo){
-            $mondayFormBuilder[$key]["settings"] = json_decode($campo["settings"], true);
+            foreach($mondayFormBuilder as $key=>$campo){
+                $mondayFormBuilder[$key]["settings"] = json_decode($campo["settings"], true);
+            }
+
+            $mondayUserDetails = [];
+            $mondayUserDetails["nombre"] = $mondayUserDetailsPre["name"];
+            $mondayUserDetails["id"] = $mondayUserDetailsPre["id"];
+
+            foreach($mondayUserDetailsPre["column_values"] as $key=>$element){
+                $mondayUserDetails["propiedades"][$element["id"]] = [$element["column"]["title"], $element["text"]];
+            }
+        } else {
+            $dataMonday = [];
+            $mondayData = [];
+            $mondayFormBuilder = [];
+            $mondayUserDetails = [];
+            $boardId = 0;
+            $boardName = "";
         }
 
         // Preparar datos para la vista
@@ -1905,14 +1920,6 @@ class UserController extends Controller
                     $columnasparatabla[$key][$key2]["parentesco"] = $parentescos[$key-2][$key2];
                 }
             }
-        }
-
-        $mondayUserDetails = [];
-        $mondayUserDetails["nombre"] = $mondayUserDetailsPre["name"];
-        $mondayUserDetails["id"] = $mondayUserDetailsPre["id"];
-
-        foreach($mondayUserDetailsPre["column_values"] as $key=>$element){
-            $mondayUserDetails["propiedades"][$element["id"]] = [$element["column"]["title"], $element["text"]];
         }
 
         $html = view('crud.users.edit', compact('usuariosMonday', 'dataMonday', 'mondayData', 'boardId', 'boardName', 'mondayFormBuilder', 'archivos', 'user', 'roles', 'permissions', 'facturas', 'servicios', 'columnasparatabla'))->render();
