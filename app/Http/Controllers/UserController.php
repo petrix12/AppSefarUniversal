@@ -1920,6 +1920,76 @@ class UserController extends Controller
 
     }
 
+
+    public function savePersonalData(Request $request){
+        $request->validate([
+            'email' => 'required|email|unique:users,email,' . $request->id,
+            'phone' => 'required|string|max:15',
+            'nombres' => 'required|string|max:255',
+            'apellidos' => 'required|string|max:255',
+            'date_of_birth' => 'required|date',
+            'passport' => 'required|string|max:20|unique:users,passport,' . $request->id,
+        ], [
+            'correo.required' => 'El campo correo es obligatorio.',
+            'correo.email' => 'El correo debe ser válido.',
+            'correo.unique' => 'Este correo ya está registrado.',
+            'phone.required' => 'El campo teléfono es obligatorio.',
+            'nombres.required' => 'El campo nombres es obligatorio.',
+            'apellidos.required' => 'El campo apellidos es obligatorio.',
+            'date_of_birth.required' => 'El campo fecha de nacimiento es obligatorio.',
+            'date_of_birth.date' => 'La fecha de nacimiento debe ser una fecha válida.',
+            'passport.required' => 'El campo pasaporte es obligatorio.',
+            'passport.unique' => 'Este pasaporte ya está registrado.',
+        ]);
+
+        $hubspotFields = [
+            'fecha_nac' => 'date_of_birth',
+            'nombres' => 'firstname',
+            'updated_at' => 'lastmodifieddate',
+            'apellidos' => 'lastname' ,
+            'referido_por' => 'n000__referido_por__clonado_',
+            'passport' => 'numero_de_pasaporte',
+            'servicio' => 'servicio_solicitado',
+        ];
+
+        $user = User::findOrFail($request->id);
+
+        // Obtener los datos actuales de la base de datos
+        $currentData = $user->toArray();
+
+        // Filtrar el request eliminando valores NULL que ya son NULL en la base de datos
+        $filteredRequest = collect($request->all())
+            ->filter(function ($value, $key) use ($currentData) {
+                return !is_null($value) || !array_key_exists($key, $currentData) || !is_null($currentData[$key]);
+            })
+            ->except(['_token', 'id']);
+
+        if ($filteredRequest->has('vinculo_antepasados')) {
+            $filteredRequest['vinculo_antepasados'] = implode(';', $filteredRequest->get('vinculo_antepasados'));
+        }
+
+        $hubspotData = [];
+
+        foreach ($filteredRequest as $key=>$data){
+            if ($key != "pay" && $key != "contrato"){
+                if (isset($hubspotFields[$key])){
+                    $hubspotData[$hubspotFields[$key]] = $data;
+                } else {
+                    $hubspotData[$key] = $data;
+                }
+            }
+        }
+
+        // Inspeccionar resultados
+        $user->update($filteredRequest->toArray());
+
+        // Llamar a la API de HubSpot para actualizar los datos
+        $this->hubspotService->updateContact($user->hs_id, $hubspotData);
+
+        // Retornar respuesta exitosa
+        return response()->json(['message' => 'Datos actualizados correctamente.']);
+    }
+
     /**
      * Update the specified resource in storage.
      *

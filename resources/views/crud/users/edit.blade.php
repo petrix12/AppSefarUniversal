@@ -71,22 +71,27 @@
                         Pagos realizados
                     </button>
                 </li>
+                @if(auth()->user()->roles[0]->id == 1)
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab" aria-controls="documents" aria-selected="false">
                         Archivos Cargados
                     </button>
                 </li>
+                @endif
+                @if(auth()->user()->roles[0]->id == 1)
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="etiquetado-tab" data-bs-toggle="tab" data-bs-target="#etiquetado" type="button" role="tab" aria-controls="etiquetado" aria-selected="false">
                         Etiquetado
                     </button>
                 </li>
+                @endif
             </ul>
             <div class="tab-content mt-4" id="formTabsContent">
                 <!-- Primer Formulario -->
                 <div class="tab-pane fade show active" id="personal_data" role="tabpanel" aria-labelledby="personal-data-tab">
-                    <form action="/guardar-datos-personales" method="POST">
+                    <form id="datos-personales-form">
                         @csrf
+                        <input type="hidden" id="id" name="id" value="{{$user->id}}" />
                         <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
                             <span class="ctvSefar block text-indigo-600">Datos Personales</span>
                         </h2>
@@ -158,8 +163,8 @@
                         </div>
                         <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
                             <div style="flex: 1;" class="mb-3">
-                                <label for="correo" class="block text-sm font-medium text-gray-700">Correo</label>
-                                <input type="email" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="correo" name="correo" value="{{ old('email', $user->email) }}" placeholder="Ingrese su correo electrónico">
+                                <label for="email" class="block text-sm font-medium text-gray-700">Correo</label>
+                                <input type="email" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="email" name="email" value="{{ old('email', $user->email) }}" placeholder="Ingrese su correo electrónico">
                             </div>
                             <div style="flex: 1;" class="mb-3">
                                 <label for="telefono" class="block text-sm font-medium text-gray-700">Teléfono</label>
@@ -645,15 +650,6 @@
 
                         <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
                             <div style="flex: 1;" class="mb-3">
-                                <label for="departamento_sefar_universal" class="block text-sm font-medium text-gray-700">Departamento Sefar Universal</label>
-                                <select class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="departamento_sefar_universal" name="departamento_sefar_universal">
-                                    <option value="" {{ old('departamento_sefar_universal', $user->departamento_sefar_universal ?? '') === '' ? 'selected' : '' }}></option>
-                                    <option value="Genealogía" {{ old('departamento_sefar_universal', $user->departamento_sefar_universal ?? '') === 'Genealogía' ? 'selected' : '' }}>Genealogía</option>
-                                    <option value="Ventas (Coordinador)" {{ old('departamento_sefar_universal', $user->departamento_sefar_universal ?? '') === 'Ventas (Coordinador)' ? 'selected' : '' }}>Ventas (Coordinador)</option>
-                                    <option value="Otros" {{ old('departamento_sefar_universal', $user->departamento_sefar_universal ?? '') === 'Otros' ? 'selected' : '' }}>Otros</option>
-                                </select>
-                            </div>
-                            <div style="flex: 1;" class="mb-3">
                                 <label for="estado_de_datos_y_documentos_de_los_antepasados" class="block text-sm font-medium text-gray-700">Estado de datos y documentos de antepasados</label>
                                 <select class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="estado_de_datos_y_documentos_de_los_antepasados" name="estado_de_datos_y_documentos_de_los_antepasados">
                                     <option value="" {{ old('estado_de_datos_y_documentos_de_los_antepasados', $user->estado_de_datos_y_documentos_de_los_antepasados ?? '') === '' ? 'selected' : '' }}></option>
@@ -666,7 +662,7 @@
 
                         @endif
 
-                        <button type="submit" class="cfrSefar btn btn-primary mt-3">Guardar</button>
+                        <button type="button" id="guardar-datos" class="cfrSefar btn btn-primary mt-3">Guardar</button>
                     </form>
                 </div>
 
@@ -1061,6 +1057,54 @@
                     });
                 }
             });
+        });
+
+        $('#guardar-datos').on('click', function(e) {
+            e.preventDefault(); // Evita el comportamiento predeterminado del botón
+
+            // Serializa los datos del formulario
+            let formData = $('#datos-personales-form').serialize();
+
+            // Envía la petición al backend usando AJAX
+            $.ajax({
+                url: '/guardar-datos-personales', // URL especificada en el formulario
+                type: 'POST',
+                data: formData,
+                success: function(response) {
+                    // Maneja la respuesta exitosa del servidor
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Éxito!',
+                        text: 'Datos guardados exitosamente.',
+                        confirmButtonText: 'Aceptar'
+                    });
+                },
+                error: function(xhr) {
+                    // Maneja errores
+                    let errors = xhr.responseJSON.errors;
+                    let errorMessage = xhr.responseJSON.message || 'Hubo un error al guardar los datos.';
+
+                    // Formatea los errores en una lista para mostrarlos en Swal2
+                    let formattedErrors = '';
+                    if (errors) {
+                        Object.keys(errors).forEach(function(key) {
+                            formattedErrors += `<p>${errors[key][0]}</p>`;
+                        });
+                    }
+
+                    // Muestra el mensaje de error usando Swal2
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error al guardar',
+                        html: formattedErrors || errorMessage,
+                        confirmButtonText: 'Aceptar'
+                    });
+                }
+            });
+        });
+
+        $('#datos-personales-form').on('submit', function (e) {
+            e.preventDefault();
         });
 
         // Evita el comportamiento predeterminado del formulario
