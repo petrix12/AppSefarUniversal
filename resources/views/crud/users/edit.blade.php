@@ -81,16 +81,6 @@
                         Etiquetado
                     </button>
                 </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="fcje-tab" data-bs-toggle="tab" data-bs-target="#fcje" type="button" role="tab" aria-controls="fcje" aria-selected="false">
-                        FCJE
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="cil-tab" data-bs-toggle="tab" data-bs-target="#cil" type="button" role="tab" aria-controls="cil" aria-selected="false">
-                        CIL
-                    </button>
-                </li>
             </ul>
             <div class="tab-content mt-4" id="formTabsContent">
                 <!-- Primer Formulario -->
@@ -100,7 +90,7 @@
                         <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
                             <span class="ctvSefar block text-indigo-600">Datos Personales</span>
                         </h2>
-                        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
                             <div style="flex: 1;" class="mb-3">
                                 <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre</label>
                                 <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="nombres" name="nombres" value="{{ old('nombres', $user->nombres) }}" placeholder="Ingrese su nombre">
@@ -109,9 +99,61 @@
                                 <label for="apellido" class="block text-sm font-medium text-gray-700">Apellido</label>
                                 <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="apellidos" name="apellidos" value="{{ old('apellidos', $user->apellidos) }}" placeholder="Ingrese su apellido">
                             </div>
+                        </div>
+                        <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
                             <div style="flex: 1;" class="mb-3">
-                                <label for="pasaporte" class="block text-sm font-medium text-gray-700">Número de Pasaporte</label>
-                                <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="passport" name="passport" value="{{ old('passport', $user->passport) }}" placeholder="Ingrese su número de pasaporte">
+                                <label for="date_of_birth" class="block text-sm font-medium text-gray-700">Fecha de Nacimiento</label>
+                                <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="date_of_birth" name="date_of_birth" value="{{ old('date_of_birth', \Carbon\Carbon::parse($user->date_of_birth)->format('Y-m-d')) }}" placeholder="Ingrese fecha de nacimiento">
+                            </div>
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="genero" class="block text-sm font-medium text-gray-700">Genero</label>
+                                <select
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    id="genero"
+                                    name="genero">
+                                    <option value="" {{ old('genero', $user->genero) === '' ? 'selected' : '' }}></option>
+                                    <option value="FEMENINO / FEMALE"
+                                        <?php if(trim($user->genero) == "FEMENINO" || $user->genero == "FEMENINO / FEMALE") { echo "selected"; } ?>
+                                    >
+                                        FEMENINO / FEMALE
+                                    </option>
+                                    <option value="MASCULINO / MALE"
+                                        <?php if(trim($user->genero) == "MASCULINO" || $user->genero == "MASCULINO / MALE") { echo "selected"; } ?>
+                                    >
+                                        MASCULINO / MALE
+                                    </option>
+                                    <option value="OTROS / OTHERS"
+                                        <?php if(trim($user->genero) == "OTRO" || $user->genero == "OTROS" || $user->genero == "OTROS / OTHERS"  || $user->genero == "OTROS / OT" ) { echo "selected"; } ?>
+                                    >
+                                        OTROS / OTHERS
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="veces_casado" class="block text-sm font-medium text-gray-700">Veces Casado</label>
+                                <input
+                                    type="number"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    id="veces_casado"
+                                    name="veces_casado"
+                                    value="{{ old('veces_casado', $user->veces_casado ?? '') }}"
+                                    placeholder="Ingrese la cantidad de veces casado">
+                            </div>
+
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="edo_civil" class="block text-sm font-medium text-gray-700">Estado Civil</label>
+                                <select
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    id="edo_civil"
+                                    name="edo_civil">
+                                    <option value="" {{ old('edo_civil', $user->edo_civil ?? '') === '' ? 'selected' : '' }}></option>
+                                    <option value="SOLTERO (A)" {{ old('edo_civil', $user->edo_civil ?? '') === 'SOLTERO (A)' ? 'selected' : '' }}>SOLTERO (A)</option>
+                                    <option value="CASADO (A)" {{ old('edo_civil', $user->edo_civil ?? '') === 'CASADO (A)' ? 'selected' : '' }}>CASADO (A)</option>
+                                    <option value="DIVORCIADO (A)" {{ old('edo_civil', $user->edo_civil ?? '') === 'DIVORCIADO (A)' ? 'selected' : '' }}>DIVORCIADO (A)</option>
+                                    <option value="VIUDO (A)" {{ old('edo_civil', $user->edo_civil ?? '') === 'VIUDO (A)' ? 'selected' : '' }}>VIUDO (A)</option>
+                                </select>
                             </div>
                         </div>
                         <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
@@ -122,6 +164,18 @@
                             <div style="flex: 1;" class="mb-3">
                                 <label for="telefono" class="block text-sm font-medium text-gray-700">Teléfono</label>
                                 <input type="tel" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="phone" name="phone" value="{{ old('phone', $user->phone) }}" placeholder="Ingrese su número de teléfono">
+                            </div>
+                        </div>
+                        <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="detalle_de_la_solicitud" class="block text-sm font-medium text-gray-700">Detalles de la solicitud</label>
+                                <textarea
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    id="detalle_de_la_solicitud"
+                                    name="detalle_de_la_solicitud"
+                                    rows="3"
+                                    placeholder="Ingrese Detalles de la Solicitud"
+                                >{{ old('detalle_de_la_solicitud', $user->detalle_de_la_solicitud) }}</textarea>
                             </div>
                         </div>
                         <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
@@ -174,7 +228,7 @@
                                 @endif
                             </div>
                             <div style="flex: 1;" class="mb-3">
-                                <label for="servicio" class="block text-sm font-medium text-gray-700">Servicio Principal</label>
+                                <label for="contrato" class="block text-sm font-medium text-gray-700">Servicio Principal</label>
                                 @if(auth()->user()->roles[0]->id == 1)
                                 <select name="servicio" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                     <option></option>
@@ -188,7 +242,83 @@
                                     </p>
                                 @endif
                             </div>
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="contrato" class="block text-sm font-medium text-gray-700">Contrato</label>
+                                @if(auth()->user()->roles[0]->id == 1)
+                                    <select name="contrato" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        @if ($user->contrato == 0)
+                                            <option selected value=0>No ha firmado contrato</option>
+                                        @else
+                                            <option value=0>No ha firmado contrato</option>
+                                        @endif
+
+                                        @if ($user->contrato == 1)
+                                            <option selected value=1>Firmó Contrato</option>
+                                        @else
+                                            <option value=1>Firmó Contrato</option>
+                                        @endif
+                                    </select>
+                                @else
+                                    <p>
+                                        @if ($user->pay == 0)
+                                            No ha firmado contrato
+                                        @endif
+
+                                        @if ($user->pay == 1)
+                                            Firmó Contrato
+                                        @endif
+                                    </p>
+                                @endif
+                            </div>
                         </div>
+
+                        <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
+                            <span class="ctvSefar block text-indigo-600">
+                            Datos del Pasaporte
+                            </span>
+                        </h2>
+
+                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="pasaporte" class="block text-sm font-medium text-gray-700">Número de Pasaporte</label>
+                                <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="passport" name="passport" value="{{ old('passport', $user->passport) }}" placeholder="Ingrese su número de pasaporte">
+                            </div>
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="nombre_en_pasaporte" class="block text-sm font-medium text-gray-700">Nombre en Pasaporte</label>
+                                <input
+                                    type="text"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    id="nombre_en_pasaporte"
+                                    name="nombre_en_pasaporte"
+                                    value="{{ old('nombre_en_pasaporte', $user->nombre_en_pasaporte ?? '') }}"
+                                    placeholder="Ingrese el nombre tal como aparece en el pasaporte">
+                            </div>
+
+                            <!-- Campo País de Expedición del Pasaporte -->
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="pais_de_expedicion_del_pasaporte" class="block text-sm font-medium text-gray-700">País de Expedición del Pasaporte</label>
+                                <input
+                                    type="text"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    id="pais_de_expedicion_del_pasaporte"
+                                    name="pais_de_expedicion_del_pasaporte"
+                                    value="{{ old('pais_de_expedicion_del_pasaporte', $user->pais_de_expedicion_del_pasaporte ?? '') }}"
+                                    placeholder="Ingrese el país de expedición del pasaporte">
+                            </div>
+
+                            <!-- Campo Fecha de Caducidad del Pasaporte -->
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="fecha_de_caducidad_del_pasaporte" class="block text-sm font-medium text-gray-700">Fecha de Caducidad del Pasaporte</label>
+                                <input
+                                    type="date"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    id="fecha_de_caducidad_del_pasaporte"
+                                    name="fecha_de_caducidad_del_pasaporte"
+                                    value="{{ old('fecha_de_caducidad_del_pasaporte', \Carbon\Carbon::parse($user->fecha_de_caducidad_del_pasaporte ?? now())->format('Y-m-d')) }}"
+                                    placeholder="Ingrese la fecha de caducidad del pasaporte">
+                            </div>
+                        </div>
+
                         <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
                             <span class="ctvSefar block text-indigo-600">Direcciones</span>
                         </h2>
@@ -201,6 +331,16 @@
                                 <label for="city" class="block text-sm font-medium text-gray-700">Ciudad de Residencia</label>
                                 <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="city" name="city" value="{{ old('city', $user->city) }}" placeholder="Ingrese su ciudad de Residencia">
                             </div>
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="anos_en_residencia_actual" class="block text-sm font-medium text-gray-700">Años en Residencia Actual</label>
+                                <input
+                                    type="text"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    id="anos_en_residencia_actual"
+                                    name="anos_en_residencia_actual"
+                                    value="{{ old('anos_en_residencia_actual', $user->anos_en_residencia_actual ?? '') }}"
+                                    placeholder="Ingrese los años en la residencia actual">
+                            </div>
                         </div>
                         <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
                             <div style="flex: 1;" class="mb-3">
@@ -208,6 +348,7 @@
                                 <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="address" name="address" value="{{ old('address', $user->address) }}" placeholder="Ingrese su Dirección actual">
                             </div>
                         </div>
+
                         <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
                             <div style="flex: 1;" class="mb-3">
                                 <label for="pais_de_nacimiento" class="block text-sm font-medium text-gray-700">Pais de Nacimiento</label>
@@ -218,7 +359,137 @@
                                 <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="ciudad_de_nacimiento" name="ciudad_de_nacimiento" value="{{ old('ciudad_de_nacimiento', $user->ciudad_de_nacimiento) }}" placeholder="Ingrese su Ciudad de Nacimiento">
                             </div>
                         </div>
+                        <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="direccion_en_el_pais_de_origen" class="block text-sm font-medium text-gray-700">Dirección en el País de Origen</label>
+                                <input
+                                    type="text"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    id="direccion_en_el_pais_de_origen"
+                                    name="direccion_en_el_pais_de_origen"
+                                    value="{{ old('direccion_en_el_pais_de_origen', $user->direccion_en_el_pais_de_origen ?? '') }}"
+                                    placeholder="Ingrese la dirección en el país de origen">
+                            </div>
+                        </div>
+                        <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="paises_donde_ha_residido_en_los_ultimos_5_anos" class="block text-sm font-medium text-gray-700">Países donde ha residido en los últimos 5 años</label>
+                                <textarea
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    id="paises_donde_ha_residido_en_los_ultimos_5_anos"
+                                    name="paises_donde_ha_residido_en_los_ultimos_5_anos"
+                                    rows="3"
+                                    placeholder="Ingrese los países donde ha residido en los últimos 5 años">{{ old('paises_donde_ha_residido_en_los_ultimos_5_anos', $user->paises_donde_ha_residido_en_los_ultimos_5_anos ?? '') }}</textarea>
+                            </div>
+                        </div>
 
+                        <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
+                            <span class="ctvSefar block text-indigo-600">Otros datos personales</span>
+                        </h2>
+                        <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="conyuge_interesado_en_proceso" class="block text-sm font-medium text-gray-700">Conyuge Interesado</label>
+                                <input
+                                    type="checkbox"
+                                    class="mt-1 py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    id="conyuge_interesado_en_proceso"
+                                    name="conyuge_interesado_en_proceso"
+                                    style="width: 33.6px!important; height: 33.6px!important;"
+                                    value="1"
+                                    {{ old('conyuge_interesado_en_proceso', $user->conyuge_interesado_en_proceso ? 'checked' : '') }}
+                                />
+                            </div>
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="nombre_completo_del_conyuge" class="block text-sm font-medium text-gray-700">Nombre de Conyuge</label>
+                                <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="nombre_completo_del_conyuge" name="nombre_completo_del_conyuge" value="{{ old('nombre_completo_del_conyuge', $user->nombre_completo_del_conyuge) }}" placeholder="Ingrese su Ciudad de Nacimiento">
+                            </div>
+                        </div>
+                        <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <!-- Campo Partida de Nacimiento Simple -->
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="partida_de_nacimiento_simple" class="block text-sm font-medium text-gray-700">Partida de Nacimiento Simple</label>
+                                <input
+                                    type="text"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    id="partida_de_nacimiento_simple"
+                                    name="partida_de_nacimiento_simple"
+                                    value="{{ old('partida_de_nacimiento_simple', $user->partida_de_nacimiento_simple ?? '') }}"
+                                    placeholder="Ingrese información sobre la partida de nacimiento">
+                            </div>
+                        </div>
+                        <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <!-- Campo Número de IBAN -->
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="no_de_iban" class="block text-sm font-medium text-gray-700">Número de IBAN</label>
+                                <input
+                                    type="text"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    id="no_de_iban"
+                                    name="no_de_iban"
+                                    value="{{ old('no_de_iban', $user->no_de_iban ?? '') }}"
+                                    placeholder="Ingrese el número de IBAN">
+                            </div>
+
+                            <!-- Campo Número de Identificación Nacional (NIF) -->
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="no_de_identificacion_nacional__nif_" class="block text-sm font-medium text-gray-700">Número de Identificación Nacional (NIF)</label>
+                                <input
+                                    type="text"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    id="no_de_identificacion_nacional__nif_"
+                                    name="no_de_identificacion_nacional__nif_"
+                                    value="{{ old('no_de_identificacion_nacional__nif_', $user->no_de_identificacion_nacional__nif_ ?? '') }}"
+                                    placeholder="Ingrese el número de identificación nacional (NIF)">
+                            </div>
+                        </div>
+
+                        <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <!-- Campo Vínculo con Antepasados -->
+                            <div style="flex: 1;" class="mb-3">
+                                <label class="block text-sm font-medium text-gray-700">Vínculo con Antepasados</label>
+                                @php
+                                    $vinculosSeleccionados = explode(';', $user->vinculo_antepasados ?? '');
+                                @endphp
+                                <div class="mt-1">
+                                    <label class="flex items-center">
+                                        <input
+                                            type="checkbox"
+                                            name="vinculo_antepasados[]"
+                                            value="Padre/Madre"
+                                            {{ in_array('Padre/Madre', $vinculosSeleccionados) ? 'checked' : '' }}
+                                            class="mr-2">
+                                        Padre/Madre
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input
+                                            type="checkbox"
+                                            name="vinculo_antepasados[]"
+                                            value="Abuelo(a)"
+                                            {{ in_array('Abuelo(a)', $vinculosSeleccionados) ? 'checked' : '' }}
+                                            class="mr-2">
+                                        Abuelo(a)
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input
+                                            type="checkbox"
+                                            name="vinculo_antepasados[]"
+                                            value="Bisabuelo(a)"
+                                            {{ in_array('Bisabuelo(a)', $vinculosSeleccionados) ? 'checked' : '' }}
+                                            class="mr-2">
+                                        Bisabuelo(a)
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input
+                                            type="checkbox"
+                                            name="vinculo_antepasados[]"
+                                            value="Tatarabuelo(a)"
+                                            {{ in_array('Tatarabuelo(a)', $vinculosSeleccionados) ? 'checked' : '' }}
+                                            class="mr-2">
+                                        Tatarabuelo(a)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                         @if(auth()->user()->roles[0]->id == 1)
 
                         <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
@@ -262,6 +533,30 @@
                             <div style="flex: 1;" class="mb-3">
                                 <label for="n6__aacs_recibido_en_espana" class="block text-sm font-medium text-gray-700">AACS Recibido en España</label>
                                 <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n6__aacs_recibido_en_espana" name="n6__aacs_recibido_en_espana" value="{{ old('n6__aacs_recibido_en_espana', $user->n6__aacs_recibido_en_espana) }}" placeholder="AACS Recibido en España">
+                            </div>
+                        </div>
+
+                        <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
+                            <span class="ctvSefar block text-indigo-600">CCSE</span>
+                        </h2>
+                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="ccse_archivado_espana" class="block text-sm font-medium text-gray-700">CCSE Archivado España</label>
+                                <input type="text" value="{{ old('ccse_archivado_espana', $user->ccse_archivado_espana) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="ccse_archivado_espana" name="ccse_archivado_espana" placeholder="CCSE Archivado España">
+                            </div>
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="ccse_resultado" class="block text-sm font-medium text-gray-700">CCSE Resultado</label>
+                                <input type="text" value="{{ old('ccse_resultado', $user->ccse_resultado) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="ccse_resultado" name="ccse_resultado">
+                            </div>
+                        </div>
+
+                        <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
+                            <span class="ctvSefar block text-indigo-600">CIF</span>
+                        </h2>
+                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="cif" class="block text-sm font-medium text-gray-700">CIF</label>
+                                <input type="text" value="{{ old('cif', $user->cif) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="cif" name="cif" placeholder="CIF">
                             </div>
                         </div>
 
@@ -347,6 +642,28 @@
                             </div>
                         </div>
 
+
+                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="departamento_sefar_universal" class="block text-sm font-medium text-gray-700">Departamento Sefar Universal</label>
+                                <select class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="departamento_sefar_universal" name="departamento_sefar_universal">
+                                    <option value="" {{ old('departamento_sefar_universal', $user->departamento_sefar_universal ?? '') === '' ? 'selected' : '' }}></option>
+                                    <option value="Genealogía" {{ old('departamento_sefar_universal', $user->departamento_sefar_universal ?? '') === 'Genealogía' ? 'selected' : '' }}>Genealogía</option>
+                                    <option value="Ventas (Coordinador)" {{ old('departamento_sefar_universal', $user->departamento_sefar_universal ?? '') === 'Ventas (Coordinador)' ? 'selected' : '' }}>Ventas (Coordinador)</option>
+                                    <option value="Otros" {{ old('departamento_sefar_universal', $user->departamento_sefar_universal ?? '') === 'Otros' ? 'selected' : '' }}>Otros</option>
+                                </select>
+                            </div>
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="estado_de_datos_y_documentos_de_los_antepasados" class="block text-sm font-medium text-gray-700">Estado de datos y documentos de antepasados</label>
+                                <select class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="estado_de_datos_y_documentos_de_los_antepasados" name="estado_de_datos_y_documentos_de_los_antepasados">
+                                    <option value="" {{ old('estado_de_datos_y_documentos_de_los_antepasados', $user->estado_de_datos_y_documentos_de_los_antepasados ?? '') === '' ? 'selected' : '' }}></option>
+                                    <option value="Conoce los datos y tiene los documentos" {{ old('estado_de_datos_y_documentos_de_los_antepasados', $user->estado_de_datos_y_documentos_de_los_antepasados ?? '') === 'Conoce los datos y tiene los documentos' ? 'selected' : '' }}>Conoce los datos y tiene los documentos</option>
+                                    <option value="Conoce los datos, pero no tiene los documentos" {{ old('estado_de_datos_y_documentos_de_los_antepasados', $user->estado_de_datos_y_documentos_de_los_antepasados ?? '') === 'Conoce los datos, pero no tiene los documentos' ? 'selected' : '' }}>Conoce los datos, pero no tiene los documentos</option>
+                                    <option value="No conoce los datos" {{ old('estado_de_datos_y_documentos_de_los_antepasados', $user->estado_de_datos_y_documentos_de_los_antepasados ?? '') === 'No conoce los datos' ? 'selected' : '' }}>No conoce los datos</option>
+                                </select>
+                            </div>
+                        </div>
+
                         @endif
 
                         <button type="submit" class="cfrSefar btn btn-primary mt-3">Guardar</button>
@@ -400,7 +717,7 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach ( $columnasparatabla as $generacion => $grupo )
                                 @foreach ( $grupo as $persona)
-                                    @if ($persona["showbtn"] == 2)
+                                    @if (isset($persona["showbtn"]) && $persona["showbtn"] == 2)
                                     <tr>
                                         <td>{{$persona["Nombres"]}} {{$persona["Apellidos"]}}</td>
                                         <td>{{$persona["parentesco"]}}</td>
