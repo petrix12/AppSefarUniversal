@@ -827,6 +827,13 @@
                                 ]))
                                     @continue
                                 @endif
+
+                                @if (in_array($field['title'], [
+                                    "No. PASAPORTE", "FECHA NACIMIENTO", "PADRE", "MADRE", "Record ID"
+                                ]))
+                                    @continue
+                                @endif
+
                                 @if ($field['type'] === 'long_text')
                                     <!-- Textarea abarca toda la fila -->
                                     <div style="flex: 1 1 100%;" class="mb-3">
