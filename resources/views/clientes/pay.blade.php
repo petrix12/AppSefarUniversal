@@ -89,12 +89,18 @@
         </script>
     @endif
 
+    <style>
+        .content-wrapper {
+
+        }
+    </style>
+
     @if (auth()->user()->servicio == 'Constitución de Empresa' || auth()->user()->servicio == 'Representante Fiscal' || auth()->user()->servicio == 'Codigo  Fiscal' || auth()->user()->servicio == 'Apertura de cuenta' || auth()->user()->servicio == 'Trimestre contable' || auth()->user()->servicio == 'Cooperativa 10 años' || auth()->user()->servicio == 'Cooperativa 5 años' || auth()->user()->servicio == 'Portuguesa Sefardi' || auth()->user()->servicio == 'Portuguesa Sefardi - Subsanación' || auth()->user()->servicio == 'Certificación de Documentos - Portugal')
     <form action="" method="POST" class="require-validation" data-cc-on-file="false" data-stripe-publishable-key="{{ env('STRIPE_KEY_PORT') }}" id="payment-form">
     @else
     <form action="" method="POST" class="require-validation" data-cc-on-file="false" data-stripe-publishable-key="{{ env('STRIPE_KEY') }}" id="payment-form">
     @endif
-        <div class="container p-8 row" style="display:flex;">
+        <div class="container-fluid px-2 py-3">
             <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
 
             <script src="https://cdnjs.cloudflare.com/ajax/libs/cleave.js/1.6.0/cleave.min.js"></script>
@@ -242,177 +248,179 @@
 
             </script>
 
-
-
             @csrf
-            <div class="col-sm-12 col-md-5 mb-0">
-                <center>
-                    <h2 style="padding:10px 0px; color:#12313a"><i class="mt-4 fas fa-credit-card"></i> Datos de Pago <i class="fas fa-credit-card"></i></h2>
-                </center>
-                <div class='row' style="margin: 0;">
-                    <div class='col-xs-12 form-group required' style="width: 100%;">
-                        <label class='control-label'>Nombre en la Tarjeta</label>
-                        <input
-                            autocomplete='off' id="nameoncard" name="nameoncard" class='form-control'
-                            type='text' style="width: 100%;">
+            <div class="row">
+                <!-- Columna izquierda: Datos de pago -->
+                <div class="col-12 col-md-5 mb-3 order-2 order-md-1">
+                    <div class="card card-body shadow">
+                        <h2 class="text-center mb-4">
+                            <i class="fas fa-credit-card"></i> Datos de Pago <i class="fas fa-credit-card"></i>
+                        </h2>
+
+                        <div class="form-group required mb-3">
+                            <label for="nameoncard" class="control-label">Nombre en la Tarjeta</label>
+                            <input
+                                autocomplete="off"
+                                id="nameoncard"
+                                name="nameoncard"
+                                class="form-control"
+                                type="text">
+                        </div>
+
+                        <div class="form-group required mb-3">
+                            <label for="ccn" class="control-label">Número de Tarjeta</label>
+                            <input
+                                autocomplete="off"
+                                id="ccn"
+                                class="form-control card-number"
+                                type="tel">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-4 form-group required mb-3">
+                                <label for="card-cvc" class="control-label">CVC</label>
+                                <input
+                                    autocomplete="off"
+                                    class="form-control card-cvc"
+                                    placeholder="***"
+                                    maxlength="4"
+                                    type="password">
+                            </div>
+                            <div class="col-4 form-group required mb-3">
+                                <label class="control-label">Mes</label>
+                                <input
+                                    class="form-control card-expiry-month"
+                                    placeholder="MM"
+                                    size="2"
+                                    type="text">
+                            </div>
+                            <div class="col-4 form-group required mb-3">
+                                <label class="control-label">Año</label>
+                                <input
+                                    class="form-control card-expiry-year"
+                                    placeholder="YY"
+                                    size="2"
+                                    type="text">
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-center mb-3">
+                            <button class="btn btn-primary cfrSefar" type="submit">Realizar pago</button>
+                        </div>
+
+                        <div class="separator"></div>
+
+                        <div class="form-group required mb-3">
+                            <label for="coupon" class="control-label">Ingresar Cupón</label>
+                            <input
+                                autocomplete="off"
+                                name="coupon"
+                                id="coupon"
+                                class="form-control coupon"
+                                type="text">
+                        </div>
+
+                        <div class="d-flex justify-content-center mb-3">
+                            <button type="btn csrSefar" class="btn btn-info me-2" id="valcoupon">Validar cupón</button>
+                        </div>
                     </div>
                 </div>
 
-                <div class='mt-2 row' style="margin: 0;">
-                    <div class='col-xs-12 form-group required' style="width: 100%;">
-                        <label class='control-label type'>Número de Tarjeta de Débito/Crédito</label>
-                        <input
-                            autocomplete='off' id="ccn" class='form-control card-number'
-                            type='tel' style="width: 100%;">
-                    </div>
-                </div>
+                <!-- Columna derecha: Resumen de compra -->
+                <div class="col-12 col-md-7 mb-3 order-1 order-md-2">
+                    <div class="card shadow">
+                        <div class="card-body">
+                            <div class="text-center mb-3">
+                                <img class="img-fluid" style="max-width:100px;"
+                                     src="/vendor/adminlte/dist/img/LogoSefar.png"
+                                     alt="Logo Sefar">
+                                <h4 style="font-weight: bold;">Información de Pago</h4>
+                            </div>
 
-                <div class='row' style="margin: 0 0 1rem 0;">
-                    <div class='mt-2' style="width: calc(100%/3); padding-right: 3px;">
-                        <label class='control-label'>CVC</label> <input autocomplete='off'
-                            class='form-control card-cvc' placeholder='***' maxlength="4"
-                            type='password'>
-                    </div>
-                    <div class='mt-2' style="width: calc(100%/3); padding-left: 3px; padding-right: 3px;">
-                        <label class='control-label'>Mes de Expiración</label> <input
-                            class='form-control card-expiry-month' placeholder='MM' size='2'
-                            type='text'>
-                    </div>
-                    <div class='mt-2' style="width: calc(100%/3); padding-left: 3px;">
-                        <label class='control-label'>Año de Expiración</label> <input
-                            class='form-control card-expiry-year' placeholder='YY' size='2'
-                            type='text'>
-                    </div>
-                </div>
+                            <!-- Envuelve tu tabla en .table-responsive para pantallas pequeñas -->
+                            <div class="table-responsive">
+                                <table class="table styled-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Descripción</th>
+                                            <th>Costo(€)</th>
+                                            @if (count($compras) > 1)
+                                                <th>Acciones</th>
+                                            @endif
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    @php
+                                        $total = 0;
+                                        $vinc = 0;
+                                    @endphp
+                                    @foreach ($compras as $compra)
+                                        @php
+                                            // Verificación de "vinculaciones"
+                                            if (
+                                                auth()->user()->servicio == 'Constitución de Empresa' ||
+                                                auth()->user()->servicio == 'Representante Fiscal' ||
+                                                auth()->user()->servicio == 'Codigo  Fiscal' ||
+                                                auth()->user()->servicio == 'Apertura de cuenta' ||
+                                                auth()->user()->servicio == 'Trimestre contable' ||
+                                                auth()->user()->servicio == 'Cooperativa 10 años' ||
+                                                auth()->user()->servicio == 'Cooperativa 5 años'
+                                            ) {
+                                                $vinc = 1;
+                                            }
+                                            $total += $compra["monto"];
+                                        @endphp
+                                        <tr>
+                                            <td>{{ $compra["descripcion"] }}</td>
+                                            <td>{{ $compra["monto"] }}€</td>
+                                            @if(count($compras) > 1)
+                                                <td>
+                                                    <button type="button"
+                                                            class="btn btn-danger deletedesc"
+                                                            id="{{ $compra['id'] }}">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            @endif
+                                        </tr>
+                                    @endforeach
+                                        <tr>
+                                            <td class="text-end fw-bold" style="text-align: right"><b>TOTAL:</b></td>
+                                            <td class="fw-bold"><b>{{ $total }}€</b></td>
+                                            @if (count($compras) > 1)
+                                                <td></td>
+                                            @endif
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
 
-                <div class='mt-2 row' style="margin: 0;">
-                    <div class='col-xs-12 form-group required' style="width: 100%;">
-                        <label class='control-label type'>Ingresar Cupón</label>
-                        <input
-                            autocomplete='off' name="coupon" id="coupon" class='form-control coupon'
-                            type='text' style="width: 100%;">
-                    </div>
-                </div>
+                            @if($vinc == 1)
+                                <div class="text-center">
+                                    <a href="{{ route('cliente.vinculaciones') }}"
+                                       class="btn btn-primary">
+                                        Solicitar más servicios de Vinculaciones
+                                    </a>
+                                </div>
+                            @endif
 
-                <div class='row' style="justify-content: center; display: flex; margin-bottom:2rem;">
-                    <input type="button" id="valcoupon" value="Validar cupón" class="btn csrSefar" style="margin-right: 1rem;"><button class="btn btn-primary cfrSefar" type="submit">Realizar pago</button>
+                            <input type="hidden" id="idproducto"
+                                   name="idproducto"
+                                   value="{{ isset($servicio[0]['id']) ? $servicio[0]['id'] : '' }}">
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="col-sm-12 col-md-7 mb-0">
-                <div class="card" style="margin:0 30px; padding: 30px;">
-                    <center>
-                        <img style="width:100px;" src="/vendor/adminlte/dist/img/LogoSefar.png">
-                        <h4 style="font-weight: bold;">Información de Pago</h4>
-                    </center>
 
-                    <style type="text/css">
-                        .styled-table {
-                            border-collapse: collapse;
-                            margin: 15px 0 25px 0;
-                            font-size: 0.9em;
-                            min-width: 400px;
-                            box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
-                        }
-                        .styled-table thead tr {
-                            background-color: var(--main-bg-color) !important;
-                            color: #ffffff;
-                            text-align: left;
-                        }
-                        .styled-table th,
-                        .styled-table td {
-                            padding: 12px 15px;
-                        }
-                        .styled-table tbody tr {
-                            border-bottom: 1px solid #dddddd;
-                        }
+            <div class='row' style="padding: 0px 60px 0px 20px;"><br><br>
+                <small>
+                    <p>Sefar Universal se compromete a proteger y respetar tu privacidad, y solo usaremos tu información personal para administrar tu cuenta y proporcionar los productos y servicios que nos solicitaste. De vez en cuando, nos gustaría ponernos en contacto contigo acerca de nuestros productos y servicios, así como sobre otros contenidos que puedan interesarte.</p>
 
-                        .styled-table tbody tr:nth-of-type(even) {
-                            background-color: #f3f3f3;
-                        }
-
-                        .styled-table tbody tr:last-of-type {
-                            border-bottom: 2px solid var(--main-bg-color);
-                        }
-                    </style>
-
-                    <table class="styled-table">
-                        <thead>
-                            <tr>
-                                <th>Descripción</th>
-                                <th>Costo(€)</th>
-                                @if (count($compras)>1)
-                                <th></th>
-                                @endif
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
-
-                            $total = 0;
-
-                            $vinc = 0;
-
-                            foreach ($compras as $key => $compra) {
-                                if (auth()->user()->servicio == 'Constitución de Empresa' || auth()->user()->servicio == 'Representante Fiscal' || auth()->user()->servicio == 'Codigo  Fiscal' || auth()->user()->servicio == 'Apertura de cuenta' || auth()->user()->servicio == 'Trimestre contable' || auth()->user()->servicio == 'Cooperativa 10 años' || auth()->user()->servicio == 'Cooperativa 5 años') {
-                                    $vinc = 1;
-                                }
-                            ?>
-
-                                <tr>
-                                    <td style="">{{$compra["descripcion"]}}</td>
-                                    <td style="">{{$compra["monto"]}}€</td>
-                                    @if (count($compras)>1)
-                                    <td style="">
-                                        <a style="color: white;"
-                                            class="deletedesc btn btn-danger"
-                                            id="{{$compra['id']}}"
-                                            ><i class="fas fa-trash"></i>
-                                        </a>
-                                    </td>
-                                    @endif
-                                </tr>
-
-                            <?php
-                                $total = $total + $compra["monto"];
-                            }
-
-                            ?>
-                            <tr>
-                                <td style="font-weight: bold; text-align: right;">TOTAL:</td>
-                                <td style="font-weight: bold;">{{$total}}€</td>
-                                @if (count($compras)>1)
-                                <td style=""></td>
-                                @endif
-                            </tr>
-                        </tbody>
-                    </table>
-                    <center>
-
-                        <?php
-
-                            if ($vinc == 1){
-
-                        ?>
-                                <a href="{{ route('cliente.vinculaciones') }}"><input type="button" value="Solicitar más servicios de Vinculaciones" class="btn btn-primary cfrSefar"></a>
-                        <?php
-
-                            }
-
-                        ?>
-                    </center>
-
-                    <input type="hidden" id="idproducto" name="idproducto" value="{{isset($servicio[0]['id']) ? $servicio[0]['id'] : ''}}">
-                </div>
+                    <p>Puedes darte de baja de estas comunicaciones en cualquier momento. Para obtener más información sobre cómo darte de baja, nuestras prácticas de privacidad y cómo nos comprometemos a proteger y respetar tu privacidad, consulta nuestra Política de privacidad.
+                    Al hacer clic en Enviar, aceptas que Sefar Universal almacene y procese la información personal suministrada arriba para proporcionarte el contenido solicitado.</p>
+                </small>
             </div>
 
-        </div>
-        <div class='row' style="padding: 0px 60px 0px 20px;"><br><br>
-            <small>
-                <p>Sefar Universal se compromete a proteger y respetar tu privacidad, y solo usaremos tu información personal para administrar tu cuenta y proporcionar los productos y servicios que nos solicitaste. De vez en cuando, nos gustaría ponernos en contacto contigo acerca de nuestros productos y servicios, así como sobre otros contenidos que puedan interesarte.</p>
-
-                <p>Puedes darte de baja de estas comunicaciones en cualquier momento. Para obtener más información sobre cómo darte de baja, nuestras prácticas de privacidad y cómo nos comprometemos a proteger y respetar tu privacidad, consulta nuestra Política de privacidad.
-                Al hacer clic en Enviar, aceptas que Sefar Universal almacene y procese la información personal suministrada arriba para proporcionarte el contenido solicitado.</p>
-            </small>
         </div>
     </form>
 
