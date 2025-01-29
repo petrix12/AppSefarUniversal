@@ -111,13 +111,6 @@
                                     Acción
                                 </th>
                                 @endcan
-                                <!--
-                                @can('crud.users.status')
-                                <th scope="col" class="py-2 text-center text-xs text-gray-500 uppercase tracking-wider">
-                                    Estatus
-                                </th>
-                                @endcan
-                                -->
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -186,15 +179,6 @@
                                 @endcan
                             </td>
                             @endcan
-                            <!--
-                            @can('crud.users.status')
-                            <td class="px-1 py-2 text-sm text-center">
-                                @if($agcliente->NPasaporte == $agcliente->IDCliente)
-                                <a href="{{ route('getuserstatus_ventas', $agcliente ) }}"  class="mx-12 text-grey-600 hover:text-indigo-900" title="Estatus"><i class="fas fa-exclamation"></i></a>
-                                @endif
-                            </td>
-                            @endcan
-                            -->
                         </tr>
                         @endforeach
                         </tbody>
