@@ -163,7 +163,7 @@ Route::get('/viewcomprobantecliente/{id}', [FacturaController::class, 'viewcompr
 //panel administrativo status
 Route::get('/users/status/{id}', [UserController::class, 'getuserstatus'])->name('getuserstatus');
 
-Route::post('/guardar-datos-personales', [UserController::class, 'savePersonalData'])->name('getuserstatus');
+Route::post('/guardar-datos-personales', [UserController::class, 'savePersonalData'])->name('saveuserdata');
 
 //panel produccion y ventas status
 Route::get('/clientes/status/{agcliente}', [UserController::class, 'getuserstatus_ventas'])->name('getuserstatus_ventas');
