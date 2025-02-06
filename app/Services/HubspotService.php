@@ -170,7 +170,7 @@ class HubspotService
     public function getDealsByContactId(string $contactId): array
     {
         try {
-            // 1. Obtener todas las propiedades de "deals" para luego leerlas
+            // 1. Obtener todas las propiedades de "deals"
             $properties = $this->getDealProperties();
 
             // 2. Obtener las asociaciones (contact -> deals)
@@ -187,7 +187,6 @@ class HubspotService
             // 3. Extraer todos los IDs de 'deals' asociados a este contacto
             $dealIds = [];
             foreach ($associations->getResults() as $association) {
-                // 'getTo()' retorna un array de objetos PublicObjectId
                 $toArray = $association->getTo();
                 foreach ($toArray as $toItem) {
                     $dealIds[] = $toItem->getId();
@@ -211,16 +210,46 @@ class HubspotService
             // 5. Hacemos la lectura batch de Deals
             $dealsResponse = $this->hubspot->crm()->deals()->batchApi()->read($batchRequest);
 
-            // 6. Retornamos un array con la información de cada deal
+            // 6. Retornamos un array con la información filtrada de cada deal
             return array_map(function ($deal) {
+                $allProperties = $deal->getProperties();
+
+                // Filtrar propiedades que no comiencen con "hs_"
+                $filteredProperties = array_filter(
+                    $allProperties,
+                    fn($key) => strpos($key, 'hs_') !== 0,
+                    ARRAY_FILTER_USE_KEY
+                );
+
                 return [
                     'id' => $deal->getId(),
-                    'properties' => $deal->getProperties(),
+                    'properties' => $filteredProperties,
                 ];
             }, $dealsResponse->getResults());
 
         } catch (\Exception $e) {
             throw new \Exception('Error al obtener los negocios asociados al contacto: ' . $e->getMessage());
+        }
+    }
+
+    public function getDealStagesByPipeline(string $pipelineId): array
+    {
+        try {
+            // Obtener el pipeline con sus etapas
+            $pipeline = $this->hubspot->crm()->pipelines()->pipelinesApi()->getById('deals', $pipelineId);
+
+            // Extraer las etapas (dealstages) del pipeline
+            $stages = $pipeline->getStages();
+
+            // Retornar un arreglo con los IDs y nombres de las etapas
+            return array_map(function ($stage) {
+                return [
+                    'id' => $stage->getId(),
+                    'name' => $stage->getLabel(),
+                ];
+            }, $stages);
+        } catch (\Exception $e) {
+            throw new \Exception('Error al obtener las etapas del pipeline: ' . $e->getMessage());
         }
     }
 

@@ -37,6 +37,7 @@ use App\Http\Controllers\AgClienteNewController;
 use App\Http\Controllers\SolicitudCuponController;
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\GeneralCouponController;
+use App\Http\Controllers\NegocioController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -144,6 +145,8 @@ Route::get('/teamleader/contacts', [TeamleaderController::class, 'getContacts'])
 
 //checkRegMondayTest
 Route::get('/checkMondayTest', [ClienteController::class, 'checkMondayTest'])->name('checkMondayTest');
+
+Route::get('/deal/{id}/edit', [NegocioController::class, 'edit'])->name('deals.edit');
 
 //Ruta Comprobantes de Pago
 Route::get('/downloadTree/{id}', [GedcomController::class, 'getGedcomCliente'])->name('getGedcomCliente');

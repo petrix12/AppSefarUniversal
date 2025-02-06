@@ -64,3 +64,14 @@ body.dark-mode .flatpickr-calendar {
 body.dark-mode .flatpickr-disabled {
     color:#777777!important;
 }
+
+.separator {
+    margin: 1rem 0;
+    border-bottom: 1px solid #ced4da !important;       /* Espacio arriba y abajo (opcional) */
+  }
+
+  /* ----------- MODO OSCURO ----------- */
+  body.dark-mode .separator {
+    border-bottom: 1px solid #eeeeee !important; /* Color de la línea en dark mode */
+  }
+

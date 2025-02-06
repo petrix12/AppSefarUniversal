@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Negocio;
 use Illuminate\Http\Request;
 
 class NegocioController extends Controller
@@ -56,7 +57,8 @@ class NegocioController extends Controller
      */
     public function edit($id)
     {
-        //
+        $deal_db = Negocio::find($id);
+        return view('crud.negocios.edit', compact('deal_db'));
     }
 
     /**

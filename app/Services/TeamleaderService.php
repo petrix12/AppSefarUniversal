@@ -173,43 +173,241 @@ class TeamleaderService
         }
     }
 
-    public function getDealsByContactId($contactId)
+    public function listProjectsByCustomerId(string $customerId)
     {
         try {
             $accessToken = $this->getAccessToken();
 
+            // Payload de la solicitud
+            $payload = [
+                'filter' => [
+                    'customer' => [
+                        'type' => 'contact', // Cambia a 'company' si es una empresa
+                        'id' => $customerId
+                    ],
+                ],
+                'page' => [
+                    'size' => 100, // Tamaño máximo por página
+                    'number' => 1,
+                ],// Datos adicionales si los necesitas
+            ];
+
+            // Realizar la solicitud
             $response = Http::withToken($accessToken)
-                ->post('https://api.focus.teamleader.eu/deals.list', [
-                    'filter' => [
-                        'contact_id' => $contactId,
-                    ],
-                    'page' => [
-                        'size' => 100, // Ajusta según el límite de registros que desees traer
-                    ],
-                ]);
+                ->withHeaders([
+                    'Content-Type' => 'application/json',
+                ])
+                ->post('https://api.focus.teamleader.eu/projects.list', $payload);
 
+            // Validar la respuesta
             if ($response->successful()) {
-                $deals = $response->json();
-
-                if (!empty($deals['data'])) {
-                    // Obtener campos personalizados de cada negocio
-                    foreach ($deals['data'] as &$deal) {
-                        $dealDetails = $this->getDealDetails($deal['id']);
-                        $deal['custom_fields'] = $dealDetails['custom_fields'] ?? [];
-                    }
-                    return $deals['data'];
-                } else {
-                    return [];
-                }
+                $data = $response->json();
+                return $data['data'] ?? []; // Retorna los proyectos listados
             } else {
+                // Manejo de errores
                 $error = $response->json();
-                $errorMessage = isset($error['errors'][0]['title']) ? $error['errors'][0]['title'] : 'Error desconocido';
-                throw new \Exception('Error al obtener las negociaciones: ' . $errorMessage);
+                $errorMessage = $error['errors'][0]['title'] ?? 'Error desconocido';
+                throw new \Exception('Error al listar proyectos: ' . $errorMessage);
             }
         } catch (\Exception $e) {
             throw new \Exception('Error: ' . $e->getMessage());
         }
     }
+
+
+    public function getProjectDetails(string $projectId)
+    {
+        try {
+            $accessToken = $this->getAccessToken();
+
+            $response = Http::withToken($accessToken)
+                ->post('https://api.focus.teamleader.eu/projects.info', [
+                    'id' => $projectId, // Incluye datos adicionales si los necesitas
+                ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                return $data['data']; // Retorna los detalles del proyecto
+            } else {
+                $error = $response->json();
+                $errorMessage = $error['errors'][0]['title'] ?? 'Error desconocido';
+                throw new \Exception('Error al obtener detalles del proyecto: ' . $errorMessage);
+            }
+        } catch (\Exception $e) {
+            throw new \Exception('Error: ' . $e->getMessage());
+        }
+    }
+
+    public function getUserIdByEmail($email)
+    {
+        // Llama al endpoint users.list
+        $response = Http::withToken($this->getAccessToken())
+            ->post('https://api.focus.teamleader.eu/users.list', [
+                'page' => [
+                    'size' => 100, // Ajusta el tamaño según la cantidad de usuarios
+                    'number' => 1,
+                ],
+            ]);
+
+        if ($response->successful()) {
+            $users = $response->json()['data'];
+
+            // Buscar el usuario por correo
+            foreach ($users as $user) {
+                if ($user['email'] === $email) {
+                    return $user['id'];
+                }
+            }
+
+            throw new \Exception("No se encontró un usuario con el correo: $email");
+        }
+
+        throw new \Exception('Error al obtener la lista de usuarios.');
+    }
+
+
+    public function createProjectFromHubspotDeal($hubspotDeal, $customerId, $camposDeTeamleader)
+    {
+        try {
+            $responsibleUserId = $this->getUserIdByEmail('seguridad@sefarvzla.com');
+
+            $participants = [
+                [
+                    "participant" => [
+                        'id' => $this->getUserIdByEmail('sistemasccs@sefarvzla.com'),
+                        'type' => 'user',
+                    ],
+                    "role" => "decision_maker"
+                ],
+                [
+                    "participant" => [
+                        'id' => $this->getUserIdByEmail('cmolina@sefarvzla.com'),
+                        'type' => 'user',
+                    ],
+                    "role" => "decision_maker"
+                ],
+                [
+                    "participant" => [
+                        'id' => $this->getUserIdByEmail('asistentedeproduccion@sefarvzla.com'),
+                        'type' => 'user',
+                    ],
+                    "role" => "decision_maker"
+                ],
+                [
+                    "participant" => [
+                        'id' => $this->getUserIdByEmail('asistentepresidencial@sefarvzla.com'),
+                        'type' => 'user',
+                    ],
+                    "role" => "decision_maker"
+                ],
+                [
+                    "participant" => [
+                        'id' => $this->getUserIdByEmail('milenacera@sefarvzla.com'),
+                        'type' => 'user',
+                    ],
+                    "role" => "decision_maker"
+                ],
+            ];
+
+            $accessToken = $this->getAccessToken();
+
+            // Mapear los campos de HS al formato de TL
+            $customFields = [];
+            $dealprops = $hubspotDeal['properties'];
+
+            foreach ($dealprops as $hsfield => $value) {
+                if(isset($camposDeTeamleader["$hsfield"]) && isset($value)){
+                    $customFields[] = [
+                        'id' => $camposDeTeamleader["$hsfield"],
+                        'value' => $value,
+                    ];
+                }
+            }
+
+            $startDate = null;
+            $dueDate = null;
+
+            if (!empty($hubspotDeal['properties']['createdate'])) {
+                $startDateObj = new \DateTime($hubspotDeal['properties']['createdate']);
+                $startDate = $startDateObj->format('Y-m-d');
+
+                // Calcular fechas para los hitos
+                $milestoneStartDate = $startDateObj->modify('+1 day')->format('Y-m-d');
+                $dueDate = $startDateObj->modify('+1 year')->format('Y-m-d');
+            }
+
+            // Crear hitos válidos
+            $milestones = [
+                [
+                    'name' => 'Inicio del Proyecto', // Cambia según el contexto
+                    'starts_on' => $milestoneStartDate,
+                    'due_on' => $dueDate,
+                    'responsible_user_id' => $responsibleUserId, // Propietario
+                ],
+            ];
+
+            $amount = $hubspotDeal['properties']['amount'] ?? 0;
+
+            if (!is_numeric($amount)) {
+                $amount = (float) str_replace([',', '.'], '', $amount); // Limpia y convierte a número
+            }
+
+            // Payload para crear el proyecto en TL
+            $payload = [
+                'title' => $hubspotDeal['properties']['dealname'] ?? 'Sin título',
+                'customer' => [
+                    'type' => 'contact',
+                    'id' => $customerId,
+                ],
+                'participants' => $participants,            // Participantes
+                'milestones' => $milestones, // Agregar hitos válidos
+                'budget' => [
+                    'amount' => (float)$amount,
+                    'currency' => "EUR"
+                ],
+                'starts_on' => $startDate,
+                'due_on' => $dueDate,
+                'custom_fields' => $customFields,
+            ];
+
+            // Realizar la solicitud a la API de Teamleader
+            $response = Http::withToken($accessToken)
+                ->withHeaders(['Content-Type' => 'application/json'])
+                ->post('https://api.focus.teamleader.eu/projects.create', $payload);
+
+            // Validar la respuesta
+            if ($response->successful()) {
+                return $response->json();
+            } else {
+                $error = $response->json();
+                $errorMessage = $error['errors'][0]['title'] ?? 'Error desconocido';
+                throw new \Exception('Error al crear el proyecto en Teamleader: ' . $errorMessage);
+            }
+        } catch (\Exception $e) {
+            throw new \Exception('Error: ' . $e->getMessage());
+        }
+    }
+
+
+    public function getProjectsWithDetailsByCustomerId(string $customerId)
+    {
+        try {
+            // Listar proyectos del cliente
+            $projects = $this->listProjectsByCustomerId($customerId);
+
+            // Obtener detalles de cada proyecto
+            $detailedProjects = [];
+            foreach ($projects as $project) {
+                $details = $this->getProjectDetails($project['id']);
+                $detailedProjects[] = array_merge($project, $details); // Combina datos básicos y detalles
+            }
+
+            return $detailedProjects;
+        } catch (\Exception $e) {
+            throw new \Exception('Error: ' . $e->getMessage());
+        }
+    }
+
 
     private function getDealDetails($dealId)
     {

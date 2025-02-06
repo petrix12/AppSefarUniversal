@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ServicioController;
 use App\Http\Controllers\AlertController;
 
+use App\Http\Controllers\AssistantController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -23,3 +25,5 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::get('/getservicio', [ServicioController::class, 'getservicio']);
 
 Route::get('/getactivealerts', [AlertController::class, 'getactivealerts']);
+
+Route::post('/assistant/chat', [AssistantController::class, 'chat']);
