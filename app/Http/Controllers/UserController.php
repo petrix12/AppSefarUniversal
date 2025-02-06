@@ -1584,13 +1584,36 @@ class UserController extends Controller
 
             $data = $deal['properties']["argumento_de_ventas__new_"];
 
-            // Convertir a un array separando por ";"
-            $arrayData = explode(';', $data);
+            // Asegurarse de que siempre sea un array, incluso si no hay punto y coma
+            $arrayData = $data ? ( strpos($data, ';') !== false ? explode(';', $data) : [$data] ) : null;
 
             // Convertir el array a JSON
-            $jsonData = json_encode($arrayData);
+            $jsonData = json_encode($arrayData, JSON_UNESCAPED_UNICODE);
 
-            $deal['properties']["argumento_de_ventas__new_"] = $data;
+            // Asignar el JSON convertido de nuevo al arreglo
+            $deal['properties']["argumento_de_ventas__new_"] = $jsonData;
+
+            $data = $deal['properties']["n2__antecedentes_penales"];
+
+            // Asegurarse de que siempre sea un array, incluso si no hay punto y coma
+            $arrayData = $data ? ( strpos($data, ';') !== false ? explode(';', $data) : [$data] ) : null;
+
+            // Convertir el array a JSON
+            $jsonData = json_encode($arrayData, JSON_UNESCAPED_UNICODE);
+
+            // Asignar el JSON convertido de nuevo al arreglo
+            $deal['properties']["n2__antecedentes_penales"] = $jsonData;
+
+            $data = $deal['properties']["documentos"];
+
+            // Asegurarse de que siempre sea un array, incluso si no hay punto y coma
+            $arrayData = $data ? ( strpos($data, ';') !== false ? explode(';', $data) : [$data] ) : null;
+
+            // Convertir el array a JSON
+            $jsonData = json_encode($arrayData, JSON_UNESCAPED_UNICODE);
+
+            // Asignar el JSON convertido de nuevo al arreglo
+            $deal['properties']["documentos"] = $jsonData;
 
             // Buscar un trato en Teamleader con el mismo nombre
             $teamleaderId = array_search($dealName, $teamleaderDealNames) ?: null;
@@ -1737,7 +1760,7 @@ class UserController extends Controller
                         switch ($hsField) {
                             case 'fecha_nac':
                             case 'date_of_birth':
-                                if (!empty($dbValue)) {
+                                if (!empty($dbValue) && $dbValue !="0000-00-00") {
                                     try {
                                         // Convertir la fecha de la base de datos a timestamp en milisegundos
                                         $onlyDate = (new \DateTime($dbValue))->format('Y-m-d');
