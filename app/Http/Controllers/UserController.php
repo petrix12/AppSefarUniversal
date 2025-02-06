@@ -1501,7 +1501,7 @@ class UserController extends Controller
             'n12__notas___no__expediente' => '4b822322-17a1-06ba-9b5b-82db70f46f5b',
             'n13__fecha_recurso_alzada' => '7c06cfed-87f4-00ac-8a5a-946b0b9643b8',
             'n2__firmado_por_el_cliente' => '5f090e48-4a5b-0504-8259-9e945e95126a',
-            //'n2__antecedentes_penales' => '35c68020-1160-068b-b055-1b5e6fe4ca11',
+            'n2__antecedentes_penales' => '35c68020-1160-068b-b055-1b5e6fe4ca11',
             'n2__ciudad_formalizacion' => 'ad849a21-82b3-0032-995e-6e9dbcd46f53',
             'n2__enviado_a_redaccion_informe' => 'ed8167e1-00e2-05fb-8a5c-900699b54d88',
             'n2__monto_pagado' => '4bef5482-f2e4-02da-8653-691944760f84',
@@ -1579,6 +1579,18 @@ class UserController extends Controller
         foreach ($deals as $deal) {
             $dealId = $deal['id'];
             $dealName = $deal['properties']['dealname'] ?? null;
+
+            //Limpiar
+
+            $data = $deal['properties']["argumento_de_ventas__new_"];
+
+            // Convertir a un array separando por ";"
+            $arrayData = explode(';', $data);
+
+            // Convertir el array a JSON
+            $jsonData = json_encode($arrayData);
+
+            $deal['properties']["argumento_de_ventas__new_"] = $data;
 
             // Buscar un trato en Teamleader con el mismo nombre
             $teamleaderId = array_search($dealName, $teamleaderDealNames) ?: null;
