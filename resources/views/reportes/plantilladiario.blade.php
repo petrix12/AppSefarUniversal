@@ -272,7 +272,7 @@
         <div class="card">
             <center>
                 <img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
-                <h3>Pagos realizados con Stripe durante el dia:</h3>
+                <h3>Pagos realizados con Stripe y Paypal durante el dia:</h3>
             </center>
             <table>
                 <thead class="theadreport">
@@ -288,7 +288,7 @@
                         $totalMontoStripe = 0;
                     @endphp
                     @foreach ($facturas as $factura)
-                        @if ($factura['met'] == 'stripe')
+                        @if ($factura['met'] == 'stripe' || $factura['met'] == 'paypal')
                             @foreach ($factura['compras'] as $compra)
                                 <tr>
                                     <td>{{ $factura['usuario']['name'] }}</td>

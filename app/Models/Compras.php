@@ -20,7 +20,9 @@ class Compras extends Model
         'cuponaplicado',
         'hash_factura',
         'montooriginal',
-        'porcentajedescuento'
+        'porcentajedescuento',
+        'deal_id',
+        'phasenum'
     ];
 
     public function user()

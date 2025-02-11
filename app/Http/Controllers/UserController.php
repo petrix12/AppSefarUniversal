@@ -1632,10 +1632,7 @@ class UserController extends Controller
                 $data[$column] = $deal['properties'][$column] ?? null;
             }
 
-            if ($existingDeal) {
-                // Si ya existe, actualizar los datos
-                $existingDeal->update($data);
-            } else {
+            if (!$existingDeal) {
                 // Si no existe, insertar un nuevo registro
                 Negocio::create($data);
             }

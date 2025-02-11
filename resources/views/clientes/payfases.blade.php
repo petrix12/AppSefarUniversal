@@ -315,21 +315,6 @@
                             <div id="paypal-button-container" class="w-100"></div>
                         </div>
 
-                        <div class="separator"></div>
-
-                        <div class="form-group required mb-3">
-                            <label for="coupon" class="control-label">Ingresar Cupón</label>
-                            <input
-                                autocomplete="off"
-                                name="coupon"
-                                id="coupon"
-                                class="form-control coupon"
-                                type="text">
-                        </div>
-
-                        <div class="d-flex justify-content-center mb-3">
-                            <button type="btn csrSefar" class="btn btn-info me-2" id="valcoupon">Validar cupón</button>
-                        </div>
                     </div>
                 </div>
 
@@ -463,7 +448,7 @@
                         // Aquí manejas la respuesta de PayPal (pago exitoso)
                         // Podrías redirigir a una ruta de "gracias" o procesar en el server
                         $.ajax({
-                            url: "{{ route('procesarpaypal') }}", // Usar la ruta definida
+                            url: "{{ route('procesarpaypalfases') }}", // Usar la ruta definida
                             method: 'POST',
                             headers: {
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}' // CSRF token para Laravel

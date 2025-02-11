@@ -12,6 +12,7 @@ use App\Models\HsReferido;
 use App\Models\Factura;
 use App\Models\User;
 use App\Models\File;
+use App\Models\Negocio;
 use App\Models\TFile;
 use App\Models\Hermano;
 use App\Models\Alert as Alertas;
@@ -40,9 +41,20 @@ use Mail;
 use Illuminate\Support\Facades\Mail as Mail2;
 use Monday;
 use Carbon\Carbon;
+use App\Services\TeamleaderService;
+use App\Services\HubspotService;
 
 class ClienteController extends Controller
 {
+    protected $teamleaderService;
+    protected $hubspotService;
+
+    public function __construct(TeamleaderService $teamleaderService, HubspotService $hubspotService)
+    {
+        $this->teamleaderService = $teamleaderService;
+        $this->hubspotService = $hubspotService;
+    }
+
     public function tree(){
         if (Auth::user()->roles->first()->name == "Cliente"){
             if(Auth::user()->pay==0){
@@ -50,6 +62,9 @@ class ClienteController extends Controller
             }
             if(Auth::user()->pay==1 || auth()->user()->pay == 3){
                 return redirect()->route('clientes.getinfo');
+            }
+            if(Auth::user()->pay==11 || Auth::user()->pay==12){
+                return redirect()->route('clientes.payfases');
             }
             if(Auth::user()->contrato==0){
                 return redirect()->route('cliente.contrato');
@@ -489,6 +504,10 @@ class ClienteController extends Controller
             if(Auth::user()->pay==2){
                 return redirect('/tree');
             }
+
+            if(Auth::user()->pay==11 || Auth::user()->pay==12){
+                return redirect()->route('clientes.payfases');
+            }
         }
         return view('clientes.getinfo');
     }
@@ -696,6 +715,75 @@ class ClienteController extends Controller
 
     }
 
+    public function payfases(){
+        if (Auth::user()->roles->first()->name == "Cliente"){
+            if (Auth::user()->pay==2){
+                $IDCliente = Auth::user()->passport;
+                return redirect('/tree');
+            } else if(Auth::user()->pay==1 || Auth::user()->pay==3){
+                return redirect()->route('clientes.getinfo');
+            } else if(Auth::user()->pay==0){
+                return redirect()->route('clientes.pay');
+            }
+        }
+        $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->whereNotNull('deal_id')->get();
+
+        if (auth()->user()->tiene_hermanos==1 || auth()->user()->tiene_hermanos=="1" || auth()->user()->tiene_hermanos=="Si") {
+            $servicio = Servicio::where('id_hubspot', auth()->user()->servicio." - Hermano")->get();
+        } else {
+            $servicio = Servicio::where('id_hubspot', auth()->user()->servicio)->get();
+        }
+
+        $cps = json_decode(json_encode($compras),true);
+
+        if (count($cps)==0){
+            $hss = json_decode(json_encode($servicio),true);
+
+            if(auth()->user()->servicio == "Recurso de Alzada"){
+                $monto = $hss[0]["precio"] * auth()->user()->cantidad_alzada;
+            } else {
+                $monto = $hss[0]["precio"];
+            }
+
+            if( auth()->user()->servicio == "Española LMD" || auth()->user()->servicio == "Italiana" ) {
+                $desc = "Pago Fase Inicial: Investigación Preliminar y Preparatoria: " . $hss[0]["nombre"];
+                if (auth()->user()->servicio == "Española LMD"){
+                    if (auth()->user()->antepasados==0){
+                        $monto = 99;
+                    }
+                }
+                if (auth()->user()->servicio == "Italiana"){
+                    if (auth()->user()->antepasados==1){
+                        $desc = $desc . " + (Consulta Gratuita)";
+                    }
+                }
+            } elseif ( auth()->user()->servicio == "Gestión Documental" ) {
+                $desc = $hss[0]["nombre"];
+            } elseif ($servicio[0]['tipov'] == 1) {
+                $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
+            } else {
+                $desc = "Inicia tu Proceso: " . $hss[0]["nombre"];
+            }
+
+            Compras::create([
+                'id_user' => auth()->user()->id,
+                'servicio_hs_id' => auth()->user()->servicio,
+                'descripcion' => $desc,
+                'pagado' => 0,
+                'monto' => $monto
+            ]);
+
+            $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->get();
+        }
+
+        $alertas = $today = Carbon::today();
+        $alertas = Alertas::where('start_date', '<=', $today)
+                        ->where('end_date', '>=', $today)
+                        ->get();
+
+        return view('clientes.payfases', compact('servicio', 'compras', 'alertas'));
+    }
+
     public function pay(){
         if (Auth::user()->roles->first()->name == "Cliente"){
             if (Auth::user()->pay==2){
@@ -703,9 +791,11 @@ class ClienteController extends Controller
                 return redirect('/tree');
             } else if(Auth::user()->pay==1 || Auth::user()->pay==3){
                 return redirect()->route('clientes.getinfo');
+            } else if(Auth::user()->pay==11 || Auth::user()->pay==12){
+                return redirect()->route('clientes.payfases');
             }
         }
-        $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->get();
+        $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->whereNull('deal_id')->get();
 
         if (auth()->user()->tiene_hermanos==1 || auth()->user()->tiene_hermanos=="1" || auth()->user()->tiene_hermanos=="Si") {
             $servicio = Servicio::where('id_hubspot', auth()->user()->servicio." - Hermano")->get();
@@ -764,7 +854,7 @@ class ClienteController extends Controller
     }
 
     public function revisarcupon(Request $request){
-        $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->get();
+        $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->whereNull('deal_id')->get();
         $servicio = Servicio::where('id_hubspot', auth()->user()->servicio)->get();
         $hubspot = HubSpot\Factory::createWithAccessToken(env('HUBSPOT_KEY'));
         $data = json_decode(json_encode($request->all()),true);
@@ -1064,6 +1154,585 @@ class ClienteController extends Controller
         ]);
     }
 
+    public function procesarPaypal(Request $request){
+        $hubspot = HubSpot\Factory::createWithAccessToken(env('HUBSPOT_KEY'));
+
+        $servicio = Servicio::where('id_hubspot', auth()->user()->servicio)->get();
+
+        $cupones = json_decode(json_encode(Coupon::all()),true);
+
+        $datos = json_decode(json_encode(DB::table('users')->where('id', auth()->user()->id)->get()),true);
+
+        $finalcupon = "";
+
+        $errorcod = "error";
+
+        $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->whereNull('deal_id')->get();
+        $servicio = Servicio::where('id_hubspot', auth()->user()->servicio)->get();
+
+        $cps = json_decode(json_encode($compras),true);
+
+        $hss = json_decode(json_encode($servicio),true);
+
+        $monto = 0;
+
+        foreach ($compras as $key => $compra) {
+            $monto = $monto + $compra["monto"];
+        }
+
+        $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+        $hash_factura = "sef_".generate_string($permitted_chars, 50);
+
+        Factura::create([
+            'id_cliente' => auth()->user()->id,
+            'hash_factura' => $hash_factura,
+            'met' => 'paypal'
+        ]);
+
+        foreach ($compras as $key => $compra) {
+            DB::table('compras')->where('id', $compra['id'])->update(['pagado' => 1, 'hash_factura' => $hash_factura]);
+        }
+
+        $cargostemp = [];
+
+        if (isset($datos[0]["id_pago"])){
+            if(is_array(json_decode($datos[0]["id_pago"],true))) {
+                $cargostemp = json_decode($datos[0]["id_pago"],true);
+                $cargos = json_encode($cargostemp);
+            } else {
+                $cargostemp[] = $datos[0]["id_pago"];
+                $cargos = json_encode($cargostemp);
+            }
+        } else {
+            $cargos = json_encode($cargostemp);
+        }
+
+        $cuponestemp = [];
+
+        if (isset($finalcupon)){
+            DB::table('coupons')->where('couponcode', $finalcupon)->update(['enabled' => 0]);
+            if (isset($datos[0]["pago_cupon"])){
+                if(is_array(json_decode($datos[0]["pago_cupon"],true))) {
+                    $cuponestemp = json_decode($datos[0]["pago_cupon"],true);
+                    $cuponestemp[] = $finalcupon;
+                    $cupones = json_encode($cuponestemp);
+                } else {
+                    $cuponestemp[] = $datos[0]["pago_cupon"];
+                    $cuponestemp[] = $finalcupon;
+                    $cupones = json_encode($cuponestemp);
+                }
+            } else {
+                $cuponestemp[] = $finalcupon;
+                $cupones = json_encode($cuponestemp);
+            }
+        } else {
+            if (isset($datos[0]["pago_cupon"])){
+                if(is_array(json_decode($datos[0]["pago_cupon"],true))) {
+                    $cuponestemp = json_decode($datos[0]["pago_cupon"],true);
+                    $cuponestemp[] = '';
+                    $cupones = json_encode($cuponestemp);
+                } else {
+                    $cuponestemp[] = $datos[0]["pago_cupon"];
+                    $cuponestemp[] = '';
+                    $cupones = json_encode($cuponestemp);
+                }
+            } else {
+                $cuponestemp[] = '';
+                $cupones = json_encode($cuponestemp);
+            }
+        }
+
+        $pago_registrotemp = [];
+
+        if (isset($datos[0]["pago_registro_hist"])){
+            if(is_array(json_decode($datos[0]["pago_registro_hist"],true))) {
+                $pago_registrotemp = json_decode($datos[0]["pago_registro_hist"],true);
+                $pago_registrotemp[] = $monto;
+                $pago_registro = json_encode($pago_registrotemp);
+            } else {
+                $pago_registrotemp[] = $datos[0]["pago_registro"];
+                $pago_registrotemp[] = $monto;
+                $pago_registro = json_encode($pago_registrotemp);
+            }
+        } else {
+            $pago_registrotemp[] = $monto;
+            $pago_registro = json_encode($pago_registrotemp);
+        }
+
+        DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro_hist' => $pago_registro, 'pago_registro' => $monto, 'id_pago' => $cargos, 'pago_cupon' => $cupones, 'contrato' => 0]);
+
+        $setto2 = 1;
+
+        foreach ($compras as $key => $compra) {
+            $servicio = Servicio::where('id_hubspot', $compra["servicio_hs_id"])->get();
+            if ($compra["servicio_hs_id"] == 'Árbol genealógico de Deslinde' || $compra["servicio_hs_id"] == 'Acumulación de linajes' || $compra["servicio_hs_id"] == 'Procedimiento de Urgencia' || $compra["servicio_hs_id"] == 'Recurso de Alzada' || $compra["servicio_hs_id"] == 'Gestión Documental' || $servicio[0]['tipov']==1){
+                $setto2 = 1;
+            } else {
+                $setto2 = 0;
+                break;
+            }
+        }
+
+        if ($setto2==1) {
+            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]);
+            auth()->user()->revokePermissionTo('finish.register');
+        }
+
+        auth()->user()->revokePermissionTo('pay.services');
+        $idcontact = "";
+
+        $filter = new \HubSpot\Client\Crm\Contacts\Model\Filter();
+        $filter
+            ->setOperator('EQ')
+            ->setPropertyName('email')
+            ->setValue(auth()->user()->email);
+
+        $filterGroup = new \HubSpot\Client\Crm\Contacts\Model\FilterGroup();
+        $filterGroup->setFilters([$filter]);
+
+        $searchRequest = new \HubSpot\Client\Crm\Contacts\Model\PublicObjectSearchRequest();
+        $searchRequest->setFilterGroups([$filterGroup]);
+
+        //Llamo a todas las propiedades de Hubspot (Si el dia de mañana hay que añadir algo nuevo, la ventaja que tenemos es que ya me estoy trayendo todos los elementos del arreglo)
+
+        $searchRequest->setProperties([
+            "registro_pago",
+            "registro_cupon",
+            "transaction_id"
+        ]);
+
+        //Hago la busqueda del cliente
+        $contactHS = $hubspot->crm()->contacts()->searchApi()->doSearch($searchRequest);
+
+        if ($contactHS['total'] != 0){
+            $valuehscupon = "";
+            //sago solo el id del contacto:
+            $idcontact = $contactHS['results'][0]['id'];
+
+            DB::table('users')->where('id', auth()->user()->id)->update(['hs_id' => $idcontact]);
+
+            $properties1 = [
+                'registro_pago' => $servicio[0]["precio"],
+                'registro_cupon' => $cupones,
+                'transaction_id' => $cargos,
+                'hist_pago_registro' => $pago_registro
+            ];
+            $simplePublicObjectInput = new SimplePublicObjectInput([
+                'properties' => $properties1,
+            ]);
+
+            $apiResponse = $hubspot->crm()->contacts()->basicApi()->update($idcontact, $simplePublicObjectInput);
+
+            $dealInput = new \HubSpot\Client\Crm\Deals\Model\SimplePublicObjectInput();
+
+            foreach ($compras as $key => $compra) {
+                $dealInput->setProperties([
+                    'dealname' => auth()->user()->name . ' - ' . $compra['servicio_hs_id'],
+                    'pipeline' => "94794",
+                    'dealstage' => "429097",
+                    'servicio_solicitado' => $compra['servicio_hs_id'],
+                    'servicio_solicitado2' => $compra['servicio_hs_id'],
+                ]);
+
+                $apiResponse = json_decode(json_encode($hubspot->crm()->deals()->basicApi()->create($dealInput)),true);
+
+                $iddeal = $apiResponse["id"];
+
+                $associationSpec1 = new AssociationSpec([
+                    'association_category' => 'HUBSPOT_DEFINED',
+                    'association_type_id' => 3
+                ]);
+
+                $asocdeal = $hubspot->crm()->deals()->associationsApi()->create($iddeal, 'contacts', $idcontact, [$associationSpec1]);
+                sleep(2);
+            }
+
+        }
+        $user = User::findOrFail(auth()->user()->id);
+        $pdfContent = createPDF($hash_factura);
+
+        Mail::send('mail.comprobante-mail', ['user' => $user], function ($m) use ($pdfContent, $request, $user) {
+            $m->to([
+                auth()->user()->email
+            ])->subject('SEFAR UNIVERSAL - Hemos procesado su pago satisfactoriamente')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
+        });
+
+        $pdfContent2 = createPDFintel($hash_factura);
+
+        Mail::send('mail.comprobante-mail-intel', ['user' => $user], function ($m) use ($pdfContent2, $request, $user) {
+            $m->to([
+                'pedro.bazo@sefarvzla.com',
+                'crisantoantonio@gmail.com',
+                'sistemasccs@sefarvzla.com',
+                'automatizacion@sefarvzla.com',
+                'sistemascol@sefarvzla.com',
+                'asistentedeproduccion@sefarvzla.com',
+                'organizacionrrhh@sefarvzla.com',
+                'organizacionrrhh@sefarvzla.com',
+                '20053496@bcc.hubspot.com',
+                'contabilidad@sefaruniversal.com',
+            ])->subject(strtoupper($user->name) . ' (ID: ' .
+                strtoupper($user->passport) . ') HA REALIZADO UN PAGO EN App Sefar Universal')->attachData($pdfContent2, 'Comprobante.pdf', ['mime' => 'application/pdf']);
+        });
+
+        if ($setto2==1) {
+
+            $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND b.passport='".$user->passport."' ORDER BY a.id DESC LIMIT 1;";
+
+            $datos_factura = json_decode(json_encode(DB::select($query)),true);
+
+            $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
+
+            $servicios = "";
+
+            foreach ($productos as $key => $value) {
+                $servicios = $servicios . $value["servicio_hs_id"];
+                if ($key != count($productos)-1){
+                    $servicios = $servicios . ", ";
+                }
+            }
+
+            $token = env('MONDAY_TOKEN');
+            $apiUrl = 'https://api.monday.com/v2';
+            $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
+
+            $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
+
+            $link = 'https://app.sefaruniversal.com/tree/' . auth()->user()->passport;
+
+            $vars = [
+                'myItemName' => auth()->user()->apellidos." ".auth()->user()->nombres,
+                'columnVals' => json_encode([
+                    'texto' => auth()->user()->passport,
+                    'enlace' => $link . " " . $link,
+                    'estado54' => 'Arbol Incompleto',
+                    'texto1' => $servicios,
+                    'texto4' => auth()->user()->hs_id
+                ])
+            ];
+
+            $data = @file_get_contents($apiUrl, false, stream_context_create([
+                    'http' => [
+                        'method' => 'POST',
+                        'header' => $headers,
+                        'content' => json_encode(['query' => $query, 'variables' => $vars]),
+                    ]
+                ]
+            ));
+
+            $responseContent = json_decode($data, true);
+
+            echo json_encode($responseContent);
+
+        }
+    }
+
+    public function procesarpaypalfases(Request $request) {
+        $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->whereNotNull('deal_id')->get();
+
+        $monto = 0;
+
+        foreach ($compras as $key => $compra) {
+            $monto = $monto + $compra["monto"];
+        }
+
+        $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+        $hash_factura = "sef_".generate_string($permitted_chars, 50);
+
+        Factura::create([
+            'id_cliente' => auth()->user()->id,
+            'hash_factura' => $hash_factura,
+            'met' => 'paypal',
+        ]);
+
+        foreach ($compras as $key => $compra) {
+            DB::table('compras')->where('id', $compra['id'])->update(['pagado' => 1, 'hash_factura' => $hash_factura]);
+
+            $deal = Negocio::find($compra->deal_id);
+            $fechaActual = Carbon::now()->format('Y/m/d');
+
+            if($compra->phasenum == 1){
+                $deal->fase_1_pagado = $compra->monto . " " . $fechaActual;
+                $deal->fecha_fase_1_pagado = $fechaActual;
+                $deal->monto_fase_1_pagado = $compra->monto;
+                $deal->save();
+
+                if ($deal->teamleader_id) {
+                    $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
+
+                    // Conservar los campos existentes
+                    $existingFields = $currentProject['custom_fields'];
+
+                    // Actualizar solo el campo necesario sin borrar los demás
+                    $updatedFields = array_map(function($field) use ($compra, $fechaActual) {
+                        if ($field['definition']['id'] === "a1b50c58-8175-0d13-9856-f661e783dc08") {
+                            $field['value'] = $compra->monto . " " . $fechaActual;
+                        }
+
+                        $field['id'] = $field['definition']['id'];
+
+                        unset($field['definition']);
+
+                        return $field;
+                    }, $existingFields);
+
+                    $campoTeamleader = ['custom_fields' => $updatedFields];
+
+                    $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+                }
+
+                if ($deal->hubspot_id) {
+                    // Establecer la zona horaria en UTC
+                    $utcTimezone = new \DateTimeZone('UTC');
+
+                    // Obtener la fecha actual a medianoche en UTC
+                    $midnightUTC = new \DateTime('now', $utcTimezone);
+                    $midnightUTC->setTime(0, 0, 0);  // Establecer hora en 00:00:00
+
+                    // Convertir a timestamp en milisegundos
+                    $timestamp = $midnightUTC->getTimestamp() * 1000;
+
+                    // Datos para enviar a HubSpot
+                    $campoHubspot = [
+                        'monto_fase_1_pagado' => $compra->monto,
+                        'fecha_fase_1_pagado' => $timestamp,
+                        'fase_1_pagado' =>  $compra->monto . " " . $fechaActual
+                    ];
+
+                    $this->hubspotService->updateDeals($deal->hubspot_id, $campoHubspot);
+                }
+            } else if ($compra->phasenum == 2) {
+                $deal->fase_2_pagado = $compra->monto . " " . $fechaActual;
+                $deal->fecha_fase_2_pagado = $fechaActual;
+                $deal->monto_fase_2_pagado = $compra->monto;
+                $deal->save();
+
+                if ($deal->teamleader_id) {
+                    $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
+
+                    // Conservar los campos existentes
+                    $existingFields = $currentProject['custom_fields'];
+
+                    // Actualizar solo el campo necesario sin borrar los demás
+                    $updatedFields = array_map(function($field) use ($compra, $fechaActual) {
+                        if ($field['definition']['id'] === "a5b94ccc-3ea8-06fc-b259-0a487073dc0d") {
+                            $field['value'] = $compra->monto . " " . $fechaActual;
+                        }
+
+                        $field['id'] = $field['definition']['id'];
+
+                        unset($field['definition']);
+
+                        return $field;
+                    }, $existingFields);
+
+                    $campoTeamleader = ['custom_fields' => $updatedFields];
+
+                    $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+                }
+
+                if ($deal->hubspot_id) {
+                    // Establecer la zona horaria en UTC
+                    $utcTimezone = new \DateTimeZone('UTC');
+
+                    // Obtener la fecha actual a medianoche en UTC
+                    $midnightUTC = new \DateTime('now', $utcTimezone);
+                    $midnightUTC->setTime(0, 0, 0);  // Establecer hora en 00:00:00
+
+                    // Convertir a timestamp en milisegundos
+                    $timestamp = $midnightUTC->getTimestamp() * 1000;
+
+                    // Datos para enviar a HubSpot
+                    $campoHubspot = [
+                        'monto_fase_2_pagado' => $compra->monto,
+                        'fecha_fase_2_pagado' => $timestamp,
+                        'fase_2_pagado' =>  $compra->monto . " " . $fechaActual
+                    ];
+
+                    $this->hubspotService->updateDeals($deal->hubspot_id, $campoHubspot);
+                }
+            } else if ($compra->phasenum == 3) {
+                $deal->fase_3_pagado = $compra->monto . " " . $fechaActual;
+                $deal->fecha_fase_3_pagado = $fechaActual;
+                $deal->monto_fase_3_pagado = $compra->monto;
+                $deal->save();
+
+                if ($deal->teamleader_id) {
+                    $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
+
+                    // Conservar los campos existentes
+                    $existingFields = $currentProject['custom_fields'];
+
+                    // Actualizar solo el campo necesario sin borrar los demás
+                    $updatedFields = array_map(function($field) use ($compra, $fechaActual) {
+                        if ($field['definition']['id'] === "9a1df9b7-c92f-09e5-b156-96af3f83dc0e") {
+                            $field['value'] = $compra->monto . " " . $fechaActual;
+                        }
+
+                        $field['id'] = $field['definition']['id'];
+
+                        unset($field['definition']);
+
+                        return $field;
+                    }, $existingFields);
+
+                    $campoTeamleader = ['custom_fields' => $updatedFields];
+
+                    $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+                }
+
+                if ($deal->hubspot_id) {
+                    // Establecer la zona horaria en UTC
+                    $utcTimezone = new \DateTimeZone('UTC');
+
+                    // Obtener la fecha actual a medianoche en UTC
+                    $midnightUTC = new \DateTime('now', $utcTimezone);
+                    $midnightUTC->setTime(0, 0, 0);  // Establecer hora en 00:00:00
+
+                    // Convertir a timestamp en milisegundos
+                    $timestamp = $midnightUTC->getTimestamp() * 1000;
+
+                    // Datos para enviar a HubSpot
+                    $campoHubspot = [
+                        'monto_fase_3_pagado' => $compra->monto,
+                        'fecha_fase_3_pagado' => $timestamp,
+                        'fase_3_pagado' =>  $compra->monto . " " . $fechaActual
+                    ];
+
+                    $this->hubspotService->updateDeals($deal->hubspot_id, $campoHubspot);
+                }
+            } else if ($compra->phasenum == 99) { //cil
+                $deal->cil___fcje_pagado = $compra->monto . " " . $fechaActual;
+                $deal->cilfcje_fechapagado = $fechaActual;
+                $deal->cilfcje_montopagado = $compra->monto;
+                $deal->save();
+
+                if ($deal->teamleader_id) {
+                    $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
+
+                    // Conservar los campos existentes
+                    $existingFields = $currentProject['custom_fields'];
+
+                    // Actualizar solo el campo necesario sin borrar los demás
+                    $updatedFields = array_map(function($field) use ($compra, $fechaActual) {
+                        if ($field['definition']['id'] === "f23fbe3b-5d13-0a41-a857-e9ab1c63dc42") {
+                            $field['value'] = $compra->monto . " " . $fechaActual;
+                        }
+
+                        $field['id'] = $field['definition']['id'];
+
+                        unset($field['definition']);
+
+                        return $field;
+                    }, $existingFields);
+
+                    $campoTeamleader = ['custom_fields' => $updatedFields];
+
+                    $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+                }
+
+                if ($deal->hubspot_id) {
+                    // Establecer la zona horaria en UTC
+                    $utcTimezone = new \DateTimeZone('UTC');
+
+                    // Obtener la fecha actual a medianoche en UTC
+                    $midnightUTC = new \DateTime('now', $utcTimezone);
+                    $midnightUTC->setTime(0, 0, 0);  // Establecer hora en 00:00:00
+
+                    // Convertir a timestamp en milisegundos
+                    $timestamp = $midnightUTC->getTimestamp() * 1000;
+
+                    // Datos para enviar a HubSpot
+                    $campoHubspot = [
+                        'cil___fcje_pagado' =>  $compra->monto . " " . $fechaActual
+                    ];
+
+                    $this->hubspotService->updateDeals($deal->hubspot_id, $campoHubspot);
+                }
+            } else if ($compra->phasenum == 98) { //cnat
+                $deal->carta_nat_preestab = $compra->monto . " " . $fechaActual;
+                $deal->carta_nat_fechapagado = $fechaActual;
+                $deal->carta_nat_montopagado = $compra->monto;
+                $deal->save();
+
+                if ($deal->teamleader_id) {
+                    $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
+
+                    // Conservar los campos existentes
+                    $existingFields = $currentProject['custom_fields'];
+
+                    // Actualizar solo el campo necesario sin borrar los demás
+                    $updatedFields = array_map(function($field) use ($compra, $fechaActual) {
+                        if ($field['definition']['id'] === "4339375f-ed77-02d9-a157-7da9f9e4bfac") {
+                            $field['value'] = $compra->monto . " " . $fechaActual;
+                        }
+
+                        $field['id'] = $field['definition']['id'];
+
+                        unset($field['definition']);
+
+                        return $field;
+                    }, $existingFields);
+
+                    $campoTeamleader = ['custom_fields' => $updatedFields];
+
+                    $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+                }
+
+                if ($deal->hubspot_id) {
+                    // Establecer la zona horaria en UTC
+                    $utcTimezone = new \DateTimeZone('UTC');
+
+                    // Obtener la fecha actual a medianoche en UTC
+                    $midnightUTC = new \DateTime('now', $utcTimezone);
+                    $midnightUTC->setTime(0, 0, 0);  // Establecer hora en 00:00:00
+
+                    // Convertir a timestamp en milisegundos
+                    $timestamp = $midnightUTC->getTimestamp() * 1000;
+
+                    // Datos para enviar a HubSpot
+                    $campoHubspot = [
+                        'carta_nat_pagado' =>  $compra->monto . " " . $fechaActual
+                    ];
+
+                    $this->hubspotService->updateDeals($deal->hubspot_id, $campoHubspot);
+                }
+            }
+        }
+
+        $user = User::find(auth()->user()->id);
+        $user->pay = $user->pay-10;
+        $user->save();
+
+        $pdfContent = createPDF($hash_factura);
+
+        Mail::send('mail.comprobante-mail', ['user' => $user], function ($m) use ($pdfContent, $request, $user) {
+            $m->to([
+                auth()->user()->email
+            ])->subject('SEFAR UNIVERSAL - Hemos procesado su pago satisfactoriamente')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
+        });
+
+        $pdfContent2 = createPDFintel($hash_factura);
+
+        Mail::send('mail.comprobante-mail-intel', ['user' => $user], function ($m) use ($pdfContent2, $request, $user) {
+            $m->to([
+                'pedro.bazo@sefarvzla.com',
+                'crisantoantonio@gmail.com',
+                'sistemasccs@sefarvzla.com',
+                'automatizacion@sefarvzla.com',
+                'sistemascol@sefarvzla.com',
+                'asistentedeproduccion@sefarvzla.com',
+                'organizacionrrhh@sefarvzla.com',
+                'organizacionrrhh@sefarvzla.com',
+                '20053496@bcc.hubspot.com',
+                'contabilidad@sefaruniversal.com',
+            ])->subject(strtoupper($user->name) . ' (ID: ' .
+                strtoupper($user->passport) . ') HA REALIZADO UN PAGO EN App Sefar Universal')->attachData($pdfContent2, 'Comprobante.pdf', ['mime' => 'application/pdf']);
+        });
+    }
+
     public function procesarpay(Request $request) {
         $hubspot = HubSpot\Factory::createWithAccessToken(env('HUBSPOT_KEY'));
         //Lo que va dentro de la Funcion
@@ -1087,7 +1756,7 @@ class ClienteController extends Controller
 
         $errorcod = "error";
 
-        $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->get();
+        $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->whereNull('deal_id')->get();
         $servicio = Servicio::where('id_hubspot', auth()->user()->servicio)->get();
 
         $cps = json_decode(json_encode($compras),true);
@@ -1410,6 +2079,396 @@ class ClienteController extends Controller
                     echo json_encode($responseContent);
 
                 }
+
+                return redirect()->route('gracias')->with("status","exito");
+            } else {
+                return redirect()->route('clientes.pay')->with("status","error6");
+            }
+        }
+    }
+
+    public function procesarpayfases(Request $request) {
+        $hubspot = HubSpot\Factory::createWithAccessToken(env('HUBSPOT_KEY'));
+        //Lo que va dentro de la Funcion
+
+        if (auth()->user()->servicio == 'Constitución de Empresa' || auth()->user()->servicio == 'Representante Fiscal' || auth()->user()->servicio == 'Codigo  Fiscal' || auth()->user()->servicio == 'Apertura de cuenta' || auth()->user()->servicio == 'Trimestre contable' || auth()->user()->servicio == 'Cooperativa 10 años' || auth()->user()->servicio == 'Cooperativa 5 años' || auth()->user()->servicio == 'Portuguesa Sefardi' || auth()->user()->servicio == 'Portuguesa Sefardi - Subsanación' || auth()->user()->servicio == 'Certificación de Documentos - Portugal') {
+            Stripe\Stripe::setApiKey(env('STRIPE_SECRET_PORT'));
+        } else {
+            Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+        }
+
+        $servicio = Servicio::where('id_hubspot', auth()->user()->servicio)->get();
+
+        $cupones = json_decode(json_encode(Coupon::all()),true);
+
+        $errorcod = "error";
+
+        $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->whereNotNull('deal_id')->get();
+        $servicio = Servicio::where('id_hubspot', auth()->user()->servicio)->get();
+
+        $monto = 0;
+
+        foreach ($compras as $key => $compra) {
+            $monto = $monto + $compra["monto"];
+        }
+
+        try {
+            $customer = Stripe\Customer::create(array(
+                "email" => auth()->user()->email,
+                "name" => $request->nameoncard,
+                "source" => $request->stripeToken
+            ));
+            $charged = Stripe\Charge::create ([
+                "amount" => $monto*100,
+                "currency" => "eur",
+                "customer" => $customer->id,
+                "description" => "Sefar Universal: Gestión de Pago de Fases"
+            ]);
+        } catch(CardException $e) {
+            $errorcod= "errorx";
+        } catch (RateLimitException $e) {
+            $errorcod= "error1";
+        } catch (InvalidRequestException $e) {
+            $errorcod= "error2";
+        } catch (AuthenticationException $e) {
+            $errorcod= "error3";
+        } catch (ApiConnectionException $e) {
+            $errorcod= "error4";
+        } catch (ApiErrorException $e) {
+            $errorcod= "error5";
+        } catch (Exception $e) {
+            $errorcod= "error6";
+        }
+
+        if ($errorcod== "errorx"){
+            return redirect()->route('clientes.pay')->with("status","errorx")->with("code",$e->getError()->code);
+        }
+
+        if ($errorcod== "error1"){
+            return redirect()->route('clientes.pay')->with("status","error1");
+        }
+
+        if ($errorcod== "error2"){
+            return redirect()->route('clientes.pay')->with("status","error2");
+        }
+
+        if ($errorcod== "error3"){
+            return redirect()->route('clientes.pay')->with("status","error3");
+        }
+
+        if ($errorcod== "error4"){
+            return redirect()->route('clientes.pay')->with("status","error4");
+        }
+
+        if ($errorcod== "error5"){
+            return redirect()->route('clientes.pay')->with("status","error5");
+        }
+
+        if ($errorcod== "error6"){
+            return redirect()->route('clientes.pay')->with("status","error6");
+        }
+
+        if ($charged->status == "succeeded"){
+            if (isset($charged->id)){
+
+                $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+                $hash_factura = "sef_".generate_string($permitted_chars, 50);
+
+                Factura::create([
+                    'id_cliente' => auth()->user()->id,
+                    'hash_factura' => $hash_factura,
+                    'met' => 'stripe',
+                    'idcus' => $charged->customer,
+                    'idcharge' => $charged->id
+                ]);
+
+                foreach ($compras as $key => $compra) {
+                    DB::table('compras')->where('id', $compra['id'])->update(['pagado' => 1, 'hash_factura' => $hash_factura]);
+
+                    $deal = Negocio::find($compra->deal_id);
+                    $fechaActual = Carbon::now()->format('Y/m/d');
+
+                    if($compra->phasenum == 1){
+                        $deal->fase_1_pagado = $compra->monto . " " . $fechaActual;
+                        $deal->fecha_fase_1_pagado = $fechaActual;
+                        $deal->monto_fase_1_pagado = $compra->monto;
+                        $deal->save();
+
+                        if ($deal->teamleader_id) {
+                            $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
+
+                            // Conservar los campos existentes
+                            $existingFields = $currentProject['custom_fields'];
+
+                            // Actualizar solo el campo necesario sin borrar los demás
+                            $updatedFields = array_map(function($field) use ($compra, $fechaActual) {
+                                if ($field['definition']['id'] === "a1b50c58-8175-0d13-9856-f661e783dc08") {
+                                    $field['value'] = $compra->monto . " " . $fechaActual;
+                                }
+
+                                $field['id'] = $field['definition']['id'];
+
+                                unset($field['definition']);
+
+                                return $field;
+                            }, $existingFields);
+
+                            $campoTeamleader = ['custom_fields' => $updatedFields];
+
+                            $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+                        }
+
+                        if ($deal->hubspot_id) {
+                            // Establecer la zona horaria en UTC
+                            $utcTimezone = new \DateTimeZone('UTC');
+
+                            // Obtener la fecha actual a medianoche en UTC
+                            $midnightUTC = new \DateTime('now', $utcTimezone);
+                            $midnightUTC->setTime(0, 0, 0);  // Establecer hora en 00:00:00
+
+                            // Convertir a timestamp en milisegundos
+                            $timestamp = $midnightUTC->getTimestamp() * 1000;
+
+                            // Datos para enviar a HubSpot
+                            $campoHubspot = [
+                                'monto_fase_1_pagado' => $compra->monto,
+                                'fecha_fase_1_pagado' => $timestamp,
+                                'fase_1_pagado' =>  $compra->monto . " " . $fechaActual
+                            ];
+
+                            $this->hubspotService->updateDeals($deal->hubspot_id, $campoHubspot);
+                        }
+                    } else if ($compra->phasenum == 2) {
+                        $deal->fase_2_pagado = $compra->monto . " " . $fechaActual;
+                        $deal->fecha_fase_2_pagado = $fechaActual;
+                        $deal->monto_fase_2_pagado = $compra->monto;
+                        $deal->save();
+
+                        if ($deal->teamleader_id) {
+                            $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
+
+                            // Conservar los campos existentes
+                            $existingFields = $currentProject['custom_fields'];
+
+                            // Actualizar solo el campo necesario sin borrar los demás
+                            $updatedFields = array_map(function($field) use ($compra, $fechaActual) {
+                                if ($field['definition']['id'] === "a5b94ccc-3ea8-06fc-b259-0a487073dc0d") {
+                                    $field['value'] = $compra->monto . " " . $fechaActual;
+                                }
+
+                                $field['id'] = $field['definition']['id'];
+
+                                unset($field['definition']);
+
+                                return $field;
+                            }, $existingFields);
+
+                            $campoTeamleader = ['custom_fields' => $updatedFields];
+
+                            $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+                        }
+
+                        if ($deal->hubspot_id) {
+                            // Establecer la zona horaria en UTC
+                            $utcTimezone = new \DateTimeZone('UTC');
+
+                            // Obtener la fecha actual a medianoche en UTC
+                            $midnightUTC = new \DateTime('now', $utcTimezone);
+                            $midnightUTC->setTime(0, 0, 0);  // Establecer hora en 00:00:00
+
+                            // Convertir a timestamp en milisegundos
+                            $timestamp = $midnightUTC->getTimestamp() * 1000;
+
+                            // Datos para enviar a HubSpot
+                            $campoHubspot = [
+                                'monto_fase_2_pagado' => $compra->monto,
+                                'fecha_fase_2_pagado' => $timestamp,
+                                'fase_2_pagado' =>  $compra->monto . " " . $fechaActual
+                            ];
+
+                            $this->hubspotService->updateDeals($deal->hubspot_id, $campoHubspot);
+                        }
+                    } else if ($compra->phasenum == 3) {
+                        $deal->fase_3_pagado = $compra->monto . " " . $fechaActual;
+                        $deal->fecha_fase_3_pagado = $fechaActual;
+                        $deal->monto_fase_3_pagado = $compra->monto;
+                        $deal->save();
+
+                        if ($deal->teamleader_id) {
+                            $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
+
+                            // Conservar los campos existentes
+                            $existingFields = $currentProject['custom_fields'];
+
+                            // Actualizar solo el campo necesario sin borrar los demás
+                            $updatedFields = array_map(function($field) use ($compra, $fechaActual) {
+                                if ($field['definition']['id'] === "9a1df9b7-c92f-09e5-b156-96af3f83dc0e") {
+                                    $field['value'] = $compra->monto . " " . $fechaActual;
+                                }
+
+                                $field['id'] = $field['definition']['id'];
+
+                                unset($field['definition']);
+
+                                return $field;
+                            }, $existingFields);
+
+                            $campoTeamleader = ['custom_fields' => $updatedFields];
+
+                            $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+                        }
+
+                        if ($deal->hubspot_id) {
+                            // Establecer la zona horaria en UTC
+                            $utcTimezone = new \DateTimeZone('UTC');
+
+                            // Obtener la fecha actual a medianoche en UTC
+                            $midnightUTC = new \DateTime('now', $utcTimezone);
+                            $midnightUTC->setTime(0, 0, 0);  // Establecer hora en 00:00:00
+
+                            // Convertir a timestamp en milisegundos
+                            $timestamp = $midnightUTC->getTimestamp() * 1000;
+
+                            // Datos para enviar a HubSpot
+                            $campoHubspot = [
+                                'monto_fase_3_pagado' => $compra->monto,
+                                'fecha_fase_3_pagado' => $timestamp,
+                                'fase_3_pagado' =>  $compra->monto . " " . $fechaActual
+                            ];
+
+                            $this->hubspotService->updateDeals($deal->hubspot_id, $campoHubspot);
+                        }
+                    } else if ($compra->phasenum == 99) { //cil
+                        $deal->cil___fcje_pagado = $compra->monto . " " . $fechaActual;
+                        $deal->cilfcje_fechapagado = $fechaActual;
+                        $deal->cilfcje_montopagado = $compra->monto;
+                        $deal->save();
+
+                        if ($deal->teamleader_id) {
+                            $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
+
+                            // Conservar los campos existentes
+                            $existingFields = $currentProject['custom_fields'];
+
+                            // Actualizar solo el campo necesario sin borrar los demás
+                            $updatedFields = array_map(function($field) use ($compra, $fechaActual) {
+                                if ($field['definition']['id'] === "f23fbe3b-5d13-0a41-a857-e9ab1c63dc42") {
+                                    $field['value'] = $compra->monto . " " . $fechaActual;
+                                }
+
+                                $field['id'] = $field['definition']['id'];
+
+                                unset($field['definition']);
+
+                                return $field;
+                            }, $existingFields);
+
+                            $campoTeamleader = ['custom_fields' => $updatedFields];
+
+                            $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+                        }
+
+                        if ($deal->hubspot_id) {
+                            // Establecer la zona horaria en UTC
+                            $utcTimezone = new \DateTimeZone('UTC');
+
+                            // Obtener la fecha actual a medianoche en UTC
+                            $midnightUTC = new \DateTime('now', $utcTimezone);
+                            $midnightUTC->setTime(0, 0, 0);  // Establecer hora en 00:00:00
+
+                            // Convertir a timestamp en milisegundos
+                            $timestamp = $midnightUTC->getTimestamp() * 1000;
+
+                            // Datos para enviar a HubSpot
+                            $campoHubspot = [
+                                'cil___fcje_pagado' =>  $compra->monto . " " . $fechaActual
+                            ];
+
+                            $this->hubspotService->updateDeals($deal->hubspot_id, $campoHubspot);
+                        }
+                    } else if ($compra->phasenum == 98) { //cnat
+                        $deal->carta_nat_preestab = $compra->monto . " " . $fechaActual;
+                        $deal->carta_nat_fechapagado = $fechaActual;
+                        $deal->carta_nat_montopagado = $compra->monto;
+                        $deal->save();
+
+                        if ($deal->teamleader_id) {
+                            $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
+
+                            // Conservar los campos existentes
+                            $existingFields = $currentProject['custom_fields'];
+
+                            // Actualizar solo el campo necesario sin borrar los demás
+                            $updatedFields = array_map(function($field) use ($compra, $fechaActual) {
+                                if ($field['definition']['id'] === "4339375f-ed77-02d9-a157-7da9f9e4bfac") {
+                                    $field['value'] = $compra->monto . " " . $fechaActual;
+                                }
+
+                                $field['id'] = $field['definition']['id'];
+
+                                unset($field['definition']);
+
+                                return $field;
+                            }, $existingFields);
+
+                            $campoTeamleader = ['custom_fields' => $updatedFields];
+
+                            $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+                        }
+
+                        if ($deal->hubspot_id) {
+                            // Establecer la zona horaria en UTC
+                            $utcTimezone = new \DateTimeZone('UTC');
+
+                            // Obtener la fecha actual a medianoche en UTC
+                            $midnightUTC = new \DateTime('now', $utcTimezone);
+                            $midnightUTC->setTime(0, 0, 0);  // Establecer hora en 00:00:00
+
+                            // Convertir a timestamp en milisegundos
+                            $timestamp = $midnightUTC->getTimestamp() * 1000;
+
+                            // Datos para enviar a HubSpot
+                            $campoHubspot = [
+                                'carta_nat_pagado' =>  $compra->monto . " " . $fechaActual
+                            ];
+
+                            $this->hubspotService->updateDeals($deal->hubspot_id, $campoHubspot);
+                        }
+                    }
+                }
+
+                $user = User::find(auth()->user()->id);
+                $user->pay = $user->pay-10;
+                $user->save();
+
+
+
+                $pdfContent = createPDF($hash_factura);
+
+                Mail::send('mail.comprobante-mail', ['user' => $user], function ($m) use ($pdfContent, $request, $user) {
+                    $m->to([
+                        auth()->user()->email
+                    ])->subject('SEFAR UNIVERSAL - Hemos procesado su pago satisfactoriamente')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
+                });
+
+                $pdfContent2 = createPDFintel($hash_factura);
+
+                Mail::send('mail.comprobante-mail-intel', ['user' => $user], function ($m) use ($pdfContent2, $request, $user) {
+                    $m->to([
+                        'pedro.bazo@sefarvzla.com',
+                        'crisantoantonio@gmail.com',
+                        'sistemasccs@sefarvzla.com',
+                        'automatizacion@sefarvzla.com',
+                        'sistemascol@sefarvzla.com',
+                        'asistentedeproduccion@sefarvzla.com',
+                        'organizacionrrhh@sefarvzla.com',
+                        'organizacionrrhh@sefarvzla.com',
+                        '20053496@bcc.hubspot.com',
+                        'contabilidad@sefaruniversal.com',
+                    ])->subject(strtoupper($user->name) . ' (ID: ' .
+                        strtoupper($user->passport) . ') HA REALIZADO UN PAGO EN App Sefar Universal')->attachData($pdfContent2, 'Comprobante.pdf', ['mime' => 'application/pdf']);
+                });
 
                 return redirect()->route('gracias')->with("status","exito");
             } else {

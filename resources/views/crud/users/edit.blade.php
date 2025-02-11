@@ -84,6 +84,11 @@
                         Etiquetado
                     </button>
                 </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="negocios-tab" data-bs-toggle="tab" data-bs-target="#negocios" type="button" role="tab" aria-controls="negocios" aria-selected="false">
+                        Negocios
+                    </button>
+                </li>
                 @endif
             </ul>
             <div class="tab-content mt-4" id="formTabsContent">
@@ -768,6 +773,8 @@
                                             Tarjeta de Crédito/Débito
                                         @elseif ($factura["met"] == "cupon")
                                             Cupón
+                                        @elseif ($factura["met"] == "paypal")
+                                            PayPal
                                         @endif
                                     </td>
                                     <td>
@@ -779,7 +786,17 @@
                                             @php
                                                 $monto += $compra["monto"];
                                             @endphp
-                                            {{$compra["servicio_hs_id"]}}
+                                            @if($compra["servicio_hs_id"])
+                                                {{$compra["servicio_hs_id"]}}
+                                            @else
+                                                @if ($compra["phasenum"]<10)
+                                                    Pago Fase {{$compra["phasenum"]}}
+                                                @elseif($compra["phasenum"]==99)
+                                                    Pago FCJE/CIL
+                                                @elseif($compra["phasenum"]==98)
+                                                    Pago Carta de Naturaleza
+                                                @endif
+                                            @endif
                                             @if($index < $totalCompras - 1)
                                                 <br> <!-- Agregar salto de línea si no es el último -->
                                             @endif
@@ -950,6 +967,29 @@
                             <span class="ctvSefar block text-indigo-600">Este cliente no se encuentra en Monday</span>
                         </h2>
                     @endif
+                </div>
+
+                <div class="tab-pane fade" id="negocios" role="tabpanel" aria-labelledby="negocios-tab">
+                    <table id="dealsTable" class="min-w-full divide-y divide-gray-200 w-100">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col">Nombre del Negocio</th>
+                                <th scope="col">Ver info</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach ( $negocios as $negocio )
+                                <tr>
+                                    <td>{{$negocio["dealname"]}}<br>{!!$negocio["hubspot_id"] ? "<small>Se encuentra en <b><a href='https://app.hubspot.com/contacts/20053496/record/0-3/".$negocio['hubspot_id']."'>Hubspot</a></b></small>" : ''!!}{!! $negocio["teamleader_id"] ? "<small> y en <b><a href='https://focus.teamleader.eu/web/projects/".$negocio['teamleader_id']."'>Teamleader</a></b></small>" : '' !!}</td>
+                                    <td>
+                                        <a href="/deal/{{$negocio['id']}}/edit" target="_blank" class="btn btn-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -1266,6 +1306,14 @@
             }
         });
         $('#documentsTable').DataTable({
+            "language": {
+                "lengthMenu": "Mostrar _MENU_ resultados por página",
+                "zeroRecords": "No hay resultados",
+                "info": "Página _PAGE_ de _PAGES_",
+                "infoEmpty": "No hay resultados"
+            }
+        });
+        $('#dealsTable').DataTable({
             "language": {
                 "lengthMenu": "Mostrar _MENU_ resultados por página",
                 "zeroRecords": "No hay resultados",

@@ -137,12 +137,19 @@ class HubspotService
             $responseBody = $e->getResponseBody();
 
             // Muestra (o loguea) la respuesta completa para ver el error sin truncar
-            dd([
-                'HubSpot Update Error',
-                'Status Code' => $statusCode,
-                'Response'    => json_decode($responseBody),
-                'Propiedades Enviadas' => $properties
+        }
+    }
+
+    public function updateDeals($hsId, $properties)
+    {
+        try {
+            $this->hubspot->crm()->deals()->basicApi()->update($hsId, [
+                'properties' => $properties
             ]);
+        } catch (ContactException $e) {
+            // Aquí puedes ver el código de estado (por ejemplo, 400) y la respuesta completa
+            $statusCode   = $e->getCode();
+            $responseBody = $e->getResponseBody();
         }
     }
 

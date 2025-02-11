@@ -73,7 +73,7 @@ class SendMonthReportEmails extends Command
 
         $facturas = json_decode(
             json_encode(
-                Factura::where('met', 'stripe')
+                Factura::whereIn('met', ['stripe', 'paypal'])
                     ->whereHas('compras', function($query) {
                         $query->where('pagado', 1);
                     })

@@ -168,7 +168,7 @@ class SendYearReportEmails extends Command
         ];
 
         // Facturas (Stripe)
-        $facturas = Factura::where('met', 'stripe')
+        $facturas = Factura::whereIn('met', ['stripe', 'paypal'])
         ->whereBetween('created_at', [$fechaInicioAnio, $fechaFinAnio])
         ->with(['compras' => function ($query) {
             $query->select('servicio_hs_id', 'monto', 'hash_factura');

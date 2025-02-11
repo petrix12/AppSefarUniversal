@@ -78,6 +78,8 @@
                 <b>Forma de Pago:</b> Stripe - Tarjeta de Crédito o Débito<br>
             @elseif($datos_factura[0]["met"]=="cupon")
                 <b>Forma de Pago:</b> Cupón<br>
+            @elseif($datos_factura[0]["met"]=="paypal")
+                <b>Forma de Pago:</b> PayPal<br>
             @endif
 
             <p style="width: 100%; text-align: right;"><b>Fecha de Comprobante:</b> <?php echo(date("d-m-Y", strtotime($datos_factura[0]["created_at"]))); ?><br></p>

@@ -120,6 +120,20 @@ Route::post('deletefile', [AgClienteNewController::class, 'deletefile'])->name('
 Route::post('getfileedit', [AgClienteNewController::class, 'getfileedit'])->name('getfileedit');
 Route::post('getfileupdate', [AgClienteNewController::class, 'getfileupdate'])->name('getfileupdate');
 
+Route::post('/sincronizarhsytl', [NegocioController::class, 'sincronizarhsytl'])->name('sincronizarhsytl');
+Route::post('/guardarfase1', [NegocioController::class, 'guardarfase1'])->name('guardarfase1');
+Route::post('/guardarfase2', [NegocioController::class, 'guardarfase2'])->name('guardarfase2');
+Route::post('/guardarfase3', [NegocioController::class, 'guardarfase3'])->name('guardarfase3');
+Route::post('/guardarcartanat', [NegocioController::class, 'guardarcartanat'])->name('guardarcartanat');
+Route::post('/guardarfcjecil', [NegocioController::class, 'guardarfcjecil'])->name('guardarfcjecil');
+
+Route::post('/exonerarfase1', [NegocioController::class, 'exonerarfase1'])->name('exonerarfase1');
+Route::post('/exonerarfase2', [NegocioController::class, 'exonerarfase2'])->name('exonerarfase2');
+Route::post('/exonerarfase3', [NegocioController::class, 'exonerarfase3'])->name('exonerarfase3');
+Route::post('/exonerarcartanat', [NegocioController::class, 'exonerarcartanat'])->name('exonerarcartanat');
+Route::post('/exonerarfcjecil', [NegocioController::class, 'exonerarcilfcje'])->name('exonerarcilfcje');
+Route::post('/incluidofase1cilfcje', [NegocioController::class, 'incluidofase1cilfcje'])->name('incluidofase1cilfcje');
+
 Route::post('etiquetasgenealogiamonday', [EtiquetaGenealogiaController::class, 'update'])->name('etiquetasgenealogiamonday');
 
 Route::get('diarioindex',[ReportController::class, 'diarioindex'])->name('diarioindex')->middleware('can:reportes.index');
@@ -284,6 +298,8 @@ Route::group(['middleware' => ['auth'], 'as' => 'clientes.'], function(){
         ->middleware('can:cliente');
     Route::get('pay', [ClienteController::class, 'pay'])->name('pay')
         ->middleware('can:cliente');
+    Route::get('payfases', [ClienteController::class, 'payfases'])->name('payfases')
+        ->middleware('can:cliente');
 
 });
 
@@ -298,6 +314,13 @@ Route::get('checkRegAlzada', [ClienteController::class, 'checkRegAlzada'])->name
 
 Route::post('pay', [ClienteController::class, 'procesarpay'])->name('procesarpay')
         ->middleware('can:cliente');
+Route::post('payfases', [ClienteController::class, 'procesarpayfases'])->name('procesarpayfases')
+        ->middleware('can:cliente');
+
+Route::post('/procesarpaypalfases', [ClienteController::class, 'procesarpaypalfases'])->name('procesarpaypalfases');
+
+Route::post('/procesarpaypal', [ClienteController::class, 'procesarPaypal'])->name('procesarpaypal');
+
 
 Route::get('/revisarcupon', [ClienteController::class, 'revisarcupon'])->name('revisarcupon')
         ->middleware('can:cliente');

@@ -475,7 +475,7 @@ class ReportController extends Controller
 
         $facturas = json_decode(
             json_encode(
-                Factura::where('met', 'stripe')
+                Factura::whereIn('met', ['stripe', 'paypal'])
                     ->whereHas('compras', function($query) {
                         $query->where('pagado', 1);
                     })
@@ -928,7 +928,7 @@ class ReportController extends Controller
 
         $facturas = json_decode(
             json_encode(
-                Factura::where('met', 'stripe')
+                Factura::whereIn('met', ['stripe', 'paypal'])
                     ->whereHas('compras', function($query) {
                         $query->where('pagado', 1);
                     })
@@ -1461,7 +1461,7 @@ class ReportController extends Controller
         ];
 
         // Facturas (Stripe)
-        $facturas = Factura::where('met', 'stripe')
+        $facturas = Factura::whereIn('met', ['stripe', 'paypal'])
         ->whereBetween('created_at', [$fechaInicioAnio, $fechaFinAnio])
         ->with(['compras' => function ($query) {
             $query->select('servicio_hs_id', 'monto', 'hash_factura');

@@ -78,6 +78,8 @@
                 <b>Forma de Pago:</b> Stripe - Tarjeta de Crédito o Débito<br>
             @elseif($datos_factura[0]["met"]=="cupon")
                 <b>Forma de Pago:</b> Cupón<br>
+            @elseif($datos_factura[0]["met"]=="paypal")
+                <b>Forma de Pago:</b> PayPal<br>
             @endif
             @if(!is_null($datos_factura[0]["idcus"]))
                 <b>ID de Cliente:</b> {{$datos_factura[0]["idcus"]}}<br>

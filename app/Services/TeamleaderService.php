@@ -431,6 +431,27 @@ class TeamleaderService
         }
     }
 
+    public function updateProject($projectId, $updatedData)
+    {
+            $accessToken = $this->getAccessToken();
+
+            // Construir el payload con el ID del proyecto y los datos a actualizar
+            $payload = array_merge(['id' => $projectId], $updatedData);
+
+            $response = Http::withToken($accessToken)
+                ->withHeaders(['Content-Type' => 'application/json'])
+                ->post('https://api.focus.teamleader.eu/projects.update', $payload);
+
+            if ($response->successful()) {
+                return $response->json();
+            } else {
+                $error = $response->json();
+                $errorMessage = $error['errors'][0]['title'] ?? 'Error desconocido';
+                throw new \Exception('Error al actualizar el proyecto: ' . $errorMessage);
+            }
+
+    }
+
     public function getModuleByFieldId(string $tlId): ?string
     {
         // 1. Obtener el token de acceso

@@ -260,7 +260,7 @@
         <div class="card">
             <center>
                 <img class='logo' src='{{ public_path("/img/logonormal.png") }}' />
-                <h3>Pagos realizados durante el mes (Stripe):</h3>
+                <h3>Pagos realizados durante el mes (Stripe y Paypal):</h3>
             </center>
             @php
                 $totalMonto = array_sum($facturas);
