@@ -255,7 +255,7 @@
                 <div class="col-12 col-md-5 mb-3 order-2 order-md-1">
                     <div class="card card-body shadow">
                         <h2 class="text-center mb-4">
-                            Datos de Pago
+                            <b>Datos de Pago</b>
                         </h2>
 
                         <div class="form-group required mb-3">
