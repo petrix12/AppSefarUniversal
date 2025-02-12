@@ -255,7 +255,7 @@
                 <div class="col-12 col-md-5 mb-3 order-2 order-md-1">
                     <div class="card card-body shadow">
                         <h2 class="text-center mb-4">
-                            <i class="fas fa-credit-card"></i> Datos de Pago <i class="fas fa-credit-card"></i>
+                            Datos de Pago
                         </h2>
 
                         <div class="form-group required mb-3">
@@ -432,7 +432,7 @@
     </form>
 
     <script
-            src="https://www.paypal.com/sdk/js?client-id={{ env('PAYPAL_CLIENT_ID') }}&currency=EUR&components=buttons&enable-funding=venmo,paylater,card"
+            src="https://www.paypal.com/sdk/js?client-id={{ env('PAYPAL_CLIENT_ID') }}&currency=EUR&components=buttons"
             data-sdk-integration-source="developer-studio"
         ></script>
 
