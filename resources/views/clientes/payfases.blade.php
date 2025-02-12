@@ -417,7 +417,7 @@
     </form>
 
     <script
-            src="https://www.paypal.com/sdk/js?client-id={{ env('PAYPAL_CLIENT_ID') }}&currency=EUR&components=buttons"
+            src="https://www.paypal.com/sdk/js?client-id={{ env('PAYPAL_CLIENT_ID') }}&currency=EUR&components=buttons&disable-funding=credit,card"
             data-sdk-integration-source="developer-studio"
         ></script>
 
