@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ServicioController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AlertController;
 
 use App\Http\Controllers\AssistantController;
@@ -27,3 +28,6 @@ Route::get('/getservicio', [ServicioController::class, 'getservicio']);
 Route::get('/getactivealerts', [AlertController::class, 'getactivealerts']);
 
 Route::post('/assistant/chat', [AssistantController::class, 'chat']);
+
+Route::post('/chat/iniciar', [ChatController::class, 'iniciarChat']);
+Route::post('/chat/enviar', [ChatController::class, 'enviarMensaje']);
