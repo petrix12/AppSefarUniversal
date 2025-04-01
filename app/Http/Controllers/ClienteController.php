@@ -7,6 +7,8 @@ use App\Mail\CargaSefar;
 use App\Models\Agcliente;
 use App\Models\Coupon;
 use App\Models\Servicio;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use App\Models\Compras;
 use App\Models\HsReferido;
 use App\Models\Factura;
@@ -43,6 +45,9 @@ use Monday;
 use Carbon\Carbon;
 use App\Services\TeamleaderService;
 use App\Services\HubspotService;
+use Illuminate\Support\Facades\Schema;
+use App\Models\MondayData;
+use App\Models\MondayFormBuilder;
 
 class ClienteController extends Controller
 {
@@ -55,6 +60,915 @@ class ClienteController extends Controller
         $this->hubspotService = $hubspotService;
     }
 
+    public function pagospendientes(){
+        $user = Auth::user()->id;
+
+        $compras = Compras::where('id_user', $user)->where('pagado', 0)->whereNotNull("deal_id")->get();
+
+        return view('clientes.pagospendientes', compact('compras'));
+    }
+
+    private function searchUserInMonday($passport, User $user)
+    {
+        $boardIds = [
+            878831315,
+            6524058079, 3950637564, 815474056, 3639222742, 3469085450, 2213224176,
+            1910043474, 1845710504, 1845706367, 1845701215, 1016436921,
+            1026956491, 815474056, 815471640, 807173414,
+            803542982, 765394861, 742896377, 708128239, 708123651,
+            669590637, 625187241
+        ];
+
+        $searchUrl = "https://app.sefaruniversal.com/tree/" . $passport;
+
+        foreach ($boardIds as $boardId) {
+            $query = "
+                items_page_by_column_values(
+                    limit: 50,
+                    board_id: {$boardId},
+                    columns: [{column_id: \"enlace\", column_values: [\"{$searchUrl}\"]}]
+                ) {
+                    cursor
+                    items {
+                        id
+                        name
+                        board {
+                            name
+                        }
+                        column_values {
+                            id
+                            column {
+                                title
+                            }
+                            text
+                        }
+                    }
+                }
+            ";
+
+            $result = json_decode(json_encode(Monday::customQuery($query)), true);
+
+            if (!empty($result['items_page_by_column_values']['items'])) {
+                $item = $result['items_page_by_column_values']['items'][0];
+                $user->monday_id = $item['id']; // Guardar el ID de Monday
+                $user->save();
+                return $item;
+            }
+        }
+
+        return null;
+    }
+
+    public function status(){
+        $user = Auth::user();
+
+        $usuariosMondaytemp = $this->getUsersForSelect();
+
+        $usuariosMondaytemp = json_decode(json_encode($usuariosMondaytemp),true);
+
+        $usuariosMonday = $usuariosMondaytemp["original"];
+
+        $facturas = Factura::with("compras")->where("id_cliente", $user->id)->get();
+
+        // Verificar si el usuario ya tiene hs_id
+        if (is_null($user->hs_id)) {
+            $HScontactByEmail = $this->hubspotService->searchContactByEmail($user->email);
+            if ($HScontactByEmail) {
+                $user->hs_id = $HScontactByEmail['id'];
+                $user->save();
+            } else {
+                throw new \Exception("El contacto no se encontró en HubSpot.");
+            }
+        }
+
+        $HScontact = $this->hubspotService->getContactById($user->hs_id);
+
+        $HScontactFiles = $this->hubspotService->getEngagementsByContactId($user->hs_id);
+
+        $urls = $this->hubspotService->getContactFileFields($user->hs_id);
+
+        $deals = $this->hubspotService->getDealsByContactId($user->hs_id);
+
+        if (is_null($user->tl_id)) {
+            $TLcontactByEmail = $this->teamleaderService->searchContactByEmail($user->email);
+
+            if (is_null($TLcontactByEmail)) {
+                $newContact = $this->teamleaderService->createContact($user);
+                $user->tl_id = $newContact['id'];
+            } else {
+                $user->tl_id = $TLcontactByEmail['id'];
+            }
+
+            $user->save();
+        }
+
+        // Almacenar las etapas de pipelines cargadas para evitar llamadas repetidas
+        $pipelineStages = [];
+
+        // Procesar los negocios y asociar sus etapas (dealstage) y opciones
+        $dealsWithStages = array_map(function ($deal) use (&$pipelineStages) {
+            $dealstageId = $deal['properties']['dealstage'] ?? null;
+            $pipelineId = $deal['properties']['pipeline'] ?? null;
+
+            $dealstageName = null;
+            $dealstageOptions = [];
+
+            if ($pipelineId) {
+                // Verificar si ya cargamos las etapas del pipeline
+                if (!isset($pipelineStages[$pipelineId])) {
+                    $pipelineStages[$pipelineId] = $this->hubspotService->getDealStagesByPipeline($pipelineId);
+                }
+
+                // Buscar el nombre del dealstage en las etapas del pipeline
+                $dealstageName = collect($pipelineStages[$pipelineId])->firstWhere('id', $dealstageId)['name'] ?? null;
+
+                // Asignar las opciones de dealstage (todas las etapas del pipeline)
+                $dealstageOptions = $pipelineStages[$pipelineId];
+            }
+
+            // Retornar el negocio con el nombre de su etapa actual y las opciones de etapas
+            return array_merge($deal, [
+                'dealstage_name' => $dealstageName,
+                'dealstage_options' => $dealstageOptions,
+            ]);
+        }, $deals);
+
+        $TLcontact = $this->teamleaderService->getContactById($user->tl_id);
+        $TLdeals = $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id);
+
+        $camposDeTeamleader = [
+            'n1__enviada_al_cliente' => '4203d8ab-f1de-0145-af52-1bb278951268',
+            'documentos' => 'e254d7ed-3c93-097d-b659-852a3b74c5e5',
+            'n1__lugar_del_expediente' => '4bbfdc08-686d-0a03-8557-bd1d60d46f57',
+            'n1__monto_preestablecido' => '6f7a4408-b146-0e58-a35b-8f02fed60887',
+            'n10__fecha_asignacion_de_juez' => '497e7359-8b1a-056a-9e5e-28fa0cf5b2f1',
+            'n11__envio_redaccion_abogada' => 'e04af721-8808-0a43-9356-df374565b2fa',
+            'n12__notas___no__expediente' => '4b822322-17a1-06ba-9b5b-82db70f46f5b',
+            'n13__fecha_recurso_alzada' => '7c06cfed-87f4-00ac-8a5a-946b0b9643b8',
+            'n2__firmado_por_el_cliente' => '5f090e48-4a5b-0504-8259-9e945e95126a',
+            'n2__antecedentes_penales' => '35c68020-1160-068b-b055-1b5e6fe4ca11',
+            'n2__ciudad_formalizacion' => 'ad849a21-82b3-0032-995e-6e9dbcd46f53',
+            'n2__enviado_a_redaccion_informe' => 'ed8167e1-00e2-05fb-8a5c-900699b54d88',
+            'n2__monto_pagado' => '4bef5482-f2e4-02da-8653-691944760f84',
+            'n3__gestionado___entregado' => 'b0421965-2b39-0c4d-9e51-1e567b05126b',
+            'n3__contratos_y_permisos' => '39085084-d206-073e-8057-ef23ab046f5a',
+            'n3__f__vencimiento_ant__penal' => '578e17da-c01b-0a97-bc5a-7d9255b4c9d5',
+            'n3__informe_cargado' => '1c067d8e-1b3b-0b4b-8c5f-436233b4c3f2',
+            'n4__certificado_descargado' => '62a2cd97-1898-00bf-885c-029939e4c40f',
+            'n4__pago_tasa' => 'a2d11316-e31b-0b2c-bd5e-0c7ad13491d0',
+            'n5___f_solicitud_documentos' => 'e0919d4b-322a-0c06-9759-0a6607f4c9db',
+            'n5__fecha_de_formalizacion' => '7c87a75b-ce63-01da-9c58-5277f6c40fa9',
+            'n5__notas_genealogia' => 'edc41efc-e52f-0c9a-8e5d-41b8fff4c3f3',
+            'n6__cil_preaprobado' => '57535be4-4738-00b5-9251-b53739e607c0',
+            'n6__fecha_acta_remitida_' => '8091a7fc-3023-0625-8051-de85a4c46f59',
+            'n7__enviado_al_dto_juridico' => 'c3feeebf-21a9-0cac-855e-e6f550260ee0',
+            'n7__fecha_caducidad_pasaporte' => '6fb8ef4e-6fdb-0241-8354-bda543e4cbff',
+            'n7__fecha_de_resolucion' => '3ef52253-5ac1-025a-8c5b-a9d094c468b8',
+            'n4__notario___abogado' => '36fa5b9d-bafd-0e61-9058-72b4ed547197',
+            'n8__f_rec__solicitud_doc' => 'e255a259-5328-0ee6-ab52-3e4f9604c9de',
+            'n9__enviado_a_legales' => '047dc070-6b23-0434-b858-61a1d7e4c9fd',
+            'n9__notif__1__int__subsanar_' => '7918f47c-4097-07e1-af57-d6c435660883',
+            'n91__recepcion_recaudos_fisico' => '8e8ea98b-5137-047b-8157-c44935a4c3f1',
+            'carta_nat_pagado' => '4339375f-ed77-02d9-a157-7da9f9e4bfac',
+            'carta_nat_preestab' => 'a42ed217-b570-0973-9052-fab97214c229',
+            'cil___fcje_pagado' => 'f23fbe3b-5d13-0a41-a857-e9ab1c63dc42',
+            'cil___fcje_preestab' => 'aa1ce4b9-a410-00f2-a953-5f8c2713dc35',
+            'codigo_de_proceso' => 'a42f63f5-d527-0544-ab50-9c03857707f2',
+            'argumento_de_ventas__new_' => 'c34c71b3-331e-0524-a45a-95a654e51b4c',
+            'fase_0_pagado__teamleader_' => 'd90b2e44-2e9b-0f29-945a-71c34bb3def0',
+            'fase_1_pagado__teamleader_' => 'a1b50c58-8175-0d13-9856-f661e783dc08',
+            'fase_1_preestab' => '73173887-a0e8-0f4f-bb55-b61f33d3c6e9',
+            'fase_2_pagado__teamleader_' => 'a5b94ccc-3ea8-06fc-b259-0a487073dc0d',
+            'fase_2_preestab' => 'c66a9c15-c965-0812-ad5b-7e48f183c6f9',
+            'fase_3_pagado__teamleader_' => '9a1df9b7-c92f-09e5-b156-96af3f83dc0e',
+            'fase_3_preestab' => 'e41fdbbb-a25a-005b-af56-9f3ca623c700',
+            'fecha_de_aceptacion' => 'fbe8df81-7225-0c01-b051-7f1032054ffe',
+            'date_of_birth' => '2ef543c1-e76c-025a-a950-67eec7954d89',
+            'numero_de_pasaporte' => '891080d2-eeeb-030f-a256-d0ee6095773d',
+            'pais_de_residencia' => 'bd374fc3-39a5-0070-9455-67d94cc6b7f7',
+            'servicio_solicitado' => 'fcd48891-20f6-049a-a05f-f78a6f951b4d'
+        ];
+
+        if (sizeof($dealsWithStages) > sizeof($TLdeals)) {
+            // Obtener los nombres de los tratos en Teamleader
+            $teamleaderDealNames = array_map(function ($deal) {
+                return $deal['title']; // Asegúrate de que este es el campo que contiene el nombre
+            }, $TLdeals);
+
+            // Iterar sobre los tratos de HubSpot
+            foreach ($dealsWithStages as $deal) {
+                // Validar si el trato ya existe en Teamleader
+                if (!in_array($deal['properties']['dealname'], $teamleaderDealNames)) {
+                    // Crear el trato si no existe
+                    $this->teamleaderService->createProjectFromHubspotDeal($deal, $user->tl_id, $camposDeTeamleader);
+                }
+            }
+
+            // Actualizar la lista de tratos en Teamleader
+            $TLdeals = $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id);
+        }
+
+        //get updated deals
+
+        $deals = $this->hubspotService->getDealsByContactId($user->hs_id);
+        $TLdeals = $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id);
+
+        $teamleaderDealNames = array_column($TLdeals, 'title', 'id');
+
+        // Obtener los campos de la base de datos excepto los que no se deben llenar
+        $columns = Schema::getColumnListing((new Negocio)->getTable());
+        $excludedColumns = ['id', 'created_at', 'updated_at', 'hubspot_id', 'teamleader_id', 'user_id'];
+        $fillableColumns = array_diff($columns, $excludedColumns);
+
+        // Iterar sobre los negocios de HubSpot y actualizar la base de datos
+        foreach ($deals as $deal) {
+            $dealId = $deal['id'];
+            $dealName = $deal['properties']['dealname'] ?? null;
+
+            //Limpiar
+
+            $data = $deal['properties']["argumento_de_ventas__new_"];
+
+            // Asegurarse de que siempre sea un array, incluso si no hay punto y coma
+            $arrayData = $data ? ( strpos($data, ';') !== false ? explode(';', $data) : [$data] ) : null;
+
+            // Convertir el array a JSON
+            $jsonData = json_encode($arrayData, JSON_UNESCAPED_UNICODE);
+
+            // Asignar el JSON convertido de nuevo al arreglo
+            $deal['properties']["argumento_de_ventas__new_"] = $jsonData;
+
+            $data = $deal['properties']["n2__antecedentes_penales"];
+
+            // Asegurarse de que siempre sea un array, incluso si no hay punto y coma
+            $arrayData = $data ? ( strpos($data, ';') !== false ? explode(';', $data) : [$data] ) : null;
+
+            // Convertir el array a JSON
+            $jsonData = json_encode($arrayData, JSON_UNESCAPED_UNICODE);
+
+            // Asignar el JSON convertido de nuevo al arreglo
+            $deal['properties']["n2__antecedentes_penales"] = $jsonData;
+
+            $data = $deal['properties']["documentos"];
+
+            // Asegurarse de que siempre sea un array, incluso si no hay punto y coma
+            $arrayData = $data ? ( strpos($data, ';') !== false ? explode(';', $data) : [$data] ) : null;
+
+            // Convertir el array a JSON
+            $jsonData = json_encode($arrayData, JSON_UNESCAPED_UNICODE);
+
+            // Asignar el JSON convertido de nuevo al arreglo
+            $deal['properties']["documentos"] = $jsonData;
+
+            // Buscar un trato en Teamleader con el mismo nombre
+            $teamleaderId = array_search($dealName, $teamleaderDealNames) ?: null;
+
+            // Buscar si ya existe el negocio en la base de datos
+            $existingDeal = Negocio::where('hubspot_id', $dealId)->first();
+
+            // Filtrar solo las propiedades de HubSpot que coincidan con las columnas de la base de datos
+            $data = [
+                'hubspot_id' => $dealId,
+                'teamleader_id' => $teamleaderId,
+                'user_id' => $user->id,
+            ];
+
+            foreach ($fillableColumns as $column) {
+                $data[$column] = $deal['properties'][$column] ?? null;
+            }
+
+            if (!$existingDeal) {
+                // Si no existe, insertar un nuevo registro
+                Negocio::create($data);
+            }
+        }
+
+        $negocios = Negocio::where("user_id", $user->id)->get();
+
+        $resultUrls = [];
+        foreach ($urls as $url) {
+            $fileUrl = $this->hubspotService->getFileUrlFromFormIntegrations($url);
+            if ($fileUrl !== null) {
+                $resultUrls[] = $fileUrl;
+            }
+        }
+
+        foreach ($resultUrls as $fileUrl) {
+            $filename = basename(parse_url($fileUrl, PHP_URL_PATH));
+
+            $s3Path = "public/doc/{$user->passport}/{$filename}";
+
+            $existeEnDB = File::where('file', $filename)
+                ->where('IDCliente', $user->passport)
+                ->exists();
+            if ($existeEnDB) {
+                continue;
+            }
+            // --- Verificación en S3 ---
+            $existeEnS3 = Storage::disk('s3')->exists($s3Path);
+
+            if ($existeEnS3) {
+                continue;
+            }
+
+            $fileContents = file_get_contents($fileUrl);
+
+            Storage::disk('s3')->put($s3Path, $fileContents);
+
+            File::create([
+                'file'      => $filename,                       // Nombre del archivo
+                'location'  => "public/doc/{$user->passport}/", // Carpeta base
+                'IDCliente' => $user->passport,                 // Identificador de cliente
+            ]);
+        }
+
+        foreach ($HScontactFiles as $fileUrl) {
+            $filename = basename(parse_url($fileUrl, PHP_URL_PATH));
+
+            $s3Path = "public/doc/{$user->passport}/{$filename}";
+
+            $existeEnDB = File::where('file', $filename)
+                ->where('IDCliente', $user->passport)
+                ->exists();
+            if ($existeEnDB) {
+                continue;
+            }
+
+            // --- Verificación en S3 ---
+            $existeEnS3 = Storage::disk('s3')->exists($s3Path);
+
+            if ($existeEnS3) {
+                continue;
+            }
+
+            $fileContents = file_get_contents($fileUrl);
+
+            Storage::disk('s3')->put($s3Path, $fileContents);
+
+            File::create([
+                'file'      => $filename,                       // Nombre del archivo
+                'location'  => "public/doc/{$user->passport}/", // Carpeta base
+                'IDCliente' => $user->passport,                 // Identificador de cliente
+            ]);
+        }
+
+        $archivos = File::where("IDCliente", $user->passport)->get();
+
+        // Mapear campos de HubSpot con los de la base de datos
+        $hubspotFields = [
+            'fecha_nac' => 'date_of_birth',
+            'firstname' => 'nombres',
+            'lastmodifieddate' => 'updated_at',
+            'lastname' => 'apellidos',
+            'n000__referido_por__clonado_' => 'referido_por',
+            'numero_de_pasaporte' => 'passport',
+            'servicio_solicitado' => 'servicio',
+        ];
+
+        // Recorrer propiedades de HubSpot y añadir las faltantes al arreglo
+        foreach ($HScontact['properties'] as $hsField => $value) {
+            if (!array_key_exists($hsField, $hubspotFields) && $hsField != "createdate" && $hsField != "hs_object_id") {
+                // Agrega automáticamente un nuevo campo con una clave genérica
+                $hubspotFields[$hsField] = $hsField; // Usa el mismo nombre como clave en DB
+            }
+        }
+
+        $updatesToDB = [];
+        $updatesToHubSpot = [];
+
+        $hsLastModified = new \DateTime($HScontact['properties']['lastmodifieddate']);
+        $dbLastModified = new \DateTime($user->updated_at);
+
+        $utcTimezone = new \DateTimeZone('UTC');
+        $hsLastModified->setTimezone($utcTimezone);
+        $dbLastModified->setTimezone($utcTimezone);
+
+        foreach ($hubspotFields as $hsField => $dbField) {
+            $hubspotValue = $HScontact['properties'][$hsField] ?? null;
+            $dbValue = $user->{$dbField};
+
+            if ($hsField != 'lastmodifieddate') {
+                // Comparar valores y fechas
+                if ($hubspotValue !== $dbValue) {
+                    // Ejemplo de comparaciones
+                    if ($hubspotValue && (!$dbValue || $hsLastModified > $dbLastModified)) {
+                        // HubSpot más reciente
+                        if ($hsField!="updated_at"){
+                            $user->{$dbField} = $hubspotValue;
+                            $updatesToDB[$dbField] = $hubspotValue;
+                        }
+                    } elseif ($dbValue && (!$hubspotValue || $dbLastModified > $hsLastModified)) {
+                        // Base de datos más reciente
+                        switch ($hsField) {
+                            case 'fecha_nac':
+                            case 'date_of_birth':
+                                if (!empty($dbValue) && $dbValue !="0000-00-00") {
+                                    try {
+                                        // Convertir la fecha de la base de datos a timestamp en milisegundos
+                                        $onlyDate = (new \DateTime($dbValue))->format('Y-m-d');
+                                        $dbDate = new \DateTime($onlyDate, new \DateTimeZone('UTC'));
+                                        $dbTimestampMs = $dbDate->getTimestamp() * 1000;
+
+                                        // Convertir la fecha de HubSpot a timestamp en milisegundos (si existe)
+                                        $hubspotValue = $HScontact['properties'][$hsField] ?? null;
+                                        if ($hubspotValue !== null) {
+                                            $hubspotDate = (new \DateTime())->setTimestamp($hubspotValue / 1000);
+                                            $hubspotDate->setTimezone(new \DateTimeZone('UTC'));
+                                            $hubspotTimestampMs = $hubspotDate->getTimestamp() * 1000;
+                                        } else {
+                                            $hubspotTimestampMs = null;
+                                        }
+
+                                        // Solo actualizar si el valor en HubSpot es diferente
+                                        if ($hubspotTimestampMs !== $dbTimestampMs) {
+                                            $updatesToHubSpot[$hsField] = $dbTimestampMs;
+                                        }
+                                    } catch (\Exception $e) {
+                                        // Manejar el error de fecha si es necesario
+                                    }
+                                }
+                                break;
+
+                            case 'genero':
+                                $cleanValue = trim($dbValue); // Quitar espacios en blanco
+                                $mapping = [
+                                    'MASCULINO' => 'MASCULINO / MALE',
+                                    'FEMENINO'  => 'FEMENINO / FEMALE',
+                                    'OTROS'     => 'OTROS / OTHERS',
+                                ];
+
+                                if (isset($mapping[$cleanValue])) {
+                                    $mappedValue = $mapping[$cleanValue];
+
+                                    // Solo actualizar si el valor en HubSpot es diferente
+                                    $hubspotValue = $HScontact['properties'][$hsField] ?? null;
+                                    if ($hubspotValue !== $mappedValue) {
+                                        $updatesToHubSpot[$hsField] = $mappedValue;
+                                    }
+                                }
+                                break;
+
+                            default:
+                                // Comparar valores directamente para otros campos
+                                $hubspotValue = $HScontact['properties'][$hsField] ?? null;
+                                if ($hsField == "cantidad_alzada"){
+                                    if (strval($hubspotValue) !== strval($dbValue)) {
+                                        $updatesToHubSpot[$hsField] = $dbValue;
+                                    }
+                                } else {
+                                    if ($hubspotValue !== $dbValue) {
+                                        $updatesToHubSpot[$hsField] = $dbValue;
+                                    }
+                                }
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+
+        $excludedKeys = ['lastmodifieddate', 'referido_por']; // Lista de claves a excluir
+        $updatesToHubSpot = array_filter(
+            $updatesToHubSpot,
+            fn($key) => !in_array($key, $excludedKeys),
+            ARRAY_FILTER_USE_KEY
+        );
+
+        if (isset($updatesToDB['date_of_birth']) && is_numeric($updatesToDB['date_of_birth'])) {
+            if ((int)$updatesToDB['date_of_birth']) {
+                unset($updatesToDB['date_of_birth']); // Elimina el campo si es EPOCH
+            }
+        }
+
+        // Guardar los cambios en la base de datos si hubo actualizaciones
+        if (!empty($updatesToDB)) {
+            $user->save();
+        }
+
+        // Actualizar HubSpot si hubo cambios
+        if (!empty($updatesToHubSpot)) {
+            try {
+                // Aquí llamas a tu servicio HubSpot que hace el PATCH
+                $this->hubspotService->updateContact($user->hs_id, $updatesToHubSpot);
+            } catch (ClientException $e) {
+                // Obtén la respuesta completa en formato string
+                $responseBodyAsString = (string) $e->getResponse()->getBody();
+            }
+        }
+
+        // Obtener tratos asociados desde HubSpot
+        $HSdeals = $this->hubspotService->getDealsByContactId($user->hs_id);
+
+        // Monday
+        if (!$user->monday_id) {
+            $mondayUserDetailsPre = $this->searchUserInMonday($user->passport, $user);
+        }
+
+        $query = "
+            items(ids: [{$user->monday_id}]) {
+                id
+                name
+                board {
+                    id
+                    name
+                }
+                column_values {
+                    id
+                    column {
+                        title
+                    }
+                    text
+                }
+            }
+        ";
+
+        $result = json_decode(json_encode(Monday::customQuery($query)), true);
+
+        $mondayUserDetailsPre = $result['items'][0] ?? null;
+
+        // Guardar datos del usuario en Monday
+        if ($mondayUserDetailsPre) {
+            $this->storeMondayUserData($user, $mondayUserDetailsPre);
+            $boardId = $mondayUserDetailsPre['board']['id'] ?? null;
+            $boardName = $mondayUserDetailsPre['board']['name'] ?? null;
+
+            // Guardar las columnas del board en `monday_form_builder`
+            if ($boardId) {
+                $this->storeMondayBoardColumns($boardId);
+            }
+
+            $mondayData = json_decode(MondayData::where('user_id', $user->id)->first(), true);
+            $mondayData["data"] = json_decode($mondayData["data"] , true);
+
+            $dataMonday = [];
+
+            foreach($mondayData["data"]["column_values"] as $key => $campo){
+                $dataMonday[$campo["id"]] = $campo["text"];
+            }
+
+            $mondayFormBuilder = json_decode(MondayFormBuilder::where('board_id', $boardId)->get(), true);
+
+            foreach($mondayFormBuilder as $key=>$campo){
+                $mondayFormBuilder[$key]["settings"] = json_decode($campo["settings"], true);
+            }
+
+            $mondayUserDetails = [];
+            $mondayUserDetails["nombre"] = $mondayUserDetailsPre["name"];
+            $mondayUserDetails["id"] = $mondayUserDetailsPre["id"];
+
+            foreach($mondayUserDetailsPre["column_values"] as $key=>$element){
+                $mondayUserDetails["propiedades"][$element["id"]] = [$element["column"]["title"], $element["text"]];
+            }
+        } else {
+            $dataMonday = [];
+            $mondayData = [];
+            $mondayFormBuilder = [];
+            $mondayUserDetails = [];
+            $boardId = 0;
+            $boardName = "";
+        }
+
+        // Preparar datos para la vista
+        $roles = Role::all();
+        $permissions = Permission::all();
+        $servicios = Servicio::all();
+
+        $people = json_decode(json_encode(Agcliente::where("IDCliente",trim($user->passport))->get()),true);
+
+        $arreglo = $people;
+        $generaciones = array();
+
+        foreach ($arreglo as $id => $persona) {
+            if ($persona['idPadreNew'] === null && $persona['idMadreNew'] === null) {
+                $generaciones[$persona["id"]] = 1;
+            }
+        }
+
+        $cambio = true;
+        while ($cambio) {
+            $cambio = false;
+            foreach ($arreglo as $id => $persona) {
+                $generacionPadre = isset($generaciones[$persona['idPadreNew']]) ? $generaciones[$persona['idPadreNew']] : 0;
+                $generacionMadre = isset($generaciones[$persona['idMadreNew']]) ? $generaciones[$persona['idMadreNew']] : 0;
+                $generacionActual = max($generacionPadre, $generacionMadre) + 1;
+
+                if (!isset($generaciones[$persona["id"]]) || $generaciones[$persona["id"]] != $generacionActual) {
+                    $generaciones[$persona["id"]] = $generacionActual;
+                    $cambio = true;
+                }
+            }
+        }
+
+        $maxGeneraciones = count($generaciones) > 0 ? max($generaciones) : 0;
+        $maxGeneraciones++;
+
+        $columnasparatabla = array();
+
+        for ($i=0; $i<$maxGeneraciones; $i++){
+            if ($i == 0){
+                if(!isset($columnasparatabla[$i])){
+                    $columnasparatabla[$i] = [];
+                }
+
+                $columnasparatabla[$i][] =  $arreglo[0];
+                $columnasparatabla[$i][0]["showbtn"] = 2;  //2 es persona, 1 es boton de añadir, 0 es nada
+            } else {
+                foreach ($columnasparatabla[$i-1] as $key2 => $persona2){
+
+                    if(!isset($columnasparatabla[$i])){
+                        $columnasparatabla[$i] = [];
+                        $j = 0;
+                    } else {
+                        $j = sizeof($columnasparatabla[$i]);
+                    }
+
+                    //padre
+
+                    if (isset($persona2["idPadreNew"]) && @$persona2["idPadreNew"]==null){
+
+                        if ($persona2["showbtn"] == 0) {
+                            $columnasparatabla[$i][$j]["showbtn"] = 0;
+                        } else if ($persona2["showbtn"] == 1) {
+                            $columnasparatabla[$i][$j]["showbtn"] = 0;
+                        } else {
+                            $columnasparatabla[$i][$j]["showbtn"] = 1;
+                            $columnasparatabla[$i][$j]["showbtnsex"] = "m";
+                            $columnasparatabla[$i][$j]["id_hijo"] = $persona2["id"];
+                        }
+
+                    } else {
+                        foreach ($arreglo as $key => $persona) {
+                            if ($persona2["idPadreNew"] == $arreglo[$key]["id"]){
+                                $columnasparatabla[$i][$j] = $arreglo[$key];
+                                $columnasparatabla[$i][$j]["showbtn"] = 2;
+                                break;
+                            }
+                        }
+
+                    }
+
+                    $j++;
+
+                    // madre
+
+                    if (isset($persona2["idMadreNew"]) && @$persona2["idMadreNew"]==null){
+
+                        if ($persona2["showbtn"] == 0) {
+                            $columnasparatabla[$i][$j]["showbtn"] = 0;
+                        } else if ($persona2["showbtn"] == 1) {
+                            $columnasparatabla[$i][$j]["showbtn"] = 0;
+                        } else {
+                            $columnasparatabla[$i][$j]["showbtn"] = 1;
+                            $columnasparatabla[$i][$j]["showbtnsex"] = "f";
+                            $columnasparatabla[$i][$j]["id_hijo"] = $persona2["id"];
+                        }
+
+                    } else {
+
+                        foreach ($arreglo as $key => $persona) {
+                            if ($persona2["idMadreNew"] == $arreglo[$key]["id"]){
+                                $columnasparatabla[$i][$j] = $arreglo[$key];
+                                $columnasparatabla[$i][$j]["showbtn"] = 2;
+                                break;
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+
+        $parentescos = [];
+        $parentescos_post_padres = [
+            "Abuel",
+            "Bisabuel",
+            "Tatarabuel",
+            "Trastatarabuel",
+            "Retatarabuel",
+            "Sestarabuel",
+            "Setatarabuel",
+            "Octatarabuel",
+            "Nonatarabuel",
+            "Decatarabuel",
+            "Undecatarabuel",
+            "Duodecatarabuel",
+            "Trececatarabuel",
+            "Catorcatarabuel",
+            "Quincecatarabuel",
+            "Deciseiscatarabuel",
+            "Decisietecatarabuel",
+            "Deciochocatarabuel",
+            "Decinuevecatarabuel",
+            "Vigecatarabuel",
+            "Vigecimoprimocatarabuel",
+            "Vigecimosegundocatarabuel",
+            "Vigecimotercercatarabuel",
+            "Vigecimocuartocatarabuel",
+            "Vigecimoquintocatarabuel",
+            "Vigecimosextocatarabuel",
+            "Vigecimoseptimocatarabuel",
+            "Vigecimooctavocatarabuel",
+            "Vigecimonovenocatarabuel",
+            "Trigecatarabuel",
+            "Trigecimoprimocatarabuel",
+            "Trigecimosegundocatarabuel",
+            "Trigecimotercercatarabuel",
+            "Trigecimocuartocatarabuel",
+            "Trigecimoquintocatarabuel",
+            "Trigecimosextocatarabuel",
+            "Trigecimoseptimocatarabuel",
+            "Trigecimooctavocatarabuel",
+            "Trigecimonovenocatarabuel",
+            "Cuarentacatarabuel",
+            "Cuarentaprimocatarabuel",
+            "Cuarentasegundocatarabuel",
+            "Cuarentatercercatarabuel",
+        ];
+        $prepar = 4;
+
+        function generarTexto($i, $key) {
+            $text = "";
+            $multiplicador = 4;
+
+            for ($j = 1; $j <= $key; $j++) {
+                $text .= (($i % $multiplicador) < ($multiplicador / 2) ? "P " : "M ");
+                $multiplicador *= 2;
+            }
+
+            $text .= ($i < 2 * ($key + 1) ? "P" : "M");
+            return $text;
+        }
+
+        foreach ($parentescos_post_padres as $key => $parentesco) {
+            if($key <= sizeof($columnasparatabla)){
+                $parentescos[$key] = [];
+
+                for ($i = 0; $i < $prepar; $i++) {
+                    $textparentesco = $parentesco . ($i % 2 == 0 ? "o" : "a");
+                    $text = generarTexto($i, $key);
+                    $parentescos[$key][] = $textparentesco . " " . $text;
+                }
+
+                $prepar *= 2;
+            }
+        }
+
+        foreach ($columnasparatabla as $key => $persona) {
+            if ($key==0){
+                $columnasparatabla[$key][0]["parentesco"] = "Cliente";
+            } else if ($key == 1){
+                $columnasparatabla[$key][0]["parentesco"] = "Padre";
+                $columnasparatabla[$key][1]["parentesco"] = "Madre";
+            } else {
+                foreach ($columnasparatabla[$key] as $key2 => $familiar) {
+                    $columnasparatabla[$key][$key2]["parentesco"] = $parentescos[$key-2][$key2];
+                }
+            }
+        }
+
+        $flagOtrosProcesos = false;
+        $flagMayorInformacion = false;
+        $flagNoApto = false;
+        $flagArbolIncompleto = true;
+
+        $i = 0;
+        foreach ( $columnasparatabla as $generacion => $grupo ){
+            foreach ( $grupo as $persona){
+                if (isset($persona["showbtn"]) && $persona["showbtn"] == 2){
+                    if($persona["parentesco"] == "Tatarabuelo" || $persona["parentesco"] == "Tatarabuelo"){
+                        $flagArbolIncompleto = false;
+                    }
+                }
+            }
+        }
+
+        /* Calculo de estatus de cliente - Me quiero suicidar... Este codigo es una papa, pero toca hacerlo */
+
+        $clientstatus = 0; // Aqui cubrimos hasta la parte en la que comienza el registro. De resto, dependemos de Monday, o en su defecto Hubspot/teamleader
+
+        if ($user->pay != 0){
+            if ($user->pay==1){
+                //el cliente pagó pero no ha completado el 001
+                $clientstatus = 0.33;
+            } else if (!($user->pay==1 || $user->pay==0)){
+                if($user->contrato == 0){
+                    //no ha firmado contrato
+                    $clientstatus = 0.67;
+                } else {
+                    // Analisis Genealógico
+                    $clientstatus = 1;
+                }
+            }
+        } else {
+            $clientstatus = 0;
+        }
+
+        if ($flagArbolIncompleto == false){
+            if ($clientstatus == 1){
+                $checktags = "";
+                //si está en analisis genealógico, tienes que revisar las etiquetas que tiene el cliente en Monday
+                if (isset($dataMonday["men__desplegable"]) && $dataMonday["men__desplegable"] != "") {
+                    $checktags = $dataMonday["men__desplegable"];
+
+                    $resultadoIA = $this->analizarEtiquetas($checktags);
+
+                    if ($resultadoIA == 2) {
+                        $flagOtrosProcesos = true;
+                    } else if ($resultadoIA == 3) {
+                        $flagMayorInformacion = true;
+                    } else if ($resultadoIA == 4) {
+                        $flagArbolIncompleto = true;
+                    } else if ($resultadoIA == 5) {
+                        $flagNoApto = true;
+                    } else {
+                        $clientstatus = $clientstatus + $resultadoIA;
+                    }
+                } else {
+                    $clientstatus == 1;
+                }
+            }
+        }
+
+        //aqui empezamos a depender del Hubspot y del Teamleader... Tenemos que pasar toda la data de los negocios.
+        // esta es la parte ladilla
+
+        $dealsDataCOS = false;
+
+        if ($clientstatus > 1.69) {
+            $dealsDataCOS = true;
+        }
+
+        $servicename = Servicio::where("id_hubspot", $user->servicio)->first();
+
+        $html = view('crud.users.edit', compact('servicename', 'flagArbolIncompleto', 'flagNoApto', 'dealsDataCOS', 'flagMayorInformacion', 'flagOtrosProcesos', 'clientstatus', 'negocios', 'usuariosMonday', 'dataMonday', 'mondayData', 'boardId', 'boardName', 'mondayFormBuilder', 'archivos', 'user', 'roles', 'permissions', 'facturas', 'servicios', 'columnasparatabla'))->render();
+        return $html;
+    }
+
+    public function getUsersForSelect()
+    {
+        // Consulta GraphQL para obtener los usuarios
+        $query = '
+        users {
+            id
+            name
+            email
+            enabled
+        }';
+
+        // Ejecuta la consulta (suponiendo que tienes un método para esto)
+        $users = Monday::customQuery($query);
+
+        // Filtra los usuarios habilitados
+        $enabledUsers = collect($users['users'])
+            ->filter(fn($user) => $user['enabled']) // Solo usuarios habilitados
+            ->map(fn($user) => [
+                'id'   => $user['id'],
+                'name' => $user['name'],
+                'email' => $user['email']
+            ])
+            ->values();
+
+        // Devuelve los usuarios listos para usarse en un select
+        return response()->json($enabledUsers);
+    }
+
+    private function storeMondayBoardColumns($boardId)
+    {
+        $query = "
+            boards(ids: [$boardId]) {
+                columns {
+                    id
+                    title
+                    type
+                    settings_str
+                }
+            }
+        ";
+
+        $result = json_decode(json_encode(Monday::customQuery($query)), true);
+        $columns = $result['boards'][0]['columns'] ?? [];
+
+        foreach ($columns as $column) {
+            $settings = $column['settings_str'] ? json_decode($column['settings_str'], true) : [];
+
+            // Extraer los IDs de los tags si la columna es de tipo "tags" o "multi-select"
+            $tagIds = [];
+            if (in_array($column['type'], ['tags', 'multi-select']) && isset($settings['tags'])) {
+                $tagIds = array_column($settings['tags'], 'id');
+            }
+
+            MondayFormBuilder::updateOrCreate(
+                ['board_id' => $boardId, 'column_id' => $column['id']],
+                [
+                    'title' => $column['title'],
+                    'type' => $column['type'],
+                    'settings' => $column['settings_str'] ? $column['settings_str'] : null,
+                    'tag_ids' => $tagIds, // Guardar los IDs de los tags
+                ]
+            );
+        }
+    }
+
     public function tree(){
         if (Auth::user()->roles->first()->name == "Cliente"){
             if(Auth::user()->pay==0){
@@ -62,9 +976,6 @@ class ClienteController extends Controller
             }
             if(Auth::user()->pay==1 || auth()->user()->pay == 3){
                 return redirect()->route('clientes.getinfo');
-            }
-            if(Auth::user()->pay==11 || Auth::user()->pay==12){
-                return redirect()->route('clientes.payfases');
             }
             if(Auth::user()->contrato==0){
                 return redirect()->route('cliente.contrato');
@@ -376,6 +1287,14 @@ class ClienteController extends Controller
         return view('arboles.tree', compact('IDCliente', 'people', 'columnasparatabla', 'cliente', 'tipoarchivos', 'parentescos', 'htmlGenerado', 'checkBtn', 'generacionBase', 'parentnumber'));
     }
 
+    private function storeMondayUserData($user, $mondayUserDetailsPre)
+    {
+        MondayData::updateOrCreate(
+            ['user_id' => $user->id],
+            ['data' => json_encode($mondayUserDetailsPre)]
+        );
+    }
+
     public function hermanoscliente(){
         if (Auth::user()->roles->first()->name == "Cliente"){
             if(Auth::user()->pay==0){
@@ -503,10 +1422,6 @@ class ClienteController extends Controller
             }
             if(Auth::user()->pay==2){
                 return redirect('/tree');
-            }
-
-            if(Auth::user()->pay==11 || Auth::user()->pay==12){
-                return redirect()->route('clientes.payfases');
             }
         }
         return view('clientes.getinfo');
@@ -715,18 +1630,15 @@ class ClienteController extends Controller
 
     }
 
-    public function payfases(){
+    public function gotopayfases(Request $request){
         if (Auth::user()->roles->first()->name == "Cliente"){
-            if (Auth::user()->pay==2){
-                $IDCliente = Auth::user()->passport;
-                return redirect('/tree');
-            } else if(Auth::user()->pay==1 || Auth::user()->pay==3){
+            if(Auth::user()->pay==1 || Auth::user()->pay==3){
                 return redirect()->route('clientes.getinfo');
             } else if(Auth::user()->pay==0){
                 return redirect()->route('clientes.pay');
             }
         }
-        $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->whereNotNull('deal_id')->get();
+        $compras = Compras::where('id_user', auth()->user()->id)->where('id', $request->id)->where('pagado', 0)->whereNotNull('deal_id')->get();
 
         if (auth()->user()->tiene_hermanos==1 || auth()->user()->tiene_hermanos=="1" || auth()->user()->tiene_hermanos=="Si") {
             $servicio = Servicio::where('id_hubspot', auth()->user()->servicio." - Hermano")->get();
@@ -781,7 +1693,9 @@ class ClienteController extends Controller
                         ->where('end_date', '>=', $today)
                         ->get();
 
-        return view('clientes.payfases', compact('servicio', 'compras', 'alertas'));
+        $compraid = $request->id;
+
+        return view('clientes.payfases', compact('compraid', 'servicio', 'compras', 'alertas'));
     }
 
     public function pay(){
@@ -791,16 +1705,14 @@ class ClienteController extends Controller
                 return redirect('/tree');
             } else if(Auth::user()->pay==1 || Auth::user()->pay==3){
                 return redirect()->route('clientes.getinfo');
-            } else if(Auth::user()->pay==11 || Auth::user()->pay==12){
-                return redirect()->route('clientes.payfases');
             }
         }
         $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->whereNull('deal_id')->get();
 
         if (auth()->user()->tiene_hermanos==1 || auth()->user()->tiene_hermanos=="1" || auth()->user()->tiene_hermanos=="Si") {
-            $servicio = Servicio::where('id_hubspot', auth()->user()->servicio." - Hermano")->get();
+            $servicio = Servicio::where('id_hubspot', "like", auth()->user()->servicio." - Hermano")->get();
         } else {
-            $servicio = Servicio::where('id_hubspot', auth()->user()->servicio)->get();
+            $servicio = Servicio::where('id_hubspot', "like", auth()->user()->servicio."%")->get();
         }
 
         $cps = json_decode(json_encode($compras),true);
@@ -1429,7 +2341,7 @@ class ClienteController extends Controller
     }
 
     public function procesarpaypalfases(Request $request) {
-        $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->whereNotNull('deal_id')->get();
+        $compras = Compras::where('id_user', auth()->user()->id)->where('id', $request->compraid)->where('pagado', 0)->whereNotNull('deal_id')->get();
 
         $monto = 0;
 
@@ -2103,7 +3015,7 @@ class ClienteController extends Controller
 
         $errorcod = "error";
 
-        $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->whereNotNull('deal_id')->get();
+        $compras = Compras::where('id_user', auth()->user()->id)->where('id', $request->compraid)->where('pagado', 0)->whereNotNull('deal_id')->get();
         $servicio = Servicio::where('id_hubspot', auth()->user()->servicio)->get();
 
         $monto = 0;
@@ -2513,6 +3425,9 @@ class ClienteController extends Controller
             $estado_de_datos_y_documentos_de_los_antepasados = '';
         }
 
+        if (isset($request->nacionalidad_solicitada)){
+            $servicio_solicitado = Servicio::where('id_hubspot', "like", $request->nacionalidad_solicitada."%")->first();
+        }
 
         if (count($mailpass)>0 || count($mail)>0) {
             $preusercheck = json_decode( json_encode( DB::table('users')->where('email', $request->email)->get()),true);
@@ -2526,7 +3441,7 @@ class ClienteController extends Controller
                 $familiares = 1 + $request->cantidad_alzada;
                 DB::table('users')->where('email', $request->email)->update([
                     'pay' => 0,
-                    'servicio' => $request->nacionalidad_solicitada,
+                    'servicio' => $servicio_solicitado,
                     'cantidad_alzada' => $cantidad + 1,
                     "antepasados" => $antepasados,
                     'vinculo_antepasados' => $vinculo_antepasados,
@@ -2575,7 +3490,7 @@ class ClienteController extends Controller
                 } elseif ($servicio[0]['tipov']==1) {
                     $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
                 } else {
-                    $desc = "Inicia tu Proceso: " . $hss[0]["nombre"];
+                    $desc = "Inicia tu Proceso: " . $servicio_solicitado;
                 }
 
                 if (isset($request->pay)){
