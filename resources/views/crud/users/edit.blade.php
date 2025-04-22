@@ -419,7 +419,7 @@
 
                         <div class="card">
                             <div class="card-header" style="text-align: center;">
-                                <h2 class="card-title mb-4">Estatus de mi proceso: {!! $co["servicename"] !!}</h2>
+                                <h2 class="card-title mb-4 mt-4">Estatus de mi proceso: {!! $co["servicename"] !!}</h2>
                                 <p class="mt-2" style="    padding-top: 22px;">
                                     @if ($currentStep >=0 && $currentStep <1)
                                         {!!$steps[0]["mensaje"]!!}

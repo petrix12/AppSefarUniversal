@@ -60,7 +60,7 @@ class ChatController extends Controller
             'Authorization' => "Bearer $apiKey",
             'Content-Type' => 'application/json',
         ])->post("https://openrouter.ai/api/v1/chat/completions", [
-            'model' => 'google/gemini-2.0-flash-thinking-exp:free',
+            'model' => 'openai/gpt-4.1',
             'messages' => $mensajes,
         ]);
 
