@@ -3441,12 +3441,13 @@ class ClienteController extends Controller
                 $familiares = 1 + $request->cantidad_alzada;
                 DB::table('users')->where('email', $request->email)->update([
                     'pay' => 0,
-                    'servicio' => $servicio_solicitado,
+                    'servicio' => $servicio_solicitado->nombre,
                     'cantidad_alzada' => $cantidad + 1,
                     "antepasados" => $antepasados,
                     'vinculo_antepasados' => $vinculo_antepasados,
                     'estado_de_datos_y_documentos_de_los_antepasados' => $estado_de_datos_y_documentos_de_los_antepasados
                 ]);
+
 
                 if(count($mailpass)>0){
                     $userdata = json_decode(json_encode(DB::table('users')->where('email', $request->email)->where('passport', $request->numero_de_pasaporte)->get()),true);
@@ -3454,14 +3455,9 @@ class ClienteController extends Controller
                     $userdata = json_decode(json_encode(DB::table('users')->where('email', $request->email)->get()),true);
                 }
 
-
                 $compras = Compras::where('id_user', $userdata[0]["id"])->where('pagado', 0)->get();
 
-                if ($request->tiene_hermanos == 1 || $request->tiene_hermanos == "1" || $request->tiene_hermanos == "Si"){
-                    $servicio = Servicio::where('id_hubspot', $userdata[0]["servicio"]." - Hermano")->get();
-                } else {
-                    $servicio = Servicio::where('id_hubspot', $userdata[0]["servicio"])->get();
-                }
+                $servicio = Servicio::where('id_hubspot', "like", $servicio_solicitado->nombre."%")->get();
 
                 $cps = json_decode(json_encode($compras),true);
 
