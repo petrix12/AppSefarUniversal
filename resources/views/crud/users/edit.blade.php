@@ -242,19 +242,19 @@
                                     'icon' => 'fa-check-circle',
                                     'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 7.jpg',
                                     'status' => 6,
-                                    'label' => 'Investigación más profunda',
-                                    'mensaje' =>    "¡Excelente noticia, tu genealogía ha sido aprobada!<br>
-                                                    Esto quiere decir que eres apto para obtener tu nacionalidad por medio de tu genealogía.<br>
-                                                    Te hemos hecho llegar un presupuesto, en el cual detallamos nuestra propuesta profesional para que inicies formalmente tu solicitud de nacionalidad."
+                                    'label' => 'Apto para Otros Procesos',
+                                    'mensaje' =>    "Nuestros especialistas continúan explorando nuevas opciones para ti.<br>
+                                                    Aunque aún no se ha confirmado una conexión genealógica, podemos brindarte alternativas como la obtención de residencias o visas para que puedas vivir, trabajar y desarrollarte legalmente en la Unión Europea.<br>
+                                                    Adicionalmente, nuestro equipo continúa ampliando y verificando bases de datos genealógicas, lo que podría generar nuevas oportunidades para ti en el futuro."
                                 ],
                                 [
                                     'icon' => 'fa-check-circle',
                                     'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 8 modificado.jpg',
                                     'status' => 7,
-                                    'label' => 'Apto para Otros Procesos',
-                                    'mensaje' =>    "Nuestros especialistas continúan explorando nuevas opciones para ti.<br>
-                                                    Aunque aún no se ha confirmado una conexión genealógica, podemos brindarte alternativas como la obtención de residencias o visas para que puedas vivir, trabajar y desarrollarte legalmente en la Unión Europea.<br>
-                                                    Adicionalmente, nuestro equipo continúa ampliando y verificando bases de datos genealógicas, lo que podría generar nuevas oportunidades para ti en el futuro."
+                                    'label' => 'Genealogía aprobada',
+                                    'mensaje' =>    "¡Excelente noticia, tu genealogía ha sido aprobada!<br>
+                                                    Esto quiere decir que eres apto para obtener tu nacionalidad por medio de tu genealogía.<br>
+                                                    Te hemos hecho llegar un presupuesto, en el cual detallamos nuestra propuesta profesional para que inicies formalmente tu solicitud de nacionalidad."
                                 ],
                                 [
                                     'icon' => 'fa-check-circle',
