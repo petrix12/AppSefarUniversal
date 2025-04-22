@@ -12,11 +12,12 @@ class ChatController extends Controller
     // Crear una nueva sesión de chat
     public function iniciarChat()
     {
+        $data = Treena::find(1);
         // Mensaje inicial del sistema
         $mensajeSistema = [
             [
                 "role" => "system",
-                "content" => Treena::find(1)
+                "content" => $data->context_prompt
             ]
         ];
 
