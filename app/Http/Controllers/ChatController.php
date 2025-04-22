@@ -56,8 +56,6 @@ class ChatController extends Controller
             'content' => $request->mensaje,
         ];
 
-        dd($mensajes);
-
         // Llamar a la API de OpenRouter
         $response = Http::withHeaders([
             'Authorization' => "Bearer $apiKey",
@@ -68,8 +66,6 @@ class ChatController extends Controller
         ]);
 
         if ($response->successful()) {
-            dd($response->json());
-
             $mensajeBot = $response->json()['choices'][0]['message']['content'];
 
             // Reemplazar saltos de línea por <br>
