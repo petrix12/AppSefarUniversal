@@ -41,6 +41,8 @@ class ChatController extends Controller
         // Buscar la sesión en la base de datos
         $chatSession = ChatSession::where('session_id', $request->session_id)->first();
 
+        dd($chatSession);
+
         // Si no se encuentra, crear una nueva sesión
         if (!$chatSession) {
             return response()->json(['error' => 'Sesión no encontrada'], 404);
