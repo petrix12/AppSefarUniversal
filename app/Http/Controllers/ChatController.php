@@ -65,6 +65,8 @@ class ChatController extends Controller
         ]);
 
         if ($response->successful()) {
+            dd($response->json());
+
             $mensajeBot = $response->json()['choices'][0]['message']['content'];
 
             // Reemplazar saltos de línea por <br>
@@ -89,6 +91,8 @@ class ChatController extends Controller
 
             // Guardar los mensajes en la sesión
             $chatSession->update(['messages' => $mensajes]);
+
+
 
             return response()->json(['mensaje_bot' => $mensajeBot, 'response' => $response]);
         }
