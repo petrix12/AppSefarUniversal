@@ -1710,7 +1710,7 @@ class ClienteController extends Controller
         $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->whereNull('deal_id')->get();
 
         if (auth()->user()->tiene_hermanos==1 || auth()->user()->tiene_hermanos=="1" || auth()->user()->tiene_hermanos=="Si") {
-            $servicio = Servicio::where('id_hubspot', "like", auth()->user()->servicio." - Hermano")->get();
+            $servicio = Servicio::where('id_hubspot', 'like', auth()->user()->servicio . '% - Hermano')->get();
         } else {
             $servicio = Servicio::where('id_hubspot', "like", auth()->user()->servicio."%")->get();
         }

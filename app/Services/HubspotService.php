@@ -13,6 +13,7 @@ use App\Models\AssocTlHs;
 use GuzzleHttp\Exception\RequestException;
 use HubSpot\Client\Files\ApiException as FilesApiException;
 use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\Promise;
 
 use HubSpot\Client\Files\Model\FileUpdateInput;
 
@@ -23,6 +24,24 @@ class HubspotService
     public function __construct()
     {
         $this->hubspot = Factory::createWithAccessToken(env('HUBSPOT_KEY'));
+    }
+
+    public function executeConcurrent(array $callbacks)
+    {
+        $promises = [];
+
+        foreach ($callbacks as $key => $callback) {
+            $promises[$key] = $callback();
+        }
+
+        $results = Promise\Utils::settle($promises)->wait();
+
+        $output = [];
+        foreach ($results as $key => $result) {
+            $output[$key] = $result['state'] === 'fulfilled' ? $result['value'] : null;
+        }
+
+        return $output;
     }
 
     /**
@@ -137,6 +156,46 @@ class HubspotService
             $responseBody = $e->getResponseBody();
 
             // Muestra (o loguea) la respuesta completa para ver el error sin truncar
+        }
+    }
+
+    public function getDealById(string $dealId): ?array
+    {
+        try {
+            $properties = $this->getDealProperties();
+
+            $batchRequest = new BatchReadInputSimplePublicObjectId([
+                'properties' => $properties,
+                'inputs' => [
+                    ['id' => $dealId],
+                ],
+            ]);
+
+            $response = $this->hubspot->crm()->deals()->batchApi()->read($batchRequest);
+
+            if (count($response->getResults()) > 0) {
+                $deal = $response->getResults()[0];
+                $allProperties = $deal->getProperties();
+
+                // Filtrar propiedades que no comiencen con "hs_"
+                $filteredProperties = array_filter(
+                    $allProperties,
+                    fn($key) => strpos($key, 'hs_') !== 0,
+                    ARRAY_FILTER_USE_KEY
+                );
+
+                return [
+                    'id' => $deal->getId(),
+                    'properties' => $filteredProperties,
+                ];
+            }
+
+            return null;
+
+        } catch (DealException $e) {
+            throw new \Exception("Error al obtener el deal por ID en HubSpot: " . $e->getMessage());
+        } catch (\Exception $e) {
+            throw new \Exception("Error general al obtener el deal por ID: " . $e->getMessage());
         }
     }
 
@@ -546,4 +605,127 @@ class HubspotService
         return (json_last_error() === JSON_ERROR_NONE);
     }
 
+    /**
+     * Buscar un contacto por número de pasaporte.
+     */
+    public function searchContactByPassport($passportNumber)
+    {
+        try {
+            $filter = new \HubSpot\Client\Crm\Contacts\Model\Filter();
+            $filter
+                ->setOperator('EQ')
+                ->setPropertyName('numero_de_pasaporte')
+                ->setValue($passportNumber);
+
+            $filterGroup = new \HubSpot\Client\Crm\Contacts\Model\FilterGroup();
+            $filterGroup->setFilters([$filter]);
+
+            $searchRequest = new \HubSpot\Client\Crm\Contacts\Model\PublicObjectSearchRequest();
+            $searchRequest->setFilterGroups([$filterGroup]);
+            // Asegúrate de incluir todas las propiedades que necesitas
+            $searchRequest->setProperties(['email', 'firstname', 'lastname', 'numero_de_pasaporte']);
+            $searchRequest->setLimit(1);
+
+            $contactsPage = $this->hubspot->crm()->contacts()->searchApi()->doSearch($searchRequest);
+
+            if (count($contactsPage->getResults()) > 0) {
+                $contact = $contactsPage->getResults()[0];
+                $properties = $contact->getProperties();
+
+                return [
+                    'id' => $contact->getId(),
+                    'properties' => [
+                        'email' => $properties['email'] ?? null,
+                        'firstname' => $properties['firstname'] ?? null,
+                        'lastname' => $properties['lastname'] ?? null,
+                        'numero_de_pasaporte' => $properties['numero_de_pasaporte'] ?? null
+                    ]
+                ];
+            }
+
+            return null;
+        } catch (ContactException $e) {
+            throw new \Exception('Error al buscar el contacto por pasaporte en HubSpot: ' . $e->getMessage());
+        }
+    }
+
+    public function createDealInHubspotFromTL(array $teamleaderDeal, string $hsContactId, array $camposRelacionados): ?array
+    {
+        try {
+            $dealProperties = [];
+
+            // Nombre del trato
+            $dealProperties['dealname'] = $teamleaderDeal['title'] ?? 'Sin título';
+
+            // Monto del proyecto
+            if (isset($teamleaderDeal['budget']['amount'])) {
+                $dealProperties['amount'] = $teamleaderDeal['budget']['amount'];
+            }
+
+            // Fecha de creación
+            if (isset($teamleaderDeal['starts_on'])) {
+                $dealProperties['createdate'] = (new \DateTime($teamleaderDeal['starts_on']))->format(\DateTime::ATOM);
+            }
+
+            // Mapear campos personalizados de TL a HS
+            if (isset($teamleaderDeal['custom_fields'])) {
+                foreach ($teamleaderDeal['custom_fields'] as $customField) {
+                    $tlFieldId = $customField['definition']['id'] ?? null;
+                    $value = $customField['value'] ?? null;
+
+                    if ($tlFieldId && $value) {
+                        $hsField = array_search($tlFieldId, $camposRelacionados, true);
+                        if ($hsField) {
+                            $dealProperties[$hsField] = $value;
+                        }
+                    }
+                }
+            }
+
+            // Crear el trato (deal) en HubSpot
+            $response = $this->hubspot->crm()->deals()->basicApi()->create([
+                'properties' => $dealProperties
+            ]);
+
+            $dealId = $response->getId();
+
+            // Asociar el nuevo trato con el contacto
+            $this->hubspot->crm()->associations()->basicApi()->create(
+                'deals',
+                $dealId,
+                'contacts',
+                $hsContactId,
+                [
+                    'associationTypeId' => 3 // Contact to deal association
+                ]
+            );
+
+            return [
+                'id' => $dealId,
+                'properties' => $dealProperties
+            ];
+        } catch (\Exception $e) {
+            throw new \Exception('Error al crear el trato en HubSpot desde Teamleader: ' . $e->getMessage());
+        }
+    }
+
+    public function getContactByIdPromise($contactId)
+    {
+        return Promise\Create::promiseFor($this->getContactById($contactId));
+    }
+
+    public function getEngagementsByContactIdPromise($contactId)
+    {
+        return Promise\Create::promiseFor($this->getEngagementsByContactId($contactId));
+    }
+
+    public function getDealsByContactIdPromise($contactId)
+    {
+        return Promise\Create::promiseFor($this->getDealsByContactId($contactId));
+    }
+
+    public function getContactFileFieldsPromise($contactId)
+    {
+        return Promise\Create::promiseFor($this->getContactFileFields($contactId));
+    }
 }

@@ -8,9 +8,11 @@ use App\Models\HsReferido;
 use App\Models\Compras;
 use App\Models\Factura;
 use App\Models\Negocio;
+use Illuminate\Support\Facades\Http;
 use App\Models\File;
 use App\Models\AssocTlHs;
 use Monday;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Agcliente;
@@ -32,6 +34,9 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\MondayData;
 use App\Models\MondayFormBuilder;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Log;
+use GuzzleHttp\Client;
+use GuzzleHttp\Promise;
 
 class UserController extends Controller
 {
@@ -1409,6 +1414,119 @@ class UserController extends Controller
         return view('crud.users.status', compact('user', 'contactHS', 'dealsData', 'servicioHS', 'referidosHS', 'familiaresR', 'usuario_mdy'));
     }
 
+    protected function getHubspotData($hsId)
+    {
+        // Ejecutar llamadas concurrentes
+        $result = $this->hubspotService->executeConcurrent([
+            'contact' => fn() => $this->hubspotService->getContactByIdPromise($hsId),
+            'files' => fn() => $this->hubspotService->getEngagementsByContactIdPromise($hsId),
+            'urls' => fn() => $this->hubspotService->getContactFileFieldsPromise($hsId),
+            'deals' => fn() => $this->hubspotService->getDealsByContactIdPromise($hsId)
+        ]);
+
+        return $result;
+    }
+
+    protected function syncUserWithHubspot($user)
+    {
+        $HScontact = $this->hubspotService->searchContactByEmail($user->email)
+                ?? $this->hubspotService->searchContactByPassport($user->passport);
+
+        if (!$HScontact) {
+            throw new \Exception("El contacto no se encontró en HubSpot ni por email ni por pasaporte.");
+        }
+
+        $user->update([
+            'hs_id' => $HScontact['id'],
+            'email' => $HScontact['properties']['email'] ?? $user->email,
+            'nombres' => $HScontact['properties']['firstname'] ?? $user->nombres,
+            'apellidos' => $HScontact['properties']['lastname'] ?? $user->apellidos
+        ]);
+    }
+
+
+
+    /**
+     * Procesa archivos de forma concurrente desde URLs de HubSpot
+     *
+     * @param array $urls Array de URLs a procesar
+     * @param mixed $user Objeto del usuario
+     * @param HubspotService $hubspotService Instancia del servicio
+     * @return array Archivos procesados exitosamente
+     */
+    private function processFilesConcurrently(array $urls, $user, HubspotService $hubspotService): array
+    {
+        // 1. Configuración inicial
+        $client = new Client(['timeout' => 15]);
+        $processedFiles = [];
+
+        // 2. Obtener archivos existentes en una sola consulta
+        $existingFiles = File::where('IDCliente', $user->passport)
+            ->pluck('file')
+            ->toArray();
+
+        // 3. Preparar promesas para descargas concurrentes
+        $promises = [];
+        $validFiles = [];
+
+        foreach ($urls as $url) {
+            try {
+                $fileUrl = $hubspotService->getFileUrlFromFormIntegrations($url);
+                if (!$fileUrl) continue;
+
+                $filename = basename(parse_url($fileUrl, PHP_URL_PATH));
+                $s3Path = "public/doc/{$user->passport}/{$filename}";
+
+                // Verificar si ya existe
+                if (in_array($filename, $existingFiles)) {
+                    continue;
+                }
+                if (Storage::disk('s3')->exists($s3Path)) {
+                    continue;
+                }
+
+                $validFiles[$filename] = $s3Path;
+                $promises[$filename] = $client->getAsync($fileUrl);
+
+            } catch (\Exception $e) {
+                \Log::error("Error preparando descarga: {$e->getMessage()}");
+            }
+        }
+
+        // 4. Ejecutar descargas concurrentes
+        $responses = Promise\Utils::settle($promises)->wait();
+
+        // 5. Procesar resultados
+        foreach ($responses as $filename => $response) {
+            if ($response['state'] !== 'fulfilled') {
+                \Log::warning("Fallo descarga: {$filename}");
+                continue;
+            }
+
+            try {
+                $fileContent = $response['value']->getBody();
+                $s3Path = $validFiles[$filename];
+
+                // Subir a S3
+                Storage::disk('s3')->put($s3Path, $fileContent);
+
+                // Registrar en DB
+                File::create([
+                    'file' => $filename,
+                    'location' => "public/doc/{$user->passport}/",
+                    'IDCliente' => $user->passport,
+                ]);
+
+                $processedFiles[] = $filename;
+
+            } catch (\Exception $e) {
+                \Log::error("Error procesando {$filename}: {$e->getMessage()}");
+            }
+        }
+
+        return $processedFiles;
+    }
+
     /**
      * Show the form for editing the specified resource.
      *
@@ -1417,79 +1535,20 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        $usuariosMondaytemp = $this->getUsersForSelect();
+        $usuariosMonday = $this->getUsersForSelect()->original ?? [];
 
-        $usuariosMondaytemp = json_decode(json_encode($usuariosMondaytemp),true);
+        $facturas = Factura::with('compras')->where('id_cliente', $user->id)->get();
 
-        $usuariosMonday = $usuariosMondaytemp["original"];
-
-        $facturas = Factura::with("compras")->where("id_cliente", $user->id)->get();
-
-        // Verificar si el usuario ya tiene hs_id
         if (is_null($user->hs_id)) {
-            $HScontactByEmail = $this->hubspotService->searchContactByEmail($user->email);
-            if ($HScontactByEmail) {
-                $user->hs_id = $HScontactByEmail['id'];
-                $user->save();
-            } else {
-                throw new \Exception("El contacto no se encontró en HubSpot.");
-            }
+            $this->syncUserWithHubspot($user);
         }
 
-        $HScontact = $this->hubspotService->getContactById($user->hs_id);
+        $hubspotData = $this->getHubspotData($user->hs_id);
 
-        $HScontactFiles = $this->hubspotService->getEngagementsByContactId($user->hs_id);
-
-        $urls = $this->hubspotService->getContactFileFields($user->hs_id);
-
-        $deals = $this->hubspotService->getDealsByContactId($user->hs_id);
-
-        if (is_null($user->tl_id)) {
-            $TLcontactByEmail = $this->teamleaderService->searchContactByEmail($user->email);
-
-            if (is_null($TLcontactByEmail)) {
-                $newContact = $this->teamleaderService->createContact($user);
-                $user->tl_id = $newContact['id'];
-            } else {
-                $user->tl_id = $TLcontactByEmail['id'];
-            }
-
-            $user->save();
-        }
-
-        // Almacenar las etapas de pipelines cargadas para evitar llamadas repetidas
-        $pipelineStages = [];
-
-        // Procesar los negocios y asociar sus etapas (dealstage) y opciones
-        $dealsWithStages = array_map(function ($deal) use (&$pipelineStages) {
-            $dealstageId = $deal['properties']['dealstage'] ?? null;
-            $pipelineId = $deal['properties']['pipeline'] ?? null;
-
-            $dealstageName = null;
-            $dealstageOptions = [];
-
-            if ($pipelineId) {
-                // Verificar si ya cargamos las etapas del pipeline
-                if (!isset($pipelineStages[$pipelineId])) {
-                    $pipelineStages[$pipelineId] = $this->hubspotService->getDealStagesByPipeline($pipelineId);
-                }
-
-                // Buscar el nombre del dealstage en las etapas del pipeline
-                $dealstageName = collect($pipelineStages[$pipelineId])->firstWhere('id', $dealstageId)['name'] ?? null;
-
-                // Asignar las opciones de dealstage (todas las etapas del pipeline)
-                $dealstageOptions = $pipelineStages[$pipelineId];
-            }
-
-            // Retornar el negocio con el nombre de su etapa actual y las opciones de etapas
-            return array_merge($deal, [
-                'dealstage_name' => $dealstageName,
-                'dealstage_options' => $dealstageOptions,
-            ]);
-        }, $deals);
-
-        $TLcontact = $this->teamleaderService->getContactById($user->tl_id);
-        $TLdeals = $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id);
+        $HScontact = $hubspotData['contact'];
+        $HScontactFiles = $hubspotData['files'];
+        $urls = $hubspotData['urls'];
+        $deals = $hubspotData['deals'];
 
         $camposDeTeamleader = [
             'n1__enviada_al_cliente' => '4203d8ab-f1de-0145-af52-1bb278951268',
@@ -1544,169 +1603,161 @@ class UserController extends Controller
             'servicio_solicitado' => 'fcd48891-20f6-049a-a05f-f78a6f951b4d'
         ];
 
-        if (sizeof($dealsWithStages) > sizeof($TLdeals)) {
-            // Obtener los nombres de los tratos en Teamleader
-            $teamleaderDealNames = array_map(function ($deal) {
-                return $deal['title']; // Asegúrate de que este es el campo que contiene el nombre
-            }, $TLdeals);
+        if (is_null($user->tl_id)) {
+            try {
+                $TLcontactByEmail = $this->teamleaderService->searchContactByEmail($user->email);
 
-            // Iterar sobre los tratos de HubSpot
-            foreach ($dealsWithStages as $deal) {
-                // Validar si el trato ya existe en Teamleader
-                if (!in_array($deal['properties']['dealname'], $teamleaderDealNames)) {
-                    // Crear el trato si no existe
-                    $this->teamleaderService->createProjectFromHubspotDeal($deal, $user->tl_id, $camposDeTeamleader);
+                if (!is_null($TLcontactByEmail)) {
+                    $user->tl_id = $TLcontactByEmail['id'];
+                } else {
+                    $newContact = $this->teamleaderService->createContact($user);
+                    $user->tl_id = $newContact['id'];
+                }
+
+                $user->save();
+            } catch (\Exception $e) {
+                \Log::error("Error al sincronizar con Teamleader: " . $e->getMessage());
+            }
+        }
+
+        // 2. Obtener datos en paralelo
+        try {
+            $concurrentResults = $this->hubspotService->executeConcurrent([
+                'pipelineStages' => function() use ($deals) {
+                    $usedPipelineIds = array_unique(array_filter(
+                        array_column(array_column($deals, 'properties'), 'pipeline')
+                    ));
+                    $stages = [];
+                    foreach ($usedPipelineIds as $pipelineId) {
+                        $stages[$pipelineId] = $this->hubspotService->getDealStagesByPipeline($pipelineId);
+                    }
+                    return $stages;
+                },
+                'TLcontact' => function() use ($user) {
+                    return $this->teamleaderService->getContactById($user->tl_id);
+                },
+                'TLdeals' => function() use ($user) {
+                    return $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id);
+                }
+            ]);
+
+            $pipelineStages = $concurrentResults['pipelineStages'] ?? [];
+            $TLcontact = $concurrentResults['TLcontact'] ?? null;
+            $TLdeals = $concurrentResults['TLdeals'] ?? [];
+
+            // 3. Procesar negocios con etapas
+            $dealsWithStages = array_map(function ($deal) use ($pipelineStages) {
+                $properties = $deal['properties'];
+                $dealstageId = $properties['dealstage'] ?? null;
+                $pipelineId = $properties['pipeline'] ?? null;
+
+                $dealstageName = null;
+                $dealstageOptions = [];
+
+                if ($pipelineId && isset($pipelineStages[$pipelineId])) {
+                    $dealstageName = collect($pipelineStages[$pipelineId])->firstWhere('id', $dealstageId)['name'] ?? null;
+                    $dealstageOptions = $pipelineStages[$pipelineId];
+                }
+
+                return array_merge($deal, [
+                    'dealstage_name' => $dealstageName,
+                    'dealstage_options' => $dealstageOptions,
+                ]);
+            }, $deals);
+
+            // 4. Sincronizar tratos con Teamleader
+            $teamleaderDealNames = [];
+            if (is_array($TLdeals)) {
+                $teamleaderDealNames = array_column($TLdeals, 'title');
+            }
+
+            if (count($dealsWithStages) > count($teamleaderDealNames)) {
+                foreach ($dealsWithStages as $deal) {
+                    $dealName = $deal['properties']['dealname'] ?? '';
+                    if (!in_array($dealName, $teamleaderDealNames)) {
+                        try {
+                            $this->teamleaderService->createProjectFromHubspotDeal(
+                                $deal,
+                                $user->tl_id,
+                                $camposDeTeamleader
+                            );
+                        } catch (\Exception $e) {
+                            \Log::error("Error al crear proyecto en Teamleader: " . $e->getMessage());
+                        }
+                    }
+                }
+
+                // Actualizar lista de tratos después de las creaciones
+                $TLdeals = $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id);
+            }
+
+            // 5. Obtener datos actualizados
+            $updatedDeals = $this->hubspotService->getDealsByContactId($user->hs_id);
+            $updatedTLdeals = $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id);
+
+            $this->syncDealFieldsBetweenPlatforms($updatedDeals, $updatedTLdeals, $camposDeTeamleader, $user);
+
+            $teamleaderDealNames = [];
+            if (is_array($updatedTLdeals)) {
+                $teamleaderDealNames = array_column($updatedTLdeals, 'title', 'id');
+            }
+
+            // 6. Procesar propiedades y actualizar base de datos
+            $columns = Schema::getColumnListing((new Negocio)->getTable());
+            $excludedColumns = ['id', 'created_at', 'updated_at', 'hubspot_id', 'teamleader_id', 'user_id'];
+            $fillableColumns = array_diff($columns, $excludedColumns);
+
+            $processProperty = function($value) {
+                if (is_null($value)) return null;
+                $arrayData = strpos($value, ';') !== false ? explode(';', $value) : [$value];
+                return json_encode($arrayData, JSON_UNESCAPED_UNICODE);
+            };
+
+            $existingDealIds = Negocio::whereIn('hubspot_id', array_column($updatedDeals, 'id'))
+                ->pluck('hubspot_id')
+                ->toArray();
+
+            $newDeals = [];
+            foreach ($updatedDeals as $deal) {
+                // Procesar propiedades especiales
+                $propsToProcess = ['argumento_de_ventas__new_', 'n2__antecedentes_penales', 'documentos'];
+                foreach ($propsToProcess as $prop) {
+                    if (isset($deal['properties'][$prop])) {
+                        $deal['properties'][$prop] = $processProperty($deal['properties'][$prop]);
+                    }
+                }
+
+                if (!in_array($deal['id'], $existingDealIds)) {
+                    $data = [
+                        'hubspot_id' => $deal['id'],
+                        'teamleader_id' => array_search($deal['properties']['dealname'] ?? null, $teamleaderDealNames) ?: null,
+                        'user_id' => $user->id,
+                    ];
+
+                    foreach ($fillableColumns as $column) {
+                        $data[$column] = $deal['properties'][$column] ?? null;
+                    }
+
+                    $newDeals[] = $data;
                 }
             }
 
-            // Actualizar la lista de tratos en Teamleader
-            $TLdeals = $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id);
+            // Inserción masiva
+            if (!empty($newDeals)) {
+                Negocio::insert($newDeals);
+            }
+
+            $negocios = Negocio::where("user_id", $user->id)->get();
+
+        } catch (\Exception $e) {
+            \Log::error("Error en el proceso principal: " . $e->getMessage());
+            throw $e;
         }
 
-        //get updated deals
+        $processedUrls = $this->processFilesConcurrently($urls, $user, $this->hubspotService);
+        $processedContactFiles = $this->processFilesConcurrently($HScontactFiles, $user, $this->hubspotService);
 
-        $deals = $this->hubspotService->getDealsByContactId($user->hs_id);
-        $TLdeals = $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id);
-
-        $teamleaderDealNames = array_column($TLdeals, 'title', 'id');
-
-        // Obtener los campos de la base de datos excepto los que no se deben llenar
-        $columns = Schema::getColumnListing((new Negocio)->getTable());
-        $excludedColumns = ['id', 'created_at', 'updated_at', 'hubspot_id', 'teamleader_id', 'user_id'];
-        $fillableColumns = array_diff($columns, $excludedColumns);
-
-        // Iterar sobre los negocios de HubSpot y actualizar la base de datos
-        foreach ($deals as $deal) {
-            $dealId = $deal['id'];
-            $dealName = $deal['properties']['dealname'] ?? null;
-
-            //Limpiar
-
-            $data = $deal['properties']["argumento_de_ventas__new_"];
-
-            // Asegurarse de que siempre sea un array, incluso si no hay punto y coma
-            $arrayData = $data ? ( strpos($data, ';') !== false ? explode(';', $data) : [$data] ) : null;
-
-            // Convertir el array a JSON
-            $jsonData = json_encode($arrayData, JSON_UNESCAPED_UNICODE);
-
-            // Asignar el JSON convertido de nuevo al arreglo
-            $deal['properties']["argumento_de_ventas__new_"] = $jsonData;
-
-            $data = $deal['properties']["n2__antecedentes_penales"];
-
-            // Asegurarse de que siempre sea un array, incluso si no hay punto y coma
-            $arrayData = $data ? ( strpos($data, ';') !== false ? explode(';', $data) : [$data] ) : null;
-
-            // Convertir el array a JSON
-            $jsonData = json_encode($arrayData, JSON_UNESCAPED_UNICODE);
-
-            // Asignar el JSON convertido de nuevo al arreglo
-            $deal['properties']["n2__antecedentes_penales"] = $jsonData;
-
-            $data = $deal['properties']["documentos"];
-
-            // Asegurarse de que siempre sea un array, incluso si no hay punto y coma
-            $arrayData = $data ? ( strpos($data, ';') !== false ? explode(';', $data) : [$data] ) : null;
-
-            // Convertir el array a JSON
-            $jsonData = json_encode($arrayData, JSON_UNESCAPED_UNICODE);
-
-            // Asignar el JSON convertido de nuevo al arreglo
-            $deal['properties']["documentos"] = $jsonData;
-
-            // Buscar un trato en Teamleader con el mismo nombre
-            $teamleaderId = array_search($dealName, $teamleaderDealNames) ?: null;
-
-            // Buscar si ya existe el negocio en la base de datos
-            $existingDeal = Negocio::where('hubspot_id', $dealId)->first();
-
-            // Filtrar solo las propiedades de HubSpot que coincidan con las columnas de la base de datos
-            $data = [
-                'hubspot_id' => $dealId,
-                'teamleader_id' => $teamleaderId,
-                'user_id' => $user->id,
-            ];
-
-            foreach ($fillableColumns as $column) {
-                $data[$column] = $deal['properties'][$column] ?? null;
-            }
-
-            if (!$existingDeal) {
-                // Si no existe, insertar un nuevo registro
-                Negocio::create($data);
-            }
-        }
-
-        $negocios = Negocio::where("user_id", $user->id)->get();
-
-        $resultUrls = [];
-        foreach ($urls as $url) {
-            $fileUrl = $this->hubspotService->getFileUrlFromFormIntegrations($url);
-            if ($fileUrl !== null) {
-                $resultUrls[] = $fileUrl;
-            }
-        }
-
-        foreach ($resultUrls as $fileUrl) {
-            $filename = basename(parse_url($fileUrl, PHP_URL_PATH));
-
-            $s3Path = "public/doc/{$user->passport}/{$filename}";
-
-            $existeEnDB = File::where('file', $filename)
-                ->where('IDCliente', $user->passport)
-                ->exists();
-            if ($existeEnDB) {
-                continue;
-            }
-            // --- Verificación en S3 ---
-            $existeEnS3 = Storage::disk('s3')->exists($s3Path);
-
-            if ($existeEnS3) {
-                continue;
-            }
-
-            $fileContents = file_get_contents($fileUrl);
-
-            Storage::disk('s3')->put($s3Path, $fileContents);
-
-            File::create([
-                'file'      => $filename,                       // Nombre del archivo
-                'location'  => "public/doc/{$user->passport}/", // Carpeta base
-                'IDCliente' => $user->passport,                 // Identificador de cliente
-            ]);
-        }
-
-        foreach ($HScontactFiles as $fileUrl) {
-            $filename = basename(parse_url($fileUrl, PHP_URL_PATH));
-
-            $s3Path = "public/doc/{$user->passport}/{$filename}";
-
-            $existeEnDB = File::where('file', $filename)
-                ->where('IDCliente', $user->passport)
-                ->exists();
-            if ($existeEnDB) {
-                continue;
-            }
-
-            // --- Verificación en S3 ---
-            $existeEnS3 = Storage::disk('s3')->exists($s3Path);
-
-            if ($existeEnS3) {
-                continue;
-            }
-
-            $fileContents = file_get_contents($fileUrl);
-
-            Storage::disk('s3')->put($s3Path, $fileContents);
-
-            File::create([
-                'file'      => $filename,                       // Nombre del archivo
-                'location'  => "public/doc/{$user->passport}/", // Carpeta base
-                'IDCliente' => $user->passport,                 // Identificador de cliente
-            ]);
-        }
-
+        // Obtener archivos del cliente
         $archivos = File::where("IDCliente", $user->passport)->get();
 
         // Mapear campos de HubSpot con los de la base de datos
@@ -1752,7 +1803,7 @@ class UserController extends Controller
                             $user->{$dbField} = $hubspotValue;
                             $updatesToDB[$dbField] = $hubspotValue;
                         }
-                    } elseif ($dbValue && (!$hubspotValue || $dbLastModified > $hsLastModified)) {
+                    } else if ($dbValue && (!$hubspotValue || $dbLastModified > $hsLastModified)) {
                         // Base de datos más reciente
                         switch ($hsField) {
                             case 'fecha_nac':
@@ -1871,13 +1922,18 @@ class UserController extends Controller
                     id
                     column {
                         title
+                        type
                     }
                     text
+                    value
                 }
             }
         ";
 
         $result = json_decode(json_encode(Monday::customQuery($query)), true);
+
+
+        // Registrar hora de fin
 
         $mondayUserDetailsPre = $result['items'][0] ?? null;
 
@@ -1928,112 +1984,76 @@ class UserController extends Controller
         $permissions = Permission::all();
         $servicios = Servicio::all();
 
-        $people = json_decode(json_encode(Agcliente::where("IDCliente",trim($user->passport))->get()),true);
+        // Obtener datos de la base de datos de forma más eficiente
+        $people = Agcliente::where("IDCliente", trim($user->passport))->get()->toArray();
 
-        $arreglo = $people;
-        $generaciones = array();
+        // Optimización 1: Crear un mapa rápido de búsqueda por ID
+        $peopleMap = [];
+        foreach ($people as $person) {
+            $peopleMap[$person['id']] = $person;
+        }
 
-        foreach ($arreglo as $id => $persona) {
-            if ($persona['idPadreNew'] === null && $persona['idMadreNew'] === null) {
-                $generaciones[$persona["id"]] = 1;
+        // Optimización 2: Calcular generaciones usando un enfoque iterativo mejorado
+        $generaciones = [];
+
+        // Primera pasada: identificar raíces (personas sin padres)
+        $queue = [];
+        foreach ($people as $person) {
+            if ($person['idPadreNew'] === null && $person['idMadreNew'] === null) {
+                $generaciones[$person['id']] = 1;
+                $queue[] = $person['id'];
             }
         }
 
-        $cambio = true;
-        while ($cambio) {
-            $cambio = false;
-            foreach ($arreglo as $id => $persona) {
-                $generacionPadre = isset($generaciones[$persona['idPadreNew']]) ? $generaciones[$persona['idPadreNew']] : 0;
-                $generacionMadre = isset($generaciones[$persona['idMadreNew']]) ? $generaciones[$persona['idMadreNew']] : 0;
-                $generacionActual = max($generacionPadre, $generacionMadre) + 1;
+        // Procesamiento por niveles (BFS usando array en lugar de SplQueue)
+        while (!empty($queue)) {
+            $currentId = array_shift($queue);
+            $currentGeneration = $generaciones[$currentId];
 
-                if (!isset($generaciones[$persona["id"]]) || $generaciones[$persona["id"]] != $generacionActual) {
-                    $generaciones[$persona["id"]] = $generacionActual;
-                    $cambio = true;
-                }
-            }
-        }
-
-        $maxGeneraciones = count($generaciones) > 0 ? max($generaciones) : 0;
-        $maxGeneraciones++;
-
-        $columnasparatabla = array();
-
-        for ($i=0; $i<$maxGeneraciones; $i++){
-            if ($i == 0){
-                if(!isset($columnasparatabla[$i])){
-                    $columnasparatabla[$i] = [];
-                }
-
-                $columnasparatabla[$i][] =  $arreglo[0];
-                $columnasparatabla[$i][0]["showbtn"] = 2;  //2 es persona, 1 es boton de añadir, 0 es nada
-            } else {
-                foreach ($columnasparatabla[$i-1] as $key2 => $persona2){
-
-                    if(!isset($columnasparatabla[$i])){
-                        $columnasparatabla[$i] = [];
-                        $j = 0;
-                    } else {
-                        $j = sizeof($columnasparatabla[$i]);
-                    }
-
-                    //padre
-
-                    if (isset($persona2["idPadreNew"]) && @$persona2["idPadreNew"]==null){
-
-                        if ($persona2["showbtn"] == 0) {
-                            $columnasparatabla[$i][$j]["showbtn"] = 0;
-                        } else if ($persona2["showbtn"] == 1) {
-                            $columnasparatabla[$i][$j]["showbtn"] = 0;
-                        } else {
-                            $columnasparatabla[$i][$j]["showbtn"] = 1;
-                            $columnasparatabla[$i][$j]["showbtnsex"] = "m";
-                            $columnasparatabla[$i][$j]["id_hijo"] = $persona2["id"];
-                        }
-
-                    } else {
-                        foreach ($arreglo as $key => $persona) {
-                            if ($persona2["idPadreNew"] == $arreglo[$key]["id"]){
-                                $columnasparatabla[$i][$j] = $arreglo[$key];
-                                $columnasparatabla[$i][$j]["showbtn"] = 2;
-                                break;
-                            }
-                        }
-
-                    }
-
-                    $j++;
-
-                    // madre
-
-                    if (isset($persona2["idMadreNew"]) && @$persona2["idMadreNew"]==null){
-
-                        if ($persona2["showbtn"] == 0) {
-                            $columnasparatabla[$i][$j]["showbtn"] = 0;
-                        } else if ($persona2["showbtn"] == 1) {
-                            $columnasparatabla[$i][$j]["showbtn"] = 0;
-                        } else {
-                            $columnasparatabla[$i][$j]["showbtn"] = 1;
-                            $columnasparatabla[$i][$j]["showbtnsex"] = "f";
-                            $columnasparatabla[$i][$j]["id_hijo"] = $persona2["id"];
-                        }
-
-                    } else {
-
-                        foreach ($arreglo as $key => $persona) {
-                            if ($persona2["idMadreNew"] == $arreglo[$key]["id"]){
-                                $columnasparatabla[$i][$j] = $arreglo[$key];
-                                $columnasparatabla[$i][$j]["showbtn"] = 2;
-                                break;
-                            }
-                        }
-
+            // Buscar hijos de esta persona
+            foreach ($people as $person) {
+                if ($person['idPadreNew'] == $currentId || $person['idMadreNew'] == $currentId) {
+                    if (!isset($generaciones[$person['id']]) || $generaciones[$person['id']] < $currentGeneration + 1) {
+                        $generaciones[$person['id']] = $currentGeneration + 1;
+                        $queue[] = $person['id'];
                     }
                 }
             }
         }
 
-        $parentescos = [];
+        $maxGeneraciones = empty($generaciones) ? 1 : max($generaciones) + 1;
+
+        // Optimización 3: Construir la estructura de columnas
+        $columnasparatabla = [];
+
+        for ($i = 0; $i < $maxGeneraciones; $i++) {
+            $columnasparatabla[$i] = [];
+
+            if ($i == 0) {
+                // Caso especial para el cliente (primera generación)
+                if (!empty($people)) {
+                    $people[0]['showbtn'] = 2;
+                    $columnasparatabla[$i][] = $people[0];
+                }
+                continue;
+            }
+
+            // Procesar generación anterior para construir la actual
+            foreach ($columnasparatabla[$i-1] as $personaAnterior) {
+                // Procesar padre
+                $this->processParent($columnasparatabla[$i], $personaAnterior, 'idPadreNew', 'm', $peopleMap);
+
+                // Procesar madre
+                $this->processParent($columnasparatabla[$i], $personaAnterior, 'idMadreNew', 'f', $peopleMap);
+            }
+        }
+
+        // Optimización 4: Precalcular parentescos
+        $parentescos = [
+            0 => ["Cliente"],
+            1 => ["Padre", "Madre"]
+        ];
+
         $parentescos_post_padres = [
             "Abuel",
             "Bisabuel",
@@ -2079,51 +2099,580 @@ class UserController extends Controller
             "Cuarentasegundocatarabuel",
             "Cuarentatercercatarabuel",
         ];
+
         $prepar = 4;
-
-        function generarTexto($i, $key) {
-            $text = "";
-            $multiplicador = 4;
-
-            for ($j = 1; $j <= $key; $j++) {
-                $text .= (($i % $multiplicador) < ($multiplicador / 2) ? "P " : "M ");
-                $multiplicador *= 2;
-            }
-
-            $text .= ($i < 2 * ($key + 1) ? "P" : "M");
-            return $text;
-        }
-
         foreach ($parentescos_post_padres as $key => $parentesco) {
-            if($key <= sizeof($columnasparatabla)){
-                $parentescos[$key] = [];
-
+            if ($key + 2 < $maxGeneraciones) {
+                $parentescos[$key + 2] = [];
                 for ($i = 0; $i < $prepar; $i++) {
-                    $textparentesco = $parentesco . ($i % 2 == 0 ? "o" : "a");
-                    $text = generarTexto($i, $key);
-                    $parentescos[$key][] = $textparentesco . " " . $text;
+                    $suffix = ($i % 2 == 0 ? "o" : "a");
+                    $text = $this->generateRelationshipText($i, $key);
+                    $parentescos[$key + 2][] = $parentesco . $suffix . " " . $text;
                 }
-
                 $prepar *= 2;
             }
         }
 
-        foreach ($columnasparatabla as $key => $persona) {
-            if ($key==0){
-                $columnasparatabla[$key][0]["parentesco"] = "Cliente";
-            } else if ($key == 1){
-                $columnasparatabla[$key][0]["parentesco"] = "Padre";
-                $columnasparatabla[$key][1]["parentesco"] = "Madre";
-            } else {
-                foreach ($columnasparatabla[$key] as $key2 => $familiar) {
-                    $columnasparatabla[$key][$key2]["parentesco"] = $parentescos[$key-2][$key2];
+        // Asignar parentescos
+        foreach ($columnasparatabla as $key => $generacion) {
+            foreach ($generacion as $idx => $persona) {
+                $columnasparatabla[$key][$idx]['parentesco'] = $parentescos[$key][$idx] ?? 'Desconocido';
+            }
+        }
+
+        $flagOtrosProcesos = false;
+        $flagMayorInformacion = false;
+        $flagNoApto = false;
+        $flagArbolIncompleto = true;
+        $flagInvestigacionProfunda = false;
+
+        $i = 0;
+        foreach ( $columnasparatabla as $generacion => $grupo ){
+            foreach ( $grupo as $persona){
+                if (isset($persona["showbtn"]) && $persona["showbtn"] == 2){
+                    if (strpos($persona["parentesco"], "Tatarabuel") !== false) {
+                        $flagArbolIncompleto = false;
+                    }
                 }
             }
         }
 
-        $html = view('crud.users.edit', compact('negocios', 'usuariosMonday', 'dataMonday', 'mondayData', 'boardId', 'boardName', 'mondayFormBuilder', 'archivos', 'user', 'roles', 'permissions', 'facturas', 'servicios', 'columnasparatabla'))->render();
+        /* Calculo de estatus de cliente - Me quiero suicidar... Este codigo es una papa, pero toca hacerlo */
+
+        $clientstatus = 0; // Aqui cubrimos hasta la parte en la que comienza el registro. De resto, dependemos de Monday, o en su defecto Hubspot/teamleader
+
+        if ($user->pay != 0){
+            if ($user->pay==1){
+                //el cliente pagó pero no ha completado el 001
+                $clientstatus = 0.33;
+            } else if (!($user->pay==1 || $user->pay==0)){
+                if($user->contrato == 0){
+                    //no ha firmado contrato
+                    $clientstatus = 0.67;
+                } else {
+                    // Analisis Genealógico
+                    $clientstatus = 1;
+                }
+            }
+        } else {
+            $clientstatus = 0;
+        }
+
+        if ($flagArbolIncompleto == false){
+            if ($clientstatus == 1){
+                $checktags = "";
+                //si está en analisis genealógico, tienes que revisar las etiquetas que tiene el cliente en Monday
+                if (isset($dataMonday["men__desplegable"]) && $dataMonday["men__desplegable"] != "") {
+                    $checktags = $dataMonday["men__desplegable"];
+
+                    $resultadoIA = $this->analizarEtiquetas($checktags);
+
+                    if ($resultadoIA == 2  || $resultadoIA == "2") {
+                        $flagOtrosProcesos = true;
+                        $clientstatus == 1.21;
+                    } else if ($resultadoIA == 3 || $resultadoIA == "3") {
+                        $flagMayorInformacion = true;
+                        $clientstatus == 1.21;
+                    } else if ($resultadoIA == 4  || $resultadoIA == "4") {
+                        $flagNoApto = true;
+                        $clientstatus == 1.21;
+                    } else if  ($resultadoIA == 6 || $resultadoIA == "6") {
+                        $flagInvestigacionProfunda = true;
+                        $clientstatus == 1.21;
+                    } else{
+                        $clientstatus = $clientstatus + $resultadoIA;
+                    }
+                } else {
+                    $clientstatus == 1;
+                }
+            }
+        }
+
+        //aqui empezamos a depender del Hubspot y del Teamleader... Tenemos que pasar toda la data de los negocios.
+        // esta es la parte ladilla... pd: se va a hacer en el frontend, porque tengo que iterar entre todos los negocios (pesima idea, pero aja)
+
+        $dealsDataCOS = false;
+
+        if ($clientstatus > 1.69) {
+            $dealsDataCOS = true;
+        }
+
+        $cos = [];
+
+        $servicename = Servicio::where("id_hubspot", "like", $user->servicio."%")->first();
+
+        if( count($negocios)>0 ) {
+            foreach($negocios as $negocio) {
+                $service = Servicio::where("id_hubspot", "like", $negocio->servicio_solicitado."%")->first();
+
+                if (isset($negocio->fase_1_preestab) || isset($negocio->fase_1_preestab) || isset($negocio->fase_1_preestab)) {
+                    if(isset($negocio->fase_1_pagado) || isset($negocio->fase_1_pagado__teamleader_)) {
+                        if(isset($negocio->n2__enviado_a_redaccion_informe)) {
+                            //Aqui tengo que empezar a ver la tabla de informes en redacción de Monday
+                            $investFLAG = 0;
+                                if (isset($negocio->fase_2_preestab) || isset($negocio->fase_2_preestab) || isset($negocio->fase_2_preestab)) {
+                                    if(isset($negocio->fase_2_pagado) || isset($negocio->fase_2_pagado__teamleader_)) {
+                                        if(isset($negocio->n3__informe_cargado)) {
+                                            if(isset($negocio->n4__certificado_descargado)) {
+                                                if (isset($negocio->fase_3_preestab) || isset($negocio->fase_3_preestab) || isset($negocio->fase_3_preestab)) {
+                                                    if(isset($negocio->fase_3_pagado) || isset($negocio->fase_3_pagado__teamleader_)) {
+                                                        if(isset($negocio->fase_3_pagado) || isset($negocio->fase_3_pagado__teamleader_)) {
+                                                            if(isset($negocio->n5__fecha_de_formalizacion)) {
+                                                                // add array here
+                                                                $cos[] = [
+                                                                    "servicename" => $servicename->nombre,
+                                                                    "currentStep" => 27,
+                                                                    "color" => "info",
+                                                                    "progressPercentageGen" => 22*100/28,
+                                                                    "message" => ""
+                                                                ];
+                                                                // end array here
+                                                            } else {
+                                                                // add array here
+                                                                $cos[] = [
+                                                                    "servicename" => $servicename->nombre,
+                                                                    "currentStep" => 23,
+                                                                    "color" => "info",
+                                                                    "progressPercentageGen" => 22*100/28,
+                                                                    "message" => ""
+                                                                ];
+                                                                // end array here
+                                                            }
+                                                        } else {
+                                                            // add array here
+                                                            $cos[] = [
+                                                                "servicename" => $servicename->nombre,
+                                                                "currentStep" => 23,
+                                                                "color" => "info",
+                                                                "progressPercentageGen" => 22*100/28,
+                                                                "message" => ""
+                                                            ];
+                                                            // end array here
+                                                        }
+                                                    } else {
+                                                        // add array here
+                                                            $cos[] = [
+                                                                "servicename" => $servicename->nombre,
+                                                                "currentStep" => 23,
+                                                                "color" => "warning",
+                                                                "progressPercentageGen" => 23*100/28,
+                                                                "message" => "Estamos en una fase decisiva. Recuerde realizar el pago correspondiente a esta última fase. <br><br><a href='/pagospendientes' style='color: #fa1d33'>Haz click aquí</a> para ir a pagar."
+                                                            ];
+                                                        // end array here
+                                                    }
+                                                } else {
+                                                    // add array here
+                                                        $cos[] = [
+                                                            "servicename" => $servicename->nombre,
+                                                            "currentStep" => 22,
+                                                            "color" => "info",
+                                                            "progressPercentageGen" => 22*100/28,
+                                                            "message" => ""
+                                                        ];
+                                                    // end array here
+                                                }
+                                            } else {
+                                                // add array here
+                                                $cos[] = [
+                                                    "servicename" => $servicename->nombre,
+                                                    "currentStep" => 15,
+                                                    "color" => "info",
+                                                    "progressPercentageGen" => 15*100/28,
+                                                    "message" => ""
+                                                ];
+                                                // end array here
+                                            }
+                                        } else {
+                                            // add array here
+                                            $cos[] = [
+                                                "servicename" => $servicename->nombre,
+                                                "currentStep" => 15,
+                                                "color" => "info",
+                                                "progressPercentageGen" => 15*100/28,
+                                                "message" => ""
+                                            ];
+                                            // end array here
+                                        }
+                                    } else {
+                                        // add array here
+                                        $cos[] = [
+                                            "servicename" => $servicename->nombre,
+                                            "currentStep" => 14,
+                                            "color" => "warning",
+                                            "progressPercentageGen" => 14*100/28,
+                                            "message" => "Nos encontramos a la espera de su pago para continuar con su proceso.<br><br><a href='/pagospendientes' style='color: #fa1d33'>Haz click aquí</a> para ir a pagar."
+                                        ];
+                                        // end array here
+                                    }
+                                } else {
+                                    // add array here
+                                    $cos[] = [
+                                        "servicename" => $servicename->nombre,
+                                        "currentStep" => 8,
+                                        "color" => "info",
+                                        "progressPercentageGen" => 8*100/28,
+                                        "message" => ""
+                                    ];
+                                    // end array here
+                                }
+                        } else {
+                            // add array here
+                                $cos[] = [
+                                    "servicename" => $servicename->nombre,
+                                    "currentStep" => 8,
+                                    "color" => "info",
+                                    "progressPercentageGen" => 8*100/28,
+                                    "message" => ""
+                            ];
+                            // end array here
+                        }
+                    } else {
+                        // add array here
+                            $cos[] = [
+                                "servicename" => $servicename->nombre,
+                                "currentStep" => 8,
+                                "color" => "warning",
+                                "progressPercentageGen" => 1.5*100/28,
+                                "message" => "Nos encontramos a la espera de su pago para iniciar su proceso.<br><br><a href='/pagospendientes' style='color: #fa1d33'>Haz click aquí</a> para ir a pagar."
+                           ];
+                        // end array here
+                    }
+                } else {
+                    if ($clientstatus == 0) {
+                        // add array here
+                        $cos[] = [
+                            "servicename" => $service->nombre,
+                            "currentStep" => 0,
+                            "color" => "warning",
+                            "progressPercentageGen" => 0,
+                            "message" => "Aún no has realizado el pago del registro de tu proceso. <a href='/pay' style='color: #fa1d33'>Haz click aquí</a> para ir a pagar tu registro"
+                       ];
+                        // end array here
+                    } else if ($clientstatus == 0.33) {
+                        // add array here
+                        $cos[] = [
+                            "servicename" => $servicename->nombre,
+                            "currentStep" => 0.5,
+                            "color" => "warning",
+                            "progressPercentageGen" => 0.5*100/28,
+                            "message" => "Falta completar información de tu registro. <a href='/getinfo' style='color: #fa1d33'>Haz click aquí</a> para continuar."
+                       ];
+                        // end array here
+                    } else if ($clientstatus == 0.67) {
+                        // add array here
+                        $cos[] = [
+                            "servicename" => $servicename->nombre,
+                            "currentStep" => 0.5,
+                            "color" => "warning",
+                            "progressPercentageGen" => 0.5*100/28,
+                            "message" => "No has firmado tu contrato. <a href='/contrato' style='color: #fa1d33'>Haz click aquí</a> para continuar."
+                       ];
+                        // end array here
+                    } else if ($clientstatus == 1 && ($flagArbolIncompleto==1 || $flagArbolIncompleto==true)) {
+                        // add array here
+                            $cos[] = [
+                                "servicename" => $servicename->nombre,
+                                "currentStep" => 1,
+                                "color" => "warning",
+                                "progressPercentageGen" => 1*100/28,
+                                "message" => "Debes añadir más información a tu arbol genealógico. <a href='/tree' style='color: #fa1d33'>Haz click aquí</a> para continuar."
+                           ];
+                        // end array here
+                    } else if($clientstatus >= 1 && $clientstatus< 2) {
+
+                        if ($flagMayorInformacion==1 || $flagMayorInformacion==true) {
+                            // add array here
+                            $cos[] = [
+                                "servicename" => $servicename->nombre,
+                                "currentStep" => 1.5,
+                                "color" => "warning",
+                                "progressPercentageGen" => 1.5*100/28,
+                                "message" => "Se requiere Mayor Información."
+                           ];
+                            // end array here
+                        } else if ($flagOtrosProcesos==1 || $flagOtrosProcesos==true) {
+                            // add array here
+                            $cos[] = [
+                                "servicename" => $servicename->nombre,
+                                "currentStep" => 1.5,
+                                "color" => "info",
+                                "progressPercentageGen" => 1.5*100/28,
+                                "message" => "Nuestros especialistas continúan explorando nuevas opciones para ti. Aunque aún no se ha confirmado una conexión genealógica, podemos brindarte alternativas como la obtención de residencias o visas para que puedas vivir, trabajar y desarrollarte legalmente en la Unión Europea.<br><br>Adicionalmente, nuestro equipo continúa ampliando y verificando bases de datos genealógicas, lo que podría generar nuevas oportunidades para ti en el futuro."
+                           ];
+                            // end array here
+                        } else if ($flagNoApto==1 || $flagNoApto==true) {
+                            // add array here
+                            $cos[] = [
+                                "servicename" => $servicename->nombre,
+                                "currentStep" => 1.5,
+                                "color" => "info",
+                                "progressPercentageGen" => 1.5*100/28,
+                                "message" => "Nuestros especialistas continúan explorando nuevas opciones para ti. Aunque aún no se ha confirmado una conexión genealógica, podemos brindarte alternativas como la obtención de residencias o visas para que puedas vivir, trabajar y desarrollarte legalmente en la Unión Europea.<br><br>Adicionalmente, nuestro equipo continúa ampliando y verificando bases de datos genealógicas, lo que podría generar nuevas oportunidades para ti en el futuro."
+                           ];
+                            // end array here
+                        } else if ($flagInvestigacionProfunda== 1 || $flagInvestigacionProfunda==true) {
+                            // add array here
+                                $cos[] = [
+                                    "servicename" => $servicename->nombre,
+                                    "currentStep" => 1.5,
+                                    "color" => "warning",
+                                    "progressPercentageGen" => 1.5*100/28,
+                                    "message" => "Nuestros especialistas continúan explorando y reconstruyendo líneas genealógicas nuevas y desconocidas, para ampliar tus posibilidades.<br><br>Para ello, necesitamos llevar a cabo una investigación más profunda, utilizando fuentes especializadas e investigadores particulares.<br><br>En este sentido, te hemos enviado un presupuesto detallado para esta investigación más profunda, en la que optimizaremos al máximo la búsqueda de conexiones genealógicas para conectar con tus raíces europeas."
+                               ];
+                            // end array here
+                        } else {
+                            if($clientstatus >= 1 && $clientstatus < 1.7) {
+                                // add array here
+                                    $cos[] = [
+                                        "servicename" => $servicename->nombre,
+                                        "currentStep" => 1.5,
+                                        "color" => "warning",
+                                        "progressPercentageGen" => 1.5*100/28,
+                                        "message" => ""
+                                   ];
+                                // end array here
+                            } else {
+                                // add array here
+                                $cos[] = [
+                                    "servicename" => $servicename->nombre,
+                                    "currentStep" => 1.5,
+                                    "color" => "warning",
+                                    "progressPercentageGen" => 1.5*100/28,
+                                    "message" => ""
+                               ];
+                                // end array here
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+           $cos[] = [
+                "servicename" => $servicename,
+                "currentStep" => 0,
+                "color" => "warning",
+                "progressPercentageGen" => 0,
+                "message" => "Aún no has realizado el pago del registro de tu proceso. <a style='color: #fa1d33'>Haz click aquí</a> para ir a pagar tu registro"
+           ];
+        }
+
+        $html = view('crud.users.edit', compact('cos', 'servicename', 'flagInvestigacionProfunda', 'flagArbolIncompleto', 'flagNoApto', 'dealsDataCOS', 'flagMayorInformacion', 'flagOtrosProcesos', 'clientstatus', 'negocios', 'usuariosMonday', 'dataMonday', 'mondayData', 'boardId', 'boardName', 'mondayFormBuilder', 'archivos', 'user', 'roles', 'permissions', 'facturas', 'servicios', 'columnasparatabla'))->render();
         return $html;
 
+    }
+
+    private function syncDealFieldsBetweenPlatforms($hubspotDeals, $teamleaderDeals, $camposRelacionados, $user)
+    {
+        $updatesToHubspotAll = [];
+        $updatesToTeamleaderAll = [];
+        $updatesToDBAll = [];
+
+        // Indexar por dealname
+        $hubspotByName = collect($hubspotDeals)->keyBy(fn($d) => $d['properties']['dealname'] ?? '');
+        $teamleaderByName = collect($teamleaderDeals)->keyBy(fn($d) => $d['title'] ?? '');
+
+        // 1. Crear faltantes en HubSpot
+        foreach ($teamleaderByName as $dealName => $tlDeal) {
+            if (!$hubspotByName->has($dealName)) {
+                try {
+                    $newHsDeal = $this->hubspotService->createDealInHubspotFromTL($tlDeal, $user->hs_id ?? null, $camposRelacionados);
+                    $hubspotByName->put($dealName, $newHsDeal); // actualiza colección
+                    Log::info("Trato creado en HubSpot desde TL: " . $dealName);
+                } catch (\Exception $e) {
+                    Log::error("Error creando trato en HubSpot desde TL: " . $e->getMessage());
+                }
+            }
+        }
+
+        // 2. Crear faltantes en Teamleader
+        foreach ($hubspotByName as $dealName => $hsDeal) {
+            if (!$teamleaderByName->has($dealName)) {
+                try {
+                    $newTLDeal = $this->teamleaderService->createProjectFromHubspotDeal($hsDeal, $user->tl_id, $camposRelacionados);
+                    $teamleaderByName->put($dealName, array_merge($newTLDeal, ['title' => $dealName]));
+                    Log::info("Trato creado en Teamleader desde HubSpot: " . $dealName);
+                } catch (\Exception $e) {
+                    Log::error("Error creando trato en TL desde HubSpot: " . $e->getMessage());
+                }
+            }
+        }
+
+        // 3. Sincronizar valores
+        foreach ($hubspotByName as $dealName => $hsDeal) {
+            $hubspotId = $hsDeal['id'] ?? null;
+            $hubspotProps = $hsDeal['properties'] ?? [];
+
+            $tlDeal = $teamleaderByName->get($dealName);
+            $teamleaderId = $tlDeal['id'] ?? null;
+            $existingFields = $tlDeal['custom_fields'] ?? [];
+
+            $hubspotLastMod = new \DateTime($hubspotProps['lastmodifieddate'] ?? '1970-01-01');
+            $teamleaderLastMod = new \DateTime($tlDeal['updated_at'] ?? '1970-01-01');
+
+            $tlCustomFields = [];
+            $hsUpdates = [];
+            $dbUpdates = [];
+
+            foreach ($camposRelacionados as $hsField => $tlFieldId) {
+                $hsValue = $hubspotProps[$hsField] ?? null;
+                $tlField = collect($existingFields)->firstWhere('definition.id', $tlFieldId);
+                $tlValue = $tlField['value'] ?? null;
+
+                $finalValue = null;
+                if ($hsValue && (!$tlValue || $hubspotLastMod > $teamleaderLastMod)) {
+                    $finalValue = $hsValue;
+                } else if ($tlValue) {
+                    $finalValue = $tlValue;
+                }
+
+                if (!is_null($finalValue)) {
+                    $tlCustomFields[] = [
+                        'id' => $tlFieldId,
+                        'value' => $finalValue
+                    ];
+
+                    if ($tlValue && (!$hsValue || $teamleaderLastMod > $hubspotLastMod)) {
+                        $hsUpdates[$hsField] = $tlValue;
+                    }
+
+                    $dbUpdates[$hsField] = $finalValue;
+                }
+            }
+
+            if ($teamleaderId && !empty($tlCustomFields)) {
+                $updatesToTeamleaderAll[$teamleaderId] = [
+                    'custom_fields' => $tlCustomFields
+                ];
+            }
+
+            if (!empty($hsUpdates) && $hubspotId) {
+                $updatesToHubspotAll[$hubspotId] = $hsUpdates;
+            }
+
+            if (!empty($dbUpdates)) {
+                $updatesToDBAll[] = [
+                    'hubspot_id' => $hubspotId,
+                    'teamleader_id' => $teamleaderId,
+                    'user_id' => $user->id,
+                    'fields' => $dbUpdates
+                ];
+            }
+        }
+
+        // Actualizar HubSpot
+        foreach ($updatesToHubspotAll as $dealId => $fields) {
+            $this->hubspotService->updateDeals($dealId, $fields);
+        }
+
+        // Actualizar Teamleader
+        foreach ($updatesToTeamleaderAll as $tlDealId => $payload) {
+            $this->teamleaderService->updateProject($tlDealId, $payload);
+        }
+
+        // Actualizar DB
+        foreach ($updatesToDBAll as $entry) {
+            $negocio = Negocio::firstOrNew([
+                'hubspot_id' => $entry['hubspot_id']
+            ]);
+            $negocio->user_id = $entry['user_id'];
+            $negocio->teamleader_id = $entry['teamleader_id'];
+
+            foreach ($entry['fields'] as $field => $value) {
+                if (Schema::hasColumn((new Negocio)->getTable(), $field)) {
+                    $negocio->{$field} = $value;
+                }
+            }
+
+            $negocio->save();
+        }
+    }
+
+    protected function processParent(array &$currentGen, array $parent, string $field, string $sex, array $peopleMap): void
+    {
+        $j = count($currentGen);
+
+        if (empty($parent[$field])) {
+            $currentGen[$j]['showbtn'] = ($parent['showbtn'] == 0) ? 0 : 1;
+            $currentGen[$j]['showbtnsex'] = $sex;
+        } else {
+            if (isset($peopleMap[$parent[$field]])) {
+                $currentGen[$j] = $peopleMap[$parent[$field]];
+                $currentGen[$j]['showbtn'] = 2;
+            }
+        }
+    }
+
+    /**
+     * Genera el texto de relación genealógica
+     */
+    protected function generateRelationshipText(int $i, int $key): string
+    {
+        $text = "";
+        $multiplicador = 4;
+
+        for ($j = 1; $j <= $key; $j++) {
+            $text .= (($i % $multiplicador) < ($multiplicador / 2) ? "P " : "M ");
+            $multiplicador *= 2;
+        }
+
+        $text .= ($i < 2 * ($key + 1) ? "P" : "M");
+        return $text;
+    }
+
+    private function analizarEtiquetas($checktags)
+    {
+        $apiKey = env('OPENROUTER_API_KEY');
+
+        // Definir el mensaje que se enviará a OpenRouter
+        $mensaje = [
+            [
+                "role" => "system",
+                "content" => "Eres un asistente especializado en analizar etiquetas y devolver un valor numérico basado en reglas específicas. Tu respuesta debe ser únicamente un número, sin texto adicional, ya que será parseado en un backend. Las reglas son las siguientes:
+
+1. **Etiquetas que indican 'apto para otros procesos' o similares**: Devuelve '2'.
+2. **Etiquetas que indican 'Se requiere Mayor información' o similar**: Devuelve '3'.
+3. **Etiquetas de 'NO APTO'**: Si el cliente no es apto, devuelve '2'.
+4. **Etiquetas con palabras clave como 'aprobado' o 'aceptado'**: Devuelve un valor entre 0.7 y 0.9. Nunca devuelvas 1.0, ya que es difícil determinar si está completamente aprobado. Evalúa la cantidad de etiquetas y su contexto para ajustar el valor.
+5. **Etiquetas que indican algún avance en el proceso o asociación genealógica**: Devuelve un valor entre 0.41 y 0.69. Mientras más bajo el valor, mejor.
+6. **Otros casos**: Devuelve un valor entre 0 y 0.4.
+7. **Apto para investigación mas profunda**: Si la etiqueta indica que el cliente es APTO PARA UNA INVESTIGACIÓN MAS PROFUNDA, devuelve el valor 6.
+
+Recuerda: Tu respuesta debe ser SOLO UN NÚMERO, sin explicaciones ni texto adicional."
+            ],
+            [
+                "role" => "user",
+                "content" => "Analiza las siguientes etiquetas: " . $checktags . "."
+
+            ]
+        ];
+
+        // Llamar a la API de OpenRouter
+        $response = Http::withHeaders([
+            'Authorization' => "Bearer $apiKey",
+            'Content-Type' => 'application/json',
+        ])->post("https://openrouter.ai/api/v1/chat/completions", [
+            'model' => 'google/gemini-2.0-flash-thinking-exp:free', // Puedes cambiar el modelo si lo prefieres
+            'messages' => $mensaje,
+        ]);
+
+        if ($response->successful()) {
+            // Obtener la respuesta de la IA
+            $respuestaIA = $response->json()['choices'][0]['message']['content'];
+
+            // Convertir la respuesta a un número
+            $resultado = floatval(trim($respuestaIA));
+
+            // Validar que el resultado esté dentro del rango esperado
+            if ($resultado >= 0) {
+                return $resultado;
+            } else {
+                // Si la IA devuelve algo inesperado, devolver un valor por defecto
+                return 0.5;
+            }
+        }
+
+        // Si hay un error en la API, devolver un valor por defecto
+        return 0.5;
     }
 
 
@@ -2325,6 +2874,7 @@ class UserController extends Controller
 
     private function searchUserInMonday($passport, User $user)
     {
+        $client = new Client();  // Inicializa el cliente Guzzle
         $boardIds = [
             878831315,
             6524058079, 3950637564, 815474056, 3639222742, 3469085450, 2213224176,
@@ -2333,72 +2883,134 @@ class UserController extends Controller
             803542982, 765394861, 742896377, 708128239, 708123651,
             669590637, 625187241
         ];
-
         $searchUrl = "https://app.sefaruniversal.com/tree/" . $passport;
+
+        $promises = [];  // Array para almacenar las promesas de las solicitudes
 
         foreach ($boardIds as $boardId) {
             $query = "
-                items_page_by_column_values(
-                    limit: 50,
-                    board_id: {$boardId},
-                    columns: [{column_id: \"enlace\", column_values: [\"{$searchUrl}\"]}]
-                ) {
-                    cursor
-                    items {
-                        id
-                        name
-                        board {
-                            name
-                        }
-                        column_values {
+                query {
+                    items_page_by_column_values(
+                        limit: 50,
+                        board_id: {$boardId},
+                        columns: [{column_id: \"enlace\", column_values: [\"{$searchUrl}\"]}]
+                    ) {
+                        cursor
+                        items {
                             id
-                            column {
-                                title
-                            }
-                            text
                         }
                     }
                 }
             ";
 
-            $result = json_decode(json_encode(Monday::customQuery($query)), true);
+            // Cada solicitud se hace de manera asíncrona
+            $promises[] = $client->postAsync("https://api.monday.com/v2", [
+                'json' => ['query' => $query],
+                'headers' => [
+                    "Authorization" => "Bearer " . getenv('MONDAY_TOKEN'),
+                    "Content-Type" => "application/json"
+                ]
+            ]);
+        }
 
-            if (!empty($result['items_page_by_column_values']['items'])) {
-                $item = $result['items_page_by_column_values']['items'][0];
-                $user->monday_id = $item['id']; // Guardar el ID de Monday
-                $user->save();
-                return $item;
+        // Esperar todas las respuestas y procesarlas
+        $responses = Promise\Utils::settle($promises)->wait();
+
+        foreach ($responses as $response) {
+            if ($response['state'] === 'fulfilled') {
+                $data = json_decode($response['value']->getBody(), true);
+
+                if (!empty($data['data']['items_page_by_column_values']['items'])) {
+                    $item = $data['data']['items_page_by_column_values']['items'][0];
+                    $user->monday_id = $item['id']; // Guardar el ID de Monday
+                    $user->save();
+                    return $item;  // Devolver el primer item encontrado
+                }
             }
         }
 
-        return null;
+        return null;  // Si no se encuentra el usuario en ningún board
     }
 
     private function storeMondayBoardColumns($boardId)
     {
-        $query = "
-            boards(ids: [$boardId]) {
-                columns {
-                    id
-                    title
-                    type
-                    settings_str
+        try {
+            // Step 1: Fetch only basic column info (lightweight query)
+            $metadataQuery = 'query { boards(ids: [' . $boardId . ']) { columns { id title type } } }';
+            $metadataResult = Monday::customQuery($metadataQuery);
+
+            if (empty($metadataResult['data']['boards'][0]['columns'])) {
+                return; // No columns found
+            }
+
+            $columns = $metadataResult['data']['boards'][0]['columns'];
+            $filteredColumns = [];
+            $excludedTypes = [
+                'name', 'subtasks', 'auto_number', 'progress',
+                'creation_log', 'link', 'integration', 'item_id',
+                'formula', 'board_relation', 'mirror', 'email'
+            ];
+
+            // Filter columns to only include relevant ones
+            foreach ($columns as $column) {
+                if (!in_array($column['type'], $excludedTypes)) {
+                    $filteredColumns[] = $column['id'];
                 }
             }
-        ";
 
-        $result = json_decode(json_encode(Monday::customQuery($query)), true);
-        $columns = $result['boards'][0]['columns'] ?? [];
+            if (empty($filteredColumns)) {
+                return; // No relevant columns found
+            }
 
-        foreach ($columns as $column) {
-            MondayFormBuilder::updateOrCreate(
-                ['board_id' => $boardId, 'column_id' => $column['id']],
-                [
+            // Step 2: Fetch full details only for relevant columns
+            $columnsQuery = 'query {
+                boards(ids: [' . $boardId . ']) {
+                    columns(ids: [' . implode(',', array_map('json_encode', $filteredColumns)) . ']) {
+                        id
+                        title
+                        type
+                        settings_str
+                    }
+                }
+            }';
+
+            $fullResult = Monday::customQuery($columnsQuery);
+            $relevantColumns = $fullResult['data']['boards'][0]['columns'] ?? [];
+
+            $batchData = [];
+            foreach ($relevantColumns as $column) {
+                $settings = !empty($column['settings_str']) ? json_decode($column['settings_str'], true) : [];
+
+                $tagIds = [];
+                if (in_array($column['type'], ['tags', 'multi-select']) && !empty($settings['tags'])) {
+                    $tagIds = array_column($settings['tags'], 'id');
+                }
+
+                $batchData[] = [
+                    'board_id' => $boardId,
+                    'column_id' => $column['id'],
                     'title' => $column['title'],
                     'type' => $column['type'],
-                    'settings' => $column['settings_str'] ? $column['settings_str'] : null,
-                ]
-            );
+                    'settings' => $column['settings_str'] ?? null,
+                    'tag_ids' => $tagIds,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ];
+            }
+
+            // Batch upsert
+            if (!empty($batchData)) {
+                MondayFormBuilder::upsert(
+                    $batchData,
+                    ['board_id', 'column_id'],
+                    ['title', 'type', 'settings', 'tag_ids', 'updated_at']
+                );
+            }
+
+        } catch (\Exception $e) {
+            Log::error("Failed to store Monday board columns: " . $e->getMessage());
+            // Optionally rethrow if needed
+            // throw $e;
         }
     }
 

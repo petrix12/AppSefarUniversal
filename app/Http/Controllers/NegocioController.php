@@ -10,6 +10,7 @@ use App\Models\Compras;
 use App\Services\TeamleaderService;
 use App\Services\HubspotService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Schema;
 
 class NegocioController extends Controller
 {
@@ -63,6 +64,81 @@ class NegocioController extends Controller
         //
     }
 
+    private function syncDealIndividual($dealDb, $camposRelacionados, $user)
+    {
+        $hubspotId = $dealDb->hubspot_id;
+        $teamleaderId = $dealDb->teamleader_id;
+
+        // Obtener deal específico de HubSpot
+        $hubspotDeal = $this->hubspotService->getDealById($hubspotId);
+        if (!$hubspotDeal || !isset($hubspotDeal['properties'])) {
+            return dd("❌ No se encontró el trato en HubSpot con ID {$hubspotId}");
+        }
+
+        // Obtener deal específico de Teamleader (solo si tiene ID)
+        $TLdeal = $teamleaderId ? $this->teamleaderService->getProjectDetails($teamleaderId) : null;
+
+        $hubspotLastMod = new \DateTime($hubspotDeal['properties']['lastmodifieddate'] ?? '1970-01-01');
+        $teamleaderLastMod = $TLdeal ? new \DateTime($TLdeal['updated_at'] ?? '1970-01-01') : null;
+
+        $hsProps = $hubspotDeal['properties'];
+        $tlFields = $TLdeal['custom_fields'] ?? [];
+
+        $updatesToHubspot = [];
+        $updatesToTeamleader = [];
+        $updatesToDB = [];
+
+        foreach ($camposRelacionados as $hsField => $tlFieldId) {
+            $hsValue = $hsProps[$hsField] ?? null;
+            $tlValue = collect($tlFields)->firstWhere('definition.id', $tlFieldId)['value'] ?? null;
+
+            // Determinar valor final por frescura
+            if ($hsValue && (!$tlValue || ($teamleaderLastMod && $hubspotLastMod > $teamleaderLastMod))) {
+                $finalValue = $hsValue;
+            } elseif ($tlValue) {
+                $finalValue = $tlValue;
+            } else {
+                continue;
+            }
+
+            // Teamleader solo si existe y requiere actualización
+            if ($teamleaderId && $tlValue !== $finalValue) {
+                $updatesToTeamleader[] = [
+                    'id' => $tlFieldId,
+                    'value' => $finalValue
+                ];
+            }
+
+            // HubSpot solo si TL tiene algo más reciente
+            if ($tlValue && (!$hsValue || ($teamleaderLastMod && $teamleaderLastMod > $hubspotLastMod))) {
+                $updatesToHubspot[$hsField] = $tlValue;
+            }
+
+            // Base de datos
+            $updatesToDB[$hsField] = $finalValue;
+        }
+
+        // Actualizar HubSpot
+        if (!empty($updatesToHubspot)) {
+            $this->hubspotService->updateDeals($hubspotId, $updatesToHubspot);
+        }
+
+        // Actualizar Teamleader
+        if ($teamleaderId && !empty($updatesToTeamleader)) {
+            $this->teamleaderService->updateProject($teamleaderId, ['custom_fields' => $updatesToTeamleader]);
+        }
+
+        // Actualizar base de datos
+        foreach ($updatesToDB as $campo => $valor) {
+            if (Schema::hasColumn((new Negocio)->getTable(), $campo)) {
+                $dealDb->{$campo} = $valor;
+            }
+        }
+        $dealDb->save();
+
+    }
+
+
     /**
      * Show the form for editing the specified resource.
      *
@@ -73,6 +149,62 @@ class NegocioController extends Controller
     {
         $deal_db = Negocio::find($id);
         $user = User::find($deal_db->user_id);
+
+        $camposDeTeamleader = [
+            'n1__enviada_al_cliente' => '4203d8ab-f1de-0145-af52-1bb278951268',
+            'documentos' => 'e254d7ed-3c93-097d-b659-852a3b74c5e5',
+            'n1__lugar_del_expediente' => '4bbfdc08-686d-0a03-8557-bd1d60d46f57',
+            'n1__monto_preestablecido' => '6f7a4408-b146-0e58-a35b-8f02fed60887',
+            'n10__fecha_asignacion_de_juez' => '497e7359-8b1a-056a-9e5e-28fa0cf5b2f1',
+            'n11__envio_redaccion_abogada' => 'e04af721-8808-0a43-9356-df374565b2fa',
+            'n12__notas___no__expediente' => '4b822322-17a1-06ba-9b5b-82db70f46f5b',
+            'n13__fecha_recurso_alzada' => '7c06cfed-87f4-00ac-8a5a-946b0b9643b8',
+            'n2__firmado_por_el_cliente' => '5f090e48-4a5b-0504-8259-9e945e95126a',
+            'n2__antecedentes_penales' => '35c68020-1160-068b-b055-1b5e6fe4ca11',
+            'n2__ciudad_formalizacion' => 'ad849a21-82b3-0032-995e-6e9dbcd46f53',
+            'n2__enviado_a_redaccion_informe' => 'ed8167e1-00e2-05fb-8a5c-900699b54d88',
+            'n2__monto_pagado' => '4bef5482-f2e4-02da-8653-691944760f84',
+            'n3__gestionado___entregado' => 'b0421965-2b39-0c4d-9e51-1e567b05126b',
+            'n3__contratos_y_permisos' => '39085084-d206-073e-8057-ef23ab046f5a',
+            'n3__f__vencimiento_ant__penal' => '578e17da-c01b-0a97-bc5a-7d9255b4c9d5',
+            'n3__informe_cargado' => '1c067d8e-1b3b-0b4b-8c5f-436233b4c3f2',
+            'n4__certificado_descargado' => '62a2cd97-1898-00bf-885c-029939e4c40f',
+            'n4__pago_tasa' => 'a2d11316-e31b-0b2c-bd5e-0c7ad13491d0',
+            'n5___f_solicitud_documentos' => 'e0919d4b-322a-0c06-9759-0a6607f4c9db',
+            'n5__fecha_de_formalizacion' => '7c87a75b-ce63-01da-9c58-5277f6c40fa9',
+            'n5__notas_genealogia' => 'edc41efc-e52f-0c9a-8e5d-41b8fff4c3f3',
+            'n6__cil_preaprobado' => '57535be4-4738-00b5-9251-b53739e607c0',
+            'n6__fecha_acta_remitida_' => '8091a7fc-3023-0625-8051-de85a4c46f59',
+            'n7__enviado_al_dto_juridico' => 'c3feeebf-21a9-0cac-855e-e6f550260ee0',
+            'n7__fecha_caducidad_pasaporte' => '6fb8ef4e-6fdb-0241-8354-bda543e4cbff',
+            'n7__fecha_de_resolucion' => '3ef52253-5ac1-025a-8c5b-a9d094c468b8',
+            'n4__notario___abogado' => '36fa5b9d-bafd-0e61-9058-72b4ed547197',
+            'n8__f_rec__solicitud_doc' => 'e255a259-5328-0ee6-ab52-3e4f9604c9de',
+            'n9__enviado_a_legales' => '047dc070-6b23-0434-b858-61a1d7e4c9fd',
+            'n9__notif__1__int__subsanar_' => '7918f47c-4097-07e1-af57-d6c435660883',
+            'n91__recepcion_recaudos_fisico' => '8e8ea98b-5137-047b-8157-c44935a4c3f1',
+            'carta_nat_pagado' => '4339375f-ed77-02d9-a157-7da9f9e4bfac',
+            'carta_nat_preestab' => 'a42ed217-b570-0973-9052-fab97214c229',
+            'cil___fcje_pagado' => 'f23fbe3b-5d13-0a41-a857-e9ab1c63dc42',
+            'cil___fcje_preestab' => 'aa1ce4b9-a410-00f2-a953-5f8c2713dc35',
+            'codigo_de_proceso' => 'a42f63f5-d527-0544-ab50-9c03857707f2',
+            'argumento_de_ventas__new_' => 'c34c71b3-331e-0524-a45a-95a654e51b4c',
+            'fase_0_pagado__teamleader_' => 'd90b2e44-2e9b-0f29-945a-71c34bb3def0',
+            'fase_1_pagado__teamleader_' => 'a1b50c58-8175-0d13-9856-f661e783dc08',
+            'fase_1_preestab' => '73173887-a0e8-0f4f-bb55-b61f33d3c6e9',
+            'fase_2_pagado__teamleader_' => 'a5b94ccc-3ea8-06fc-b259-0a487073dc0d',
+            'fase_2_preestab' => 'c66a9c15-c965-0812-ad5b-7e48f183c6f9',
+            'fase_3_pagado__teamleader_' => '9a1df9b7-c92f-09e5-b156-96af3f83dc0e',
+            'fase_3_preestab' => 'e41fdbbb-a25a-005b-af56-9f3ca623c700',
+            'fecha_de_aceptacion' => 'fbe8df81-7225-0c01-b051-7f1032054ffe',
+            'date_of_birth' => '2ef543c1-e76c-025a-a950-67eec7954d89',
+            'numero_de_pasaporte' => '891080d2-eeeb-030f-a256-d0ee6095773d',
+            'pais_de_residencia' => 'bd374fc3-39a5-0070-9455-67d94cc6b7f7',
+            'servicio_solicitado' => 'fcd48891-20f6-049a-a05f-f78a6f951b4d'
+        ];
+
+        $this->syncDealIndividual($deal_db, $camposDeTeamleader, $user);
+
         $TLdeals = $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id);
         return view('crud.negocios.edit', compact('deal_db', 'user', 'TLdeals'));
     }
@@ -916,7 +1048,88 @@ class NegocioController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $deal = Negocio::findOrFail($id);
+        $deal->fill($request->all());
+        $deal->save();
+
+        $camposRelacionados = [
+            'n1__enviada_al_cliente' => '4203d8ab-f1de-0145-af52-1bb278951268',
+            'documentos' => 'e254d7ed-3c93-097d-b659-852a3b74c5e5',
+            'n1__lugar_del_expediente' => '4bbfdc08-686d-0a03-8557-bd1d60d46f57',
+            'n1__monto_preestablecido' => '6f7a4408-b146-0e58-a35b-8f02fed60887',
+            'n10__fecha_asignacion_de_juez' => '497e7359-8b1a-056a-9e5e-28fa0cf5b2f1',
+            'n11__envio_redaccion_abogada' => 'e04af721-8808-0a43-9356-df374565b2fa',
+            'n12__notas___no__expediente' => '4b822322-17a1-06ba-9b5b-82db70f46f5b',
+            'n13__fecha_recurso_alzada' => '7c06cfed-87f4-00ac-8a5a-946b0b9643b8',
+            'n2__firmado_por_el_cliente' => '5f090e48-4a5b-0504-8259-9e945e95126a',
+            'n2__antecedentes_penales' => '35c68020-1160-068b-b055-1b5e6fe4ca11',
+            'n2__ciudad_formalizacion' => 'ad849a21-82b3-0032-995e-6e9dbcd46f53',
+            'n2__enviado_a_redaccion_informe' => 'ed8167e1-00e2-05fb-8a5c-900699b54d88',
+            'n2__monto_pagado' => '4bef5482-f2e4-02da-8653-691944760f84',
+            'n3__gestionado___entregado' => 'b0421965-2b39-0c4d-9e51-1e567b05126b',
+            'n3__contratos_y_permisos' => '39085084-d206-073e-8057-ef23ab046f5a',
+            'n3__f__vencimiento_ant__penal' => '578e17da-c01b-0a97-bc5a-7d9255b4c9d5',
+            'n3__informe_cargado' => '1c067d8e-1b3b-0b4b-8c5f-436233b4c3f2',
+            'n4__certificado_descargado' => '62a2cd97-1898-00bf-885c-029939e4c40f',
+            'n4__pago_tasa' => 'a2d11316-e31b-0b2c-bd5e-0c7ad13491d0',
+            'n5___f_solicitud_documentos' => 'e0919d4b-322a-0c06-9759-0a6607f4c9db',
+            'n5__fecha_de_formalizacion' => '7c87a75b-ce63-01da-9c58-5277f6c40fa9',
+            'n5__notas_genealogia' => 'edc41efc-e52f-0c9a-8e5d-41b8fff4c3f3',
+            'n6__cil_preaprobado' => '57535be4-4738-00b5-9251-b53739e607c0',
+            'n6__fecha_acta_remitida_' => '8091a7fc-3023-0625-8051-de85a4c46f59',
+            'n7__enviado_al_dto_juridico' => 'c3feeebf-21a9-0cac-855e-e6f550260ee0',
+            'n7__fecha_caducidad_pasaporte' => '6fb8ef4e-6fdb-0241-8354-bda543e4cbff',
+            'n7__fecha_de_resolucion' => '3ef52253-5ac1-025a-8c5b-a9d094c468b8',
+            'n4__notario___abogado' => '36fa5b9d-bafd-0e61-9058-72b4ed547197',
+            'n8__f_rec__solicitud_doc' => 'e255a259-5328-0ee6-ab52-3e4f9604c9de',
+            'n9__enviado_a_legales' => '047dc070-6b23-0434-b858-61a1d7e4c9fd',
+            'n9__notif__1__int__subsanar_' => '7918f47c-4097-07e1-af57-d6c435660883',
+            'n91__recepcion_recaudos_fisico' => '8e8ea98b-5137-047b-8157-c44935a4c3f1',
+            'carta_nat_pagado' => '4339375f-ed77-02d9-a157-7da9f9e4bfac',
+            'carta_nat_preestab' => 'a42ed217-b570-0973-9052-fab97214c229',
+            'cil___fcje_pagado' => 'f23fbe3b-5d13-0a41-a857-e9ab1c63dc42',
+            'cil___fcje_preestab' => 'aa1ce4b9-a410-00f2-a953-5f8c2713dc35',
+            'codigo_de_proceso' => 'a42f63f5-d527-0544-ab50-9c03857707f2',
+            'argumento_de_ventas__new_' => 'c34c71b3-331e-0524-a45a-95a654e51b4c',
+            'fase_0_pagado__teamleader_' => 'd90b2e44-2e9b-0f29-945a-71c34bb3def0',
+            'fase_1_pagado__teamleader_' => 'a1b50c58-8175-0d13-9856-f661e783dc08',
+            'fase_1_preestab' => '73173887-a0e8-0f4f-bb55-b61f33d3c6e9',
+            'fase_2_pagado__teamleader_' => 'a5b94ccc-3ea8-06fc-b259-0a487073dc0d',
+            'fase_2_preestab' => 'c66a9c15-c965-0812-ad5b-7e48f183c6f9',
+            'fase_3_pagado__teamleader_' => '9a1df9b7-c92f-09e5-b156-96af3f83dc0e',
+            'fase_3_preestab' => 'e41fdbbb-a25a-005b-af56-9f3ca623c700',
+            'fecha_de_aceptacion' => 'fbe8df81-7225-0c01-b051-7f1032054ffe',
+            'date_of_birth' => '2ef543c1-e76c-025a-a950-67eec7954d89',
+            'numero_de_pasaporte' => '891080d2-eeeb-030f-a256-d0ee6095773d',
+            'pais_de_residencia' => 'bd374fc3-39a5-0070-9455-67d94cc6b7f7',
+            'servicio_solicitado' => 'fcd48891-20f6-049a-a05f-f78a6f951b4d'
+        ]; // o defínelo local si prefieres
+
+        // Actualizar en Teamleader
+        if ($deal->teamleader_id) {
+            $this->teamleaderService->updateProject($deal->teamleader_id, [
+                'custom_fields' => collect($request->all())->map(function ($value, $field) use ($camposRelacionados) {
+                    return isset($camposRelacionados[$field]) ? [
+                        'id' => $camposRelacionados[$field],
+                        'value' => $value
+                    ] : null;
+                })->filter()->values()->all()
+            ]);
+        }
+
+        // Actualizar en HubSpot
+        if ($deal->hubspot_id) {
+            $hsPayload = [];
+            foreach ($request->all() as $field => $value) {
+                if (array_key_exists($field, $camposRelacionados)) {
+                    $hsPayload[$field] = $value;
+                }
+            }
+
+            $this->hubspotService->updateDeals($deal->hubspot_id, $hsPayload);
+        }
+
+        return response()->json(['message' => 'Actualizado y sincronizado.']);
     }
 
     /**

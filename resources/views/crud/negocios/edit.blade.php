@@ -41,405 +41,452 @@
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="deal-payments-tab" data-bs-toggle="tab" data-bs-target="#deal_payments" type="button" role="tab" aria-controls="personal_data" aria-selected="true">
-                        Generar Pagos
+                        Generar Cobros
                     </button>
                 </li>
             </ul>
             <div class="tab-content mt-4" id="formTabsContent">
                 <div class="tab-pane fade show active" id="deal_data" role="tabpanel" aria-labelledby="deal-data-tab">
-                    <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
-                        <span class="ctvSefar block text-indigo-600">DATOS GENERALES:</span>
-                    </h2>
+                    <form id="deal-form">
+                        <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
+                            <span class="ctvSefar block text-indigo-600">DATOS GENERALES:</span>
+                        </h2>
 
-                    <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="dealname" class="block text-sm font-medium text-gray-700">Nombre del Negocio</label>
-                            <input type="text" id="dealname" name="dealname"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('dealname', $deal_db->dealname) }}">
+                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="dealname" class="block text-sm font-medium text-gray-700">Nombre del Negocio</label>
+                                <input type="text" id="dealname" name="dealname"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('dealname', $deal_db->dealname) }}">
+                            </div>
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="teamleader_id" class="block text-sm font-medium text-gray-700">Proyecto (Teamleader)</label>
+                                <select class="select2 mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="teamleader_id" name="teamleader_id">
+                                    <option value="" {{ old('teamleader_id', $deal_db->teamleader_id) == '' ? 'selected' : '' }}>Seleccione un proyecto</option>
+                                    @foreach ($TLdeals as $tldeal)
+                                        <option value='{{$tldeal["id"]}}' {{ old('teamleader_id', $deal_db->teamleader_id) == $tldeal["id"] ? 'selected' : '' }}>{{$tldeal["title"]}}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="servicio_solicitado2" class="block text-sm font-medium text-gray-700">Servicio Solicitado</label>
+                                <input list="listadatos" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="servicio_solicitado2" name="servicio_solicitado2" value="{{ old('servicio_solicitado2', $deal_db->servicio_solicitado2) }}">
+                                <datalist id="listadatos">
+                                    <option value="Subsanación de Expediente">
+                                    <option value="Nacionalidad Portuguesa por origen Sefardí">
+                                    <option value="Nacionalidad Española por origen Sefardí">
+                                    <option value="Nacionalidad por Carta de Naturaleza">
+                                    <option value="Nacionalidad Italiana">
+                                    <option value="Nacionalidad Portuguesa por Cónyuge">
+                                    <option value="Nacionalidad Portuguesa por ser nieto de Portugués">
+                                    <option value="Nacionalidad por otras vías">
+                                    <option value="Residencia no lucrativa">
+                                    <option value="Residencia Temporal por Arraigo Familiar">
+                                    <option value="Estancia por Estudios">
+                                    <option value="Residencia por Reagrupación Familiar">
+                                    <option value="Residencia para familiares de ciudadanos de la Unión Europea">
+                                    <option value="Residencia para familiares de la Unión Europea">
+                                    <option value="Paso de Estancia por Estudios a otro tipo de permisos">
+                                    <option value="Autorizaciones relacionadas con el autoempleo (autónomos)">
+                                    <option value="Otros servicios (No Serfardíes)">
+                                    <option value="Golden Visas (España)">
+                                    <option value="Ley de extranjería">
+                                    <option value="Nacionalidad Española por Residencia">
+                                    <option value="Visas Americanas">
+                                    <option value="Visas Colombianas">
+                                    <option value="Visas Canadienses">
+                                    <option value="Ley de Extranjería Portugal">
+                                    <option value="Golden Visas Portugal">
+                                    <option value="Memorándum administrativos">
+                                    <option value="Inscripción de nacimiento fuera de plazo">
+                                    <option value="Acompañamiento notarial para la juramentación de la nacionalidad española">
+                                    <option value="Traducción al Portugués">
+                                    <option value="Traducción al Italiano">
+                                    <option value="Alquileres">
+                                    <option value="Extranjería y Nacionalidad">
+                                    <option value="Hipotecas e Impuestos">
+                                    <option value="Inversión de Inmuebles (Real State)">
+                                    <option value="Oportunidades de Negocio">
+                                    <option value="Cartas de deseo">
+                                    <option value="Otros">
+                                    <option value="Mercantiles">
+                                    <option value="Parafiscales">
+                                    <option value="Registros Inmobiliarios">
+                                    <option value="De Notaria">
+                                    <option value="Tribunales Civiles">
+                                    <option value="Protección al Menor">
+                                    <option value="Tránsito Terrestre">
+                                    <option value="Visas/Residencias">
+                                    <option value="Documentos en Colombia">
+                                    <option value="Otros servicios">
+                                    <option value="Actas de estado civil (naci, matr - divorcio y defunción)">
+                                    <option value="Certificados de registro civil">
+                                    <option value="Apostillado de documentos deben añadirse 80 euros)">
+                                    <option value="Rectificación de actas de registro civil">
+                                    <option value="Permisos de residencia electiva (Golden visa)">
+                                    <option value="Permisos de residencias no lucrativas">
+                                    <option value="Declaración de sucesiones">
+                                    <option value="Asesoría tasación internacional">
+                                    <option value="Constitución de sociedades">
+                                    <option value="Otros tramites">
+                                    <option value="TPS Venezolanos en USA">
+                                    <option value="ASISTENCIA DOCUMENTAL">
+                                    <option value="SOLICITUD DE HOMOLOGACIÓN Y/O EQUIVALENCIA DE TÍTULOS ACADÉMICOS EN ESPAÑA">
+                                    <option value="Certificado de nacimiento">
+                                    <option value="Certificado de matrimonio">
+                                    <option value="Certificado de defunción">
+                                    <option value="Registro mercantil (Acta constitutiva)">
+                                    <option value="SOLICITUD DE DOCUMENTO DE RESOLUCIÓN EXPRESA">
+                                    <option value="Ley de Memoria Democrática">
+                                    <option value="Permanencia Temporal para Venezolanos">
+                                    <option value="Española LMD">
+                                    <option value="Española Sefardi">
+                                    <option value="Portuguesa Sefardi">
+                                    <option value="Italiana">
+                                    <option value="Portuguesa Sefardi – Subsanación">
+                                    <option value="Española Sefardi – Subsanación">
+                                    <option value="Española - Carta de Naturaleza">
+                                    <option value="Ley de Extranjería Italia">
+                                    <option value="VISA ESTADOUNIDENSE DE TURISMO">
+                                    <option value="VISA ESTADOUNIDENSE PARA ESTUDIANTE">
+                                    <option value="Cooperativa 5 años">
+                                    <option value="Recurso de Alzada">
+                                    <option value="Cooperativa 10 años">
+                                    <option value="Árbol genealógico de Deslinde">
+                                </datalist>
+                                <input type="hidden" id="servicio_solicitado" name="servicio_solicitado" value="{{ old('servicio_solicitado', $deal_db->servicio_solicitado) }}" />
+                            </div>
                         </div>
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="teamleader_id" class="block text-sm font-medium text-gray-700">Proyecto (Teamleader)</label>
-                            <select class="select2 mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="teamleader_id" name="teamleader_id">
-                                <option value="" {{ old('teamleader_id', $deal_db->teamleader_id) == '' ? 'selected' : '' }}>Seleccione un proyecto</option>
-                                @foreach ($TLdeals as $tldeal)
-                                    <option value='{{$tldeal["id"]}}' {{ old('teamleader_id', $deal_db->teamleader_id) == $tldeal["id"] ? 'selected' : '' }}>{{$tldeal["title"]}}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="servicio_solicitado2" class="block text-sm font-medium text-gray-700">Servicio Solicitado</label>
-                            <input list="listadatos" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="servicio_solicitado2" name="servicio_solicitado2" value="{{ old('servicio_solicitado2', $deal_db->servicio_solicitado2) }}">
-                            <datalist id="listadatos">
-                                <option value="Subsanación de Expediente">
-                                <option value="Nacionalidad Portuguesa por origen Sefardí">
-                                <option value="Nacionalidad Española por origen Sefardí">
-                                <option value="Nacionalidad por Carta de Naturaleza">
-                                <option value="Nacionalidad Italiana">
-                                <option value="Nacionalidad Portuguesa por Cónyuge">
-                                <option value="Nacionalidad Portuguesa por ser nieto de Portugués">
-                                <option value="Nacionalidad por otras vías">
-                                <option value="Residencia no lucrativa">
-                                <option value="Residencia Temporal por Arraigo Familiar">
-                                <option value="Estancia por Estudios">
-                                <option value="Residencia por Reagrupación Familiar">
-                                <option value="Residencia para familiares de ciudadanos de la Unión Europea">
-                                <option value="Residencia para familiares de la Unión Europea">
-                                <option value="Paso de Estancia por Estudios a otro tipo de permisos">
-                                <option value="Autorizaciones relacionadas con el autoempleo (autónomos)">
-                                <option value="Otros servicios (No Serfardíes)">
-                                <option value="Golden Visas (España)">
-                                <option value="Ley de extranjería">
-                                <option value="Nacionalidad Española por Residencia">
-                                <option value="Visas Americanas">
-                                <option value="Visas Colombianas">
-                                <option value="Visas Canadienses">
-                                <option value="Ley de Extranjería Portugal">
-                                <option value="Golden Visas Portugal">
-                                <option value="Memorándum administrativos">
-                                <option value="Inscripción de nacimiento fuera de plazo">
-                                <option value="Acompañamiento notarial para la juramentación de la nacionalidad española">
-                                <option value="Traducción al Portugués">
-                                <option value="Traducción al Italiano">
-                                <option value="Alquileres">
-                                <option value="Extranjería y Nacionalidad">
-                                <option value="Hipotecas e Impuestos">
-                                <option value="Inversión de Inmuebles (Real State)">
-                                <option value="Oportunidades de Negocio">
-                                <option value="Cartas de deseo">
-                                <option value="Otros">
-                                <option value="Mercantiles">
-                                <option value="Parafiscales">
-                                <option value="Registros Inmobiliarios">
-                                <option value="De Notaria">
-                                <option value="Tribunales Civiles">
-                                <option value="Protección al Menor">
-                                <option value="Tránsito Terrestre">
-                                <option value="Visas/Residencias">
-                                <option value="Documentos en Colombia">
-                                <option value="Otros servicios">
-                                <option value="Actas de estado civil (naci, matr - divorcio y defunción)">
-                                <option value="Certificados de registro civil">
-                                <option value="Apostillado de documentos deben añadirse 80 euros)">
-                                <option value="Rectificación de actas de registro civil">
-                                <option value="Permisos de residencia electiva (Golden visa)">
-                                <option value="Permisos de residencias no lucrativas">
-                                <option value="Declaración de sucesiones">
-                                <option value="Asesoría tasación internacional">
-                                <option value="Constitución de sociedades">
-                                <option value="Otros tramites">
-                                <option value="TPS Venezolanos en USA">
-                                <option value="ASISTENCIA DOCUMENTAL">
-                                <option value="SOLICITUD DE HOMOLOGACIÓN Y/O EQUIVALENCIA DE TÍTULOS ACADÉMICOS EN ESPAÑA">
-                                <option value="Certificado de nacimiento">
-                                <option value="Certificado de matrimonio">
-                                <option value="Certificado de defunción">
-                                <option value="Registro mercantil (Acta constitutiva)">
-                                <option value="SOLICITUD DE DOCUMENTO DE RESOLUCIÓN EXPRESA">
-                                <option value="Ley de Memoria Democrática">
-                                <option value="Permanencia Temporal para Venezolanos">
-                                <option value="Española LMD">
-                                <option value="Española Sefardi">
-                                <option value="Portuguesa Sefardi">
-                                <option value="Italiana">
-                                <option value="Portuguesa Sefardi – Subsanación">
-                                <option value="Española Sefardi – Subsanación">
-                                <option value="Española - Carta de Naturaleza">
-                                <option value="Ley de Extranjería Italia">
-                                <option value="VISA ESTADOUNIDENSE DE TURISMO">
-                                <option value="VISA ESTADOUNIDENSE PARA ESTUDIANTE">
-                                <option value="Cooperativa 5 años">
-                                <option value="Recurso de Alzada">
-                                <option value="Cooperativa 10 años">
-                                <option value="Árbol genealógico de Deslinde">
-                            </datalist>
-                            <input type="hidden" id="servicio_solicitado" name="servicio_solicitado" value="{{ old('servicio_solicitado', $deal_db->servicio_solicitado) }}" />
-                        </div>
-                    </div>
 
-                    <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
-                        <span class="ctvSefar block text-indigo-600">CERTIFICADOS GENEALOGICOS</span>
-                    </h2>
+                        <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
+                            <span class="ctvSefar block text-indigo-600">CERTIFICADOS GENEALOGICOS</span>
+                        </h2>
 
-                    <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n2__enviado_a_redaccion_informe" class="block text-sm font-medium text-gray-700">Enviado a Redacción Informe</label>
-                            <input type="date" id="n2__enviado_a_redaccion_informe" name="n2__enviado_a_redaccion_informe"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('n2__enviado_a_redaccion_informe', $deal_db->n2__enviado_a_redaccion_informe) }}">
+                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n2__enviado_a_redaccion_informe" class="block text-sm font-medium text-gray-700">Enviado a Redacción Informe</label>
+                                <input type="date" id="n2__enviado_a_redaccion_informe" name="n2__enviado_a_redaccion_informe"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('n2__enviado_a_redaccion_informe', $deal_db->n2__enviado_a_redaccion_informe) }}">
+                            </div>
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n3__informe_cargado" class="block text-sm font-medium text-gray-700">Informe Cargado</label>
+                                <input type="date" id="n3__informe_cargado" name="n3__informe_cargado"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('n3__informe_cargado', $deal_db->n3__informe_cargado) }}">
+                            </div>
                         </div>
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n3__informe_cargado" class="block text-sm font-medium text-gray-700">Informe Cargado</label>
-                            <input type="date" id="n3__informe_cargado" name="n3__informe_cargado"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('n3__informe_cargado', $deal_db->n3__informe_cargado) }}">
+                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n4__certificado_descargado" class="block text-sm font-medium text-gray-700">Certificado Descargado</label>
+                                <input type="date" id="n4__certificado_descargado" name="n4__certificado_descargado"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('n4__certificado_descargado', $deal_db->n4__certificado_descargado) }}">
+                            </div>
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n6__cil_preaprobado" class="block text-sm font-medium text-gray-700">CIL Preaprobado</label>
+                                <input type="date" id="n6__cil_preaprobado" name="n6__cil_preaprobado"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('n6__cil_preaprobado', $deal_db->n6__cil_preaprobado) }}">
+                            </div>
                         </div>
-                    </div>
-                    <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n4__certificado_descargado" class="block text-sm font-medium text-gray-700">Certificado Descargado</label>
-                            <input type="date" id="n4__certificado_descargado" name="n4__certificado_descargado"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('n4__certificado_descargado', $deal_db->n4__certificado_descargado) }}">
+                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n7__enviado_al_dto_juridico" class="block text-sm font-medium text-gray-700">Enviado al Dto Jurídico</label>
+                                <input type="date" id="n7__enviado_al_dto_juridico" name="n7__enviado_al_dto_juridico"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('n7__enviado_al_dto_juridico', $deal_db->n7__enviado_al_dto_juridico) }}">
+                            </div>
+                            <div style="flex: 1 1 100%;" class="mb-3">
+                                <label for="n5__notas_genealogia" class="block text-sm font-medium text-gray-700">Notas de Genealogía</label>
+                                <textarea id="n5__notas_genealogia" name="n5__notas_genealogia" rows="4"
+                                        class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">{{ old('n5__notas_genealogia', $deal_db->n5__notas_genealogia) }}</textarea>
+                            </div>
                         </div>
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n6__cil_preaprobado" class="block text-sm font-medium text-gray-700">CIL Preaprobado</label>
-                            <input type="date" id="n6__cil_preaprobado" name="n6__cil_preaprobado"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('n6__cil_preaprobado', $deal_db->n6__cil_preaprobado) }}">
-                        </div>
-                    </div>
-                    <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n7__enviado_al_dto_juridico" class="block text-sm font-medium text-gray-700">Enviado al Dto Jurídico</label>
-                            <input type="date" id="n7__enviado_al_dto_juridico" name="n7__enviado_al_dto_juridico"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('n7__enviado_al_dto_juridico', $deal_db->n7__enviado_al_dto_juridico) }}">
-                        </div>
-                        <div style="flex: 1 1 100%;" class="mb-3">
-                            <label for="n5__notas_genealogia" class="block text-sm font-medium text-gray-700">Notas de Genealogía</label>
-                            <textarea id="n5__notas_genealogia" name="n5__notas_genealogia" rows="4"
-                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">{{ old('n5__notas_genealogia', $deal_db->n5__notas_genealogia) }}</textarea>
-                        </div>
-                    </div>
 
-                    <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
-                        <span class="ctvSefar block text-indigo-600">DOCUMENTOS</span>
-                    </h2>
+                        <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
+                            <span class="ctvSefar block text-indigo-600">DOCUMENTOS</span>
+                        </h2>
 
-                    <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n3__f__vencimiento_ant__penal" class="block text-sm font-medium text-gray-700">Vencimiento de Antecedentes Penales</label>
-                            <input type="date" id="n3__f__vencimiento_ant__penal" name="n3__f__vencimiento_ant__penal"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('n3__f__vencimiento_ant__penal', $deal_db->n3__f__vencimiento_ant__penal) }}">
+                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n3__f__vencimiento_ant__penal" class="block text-sm font-medium text-gray-700">Vencimiento de Antecedentes Penales</label>
+                                <input type="date" id="n3__f__vencimiento_ant__penal" name="n3__f__vencimiento_ant__penal"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('n3__f__vencimiento_ant__penal', $deal_db->n3__f__vencimiento_ant__penal) }}">
+                            </div>
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n5___f_solicitud_documentos" class="block text-sm font-medium text-gray-700">Fecha de Solicitud de Documentos</label>
+                                <input type="date" id="n5___f_solicitud_documentos" name="n5___f_solicitud_documentos"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('n5___f_solicitud_documentos', $deal_db->n5___f_solicitud_documentos) }}">
+                            </div>
                         </div>
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n5___f_solicitud_documentos" class="block text-sm font-medium text-gray-700">Fecha de Solicitud de Documentos</label>
-                            <input type="date" id="n5___f_solicitud_documentos" name="n5___f_solicitud_documentos"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('n5___f_solicitud_documentos', $deal_db->n5___f_solicitud_documentos) }}">
+                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n7__fecha_caducidad_pasaporte" class="block text-sm font-medium text-gray-700">Fecha de Caducidad del Pasaporte</label>
+                                <input type="date" id="n7__fecha_caducidad_pasaporte" name="n7__fecha_caducidad_pasaporte"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('n7__fecha_caducidad_pasaporte', $deal_db->n7__fecha_caducidad_pasaporte) }}">
+                            </div>
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n9__enviado_a_legales" class="block text-sm font-medium text-gray-700">Enviado a Legales</label>
+                                <input type="date" id="n9__enviado_a_legales" name="n9__enviado_a_legales"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('n9__enviado_a_legales', $deal_db->n9__enviado_a_legales) }}">
+                            </div>
                         </div>
-                    </div>
-                    <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n7__fecha_caducidad_pasaporte" class="block text-sm font-medium text-gray-700">Fecha de Caducidad del Pasaporte</label>
-                            <input type="date" id="n7__fecha_caducidad_pasaporte" name="n7__fecha_caducidad_pasaporte"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('n7__fecha_caducidad_pasaporte', $deal_db->n7__fecha_caducidad_pasaporte) }}">
+                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n91__recepcion_recaudos_fisico" class="block text-sm font-medium text-gray-700">Recepción de Recaudos Físicos</label>
+                                <input type="date" id="n91__recepcion_recaudos_fisico" name="n91__recepcion_recaudos_fisico"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('n91__recepcion_recaudos_fisico', $deal_db->n91__recepcion_recaudos_fisico) }}">
+                            </div>
                         </div>
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n9__enviado_a_legales" class="block text-sm font-medium text-gray-700">Enviado a Legales</label>
-                            <input type="date" id="n9__enviado_a_legales" name="n9__enviado_a_legales"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('n9__enviado_a_legales', $deal_db->n9__enviado_a_legales) }}">
-                        </div>
-                    </div>
-                    <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n91__recepcion_recaudos_fisico" class="block text-sm font-medium text-gray-700">Recepción de Recaudos Físicos</label>
-                            <input type="date" id="n91__recepcion_recaudos_fisico" name="n91__recepcion_recaudos_fisico"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('n91__recepcion_recaudos_fisico', $deal_db->n91__recepcion_recaudos_fisico) }}">
-                        </div>
-                    </div>
 
-                    <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
-                        <span class="ctvSefar block text-indigo-600">FORMALIZACIÓN DEL TRÁMITE</span>
-                    </h2>
+                        <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
+                            <span class="ctvSefar block text-indigo-600">FORMALIZACIÓN DEL TRÁMITE</span>
+                        </h2>
 
-                    <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n1__lugar_del_expediente" class="block text-sm font-medium text-gray-700">Lugar del Expediente</label>
-                            <select placeholder="" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                id="n1__lugar_del_expediente"
-                                name="n1__lugar_del_expediente">
+                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n1__lugar_del_expediente" class="block text-sm font-medium text-gray-700">Lugar del Expediente</label>
+                                <select placeholder="" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    id="n1__lugar_del_expediente"
+                                    name="n1__lugar_del_expediente">
 
-                                @php
-                                    $selectedValue = old('n1__lugar_del_expediente', $deal_db->n1__lugar_del_expediente);
-                                @endphp
+                                    @php
+                                        $selectedValue = old('n1__lugar_del_expediente', $deal_db->n1__lugar_del_expediente);
+                                    @endphp
 
-                                <option value="" {{ $selectedValue == '' ? 'selected' : '' }}>Elegir…</option>
-                                <option value="SEVILLA" {{ $selectedValue == 'SEVILLA' ? 'selected' : '' }}>SEVILLA</option>
-                                <option value="MADRID" {{ $selectedValue == 'MADRID' ? 'selected' : '' }}>MADRID</option>
-                                <option value="SE ENVIO A MADRID" {{ $selectedValue == 'SE ENVIO A MADRID' ? 'selected' : '' }}>SE ENVIO A MADRID</option>
-                                <option value="SE ENVIO A SEVILLA" {{ $selectedValue == 'SE ENVIO A SEVILLA' ? 'selected' : '' }}>SE ENVIO A SEVILLA</option>
-                                <option value="CLIENTE" {{ $selectedValue == 'CLIENTE' ? 'selected' : '' }}>CLIENTE</option>
-                                <option value="CON NATHALY" {{ $selectedValue == 'CON NATHALY' ? 'selected' : '' }}>CON NATHALY</option>
-                                <option value="ESPAÑA" {{ $selectedValue == 'ESPAÑA' ? 'selected' : '' }}>España</option>
-                                <option value="ITALIA" {{ $selectedValue == 'ITALIA' ? 'selected' : '' }}>ITALIA</option>
-                                <option value="NOTARIO" {{ $selectedValue == 'NOTARIO' ? 'selected' : '' }}>NOTARIO</option>
-                                <option value="PORTUGAL" {{ $selectedValue == 'PORTUGAL' ? 'selected' : '' }}>PORTUGAL</option>
-                                <option value="SE ENVIO A ITALIA" {{ $selectedValue == 'SE ENVIO A ITALIA' ? 'selected' : '' }}>SE ENVIO A ITALIA</option>
-                                <option value="TELEMATICO" {{ $selectedValue == 'TELEMATICO' ? 'selected' : '' }}>TELEMATICO</option>
-                                <option value="OTRO" {{ $selectedValue == 'Otro…' ? 'selected' : '' }}>Otro…</option>
-                            </select>
+                                    <option value="" {{ $selectedValue == '' ? 'selected' : '' }}>Elegir…</option>
+                                    <option value="SEVILLA" {{ $selectedValue == 'SEVILLA' ? 'selected' : '' }}>SEVILLA</option>
+                                    <option value="MADRID" {{ $selectedValue == 'MADRID' ? 'selected' : '' }}>MADRID</option>
+                                    <option value="SE ENVIO A MADRID" {{ $selectedValue == 'SE ENVIO A MADRID' ? 'selected' : '' }}>SE ENVIO A MADRID</option>
+                                    <option value="SE ENVIO A SEVILLA" {{ $selectedValue == 'SE ENVIO A SEVILLA' ? 'selected' : '' }}>SE ENVIO A SEVILLA</option>
+                                    <option value="CLIENTE" {{ $selectedValue == 'CLIENTE' ? 'selected' : '' }}>CLIENTE</option>
+                                    <option value="CON NATHALY" {{ $selectedValue == 'CON NATHALY' ? 'selected' : '' }}>CON NATHALY</option>
+                                    <option value="ESPAÑA" {{ $selectedValue == 'ESPAÑA' ? 'selected' : '' }}>España</option>
+                                    <option value="ITALIA" {{ $selectedValue == 'ITALIA' ? 'selected' : '' }}>ITALIA</option>
+                                    <option value="NOTARIO" {{ $selectedValue == 'NOTARIO' ? 'selected' : '' }}>NOTARIO</option>
+                                    <option value="PORTUGAL" {{ $selectedValue == 'PORTUGAL' ? 'selected' : '' }}>PORTUGAL</option>
+                                    <option value="SE ENVIO A ITALIA" {{ $selectedValue == 'SE ENVIO A ITALIA' ? 'selected' : '' }}>SE ENVIO A ITALIA</option>
+                                    <option value="TELEMATICO" {{ $selectedValue == 'TELEMATICO' ? 'selected' : '' }}>TELEMATICO</option>
+                                    <option value="OTRO" {{ $selectedValue == 'Otro…' ? 'selected' : '' }}>Otro…</option>
+                                </select>
 
+                            </div>
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n10__fecha_asignacion_de_juez" class="block text-sm font-medium text-gray-700">FECHA ASIGNACIÓN DE JUEZ</label>
+                                <input type="date" id="n10__fecha_asignacion_de_juez" name="n10__fecha_asignacion_de_juez"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('n10__fecha_asignacion_de_juez', $deal_db->n10__fecha_asignacion_de_juez) }}">
+                            </div>
                         </div>
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n10__fecha_asignacion_de_juez" class="block text-sm font-medium text-gray-700">FECHA ASIGNACIÓN DE JUEZ</label>
-                            <input type="date" id="n10__fecha_asignacion_de_juez" name="n10__fecha_asignacion_de_juez"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('n10__fecha_asignacion_de_juez', $deal_db->n10__fecha_asignacion_de_juez) }}">
+                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n11__envio_redaccion_abogada" class="block text-sm font-medium text-gray-700">ENVIO REDACCIÓN ABOGADA</label>
+                                <input type="date" id="n11__envio_redaccion_abogada" name="n11__envio_redaccion_abogada"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('n11__envio_redaccion_abogada', $deal_db->n11__envio_redaccion_abogada) }}">
+                            </div>
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n12__notas___no__expediente" class="block text-sm font-medium text-gray-700">NOTAS - No. EXPEDIENTE</label>
+                                <input type="text" id="n12__notas___no__expediente" name="n12__notas___no__expediente"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('n12__notas___no__expediente', $deal_db->n12__notas___no__expediente) }}">
+                            </div>
                         </div>
-                    </div>
-                    <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n11__envio_redaccion_abogada" class="block text-sm font-medium text-gray-700">ENVIO REDACCIÓN ABOGADA</label>
-                            <input type="date" id="n11__envio_redaccion_abogada" name="n11__envio_redaccion_abogada"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('n11__envio_redaccion_abogada', $deal_db->n11__envio_redaccion_abogada) }}">
-                        </div>
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n12__notas___no__expediente" class="block text-sm font-medium text-gray-700">NOTAS - No. EXPEDIENTE</label>
-                            <input type="text" id="n12__notas___no__expediente" name="n12__notas___no__expediente"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('n12__notas___no__expediente', $deal_db->n12__notas___no__expediente) }}">
-                        </div>
-                    </div>
-                    <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n13__fecha_recurso_alzada" class="block text-sm font-medium text-gray-700">Fecha Recurso de Alzada</label>
-                            <input type="date" id="n13__fecha_recurso_alzada" name="n13__fecha_recurso_alzada"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('n13__fecha_recurso_alzada', $deal_db->n13__fecha_recurso_alzada) }}">
-                        </div>
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n2__ciudad_formalizacion" class="block text-sm font-medium text-gray-700">Ciudad Formalización</label>
-                            <select placeholder="" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                id="n2__ciudad_formalizacion"
-                                name="n2__ciudad_formalizacion">
+                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n13__fecha_recurso_alzada" class="block text-sm font-medium text-gray-700">Fecha Recurso de Alzada</label>
+                                <input type="date" id="n13__fecha_recurso_alzada" name="n13__fecha_recurso_alzada"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('n13__fecha_recurso_alzada', $deal_db->n13__fecha_recurso_alzada) }}">
+                            </div>
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n2__ciudad_formalizacion" class="block text-sm font-medium text-gray-700">Ciudad Formalización</label>
+                                <select placeholder="" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    id="n2__ciudad_formalizacion"
+                                    name="n2__ciudad_formalizacion">
 
-                                @php
-                                    $selectedValue = old('n2__ciudad_formalizacion', $deal_db->n2__ciudad_formalizacion);
-                                @endphp
+                                    @php
+                                        $selectedValue = old('n2__ciudad_formalizacion', $deal_db->n2__ciudad_formalizacion);
+                                    @endphp
 
-                                <option value="" {{ $selectedValue == '' ? 'selected' : '' }}>Elegir…</option>
-                                <option value="SEVILLA" {{ $selectedValue == 'SEVILLA' ? 'selected' : '' }}>SEVILLA</option>
-                                <option value="MADRID" {{ $selectedValue == 'MADRID' ? 'selected' : '' }}>MADRID</option>
-                                <option value="No firmará con nosotros" {{ $selectedValue == 'No firmará con nosotros' ? 'selected' : '' }}>No firmará con nosotros</option>
-                                <option value="-" {{ $selectedValue == '-' ? 'selected' : '' }}>-</option>
-                                <option value="ITALIA" {{ $selectedValue == 'ITALIA' ? 'selected' : '' }}>ITALIA</option>
-                                <option value="Lisboa" {{ $selectedValue == 'Lisboa' ? 'selected' : '' }}>Lisboa</option>
-                                <option value="Marbella" {{ $selectedValue == 'Marbella' ? 'selected' : '' }}>Marbella</option>
-                                <option value="OTRO" {{ $selectedValue == 'Otro…' ? 'selected' : '' }}>Otro…</option>
-                            </select>
+                                    <option value="" {{ $selectedValue == '' ? 'selected' : '' }}>Elegir…</option>
+                                    <option value="SEVILLA" {{ $selectedValue == 'SEVILLA' ? 'selected' : '' }}>SEVILLA</option>
+                                    <option value="MADRID" {{ $selectedValue == 'MADRID' ? 'selected' : '' }}>MADRID</option>
+                                    <option value="No firmará con nosotros" {{ $selectedValue == 'No firmará con nosotros' ? 'selected' : '' }}>No firmará con nosotros</option>
+                                    <option value="-" {{ $selectedValue == '-' ? 'selected' : '' }}>-</option>
+                                    <option value="ITALIA" {{ $selectedValue == 'ITALIA' ? 'selected' : '' }}>ITALIA</option>
+                                    <option value="Lisboa" {{ $selectedValue == 'Lisboa' ? 'selected' : '' }}>Lisboa</option>
+                                    <option value="Marbella" {{ $selectedValue == 'Marbella' ? 'selected' : '' }}>Marbella</option>
+                                    <option value="OTRO" {{ $selectedValue == 'Otro…' ? 'selected' : '' }}>Otro…</option>
+                                </select>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n3__contratos_y_permisos" class="block text-sm font-medium text-gray-700">Contratos y permisos</label>
-                            <select placeholder="" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                id="n3__contratos_y_permisos"
-                                name="n3__contratos_y_permisos">
+                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n3__contratos_y_permisos" class="block text-sm font-medium text-gray-700">Contratos y permisos</label>
+                                <select placeholder="" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    id="n3__contratos_y_permisos"
+                                    name="n3__contratos_y_permisos">
 
-                                @php
-                                    $selectedValue = old('n3__contratos_y_permisos', $deal_db->n3__contratos_y_permisos);
-                                @endphp
+                                    @php
+                                        $selectedValue = old('n3__contratos_y_permisos', $deal_db->n3__contratos_y_permisos);
+                                    @endphp
 
-                                <option value="" {{ $selectedValue == '' ? 'selected' : '' }}>Elegir…</option>
-                                <option value="CONTRATO NO PERMISO FOTO NO" {{ $selectedValue == 'CONTRATO NO PERMISO FOTO NO' ? 'selected' : '' }}>CONTRATO NO PERMISO FOTO NO</option>
-                                <option value="CONTRATO NO PERMISO FOTO SI" {{ $selectedValue == 'CONTRATO NO PERMISO FOTO SI' ? 'selected' : '' }}>CONTRATO NO PERMISO FOTO SI</option>
-                                <option value="CONTRATO SI PERMISO FOTO NO" {{ $selectedValue == 'CONTRATO SI PERMISO FOTO NO' ? 'selected' : '' }}>CONTRATO SI PERMISO FOTO NO</option>
-                                <option value="CONTRATO SI PERMISO FOTO SI" {{ $selectedValue == 'CONTRATO SI PERMISO FOTO SI' ? 'selected' : '' }}>CONTRATO SI PERMISO FOTO SI</option>
-                                <option value="-" {{ $selectedValue == '-' ? 'selected' : '' }}>-</option>
-                                <option value="OTRO" {{ $selectedValue == 'Otro…' ? 'selected' : '' }}>Otro…</option>
-                            </select>
-                        </div>
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n4__pago_tasa" class="block text-sm font-medium text-gray-700">Pago tasa</label>
-                            <select placeholder="" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                id="n4__pago_tasa"
-                                name="n4__pago_tasa">
+                                    <option value="" {{ $selectedValue == '' ? 'selected' : '' }}>Elegir…</option>
+                                    <option value="CONTRATO NO PERMISO FOTO NO" {{ $selectedValue == 'CONTRATO NO PERMISO FOTO NO' ? 'selected' : '' }}>CONTRATO NO PERMISO FOTO NO</option>
+                                    <option value="CONTRATO NO PERMISO FOTO SI" {{ $selectedValue == 'CONTRATO NO PERMISO FOTO SI' ? 'selected' : '' }}>CONTRATO NO PERMISO FOTO SI</option>
+                                    <option value="CONTRATO SI PERMISO FOTO NO" {{ $selectedValue == 'CONTRATO SI PERMISO FOTO NO' ? 'selected' : '' }}>CONTRATO SI PERMISO FOTO NO</option>
+                                    <option value="CONTRATO SI PERMISO FOTO SI" {{ $selectedValue == 'CONTRATO SI PERMISO FOTO SI' ? 'selected' : '' }}>CONTRATO SI PERMISO FOTO SI</option>
+                                    <option value="-" {{ $selectedValue == '-' ? 'selected' : '' }}>-</option>
+                                    <option value="OTRO" {{ $selectedValue == 'Otro…' ? 'selected' : '' }}>Otro…</option>
+                                </select>
+                            </div>
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n4__pago_tasa" class="block text-sm font-medium text-gray-700">Pago tasa</label>
+                                <select placeholder="" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    id="n4__pago_tasa"
+                                    name="n4__pago_tasa">
 
-                                @php
-                                    $selectedValue = old('n4__pago_tasa', $deal_db->n4__pago_tasa);
-                                @endphp
+                                    @php
+                                        $selectedValue = old('n4__pago_tasa', $deal_db->n4__pago_tasa);
+                                    @endphp
 
-                                <option value="" {{ $selectedValue == '' ? 'selected' : '' }}>Elegir…</option>
-                                <option value="TASA IMPRESA" {{ $selectedValue == 'TASA IMPRESA' ? 'selected' : '' }}>TASA IMPRESA</option>
-                                <option value="TASA PAGADA POR SEFAR" {{ $selectedValue == 'TASA PAGADA POR SEFAR' ? 'selected' : '' }}>TASA PAGADA POR SEFAR</option>
-                                <option value="TASA PAGADA POR CLIENTE" {{ $selectedValue == 'TASA PAGADA POR CLIENTE' ? 'selected' : '' }}>TASA PAGADA POR CLIENTE</option>
-                                <option value="Tasa pagada por Sevilla" {{ $selectedValue == 'Tasa pagada por Sevilla' ? 'selected' : '' }}>Tasa pagada por Sevilla</option>
-                                <option value="OTRO" {{ $selectedValue == 'Otro…' ? 'selected' : '' }}>Otro…</option>
-                            </select>
+                                    <option value="" {{ $selectedValue == '' ? 'selected' : '' }}>Elegir…</option>
+                                    <option value="TASA IMPRESA" {{ $selectedValue == 'TASA IMPRESA' ? 'selected' : '' }}>TASA IMPRESA</option>
+                                    <option value="TASA PAGADA POR SEFAR" {{ $selectedValue == 'TASA PAGADA POR SEFAR' ? 'selected' : '' }}>TASA PAGADA POR SEFAR</option>
+                                    <option value="TASA PAGADA POR CLIENTE" {{ $selectedValue == 'TASA PAGADA POR CLIENTE' ? 'selected' : '' }}>TASA PAGADA POR CLIENTE</option>
+                                    <option value="Tasa pagada por Sevilla" {{ $selectedValue == 'Tasa pagada por Sevilla' ? 'selected' : '' }}>Tasa pagada por Sevilla</option>
+                                    <option value="OTRO" {{ $selectedValue == 'Otro…' ? 'selected' : '' }}>Otro…</option>
+                                </select>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n5__fecha_de_formalizacion" class="block text-sm font-medium text-gray-700">Fecha de Formalización</label>
-                            <input type="date" id="n5__fecha_de_formalizacion" name="n5__fecha_de_formalizacion"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('n5__fecha_de_formalizacion', $deal_db->n5__fecha_de_formalizacion) }}">
+                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n5__fecha_de_formalizacion" class="block text-sm font-medium text-gray-700">Fecha de Formalización</label>
+                                <input type="date" id="n5__fecha_de_formalizacion" name="n5__fecha_de_formalizacion"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('n5__fecha_de_formalizacion', $deal_db->n5__fecha_de_formalizacion) }}">
+                            </div>
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n6__fecha_acta_remitida_" class="block text-sm font-medium text-gray-700">FECHA ACTA ENVIADA AL MJ</label>
+                                <input type="date" id="n6__fecha_acta_remitida_" name="n6__fecha_acta_remitida_"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('n6__fecha_acta_remitida_', $deal_db->n6__fecha_acta_remitida_) }}">
+                            </div>
                         </div>
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n6__fecha_acta_remitida_" class="block text-sm font-medium text-gray-700">FECHA ACTA ENVIADA AL MJ</label>
-                            <input type="date" id="n6__fecha_acta_remitida_" name="n6__fecha_acta_remitida_"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('n6__fecha_acta_remitida_', $deal_db->n6__fecha_acta_remitida_) }}">
-                        </div>
-                    </div>
 
-                    <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n7__fecha_de_resolucion" class="block text-sm font-medium text-gray-700">FECHA DE RESOLUCION</label>
-                            <input type="date" id="n7__fecha_de_resolucion" name="n7__fecha_de_resolucion"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('n7__fecha_de_resolucion', $deal_db->n7__fecha_de_resolucion) }}">
+                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n7__fecha_de_resolucion" class="block text-sm font-medium text-gray-700">FECHA DE RESOLUCION</label>
+                                <input type="date" id="n7__fecha_de_resolucion" name="n7__fecha_de_resolucion"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('n7__fecha_de_resolucion', $deal_db->n7__fecha_de_resolucion) }}">
+                            </div>
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n4__notario___abogado" class="block text-sm font-medium text-gray-700">NOTARIO / ABOGADO</label>
+                                <input type="text" id="n4__notario___abogado" name="n4__notario___abogado"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('n4__notario___abogado', $deal_db->n4__notario___abogado) }}">
+                            </div>
                         </div>
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n4__notario___abogado" class="block text-sm font-medium text-gray-700">NOTARIO / ABOGADO</label>
-                            <input type="text" id="n4__notario___abogado" name="n4__notario___abogado"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('n4__notario___abogado', $deal_db->n4__notario___abogado) }}">
-                        </div>
-                    </div>
 
-                    <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n9__notif__1__int__subsanar_" class="block text-sm font-medium text-gray-700">FECHA DE RESOLUCION</label>
-                            <input type="date" id="n9__notif__1__int__subsanar_" name="n9__notif__1__int__subsanar_"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('n9__notif__1__int__subsanar_', $deal_db->n9__notif__1__int__subsanar_) }}">
+                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n9__notif__1__int__subsanar_" class="block text-sm font-medium text-gray-700">FECHA DE RESOLUCION</label>
+                                <input type="date" id="n9__notif__1__int__subsanar_" name="n9__notif__1__int__subsanar_"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('n9__notif__1__int__subsanar_', $deal_db->n9__notif__1__int__subsanar_) }}">
+                            </div>
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="codigo_de_proceso" class="block text-sm font-medium text-gray-700">CODIGO DE PROCESO</label>
+                                <input type="text" id="codigo_de_proceso" name="codigo_de_proceso"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('codigo_de_proceso', $deal_db->codigo_de_proceso) }}">
+                            </div>
                         </div>
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="codigo_de_proceso" class="block text-sm font-medium text-gray-700">CODIGO DE PROCESO</label>
-                            <input type="text" id="codigo_de_proceso" name="codigo_de_proceso"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('codigo_de_proceso', $deal_db->codigo_de_proceso) }}">
-                        </div>
-                    </div>
 
-                    <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
-                        <span class="ctvSefar block text-indigo-600">RESOLUCIÓN EXPRESA / PODERES</span>
-                    </h2>
+                        <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
+                            <span class="ctvSefar block text-indigo-600">RESOLUCIÓN EXPRESA / PODERES</span>
+                        </h2>
 
-                    <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n1__enviada_al_cliente" class="block text-sm font-medium text-gray-700">Enviada al Cliente</label>
-                            <input type="date" id="n1__enviada_al_cliente" name="n1__enviada_al_cliente"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('n1__enviada_al_cliente', $deal_db->n1__enviada_al_cliente) }}">
+                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n1__enviada_al_cliente" class="block text-sm font-medium text-gray-700">Enviada al Cliente</label>
+                                <input type="date" id="n1__enviada_al_cliente" name="n1__enviada_al_cliente"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('n1__enviada_al_cliente', $deal_db->n1__enviada_al_cliente) }}">
+                            </div>
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n2__firmado_por_el_cliente" class="block text-sm font-medium text-gray-700">Firmado por el Cliente</label>
+                                <input type="date" id="n2__firmado_por_el_cliente" name="n2__firmado_por_el_cliente"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('n2__firmado_por_el_cliente', $deal_db->n2__firmado_por_el_cliente) }}">
+                            </div>
                         </div>
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n2__firmado_por_el_cliente" class="block text-sm font-medium text-gray-700">Firmado por el Cliente</label>
-                            <input type="date" id="n2__firmado_por_el_cliente" name="n2__firmado_por_el_cliente"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('n2__firmado_por_el_cliente', $deal_db->n2__firmado_por_el_cliente) }}">
-                        </div>
-                    </div>
 
-                    <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                        <div style="flex: 1;" class="mb-3">
-                            <label for="n3__gestionado___entregado" class="block text-sm font-medium text-gray-700">GESTIONADO / ENTREGADO</label>
-                            <input type="date" id="n3__gestionado___entregado" name="n3__gestionado___entregado"
-                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value="{{ old('n3__gestionado___entregado', $deal_db->n3__gestionado___entregado) }}">
+                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="n3__gestionado___entregado" class="block text-sm font-medium text-gray-700">GESTIONADO / ENTREGADO</label>
+                                <input type="date" id="n3__gestionado___entregado" name="n3__gestionado___entregado"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('n3__gestionado___entregado', $deal_db->n3__gestionado___entregado) }}">
+                            </div>
                         </div>
-                    </div>
+
+                        <div class="mt-6 text-right">
+                            <button type="submit" id="clientSubmitButton" class="cfrSefar btn btn-primary mt-3">
+                                Guardar
+                            </button>
+                        </div>
+                    </form>
                 </div>
+
+                <script>
+                    $('#deal-form').on('submit', function (e) {
+                        e.preventDefault();
+
+                        const formData = {};
+                        $('#deal-form').serializeArray().forEach(input => {
+                            formData[input.name] = input.value;
+                        });
+
+                        $.ajax({
+                            url: '{{ route("deals.update", $deal_db->id) }}', // Ajusta según tu ruta
+                            method: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify(formData),
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            success: function (response) {
+                                Swal.fire({
+                                    title: 'Éxito',
+                                    text: 'Negocio actualizado correctamente.',
+                                    icon: 'success',
+                                    confirmButtonText: 'Aceptar'
+                                });
+                                // Puedes redirigir o mostrar algo
+                            },
+                            error: function (xhr) {
+                                Swal.fire({
+                                    title: 'Error',
+                                    text: 'Hubo un error al actualizar el negocio.',
+                                    icon: 'error',
+                                    confirmButtonText: 'Aceptar'
+                                });
+                            }
+                        });
+                    });
+                </script>
+
 
                 <div class="tab-pane fade show" id="deal_payments" role="tabpanel" aria-labelledby="deal-payments-tab">
                     <!-- FASE 1 -->
@@ -453,10 +500,10 @@
                                 <input type="text" id="fase_1_preestab" name="fase_1_preestab"
                                     class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                     value="{{ old('fase_1_preestab', $deal_db->fase_1_preestab) }}"
-                                    {{ $deal_db->fase_1_enviado ? 'readonly' : ''}}>
+                                    {{ $deal_db->fase_1_enviado || $deal_db->fase_1_preestab ? 'readonly' : ''}}>
                             </div>
                         </div>
-                        @if(!$deal_db->fase_1_enviado)
+                        @if(!($deal_db->fase_1_enviado || $deal_db->fase_1_preestab))
                         <div style="flex: 1; display: flex; align-items: flex-end;">
                             <label class="inline-flex items-center" style="    padding-bottom: 1.1rem;">
                                 <input type="checkbox" id="exonerar_fase_1" class="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out">
@@ -465,10 +512,10 @@
                         </div>
                         @endif
                         <div style="flex: 1; display: flex; align-items: flex-end;" class="mb-3">
-                            @if(!$deal_db->fase_1_enviado)
-                                <button type="button" id="guardarFase1" class="cfrSefar btn btn-primary mt-3">Enviar Pago a Cliente</button>
+                            @if(!($deal_db->fase_1_enviado || $deal_db->fase_1_preestab))
+                                <button type="button" id="guardarFase1" class="cfrSefar btn btn-primary mt-3">Enviar Cobro a Cliente</button>
                             @else
-                                @if (!$deal_db->fase_1_pagado)
+                                @if (!($deal_db->fase_1_pagado || $deal_db->fase_1_pagado__teamleader_))
                                     <div class="w-full">
                                         <label for="fase_1_enviado" class="block text-sm font-medium text-gray-700">Fase 1 (Fecha: Pago enviado)</label>
                                         <input type="date" id="fase_1_enviado" style="background-color:orange!important;" name="fase_1_enviado"
@@ -476,18 +523,27 @@
                                             value="{{ old('fase_1_enviado', $deal_db->fase_1_enviado) }}" readonly>
                                     </div>
                                 @else
-                                    <div class="w-50">
-                                        <label for="fecha_fase_1_pagado" class="block text-sm font-medium text-gray-700">Fase 1 Pagado (Fecha)</label>
-                                        <input type="date" id="fecha_fase_1_pagado" name="fecha_fase_1_pagado" style="background-color: #00BB00!important;"
-                                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                            value="{{ old('fecha_fase_1_pagado', $deal_db->fecha_fase_1_pagado) }}" readonly>
-                                    </div>
-                                    <div class="w-50">
-                                        <label for="monto_fase_1_pagado" class="block text-sm font-medium text-gray-700">(Monto)</label>
-                                        <input type="text" id="monto_fase_1_pagado" name="monto_fase_1_pagado" style="background-color: #00BB00!important;"
-                                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                            value="{{ old('monto_fase_1_pagado', $deal_db->monto_fase_1_pagado) }}" readonly>
-                                    </div>
+                                    @if ($deal_db->fecha_fase_1_pagado && $deal_db->monto_fase_1_pagado)
+                                        <div class="w-50">
+                                            <label for="fecha_fase_1_pagado" class="block text-sm font-medium text-gray-700">Fase 1 Pagado (Fecha)</label>
+                                            <input type="date" id="fecha_fase_1_pagado" name="fecha_fase_1_pagado" style="background-color: #00BB00!important;"
+                                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                                value="{{ old('fecha_fase_1_pagado', $deal_db->fecha_fase_1_pagado) }}" readonly>
+                                        </div>
+                                        <div class="w-50">
+                                            <label for="monto_fase_1_pagado" class="block text-sm font-medium text-gray-700">(Monto)</label>
+                                            <input type="text" id="monto_fase_1_pagado" name="monto_fase_1_pagado" style="background-color: #00BB00!important;"
+                                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                                value="{{ old('monto_fase_1_pagado', $deal_db->monto_fase_1_pagado) }}" readonly>
+                                        </div>
+                                    @elseif($deal_db->fase_1_pagado__teamleader_)
+                                        <div class="w-50">
+                                            <label for="fase_1_pagado__teamleader_" class="block text-sm font-medium text-gray-700">Fase 1 - Pagado</label>
+                                            <input type="text" id="fase_1_pagado__teamleader_" name="fase_1_pagado__teamleader_" style="background-color: #00BB00!important;"
+                                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                                value="{{ old('fase_1_pagado__teamleader_', $deal_db->fase_1_pagado__teamleader_) }}" readonly>
+                                        </div>
+                                    @endif
                                 @endif
                             @endif
                         </div>
@@ -495,7 +551,7 @@
 
                     <!-- FASE 2 -->
 
-                    @if ($deal_db->fase_1_enviado)
+                    @if ($deal_db->fase_1_enviado || $deal_db->fase_1_pagado__teamleader_)
                         <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
                             <div style="flex: 1;" class="mb-3">
                                 <label for="fase_2_preestab" class="block text-sm font-medium text-gray-700">Fase 2 Preestablecido</label>
@@ -503,10 +559,10 @@
                                     <input type="text" id="fase_2_preestab" name="fase_2_preestab"
                                         class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                         value="{{ old('fase_2_preestab', $deal_db->fase_2_preestab) }}"
-                                        {{ $deal_db->fase_2_enviado ? 'readonly' : ''}}>
+                                        {{ $deal_db->fase_2_enviado || $deal_db->fase_2_preestab ? 'readonly' : ''}}>
                                 </div>
                             </div>
-                            @if(!$deal_db->fase_2_enviado)
+                            @if(!($deal_db->fase_2_enviado || $deal_db->fase_2_preestab))
                             <div style="flex: 1; display: flex; align-items: flex-end;">
                                 <label class="inline-flex items-center" style="    padding-bottom: 1.1rem;">
                                     <input type="checkbox" id="exonerar_fase_2" class="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out">
@@ -515,10 +571,10 @@
                             </div>
                             @endif
                             <div style="flex: 1; display: flex; align-items: flex-end;" class="mb-3">
-                                @if(!$deal_db->fase_2_enviado)
-                                    <button type="button" id="guardarFase2" class="cfrSefar btn btn-primary mt-3">Enviar Pago a Cliente</button>
+                                @if(!($deal_db->fase_2_enviado || $deal_db->fase_2_preestab))
+                                    <button type="button" id="guardarFase2" class="cfrSefar btn btn-primary mt-3">Enviar Cobro a Cliente</button>
                                 @else
-                                    @if (!$deal_db->fase_2_pagado)
+                                    @if (!($deal_db->fase_2_pagado || $deal_db->fase_2_pagado__teamleader_))
                                         <div class="w-full">
                                             <label for="fase_2_enviado" class="block text-sm font-medium text-gray-700">Fase 2 (Fecha: Pago enviado)</label>
                                             <input type="date" id="fase_2_enviado" style="background-color:orange!important;" name="fase_2_enviado"
@@ -526,18 +582,27 @@
                                                 value="{{ old('fase_2_enviado', $deal_db->fase_2_enviado) }}" readonly>
                                         </div>
                                     @else
-                                        <div class="w-50">
-                                            <label for="fecha_fase_2_pagado" class="block text-sm font-medium text-gray-700">Fase 2 Pagado (Fecha)</label>
-                                            <input type="date" id="fecha_fase_2_pagado" name="fecha_fase_2_pagado" style="background-color: #00BB00!important;"
-                                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                                value="{{ old('fecha_fase_2_pagado', $deal_db->fecha_fase_2_pagado) }}" readonly>
-                                        </div>
-                                        <div class="w-50">
-                                            <label for="monto_fase_2_pagado" class="block text-sm font-medium text-gray-700">(Monto)</label>
-                                            <input type="text" id="monto_fase_2_pagado" name="monto_fase_2_pagado" style="background-color: #00BB00!important;"
-                                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                                value="{{ old('monto_fase_2_pagado', $deal_db->monto_fase_2_pagado) }}" readonly>
-                                        </div>
+                                        @if ($deal_db->fecha_fase_2_pagado && $deal_db->monto_fase_2_pagado)
+                                            <div class="w-50">
+                                                <label for="fecha_fase_2_pagado" class="block text-sm font-medium text-gray-700">Fase 2 Pagado (Fecha)</label>
+                                                <input type="date" id="fecha_fase_2_pagado" name="fecha_fase_2_pagado" style="background-color: #00BB00!important;"
+                                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                                    value="{{ old('fecha_fase_2_pagado', $deal_db->fecha_fase_2_pagado) }}" readonly>
+                                            </div>
+                                            <div class="w-50">
+                                                <label for="monto_fase_2_pagado" class="block text-sm font-medium text-gray-700">(Monto)</label>
+                                                <input type="text" id="monto_fase_2_pagado" name="monto_fase_2_pagado" style="background-color: #00BB00!important;"
+                                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                                    value="{{ old('monto_fase_2_pagado', $deal_db->monto_fase_2_pagado) }}" readonly>
+                                            </div>
+                                        @elseif($deal_db->fase_2_pagado__teamleader_)
+                                            <div class="w-50">
+                                                <label for="fase_2_pagado__teamleader_" class="block text-sm font-medium text-gray-700">Fase 2 - Pagado</label>
+                                                <input type="text" id="fase_2_pagado__teamleader_" name="fase_2_pagado__teamleader_" style="background-color: #00BB00!important;"
+                                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                                    value="{{ old('fase_2_pagado__teamleader_', $deal_db->fase_2_pagado__teamleader_) }}" readonly>
+                                            </div>
+                                        @endif
                                     @endif
                                 @endif
                             </div>
@@ -546,7 +611,7 @@
 
                     <!-- FASE 3 -->
 
-                    @if ($deal_db->fase_1_enviado && $deal_db->fase_2_enviado)
+                    @if (($deal_db->fase_1_enviado || $deal_db->fase_1_pagado__teamleader_) && ($deal_db->fase_2_enviado || $deal_db->fase_2_pagado__teamleader_))
                     <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
                         <div style="flex: 1;" class="mb-3">
                             <label for="fase_3_preestab" class="block text-sm font-medium text-gray-700">Fase 3 Preestablecido</label>
@@ -554,10 +619,10 @@
                                 <input type="text" id="fase_3_preestab" name="fase_3_preestab"
                                     class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                     value="{{ old('fase_3_preestab', $deal_db->fase_3_preestab) }}"
-                                    {{ $deal_db->fase_3_enviado ? 'readonly' : ''}}>
+                                    {{ $deal_db->fase_3_enviado || $deal_db->fase_3_preestab ? 'readonly' : ''}}>
                             </div>
                         </div>
-                        @if(!$deal_db->fase_3_enviado)
+                        @if(!($deal_db->fase_3_enviado || $deal_db->fase_3_preestab ))
                         <div style="flex: 1; display: flex; align-items: flex-end;">
                             <label class="inline-flex items-center" style="    padding-bottom: 1.1rem;">
                                 <input type="checkbox" id="exonerar_fase_3" class="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out">
@@ -566,10 +631,10 @@
                         </div>
                         @endif
                         <div style="flex: 1; display: flex; align-items: flex-end;" class="mb-3">
-                            @if(!$deal_db->fase_3_enviado)
-                                <button type="button" id="guardarFase3" class="cfrSefar btn btn-primary mt-3">Enviar Pago a Cliente</button>
+                            @if(!($deal_db->fase_3_enviado || $deal_db->fase_3_preestab ))
+                                <button type="button" id="guardarFase3" class="cfrSefar btn btn-primary mt-3">Enviar Cobro a Cliente</button>
                             @else
-                                @if (!$deal_db->fase_3_pagado)
+                                @if (!($deal_db->fase_3_pagado || $deal_db->fase_3_pagado__teamleader_))
                                     <div class="w-full">
                                         <label for="fase_3_enviado" class="block text-sm font-medium text-gray-700">Fase 3 (Fecha: Pago enviado)</label>
                                         <input type="date" id="fase_3_enviado" style="background-color:orange!important;" name="fase_3_enviado"
@@ -577,18 +642,27 @@
                                             value="{{ old('fase_3_enviado', $deal_db->fase_3_enviado) }}" readonly>
                                     </div>
                                 @else
-                                    <div class="w-50">
-                                        <label for="fecha_fase_3_pagado" class="block text-sm font-medium text-gray-700">Fase 3 Pagado (Fecha)</label>
-                                        <input type="date" id="fecha_fase_3_pagado" name="fecha_fase_3_pagado" style="background-color: #00BB00!important;"
-                                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                            value="{{ old('fecha_fase_3_pagado', $deal_db->fecha_fase_3_pagado) }}">
-                                    </div>
-                                    <div class="w-50">
-                                        <label for="monto_fase_3_pagado" class="block text-sm font-medium text-gray-700">(Monto)</label>
-                                        <input type="text" id="monto_fase_3_pagado" name="monto_fase_3_pagado" style="background-color: #00BB00!important;"
-                                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                            value="{{ old('monto_fase_3_pagado', $deal_db->monto_fase_3_pagado) }}">
-                                    </div>
+                                    @if ($deal_db->fecha_fase_3_pagado && $deal_db->monto_fase_3_pagado)
+                                        <div class="w-50">
+                                            <label for="fecha_fase_3_pagado" class="block text-sm font-medium text-gray-700">Fase 3 Pagado (Fecha)</label>
+                                            <input type="date" id="fecha_fase_3_pagado" name="fecha_fase_3_pagado" style="background-color: #00BB00!important;"
+                                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                                value="{{ old('fecha_fase_3_pagado', $deal_db->fecha_fase_3_pagado) }}" readonly>
+                                        </div>
+                                        <div class="w-50">
+                                            <label for="monto_fase_3_pagado" class="block text-sm font-medium text-gray-700">(Monto)</label>
+                                            <input type="text" id="monto_fase_3_pagado" name="monto_fase_3_pagado" style="background-color: #00BB00!important;"
+                                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                                value="{{ old('monto_fase_3_pagado', $deal_db->monto_fase_3_pagado) }}" readonly>
+                                        </div>
+                                    @elseif($deal_db->fase_3_pagado__teamleader_)
+                                        <div class="w-50">
+                                            <label for="fase_3_pagado__teamleader_" class="block text-sm font-medium text-gray-700">Fase 3 - Pagado</label>
+                                            <input type="text" id="fase_3_pagado__teamleader_" name="fase_3_pagado__teamleader_" style="background-color: #00BB00!important;"
+                                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                                value="{{ old('fase_3_pagado__teamleader_', $deal_db->fase_3_pagado__teamleader_) }}" readonly>
+                                        </div>
+                                    @endif
                                 @endif
                             @endif
                         </div>
@@ -620,7 +694,7 @@
                         @endif
                         <div style="flex: 1; display: flex; align-items: flex-end;" class="mb-3">
                             @if(!$deal_db->carta_nat_enviado )
-                                <button type="button" id="guardarCartaNat" class="cfrSefar btn btn-primary mt-3">Enviar Pago a Cliente</button>
+                                <button type="button" id="guardarCartaNat" class="cfrSefar btn btn-primary mt-3">Enviar Cobro a Cliente</button>
                             @else
                                 @if (!$deal_db->carta_nat_fechapagado)
                                     <div class="w-full">
@@ -674,7 +748,7 @@
                         @endif
                         <div style="flex: 1; display: flex; align-items: flex-end;" class="mb-3">
                             @if(!$deal_db->carta_cilfcje_enviado )
-                                <button type="button" id="guardarfcjecil" class="cfrSefar btn btn-primary mt-3">Enviar Pago a Cliente</button>
+                                <button type="button" id="guardarfcjecil" class="cfrSefar btn btn-primary mt-3">Enviar Cobro a Cliente</button>
                             @else
                                 @if (!$deal_db->cilfcje_fechapagado)
                                     <label for="carta_cilfcje_enviado" class="block text-sm font-medium text-gray-700">FCJE/CIL (Fecha: Pago enviado)</label>

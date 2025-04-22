@@ -38,6 +38,7 @@ use App\Http\Controllers\SolicitudCuponController;
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\GeneralCouponController;
 use App\Http\Controllers\NegocioController;
+use App\Http\Controllers\TreenaController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -126,6 +127,7 @@ Route::post('/guardarfase2', [NegocioController::class, 'guardarfase2'])->name('
 Route::post('/guardarfase3', [NegocioController::class, 'guardarfase3'])->name('guardarfase3');
 Route::post('/guardarcartanat', [NegocioController::class, 'guardarcartanat'])->name('guardarcartanat');
 Route::post('/guardarfcjecil', [NegocioController::class, 'guardarfcjecil'])->name('guardarfcjecil');
+Route::post('/deals/{id}/update', [NegocioController::class, 'update'])->name('deals.update');
 
 Route::post('/exonerarfase1', [NegocioController::class, 'exonerarfase1'])->name('exonerarfase1');
 Route::post('/exonerarfase2', [NegocioController::class, 'exonerarfase2'])->name('exonerarfase2');
@@ -161,6 +163,10 @@ Route::get('/teamleader/contacts', [TeamleaderController::class, 'getContacts'])
 Route::get('/checkMondayTest', [ClienteController::class, 'checkMondayTest'])->name('checkMondayTest');
 
 Route::get('/deal/{id}/edit', [NegocioController::class, 'edit'])->name('deals.edit');
+
+Route::get('/prompttreena', [TreenaController::class, 'index'])->name('treena.index');
+
+Route::post('/updatetreena', [TreenaController::class, 'update'])->name('treena.update');
 
 //Ruta Comprobantes de Pago
 Route::get('/downloadTree/{id}', [GedcomController::class, 'getGedcomCliente'])->name('getGedcomCliente');
@@ -298,9 +304,10 @@ Route::group(['middleware' => ['auth'], 'as' => 'clientes.'], function(){
         ->middleware('can:cliente');
     Route::get('pay', [ClienteController::class, 'pay'])->name('pay')
         ->middleware('can:cliente');
-    Route::get('payfases', [ClienteController::class, 'payfases'])->name('payfases')
+    Route::get('pagospendientes', [ClienteController::class, 'pagospendientes'])->name('pagospendientes')
         ->middleware('can:cliente');
-
+    Route::get('status', [ClienteController::class, 'status'])->name('status')
+    ->middleware('can:cliente');
 });
 
 Route::get('testcorreos', [CorreoController::class, 'testcorreos'])->name('testcorreos');
@@ -311,6 +318,9 @@ Route::post('getinfo', [ClienteController::class, 'procesargetinfo'])->name('pro
         ->middleware('can:cliente');
 
 Route::get('checkRegAlzada', [ClienteController::class, 'checkRegAlzada'])->name('checkRegAlzada');
+
+Route::post('gotopayfases', [ClienteController::class, 'gotopayfases'])->name('gotopayfases')
+        ->middleware('can:cliente');
 
 Route::post('pay', [ClienteController::class, 'procesarpay'])->name('procesarpay')
         ->middleware('can:cliente');

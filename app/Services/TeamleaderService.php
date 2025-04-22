@@ -6,6 +6,7 @@ use App\Models\TeamleaderToken;
 use App\Services\Teamleader\TeamleaderFocusProvider;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
+use GuzzleHttp\Promise;
 
 class TeamleaderService
 {
@@ -18,6 +19,85 @@ class TeamleaderService
             'clientSecret' => env('TEAMLEADER_CLIENT_SECRET'),
             'redirectUri'  => env('TEAMLEADER_REDIRECT_URI'),
         ]);
+    }
+
+    public function executeConcurrent(array $callbacks)
+    {
+        $promises = [];
+
+        foreach ($callbacks as $key => $callback) {
+            $promises[$key] = $callback();
+        }
+
+        $results = Promise\Utils::settle($promises)->wait();
+
+        $output = [];
+        foreach ($results as $key => $result) {
+            $output[$key] = $result['state'] === 'fulfilled' ? $result['value'] : null;
+        }
+
+        return $output;
+    }
+
+    /**
+     * Versión con promesa de getContactById
+     */
+    public function getContactByIdPromise($id)
+    {
+        return Promise\Create::promiseFor($this->getContactById($id));
+    }
+
+    /**
+     * Versión con promesa de listProjectsByCustomerId
+     */
+    public function listProjectsByCustomerIdPromise($customerId)
+    {
+        return Promise\Create::promiseFor($this->listProjectsByCustomerId($customerId));
+    }
+
+    /**
+     * Versión con promesa de getProjectDetails
+     */
+    public function getProjectDetailsPromise($projectId)
+    {
+        return Promise\Create::promiseFor($this->getProjectDetails($projectId));
+    }
+
+    /**
+     * Versión optimizada con promesas de getProjectsWithDetailsByCustomerId
+     */
+    public function getProjectsWithDetailsByCustomerIdPromise($customerId)
+    {
+        return Promise\Create::promiseFor(function() use ($customerId) {
+            // Obtener proyectos y detalles en paralelo
+            $results = $this->executeConcurrent([
+                'projects' => fn() => $this->listProjectsByCustomerId($customerId),
+            ]);
+
+            $projects = $results['projects'] ?? [];
+
+            // Crear promesas para los detalles de cada proyecto
+            $detailPromises = [];
+            foreach ($projects as $project) {
+                $detailPromises['project_'.$project['id']] =
+                    $this->getProjectDetailsPromise($project['id']);
+            }
+
+            // Esperar por todos los detalles
+            $details = $this->executeConcurrent($detailPromises);
+
+            // Combinar resultados
+            $detailedProjects = [];
+            foreach ($projects as $project) {
+                $projectId = $project['id'];
+                $detailKey = 'project_'.$projectId;
+                if (isset($details[$detailKey])) {
+                    $detailedProjects[] = array_merge($project, $details[$detailKey]);
+                }
+            }
+
+            return $detailedProjects;
+        });
     }
 
     /**
@@ -409,6 +489,63 @@ class TeamleaderService
     }
 
 
+    /**
+     * Buscar un contacto por número de pasaporte en Teamleader.
+     */
+    public function searchContactByPassport($passportNumber)
+    {
+        try {
+            $accessToken = $this->getAccessToken();
+
+            $response = Http::withToken($accessToken)
+                ->post('https://api.focus.teamleader.eu/contacts.list', [
+                    'filter' => [
+                        'custom_fields' => [
+                            [
+                                'id' => '624a9810-53dc-0770-965b-65891c631673',
+                                'value' => $passportNumber
+                            ]
+                        ]
+                    ],
+                    'page' => [
+                        'size' => 1,
+                    ]
+                ]);
+
+            if ($response->successful()) {
+                $contacts = $response->json();
+                if (!empty($contacts['data'])) {
+                    $contact = $contacts['data'][0];
+
+                    $email = null;
+                    if (!empty($contact['emails'])) {
+                        foreach ($contact['emails'] as $emailData) {
+                            if ($emailData['type'] === 'primary') {
+                                $email = $emailData['email'];
+                                break;
+                            }
+                        }
+                    }
+
+                    return [
+                        'id' => $contact['id'],
+                        'properties' => [
+                            'email' => $email,
+                            'firstname' => $contact['first_name'] ?? null,
+                            'lastname' => $contact['last_name'] ?? null
+                        ]
+                    ];
+                }
+                return null;
+            } else {
+                $error = $response->json();
+                throw new \Exception('Teamleader API error: '.($error['errors'][0]['title'] ?? 'Unknown error'));
+            }
+        } catch (\Exception $e) {
+            throw new \Exception('Failed to search contact by passport: '.$e->getMessage());
+        }
+    }
+
     private function getDealDetails($dealId)
     {
         try {
@@ -504,6 +641,56 @@ class TeamleaderService
         //    Podrías usar dd($response->json()) para ver el detalle
         $error = $response->json();
         throw new \Exception("Error al obtener el módulo del campo: " . json_encode($error));
+    }
+
+    /**
+     * Versión con promesa de searchContactByEmail
+     */
+    public function searchContactByEmailPromise($email)
+    {
+        return Promise\Create::promiseFor($this->searchContactByEmail($email));
+    }
+
+    /**
+     * Versión con promesa de createContact
+     */
+    public function createContactPromise($user)
+    {
+        return Promise\Create::promiseFor($this->createContact($user));
+    }
+
+    /**
+     * Versión con promesa de getUserIdByEmail
+     */
+    public function getUserIdByEmailPromise($email)
+    {
+        return Promise\Create::promiseFor($this->getUserIdByEmail($email));
+    }
+
+    /**
+     * Versión con promesa de createProjectFromHubspotDeal
+     */
+    public function createProjectFromHubspotDealPromise($hubspotDeal, $customerId, $camposDeTeamleader)
+    {
+        return Promise\Create::promiseFor(
+            $this->createProjectFromHubspotDeal($hubspotDeal, $customerId, $camposDeTeamleader)
+        );
+    }
+
+    /**
+     * Versión con promesa de searchContactByPassport
+     */
+    public function searchContactByPassportPromise($passportNumber)
+    {
+        return Promise\Create::promiseFor($this->searchContactByPassport($passportNumber));
+    }
+
+    /**
+     * Versión con promesa de updateProject
+     */
+    public function updateProjectPromise($projectId, $updatedData)
+    {
+        return Promise\Create::promiseFor($this->updateProject($projectId, $updatedData));
     }
 
 }

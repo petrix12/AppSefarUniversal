@@ -1,4 +1,4 @@
-<div id="chat-container" style="position: fixed; bottom: 20px; right: 20px;">
+<div id="chat-container" style="position: fixed; bottom: 20px; right: 20px; z-index:1997;">
     <!-- Icono de la burbuja de chat -->
     <div id="chat-icon" style="cursor: pointer;">
         <button style="background-color: #093143 !important; border: none; border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);">

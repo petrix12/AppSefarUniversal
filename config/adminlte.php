@@ -303,6 +303,14 @@ return [
             'can'           => 'administrador',
         ],
 
+        [
+            'text'          => 'Prompt Treena',
+            'icon'          => 'fa-fw fas fa-comment',
+            'icon_color'    => 'white',
+            'url'           => 'prompttreena',
+            'can'           => 'administrador',
+        ],
+
         /* *** Administracion de PAGOS *** */
         [
             'text'        => 'Admin. Pagos',
@@ -655,6 +663,22 @@ return [
                     'icon'          => 'fa-fw fas fa-sitemap',
                     'icon_color'    => 'rgba(255,255,255,0.8)',
                     'route'         => 'clientes.tree',
+                    'can'           => 'cliente',
+                ],
+                [
+                    'text'          => 'Pagos pendientes',
+                    'classes'       => "btn_payments",
+                    'icon'          => 'fa-fw fas fa-money',
+                    'icon_color'    => 'rgba(255,255,255,0.8)',
+                    'route'         => 'clientes.pagospendientes',
+                    'can'           => 'cliente',
+                ],
+                [
+                    'text'          => 'Mi Estatus',
+                    'classes'       => "btn_payments",
+                    'icon'          => 'fa-fw fas fa-money',
+                    'icon_color'    => 'rgba(255,255,255,0.8)',
+                    'route'         => 'clientes.status',
                     'can'           => 'cliente',
                 ],/*
                 [
