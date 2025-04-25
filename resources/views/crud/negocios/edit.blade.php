@@ -390,12 +390,15 @@
                                     class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                     value="{{ old('n7__fecha_de_resolucion', $deal_db->n7__fecha_de_resolucion) }}">
                             </div>
+                            <!--
                             <div style="flex: 1;" class="mb-3">
                                 <label for="n4__notario___abogado" class="block text-sm font-medium text-gray-700">NOTARIO / ABOGADO</label>
                                 <input type="text" id="n4__notario___abogado" name="n4__notario___abogado"
                                     class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                     value="{{ old('n4__notario___abogado', $deal_db->n4__notario___abogado) }}">
                             </div>
+
+                        -->
                         </div>
 
                         <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">

@@ -1794,60 +1794,63 @@ class UserController extends Controller
             $dbValue = $user->{$dbField};
 
             if ($hsField != 'lastmodifieddate') {
-                // Comparar valores y fechas
                 if ($hubspotValue !== $dbValue) {
-                    // Ejemplo de comparaciones
                     if ($hubspotValue && (!$dbValue || $hsLastModified > $dbLastModified)) {
-                        // HubSpot más reciente
-                        if ($hsField!="updated_at"){
+                        if ($hsField != "updated_at") {
+
+                            // 🚨 PROTECCIÓN PARA FECHA NACIMIENTO
+                            if (in_array($hsField, ['fecha_nac', 'date_of_birth'])) {
+                                if (!empty($dbValue) && $dbValue != '0000-00-00') {
+                                    // Si ya tienes una fecha válida, NO sobreescribas
+                                    continue;
+                                } else {
+                                    // Si no tienes fecha, convierte EPOCH a fecha normal antes de guardar
+                                    if (is_numeric($hubspotValue)) {
+                                        $hubspotDate = (new \DateTime())->setTimestamp($hubspotValue / 1000);
+                                        $hubspotValue = $hubspotDate->format('Y-m-d');
+                                    }
+                                }
+                            }
+
                             $user->{$dbField} = $hubspotValue;
                             $updatesToDB[$dbField] = $hubspotValue;
                         }
                     } else if ($dbValue && (!$hubspotValue || $dbLastModified > $hsLastModified)) {
-                        // Base de datos más reciente
                         switch ($hsField) {
                             case 'fecha_nac':
                             case 'date_of_birth':
-                                if (!empty($dbValue) && $dbValue !="0000-00-00") {
+                                if (!empty($dbValue) && $dbValue != "0000-00-00") {
                                     try {
-                                        // Convertir la fecha de la base de datos a timestamp en milisegundos
+                                        // Convertir fecha DB a EPOCH para Hubspot
                                         $onlyDate = (new \DateTime($dbValue))->format('Y-m-d');
                                         $dbDate = new \DateTime($onlyDate, new \DateTimeZone('UTC'));
                                         $dbTimestampMs = $dbDate->getTimestamp() * 1000;
 
-                                        // Convertir la fecha de HubSpot a timestamp en milisegundos (si existe)
-                                        $hubspotValue = $HScontact['properties'][$hsField] ?? null;
-                                        if ($hubspotValue !== null) {
+                                        $hubspotTimestampMs = null;
+                                        if ($hubspotValue !== null && is_numeric($hubspotValue)) {
                                             $hubspotDate = (new \DateTime())->setTimestamp($hubspotValue / 1000);
                                             $hubspotDate->setTimezone(new \DateTimeZone('UTC'));
                                             $hubspotTimestampMs = $hubspotDate->getTimestamp() * 1000;
-                                        } else {
-                                            $hubspotTimestampMs = null;
                                         }
 
-                                        // Solo actualizar si el valor en HubSpot es diferente
                                         if ($hubspotTimestampMs !== $dbTimestampMs) {
                                             $updatesToHubSpot[$hsField] = $dbTimestampMs;
                                         }
                                     } catch (\Exception $e) {
-                                        // Manejar el error de fecha si es necesario
+                                        // Manejar error si fecha inválida
                                     }
                                 }
                                 break;
 
                             case 'genero':
-                                $cleanValue = trim($dbValue); // Quitar espacios en blanco
+                                $cleanValue = trim($dbValue);
                                 $mapping = [
                                     'MASCULINO' => 'MASCULINO / MALE',
                                     'FEMENINO'  => 'FEMENINO / FEMALE',
                                     'OTROS'     => 'OTROS / OTHERS',
                                 ];
-
                                 if (isset($mapping[$cleanValue])) {
                                     $mappedValue = $mapping[$cleanValue];
-
-                                    // Solo actualizar si el valor en HubSpot es diferente
-                                    $hubspotValue = $HScontact['properties'][$hsField] ?? null;
                                     if ($hubspotValue !== $mappedValue) {
                                         $updatesToHubSpot[$hsField] = $mappedValue;
                                     }
@@ -1855,9 +1858,7 @@ class UserController extends Controller
                                 break;
 
                             default:
-                                // Comparar valores directamente para otros campos
-                                $hubspotValue = $HScontact['properties'][$hsField] ?? null;
-                                if ($hsField == "cantidad_alzada"){
+                                if ($hsField == "cantidad_alzada") {
                                     if (strval($hubspotValue) !== strval($dbValue)) {
                                         $updatesToHubSpot[$hsField] = $dbValue;
                                     }
@@ -1872,6 +1873,7 @@ class UserController extends Controller
                 }
             }
         }
+
 
         $excludedKeys = ['lastmodifieddate', 'referido_por']; // Lista de claves a excluir
         $updatesToHubSpot = array_filter(
@@ -2221,9 +2223,9 @@ class UserController extends Controller
                                                                 // add array here
                                                                 $cos[] = [
                                                                     "servicename" => $servicename->nombre,
-                                                                    "currentStep" => 27,
+                                                                    "currentStep" => 26,
                                                                     "color" => "info",
-                                                                    "progressPercentageGen" => 22*100/28,
+                                                                    "progressPercentageGen" => 25*99/27,
                                                                     "message" => ""
                                                                 ];
                                                                 // end array here
@@ -2233,7 +2235,7 @@ class UserController extends Controller
                                                                     "servicename" => $servicename->nombre,
                                                                     "currentStep" => 23,
                                                                     "color" => "info",
-                                                                    "progressPercentageGen" => 22*100/28,
+                                                                    "progressPercentageGen" => 22*99/27,
                                                                     "message" => ""
                                                                 ];
                                                                 // end array here
@@ -2244,7 +2246,7 @@ class UserController extends Controller
                                                                 "servicename" => $servicename->nombre,
                                                                 "currentStep" => 23,
                                                                 "color" => "info",
-                                                                "progressPercentageGen" => 22*100/28,
+                                                                "progressPercentageGen" => 22*99/27,
                                                                 "message" => ""
                                                             ];
                                                             // end array here
@@ -2255,7 +2257,7 @@ class UserController extends Controller
                                                                 "servicename" => $servicename->nombre,
                                                                 "currentStep" => 23,
                                                                 "color" => "warning",
-                                                                "progressPercentageGen" => 23*100/28,
+                                                                "progressPercentageGen" => 23*99/27,
                                                                 "message" => "Estamos en una fase decisiva. Recuerde realizar el pago correspondiente a esta última fase. <br><br><a href='/pagospendientes' style='color: #fa1d33'>Haz click aquí</a> para ir a pagar."
                                                             ];
                                                         // end array here
@@ -2266,7 +2268,7 @@ class UserController extends Controller
                                                             "servicename" => $servicename->nombre,
                                                             "currentStep" => 22,
                                                             "color" => "info",
-                                                            "progressPercentageGen" => 22*100/28,
+                                                            "progressPercentageGen" => 22*99/27,
                                                             "message" => ""
                                                         ];
                                                     // end array here
@@ -2277,7 +2279,7 @@ class UserController extends Controller
                                                     "servicename" => $servicename->nombre,
                                                     "currentStep" => 15,
                                                     "color" => "info",
-                                                    "progressPercentageGen" => 15*100/28,
+                                                    "progressPercentageGen" => 15*99/27,
                                                     "message" => ""
                                                 ];
                                                 // end array here
@@ -2288,7 +2290,7 @@ class UserController extends Controller
                                                 "servicename" => $servicename->nombre,
                                                 "currentStep" => 15,
                                                 "color" => "info",
-                                                "progressPercentageGen" => 15*100/28,
+                                                "progressPercentageGen" => 15*99/27,
                                                 "message" => ""
                                             ];
                                             // end array here
@@ -2299,7 +2301,7 @@ class UserController extends Controller
                                             "servicename" => $servicename->nombre,
                                             "currentStep" => 14,
                                             "color" => "warning",
-                                            "progressPercentageGen" => 14*100/28,
+                                            "progressPercentageGen" => 14*99/27,
                                             "message" => "Nos encontramos a la espera de su pago para continuar con su proceso.<br><br><a href='/pagospendientes' style='color: #fa1d33'>Haz click aquí</a> para ir a pagar."
                                         ];
                                         // end array here
@@ -2310,7 +2312,7 @@ class UserController extends Controller
                                         "servicename" => $servicename->nombre,
                                         "currentStep" => 8,
                                         "color" => "info",
-                                        "progressPercentageGen" => 8*100/28,
+                                        "progressPercentageGen" => 8*99/27,
                                         "message" => ""
                                     ];
                                     // end array here
@@ -2321,7 +2323,7 @@ class UserController extends Controller
                                     "servicename" => $servicename->nombre,
                                     "currentStep" => 8,
                                     "color" => "info",
-                                    "progressPercentageGen" => 8*100/28,
+                                    "progressPercentageGen" => 8*99/27,
                                     "message" => ""
                             ];
                             // end array here
@@ -2332,7 +2334,7 @@ class UserController extends Controller
                                 "servicename" => $servicename->nombre,
                                 "currentStep" => 8,
                                 "color" => "warning",
-                                "progressPercentageGen" => 1.5*100/28,
+                                "progressPercentageGen" => 1.5*99/27,
                                 "message" => "Nos encontramos a la espera de su pago para iniciar su proceso.<br><br><a href='/pagospendientes' style='color: #fa1d33'>Haz click aquí</a> para ir a pagar."
                            ];
                         // end array here
@@ -2354,7 +2356,7 @@ class UserController extends Controller
                             "servicename" => $servicename->nombre,
                             "currentStep" => 0.5,
                             "color" => "warning",
-                            "progressPercentageGen" => 0.5*100/28,
+                            "progressPercentageGen" => 0.5*99/27,
                             "message" => "Falta completar información de tu registro. <a href='/getinfo' style='color: #fa1d33'>Haz click aquí</a> para continuar."
                        ];
                         // end array here
@@ -2364,7 +2366,7 @@ class UserController extends Controller
                             "servicename" => $servicename->nombre,
                             "currentStep" => 0.5,
                             "color" => "warning",
-                            "progressPercentageGen" => 0.5*100/28,
+                            "progressPercentageGen" => 0.5*99/27,
                             "message" => "No has firmado tu contrato. <a href='/contrato' style='color: #fa1d33'>Haz click aquí</a> para continuar."
                        ];
                         // end array here
@@ -2374,7 +2376,7 @@ class UserController extends Controller
                                 "servicename" => $servicename->nombre,
                                 "currentStep" => 1,
                                 "color" => "warning",
-                                "progressPercentageGen" => 1*100/28,
+                                "progressPercentageGen" => 1*99/27,
                                 "message" => "Debes añadir más información a tu arbol genealógico. <a href='/tree' style='color: #fa1d33'>Haz click aquí</a> para continuar."
                            ];
                         // end array here
@@ -2386,7 +2388,7 @@ class UserController extends Controller
                                 "servicename" => $servicename->nombre,
                                 "currentStep" => 1.5,
                                 "color" => "warning",
-                                "progressPercentageGen" => 1.5*100/28,
+                                "progressPercentageGen" => 1.5*99/27,
                                 "message" => "Se requiere Mayor Información."
                            ];
                             // end array here
@@ -2396,7 +2398,7 @@ class UserController extends Controller
                                 "servicename" => $servicename->nombre,
                                 "currentStep" => 1.5,
                                 "color" => "info",
-                                "progressPercentageGen" => 1.5*100/28,
+                                "progressPercentageGen" => 1.5*99/27,
                                 "message" => "Nuestros especialistas continúan explorando nuevas opciones para ti. Aunque aún no se ha confirmado una conexión genealógica, podemos brindarte alternativas como la obtención de residencias o visas para que puedas vivir, trabajar y desarrollarte legalmente en la Unión Europea.<br><br>Adicionalmente, nuestro equipo continúa ampliando y verificando bases de datos genealógicas, lo que podría generar nuevas oportunidades para ti en el futuro."
                            ];
                             // end array here
@@ -2406,7 +2408,7 @@ class UserController extends Controller
                                 "servicename" => $servicename->nombre,
                                 "currentStep" => 1.5,
                                 "color" => "info",
-                                "progressPercentageGen" => 1.5*100/28,
+                                "progressPercentageGen" => 1.5*99/27,
                                 "message" => "Nuestros especialistas continúan explorando nuevas opciones para ti. Aunque aún no se ha confirmado una conexión genealógica, podemos brindarte alternativas como la obtención de residencias o visas para que puedas vivir, trabajar y desarrollarte legalmente en la Unión Europea.<br><br>Adicionalmente, nuestro equipo continúa ampliando y verificando bases de datos genealógicas, lo que podría generar nuevas oportunidades para ti en el futuro."
                            ];
                             // end array here
@@ -2416,7 +2418,7 @@ class UserController extends Controller
                                     "servicename" => $servicename->nombre,
                                     "currentStep" => 1.5,
                                     "color" => "warning",
-                                    "progressPercentageGen" => 1.5*100/28,
+                                    "progressPercentageGen" => 1.5*99/27,
                                     "message" => "Nuestros especialistas continúan explorando y reconstruyendo líneas genealógicas nuevas y desconocidas, para ampliar tus posibilidades.<br><br>Para ello, necesitamos llevar a cabo una investigación más profunda, utilizando fuentes especializadas e investigadores particulares.<br><br>En este sentido, te hemos enviado un presupuesto detallado para esta investigación más profunda, en la que optimizaremos al máximo la búsqueda de conexiones genealógicas para conectar con tus raíces europeas."
                                ];
                             // end array here
@@ -2427,7 +2429,7 @@ class UserController extends Controller
                                         "servicename" => $servicename->nombre,
                                         "currentStep" => 1.5,
                                         "color" => "warning",
-                                        "progressPercentageGen" => 1.5*100/28,
+                                        "progressPercentageGen" => 1.5*99/27,
                                         "message" => ""
                                    ];
                                 // end array here
@@ -2437,7 +2439,7 @@ class UserController extends Controller
                                     "servicename" => $servicename->nombre,
                                     "currentStep" => 1.5,
                                     "color" => "warning",
-                                    "progressPercentageGen" => 1.5*100/28,
+                                    "progressPercentageGen" => 1.5*99/27,
                                     "message" => ""
                                ];
                                 // end array here

@@ -339,6 +339,14 @@
                                 ],
                                 [
                                     'icon' => 'fa-check-circle',
+                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 19.jpg',
+                                    'status' => 18,
+                                    'label' => 'Redacción de nuevo informe con la otra línea',
+                                    'mensaje' =>    "Una vez identificada la nueva línea, nuestro equipo redacta un nuevo informe completo y detallado. <br>
+                                                    Este segundo informe cumple con los mismos estándares técnicos y probatorios que el primero."
+                                ],
+                                [
+                                    'icon' => 'fa-check-circle',
                                     'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 20.jpg',
                                     'status' => 19,
                                     'label' => 'Redacción de nuevo informe con la otra línea',
@@ -1528,7 +1536,7 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach ( $negocios as $negocio )
                                 <tr>
-                                    <td>{{$negocio["dealname"]}}<br>{!!$negocio["hubspot_id"] ? "<small>Se encuentra en <b><a href='https://app.hubspot.com/contacts/20053496/record/0-3/".$negocio['hubspot_id']."'>Hubspot</a></b></small>" : ''!!}{!! $negocio["teamleader_id"] ? "<small> y en <b><a href='https://focus.teamleader.eu/web/projects/".$negocio['teamleader_id']."'>Teamleader</a></b></small>" : '' !!}</td>
+                                    <td>{{$negocio["servicio_solicitado"]}}<br>{!!$negocio["hubspot_id"] ? "<small>Se encuentra en <b><a href='https://app.hubspot.com/contacts/20053496/record/0-3/".$negocio['hubspot_id']."'>Hubspot</a></b></small>" : ''!!}{!! $negocio["teamleader_id"] ? "<small> y en <b><a href='https://focus.teamleader.eu/web/projects/".$negocio['teamleader_id']."'>Teamleader</a></b></small>" : '' !!}</td>
                                     <td>
                                         <a href="/deal/{{$negocio['id']}}/edit" target="_blank" class="btn btn-primary">
                                             <i class="fas fa-eye"></i>
