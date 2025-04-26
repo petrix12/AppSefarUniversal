@@ -2124,9 +2124,12 @@ class UserController extends Controller
 
         $flagOtrosProcesos = false;
         $flagMayorInformacion = false;
-        $flagNoApto = false;
+        $flagAprobado = false;
         $flagArbolIncompleto = true;
         $flagInvestigacionProfunda = false;
+        $ag1 = false;
+        $ag2 = false;
+        $ag3 = false;
 
         $i = 0;
         foreach ( $columnasparatabla as $generacion => $grupo ){
@@ -2171,18 +2174,18 @@ class UserController extends Controller
 
                     if ($resultadoIA == 2  || $resultadoIA == "2") {
                         $flagOtrosProcesos = true;
-                        $clientstatus == 1.21;
                     } else if ($resultadoIA == 3 || $resultadoIA == "3") {
                         $flagMayorInformacion = true;
-                        $clientstatus == 1.21;
                     } else if ($resultadoIA == 4  || $resultadoIA == "4") {
-                        $flagNoApto = true;
-                        $clientstatus == 1.21;
+                        $flagAprobado = true;
                     } else if  ($resultadoIA == 6 || $resultadoIA == "6") {
                         $flagInvestigacionProfunda = true;
-                        $clientstatus == 1.21;
-                    } else{
-                        $clientstatus = $clientstatus + $resultadoIA;
+                    } else if  ($resultadoIA == 5 || $resultadoIA == "5") {
+                        $ag2 = true;
+                    } else if  ($resultadoIA == 7 || $resultadoIA == "7") {
+                        $ag3 = true;
+                    } else {
+                        $ag1 = true;
                     }
                 } else {
                     $clientstatus == 1;
@@ -2382,68 +2385,62 @@ class UserController extends Controller
                         // end array here
                     } else if($clientstatus >= 1 && $clientstatus< 2) {
 
-                        if ($flagMayorInformacion==1 || $flagMayorInformacion==true) {
-                            // add array here
+                        if ($flagAprobado == true){
                             $cos[] = [
                                 "servicename" => $servicename->nombre,
-                                "currentStep" => 1.5,
+                                "currentStep" => 7,
+                                "color" => "info",
+                                "progressPercentageGen" => 6*99/27,
+                                "message" => "Debes añadir más información a tu arbol genealógico. <a href='/tree' style='color: #fa1d33'>Haz click aquí</a> para continuar."
+                           ];
+                        } else if ($flagOtrosProcesos == true) {
+                            $cos[] = [
+                                "servicename" => $servicename->nombre,
+                                "currentStep" => 6,
                                 "color" => "warning",
-                                "progressPercentageGen" => 1.5*99/27,
-                                "message" => "Se requiere Mayor Información."
+                                "progressPercentageGen" => 5*99/27,
+                                "message" => "Eres apto para otros procesos. Para más información, no dudes en comunicarte con nuestro equipo de expertos a través de <a href='https://sefaruniversal.com' style='color: #fa1d33'>sefaruniversal.com</a>."
                            ];
-                            // end array here
-                        } else if ($flagOtrosProcesos==1 || $flagOtrosProcesos==true) {
-                            // add array here
+                        } else if ($flagMayorInformacion == true) {
                             $cos[] = [
                                 "servicename" => $servicename->nombre,
-                                "currentStep" => 1.5,
-                                "color" => "info",
-                                "progressPercentageGen" => 1.5*99/27,
-                                "message" => "Nuestros especialistas continúan explorando nuevas opciones para ti. Aunque aún no se ha confirmado una conexión genealógica, podemos brindarte alternativas como la obtención de residencias o visas para que puedas vivir, trabajar y desarrollarte legalmente en la Unión Europea.<br><br>Adicionalmente, nuestro equipo continúa ampliando y verificando bases de datos genealógicas, lo que podría generar nuevas oportunidades para ti en el futuro."
+                                "currentStep" => 2,
+                                "color" => "warning",
+                                "progressPercentageGen" => 1*99/27,
+                                "message" => "Se requiere mayor información de tu parte. Te hemos enviado un correo electrónico con todos los requerimientos."
                            ];
-                            // end array here
-                        } else if ($flagNoApto==1 || $flagNoApto==true) {
-                            // add array here
+                        } else if ($flagInvestigacionProfunda == true) {
                             $cos[] = [
                                 "servicename" => $servicename->nombre,
-                                "currentStep" => 1.5,
+                                "currentStep" => 5,
                                 "color" => "info",
-                                "progressPercentageGen" => 1.5*99/27,
-                                "message" => "Nuestros especialistas continúan explorando nuevas opciones para ti. Aunque aún no se ha confirmado una conexión genealógica, podemos brindarte alternativas como la obtención de residencias o visas para que puedas vivir, trabajar y desarrollarte legalmente en la Unión Europea.<br><br>Adicionalmente, nuestro equipo continúa ampliando y verificando bases de datos genealógicas, lo que podría generar nuevas oportunidades para ti en el futuro."
+                                "progressPercentageGen" => 4*99/27,
+                                "message" => "Eres apto para otros procesos. Para más información, no dudes en comunicarte con nuestro equipo de expertos a través de <a href='https://sefaruniversal.com' style='color: #fa1d33'>sefaruniversal.com</a>."
                            ];
-                            // end array here
-                        } else if ($flagInvestigacionProfunda== 1 || $flagInvestigacionProfunda==true) {
-                            // add array here
-                                $cos[] = [
-                                    "servicename" => $servicename->nombre,
-                                    "currentStep" => 1.5,
-                                    "color" => "warning",
-                                    "progressPercentageGen" => 1.5*99/27,
-                                    "message" => "Nuestros especialistas continúan explorando y reconstruyendo líneas genealógicas nuevas y desconocidas, para ampliar tus posibilidades.<br><br>Para ello, necesitamos llevar a cabo una investigación más profunda, utilizando fuentes especializadas e investigadores particulares.<br><br>En este sentido, te hemos enviado un presupuesto detallado para esta investigación más profunda, en la que optimizaremos al máximo la búsqueda de conexiones genealógicas para conectar con tus raíces europeas."
-                               ];
-                            // end array here
-                        } else {
-                            if($clientstatus >= 1 && $clientstatus < 1.7) {
-                                // add array here
-                                    $cos[] = [
-                                        "servicename" => $servicename->nombre,
-                                        "currentStep" => 1.5,
-                                        "color" => "warning",
-                                        "progressPercentageGen" => 1.5*99/27,
-                                        "message" => ""
-                                   ];
-                                // end array here
-                            } else {
-                                // add array here
-                                $cos[] = [
-                                    "servicename" => $servicename->nombre,
-                                    "currentStep" => 1.5,
-                                    "color" => "warning",
-                                    "progressPercentageGen" => 1.5*99/27,
-                                    "message" => ""
-                               ];
-                                // end array here
-                            }
+                        } else if ($ag3 == true) {
+                            $cos[] = [
+                                "servicename" => $servicename->nombre,
+                                "currentStep" => 4,
+                                "color" => "info",
+                                "progressPercentageGen" => 3*99/27,
+                                "message" => "Eres apto para otros procesos. Para más información, no dudes en comunicarte con nuestro equipo de expertos a través de <a href='https://sefaruniversal.com' style='color: #fa1d33'>sefaruniversal.com</a>."
+                           ];
+                        } else if ($ag2 == true) {
+                            $cos[] = [
+                                "servicename" => $servicename->nombre,
+                                "currentStep" => 3,
+                                "color" => "info",
+                                "progressPercentageGen" => 2*99/27,
+                                "message" => "Eres apto para otros procesos. Para más información, no dudes en comunicarte con nuestro equipo de expertos a través de <a href='https://sefaruniversal.com' style='color: #fa1d33'>sefaruniversal.com</a>."
+                           ];
+                        } else if ($ag1 == true) {
+                            $cos[] = [
+                                "servicename" => $servicename->nombre,
+                                "currentStep" => 2,
+                                "color" => "info",
+                                "progressPercentageGen" => 1*99/27,
+                                "message" => "Eres apto para otros procesos. Para más información, no dudes en comunicarte con nuestro equipo de expertos a través de <a href='https://sefaruniversal.com' style='color: #fa1d33'>sefaruniversal.com</a>."
+                           ];
                         }
                     }
                 }
@@ -2634,9 +2631,9 @@ class UserController extends Controller
 1. **Etiquetas que indican 'apto para otros procesos' o similares**: Devuelve '2'.
 2. **Etiquetas que indican 'Se requiere Mayor información' o similar**: Devuelve '3'.
 3. **Etiquetas de 'NO APTO'**: Si el cliente no es apto, devuelve '2'.
-4. **Etiquetas con palabras clave como 'aprobado' o 'aceptado'**: Devuelve un valor entre 0.7 y 0.9. Nunca devuelvas 1.0, ya que es difícil determinar si está completamente aprobado. Evalúa la cantidad de etiquetas y su contexto para ajustar el valor.
-5. **Etiquetas que indican algún avance en el proceso o asociación genealógica**: Devuelve un valor entre 0.41 y 0.69. Mientras más bajo el valor, mejor.
-6. **Otros casos**: Devuelve un valor entre 0 y 0.4.
+4. **Etiquetas con palabras clave como 'aprobado' o 'aceptado'**: Devuelve un valor '4'.
+5. **Etiquetas que indican algún avance en el proceso o asociación genealógica**: Dependiendo de que tan cerca de cerrarse, devuelve '5' o '7'. ¿Si está más cerca de cerrarse? devuelve '7', ¿si no? devuelve '5'.
+6. **Otros casos**: Devuelve 0.
 7. **Apto para investigación mas profunda**: Si la etiqueta indica que el cliente es APTO PARA UNA INVESTIGACIÓN MAS PROFUNDA, devuelve el valor 6.
 
 Recuerda: Tu respuesta debe ser SOLO UN NÚMERO, sin explicaciones ni texto adicional."
