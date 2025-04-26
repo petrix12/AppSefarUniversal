@@ -2455,7 +2455,7 @@ class UserController extends Controller
            ];
         }
 
-        $html = view('crud.users.edit', compact('cos', 'servicename', 'flagInvestigacionProfunda', 'flagArbolIncompleto', 'flagNoApto', 'dealsDataCOS', 'flagMayorInformacion', 'flagOtrosProcesos', 'clientstatus', 'negocios', 'usuariosMonday', 'dataMonday', 'mondayData', 'boardId', 'boardName', 'mondayFormBuilder', 'archivos', 'user', 'roles', 'permissions', 'facturas', 'servicios', 'columnasparatabla'))->render();
+        $html = view('crud.users.edit', compact('cos', 'servicename', 'flagInvestigacionProfunda', 'flagArbolIncompleto', 'flagAprobado', 'dealsDataCOS', 'flagMayorInformacion', 'flagOtrosProcesos', 'clientstatus', 'negocios', 'usuariosMonday', 'dataMonday', 'mondayData', 'boardId', 'boardName', 'mondayFormBuilder', 'archivos', 'user', 'roles', 'permissions', 'facturas', 'servicios', 'columnasparatabla'))->render();
         return $html;
 
     }
