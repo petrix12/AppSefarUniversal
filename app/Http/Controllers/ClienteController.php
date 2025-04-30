@@ -3487,7 +3487,7 @@ class ClienteController extends Controller
                 } elseif ($servicio[0]['tipov']==1) {
                     $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
                 } else {
-                    $desc = "Inicia tu Proceso: " . $servicio_solicitado;
+                    $desc = "Inicia tu Proceso: " . $servicio_solicitado->nombre;
                 }
 
                 if (isset($request->pay)){
