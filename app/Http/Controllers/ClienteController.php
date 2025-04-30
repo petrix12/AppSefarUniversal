@@ -3457,11 +3457,12 @@ class ClienteController extends Controller
 
                 $compras = Compras::where('id_user', $userdata[0]["id"])->where('pagado', 0)->get();
 
-                $servicio = Servicio::where('id_hubspot', "like", $servicio_solicitado->nombre."%")->get();
+                $servicio[] = $servicio_solicitado;
 
                 $cps = json_decode(json_encode($compras),true);
 
-                $hss = json_decode(json_encode($servicio),true);
+                $hss = [];
+                $hss[] = json_decode(json_encode($servicio_solicitado),true);
 
                 if($userdata[0]["servicio"] == "Recurso de Alzada"){
                     $monto = $hss[0]["precio"] * ($cantidad+1);
