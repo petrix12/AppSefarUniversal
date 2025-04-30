@@ -308,13 +308,13 @@
                         <div class="d-flex justify-content-center mb-3">
                             <button class="btn btn-primary cfrSefar" type="submit">Realizar pago</button>
                         </div>
-                        <!--
+
                         <div class="separator"></div>
 
                         <div class="d-flex justify-content-center mb-3">
                             <div id="paypal-button-container" class="w-100"></div>
                         </div>
-                        -->
+
                         <div class="separator"></div>
 
                         <div class="form-group required mb-3">
