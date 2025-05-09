@@ -366,14 +366,12 @@
                                         @endphp
                                         <tr>
                                             <td>{{ $compra["descripcion"] }}</td>
-                                            <td>{{ $compra["monto"] }}€</td>
+                                            <td><center>{{ $compra["monto"] }}€</center></td>
                                             @if(count($compras) > 1)
                                                 <td>
-                                                    <button type="button"
-                                                            class="btn btn-danger deletedesc"
-                                                            id="{{ $compra['id'] }}">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
+                                                    <center>
+                                                    <i class="fas fa-trash text-danger cursor-pointer deletedesc" id="{{ $compra['id'] }}" style="font-size: 1.2rem;"></i>
+                                                    </center>
                                                 </td>
                                             @endif
                                         </tr>
