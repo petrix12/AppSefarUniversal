@@ -1674,7 +1674,7 @@ class ClienteController extends Controller
             } elseif ($servicio[0]['tipov'] == 1) {
                 $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
             } else {
-                $desc = "Inicia tu Proceso: " . $hss[0]["nombre"];
+                $desc = "Análisis genealógico: " . $hss[0]["nombre"];
             }
 
             Compras::create([
@@ -1743,7 +1743,7 @@ class ClienteController extends Controller
             } elseif ($servicio[0]['tipov'] == 1) {
                 $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
             } else {
-                $desc = "Inicia tu Proceso: " . $hss[0]["nombre"];
+                $desc = "Análisis genealógico: " . $hss[0]["nombre"];
             }
 
             Compras::create([
@@ -3487,7 +3487,7 @@ class ClienteController extends Controller
                 } elseif ($servicio[0]['tipov']==1) {
                     $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
                 } else {
-                    $desc = "Inicia tu Proceso: " . $servicio_solicitado->nombre;
+                    $desc = "Análisis genealógico: " . $servicio_solicitado->nombre;
                 }
 
                 if (isset($request->pay)){
