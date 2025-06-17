@@ -2169,13 +2169,6 @@ class UserController extends Controller
         hasta el registro del cliente (no es mala idea, si me lo preguntas... porque esto me permite revisar muchas cosas que, convenientemente,
         son importantes en el proceso, y voy dandole mas prioridad a lo que va de último)... así, resuelvo un peo gigante.*/
 
-        /*
-            Esta mierda es importante mas adelante... es lo de la IA.
-            $checktags = $dataMonday["men__desplegable"];
-
-            $resultadoIA = $this->analizarEtiquetas($checktags);
-        */
-
         //Esta variable sirve para obtener el servicio contratado por el usuario...
         //pero tomaremos en consideración el del negocio, en caso de que tenga negocios.
         $servicename = Servicio::where("id_hubspot", "like", $user->servicio."%")->first();
@@ -2184,13 +2177,15 @@ class UserController extends Controller
 
         $hoy = Carbon::now();
 
-        $mondaydataforAI["etiquetas"] = $dataMonday["men__desplegable"];
-        $mondaydataforAI["información_genealogia"] = $this->obtenerValorPorTitulo($result, 'INFO GENEALOGIA');
-        $mondaydataforAI["información_ventas"] = $this->obtenerValorPorTitulo($result, 'INFO VENTAS/ATC');
-        $mondaydataforAI["solicitud_cliente"] = $this->obtenerValorPorTitulo($result, 'CLIENTE SOLICITUD');
-        $mondaydataforAI["respuesta_solicitud"] = $this->obtenerValorPorTitulo($result, 'Estado Solicitud CDD');
-        $mondaydataforAI["arbol_cargado"] = $this->obtenerValorPorTitulo($result, 'ARBOL CARGADO');
-        $mondaydataforAI["inicio_investigacion"] = $this->obtenerValorPorTitulo($result, 'ARBOL CARGADO');
+        if (isset($dataMonday["men__desplegable"])){
+            $mondaydataforAI["etiquetas"] = $dataMonday["men__desplegable"];
+            $mondaydataforAI["información_genealogia"] = $this->obtenerValorPorTitulo($result, 'INFO GENEALOGIA');
+            $mondaydataforAI["información_ventas"] = $this->obtenerValorPorTitulo($result, 'INFO VENTAS/ATC');
+            $mondaydataforAI["solicitud_cliente"] = $this->obtenerValorPorTitulo($result, 'CLIENTE SOLICITUD');
+            $mondaydataforAI["respuesta_solicitud"] = $this->obtenerValorPorTitulo($result, 'Estado Solicitud CDD');
+            $mondaydataforAI["arbol_cargado"] = $this->obtenerValorPorTitulo($result, 'ARBOL CARGADO');
+            $mondaydataforAI["inicio_investigacion"] = $this->obtenerValorPorTitulo($result, 'ARBOL CARGADO');
+        }
 
         //dd($mondaydataforAI, $result);
 
