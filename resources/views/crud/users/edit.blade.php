@@ -195,19 +195,20 @@
                             @php
                                 $flag = true;
                             @endphp
-                        @endif
-                        @if (!empty($cosuser[0]["warning"]))
-                            <script>
-                                document.addEventListener('DOMContentLoaded', function () {
-                                    Swal.fire({
-                                        icon: 'error',
-                                        html: `{!! $cosuser[0]["warning"] !!}`,
-                                        showConfirmButton: false,
-                                        allowOutsideClick: true,
-                                        allowEscapeKey: true
+
+                            @if (!empty($cosuser[0]["warning"]))
+                                <script>
+                                    document.addEventListener('DOMContentLoaded', function () {
+                                        Swal.fire({
+                                            icon: 'error',
+                                            html: `{!! $cosuser[0]["warning"] !!}`,
+                                            showConfirmButton: false,
+                                            allowOutsideClick: true,
+                                            allowEscapeKey: true
+                                        });
                                     });
-                                });
-                            </script>
+                                </script>
+                            @endif
                         @endif
 
                         <div class="card">
