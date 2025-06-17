@@ -181,6 +181,10 @@
                     font-weight: bold;
                     text-align: center;
                 }
+
+                .nav-link{
+                    color:black;
+                }
             </style>
             <div class="tab-content mt-4" id="formTabsContent">
                 <!-- Primer Formulario -->
