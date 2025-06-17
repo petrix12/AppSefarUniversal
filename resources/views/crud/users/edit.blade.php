@@ -187,13 +187,13 @@
 
                 <div class="tab-pane fade show active" id="mystatus" role="tabpanel" aria-labelledby="mystatus-tab">
                 @php
-                    $flag = false;
+                    $flag = 0;
                 @endphp
                 @if (count($cosuser)>0)
                     @foreach ($cosuser as $co)
                         @if(array_key_exists($co["servicio"], $cos))
                             @php
-                                $flag = true;
+                                $flag = $flag + 1;
                             @endphp
 
                             @if (!empty($cosuser[0]["warning"]))
@@ -341,7 +341,7 @@
                     @endforeach
                 @endif
 
-                @if (!$flag)
+                @if ($flag==0)
                     <div class="alert alert-info text-center my-5 p-5" role="alert" style="max-width: 700px; margin: 0 auto; background-color: rgba(0,0,0,0.05); border: 1px solid #b6e0fe; border-radius: 15px;">
                         <center>
                             <img class="img-fluid" style="max-width:100px;"
