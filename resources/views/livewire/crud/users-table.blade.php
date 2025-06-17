@@ -167,7 +167,7 @@
                                         </form>&#160;
                                     @endcan
                                     @can('crud.users.status')
-                                        <a style="color:white!important;" href="{{ route('crud.users.show', $user) }}" class="btn btn-warning" title="Estatus del Cliente"><i class="fas fa-exclamation fa-fw"></i></a>&#160;
+                                        <a style="color:white!important;" href="{{ route('crud.users.edit', $user) }}" class="btn btn-warning" title="Estatus del Cliente"><i class="fas fa-exclamation fa-fw"></i></a>&#160;
                                     @endcan
                                     @if($user->passport)
                                         <a style="color:white!important;" href="{{ route('arboles.tree.index', $user->passport) }}" title="Ver Arbol - Vista Horizontal" class="btn btn-success" ><i class="fab fa-pagelines fa-fw"></i></a>
