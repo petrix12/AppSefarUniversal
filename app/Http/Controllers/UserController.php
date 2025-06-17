@@ -2505,16 +2505,19 @@ class UserController extends Controller
         }
 
         foreach ($cosuser as &$co) {
-            $maxGen = sizeof($cos[$co['servicio']]["genealogico"]);
-            $maxJur = sizeof($cos[$co['servicio']]["juridico"]);
+            if(isset($cos[$co['servicio']])){
+                $maxGen = sizeof($cos[$co['servicio']]["genealogico"]);
+                $maxJur = sizeof($cos[$co['servicio']]["juridico"]);
 
-            $co['progressPercentageGen'] = isset($co['currentStepGen']) && $co['currentStepGen'] >= 0
-                ? round(($co['currentStepGen'] / $maxGen) * 100)
-                : 0;
+                $co['progressPercentageGen'] = isset($co['currentStepGen']) && $co['currentStepGen'] >= 0
+                    ? round(($co['currentStepGen'] / $maxGen) * 100)
+                    : 0;
 
-            $co['progressPercentageJur'] = isset($co['currentStepJur']) && $co['currentStepJur'] >= 0
-                ? round(($co['currentStepJur'] / $maxJur) * 100)
-                : 0;
+                $co['progressPercentageJur'] = isset($co['currentStepJur']) && $co['currentStepJur'] >= 0
+                    ? round(($co['currentStepJur'] / $maxJur) * 100)
+                    : 0;
+            }
+
         }
         unset($co);
 
