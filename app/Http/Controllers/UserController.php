@@ -1962,9 +1962,13 @@ class UserController extends Controller
 
         $result = json_decode(json_encode(Monday::customQuery($query)), true);
 
-        $mondaydataforAI = [
-            "tablero" => $result['items'][0]['board']['name']
-        ];
+        if (isset($result['items'][0]['board']['name'])){
+            $mondaydataforAI = [
+                "tablero" => $result['items'][0]['board']['name']
+            ];
+        } else {
+            $mondaydataforAI = [];
+        }
 
         // Registrar hora de fin
 
