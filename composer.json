@@ -63,7 +63,8 @@
             "Database\\Seeders\\": "database/seeders/"
         },
         "files": [
-            "app/helper/sefar.php"
+            "app/helper/sefar.php",
+            "app/helper/cos.php"
         ]
     },
     "autoload-dev": {

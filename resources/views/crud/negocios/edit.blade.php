@@ -444,6 +444,19 @@
                             </div>
                         </div>
 
+                        <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
+                            <span class="ctvSefar block text-indigo-600">Nacionalidad Concedida</span>
+                        </h2>
+
+                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="nacionalidad_concedida" class="block text-sm font-medium text-gray-700">FECHA NACIONALIDAD CONCEDIDA</label>
+                                <input type="date" id="nacionalidad_concedida" name="nacionalidad_concedida"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value="{{ old('nacionalidad_concedida', $deal_db->nacionalidad_concedida) }}">
+                            </div>
+                        </div>
+
                         <div class="mt-6 text-right">
                             <button type="submit" id="clientSubmitButton" class="cfrSefar btn btn-primary mt-3">
                                 Guardar

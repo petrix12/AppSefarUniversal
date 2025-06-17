@@ -3,6 +3,8 @@
 @section('title', $user->name)
 
 @section('content_header')
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
 @stop
 
@@ -102,7 +104,7 @@
                     width: 100%;
                     padding-bottom: 10px; /* Espacio para el scroll */
                     -webkit-overflow-scrolling: touch; /* Scroll suave en móviles */
-                    height: 200px;
+                    height: 150px;
                 }
 
                 /* Contenedor principal del progreso */
@@ -184,410 +186,180 @@
                 <!-- Primer Formulario -->
 
                 <div class="tab-pane fade show active" id="mystatus" role="tabpanel" aria-labelledby="mystatus-tab">
-                @if (count($cos)>0)
-                    @foreach ($cos as $co)
-                        @php
-                            $steps = [
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 1.jpg',
-                                    'status' => 0,
-                                    'label' => 'Registro',
-                                    'mensaje' =>    "Aún te encuentras en el proceso de registro. Para avanzar y que iniciemos con tu estudio, es necesario que firmes tu contrato, completes tu información y realices el pago de tu análisis jurídico-genealógico.<br>
-                                                    Una vez completados estos pasos, nuestro equipo de especialistas en Derecho genealogista, historia y paleografía, comenzará el análisis detallado de tu genealogía."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 2.jpg',
-                                    'status' => 1,
-                                    'label' => 'Pre análisis',
-                                    'mensaje' =>    "Hemos recibido tu información inicial y estamos realizando una evaluación preliminar de tus antecedentes familiares.<br>
-                                                    Esta etapa nos permite identificar patrones, apellidos relevantes, y elementos históricos que nos indiquen la viabilidad de un linaje sefardí.<br>
-                                                    Este análisis nos ayuda a definir la estrategia investigativa que se utilizará a lo largo del estudio."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 3.jpg',
-                                    'status' => 2,
-                                    'label' => 'Análisis Genealógico 1',
-                                    'mensaje' =>    "Nuestros expertos en Derecho genealogista, historia y paleografía, están llevando a cabo un análisis exhaustivo de tu genealogía.<br>
-                                                    Nos encontramos verificando la documentación que nos has suministrado y contrastándola con diferentes bases de datos históricas y genealógicas para identificar conexiones y vínculos, que suelen remontarse incluso entre 15 y 20 generaciones atrás."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 4.jpg',
-                                    'status' => 3,
-                                    'label' => 'Análisis Genealógico 2',
-                                    'mensaje' =>    "Nuestro equipo ha detectado posibles vínculos adicionales y ha activado una nueva línea de investigación para enriquecer tu árbol genealógico.<br>
-                                                    Este segundo nivel de análisis nos permite descubrir conexiones familiares indirectas o poco evidentes, que refuerzan o complementan el primer informe y abren nuevas posibilidades."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 5.jpg',
-                                    'status' => 4,
-                                    'label' => 'Análisis Genealógico 3',
-                                    'mensaje' =>    "Hemos entrado en una etapa avanzada del análisis genealógico, donde buscamos información en registros poco convencionales: archivos inquisitoriales, censos coloniales, listas de conversos y bibliografía especializada.<br>
-                                                    Activamos alianzas con investigadores locales e internacionales para ampliar tus posibilidades de éxito."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 6.jpg',
-                                    'status' => 5,
-                                    'label' => 'Investigación más profunda',
-                                    'mensaje' =>    "Nuestros especialistas continúan explorando y reconstruyendo líneas genealógicas nuevas y desconocidas, para ampliar tus posibilidades.<br>
-                                                    Para ello, necesitamos llevar a cabo una investigación más profunda, utilizando fuentes especializadas e investigadores particulares.<br>
-                                                    Te hemos enviado un presupuesto detallado para esta investigación, en la que optimizaremos al máximo la búsqueda de conexiones genealógicas."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 7.jpg',
-                                    'status' => 6,
-                                    'label' => 'Apto para Otros Procesos',
-                                    'mensaje' =>    "Nuestros especialistas continúan explorando nuevas opciones para ti.<br>
-                                                    Aunque aún no se ha confirmado una conexión genealógica, podemos brindarte alternativas como la obtención de residencias o visas para que puedas vivir, trabajar y desarrollarte legalmente en la Unión Europea.<br>
-                                                    Adicionalmente, nuestro equipo continúa ampliando y verificando bases de datos genealógicas, lo que podría generar nuevas oportunidades para ti en el futuro."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 8 modificado.jpg',
-                                    'status' => 7,
-                                    'label' => 'Genealogía aprobada',
-                                    'mensaje' =>    "¡Excelente noticia, tu genealogía ha sido aprobada!<br>
-                                                    Esto quiere decir que eres apto para obtener tu nacionalidad por medio de tu genealogía.<br>
-                                                    Te hemos hecho llegar un presupuesto, en el cual detallamos nuestra propuesta profesional para que inicies formalmente tu solicitud de nacionalidad."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 9.jpg',
-                                    'status' => 8,
-                                    'label' => 'Presupuesto y Pago para la Redacción del Informe Genealógico',
-                                    'mensaje' =>    "Nos encontramos a la espera de su pago para iniciar su proceso.<br>
-                                                    Una vez proceda con su abono, nuestros especialistas se encargarán de elaborar un informe genealógico detallado, sustentando generación por generación con documentos probatorios, que llegan incluso a remontarse a una antigüedad de 7 siglos atrás."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 10.jpg',
-                                    'status' => 9,
-                                    'label' => 'Redacción del Informe Genealógico',
-                                    'mensaje' =>    "Nuestro equipo especializado se encuentra recopilando y organizando toda la documentación filiatoria necesaria para sustentar tu linaje.<br>
-                                                    Además, estamos elaborando un informe detallado con referencias históricas y pruebas documentales que refuercen tu conexión con tu antepasado sefardí."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 11.jpg',
-                                    'status' => 10,
-                                    'label' => 'Investigación y búsqueda de documentos',
-                                    'mensaje' =>    "En esta etapa, realizamos un rastreo intensivo de documentos en archivos parroquiales, notariales, civiles e inquisitoriales.<br>
-                                                    Nuestro objetivo es recolectar todas las pruebas documentales que sostienen tu árbol genealógico y que pueden ser requeridas por la FCJE o el Ministerio de Justicia."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 12.jpg',
-                                    'status' => 11,
-                                    'label' => 'Transcripción de documentos',
-                                    'mensaje' =>    "Muchos de los documentos antiguos están escritos en castellano arcaico, latín o paleografía difícil de leer. <br>
-                                                    Nuestro equipo especializado transcribe y adapta estos textos al formato jurídico y documental necesario para que sean aceptados como prueba válida."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 13.jpg',
-                                    'status' => 12,
-                                    'label' => 'Anexos al expediente genealógico',
-                                    'mensaje' =>    "Estamos organizando todos los documentos recopilados en una estructura formal y detallada.<br>
-                                                    Estos anexos acompañarán tu informe genealógico principal y serán presentados ante las autoridades correspondientes como evidencia directa."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 14.jpg',
-                                    'status' => 13,
-                                    'label' => 'Anexos al expediente genealógico',
-                                    'mensaje' =>    "Hemos completado tu informe genealógico con éxito y está listo para su presentación ante la Federación de Comunidades Judías de España.<br>
-                                                    Este documento es fundamental para tu expediente de solicitud del certificado de origen sefardí."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 15.jpg',
-                                    'status' => 14,
-                                    'label' => 'Presupuesto y Pago para la Carga del Informe Genealógico en la Plataforma de la FCJE',
-                                    'mensaje' =>    "Actualmente se encuentra pendiente su pago correspondiente a la solicitud de su certificado ante la Federación de Comunidades Judías de España (FCJE).<br>
-                                                    Es necesario que proceda con el mismo para evitar retrasos en su proceso y así cargar su informe en la plataforma de la FCJE."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 16.jpg',
-                                    'status' => 15,
-                                    'label' => 'Expediente Cargado en el FCJE',
-                                    'mensaje' =>    "¡Tu expediente ha sido cargado con éxito en la plataforma de la FCJE! <br>
-                                                    En esta etapa, la Federación hará una revisión exhaustiva de la documentación que hemos aportado y, una vez validado tu expediente, procederán con la emisión de tu certificado de origen sefardí."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 17.jpg',
-                                    'status' => 16,
-                                    'label' => 'Defensa del informe',
-                                    'mensaje' =>    "Nos encontramos en la fase de evaluación por parte de la FCJE.<br>
-                                                    Durante esta etapa, es común que se presenten observaciones o dudas que deben ser respondidas con precisión. <br>
-                                                    Nuestro equipo se encarga de defender el informe presentado, aportando información adicional y argumentando cada punto."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 18.jpg',
-                                    'status' => 17,
-                                    'label' => 'Respuesta de requerimientos',
-                                    'mensaje' =>    "Si la Federación solicita más documentos o aclaraciones, nos encargamos de brindar respuestas puntuales y fundamentadas. <br>
-                                                    Este seguimiento activo es esencial para que tu proceso avance sin bloqueos ni demoras innecesarias."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 19.jpg',
-                                    'status' => 18,
-                                    'label' => 'Redacción de nuevo informe con la otra línea',
-                                    'mensaje' =>    "Una vez identificada la nueva línea, nuestro equipo redacta un nuevo informe completo y detallado. <br>
-                                                    Este segundo informe cumple con los mismos estándares técnicos y probatorios que el primero."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 20.jpg',
-                                    'status' => 19,
-                                    'label' => 'Redacción de nuevo informe con la otra línea',
-                                    'mensaje' =>    "Una vez identificada la nueva línea, nuestro equipo redacta un nuevo informe completo y detallado. <br>
-                                                    Este segundo informe cumple con los mismos estándares técnicos y probatorios que el primero."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 21.jpg',
-                                    'status' => 20,
-                                    'label' => 'Defensa del nuevo informe',
-                                    'mensaje' =>    "Al igual que con el primero, el nuevo informe será defendido ante la FCJE por nuestro equipo. <br>
-                                                    Realizamos presentaciones argumentativas claras y respaldadas por fuentes verificadas."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 22.jpg',
-                                    'status' => 21,
-                                    'label' => 'Respuesta de requerimientos de la nueva línea',
-                                    'mensaje' =>    "En caso de que se presenten observaciones sobre esta nueva línea, también gestionamos sus respuestas. <br>
-                                                    Nuestro compromiso es asegurar que cualquier alternativa viable sea validada por completo."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 23.jpg',
-                                    'status' => 22,
-                                    'label' => 'Certificado descargado',
-                                    'mensaje' =>    "¡Tu certificado de origen sefardí ha sido emitido por la FCJE! <br>
-                                                    Este documento representa un gran paso en tu proceso y será clave en la formalización de tu expediente."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 24.jpg',
-                                    'status' => 23,
-                                    'label' => 'Redacción del Informe Legal',
-                                    'mensaje' =>    "Nuestro equipo jurídico se encuentra trabajando en la redacción de tu informe legal, asegurando que toda la documentación cumpla con los requisitos exigidos por las autoridades. <br>
-                                                    Cada detalle es revisado minuciosamente para maximizar las probabilidades de éxito en tu solicitud."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 25.jpg',
-                                    'status' => 24,
-                                    'label' => 'Solicitud de la documentación para formalizar',
-                                    'mensaje' =>    "Te indicamos exactamente qué documentos debes entregarnos para formalizar tu expediente. <br>
-                                                    Este paso es vital para garantizar que tu solicitud sea admitida sin errores."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 26.jpg',
-                                    'status' => 25,
-                                    'label' => 'Revisión de la documentación jurídico-genealógica',
-                                    'mensaje' =>    "Una vez recibida la documentación, nuestro equipo la revisa integralmente. <br>
-                                                    Verificamos que cumpla con los estándares del Ministerio de Justicia y que sea coherente con tu genealogía."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 27.jpg',
-                                    'status' => 26,
-                                    'label' => 'Expediente formalizado',
-                                    'mensaje' =>    "¡Su expediente ha sido formalizado con éxito! <br>
-                                                    Ahora, tu proceso de nacionalidad se encuentra en manos de las autoridades españolas, contando además con un seguimiento continuo por parte de nuestro equipo jurídico."
-                                ],
-                                [
-                                    'icon' => 'fa-check-circle',
-                                    'imgurl' => '/img/IMAGENESCOS/IMAGENES COS 28.jpg',
-                                    'status' => 27,
-                                    'label' => 'Seguimiento del expediente en el Ministerio de Justicia',
-                                    'mensaje' =>    "Realizamos un seguimiento estratégico del avance de tu expediente. <br>
-                                                    Nos mantenemos atentos a cualquier notificación, requerimiento o actualización del Ministerio."
-                                ],
-                            ];
-
-                            $message = $co["message"];
-                            $color = $co["color"];
-
-                            $currentStep = $co["currentStep"];
-                        @endphp
+                @if (count($cosuser)>0)
+                    @foreach ($cosuser as $co)
+                        @if (!empty($cosuser[0]["warning"]))
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function () {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        html: `{!! $cosuser[0]["warning"] !!}`,
+                                        showConfirmButton: false,
+                                        allowOutsideClick: true,
+                                        allowEscapeKey: true
+                                    });
+                                });
+                            </script>
+                        @endif
 
                         <div class="card">
                             <div class="card-header" style="text-align: center;">
-                                <h2 class="card-title mb-4 mt-4">Estatus de mi proceso: {!! $co["servicename"] !!}</h2>
-                                <p class="mt-2" style="    padding-top: 22px;">
-                                    @if ($currentStep >=0 && $currentStep <1)
-                                        {!!$steps[0]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[0]["imgurl"]}}'>
-                                    @elseif ($currentStep >=1 && $currentStep <2)
-                                        {!!$steps[1]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[1]["imgurl"]}}'>
-                                    @elseif ($currentStep >=2 && $currentStep <3)
-                                        {!!$steps[2]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[2]["imgurl"]}}'>
-                                    @elseif ($currentStep >=3 && $currentStep <4)
-                                        {!!$steps[3]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[3]["imgurl"]}}'>
-                                    @elseif ($currentStep >=4 && $currentStep <5)
-                                        {!!$steps[4]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[4]["imgurl"]}}'>
-                                    @elseif ($currentStep >=5 && $currentStep <6)
-                                        {!!$steps[5]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[5]["imgurl"]}}'>
-                                    @elseif ($currentStep >=6 && $currentStep <7)
-                                        {!!$steps[6]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[6]["imgurl"]}}'>
-                                    @elseif ($currentStep >=7 && $currentStep <8)
-                                        {!!$steps[7]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[7]["imgurl"]}}'>
-                                    @elseif ($currentStep >=8 && $currentStep <9)
-                                        {!!$steps[8]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[8]["imgurl"]}}'>
-                                    @elseif ($currentStep >=9 && $currentStep <10)
-                                        {!!$steps[9]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[9]["imgurl"]}}'>
-                                    @elseif ($currentStep >=10 && $currentStep <11)
-                                        {!!$steps[10]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[10]["imgurl"]}}'>
-                                    @elseif ($currentStep >=11 && $currentStep <12)
-                                        {!!$steps[11]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[11]["imgurl"]}}'>
-                                    @elseif ($currentStep >=12 && $currentStep <13)
-                                        {!!$steps[12]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[12]["imgurl"]}}'>
-                                    @elseif ($currentStep >=13 && $currentStep <14)
-                                        {!!$steps[13]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[13]["imgurl"]}}'>
-                                    @elseif ($currentStep >=14 && $currentStep <15)
-                                        {!!$steps[14]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[14]["imgurl"]}}'>
-                                    @elseif ($currentStep >=15 && $currentStep <16)
-                                        {!!$steps[15]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[15]["imgurl"]}}'>
-                                    @elseif ($currentStep >=16 && $currentStep <17)
-                                        {!!$steps[16]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[16]["imgurl"]}}'>
-                                    @elseif ($currentStep >=17 && $currentStep <18)
-                                        {!!$steps[17]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[17]["imgurl"]}}'>
-                                    @elseif ($currentStep >=18 && $currentStep <19)
-                                        {!!$steps[18]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[18]["imgurl"]}}'>
-                                    @elseif ($currentStep >=19 && $currentStep <20)
-                                        {!!$steps[19]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[19]["imgurl"]}}'>
-                                    @elseif ($currentStep >=20 && $currentStep <21)
-                                        {!!$steps[20]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[20]["imgurl"]}}'>
-                                    @elseif ($currentStep >=21 && $currentStep <22)
-                                        {!!$steps[21]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[21]["imgurl"]}}'>
-                                    @elseif ($currentStep >=22 && $currentStep <23)
-                                        {!!$steps[22]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[22]["imgurl"]}}'>
-                                    @elseif ($currentStep >=23 && $currentStep <24)
-                                        {!!$steps[23]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[23]["imgurl"]}}'>
-                                    @elseif ($currentStep >=24 && $currentStep <25)
-                                        {!!$steps[24]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[24]["imgurl"]}}'>
-                                    @elseif ($currentStep >=25 && $currentStep <26)
-                                        {!!$steps[25]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[25]["imgurl"]}}'>
-                                    @elseif ($currentStep >=26 && $currentStep <27)
-                                        {!!$steps[26]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[26]["imgurl"]}}'>
-                                    @elseif ($currentStep >=27 && $currentStep <28)
-                                        {!!$steps[27]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[27]["imgurl"]}}'>
-                                    @elseif ($currentStep >=28 && $currentStep <29)
-                                        {!!$steps[28]["mensaje"]!!}
-                                        <img class="w-100 mt-4" src='{{$steps[28]["imgurl"]}}'>
-                                    @endif
-                                </p>
-                            </div>
-                            <div class="card-body" style="text-align: center;">
-                                <!-- Contenedor para el scroll horizontal -->
-                                <div class="progress-scroll-container">
-                                    <div class="progress-container" id="progressContainer">
-                                        <!-- Línea de progreso completa (fondo) -->
-                                        <div class="progress-line-full"></div>
+                                <h2 class="card-title my-4">Estatus de mi proceso: {!! $co["servicio"] !!}</h2>
+                                @php
+                                    $gen = $co["currentStepGen"] ?? -1;
+                                    $jur = $co["currentStepJur"] ?? -1;
 
-                                        <!-- Línea de progreso activa -->
+                                    $pasoFinal = null;
+                                    $numeroPaso = null;
+
+                                    // Calcular paso solo si alguna línea ha comenzado
+                                    if ($gen !== -1 || $jur !== -1) {
+                                        $numeroPaso = 0;
+
+                                        if ($gen !== -1) {
+                                            $numeroPaso += $gen;
+                                        }
+
+                                        if ($jur !== -1) {
+                                            $numeroPaso += $jur;
+                                        }
+
+                                        $numeroPaso += 1;
+
+                                        // Buscar ese paso en array_cos
+                                        foreach ($cos[$co["servicio"]] as $rama) {
+                                            foreach ($rama as $paso) {
+                                                if ($paso['paso'] === $numeroPaso) {
+                                                    $pasoFinal = $paso;
+                                                    break 2;
+                                                }
+                                            }
+                                        }
+                                    }
+                                @endphp
+                                @if($pasoFinal)
+                                    <p class="pb-4">Estatus actual: <b>{{ $pasoFinal['nombre_corto'] }}</b></p>
+                                @else
+                                    <p class="pb-4">Estatus actual: <b>No iniciado</b></p>
+                                @endif
+                            </div>
+
+                            <div style="text-align: center; border-bottom: #DEE2E6 solid 1px;">
+                                <div id="carouselExampleSlidesOnly" class="carousel slide" data-ride="carousel">
+                                    <div class="carousel-inner">
+                                        @php
+                                            $flag = true;
+                                        @endphp
+                                        @foreach($imageUrls as $key => $url)
+
+                                            <div class="carousel-item {{ $flag ? 'active' : '' }}">
+                                                <img class="d-block w-100" src="{{$url}}" alt="First slide">
+                                            </div>
+
+                                            @php
+                                                $flag = false;
+                                            @endphp
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="text-align: center; background: rgba(0,0,0,0.05);" class="py-4">
+                                {!! $pasoFinal["promesa"] !!}
+                            </div>
+
+                            @if(sizeof($pasoFinal["textos_adicionales"]) > 0)
+                                <div style="text-align: center; border-bottom: #DEE2E6 solid 1px; background: rgba(0,0,0,0.05);" class="pb-4">
+                                    <h4 class="mb-4"><b>Información Adicional</b></h4>
+                                    <div class="accordion accordion-flush" id="accordionFlushExample" style="max-width: 800px; margin: 0 auto;">
+                                        @foreach($pasoFinal["textos_adicionales"] as $index => $item)
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header" id="flush-heading-{{ $index }}">
+                                                    <button class="accordion-button collapsed" type="button"
+                                                            data-bs-toggle="collapse"
+                                                            data-bs-target="#flush-collapse-{{ $index }}"
+                                                            aria-expanded="false"
+                                                            aria-controls="flush-collapse-{{ $index }}">
+                                                        {{ $item['nombre'] ?? '' }}
+                                                    </button>
+                                                </h2>
+                                                <div id="flush-collapse-{{ $index }}"
+                                                    class="accordion-collapse collapse"
+                                                    aria-labelledby="flush-heading-{{ $index }}"
+                                                    data-bs-parent="#textosAdicionalesAccordion">
+                                                    <div class="accordion-body">
+                                                        {!! $item['texto'] ?? '' !!}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
+                            <div class="card-body text-center">
+
+                                <h4 class="mb-4"><b>Progreso Genealógico</b></h4>
+                                <div class="progress-scroll-container mb-4">
+                                    <div class="progress-container" id="progressContainerGen">
+                                        <div class="progress-line-full"></div>
                                         <div class="progress-line" style="width: {{ $co['progressPercentageGen'] }}%;"></div>
 
-                                        <!-- Círculos de las etapas -->
-                                        @foreach ($steps as $step)
-                                            <div class="progress-step {{ $currentStep >= $step['status'] ? 'active' : '' }}" data-step="{{ $step['status'] }}">
-                                                <i class="fas {{ $step['icon'] }}"></i>
-                                                <span class="step-label">{{ $step['label'] }}</span>
+                                        @foreach ($cos[$co['servicio']]["genealogico"] as $step)
+                                            <div class="progress-step {{ $co['currentStepGen']+1 >= $step['paso'] ? 'active' : '' }}" data-step="{{ $step['paso'] }}">
+                                                <i class="fas fa-check-circle"></i>
+                                                <span class="step-label">{{ $step['nombre_corto'] }}</span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                <h4 class="mb-4"><b>Progreso Jurídico</b></h4>
+                                <div class="progress-scroll-container mb-4">
+                                    <div class="progress-container" id="progressContainerJur">
+                                        <div class="progress-line-full"></div>
+                                        <div class="progress-line" style="width: {{ $co['progressPercentageJur'] }}%;"></div>
+
+                                        @foreach ($cos[$co['servicio']]["juridico"] as $step)
+                                            <div class="progress-step {{ $co['currentStepJur']+1 >= $step['paso'] ? 'active' : '' }}" data-step="{{ $step['paso'] }}">
+                                                <i class="fas fa-check-circle"></i>
+                                                <span class="step-label">{{ $step['nombre_corto'] }}</span>
                                             </div>
                                         @endforeach
                                     </div>
                                 </div>
                             </div>
-                            <script>
-                                document.addEventListener('DOMContentLoaded', function() {
-                                    const container = document.querySelector('.progress-scroll-container');
-                                    const progressContainer = document.getElementById('progressContainer');
-                                    const activeSteps = document.querySelectorAll('.progress-step.active');
-
-                                    if (activeSteps.length > 0) {
-                                        // Seleccionar el último paso activo
-                                        const lastActiveStep = activeSteps[activeSteps.length - 1];
-
-                                        // Calcular la posición para centrarlo
-                                        const containerWidth = container.clientWidth;
-                                        const stepRect = lastActiveStep.getBoundingClientRect();
-                                        const containerRect = container.getBoundingClientRect();
-                                        const stepCenter = stepRect.left - containerRect.left + stepRect.width/2;
-                                        const scrollTo = stepCenter - containerWidth/2 + container.scrollLeft;
-
-                                        // Aplicar el scroll
-                                        container.scrollTo({
-                                            left: scrollTo,
-                                            behavior: 'smooth'
-                                        });
-                                    }
-                                });
-                            </script>
-                            @if ($color == "warning")
-                            <div class="alert my-4" style="border-radius:15px; margin: auto; position:relative; width: 500px; background-color: #eeeeee; border: 1px solid #cccccc">
-                                <div style="position: absolute; top: -10px; right: -10px; width: 30px; height: 30px; background-color: #fa1d33; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-exclamation" style="color: white;"></i>
-                                </div>
-
-                                <p class="mb-0">
-                                    <strong>Estado actual:</strong> {!! $message !!}
-                                </p>
-                            </div>
-                            @elseif ($color == "danger")
-                            <div class="alert my-4" style="border-radius:15px; margin: auto; position:relative; width: 500px; background-color: #eeeeee; border: 1px solid #cccccc">
-                                <div style="position: absolute; top: -10px; right: -10px; width: 30px; height: 30px; background-color: #ffcc00; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-exclamation" style="color: white;"></i>
-                                </div>
-                                <p class="mb-0">
-                                    <strong>Estado actual:</strong> {!! $message !!}
-                                </p>
-                            </div>
-                            @endif
                         </div>
                     @endforeach
                 @endif
                 </div>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        const containers = document.querySelectorAll('.progress-scroll-container');
+
+                        containers.forEach(container => {
+                            const progressContainer = container.querySelector('.progress-container');
+                            const activeSteps = container.querySelectorAll('.progress-step.active');
+
+                            if (activeSteps.length > 0) {
+                                const lastActiveStep = activeSteps[activeSteps.length - 1];
+
+                                const containerWidth = container.clientWidth;
+                                const stepRect = lastActiveStep.getBoundingClientRect();
+                                const containerRect = container.getBoundingClientRect();
+                                const stepCenter = stepRect.left - containerRect.left + stepRect.width / 2;
+                                const scrollTo = stepCenter - containerWidth / 2 + container.scrollLeft;
+
+                                container.scrollTo({
+                                    left: scrollTo,
+                                    behavior: 'smooth'
+                                });
+                            }
+                        });
+                    });
+                </script>
+
 
                 <div class="tab-pane fade show" id="personal_data" role="tabpanel" aria-labelledby="personal-data-tab">
                     <form id="datos-personales-form">
