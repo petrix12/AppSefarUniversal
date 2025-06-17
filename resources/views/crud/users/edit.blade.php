@@ -183,7 +183,7 @@
                 }
 
                 .nav-link{
-                    color:black;
+                    color:black!important;
                 }
             </style>
             <div class="tab-content mt-4" id="formTabsContent">
