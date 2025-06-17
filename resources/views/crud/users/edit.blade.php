@@ -191,7 +191,7 @@
                 @endphp
                 @if (count($cosuser)>0)
                     @foreach ($cosuser as $co)
-                        @if(isset($cos[$co["servicio"]]))
+                        @if(array_key_exists($co["servicio"], $cos))
                             @php
                                 $flag = true;
                             @endphp
