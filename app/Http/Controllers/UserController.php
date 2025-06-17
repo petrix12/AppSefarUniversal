@@ -2486,7 +2486,7 @@ class UserController extends Controller
                 }
             }
         } else {
-            $cosuser[0]["servicio"] = $servicename["nombre"];
+            $cosuser[0]["servicio"] = $servicename["id_hubspot"];
             if ($user->contrato == 0) {
                 $cosuser[0]["warning"] = "Debes firmar tu contrato para continuar con el proceso.<br><br><a href='/contrato' class='cfrSefar inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Haz click aquí para firmar tu contrato</a>";
                 $cosuser[0]["currentStepGen"] = 0;
