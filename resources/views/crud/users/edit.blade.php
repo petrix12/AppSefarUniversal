@@ -186,174 +186,174 @@
                 <!-- Primer Formulario -->
 
                 <div class="tab-pane fade show active" id="mystatus" role="tabpanel" aria-labelledby="mystatus-tab">
-                @php
-                    $flag = 0;
-                @endphp
-                @if (count($cosuser)>0)
-                    @foreach ($cosuser as $co)
-                        @if(array_key_exists($co["servicio"], $cos))
-                            @php
-                                $flag = $flag + 1;
-                            @endphp
+                    @php
+                        $errorNotAvailable = 0;
+                    @endphp
+                    @if (count($cosuser)>0)
+                        @foreach ($cosuser as $co)
+                            @if(array_key_exists($co["servicio"], $cos))
+                                @php
+                                    $errorNotAvailable = $errorNotAvailable + 1;
+                                @endphp
 
-                            @if (!empty($cosuser[0]["warning"]))
-                                <script>
-                                    document.addEventListener('DOMContentLoaded', function () {
-                                        Swal.fire({
-                                            icon: 'error',
-                                            html: `{!! $cosuser[0]["warning"] !!}`,
-                                            showConfirmButton: false,
-                                            allowOutsideClick: true,
-                                            allowEscapeKey: true
+                                @if (!empty($cosuser[0]["warning"]))
+                                    <script>
+                                        document.addEventListener('DOMContentLoaded', function () {
+                                            Swal.fire({
+                                                icon: 'error',
+                                                html: `{!! $cosuser[0]["warning"] !!}`,
+                                                showConfirmButton: false,
+                                                allowOutsideClick: true,
+                                                allowEscapeKey: true
+                                            });
                                         });
-                                    });
-                                </script>
-                            @endif
-                            <div class="card">
-                                <div class="card-header" style="text-align: center;">
-                                    <h2 class="card-title my-4">Estatus de mi proceso: {!! $co["servicio"] !!}</h2>
-                                    @php
-                                        $gen = $co["currentStepGen"] ?? -1;
-                                        $jur = $co["currentStepJur"] ?? -1;
+                                    </script>
+                                @endif
+                                <div class="card">
+                                    <div class="card-header" style="text-align: center;">
+                                        <h2 class="card-title my-4">Estatus de mi proceso: {!! $co["servicio"] !!}</h2>
+                                        @php
+                                            $gen = $co["currentStepGen"] ?? -1;
+                                            $jur = $co["currentStepJur"] ?? -1;
 
-                                        $pasoFinal = null;
-                                        $numeroPaso = null;
+                                            $pasoFinal = null;
+                                            $numeroPaso = null;
 
-                                        // Calcular paso solo si alguna línea ha comenzado
-                                        if ($gen !== -1 || $jur !== -1) {
-                                            $numeroPaso = 0;
+                                            // Calcular paso solo si alguna línea ha comenzado
+                                            if ($gen !== -1 || $jur !== -1) {
+                                                $numeroPaso = 0;
 
-                                            if ($gen !== -1) {
-                                                $numeroPaso += $gen;
-                                            }
+                                                if ($gen !== -1) {
+                                                    $numeroPaso += $gen;
+                                                }
 
-                                            if ($jur !== -1) {
-                                                $numeroPaso += $jur;
-                                            }
+                                                if ($jur !== -1) {
+                                                    $numeroPaso += $jur;
+                                                }
 
-                                            $numeroPaso += 1;
+                                                $numeroPaso += 1;
 
-                                            // Buscar ese paso en array_cos
-                                            foreach ($cos[$co["servicio"]] as $rama) {
-                                                foreach ($rama as $paso) {
-                                                    if ($paso['paso'] === $numeroPaso) {
-                                                        $pasoFinal = $paso;
-                                                        break 2;
+                                                // Buscar ese paso en array_cos
+                                                foreach ($cos[$co["servicio"]] as $rama) {
+                                                    foreach ($rama as $paso) {
+                                                        if ($paso['paso'] === $numeroPaso) {
+                                                            $pasoFinal = $paso;
+                                                            break 2;
+                                                        }
                                                     }
                                                 }
                                             }
-                                        }
-                                    @endphp
-                                    @if($pasoFinal)
-                                        <p class="pb-4">Estatus actual: <b>{{ $pasoFinal['nombre_corto'] }}</b></p>
-                                    @else
-                                        <p class="pb-4">Estatus actual: <b>No iniciado</b></p>
-                                    @endif
-                                </div>
+                                        @endphp
+                                        @if($pasoFinal)
+                                            <p class="pb-4">Estatus actual: <b>{{ $pasoFinal['nombre_corto'] }}</b></p>
+                                        @else
+                                            <p class="pb-4">Estatus actual: <b>No iniciado</b></p>
+                                        @endif
+                                    </div>
 
-                                <div style="text-align: center; border-bottom: #DEE2E6 solid 1px;">
-                                    <div id="carouselExampleSlidesOnly" class="carousel slide" data-ride="carousel">
-                                        <div class="carousel-inner">
-                                            @php
-                                                $flag = true;
-                                            @endphp
-                                            @foreach($imageUrls as $key => $url)
-
-                                                <div class="carousel-item {{ $flag ? 'active' : '' }}">
-                                                    <img class="d-block w-100" src="{{$url}}" alt="First slide">
-                                                </div>
-
+                                    <div style="text-align: center; border-bottom: #DEE2E6 solid 1px;">
+                                        <div id="carouselExampleSlidesOnly" class="carousel slide" data-ride="carousel">
+                                            <div class="carousel-inner">
                                                 @php
-                                                    $flag = false;
+                                                    $flag = true;
                                                 @endphp
-                                            @endforeach
+                                                @foreach($imageUrls as $key => $url)
+
+                                                    <div class="carousel-item {{ $flag ? 'active' : '' }}">
+                                                        <img class="d-block w-100" src="{{$url}}" alt="First slide">
+                                                    </div>
+
+                                                    @php
+                                                        $flag = false;
+                                                    @endphp
+                                                @endforeach
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                <div style="text-align: center; background: rgba(0,0,0,0.05); padding: 1rem 3rem;">
-                                    {!! $pasoFinal["promesa"] !!}
-                                </div>
+                                    <div style="text-align: center; background: rgba(0,0,0,0.05); padding: 1rem 3rem;">
+                                        {!! $pasoFinal["promesa"] !!}
+                                    </div>
 
-                                @if(sizeof($pasoFinal["textos_adicionales"]) > 0)
-                                    <div style="text-align: center; border-bottom: #DEE2E6 solid 1px; background: rgba(0,0,0,0.05);" class="pb-4">
-                                        <h4 class="mb-4"><b>Información Adicional</b></h4>
-                                        <div class="accordion accordion-flush" id="accordionFlushExample" style="max-width: 800px; margin: 0 auto;">
-                                            @foreach($pasoFinal["textos_adicionales"] as $index => $item)
-                                                <div class="accordion-item">
-                                                    <h2 class="accordion-header" id="flush-heading-{{ $index }}">
-                                                        <button class="accordion-button collapsed" type="button"
-                                                                data-bs-toggle="collapse"
-                                                                data-bs-target="#flush-collapse-{{ $index }}"
-                                                                aria-expanded="false"
-                                                                aria-controls="flush-collapse-{{ $index }}">
-                                                            {{ $item['nombre'] ?? '' }}
-                                                        </button>
-                                                    </h2>
-                                                    <div id="flush-collapse-{{ $index }}"
-                                                        class="accordion-collapse collapse"
-                                                        aria-labelledby="flush-heading-{{ $index }}"
-                                                        data-bs-parent="#textosAdicionalesAccordion">
-                                                        <div class="accordion-body">
-                                                            {!! $item['texto'] ?? '' !!}
+                                    @if(sizeof($pasoFinal["textos_adicionales"]) > 0)
+                                        <div style="text-align: center; border-bottom: #DEE2E6 solid 1px; background: rgba(0,0,0,0.05);" class="pb-4">
+                                            <h4 class="mb-4"><b>Información Adicional</b></h4>
+                                            <div class="accordion accordion-flush" id="accordionFlushExample" style="max-width: 800px; margin: 0 auto;">
+                                                @foreach($pasoFinal["textos_adicionales"] as $index => $item)
+                                                    <div class="accordion-item">
+                                                        <h2 class="accordion-header" id="flush-heading-{{ $index }}">
+                                                            <button class="accordion-button collapsed" type="button"
+                                                                    data-bs-toggle="collapse"
+                                                                    data-bs-target="#flush-collapse-{{ $index }}"
+                                                                    aria-expanded="false"
+                                                                    aria-controls="flush-collapse-{{ $index }}">
+                                                                {{ $item['nombre'] ?? '' }}
+                                                            </button>
+                                                        </h2>
+                                                        <div id="flush-collapse-{{ $index }}"
+                                                            class="accordion-collapse collapse"
+                                                            aria-labelledby="flush-heading-{{ $index }}"
+                                                            data-bs-parent="#textosAdicionalesAccordion">
+                                                            <div class="accordion-body">
+                                                                {!! $item['texto'] ?? '' !!}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            @endforeach
+                                                @endforeach
+                                            </div>
                                         </div>
-                                    </div>
-                                @endif
+                                    @endif
 
-                                <div class="card-body text-center">
+                                    <div class="card-body text-center">
 
-                                    <h4 class="mb-4"><b>Progreso Genealógico</b></h4>
-                                    <div class="progress-scroll-container mb-4">
-                                        <div class="progress-container" id="progressContainerGen">
-                                            <div class="progress-line-full"></div>
-                                            <div class="progress-line" style="width: {{ $co['progressPercentageGen'] }}%;"></div>
+                                        <h4 class="mb-4"><b>Progreso Genealógico</b></h4>
+                                        <div class="progress-scroll-container mb-4">
+                                            <div class="progress-container" id="progressContainerGen">
+                                                <div class="progress-line-full"></div>
+                                                <div class="progress-line" style="width: {{ $co['progressPercentageGen'] }}%;"></div>
 
-                                            @foreach ($cos[$co['servicio']]["genealogico"] as $step)
-                                                <div class="progress-step {{ $co['currentStepGen']+1 >= $step['paso'] ? 'active' : '' }}" data-step="{{ $step['paso'] }}">
-                                                    <i class="fas fa-check-circle"></i>
-                                                    <span class="step-label">{{ $step['nombre_corto'] }}</span>
-                                                </div>
-                                            @endforeach
+                                                @foreach ($cos[$co['servicio']]["genealogico"] as $step)
+                                                    <div class="progress-step {{ $co['currentStepGen']+1 >= $step['paso'] ? 'active' : '' }}" data-step="{{ $step['paso'] }}">
+                                                        <i class="fas fa-check-circle"></i>
+                                                        <span class="step-label">{{ $step['nombre_corto'] }}</span>
+                                                    </div>
+                                                @endforeach
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <h4 class="mb-4"><b>Progreso Jurídico</b></h4>
-                                    <div class="progress-scroll-container mb-4">
-                                        <div class="progress-container" id="progressContainerJur">
-                                            <div class="progress-line-full"></div>
-                                            <div class="progress-line" style="width: {{ $co['progressPercentageJur'] }}%;"></div>
+                                        <h4 class="mb-4"><b>Progreso Jurídico</b></h4>
+                                        <div class="progress-scroll-container mb-4">
+                                            <div class="progress-container" id="progressContainerJur">
+                                                <div class="progress-line-full"></div>
+                                                <div class="progress-line" style="width: {{ $co['progressPercentageJur'] }}%;"></div>
 
-                                            @foreach ($cos[$co['servicio']]["juridico"] as $step)
-                                                <div class="progress-step {{ $co['currentStepJur']+1 >= $step['paso'] ? 'active' : '' }}" data-step="{{ $step['paso'] }}">
-                                                    <i class="fas fa-check-circle"></i>
-                                                    <span class="step-label">{{ $step['nombre_corto'] }}</span>
-                                                </div>
-                                            @endforeach
+                                                @foreach ($cos[$co['servicio']]["juridico"] as $step)
+                                                    <div class="progress-step {{ $co['currentStepJur']+1 >= $step['paso'] ? 'active' : '' }}" data-step="{{ $step['paso'] }}">
+                                                        <i class="fas fa-check-circle"></i>
+                                                        <span class="step-label">{{ $step['nombre_corto'] }}</span>
+                                                    </div>
+                                                @endforeach
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        @endif
-                    @endforeach
-                @endif
+                            @endif
+                        @endforeach
+                    @endif
 
-                @if ($flag==0)
-                    <div class="alert alert-info text-center my-5 p-5" role="alert" style="max-width: 700px; margin: 0 auto; background-color: rgba(0,0,0,0.05); border: 1px solid #b6e0fe; border-radius: 15px;">
-                        <center>
-                            <img class="img-fluid" style="max-width:100px;"
-                                    src="/img/logonormal.png"
-                                    alt="Logo Sefar">
-                            <h4 class="alert-heading"><b>¡Muy pronto disponible!</b></h4>
-                            <p class="mt-3">Estamos trabajando para que puedas visualizar el estatus de tu proceso directamente desde esta plataforma.</p>
-                            <hr>
-                            <p class="mb-0">Te avisaremos tan pronto esté activo. Gracias por tu paciencia.</p>
-                        </center>
-                    </div>
-                @endif
+                    @if ($errorNotAvailable==0)
+                        <div class="alert alert-info text-center my-5 p-5" role="alert" style="max-width: 700px; margin: 0 auto; background-color: rgba(0,0,0,0.05); border: 1px solid #b6e0fe; border-radius: 15px;">
+                            <center>
+                                <img class="img-fluid" style="max-width:100px;"
+                                        src="/img/logonormal.png"
+                                        alt="Logo Sefar">
+                                <h4 class="alert-heading"><b>¡Muy pronto disponible!</b></h4>
+                                <p class="mt-3">Estamos trabajando para que puedas visualizar el estatus de tu proceso directamente desde esta plataforma.</p>
+                                <hr>
+                                <p class="mb-0">Te avisaremos tan pronto esté activo. Gracias por tu paciencia.</p>
+                            </center>
+                        </div>
+                    @endif
                 </div>
 
                 <script>
