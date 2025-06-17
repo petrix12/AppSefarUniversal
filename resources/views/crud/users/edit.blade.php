@@ -211,6 +211,11 @@
                                 @endif
                                 <div class="card">
                                     <div class="card-header" style="text-align: center;">
+                                        <center>
+                                            <img class="img-fluid" style="max-width:100px;"
+                                                src="/img/logonormal.png"
+                                                alt="Logo Sefar">
+                                        </center>
                                         <h2 class="card-title my-4">Estatus de mi proceso: {!! $co["servicio"] !!}</h2>
                                         @php
                                             $gen = $co["currentStepGen"] ?? -1;
