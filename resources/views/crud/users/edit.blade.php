@@ -186,8 +186,16 @@
                 <!-- Primer Formulario -->
 
                 <div class="tab-pane fade show active" id="mystatus" role="tabpanel" aria-labelledby="mystatus-tab">
+                @php
+                    $flag = false;
+                @endphp
                 @if (count($cosuser)>0)
                     @foreach ($cosuser as $co)
+                        @if(isset($cos[$co["servicio"]]))
+                            @php
+                                $flag = true;
+                            @endphp
+                        @endif
                         @if (!empty($cosuser[0]["warning"]))
                             <script>
                                 document.addEventListener('DOMContentLoaded', function () {
@@ -331,6 +339,16 @@
                             </div>
                         </div>
                     @endforeach
+                @endif
+
+                @if (!$flag)
+                    <div class="alert alert-info text-center my-5 p-5" role="alert" style="max-width: 700px; margin: 0 auto; background-color: #e8f4fd; border: 1px solid #b6e0fe; border-radius: 15px;">
+                        <img src="https://cdn-icons-png.flaticon.com/512/4712/4712100.png" alt="En desarrollo" width="100" class="mb-4">
+                        <h4 class="alert-heading"><b>¡Muy pronto disponible!</b></h4>
+                        <p class="mt-3">Estamos trabajando para que puedas visualizar el estatus de tu proceso directamente desde esta plataforma.</p>
+                        <hr>
+                        <p class="mb-0">Te avisaremos tan pronto esté activo. Gracias por tu paciencia.</p>
+                    </div>
                 @endif
                 </div>
 
