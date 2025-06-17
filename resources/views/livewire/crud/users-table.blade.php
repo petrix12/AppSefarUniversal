@@ -52,6 +52,46 @@
                         <button wire:click="clear" class="py-1 px-2 mt-1 ml-2 border border-transparent rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"><i class="far fa-window-close"></i></button>
                         @endif
                     </div>
+                    <div class="flex flex-wrap items-end bg-white px-4 py-3 sm:px-6 gap-2">
+                        {{-- Servicio contratado --}}
+                        <div class="flex-1 min-w-[200px]">
+                            <select wire:model.live="filterServicio" class="mt-1 block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="">Todos los servicios</option>
+                                @foreach ($listaServicios as $servicio)
+                                    <option value="{{ $servicio }}">{{ $servicio }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        {{-- Contrato firmado --}}
+                        <div class="flex-1 min-w-[200px]">
+                            <select wire:model.live="filterContrato" class="mt-1 block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="">--Contrato--</option>
+                                <option value="1">Firmado</option>
+                                <option value="0">No firmado</option>
+                            </select>
+                        </div>
+
+                        {{-- Pago --}}
+                        <div class="flex-1 min-w-[200px]">
+                            <select wire:model.live="filterPago" class="mt-1 block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="">--Pago--</option>
+                                <option value="2">Pagó y completó información</option>
+                                <option value="1">Pagó pero no completó información</option>
+                                <option value="0">No pagó</option>
+                            </select>
+                        </div>
+
+                        {{-- Botón limpiar --}}
+                        @if ($filterServicio || $filterContrato !== '' || $filterPago !== '')
+                        <div class="w-auto ml-auto">
+                            <button wire:click="clearFilters" class="py-1 px-4 border border-transparent rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                Limpiar <i class="fas fa-times ml-1"></i>
+                            </button>
+                        </div>
+                        @endif
+                    </div>
+
                     @if ($users->count())
                     <table class="min-w-full divide-y divide-gray-200" style="max-width: 100%;">
                         <thead class="bg-gray-50">
@@ -143,7 +183,7 @@
                     </div>
                     @else
                     <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6 text-gray-500">
-                        No hay resultado para la búsqueda {{ $search }} en la página {{ $page }} al mostrar {{ $perPage }} por página
+                        No hay resultado para la búsqueda {{ $search }} en la página {{ $page ?? 1 }} al mostrar {{ $perPage }} por página
                     </div>
                     @endif
                 </div>

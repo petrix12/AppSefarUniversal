@@ -16,26 +16,67 @@ class UsersTable extends Component
         'perPage' => ['except' => '10']
     ];
 
-    public $page = '1';
     public $search = '';
-    public $perPage = '10';
+    public $filterServicio = '';
+    public $filterContrato = '';
+    public $filterPago = '';
+    public $perPage = 10;
 
     public function render()
     {
+        $users = User::query()
+            ->when($this->search, function ($query) {
+                $query->where(function ($q) {
+                    $q->where('name', 'LIKE', "%{$this->search}%")
+                    ->orWhere('email', 'LIKE', "%{$this->search}%")
+                    ->orWhere('passport', 'LIKE', "%{$this->search}%");
+                });
+            })
+            ->when($this->filterServicio !== '', function ($query) {
+                $query->where(function ($q) {
+                    $q->where('servicio', $this->filterServicio)
+                    ->orWhereIn('id', function ($sub) {
+                        $sub->select('id_user')
+                            ->from('compras')
+                            ->where('servicio_hs_id', $this->filterServicio);
+                    });
+                });
+            })
+            ->when($this->filterContrato !== '', function ($query) {
+                $query->where('contrato', $this->filterContrato);
+            })
+            ->when($this->filterPago !== '', function ($query) {
+                $query->where('pay', $this->filterPago);
+            })
+            ->orderBy('created_at', 'DESC')
+            ->paginate($this->perPage);
+
+        // Obtener servicios únicos desde usuarios
+        $serviciosDeUsuarios = User::whereNotNull('servicio')->pluck('servicio')->toArray();
+        $serviciosDeCompras = Compras::whereNotNull('servicio_hs_id')->pluck('servicio_hs_id')->toArray();
+
+        // Unir y eliminar duplicados
+        $listaServicios = collect(array_unique(array_merge($serviciosDeUsuarios, $serviciosDeCompras)))->sort()->values();
+
         return view('livewire.crud.users-table', [
-            'users' => User::where('name','LIKE',"%$this->search%")
-                ->orWhere('email','LIKE',"%$this->search%")
-                ->orWhere('passport','LIKE',"%$this->search%")
-                ->orderBy('created_at','DESC')
-                ->paginate($this->perPage) ,
-            'compras' => Compras::all()
+            'users' => $users,
+            'compras' => Compras::all(),
+            'listaServicios' => $listaServicios,
         ]);
     }
 
     public function clear(){
         $this->search = '';
-        $this->page = 1;
         $this->perPage = '10';
+        $this->resetPage();
+    }
+
+    public function clearFilters()
+    {
+        $this->filterServicio = '';
+        $this->filterContrato = '';
+        $this->filterPago = '';
+        $this->resetPage();
     }
 
     public function updatedSearch()
