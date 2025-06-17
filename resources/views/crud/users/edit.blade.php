@@ -264,7 +264,7 @@
                                 </div>
                             </div>
 
-                            <div style="text-align: center; background: rgba(0,0,0,0.05);" class="py-4">
+                            <div style="text-align: center; background: rgba(0,0,0,0.05);" class="p-4">
                                 {!! $pasoFinal["promesa"] !!}
                             </div>
 
