@@ -246,7 +246,7 @@
 
                                         @if (isset($co["warning"]))
                                             <div class="alert alert-warning alert-dismissible fade show small py-4" role="alert">
-                                                <br><i class="fas fa-exclamation-triangle me-2" style="font-size: 30px"></i><br>
+                                                <i class="fas fa-exclamation-triangle me-2" style="font-size: 30px"></i><br><br>
                                                 {!! $co["warning"] !!}
                                             </div>
                                         @endif
