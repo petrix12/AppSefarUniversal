@@ -252,7 +252,7 @@
                                         @endif
                                     </div>
 
-                                    <div style="text-align: center; border-bottom: #DEE2E6 solid 1px;">
+                                    <div style="text-align: center; border-bottom: #DEE2E6 solid 1px;height: 150px; overflow: hidden; ">
                                         <div id="carouselExampleSlidesOnly" class="carousel slide" data-ride="carousel">
                                             <div class="carousel-inner">
                                                 @php
@@ -261,7 +261,16 @@
                                                 @foreach($imageUrls as $key => $url)
 
                                                     <div class="carousel-item {{ $flag ? 'active' : '' }}">
-                                                        <img class="d-block w-100" src="{{$url}}" alt="First slide">
+                                                        <img
+                                                            class="d-block w-100"
+                                                            src="{{$url}}"
+                                                            alt="First slide"
+                                                            style="
+                                                                object-fit: cover;
+                                                                height: 150px;
+                                                                width: 100%;
+                                                            "
+                                                        />
                                                     </div>
 
                                                     @php
