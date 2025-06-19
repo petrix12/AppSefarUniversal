@@ -259,7 +259,7 @@
 
                                         @if (isset($co["warning"]))
                                             <div class="alert alert-warning alert-dismissible fade show small py-2" role="alert">
-                                                <i class="fas fa-exclamation-triangle me-2"></i> {{ $co["warning"] }}
+                                                <i class="fas fa-exclamation-triangle me-2"></i> {!! $co["warning"] !!}
                                                 <button type="button" class="btn-close p-2" data-bs-dismiss="alert" aria-label="Close"></button>
                                             </div>
                                         @endif
