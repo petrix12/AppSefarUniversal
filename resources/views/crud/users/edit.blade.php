@@ -254,6 +254,8 @@
                                         @else
                                             <p class="pb-4">Estatus actual: <b>No iniciado</b></p>
                                         @endif
+
+                                        <p class="pb-4">{!! $pasoFinal["promesa"] !!}</p>
                                     </div>
 
                                     <div style="text-align: center; border-bottom: #DEE2E6 solid 1px;">
@@ -274,10 +276,6 @@
                                                 @endforeach
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div style="text-align: center; background: rgba(0,0,0,0.05); padding: 1rem 3rem;">
-                                        {!! $pasoFinal["promesa"] !!}
                                     </div>
 
                                     @if(sizeof($pasoFinal["textos_adicionales"]) > 0)
