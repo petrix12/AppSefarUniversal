@@ -196,19 +196,6 @@
                                     $errorNotAvailable = $errorNotAvailable + 1;
                                 @endphp
 
-                                @if (!empty($cosuser[0]["warning"]))
-                                    <script>
-                                        document.addEventListener('DOMContentLoaded', function () {
-                                            Swal.fire({
-                                                icon: 'warning',
-                                                html: `{!! $co["warning"] !!}`,
-                                                showConfirmButton: false,
-                                                allowOutsideClick: true,
-                                                allowEscapeKey: true
-                                            });
-                                        });
-                                    </script>
-                                @endif
                                 <div class="card">
                                     <div class="card-header" style="text-align: center;">
                                         <center>
