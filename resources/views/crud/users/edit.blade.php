@@ -267,7 +267,7 @@
                                                             alt="First slide"
                                                             style="
                                                                 object-fit: cover;
-                                                                height: 150px;
+                                                                height: 220px;
                                                                 width: 100%;
                                                             "
                                                         />
