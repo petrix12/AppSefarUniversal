@@ -252,7 +252,7 @@
                                         @endif
                                     </div>
 
-                                    <div style="text-align: center; border-bottom: #DEE2E6 solid 1px;height: 150px; overflow: hidden; ">
+                                    <div style="text-align: center; border-bottom: #DEE2E6 solid 1px;height: 220px; overflow: hidden; ">
                                         <div id="carouselExampleSlidesOnly" class="carousel slide" data-ride="carousel">
                                             <div class="carousel-inner">
                                                 @php
