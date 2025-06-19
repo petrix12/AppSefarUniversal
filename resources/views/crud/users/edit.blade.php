@@ -200,8 +200,8 @@
                                     <script>
                                         document.addEventListener('DOMContentLoaded', function () {
                                             Swal.fire({
-                                                icon: 'error',
-                                                html: `{!! $cosuser[0]["warning"] !!}`,
+                                                icon: 'warning',
+                                                html: `{!! $co["warning"] !!}`,
                                                 showConfirmButton: false,
                                                 allowOutsideClick: true,
                                                 allowEscapeKey: true
@@ -256,6 +256,13 @@
                                         @endif
 
                                         <p class="pb-4">{!! $pasoFinal["promesa"] !!}</p>
+
+                                        @if (isset($co["warning"]))
+                                            <div class="alert alert-warning alert-dismissible fade show small py-2" role="alert">
+                                                <i class="fas fa-exclamation-triangle me-2"></i> {{ $co["warning"] }}
+                                                <button type="button" class="btn-close p-2" data-bs-dismiss="alert" aria-label="Close"></button>
+                                            </div>
+                                        @endif
                                     </div>
 
                                     <div style="text-align: center; border-bottom: #DEE2E6 solid 1px;">
