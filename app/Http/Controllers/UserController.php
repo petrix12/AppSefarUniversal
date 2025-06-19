@@ -2736,7 +2736,7 @@ class UserController extends Controller
                         NOTA: Solicitud cliente y respuesta de la solicitud son campos que se encuentran en el tablero 'Analisis preliminar'. Si el nombre del tablero no es ese, entonces, analisisYCorreccion será false.
                         8. **investigacionIntuituPersonae**: Devuelve 'true' si el tablero actual es 'Análisis'. Si el tablero es 'Ventas', entonces 'otrosProcesos' será 'true' y esta fase no se debe marcar como activa.
                         9. **inicioInvestigacion**: Devuelve 'true' si el tablero actual es Análisis. De resto, es 'false'.
-
+                        10. Si el cliente se encuentra en el tablero 'Análisis preliminar', no confundir con 'Analisis', TODO es false.
                         Ejemplo de respuesta esperada:
                         {
                             'otrosProcesos': false,

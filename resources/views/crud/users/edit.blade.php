@@ -258,9 +258,9 @@
                                         <p class="pb-4">{!! $pasoFinal["promesa"] !!}</p>
 
                                         @if (isset($co["warning"]))
-                                            <div class="alert alert-warning alert-dismissible fade show small py-2" role="alert">
-                                                <i class="fas fa-exclamation-triangle me-2"></i> {!! $co["warning"] !!}
-                                                <button type="button" class="btn-close p-2" data-bs-dismiss="alert" aria-label="Close"></button>
+                                            <div class="alert alert-warning alert-dismissible fade show small py-4" role="alert">
+                                                <i class="fas fa-exclamation-triangle me-2" style="font-size: 30px"></i><br>
+                                                {!! $co["warning"] !!}
                                             </div>
                                         @endif
                                     </div>
