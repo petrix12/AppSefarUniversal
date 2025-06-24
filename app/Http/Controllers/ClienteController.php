@@ -1111,6 +1111,443 @@ class ClienteController extends Controller
         return $html;
     }
 
+     protected function getHubspotData($hsId)
+    {
+        // Ejecutar llamadas concurrentes
+        $result = $this->hubspotService->executeConcurrent([
+            'contact' => fn() => $this->hubspotService->getContactByIdPromise($hsId),
+            'files' => fn() => $this->hubspotService->getEngagementsByContactIdPromise($hsId),
+            'urls' => fn() => $this->hubspotService->getContactFileFieldsPromise($hsId),
+            'deals' => fn() => $this->hubspotService->getDealsByContactIdPromise($hsId)
+        ]);
+
+        return $result;
+    }
+
+    protected function syncUserWithHubspot($user)
+    {
+        $HScontact = $this->hubspotService->searchContactByEmail($user->email)
+                ?? $this->hubspotService->searchContactByPassport($user->passport);
+
+        if (!$HScontact) {
+            throw new \Exception("El contacto no se encontró en HubSpot ni por email ni por pasaporte.");
+        }
+
+        $user->update([
+            'hs_id' => $HScontact['id'],
+            'email' => $HScontact['properties']['email'] ?? $user->email,
+            'nombres' => $HScontact['properties']['firstname'] ?? $user->nombres,
+            'apellidos' => $HScontact['properties']['lastname'] ?? $user->apellidos
+        ]);
+    }
+
+
+
+    /**
+     * Procesa archivos de forma concurrente desde URLs de HubSpot
+     *
+     * @param array $urls Array de URLs a procesar
+     * @param mixed $user Objeto del usuario
+     * @param HubspotService $hubspotService Instancia del servicio
+     * @return array Archivos procesados exitosamente
+     */
+    private function processFilesConcurrently(array $urls, $user, HubspotService $hubspotService): array
+    {
+        // 1. Configuración inicial
+        $client = new Client(['timeout' => 15]);
+        $processedFiles = [];
+
+        // 2. Obtener archivos existentes en una sola consulta
+        $existingFiles = File::where('IDCliente', $user->passport)
+            ->pluck('file')
+            ->toArray();
+
+        // 3. Preparar promesas para descargas concurrentes
+        $promises = [];
+        $validFiles = [];
+
+        foreach ($urls as $url) {
+            try {
+                $fileUrl = $hubspotService->getFileUrlFromFormIntegrations($url);
+                if (!$fileUrl) continue;
+
+                $filename = basename(parse_url($fileUrl, PHP_URL_PATH));
+                $s3Path = "public/doc/{$user->passport}/{$filename}";
+
+                // Verificar si ya existe
+                if (in_array($filename, $existingFiles)) {
+                    continue;
+                }
+                if (Storage::disk('s3')->exists($s3Path)) {
+                    continue;
+                }
+
+                $validFiles[$filename] = $s3Path;
+                $promises[$filename] = $client->getAsync($fileUrl);
+
+            } catch (\Exception $e) {
+                \Log::error("Error preparando descarga: {$e->getMessage()}");
+            }
+        }
+
+        // 4. Ejecutar descargas concurrentes
+        $responses = Promise\Utils::settle($promises)->wait();
+
+        // 5. Procesar resultados
+        foreach ($responses as $filename => $response) {
+            if ($response['state'] !== 'fulfilled') {
+                \Log::warning("Fallo descarga: {$filename}");
+                continue;
+            }
+
+            try {
+                $fileContent = $response['value']->getBody();
+                $s3Path = $validFiles[$filename];
+
+                // Subir a S3
+                Storage::disk('s3')->put($s3Path, $fileContent);
+
+                // Registrar en DB
+                File::create([
+                    'file' => $filename,
+                    'location' => "public/doc/{$user->passport}/",
+                    'IDCliente' => $user->passport,
+                ]);
+
+                $processedFiles[] = $filename;
+
+            } catch (\Exception $e) {
+                \Log::error("Error procesando {$filename}: {$e->getMessage()}");
+            }
+        }
+
+        return $processedFiles;
+    }
+
+    private function obtenerValorPorTitulo($items, $tituloBuscado) {
+        // Asegurarse de que hay items y column_values
+        if (!isset($items['items'][0]['column_values'])) {
+            return null;
+        }
+
+        foreach ($items['items'][0]['column_values'] as $columna) {
+            if (isset($columna['column']['title']) &&
+                strcasecmp(trim($columna['column']['title']), trim($tituloBuscado)) === 0) {
+                return $columna['text'] ?? null;
+            }
+        }
+
+        return null;
+    }
+
+    private function syncDealFieldsBetweenPlatforms($hubspotDeals, $teamleaderDeals, $camposRelacionados, $user)
+    {
+        $updatesToHubspotAll = [];
+        $updatesToTeamleaderAll = [];
+        $updatesToDBAll = [];
+
+        // Indexar por dealname
+        $hubspotByName = collect($hubspotDeals)->keyBy(fn($d) => $d['properties']['dealname'] ?? '');
+        $teamleaderByName = collect($teamleaderDeals)->keyBy(fn($d) => $d['title'] ?? '');
+
+        // 1. Crear faltantes en HubSpot
+        foreach ($teamleaderByName as $dealName => $tlDeal) {
+            if (!$hubspotByName->has($dealName)) {
+                try {
+                    $newHsDeal = $this->hubspotService->createDealInHubspotFromTL($tlDeal, $user->hs_id ?? null, $camposRelacionados);
+                    $hubspotByName->put($dealName, $newHsDeal); // actualiza colección
+                    Log::info("Trato creado en HubSpot desde TL: " . $dealName);
+                } catch (\Exception $e) {
+                    Log::error("Error creando trato en HubSpot desde TL: " . $e->getMessage());
+                }
+            }
+        }
+
+        // 2. Crear faltantes en Teamleader
+        foreach ($hubspotByName as $dealName => $hsDeal) {
+            if (!$teamleaderByName->has($dealName)) {
+                try {
+                    $newTLDeal = $this->teamleaderService->createProjectFromHubspotDeal($hsDeal, $user->tl_id, $camposRelacionados);
+                    $teamleaderByName->put($dealName, array_merge($newTLDeal, ['title' => $dealName]));
+                    Log::info("Trato creado en Teamleader desde HubSpot: " . $dealName);
+                } catch (\Exception $e) {
+                    Log::error("Error creando trato en TL desde HubSpot: " . $e->getMessage());
+                }
+            }
+        }
+
+        // 3. Sincronizar valores
+        foreach ($hubspotByName as $dealName => $hsDeal) {
+            $hubspotId = $hsDeal['id'] ?? null;
+            $hubspotProps = $hsDeal['properties'] ?? [];
+
+            $tlDeal = $teamleaderByName->get($dealName);
+            $teamleaderId = $tlDeal['id'] ?? null;
+            $existingFields = $tlDeal['custom_fields'] ?? [];
+
+            $hubspotLastMod = new \DateTime($hubspotProps['lastmodifieddate'] ?? '1970-01-01');
+            $teamleaderLastMod = new \DateTime($tlDeal['updated_at'] ?? '1970-01-01');
+
+            $tlCustomFields = [];
+            $hsUpdates = [];
+            $dbUpdates = [];
+
+            foreach ($camposRelacionados as $hsField => $tlFieldId) {
+                $hsValue = $hubspotProps[$hsField] ?? null;
+                $tlField = collect($existingFields)->firstWhere('definition.id', $tlFieldId);
+                $tlValue = $tlField['value'] ?? null;
+
+                $finalValue = null;
+                if ($hsValue && (!$tlValue || $hubspotLastMod > $teamleaderLastMod)) {
+                    $finalValue = $hsValue;
+                } else if ($tlValue) {
+                    $finalValue = $tlValue;
+                }
+
+                if (!is_null($finalValue)) {
+                    $tlCustomFields[] = [
+                        'id' => $tlFieldId,
+                        'value' => $finalValue
+                    ];
+
+                    if ($tlValue && (!$hsValue || $teamleaderLastMod > $hubspotLastMod)) {
+                        $hsUpdates[$hsField] = $tlValue;
+                    }
+
+                    $dbUpdates[$hsField] = $finalValue;
+                }
+            }
+
+            if ($teamleaderId && !empty($tlCustomFields)) {
+                $updatesToTeamleaderAll[$teamleaderId] = [
+                    'custom_fields' => $tlCustomFields
+                ];
+            }
+
+            if (!empty($hsUpdates) && $hubspotId) {
+                $updatesToHubspotAll[$hubspotId] = $hsUpdates;
+            }
+
+            if (!empty($dbUpdates)) {
+                $updatesToDBAll[] = [
+                    'hubspot_id' => $hubspotId,
+                    'teamleader_id' => $teamleaderId,
+                    'user_id' => $user->id,
+                    'fields' => $dbUpdates
+                ];
+            }
+        }
+
+        // Actualizar HubSpot
+        foreach ($updatesToHubspotAll as $dealId => $fields) {
+            $this->hubspotService->updateDeals($dealId, $fields);
+        }
+
+        // Actualizar Teamleader
+        foreach ($updatesToTeamleaderAll as $tlDealId => $payload) {
+            $this->teamleaderService->updateProject($tlDealId, $payload);
+        }
+
+        // Actualizar DB
+        foreach ($updatesToDBAll as $entry) {
+            $negocio = Negocio::firstOrNew([
+                'hubspot_id' => $entry['hubspot_id']
+            ]);
+            $negocio->user_id = $entry['user_id'];
+            $negocio->teamleader_id = $entry['teamleader_id'];
+
+            foreach ($entry['fields'] as $field => $value) {
+                if (Schema::hasColumn((new Negocio)->getTable(), $field)) {
+                    $negocio->{$field} = $value;
+                }
+            }
+
+            $negocio->save();
+        }
+    }
+
+    protected function processParent(array &$currentGen, array $parent, string $field, string $sex, array $peopleMap): void
+    {
+        $j = count($currentGen);
+
+        if (empty($parent[$field])) {
+            $currentGen[$j]['showbtn'] = ($parent['showbtn'] == 0) ? 0 : 1;
+            $currentGen[$j]['showbtnsex'] = $sex;
+        } else {
+            if (isset($peopleMap[$parent[$field]])) {
+                $currentGen[$j] = $peopleMap[$parent[$field]];
+                $currentGen[$j]['showbtn'] = 2;
+            }
+        }
+    }
+
+    /**
+     * Genera el texto de relación genealógica
+     */
+    protected function generateRelationshipText(int $i, int $key): string
+    {
+        $text = "";
+        $multiplicador = 4;
+
+        for ($j = 1; $j <= $key; $j++) {
+            $text .= (($i % $multiplicador) < ($multiplicador / 2) ? "P " : "M ");
+            $multiplicador *= 2;
+        }
+
+        $text .= ($i < 2 * ($key + 1) ? "P" : "M");
+        return $text;
+    }
+
+    private function analizarEtiquetasYDevolverJSON($mondaydataforAI)
+    {
+        $apiKey = env('OPENROUTER_API_KEY');
+
+        // Construye el prompt dinámicamente con los valores actuales del arreglo
+        $inputJSON = json_encode([
+            'tablero' => $mondaydataforAI['tablero'] ?? '',
+            'etiquetas' => $mondaydataforAI['etiquetas'] ?? '',
+            'información_genealogia' => $mondaydataforAI['información_genealogia'] ?? '',
+            'información_ventas' => $mondaydataforAI['información_ventas'] ?? '',
+        ], JSON_UNESCAPED_UNICODE);
+
+        $mensaje = [
+            [
+                "role" => "system",
+                "content" => "Eres una IA especializada en genealogía legal. Evalúa el siguiente objeto y responde SOLO con un JSON con claves booleanas. No agregues explicación. El JSON será procesado automáticamente por backend."
+            ],
+            [
+                "role" => "user",
+                "content" => "
+                        INPUT:"
+                        .
+                        $inputJSON
+                        .
+                        "
+
+                        REGLAS:
+
+                        1. **otrosProcesos**: 'true' si el tablero es 'Ventas' o las etiquetas incluyen 'no apto', 'apto para otros procesos' o similares.
+                        2. **pericial**: 'true' si alguna etiqueta contiene 'Informe Pericial' o 'Defensa Jurídica' y el tablero contiene 'CNAT', 'SEFARDI ESPAÑA' o 'SEFARDI PORTUGAL'.
+                        3. **genealogiaAprobada**: 'true' si alguna etiqueta contiene 'aprobado' o algo que indique aprobación explícita de genealogía.
+                        4. **genealogia**: 'true' si 'información_genealogia' contiene análisis, árbol, tatarabuelos, validaciones, etc.
+                        5. **investigacionProfunda**: 'true' si hay una etiqueta con 'Investigación más profunda'.
+                        6. **investigacionInSitu**: 'true' si hay una etiqueta con 'Investigación in situ'.
+                        7. **analisisYCorreccion**: Devuelve 'true' si hay evidencia de que se realizó análisis o corrección del árbol genealógico. Para esto, revisa si existen campos como 'Solicitud cliente', 'respuesta de la Solicitud', o si se indica que el 'Arbol fue Cargado' en el campo de Arbol Cargado.
+                        NOTA: Solicitud cliente y respuesta de la solicitud son campos que se encuentran en el tablero 'Analisis preliminar'. Si el nombre del tablero no es ese, entonces, analisisYCorreccion será false.
+                        8. **investigacionIntuituPersonae**: Devuelve 'true' si el tablero actual es 'Análisis'. Si el tablero es 'Ventas', entonces 'otrosProcesos' será 'true' y esta fase no se debe marcar como activa.
+                        9. **inicioInvestigacion**: Devuelve 'true' si el tablero actual es Análisis. De resto, es 'false'.
+                        10. Si el cliente se encuentra en el tablero 'Análisis preliminar', no confundir con 'Analisis', TODO es false.
+                        Ejemplo de respuesta esperada:
+                        {
+                            'otrosProcesos': false,
+                            'pericial': true,
+                            'genealogiaAprobada': false,
+                            'genealogia': true,
+                            'investigacionProfunda': false,
+                            'investigacionInSitu': true,
+                            'analisisYCorreccion': true,
+                            'investigacionIntuituPersonae': false
+                        }
+                    "
+            ]
+        ];
+
+        // Llamada a OpenRouter
+        $response = Http::withHeaders([
+            'Authorization' => "Bearer $apiKey",
+            'Content-Type' => 'application/json',
+        ])->post("https://openrouter.ai/api/v1/chat/completions", [
+            'model' => 'openai/gpt-4.1-mini', // o GPT compatible
+            'messages' => $mensaje
+        ]);
+
+        if ($response->successful()) {
+            $json = $response->json()['choices'][0]['message']['content'];
+
+            // Intentar decodificar el JSON
+            $resultado = json_decode($json, true);
+
+            if (is_array($resultado)) {
+                return $resultado;
+            } else {
+                Log::warning("Respuesta IA no válida: $json");
+                return [];
+            }
+        }
+
+        // Fallback si la IA falla
+        return [];
+    }
+
+    public function savePersonalData(Request $request){
+        $request->validate([
+            'email' => 'required|email|unique:users,email,' . $request->id,
+            'phone' => 'required|string|max:15',
+            'nombres' => 'required|string|max:255',
+            'apellidos' => 'required|string|max:255',
+            'date_of_birth' => 'required|date',
+            'passport' => 'required|string|max:20|unique:users,passport,' . $request->id,
+        ], [
+            'correo.required' => 'El campo correo es obligatorio.',
+            'correo.email' => 'El correo debe ser válido.',
+            'correo.unique' => 'Este correo ya está registrado.',
+            'phone.required' => 'El campo teléfono es obligatorio.',
+            'nombres.required' => 'El campo nombres es obligatorio.',
+            'apellidos.required' => 'El campo apellidos es obligatorio.',
+            'date_of_birth.required' => 'El campo fecha de nacimiento es obligatorio.',
+            'date_of_birth.date' => 'La fecha de nacimiento debe ser una fecha válida.',
+            'passport.required' => 'El campo pasaporte es obligatorio.',
+            'passport.unique' => 'Este pasaporte ya está registrado.',
+        ]);
+
+        $hubspotFields = [
+            'fecha_nac' => 'date_of_birth',
+            'nombres' => 'firstname',
+            'updated_at' => 'lastmodifieddate',
+            'apellidos' => 'lastname' ,
+            'referido_por' => 'n000__referido_por__clonado_',
+            'passport' => 'numero_de_pasaporte',
+            'servicio' => 'servicio_solicitado',
+        ];
+
+        $user = User::findOrFail($request->id);
+
+        // Obtener los datos actuales de la base de datos
+        $currentData = $user->toArray();
+
+        // Filtrar el request eliminando valores NULL que ya son NULL en la base de datos
+        $filteredRequest = collect($request->all())
+            ->filter(function ($value, $key) use ($currentData) {
+                return !is_null($value) || !array_key_exists($key, $currentData) || !is_null($currentData[$key]);
+            })
+            ->except(['_token', 'id']);
+
+        if ($filteredRequest->has('vinculo_antepasados')) {
+            $filteredRequest['vinculo_antepasados'] = implode(';', $filteredRequest->get('vinculo_antepasados'));
+        }
+
+        $hubspotData = [];
+
+        foreach ($filteredRequest as $key=>$data){
+            if ($key != "pay" && $key != "contrato"){
+                if (isset($hubspotFields[$key])){
+                    $hubspotData[$hubspotFields[$key]] = $data;
+                } else {
+                    $hubspotData[$key] = $data;
+                }
+            }
+        }
+
+        // Inspeccionar resultados
+        $user->update($filteredRequest->toArray());
+
+        // Llamar a la API de HubSpot para actualizar los datos
+        $this->hubspotService->updateContact($user->hs_id, $hubspotData);
+
+        // Retornar respuesta exitosa
+        return response()->json(['message' => 'Datos actualizados correctamente.']);
+    }
+
     public function getUsersForSelect()
     {
         // Consulta GraphQL para obtener los usuarios
