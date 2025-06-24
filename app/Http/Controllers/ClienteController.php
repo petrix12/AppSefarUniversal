@@ -48,6 +48,9 @@ use App\Services\HubspotService;
 use Illuminate\Support\Facades\Schema;
 use App\Models\MondayData;
 use App\Models\MondayFormBuilder;
+use GuzzleHttp\Client;
+use GuzzleHttp\Promise;
+
 
 class ClienteController extends Controller
 {
