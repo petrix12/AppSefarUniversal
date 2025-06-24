@@ -1146,7 +1146,9 @@
                             <tr>
                                 <th scope="col">Descripción</th>
                                 <th scope="col">Monto</th>
+                                @if(auth()->user()->roles[0]->id == 5)
                                 <th scope="col">Acción</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -1154,11 +1156,13 @@
                                 <tr>
                                     <td>{{ $compra->descripcion }}</td>
                                     <td>{{ $compra->monto }} €</td>
+                                    @if(auth()->user()->roles[0]->id == 5)
                                     <td>
                                         <a href="/pay" class="btn btn-warning">
                                             <i class="fas fa-credit-card"></i> Pagar ahora
                                         </a>
                                     </td>
+                                    @endif
                                 </tr>
                             @endforeach
 
@@ -1166,6 +1170,7 @@
                                 <tr>
                                     <td>{{ $compra->descripcion }}</td>
                                     <td>{{ $compra->monto }} €</td>
+                                    @if(auth()->user()->roles[0]->id == 5)
                                     <td>
                                         <form action="/payfases" method="POST">
                                             @csrf
@@ -1175,6 +1180,7 @@
                                             </button>
                                         </form>
                                     </td>
+                                    @endif
                                 </tr>
                             @endforeach
                         </tbody>
