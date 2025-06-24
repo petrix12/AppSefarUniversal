@@ -1108,8 +1108,6 @@ class ClienteController extends Controller
         }
         unset($co);
 
-        dd($cosuser);
-
         $html = view('crud.users.edit', compact('imageUrls', 'cosuser', 'cos', 'servicename', 'negocios', 'usuariosMonday', 'dataMonday', 'mondayData', 'boardId', 'boardName', 'mondayFormBuilder', 'archivos', 'user', 'roles', 'permissions', 'facturas', 'servicios', 'columnasparatabla'))->render();
         return $html;
     }
