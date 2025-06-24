@@ -1006,9 +1006,15 @@
                 <div class="tab-pane fade" id="familiars" role="tabpanel" aria-labelledby="familiars-tab">
 
                     <center>
+                        @if(auth()->user()->roles[0]->id == 5)
+                        <a href="/tree/" class="cfrSefar mb-3 inline-flex items-center justify-center px-3 py-1 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                            Ir al Arbol
+                        </a>
+                        @else
                         <a href="/tree/{{$user->passport}}" class="cfrSefar mb-3 inline-flex items-center justify-center px-3 py-1 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
                             Ir al Arbol
                         </a>
+                        @endif
                     </center>
 
                     <table id="familiarsTable" class="min-w-full divide-y divide-gray-200 w-100">
