@@ -125,6 +125,16 @@ class ClienteController extends Controller
     public function status(){
         $user = Auth::user();
 
+        $comprasConDealNoPagadas = Compras::where('deal_id', '!=', null)
+                                ->where('pagado', 0)
+                                ->where('id_user', $user->id)
+                                ->get();
+
+        $comprasSinDealNoPagadas = Compras::whereNull('deal_id')
+                                ->where('pagado', 0)
+                                ->where('id_user', $user->id)
+                                ->get();
+
         $path = public_path('img/IMAGENESCOS/');
 
         // Obtener todos los archivos del directorio
@@ -1108,7 +1118,7 @@ class ClienteController extends Controller
         }
         unset($co);
 
-        $html = view('crud.users.edit', compact('imageUrls', 'cosuser', 'cos', 'servicename', 'negocios', 'usuariosMonday', 'dataMonday', 'mondayData', 'boardId', 'boardName', 'mondayFormBuilder', 'archivos', 'user', 'roles', 'permissions', 'facturas', 'servicios', 'columnasparatabla'))->render();
+        $html = view('crud.users.edit', compact('comprasConDealNoPagadas', 'comprasSinDealNoPagadas', 'imageUrls', 'cosuser', 'cos', 'servicename', 'negocios', 'usuariosMonday', 'dataMonday', 'mondayData', 'boardId', 'boardName', 'mondayFormBuilder', 'archivos', 'user', 'roles', 'permissions', 'facturas', 'servicios', 'columnasparatabla'))->render();
         return $html;
     }
 

@@ -79,6 +79,11 @@
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
+                    <button style="color:black" class="nav-link" id="paymentspen-tab" data-bs-toggle="tab" data-bs-target="#paymentspen" type="button" role="tab" aria-controls="paymentspen" aria-selected="false">
+                        Pagos pendientes
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
                     <button style="color:black" class="nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab" aria-controls="documents" aria-selected="false">
                         Archivos Cargados
                     </button>
@@ -1134,6 +1139,48 @@
                     </table>
                 </div>
 
+                <div class="tab-pane fade" id="paymentspen" role="tabpanel" aria-labelledby="payments-tab">
+
+                    <table id="paymentsPenTable" class="min-w-full divide-y divide-gray-200 w-100">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col">Descripción</th>
+                                <th scope="col">Monto</th>
+                                <th scope="col">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach($comprasSinDealNoPagadas as $compra)
+                                <tr>
+                                    <td>{{ $compra->descripcion }}</td>
+                                    <td>{{ $compra->monto }} €</td>
+                                    <td>
+                                        <a href="/pay" class="btn btn-warning">
+                                            <i class="fas fa-credit-card"></i> Pagar ahora
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+
+                            @foreach($comprasConDealNoPagadas as $compra)
+                                <tr>
+                                    <td>{{ $compra->descripcion }}</td>
+                                    <td>{{ $compra->monto }} €</td>
+                                    <td>
+                                        <form action="/payfases" method="POST">
+                                            @csrf
+                                            <input type="hidden" name="id" value="{{ $compra->id }}">
+                                            <button type="submit" class="btn btn-danger">
+                                                <i class="fas fa-credit-card"></i> Pagar ahora
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
                 <div class="tab-pane fade" id="etiquetado" role="tabpanel" aria-labelledby="etiquetado-tab">
                     @if ($boardId != 0)
                     <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4 mb-4">
@@ -1660,6 +1707,14 @@
             }
         });
         $('#paymentsTable').DataTable({
+            "language": {
+                "lengthMenu": "Mostrar _MENU_ resultados por página",
+                "zeroRecords": "No hay resultados",
+                "info": "Página _PAGE_ de _PAGES_",
+                "infoEmpty": "No hay resultados"
+            }
+        });
+        $('#paymentsPenTable').DataTable({
             "language": {
                 "lengthMenu": "Mostrar _MENU_ resultados por página",
                 "zeroRecords": "No hay resultados",
