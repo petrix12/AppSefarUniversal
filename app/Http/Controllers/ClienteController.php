@@ -3429,6 +3429,9 @@ class ClienteController extends Controller
             $servicio_solicitado = Servicio::where('id_hubspot', "like", $request->nacionalidad_solicitada."%")->first();
         }
 
+        $hss = [];
+        $hss[] = json_decode(json_encode($servicio_solicitado),true);
+
         if (count($mailpass)>0 || count($mail)>0) {
             $preusercheck = json_decode( json_encode( DB::table('users')->where('email', $request->email)->get()),true);
 
@@ -3460,9 +3463,6 @@ class ClienteController extends Controller
                 $servicio[] = $servicio_solicitado;
 
                 $cps = json_decode(json_encode($compras),true);
-
-                $hss = [];
-                $hss[] = json_decode(json_encode($servicio_solicitado),true);
 
                 if($userdata[0]["servicio"] == "Recurso de Alzada"){
                     $monto = $hss[0]["precio"] * ($cantidad+1);
@@ -3499,7 +3499,7 @@ class ClienteController extends Controller
                         if (isset($request->monto)){
                             $compra = Compras::create([
                                 'id_user' => $userdata[0]["id"],
-                                'servicio_hs_id' => $userdata[0]["servicio"],
+                                'servicio_hs_id' => $hss[0]["id_hubspot"],
                                 'descripcion' => 'Pago desde www.sefaruniversal.com usando Jotform',
                                 'pagado' => 0,
                                 'monto' =>$request->monto
@@ -3507,7 +3507,7 @@ class ClienteController extends Controller
                         } else {
                             $compra = Compras::create([
                                 'id_user' => $userdata[0]["id"],
-                                'servicio_hs_id' => $userdata[0]["servicio"],
+                                'servicio_hs_id' => $hss[0]["id_hubspot"],
                                 'descripcion' => 'Pago desde www.sefaruniversal.com usando Jotform',
                                 'pagado' => 0,
                                 'monto' => 0
@@ -3530,7 +3530,7 @@ class ClienteController extends Controller
                     } else {
                         Compras::create([
                             'id_user' => $userdata[0]["id"],
-                            'servicio_hs_id' => $userdata[0]["servicio"],
+                            'servicio_hs_id' => $hss[0]["id_hubspot"],
                             'descripcion' => $desc,
                             'pagado' => 0,
                             'monto' => $monto
@@ -3539,7 +3539,7 @@ class ClienteController extends Controller
                 } else {
                     Compras::create([
                         'id_user' => $userdata[0]["id"],
-                        'servicio_hs_id' => $userdata[0]["servicio"],
+                        'servicio_hs_id' => $hss[0]["id_hubspot"],
                         'descripcion' => $desc,
                         'pagado' => 0,
                         'monto' => $monto

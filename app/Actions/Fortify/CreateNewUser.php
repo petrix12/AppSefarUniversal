@@ -17,6 +17,7 @@ use Laravel\Fortify\Contracts\CreatesNewUsers;
 use Laravel\Jetstream\Jetstream;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Support\Facades\DB;
+use App\Models\Servicio;
 
 class CreateNewUser implements CreatesNewUsers
 {
@@ -71,6 +72,9 @@ class CreateNewUser implements CreatesNewUsers
                 'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['required', 'accepted'] : '',
             ])->validate();
         }
+
+        $servicio = Servicio::where('id_hubspot', "like", $user["servicio"]."%")->first();
+
         $user = User::create([
             'name' => $input['name'],
             'email' => $input['email'],
@@ -95,7 +99,7 @@ class CreateNewUser implements CreatesNewUsers
         if($input['pay']==='1'){
             $compra = Compras::create([
                 'id_user' => $user["id"],
-                'servicio_hs_id' => $user["servicio"],
+                'servicio_hs_id' => $servicio["id_hubspot"],
                 'descripcion' => 'Pago desde www.sefaruniversal.com usando Jotform',
                 'pagado' => 0,
                 'monto' => $input['monto']
