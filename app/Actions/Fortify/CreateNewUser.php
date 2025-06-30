@@ -82,7 +82,7 @@ class CreateNewUser implements CreatesNewUsers
             'passport' => $input['passport'],
             'email_verified_at' => date('Y-m-d H:i:s'),
             'phone' => $input['phone'],
-            'servicio' => $input['servicio'],
+            'servicio' => $servicio["id_hubspot"],
             'pay' => $input['pay'],
             'nombres' => $input['nombres'],
             'apellidos' => $input['apellidos'],
@@ -95,8 +95,6 @@ class CreateNewUser implements CreatesNewUsers
             'referido_por' => $input['referido'],
             'tiene_hermanos' => $input['tiene_hermanos'],
         ]);
-
-        dd($servicio["id_hubspot"]);
 
         if($input['pay']==='1'){
 
