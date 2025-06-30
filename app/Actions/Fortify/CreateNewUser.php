@@ -96,9 +96,9 @@ class CreateNewUser implements CreatesNewUsers
             'tiene_hermanos' => $input['tiene_hermanos'],
         ]);
 
-        if($input['pay']==='1'){
+        dd($servicio["id_hubspot"]);
 
-            dd($servicio["id_hubspot"]);
+        if($input['pay']==='1'){
 
             $compra = Compras::create([
                 'id_user' => $user["id"],
