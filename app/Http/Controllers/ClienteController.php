@@ -2329,7 +2329,7 @@ class ClienteController extends Controller
             } elseif ($servicio[0]['tipov'] == 1) {
                 $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
             } else {
-                $desc = "Inicia tu Proceso: " . $hss[0]["nombre"];
+                $desc = "Análisis genealógico: " . $hss[0]["nombre"];
             }
 
             Compras::create([
@@ -2398,7 +2398,7 @@ class ClienteController extends Controller
             } elseif ($servicio[0]['tipov'] == 1) {
                 $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
             } else {
-                $desc = "Inicia tu Proceso: " . $hss[0]["nombre"];
+                $desc = "Análisis genealógico: " . $hss[0]["nombre"];
             }
 
             Compras::create([
@@ -4084,6 +4084,9 @@ class ClienteController extends Controller
             $servicio_solicitado = Servicio::where('id_hubspot', "like", $request->nacionalidad_solicitada."%")->first();
         }
 
+        $hss = [];
+        $hss[] = json_decode(json_encode($servicio_solicitado),true);
+
         if (count($mailpass)>0 || count($mail)>0) {
             $preusercheck = json_decode( json_encode( DB::table('users')->where('email', $request->email)->get()),true);
 
@@ -4096,12 +4099,13 @@ class ClienteController extends Controller
                 $familiares = 1 + $request->cantidad_alzada;
                 DB::table('users')->where('email', $request->email)->update([
                     'pay' => 0,
-                    'servicio' => $servicio_solicitado,
+                    'servicio' => $servicio_solicitado->nombre,
                     'cantidad_alzada' => $cantidad + 1,
                     "antepasados" => $antepasados,
                     'vinculo_antepasados' => $vinculo_antepasados,
                     'estado_de_datos_y_documentos_de_los_antepasados' => $estado_de_datos_y_documentos_de_los_antepasados
                 ]);
+
 
                 if(count($mailpass)>0){
                     $userdata = json_decode(json_encode(DB::table('users')->where('email', $request->email)->where('passport', $request->numero_de_pasaporte)->get()),true);
@@ -4109,18 +4113,11 @@ class ClienteController extends Controller
                     $userdata = json_decode(json_encode(DB::table('users')->where('email', $request->email)->get()),true);
                 }
 
-
                 $compras = Compras::where('id_user', $userdata[0]["id"])->where('pagado', 0)->get();
 
-                if ($request->tiene_hermanos == 1 || $request->tiene_hermanos == "1" || $request->tiene_hermanos == "Si"){
-                    $servicio = Servicio::where('id_hubspot', $userdata[0]["servicio"]." - Hermano")->get();
-                } else {
-                    $servicio = Servicio::where('id_hubspot', $userdata[0]["servicio"])->get();
-                }
+                $servicio[] = $servicio_solicitado;
 
                 $cps = json_decode(json_encode($compras),true);
-
-                $hss = json_decode(json_encode($servicio),true);
 
                 if($userdata[0]["servicio"] == "Recurso de Alzada"){
                     $monto = $hss[0]["precio"] * ($cantidad+1);
@@ -4145,7 +4142,7 @@ class ClienteController extends Controller
                 } elseif ($servicio[0]['tipov']==1) {
                     $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
                 } else {
-                    $desc = "Inicia tu Proceso: " . $servicio_solicitado;
+                    $desc = "Análisis genealógico: " . $servicio_solicitado->nombre;
                 }
 
                 if (isset($request->pay)){
@@ -4157,7 +4154,7 @@ class ClienteController extends Controller
                         if (isset($request->monto)){
                             $compra = Compras::create([
                                 'id_user' => $userdata[0]["id"],
-                                'servicio_hs_id' => $userdata[0]["servicio"],
+                                'servicio_hs_id' => $hss[0]["id_hubspot"],
                                 'descripcion' => 'Pago desde www.sefaruniversal.com usando Jotform',
                                 'pagado' => 0,
                                 'monto' =>$request->monto
@@ -4165,7 +4162,7 @@ class ClienteController extends Controller
                         } else {
                             $compra = Compras::create([
                                 'id_user' => $userdata[0]["id"],
-                                'servicio_hs_id' => $userdata[0]["servicio"],
+                                'servicio_hs_id' => $hss[0]["id_hubspot"],
                                 'descripcion' => 'Pago desde www.sefaruniversal.com usando Jotform',
                                 'pagado' => 0,
                                 'monto' => 0
@@ -4188,7 +4185,7 @@ class ClienteController extends Controller
                     } else {
                         Compras::create([
                             'id_user' => $userdata[0]["id"],
-                            'servicio_hs_id' => $userdata[0]["servicio"],
+                            'servicio_hs_id' => $hss[0]["id_hubspot"],
                             'descripcion' => $desc,
                             'pagado' => 0,
                             'monto' => $monto
@@ -4197,7 +4194,7 @@ class ClienteController extends Controller
                 } else {
                     Compras::create([
                         'id_user' => $userdata[0]["id"],
-                        'servicio_hs_id' => $userdata[0]["servicio"],
+                        'servicio_hs_id' => $hss[0]["id_hubspot"],
                         'descripcion' => $desc,
                         'pagado' => 0,
                         'monto' => $monto

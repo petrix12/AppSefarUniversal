@@ -338,7 +338,9 @@
                     <div class="card shadow">
                         <div class="card-body">
                             <div class="text-center mb-3">
-                                <img class="img-fluid" style="max-width:100px;"
+                                <img class="img-fluid" style="max-width:100px;
+                                    background: #093143 !important;
+                                    margin-bottom: 15px; border-radius:100px;"
                                      src="/vendor/adminlte/dist/img/LogoSefar.png"
                                      alt="Logo Sefar">
                                 <h4 style="font-weight: bold;">Información de Pago</h4>
@@ -379,14 +381,12 @@
                                         @endphp
                                         <tr>
                                             <td>{{ $compra["descripcion"] }}</td>
-                                            <td>{{ $compra["monto"] }}€</td>
+                                            <td><center>{{ $compra["monto"] }}€</center></td>
                                             @if(count($compras) > 1)
                                                 <td>
-                                                    <button type="button"
-                                                            class="btn btn-danger deletedesc"
-                                                            id="{{ $compra['id'] }}">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
+                                                    <center>
+                                                    <i class="fas fa-trash text-danger cursor-pointer deletedesc" id="{{ $compra['id'] }}" style="font-size: 1.2rem;"></i>
+                                                    </center>
                                                 </td>
                                             @endif
                                         </tr>
