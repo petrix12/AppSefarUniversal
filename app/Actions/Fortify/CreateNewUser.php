@@ -73,7 +73,7 @@ class CreateNewUser implements CreatesNewUsers
             ])->validate();
         }
 
-        $servicio = Servicio::where('id_hubspot', "like", $user["servicio"]."%")->first();
+        $servicio = Servicio::where('id_hubspot', "like", $input['servicio']."%")->first();
 
         $user = User::create([
             'name' => $input['name'],
