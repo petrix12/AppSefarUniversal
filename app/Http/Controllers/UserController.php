@@ -38,6 +38,7 @@ use Illuminate\Support\Facades\Log;
 use GuzzleHttp\Client;
 use GuzzleHttp\Promise;
 use Carbon\Carbon;
+use App\Models\DocumentRequest;
 
 class UserController extends Controller
 {
@@ -2394,6 +2395,53 @@ class UserController extends Controller
                         continue;
                     }
 
+                    $documentsTOTAL = DocumentRequest::where('user_id', $user->id)
+                                    ->count();
+
+                    if($documentsTOTAL>0) {
+                        $documentsEnEsperaCliente = DocumentRequest::where('user_id', $user->id)
+                                        ->whereIn('status', ['en_espera_cliente', 'rechazada'])
+                                        ->count();
+
+                        $documentsEnRevision = DocumentRequest::where('user_id', $user->id)
+                                        ->where('status', 'resuelto')
+                                        ->count();
+
+                        $documentsAprobados = DocumentRequest::where('user_id', $user->id)
+                                        ->whereIn('status', ['no_documento', 'aprobada'])
+                                        ->count();
+
+                        if ($documentsAprobados>0) {
+                            $cosuser[] = [
+                                "servicio" => $negocio->servicio_solicitado,
+                                "warning" => null,
+                                "currentStepGen" => 10,
+                                "currentStepJur" => -1
+                            ];
+                            continue;
+                        }
+
+                        if ($documentsEnRevision>0) {
+                            $cosuser[] = [
+                                "servicio" => $negocio->servicio_solicitado,
+                                "warning" => null,
+                                "currentStepGen" => 9,
+                                "currentStepJur" => -1
+                            ];
+                            continue;
+                        }
+
+                        if ($documentsEnEsperaCliente>0) {
+                            $cosuser[] = [
+                                "servicio" => $negocio->servicio_solicitado,
+                                "warning" => "Tienes solicitudes de documentos pendientes. Para resolverlas, dirígete a la pestaña de 'Mis solicitudes de documentos'",
+                                "currentStepGen" => 8,
+                                "currentStepJur" => -1
+                            ];
+                            continue;
+                        }
+                    }
+
                     $cosuser[] = [
                         "servicio" => $negocio->servicio_solicitado,
                         "warning" => null,
@@ -2529,7 +2577,11 @@ class UserController extends Controller
                                 ->where('id_user', $user->id)
                                 ->get();
 
-        $html = view('crud.users.edit', compact( 'comprasConDealNoPagadas', 'comprasSinDealNoPagadas', 'imageUrls', 'cosuser', 'cos', 'servicename', 'negocios', 'usuariosMonday', 'dataMonday', 'mondayData', 'boardId', 'boardName', 'mondayFormBuilder', 'archivos', 'user', 'roles', 'permissions', 'facturas', 'servicios', 'columnasparatabla'))->render();
+        $documentRequests = DocumentRequest::where('user_id', $user->id)
+                                   ->latest()
+                                   ->get();
+
+        $html = view('crud.users.edit', compact('documentRequests', 'comprasConDealNoPagadas', 'comprasSinDealNoPagadas', 'imageUrls', 'cosuser', 'cos', 'servicename', 'negocios', 'usuariosMonday', 'dataMonday', 'mondayData', 'boardId', 'boardName', 'mondayFormBuilder', 'archivos', 'user', 'roles', 'permissions', 'facturas', 'servicios', 'columnasparatabla'))->render();
         return $html;
 
     }

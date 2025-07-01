@@ -41,6 +41,7 @@ use App\Http\Controllers\NegocioController;
 use App\Http\Controllers\TreenaController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\DocumentRequestController;
 
 
 // Vista inicio
@@ -395,4 +396,23 @@ Route::get('config-clear', function(){
 // Ruta para ejecutar en producción: $ php artisan view:clear
 Route::get('view-clear', function(){
     Artisan::call('view:clear');
+});
+
+// Rutas para administradores
+Route::prefix('admin/requests')->group(function () {
+    Route::post('/{user}', [DocumentRequestController::class, 'store'])->name('admin.requests.store');
+    // routes/web.php o routes/api.php
+    Route::put('/{documentRequest}', [DocumentRequestController::class, 'update'])->name('admin.requests.update');
+    Route::delete('/{request}', [DocumentRequestController::class, 'destroy'])->name('admin.requests.destroy');
+    Route::post('/{documentRequest}/approve', [DocumentRequestController::class, 'approve'])
+         ->name('admin.requests.approve');              // →
+
+    Route::post('/{documentRequest}/reject', [DocumentRequestController::class, 'reject'])
+         ->name('admin.requests.reject');               // →
+});
+
+// Rutas para clientes
+Route::prefix('client/requests')->group(function () {
+    Route::post('/{documentRequest}/upload', [DocumentRequestController::class, 'upload'])->name('upload');
+    Route::post('/{documentRequest}/no-doc', [DocumentRequestController::class, 'noDoc'])->name('no_doc');
 });

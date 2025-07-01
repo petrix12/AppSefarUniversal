@@ -21,6 +21,7 @@
 
 <x-app-layout>
     <div>
+        @if(auth()->user()->roles[0]->id != 5)
         <div class="flex flex-col">
             <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                 <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
@@ -43,6 +44,7 @@
                 </div>
             </div>
         </div>
+        @endif
         <div class="card p-4">
             <ul class="nav nav-tabs" id="formTabs" role="tablist">
                 <li class="nav-item" role="presentation">
@@ -83,6 +85,24 @@
                         Pagos pendientes
                     </button>
                 </li>
+                @if(auth()->user()->roles[0]->id == 5)
+                <li class="nav-item">
+                    <button style="color:black" class="nav-link" id="client-req-tab"
+                            data-bs-toggle="tab" data-bs-target="#client-req"
+                            type="button" role="tab" aria-controls="client-req" aria-selected="false">
+                        Mis solicitudes de documentos
+                    </button>
+                </li>
+                @else
+                {{-- === TAB para ADMIN === --}}
+                <li class="nav-item">
+                    <button style="color:black" class="nav-link" id="admin-req-tab"
+                            data-bs-toggle="tab" data-bs-target="#admin-req"
+                            type="button" role="tab" aria-controls="admin-req" aria-selected="false">
+                        Solicitudes de documentos
+                    </button>
+                </li>
+                @endif
                 <li class="nav-item" role="presentation">
                     <button style="color:black" class="nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab" aria-controls="documents" aria-selected="false">
                         Archivos Cargados
@@ -315,9 +335,9 @@
                                         </div>
                                     @endif
 
-                                    <div class="card-body text-center">
+                                    <div class="card-body text-center" style="text-align: center; border-bottom: #DEE2E6 solid 1px; background: rgba(0,0,0,0.05);">
 
-                                        <h4 class="mb-4"><b>Progreso Genealógico</b></h4>
+                                        <h4 class="mb-4 mt-4"><b>Progreso Genealógico</b></h4>
                                         <div class="progress-scroll-container mb-4">
                                             <div class="progress-container" id="progressContainerGen">
                                                 <div class="progress-line-full"></div>
@@ -333,7 +353,7 @@
                                         </div>
 
                                         <h4 class="mb-4"><b>Progreso Jurídico</b></h4>
-                                        <div class="progress-scroll-container mb-4">
+                                        <div class="progress-scroll-container">
                                             <div class="progress-container" id="progressContainerJur">
                                                 <div class="progress-line-full"></div>
                                                 <div class="progress-line" style="width: {{ $co['progressPercentageJur'] }}%;"></div>
@@ -347,6 +367,16 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    @if(isset($pasoFinal["ctas"]) && sizeof($pasoFinal["ctas"])>1)
+                                    <div class="card-body text-center" style="text-align: center; border-bottom: #DEE2E6 solid 1px; background: rgba(0,0,0,0.05);">
+                                        @foreach ($pasoFinal["ctas"] as $cta)
+                                            <a href="{{$cta['url']}}" target="_blank" class="cfrSefar inline-flex items-center justify-center px-3 py-2 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 my-2">
+                                                {{$cta['text']}}
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                    @endif
                                 </div>
                             @endif
                         @endforeach
@@ -1406,6 +1436,508 @@
                         </tbody>
                     </table>
                 </div>
+
+                <div class="tab-pane fade" id="admin-req" role="tabpanel" aria-labelledby="admin-req-tab">
+                    <div class="d-flex justify-content-end mb-3">
+                        <button class="cfrSefar inline-flex items-center justify-center px-3 py-2 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700" data-bs-toggle="modal" data-bs-target="#crearSolicitudModal">
+                            + Nueva solicitud
+                        </button>
+                    </div>
+
+                    <!-- Modal para crear solicitud -->
+                    <div class="modal fade" id="crearSolicitudModal" tabindex="-1" aria-labelledby="crearSolicitudLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <form id="solicitudForm" method="POST">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Nueva solicitud de documento</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Nombre del documento</label>
+                                            <input type="text" name="document_name" class="form-control" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Tipo de documento</label>
+                                            <select name="document_type" class="form-select" required>
+                                                <option value="juridico">Jurídico</option>
+                                                <option value="genealogico">Genealógico</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" class="btn btn-primary">Crear solicitud</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Modal para editar solicitud -->
+                    <div class="modal fade" id="editarSolicitudModal" tabindex="-1" aria-labelledby="editarSolicitudLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <form id="editarSolicitudForm" method="POST">
+                                <input type="hidden" name="request_id" id="edit_request_id">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Editar solicitud de documento</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Nombre del documento</label>
+                                            <input type="text" name="document_name" id="edit_document_name" class="form-control" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Tipo de documento</label>
+                                            <select name="document_type" id="edit_document_type" class="form-select" required>
+                                                <option value="juridico">Jurídico</option>
+                                                <option value="genealogico">Genealógico</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <table class="table table-sm" id="solicitudesTable">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th>Estatus</th>
+                                <th>Archivo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($documentRequests as $req)
+                            <tr data-id="{{ $req->id }}">
+                                <td>{{ $req->document_name }}</td>
+                                <td>{{ ucfirst($req->document_type) }}</td>
+                                <td>
+                                    <span class="badge
+                                        @if($req->status === 'aprobada') bg-success
+                                        @elseif($req->status === 'rechazada') bg-danger
+                                        @elseif($req->status === 'no_documento') bg-warning text-dark
+                                        @else bg-secondary @endif">
+                                        {{ ucfirst(str_replace('_',' ', $req->status)) }}
+                                    </span>
+                                </td>
+                                <td>
+                                    @if($req->file_path)
+                                    <a href="{{ Storage::disk('s3')->url($req->file_path) }}" target="_blank">Ver archivo</a>
+                                    @else
+                                    —
+                                    @endif
+                                </td>
+                                <td>
+                                    @if(!in_array($req->status, ['aprobada', 'rechazada', 'no_documento']))
+                                    <button class="btn btn-sm btn-primary editar" data-id="{{ $req->id }}">Editar</button>
+                                    <button class="btn btn-sm btn-success aprobar" data-id="{{ $req->id }}">Aprobar</button>
+                                    <button class="btn btn-sm btn-danger rechazar" data-id="{{ $req->id }}">Rechazar</button>
+                                    @endif
+                                    <button class="btn btn-sm btn-outline-danger eliminar" data-id="{{ $req->id }}">Eliminar</button>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                <script>
+                    $(document).ready(function () {
+                        // Configuración de DataTables
+                        $('#solicitudesTable').DataTable({
+                            "language": {
+                                "lengthMenu": "Mostrar _MENU_ resultados por página",
+                                "zeroRecords": "No hay resultados",
+                                "info": "Página _PAGE_ de _PAGES_",
+                                "infoEmpty": "No hay resultados"
+                            },
+                            columnDefs: [
+                                { "width": "20%", "targets": 0 }, // Nombre
+                                { "width": "15%", "targets": 1 }, // Tipo
+                                { "width": "15%", "targets": 2 }, // Estatus
+                                { "width": "25%", "targets": 3 }, // Archivo
+                                { "width": "25%", "targets": 4 }  // Acciones
+                            ]
+                        });
+
+                        // Configuración CSRF para AJAX
+                        $.ajaxSetup({
+                            headers: {
+                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                            }
+                        });
+
+                        // Crear nueva solicitud - Versión corregida
+                        $('#solicitudForm').on('submit', function (e) {
+                            e.preventDefault();
+
+                            $.ajax({
+                                url: "{{ route('admin.requests.store', $user) }}",
+                                method: 'POST',
+                                data: $(this).serialize(),
+                                success: function (res) {
+                                    const table = $('#solicitudesTable').DataTable();
+
+                                    const formattedStatus = res.status.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
+
+                                    // Crear el nuevo elemento como un array para DataTables
+                                    const newRowData = [
+                                        res.document_name,
+                                        res.document_type.charAt(0).toUpperCase() + res.document_type.slice(1),
+                                        '<span class="badge bg-secondary">' + formattedStatus + '</span>',
+                                        '—',
+                                        '<button class="btn btn-sm btn-primary editar" data-id="'+res.id+'">Editar</button> ' +
+                                        '<button class="btn btn-sm btn-success aprobar" data-id="'+res.id+'">Aprobar</button> ' +
+                                        '<button class="btn btn-sm btn-danger rechazar" data-id="'+res.id+'">Rechazar</button> ' +
+                                        '<button class="btn btn-sm btn-outline-danger eliminar" data-id="'+res.id+'">Eliminar</button>'
+                                    ];
+
+                                    // Añadir la nueva fila usando la API de DataTables
+                                    table.row.add(newRowData).draw();
+
+                                    // Limpiar y cerrar el modal
+                                    $('#crearSolicitudModal').modal('hide');
+                                    $('#solicitudForm')[0].reset();
+
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Solicitud creada',
+                                        text: 'La solicitud se creó correctamente.'
+                                    });
+                                },
+                                error: function () {
+                                    alert('Error al crear solicitud');
+                                }
+                            });
+                        });
+
+                        // Editar solicitud - Abrir modal
+                        $('#solicitudesTable').on('click', '.editar', function () {
+                            const id = $(this).data('id');
+                            const row = $(this).closest('tr');
+
+                            $('#edit_request_id').val(id);
+                            $('#edit_document_name').val(row.find('td:eq(0)').text());
+                            $('#edit_document_type').val(row.find('td:eq(1)').text().toLowerCase());
+
+                            $('#editarSolicitudModal').modal('show');
+                        });
+
+                        // Editar solicitud - Enviar formulario
+                        $('#editarSolicitudForm').on('submit', function (e) {
+                            e.preventDefault();
+                            const id = $('#edit_request_id').val();
+
+                            $.ajax({
+                                url: `/admin/requests/${id}`,
+                                method: 'PUT',
+                                data: $(this).serialize(),
+                                success: function (res) {
+                                    // Verifica que las propiedades necesarias existen
+                                    const documentName = res.data.document_name || '';
+                                    let documentType = res.data.document_type.charAt(0).toUpperCase() + res.data.document_type.slice(1);
+
+                                    // Actualiza la fila
+                                    const row = $(`tr[data-id="${id}"]`);
+                                    if (row.length) {
+                                        row.find('td:eq(0)').text(documentName);
+                                        row.find('td:eq(1)').text(documentType);
+                                        $('#editarSolicitudModal').modal('hide');
+
+                                        // Si usas DataTables
+                                        if ($.fn.DataTable.isDataTable('#solicitudesTable')) {
+                                            $('#solicitudesTable').DataTable().draw();
+                                        }
+
+                                        Swal.fire({
+                                            icon: 'success',
+                                            title: 'Solicitud editada',
+                                            text: 'La solicitud se editó correctamente.'
+                                        });
+                                    } else {
+                                        console.error('No se encontró la fila con ID:', id);
+                                    }
+                                },
+                                error: function () {
+                                    alert('Error al actualizar solicitud');
+                                }
+                            });
+                        });
+
+                        // Aprobar solicitud
+                        $('#solicitudesTable').on('click', '.aprobar', function () {
+                            const id = $(this).data('id');
+                            const row = $(this).closest('tr');
+
+                            Swal.fire({
+                                title: '¿Aprobar solicitud?',
+                                text: "¿Estás seguro de aprobar esta solicitud?",
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonColor: '#3085d6',
+                                cancelButtonColor: '#d33',
+                                confirmButtonText: 'Sí, aprobar',
+                                cancelButtonText: 'Cancelar'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    $.ajax({
+                                        url: `/admin/requests/${id}/approve`,
+                                        method: 'POST',
+                                        headers: {
+                                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                                        },
+                                        success: function (res) {
+                                            row.find('td:eq(2)').html('<span class="badge bg-success">Aprobada</span>');
+                                            row.find('td:eq(4)').html('<button class="btn btn-sm btn-outline-danger eliminar" data-id="'+id+'">Eliminar</button>');
+
+                                            // Si usas DataTables, actualiza la tabla
+                                            if ($.fn.DataTable.isDataTable('#solicitudesTable')) {
+                                                $('#solicitudesTable').DataTable().draw(false);
+                                            }
+
+                                            Swal.fire('Aprobada!', 'La solicitud ha sido aprobada.', 'success');
+                                        },
+                                        error: function (xhr) {
+                                            let errorMsg = 'Error al aprobar solicitud';
+                                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                                errorMsg = xhr.responseJSON.message;
+                                                if (xhr.responseJSON.current_status) {
+                                                    errorMsg += ` (Estado actual: ${xhr.responseJSON.current_status})`;
+                                                }
+                                            }
+                                            Swal.fire('Error', errorMsg, 'error');
+                                        }
+                                    });
+                                }
+                            });
+                        });
+
+                        // Rechazar solicitud
+                        $('#solicitudesTable').on('click', '.rechazar', function () {
+                            const id = $(this).data('id');
+                            const row = $(this).closest('tr');
+
+                            Swal.fire({
+                                title: '¿Rechazar solicitud?',
+                                text: "¿Estás seguro de rechazar esta solicitud?",
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonColor: '#3085d6',
+                                cancelButtonColor: '#d33',
+                                confirmButtonText: 'Sí, rechazar',
+                                cancelButtonText: 'Cancelar'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    $.ajax({
+                                        url: `/admin/requests/${id}/reject`,
+                                        method: 'POST',
+                                        headers: {
+                                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                                        },
+                                        success: function (res) {
+                                            row.find('td:eq(2)').html('<span class="badge bg-danger">Rechazada</span>');
+                                            row.find('td:eq(3)').html('');
+                                            row.find('td:eq(4)').html('<button class="btn btn-sm btn-outline-danger eliminar" data-id="'+id+'">Eliminar</button>');
+
+                                            // Si usas DataTables, actualiza la tabla
+                                            if ($.fn.DataTable.isDataTable('#solicitudesTable')) {
+                                                $('#solicitudesTable').DataTable().draw(false);
+                                            }
+
+                                            Swal.fire('Rechazada!', 'La solicitud ha sido rechazada.', 'success');
+                                        },
+                                        error: function (xhr) {
+                                            let errorMsg = 'Error al rechazar solicitud';
+                                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                                errorMsg = xhr.responseJSON.message;
+                                                if (xhr.responseJSON.current_status) {
+                                                    errorMsg += ` (Estado actual: ${xhr.responseJSON.current_status})`;
+                                                }
+                                            }
+                                            Swal.fire('Error', errorMsg, 'error');
+                                        }
+                                    });
+                                }
+                            });
+                        });
+
+                        // Eliminar solicitud
+                        $('#solicitudesTable').on('click', '.eliminar', function () {
+                            const id = $(this).data('id');
+                            const table = $('#solicitudesTable').DataTable();
+                            const row = $(this).closest('tr');
+
+                            if(confirm('¿Estás seguro de eliminar esta solicitud?')) {
+                                $.ajax({
+                                    url: `/admin/requests/${id}`,
+                                    method: 'DELETE',
+                                    success: function (response) {
+                                        if (response.success) {
+                                            table.row(row).remove().draw();
+
+                                            Swal.fire({
+                                                icon: 'success',
+                                                title: 'Solicitud eliminada',
+                                                text: 'La solicitud se eliminó correctamente.'
+                                            });
+                                        } else {
+                                            Swal.fire({
+                                                icon: 'error',
+                                                title: 'Error',
+                                                text: response.message || 'Ocurrió un error al eliminar la solicitud.'
+                                            });
+                                        }
+                                    }
+                                });
+                            }
+                        });
+
+                        $('#solicitudesClienteTable').on('click', '.upload-btn', function() {
+                            const requestId = $(this).data('request-id');
+                            const fileInput = $(this).siblings('.file-input')[0];
+                            const file = fileInput.files[0];
+                            const row = $(this).closest('tr');
+
+                            if (!file) {
+                                Swal.fire('Error', 'Por favor selecciona un archivo', 'error');
+                                return;
+                            }
+
+                            const formData = new FormData();
+                            formData.append('file', file);
+                            formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+
+                            Swal.fire({
+                                title: 'Subiendo archivo...',
+                                html: 'Por favor espera mientras se sube el archivo',
+                                allowOutsideClick: false,
+                                didOpen: () => {
+                                    Swal.showLoading();
+                                }
+                            });
+
+                            $.ajax({
+                                url: "client/requests/" + requestId + "/upload",
+                                type: 'POST',
+                                data: formData,
+                                processData: false,
+                                contentType: false,
+                                success: function(response) {
+                                    Swal.fire(
+                                        'Éxito!',
+                                        'El archivo se ha subido correctamente',
+                                        'success'
+                                    );
+
+                                    // Actualizar la fila
+                                    row.find('td:eq(2)').html('<span class="badge bg-info">En revisión</span>');
+                                    row.find('.actions-column').html('<em>Sin acciones disponibles</em>');
+                                },
+                                error: function(xhr) {
+                                    let errorMsg = 'Error al subir el archivo';
+                                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                                        errorMsg = xhr.responseJSON.message;
+                                    }
+                                    Swal.fire('Error', errorMsg, 'error');
+                                }
+                            });
+                        });
+
+                        // No tengo documento
+                        $('#solicitudesClienteTable').on('click', '.no-doc-btn', function() {
+                            const requestId = $(this).data('request-id');
+                            const row = $(this).closest('tr');
+
+                            Swal.fire({
+                                title: '¿No tienes el documento?',
+                                text: "¿Estás seguro de que no dispones de este documento?",
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonColor: '#3085d6',
+                                cancelButtonColor: '#d33',
+                                confirmButtonText: 'Sí, no lo tengo',
+                                cancelButtonText: 'Cancelar'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    $.ajax({
+                                        url: "client/requests/" + requestId + "/no-doc",
+                                        method: 'POST',
+                                        headers: {
+                                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                                        },
+                                        success: function(response) {
+                                            Swal.fire(
+                                                'Confirmado!',
+                                                'Hemos registrado que no dispones del documento.',
+                                                'success'
+                                            );
+
+                                            // Actualizar la fila
+                                            row.find('td:eq(2)').html('<span class="badge bg-warning">Sin documento</span>');
+                                            row.find('.actions-column').html('<em>Sin acciones disponibles</em>');
+                                        },
+                                        error: function(xhr) {
+                                            let errorMsg = 'Error al procesar la solicitud';
+                                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                                errorMsg = xhr.responseJSON.message;
+                                            }
+                                            Swal.fire('Error', errorMsg, 'error');
+                                        }
+                                    });
+                                }
+                            });
+                        });
+                    });
+                </script>
+
+                <div class="tab-pane fade" id="client-req" role="tabpanel" aria-labelledby="client-req-tab">
+                    <table class="table table-sm" id="solicitudesClienteTable">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th>Estatus</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($documentRequests as $req)
+                            <tr data-id="{{ $req->id }}">
+                                <td>{{ $req->document_name }}</td>
+                                <td>{{ ucfirst($req->document_type) }}</td>
+                                <td><span class="badge bg-secondary">{{ ucfirst(str_replace('_',' ', $req->status)) }}</span></td>
+                                <td class="actions-column">
+                                    {{-- Subir archivo --}}
+                                    @if(in_array($req->status, ['en_espera_cliente', 'rechazada']))
+                                    <div class="upload-form d-flex gap-2 mb-2">
+                                        <input type="file" class="form-control form-control-sm file-input" data-request-id="{{ $req->id }}">
+                                        <button class="btn btn-sm btn-success upload-btn" data-request-id="{{ $req->id }}">Subir</button>
+                                    </div>
+
+                                    {{-- No tengo documento --}}
+                                    @if(now()->gte($req->no_document_button_at))
+                                    <button class="btn btn-sm btn-outline-secondary w-100 no-doc-btn" data-request-id="{{ $req->id }}">No tengo el documento</button>
+                                    @endif
+                                    @else
+                                    <em>Sin acciones disponibles</em>
+                                    @endif
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -1702,6 +2234,15 @@
         // Desactiva el comportamiento predeterminado del formulario en caso de envío accidental
         $('#adminChangePasswordForm').on('submit', function (e) {
             e.preventDefault();
+        });
+
+        $('#solicitudesClienteTable').DataTable({
+            "language": {
+                "lengthMenu": "Mostrar _MENU_ resultados por página",
+                "zeroRecords": "No hay resultados",
+                "info": "Página _PAGE_ de _PAGES_",
+                "infoEmpty": "No hay resultados"
+            }
         });
 
         $('#familiarsTable').DataTable({
