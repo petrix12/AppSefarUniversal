@@ -664,7 +664,7 @@ return [
                     'icon_color'    => 'rgba(255,255,255,0.8)',
                     'route'         => 'clientes.tree',
                     'can'           => 'cliente',
-                ],
+                ],/*
                 [
                     'text'          => 'Mi Estatus',
                     'classes'       => "btn_payments",
