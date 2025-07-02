@@ -672,7 +672,7 @@ return [
                     'icon_color'    => 'rgba(255,255,255,0.8)',
                     'route'         => 'clientes.status',
                     'can'           => 'cliente',
-                ],/*
+                ],
                 [
                     'text'          => 'Registrar hermanos',
                     'classes'       => "btn_tree",
