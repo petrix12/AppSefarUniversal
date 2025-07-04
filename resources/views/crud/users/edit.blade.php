@@ -370,7 +370,7 @@
 
                                     @if(isset($pasoFinal["ctas"]) && sizeof($pasoFinal["ctas"])>1)
                                     <div class="card-body text-center" style="text-align: center; border-bottom: #DEE2E6 solid 1px; background: rgba(0,0,0,0.05);">
-                                        <h4 class="mb-4"><b>Contrata nuestros servicios:</b></h4>
+                                        <h2 class="card-title mb-4">Contrata nuestros servicios adicionales y<br><b>asegura tu ciudadania europea:</b></h2>
                                         @foreach ($pasoFinal["ctas"] as $cta)
                                             <a href="{{$cta['url']}}" target="_blank" class="cfrSefar inline-flex items-center justify-center px-3 py-2 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 my-2">
                                                 {{$cta['text']}}
