@@ -2174,26 +2174,26 @@ class UserController extends Controller
         //pero tomaremos en consideración el del negocio, en caso de que tenga negocios.
         $servicename = Servicio::where("id_hubspot", "like", $user->servicio."%")->first();
 
-        $usercoscheck = $user->arraycos;
-        $userdatecheck = $user->arraycos_expire;
+        $cosuser = [];
 
-        if (!($usercoscheck !== null && $userdatecheck && $userdatecheck < now())) {
-            $cosuser = [];
+        $hoy = Carbon::now();
 
-            $hoy = Carbon::now();
+        if (isset($dataMonday["men__desplegable"])){
+            $mondaydataforAI["etiquetas"] = $dataMonday["men__desplegable"];
+            $mondaydataforAI["información_genealogia"] = $this->obtenerValorPorTitulo($result, 'INFO GENEALOGIA');
+            $mondaydataforAI["información_ventas"] = $this->obtenerValorPorTitulo($result, 'INFO VENTAS/ATC');
+            $mondaydataforAI["solicitud_cliente"] = $this->obtenerValorPorTitulo($result, 'CLIENTE SOLICITUD');
+            $mondaydataforAI["respuesta_solicitud"] = $this->obtenerValorPorTitulo($result, 'Estado Solicitud CDD');
+            $mondaydataforAI["arbol_cargado"] = $this->obtenerValorPorTitulo($result, 'ARBOL CARGADO');
+            $mondaydataforAI["inicio_investigacion"] = $this->obtenerValorPorTitulo($result, 'ARBOL CARGADO');
+        }
 
-            if (isset($dataMonday["men__desplegable"])){
-                $mondaydataforAI["etiquetas"] = $dataMonday["men__desplegable"];
-                $mondaydataforAI["información_genealogia"] = $this->obtenerValorPorTitulo($result, 'INFO GENEALOGIA');
-                $mondaydataforAI["información_ventas"] = $this->obtenerValorPorTitulo($result, 'INFO VENTAS/ATC');
-                $mondaydataforAI["solicitud_cliente"] = $this->obtenerValorPorTitulo($result, 'CLIENTE SOLICITUD');
-                $mondaydataforAI["respuesta_solicitud"] = $this->obtenerValorPorTitulo($result, 'Estado Solicitud CDD');
-                $mondaydataforAI["arbol_cargado"] = $this->obtenerValorPorTitulo($result, 'ARBOL CARGADO');
-                $mondaydataforAI["inicio_investigacion"] = $this->obtenerValorPorTitulo($result, 'ARBOL CARGADO');
-            }
+        //dd($mondaydataforAI, $result);
 
-            //dd($mondaydataforAI, $result);
+        $cos2      = $user->arraycos;          // datos ya calculados
+        $expires  = $user->arraycos_expire;
 
+        if (!(isset($expires) && $expires > now())){
             if( count($negocios)>0 && $user->pay > 1 && $user->contrato !=0) {
                 foreach($negocios as $negocio) {
 
@@ -2570,16 +2570,11 @@ class UserController extends Controller
 
             }
             unset($co);
-
-            $user->arraycos = $cosuser;
-            $user->arraycos_expire = now()->addDays(2);
-
+            $user->arraycos        = $cosuser;
+            $user->arraycos_expire = Carbon::now()->addDays(2);
             $user->save();
-
         } else {
-            $cosuser = $user->arraycos;
-
-            dd($cosuser);
+            $cosuser = $cos2;
         }
 
         $comprasConDealNoPagadas = Compras::where('deal_id', '!=', null)
