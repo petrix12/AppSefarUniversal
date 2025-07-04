@@ -2174,398 +2174,413 @@ class UserController extends Controller
         //pero tomaremos en consideración el del negocio, en caso de que tenga negocios.
         $servicename = Servicio::where("id_hubspot", "like", $user->servicio."%")->first();
 
-        $cosuser = [];
+        $usercoscheck = $user->arraycos;
+        $userdatecheck = $user->arraycos_expire;
 
-        $hoy = Carbon::now();
+        if ($usercoscheck === null || $userdatecheck === null || $userdatecheck >= now()) {
+            $cosuser = [];
 
-        if (isset($dataMonday["men__desplegable"])){
-            $mondaydataforAI["etiquetas"] = $dataMonday["men__desplegable"];
-            $mondaydataforAI["información_genealogia"] = $this->obtenerValorPorTitulo($result, 'INFO GENEALOGIA');
-            $mondaydataforAI["información_ventas"] = $this->obtenerValorPorTitulo($result, 'INFO VENTAS/ATC');
-            $mondaydataforAI["solicitud_cliente"] = $this->obtenerValorPorTitulo($result, 'CLIENTE SOLICITUD');
-            $mondaydataforAI["respuesta_solicitud"] = $this->obtenerValorPorTitulo($result, 'Estado Solicitud CDD');
-            $mondaydataforAI["arbol_cargado"] = $this->obtenerValorPorTitulo($result, 'ARBOL CARGADO');
-            $mondaydataforAI["inicio_investigacion"] = $this->obtenerValorPorTitulo($result, 'ARBOL CARGADO');
-        }
+            $hoy = Carbon::now();
 
-        //dd($mondaydataforAI, $result);
+            if (isset($dataMonday["men__desplegable"])){
+                $mondaydataforAI["etiquetas"] = $dataMonday["men__desplegable"];
+                $mondaydataforAI["información_genealogia"] = $this->obtenerValorPorTitulo($result, 'INFO GENEALOGIA');
+                $mondaydataforAI["información_ventas"] = $this->obtenerValorPorTitulo($result, 'INFO VENTAS/ATC');
+                $mondaydataforAI["solicitud_cliente"] = $this->obtenerValorPorTitulo($result, 'CLIENTE SOLICITUD');
+                $mondaydataforAI["respuesta_solicitud"] = $this->obtenerValorPorTitulo($result, 'Estado Solicitud CDD');
+                $mondaydataforAI["arbol_cargado"] = $this->obtenerValorPorTitulo($result, 'ARBOL CARGADO');
+                $mondaydataforAI["inicio_investigacion"] = $this->obtenerValorPorTitulo($result, 'ARBOL CARGADO');
+            }
 
-        if( count($negocios)>0 && $user->pay > 1 && $user->contrato !=0) {
-            foreach($negocios as $negocio) {
+            //dd($mondaydataforAI, $result);
 
-                if (
-                    isset($negocio->fase_2_pagado) || isset($negocio->fase_2_pagado__teamleader_) ||
-                    isset($negocio->fase_3_pagado) || isset($negocio->fase_3_pagado__teamleader_)
-                ) {
-                    $resultadoIA = [
-                        "otrosProcesos" => false,
-                        "pericial" => false,
-                        "genealogiaAprobada" => false,
-                        "genealogia" => false,
-                        "investigacionProfunda" => false,
-                        "investigacionInSitu" => false,
-                        "analisisYCorreccion" => false,
-                        "investigacionIntuituPersonae" => false
-                    ];
-                } else {
-                    $resultadoIA = $this->analizarEtiquetasYDevolverJSON($mondaydataforAI);
-                }
+            if( count($negocios)>0 && $user->pay > 1 && $user->contrato !=0) {
+                foreach($negocios as $negocio) {
 
-                if(isset($negocio->fase_3_pagado) || isset($negocio->fase_3_pagado__teamleader_)) {
-                    if (isset($negocio->nacionalidad_concedida)){
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado,
-                            "warning" => null,
-                            "currentStepGen" => 18,
-                            "currentStepJur" => 8
+                    if (
+                        isset($negocio->fase_2_pagado) || isset($negocio->fase_2_pagado__teamleader_) ||
+                        isset($negocio->fase_3_pagado) || isset($negocio->fase_3_pagado__teamleader_)
+                    ) {
+                        $resultadoIA = [
+                            "otrosProcesos" => false,
+                            "pericial" => false,
+                            "genealogiaAprobada" => false,
+                            "genealogia" => false,
+                            "investigacionProfunda" => false,
+                            "investigacionInSitu" => false,
+                            "analisisYCorreccion" => false,
+                            "investigacionIntuituPersonae" => false
                         ];
-                        continue;
+                    } else {
+                        $resultadoIA = $this->analizarEtiquetasYDevolverJSON($mondaydataforAI);
                     }
 
-                    if (isset($negocio->n13__fecha_recurso_alzada)){
-                        $fechaRecurso = Carbon::parse($negocio->n13__fecha_recurso_alzada);
-                        $fechaRecursoMas3Meses = $fechaRecurso->copy()->addMonths(3);
-                        if ($fechaRecursoMas3Meses->greaterThan($hoy)){
-                            if ($fechaRecursoMas3Meses->greaterThan($hoy)) {
-                                $warning = isset($negocio->fecha_solicitud_viajudicial)
-                                    ? null
-                                    : "<b>¡Puedes solicitar la vía judicial!</b>";
-
-                                $cosuser[] = [
-                                    "servicio" => $negocio->servicio_solicitado,
-                                    "warning" => $warning,
-                                    "currentStepGen" => 18,
-                                    "currentStepJur" => 7
-                                ];
-                                continue;
-                            }
-                        }
-                    }
-
-                    if (isset($negocio->n5__fecha_de_formalizacion)){
-                        $fechaFormalizacion = Carbon::parse($negocio->n5__fecha_de_formalizacion);
-
-                        $fechaFormalizacionMas12Meses = $fechaRecurso->copy()->addMonths(12);
-                        $fechaFormalizacionMas6Meses = $fechaRecurso->copy()->addMonths(6);
-                        $fechaFormalizacionMas1Meses = $fechaRecurso->copy()->addMonths(1);
-                        if ($fechaFormalizacionMas12Meses->greaterThan($hoy)){
-                            if ($fechaFormalizacionMas12Meses->greaterThan($hoy)) {
-                                $warning = isset($negocio->fecha_solicitud_recursoalzada)
-                                    ? null
-                                    : '<b>¡Solicita tu Recurso de Alzada!</b><br><a style="border:0!important;" href="https://sefaruniversal.com/landing-email-de-recurso-de-alzada/" class="cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita el Recurso de Alzada</a>';
-
-                                $cosuser[] = [
-                                    "servicio" => $negocio->servicio_solicitado,
-                                    "warning" => $warning,
-                                    "currentStepGen" => 18,
-                                    "currentStepJur" => 6
-                                ];
-                                continue;
-                            }
-                        } else if ($fechaFormalizacionMas6Meses->greaterThan($hoy)){
-                            if ($fechaFormalizacionMas6Meses->greaterThan($hoy)) {
-                                $warning = isset($negocio->fecha_solicitud_resolucionexpresa)
-                                    ? null
-                                    : '<b>¡Solicita tu resolución expresa!</b><br><br><a href="https://sefaruniversal.com/resolucion-expresa/" style="border:0!important;" class="cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita tu Resolución Expresa</a>';
-
-                                $cosuser[] = [
-                                    "servicio" => $negocio->servicio_solicitado,
-                                    "warning" => $warning,
-                                    "currentStepGen" => 18,
-                                    "currentStepJur" => 5
-                                ];
-                                continue;
-                            }
-                        } else if ($fechaFormalizacionMas1Meses->greaterThan($hoy)){
-                            $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
-                                "warning" => '<b>¡Consulta si requieres subsanación o mejora de expediente!</b><br><br><a style="border:0!important;" href="https://sefaruniversal.com/landing-registro-subsanacion-de-la-nacionalidad-espanola-sefardi/" class="cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">¡Consulta ahora!</a>',
-                                "currentStepGen" => 18,
-                                "currentStepJur" => 4
-                            ];
-                            continue;
-                        } else {
+                    if(isset($negocio->fase_3_pagado) || isset($negocio->fase_3_pagado__teamleader_)) {
+                        if (isset($negocio->nacionalidad_concedida)){
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
                                 "warning" => null,
                                 "currentStepGen" => 18,
-                                "currentStepJur" => 3
+                                "currentStepJur" => 8
                             ];
                             continue;
                         }
-                    }
 
-                    if (isset($negocio->tasa_pagada)){
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado,
-                            "warning" => null,
-                            "currentStepGen" => 18,
-                            "currentStepJur" => 2
-                        ];
-                        continue;
-                    }
+                        if (isset($negocio->n13__fecha_recurso_alzada)){
+                            $fechaRecurso = Carbon::parse($negocio->n13__fecha_recurso_alzada);
+                            $fechaRecursoMas3Meses = $fechaRecurso->copy()->addMonths(3);
+                            if ($fechaRecursoMas3Meses->greaterThan($hoy)){
+                                if ($fechaRecursoMas3Meses->greaterThan($hoy)) {
+                                    $warning = isset($negocio->fecha_solicitud_viajudicial)
+                                        ? null
+                                        : "<b>¡Puedes solicitar la vía judicial!</b>";
 
-                    if (isset($negocio->enviado_a_pago_de_tasas)){
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado,
-                            "warning" => null,
-                            "currentStepGen" => 18,
-                            "currentStepJur" => 1
-                        ];
-                        continue;
-                    }
+                                    $cosuser[] = [
+                                        "servicio" => $negocio->servicio_solicitado,
+                                        "warning" => $warning,
+                                        "currentStepGen" => 18,
+                                        "currentStepJur" => 7
+                                    ];
+                                    continue;
+                                }
+                            }
+                        }
 
-                    $cosuser[] = [
-                        "servicio" => $negocio->servicio_solicitado,
-                        "warning" => null,
-                        "currentStepGen" => 18,
-                        "currentStepJur" => 0
-                    ];
-                    continue;
+                        if (isset($negocio->n5__fecha_de_formalizacion)){
+                            $fechaFormalizacion = Carbon::parse($negocio->n5__fecha_de_formalizacion);
 
-                } else if ( isset($negocio->fase_2_pagado) || isset($negocio->fase_2_pagado__teamleader_) ) {
-                    if (isset($negocio->fase_3_preestab) || isset($negocio->fase_3_preestab) || isset($negocio->fase_3_preestab)) {
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado,
-                            "warning" => "<b>Realiza el pago para la formalización del expediente</b> y aseguremos juntos el siguiente gran paso hacia tu ciudadanía española.",
-                            "currentStepGen" => 18,
-                            "currentStepJur" => -1
-                        ];
-                        continue;
-                    }
+                            $fechaFormalizacionMas12Meses = $fechaRecurso->copy()->addMonths(12);
+                            $fechaFormalizacionMas6Meses = $fechaRecurso->copy()->addMonths(6);
+                            $fechaFormalizacionMas1Meses = $fechaRecurso->copy()->addMonths(1);
+                            if ($fechaFormalizacionMas12Meses->greaterThan($hoy)){
+                                if ($fechaFormalizacionMas12Meses->greaterThan($hoy)) {
+                                    $warning = isset($negocio->fecha_solicitud_recursoalzada)
+                                        ? null
+                                        : '<b>¡Solicita tu Recurso de Alzada!</b><br><a style="border:0!important;" href="https://sefaruniversal.com/landing-email-de-recurso-de-alzada/" class="cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita el Recurso de Alzada</a>';
 
-                    if(isset($negocio->n4__certificado_descargado)){
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado,
-                            "warning" => null,
-                            "currentStepGen" => 18,
-                            "currentStepJur" => -1
-                        ];
-                        continue;
-                    }
+                                    $cosuser[] = [
+                                        "servicio" => $negocio->servicio_solicitado,
+                                        "warning" => $warning,
+                                        "currentStepGen" => 18,
+                                        "currentStepJur" => 6
+                                    ];
+                                    continue;
+                                }
+                            } else if ($fechaFormalizacionMas6Meses->greaterThan($hoy)){
+                                if ($fechaFormalizacionMas6Meses->greaterThan($hoy)) {
+                                    $warning = isset($negocio->fecha_solicitud_resolucionexpresa)
+                                        ? null
+                                        : '<b>¡Solicita tu resolución expresa!</b><br><br><a href="https://sefaruniversal.com/resolucion-expresa/" style="border:0!important;" class="cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita tu Resolución Expresa</a>';
 
-                    if (isset($negocio->n3__informe_cargado)){
-                        $fechaInformeCargado = Carbon::parse($negocio->n3__informe_cargado);
-                        $fechaInformeCargadoMas1Meses = $fechaInformeCargado->copy()->addMonths(1);
+                                    $cosuser[] = [
+                                        "servicio" => $negocio->servicio_solicitado,
+                                        "warning" => $warning,
+                                        "currentStepGen" => 18,
+                                        "currentStepJur" => 5
+                                    ];
+                                    continue;
+                                }
+                            } else if ($fechaFormalizacionMas1Meses->greaterThan($hoy)){
+                                $cosuser[] = [
+                                    "servicio" => $negocio->servicio_solicitado,
+                                    "warning" => '<b>¡Consulta si requieres subsanación o mejora de expediente!</b><br><br><a style="border:0!important;" href="https://sefaruniversal.com/landing-registro-subsanacion-de-la-nacionalidad-espanola-sefardi/" class="cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">¡Consulta ahora!</a>',
+                                    "currentStepGen" => 18,
+                                    "currentStepJur" => 4
+                                ];
+                                continue;
+                            } else {
+                                $cosuser[] = [
+                                    "servicio" => $negocio->servicio_solicitado,
+                                    "warning" => null,
+                                    "currentStepGen" => 18,
+                                    "currentStepJur" => 3
+                                ];
+                                continue;
+                            }
+                        }
 
-                        if ($fechaInformeCargadoMas1Meses->greaterThan($hoy)) {
+                        if (isset($negocio->tasa_pagada)){
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
                                 "warning" => null,
-                                "currentStepGen" => 17,
-                                "currentStepJur" => -1
+                                "currentStepGen" => 18,
+                                "currentStepJur" => 2
                             ];
                             continue;
-                        } else {
+                        }
+
+                        if (isset($negocio->enviado_a_pago_de_tasas)){
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
                                 "warning" => null,
-                                "currentStepGen" => 16,
+                                "currentStepGen" => 18,
+                                "currentStepJur" => 1
+                            ];
+                            continue;
+                        }
+
+                        $cosuser[] = [
+                            "servicio" => $negocio->servicio_solicitado,
+                            "warning" => null,
+                            "currentStepGen" => 18,
+                            "currentStepJur" => 0
+                        ];
+                        continue;
+
+                    } else if ( isset($negocio->fase_2_pagado) || isset($negocio->fase_2_pagado__teamleader_) ) {
+                        if (isset($negocio->fase_3_preestab) || isset($negocio->fase_3_preestab) || isset($negocio->fase_3_preestab)) {
+                            $cosuser[] = [
+                                "servicio" => $negocio->servicio_solicitado,
+                                "warning" => "<b>Realiza el pago para la formalización del expediente</b> y aseguremos juntos el siguiente gran paso hacia tu ciudadanía española.",
+                                "currentStepGen" => 18,
                                 "currentStepJur" => -1
                             ];
                             continue;
                         }
-                    }
 
-                    $cosuser[] = [
-                        "servicio" => $negocio->servicio_solicitado,
-                        "warning" => null,
-                        "currentStepGen" => 15,
-                        "currentStepJur" => -1
-                    ];
-                    continue;
-                } else if ( isset($negocio->fase_1_pagado) || isset($negocio->fase_1_pagado__teamleader_) ) {
-                    if (isset($negocio->fase_2_preestab) || isset($negocio->fase_2_preestab) || isset($negocio->fase_2_preestab)){
+                        if(isset($negocio->n4__certificado_descargado)){
+                            $cosuser[] = [
+                                "servicio" => $negocio->servicio_solicitado,
+                                "warning" => null,
+                                "currentStepGen" => 18,
+                                "currentStepJur" => -1
+                            ];
+                            continue;
+                        }
+
+                        if (isset($negocio->n3__informe_cargado)){
+                            $fechaInformeCargado = Carbon::parse($negocio->n3__informe_cargado);
+                            $fechaInformeCargadoMas1Meses = $fechaInformeCargado->copy()->addMonths(1);
+
+                            if ($fechaInformeCargadoMas1Meses->greaterThan($hoy)) {
+                                $cosuser[] = [
+                                    "servicio" => $negocio->servicio_solicitado,
+                                    "warning" => null,
+                                    "currentStepGen" => 17,
+                                    "currentStepJur" => -1
+                                ];
+                                continue;
+                            } else {
+                                $cosuser[] = [
+                                    "servicio" => $negocio->servicio_solicitado,
+                                    "warning" => null,
+                                    "currentStepGen" => 16,
+                                    "currentStepJur" => -1
+                                ];
+                                continue;
+                            }
+                        }
+
                         $cosuser[] = [
                             "servicio" => $negocio->servicio_solicitado,
-                            "warning" => "Para continuar con el proceso y proceder con el envío del informe y las pruebas correspondientes a la institución mencionada, <b>es necesario que realices el siguiente pago.</b>",
+                            "warning" => null,
                             "currentStepGen" => 15,
                             "currentStepJur" => -1
                         ];
                         continue;
-                    }
+                    } else if ( isset($negocio->fase_1_pagado) || isset($negocio->fase_1_pagado__teamleader_) ) {
+                        if (isset($negocio->fase_2_preestab) || isset($negocio->fase_2_preestab) || isset($negocio->fase_2_preestab)){
+                            $cosuser[] = [
+                                "servicio" => $negocio->servicio_solicitado,
+                                "warning" => "Para continuar con el proceso y proceder con el envío del informe y las pruebas correspondientes a la institución mencionada, <b>es necesario que realices el siguiente pago.</b>",
+                                "currentStepGen" => 15,
+                                "currentStepJur" => -1
+                            ];
+                            continue;
+                        }
 
-                    if ($resultadoIA['otrosProcesos']) {
+                        if ($resultadoIA['otrosProcesos']) {
+                            $cosuser[] = [
+                                "servicio" => $negocio->servicio_solicitado,
+                                "warning" => "<b>Tu caso ha sido derivado a otro proceso.</b> Recibirás seguimiento personalizado.",
+                                "currentStepGen" => 11,
+                                "currentStepJur" => -1
+                            ];
+                            continue;
+                        }
+
+                        $documentsTOTAL = DocumentRequest::where('user_id', $user->id)
+                                        ->count();
+
+                        if($documentsTOTAL>0) {
+                            $documentsEnEsperaCliente = DocumentRequest::where('user_id', $user->id)
+                                            ->whereIn('status', ['en_espera_cliente', 'rechazada'])
+                                            ->count();
+
+                            $documentsEnRevision = DocumentRequest::where('user_id', $user->id)
+                                            ->where('status', 'resuelto')
+                                            ->count();
+
+                            $documentsAprobados = DocumentRequest::where('user_id', $user->id)
+                                            ->whereIn('status', ['no_documento', 'aprobada'])
+                                            ->count();
+
+                            if ($documentsAprobados>0) {
+                                $cosuser[] = [
+                                    "servicio" => $negocio->servicio_solicitado,
+                                    "warning" => null,
+                                    "currentStepGen" => 10,
+                                    "currentStepJur" => -1
+                                ];
+                                continue;
+                            }
+
+                            if ($documentsEnRevision>0) {
+                                $cosuser[] = [
+                                    "servicio" => $negocio->servicio_solicitado,
+                                    "warning" => null,
+                                    "currentStepGen" => 9,
+                                    "currentStepJur" => -1
+                                ];
+                                continue;
+                            }
+
+                            if ($documentsEnEsperaCliente>0) {
+                                $cosuser[] = [
+                                    "servicio" => $negocio->servicio_solicitado,
+                                    "warning" => "Tienes solicitudes de documentos pendientes. Para resolverlas, dirígete a la pestaña de 'Mis solicitudes de documentos'",
+                                    "currentStepGen" => 8,
+                                    "currentStepJur" => -1
+                                ];
+                                continue;
+                            }
+                        }
+
                         $cosuser[] = [
                             "servicio" => $negocio->servicio_solicitado,
-                            "warning" => "<b>Tu caso ha sido derivado a otro proceso.</b> Recibirás seguimiento personalizado.",
-                            "currentStepGen" => 11,
+                            "warning" => null,
+                            "currentStepGen" => 8,
                             "currentStepJur" => -1
                         ];
                         continue;
-                    }
 
-                    $documentsTOTAL = DocumentRequest::where('user_id', $user->id)
-                                    ->count();
+                    } else {
+                        if (isset($negocio->fase_1_preestab) || isset($negocio->fase_1_preestab) || isset($negocio->fase_1_preestab)){
+                            $cosuser[] = [
+                                "servicio" => $negocio->servicio_solicitado,
+                                "warning" => "Para continuar con el proceso y proceder con la redacción del informe, <b>es necesario que realices el siguiente pago.</b>",
+                                "currentStepGen" => 7,
+                                "currentStepJur" => -1
+                            ];
+                            continue;
+                        }
 
-                    if($documentsTOTAL>0) {
-                        $documentsEnEsperaCliente = DocumentRequest::where('user_id', $user->id)
-                                        ->whereIn('status', ['en_espera_cliente', 'rechazada'])
-                                        ->count();
-
-                        $documentsEnRevision = DocumentRequest::where('user_id', $user->id)
-                                        ->where('status', 'resuelto')
-                                        ->count();
-
-                        $documentsAprobados = DocumentRequest::where('user_id', $user->id)
-                                        ->whereIn('status', ['no_documento', 'aprobada'])
-                                        ->count();
-
-                        if ($documentsAprobados>0) {
+                        if ($resultadoIA['genealogia']) {
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
                                 "warning" => null,
-                                "currentStepGen" => 10,
+                                "currentStepGen" => 5,
                                 "currentStepJur" => -1
                             ];
                             continue;
                         }
 
-                        if ($documentsEnRevision>0) {
+                        if ($resultadoIA['inicioInvestigacion']) {
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
                                 "warning" => null,
-                                "currentStepGen" => 9,
+                                "currentStepGen" => 4,
                                 "currentStepJur" => -1
                             ];
                             continue;
                         }
 
-                        if ($documentsEnEsperaCliente>0) {
+                        if ($resultadoIA['investigacionProfunda']) {
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
-                                "warning" => "Tienes solicitudes de documentos pendientes. Para resolverlas, dirígete a la pestaña de 'Mis solicitudes de documentos'",
-                                "currentStepGen" => 8,
+                                "warning" => null,
+                                "currentStepGen" => 3,
                                 "currentStepJur" => -1
                             ];
                             continue;
                         }
-                    }
 
-                    $cosuser[] = [
-                        "servicio" => $negocio->servicio_solicitado,
-                        "warning" => null,
-                        "currentStepGen" => 8,
-                        "currentStepJur" => -1
-                    ];
-                    continue;
+                        if ($resultadoIA['investigacionInSitu']) {
+                            $cosuser[] = [
+                                "servicio" => $negocio->servicio_solicitado,
+                                "warning" => null,
+                                "currentStepGen" => 2,
+                                "currentStepJur" => -1
+                            ];
+                            continue;
+                        }
 
-                } else {
-                    if (isset($negocio->fase_1_preestab) || isset($negocio->fase_1_preestab) || isset($negocio->fase_1_preestab)){
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado,
-                            "warning" => "Para continuar con el proceso y proceder con la redacción del informe, <b>es necesario que realices el siguiente pago.</b>",
-                            "currentStepGen" => 7,
-                            "currentStepJur" => -1
-                        ];
-                        continue;
-                    }
+                        if ($resultadoIA['investigacionIntuituPersonae']) {
+                            $cosuser[] = [
+                                "servicio" => $negocio->servicio_solicitado,
+                                "warning" => null,
+                                "currentStepGen" => 1,
+                                "currentStepJur" => -1,
+                                "subproceso" => 1
+                            ];
+                            continue;
+                        }
 
-                    if ($resultadoIA['genealogia']) {
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado,
-                            "warning" => null,
-                            "currentStepGen" => 5,
-                            "currentStepJur" => -1
-                        ];
-                        continue;
-                    }
+                        if ($resultadoIA['analisisYCorreccion'] || $hayTatarabuelo) {
+                            $cosuser[] = [
+                                "servicio" => $negocio->servicio_solicitado,
+                                "warning" => null,
+                                "currentStepGen" => 1,
+                                "currentStepJur" => -1,
+                                "subproceso" => 0
+                            ];
+                            continue;
+                        }
 
-                    if ($resultadoIA['inicioInvestigacion']) {
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado,
-                            "warning" => null,
-                            "currentStepGen" => 4,
-                            "currentStepJur" => -1
-                        ];
-                        continue;
-                    }
-
-                    if ($resultadoIA['investigacionProfunda']) {
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado,
-                            "warning" => null,
-                            "currentStepGen" => 3,
-                            "currentStepJur" => -1
-                        ];
-                        continue;
-                    }
-
-                    if ($resultadoIA['investigacionInSitu']) {
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado,
-                            "warning" => null,
-                            "currentStepGen" => 2,
-                            "currentStepJur" => -1
-                        ];
-                        continue;
-                    }
-
-                    if ($resultadoIA['investigacionIntuituPersonae']) {
                         $cosuser[] = [
                             "servicio" => $negocio->servicio_solicitado,
                             "warning" => null,
                             "currentStepGen" => 1,
                             "currentStepJur" => -1,
-                            "subproceso" => 1
+                            "subproceso" => -1
                         ];
                         continue;
                     }
-
-                    if ($resultadoIA['analisisYCorreccion'] || $hayTatarabuelo) {
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado,
-                            "warning" => null,
-                            "currentStepGen" => 1,
-                            "currentStepJur" => -1,
-                            "subproceso" => 0
-                        ];
-                        continue;
-                    }
-
-                    $cosuser[] = [
-                        "servicio" => $negocio->servicio_solicitado,
-                        "warning" => null,
-                        "currentStepGen" => 1,
-                        "currentStepJur" => -1,
-                        "subproceso" => -1
-                    ];
-                    continue;
+                }
+            } else {
+                $cosuser[0]["servicio"] = $servicename["id_hubspot"];
+                if ($user->pay == 0) {
+                    $cosuser[0]["warning"] = "Debes realizar el pago del registro de tu proceso.<br><br><a style='border:0!important;'  href='/pay' class='cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Pagar registro</a>";
+                    $cosuser[0]["currentStepGen"] = 0;
+                    $cosuser[0]["currentStepJur"] = -1;
+                } else if ($user->pay == 1){
+                    $cosuser[0]["warning"] = "Debes completar tu información para continuar con el proceso.<br><br><a style='border:0!important;'  href='/getinfo' class='cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Completar información</a>";
+                    $cosuser[0]["currentStepGen"] = 0;
+                    $cosuser[0]["currentStepJur"] = -1;
+                } else if ($user->contrato == 0){
+                    $cosuser[0]["warning"] = "Debes firmar tu contrato para continuar con el proceso.<br><br><a style='border:0!important;'  href='/contrato' class='cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Firmar contrato</a>";
+                    $cosuser[0]["currentStepGen"] = 0;
+                    $cosuser[0]["currentStepJur"] = -1;
                 }
             }
+
+            foreach ($cosuser as &$co) {
+                if(isset($cos[$co['servicio']])){
+                    $maxGen = sizeof($cos[$co['servicio']]["genealogico"]);
+                    $maxJur = sizeof($cos[$co['servicio']]["juridico"]);
+
+                    $co['progressPercentageGen'] = isset($co['currentStepGen']) && $co['currentStepGen'] >= 0
+                        ? round(($co['currentStepGen'] / $maxGen) * 100)
+                        : 0;
+
+                    $co['progressPercentageJur'] = isset($co['currentStepJur']) && $co['currentStepJur'] >= 0
+                        ? round(($co['currentStepJur'] / $maxJur) * 100)
+                        : 0;
+                }
+
+            }
+            unset($co);
+
+            $user->arraycos = $cosuser;
+            $user->arraycos_expire = now()->addDays(2);
+
+            $user->save();
+
         } else {
-            $cosuser[0]["servicio"] = $servicename["id_hubspot"];
-            if ($user->pay == 0) {
-                $cosuser[0]["warning"] = "Debes realizar el pago del registro de tu proceso.<br><br><a style='border:0!important;'  href='/pay' class='cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Pagar registro</a>";
-                $cosuser[0]["currentStepGen"] = 0;
-                $cosuser[0]["currentStepJur"] = -1;
-            } else if ($user->pay == 1){
-                $cosuser[0]["warning"] = "Debes completar tu información para continuar con el proceso.<br><br><a style='border:0!important;'  href='/getinfo' class='cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Completar información</a>";
-                $cosuser[0]["currentStepGen"] = 0;
-                $cosuser[0]["currentStepJur"] = -1;
-            } else if ($user->contrato == 0){
-                $cosuser[0]["warning"] = "Debes firmar tu contrato para continuar con el proceso.<br><br><a style='border:0!important;'  href='/contrato' class='cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Firmar contrato</a>";
-                $cosuser[0]["currentStepGen"] = 0;
-                $cosuser[0]["currentStepJur"] = -1;
-            }
+            $cosuser = $user->arraycos;
+
+            dd($cosuser);
         }
-
-        foreach ($cosuser as &$co) {
-            if(isset($cos[$co['servicio']])){
-                $maxGen = sizeof($cos[$co['servicio']]["genealogico"]);
-                $maxJur = sizeof($cos[$co['servicio']]["juridico"]);
-
-                $co['progressPercentageGen'] = isset($co['currentStepGen']) && $co['currentStepGen'] >= 0
-                    ? round(($co['currentStepGen'] / $maxGen) * 100)
-                    : 0;
-
-                $co['progressPercentageJur'] = isset($co['currentStepJur']) && $co['currentStepJur'] >= 0
-                    ? round(($co['currentStepJur'] / $maxJur) * 100)
-                    : 0;
-            }
-
-        }
-        unset($co);
 
         $comprasConDealNoPagadas = Compras::where('deal_id', '!=', null)
                                 ->where('pagado', 0)
