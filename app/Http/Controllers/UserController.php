@@ -2249,9 +2249,9 @@ class UserController extends Controller
                         if (isset($negocio->n5__fecha_de_formalizacion)){
                             $fechaFormalizacion = Carbon::parse($negocio->n5__fecha_de_formalizacion);
 
-                            $fechaFormalizacionMas12Meses = $fechaRecurso->copy()->addMonths(12);
-                            $fechaFormalizacionMas6Meses = $fechaRecurso->copy()->addMonths(6);
-                            $fechaFormalizacionMas1Meses = $fechaRecurso->copy()->addMonths(1);
+                            $fechaFormalizacionMas12Meses = $fechaFormalizacion->copy()->addMonths(12);
+                            $fechaFormalizacionMas6Meses = $fechaFormalizacion->copy()->addMonths(6);
+                            $fechaFormalizacionMas1Meses = $fechaFormalizacion->copy()->addMonths(1);
                             if ($fechaFormalizacionMas12Meses->greaterThan($hoy)){
                                 if ($fechaFormalizacionMas12Meses->greaterThan($hoy)) {
                                     $warning = isset($negocio->fecha_solicitud_recursoalzada)
