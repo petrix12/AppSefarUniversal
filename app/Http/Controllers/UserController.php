@@ -2177,7 +2177,7 @@ class UserController extends Controller
         $usercoscheck = $user->arraycos;
         $userdatecheck = $user->arraycos_expire;
 
-        if ($usercoscheck === null || $userdatecheck === null || $userdatecheck >= now()) {
+        if (!($usercoscheck !== null && $userdatecheck && $userdatecheck < now())) {
             $cosuser = [];
 
             $hoy = Carbon::now();
