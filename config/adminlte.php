@@ -294,6 +294,13 @@ return [
                 ]
             ],
         ],
+        [
+            'text'          => 'Usuarios',
+            'icon'          => 'fa-fw fas fa-users',
+            'icon_color'    => 'white',
+            'url'           => 'users',
+            'can'           => 'users.viewlist',
+        ],
         /* *** Pasaportes Incorrectos *** */
         [
             'text'          => 'Pasaportes Incorrectos',
