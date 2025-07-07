@@ -139,7 +139,7 @@
                                     @if (auth()->user()->roles[0]->id == 1)
                                         <p><small>{{ $user->servicio == null ? $user->getRoleNames()[0] ?? 'Sin rol' : $user->servicio }}</small></p>
                                     @else
-                                        <p><small>{{ $user->servicio != null ? $user->servicio }}</small></p>
+                                        <p><small>{{ $user->servicio != null ? $user->servicio : "Usuario App" }}</small></p>
                                     @endif
                                     <p><small>{{ $user->pay == 0 ? 'No ha pagado' : ($user->pay == 1 ? 'Pagó' : 'Pagó y completó información') }}<b>{{ $user->pay == 3 ? ' - Estatus 3 activo' : '' }}</b></small></p>
                                 @endif
