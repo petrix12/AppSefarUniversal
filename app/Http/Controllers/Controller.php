@@ -67,6 +67,10 @@ class Controller extends BaseController
             return view('crud.agclientes.index');
         }
 
+        if(Auth::user()->hasRole('Coord. Ventas')){
+            return view('crud.users.index');
+        }
+
         // Clientes corrientes
         if (Auth::user()->hasRole("Cliente")){
             if(Auth::user()->pay==0){
