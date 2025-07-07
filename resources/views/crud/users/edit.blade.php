@@ -123,7 +123,7 @@
                     </button>
                 </li>
                 @endif
-                @if(auth()->user()->roles[0]->id == 1 || auth()->user()->roles[0]->id == 4 || auth()->user()->roles[0]->id == 16 || auth()->user()->roles[0]->id == 15)
+                @if(auth()->user()->roles[0]->id == 17 || auth()->user()->roles[0]->id == 1 || auth()->user()->roles[0]->id == 4 || auth()->user()->roles[0]->id == 16 || auth()->user()->roles[0]->id == 15)
                 <li class="nav-item" role="presentation">
                     <button style="color:black" class="nav-link" id="negocios-tab" data-bs-toggle="tab" data-bs-target="#negocios" type="button" role="tab" aria-controls="negocios" aria-selected="false">
                         Negocios
@@ -735,7 +735,7 @@
                             </div>
                         </div>
 
-                        @if(auth()->user()->roles[0]->id == 1 || auth()->user()->roles[0]->id == 15 || auth()->user()->roles[0]->id == 4)
+                        @if(auth()->user()->roles[0]->id == 1 || auth()->user()->roles[0]->id == 15 || auth()->user()->roles[0]->id == 4 || auth()->user()->roles[0]->id == 17)
 
                             <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
                                 <span class="ctvSefar block text-indigo-600">Otros datos personales</span>
@@ -1010,7 +1010,9 @@
 
                         @endif
 
-                        <button type="button" id="guardar-datos" class="cfrSefar btn btn-primary mt-3">Guardar</button>
+                        @if(auth()->user()->roles[0]->id == 1 || auth()->user()->roles[0]->id == 15 || auth()->user()->roles[0]->id == 4 || auth()->user()->roles[0]->id == 17)
+                            <button type="button" id="guardar-datos" class="cfrSefar btn btn-primary mt-3">Guardar</button>
+                        @endif
                     </form>
                 </div>
 
@@ -1054,7 +1056,7 @@
                         <a href="/tree/" class="cfrSefar mb-3 inline-flex items-center justify-center px-3 py-1 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
                             Ir al Arbol
                         </a>
-                        @else
+                        @elseif (auth()->user()->roles[0]->id != 17)
                         <a href="/tree/{{$user->passport}}" class="cfrSefar mb-3 inline-flex items-center justify-center px-3 py-1 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
                             Ir al Arbol
                         </a>
