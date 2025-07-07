@@ -49,7 +49,11 @@
             <ul class="nav nav-tabs" id="formTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button style="color:black" class="nav-link active" id="mystatus-tab" data-bs-toggle="tab" data-bs-target="#mystatus" type="button" role="tab" aria-controls="mystatus" aria-selected="true">
+                        @if(auth()->user()->roles[0]->id == 5)
                         Mi Estatus
+                        @else
+                        Estatus de Cliente
+                        @endif
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
@@ -63,18 +67,21 @@
                         Contraseña
                     </button>
                 </li>
-                @else
+                @elseif(auth()->user()->roles[0]->id == 5)
                 <li class="nav-item" role="presentation">
                     <button style="color:black" class="nav-link" id="mypassword-tab" data-bs-toggle="tab" data-bs-target="#mypassword" type="button" role="tab" aria-controls="mypassword" aria-selected="true">
                         Cambiar mi Contraseña
                     </button>
                 </li>
                 @endif
+                @if(auth()->user()->roles[0]->id == 5 || auth()->user()->roles[0]->id == 1 || auth()->user()->roles[0]->id == 2 || auth()->user()->roles[0]->id == 3)
                 <li class="nav-item" role="presentation">
                     <button style="color:black" class="nav-link" id="familiars-tab" data-bs-toggle="tab" data-bs-target="#familiars" type="button" role="tab" aria-controls="familiars" aria-selected="false">
                         Familiares registrados
                     </button>
                 </li>
+                @endif
+                @if(auth()->user()->roles[0]->id == 1 || auth()->user()->roles[0]->id == 4 || auth()->user()->roles[0]->id == 5 || auth()->user()->roles[0]->id == 15 || auth()->user()->roles[0]->id == 16)
                 <li class="nav-item" role="presentation">
                     <button style="color:black" class="nav-link" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments" type="button" role="tab" aria-controls="payments" aria-selected="false">
                         Pagos realizados
@@ -85,6 +92,7 @@
                         Pagos pendientes
                     </button>
                 </li>
+                @endif
                 @if(auth()->user()->roles[0]->id == 5)
                 <li class="nav-item">
                     <button style="color:black" class="nav-link" id="client-req-tab"
@@ -108,12 +116,14 @@
                         Archivos Cargados
                     </button>
                 </li>
-                @if(auth()->user()->roles[0]->id == 1)
+                @if(auth()->user()->roles[0]->id == 1 || auth()->user()->roles[0]->id == 2)
                 <li class="nav-item" role="presentation">
                     <button style="color:black" class="nav-link" id="etiquetado-tab" data-bs-toggle="tab" data-bs-target="#etiquetado" type="button" role="tab" aria-controls="etiquetado" aria-selected="false">
                         Etiquetado
                     </button>
                 </li>
+                @endif
+                @if(auth()->user()->roles[0]->id == 1 || auth()->user()->roles[0]->id == 4 || auth()->user()->roles[0]->id == 16 || auth()->user()->roles[0]->id == 15)
                 <li class="nav-item" role="presentation">
                     <button style="color:black" class="nav-link" id="negocios-tab" data-bs-toggle="tab" data-bs-target="#negocios" type="button" role="tab" aria-controls="negocios" aria-selected="false">
                         Negocios
@@ -506,7 +516,7 @@
                                 <input type="tel" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="phone" name="phone" value="{{ old('phone', $user->phone) }}" placeholder="Ingrese su número de teléfono">
                             </div>
                         </div>
-                        @if(auth()->user()->roles[0]->id == 1)
+                        @if(auth()->user()->roles[0]->id == 1 || auth()->user()->roles[0]->id == 15 || auth()->user()->roles[0]->id == 16)
                         <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
                             <div style="flex: 1;" class="mb-3">
                                 <label for="detalle_de_la_solicitud" class="block text-sm font-medium text-gray-700">Detalles de la solicitud</label>
@@ -725,280 +735,278 @@
                             </div>
                         </div>
 
-                        @if(auth()->user()->roles[0]->id == 1)
+                        @if(auth()->user()->roles[0]->id == 1 || auth()->user()->roles[0]->id == 15 || auth()->user()->roles[0]->id == 4)
 
-                        <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
-                            <span class="ctvSefar block text-indigo-600">Otros datos personales</span>
-                        </h2>
-                        <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="conyuge_interesado_en_proceso" class="block text-sm font-medium text-gray-700">Conyuge Interesado</label>
-                                <input
-                                    type="checkbox"
-                                    class="mt-1 py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                    id="conyuge_interesado_en_proceso"
-                                    name="conyuge_interesado_en_proceso"
-                                    style="width: 33.6px!important; height: 33.6px!important;"
-                                    value="1"
-                                    {{ old('conyuge_interesado_en_proceso', $user->conyuge_interesado_en_proceso ? 'checked' : '') }}
-                                />
-                            </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="nombre_completo_del_conyuge" class="block text-sm font-medium text-gray-700">Nombre de Conyuge</label>
-                                <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="nombre_completo_del_conyuge" name="nombre_completo_del_conyuge" value="{{ old('nombre_completo_del_conyuge', $user->nombre_completo_del_conyuge) }}" placeholder="Ingrese su Ciudad de Nacimiento">
-                            </div>
-                        </div>
-                        <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <!-- Campo Partida de Nacimiento Simple -->
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="partida_de_nacimiento_simple" class="block text-sm font-medium text-gray-700">Partida de Nacimiento Simple</label>
-                                <input
-                                    type="text"
-                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                    id="partida_de_nacimiento_simple"
-                                    name="partida_de_nacimiento_simple"
-                                    value="{{ old('partida_de_nacimiento_simple', $user->partida_de_nacimiento_simple ?? '') }}"
-                                    placeholder="Ingrese información sobre la partida de nacimiento">
-                            </div>
-                        </div>
-                        <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <!-- Campo Número de IBAN -->
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="no_de_iban" class="block text-sm font-medium text-gray-700">Número de IBAN</label>
-                                <input
-                                    type="text"
-                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                    id="no_de_iban"
-                                    name="no_de_iban"
-                                    value="{{ old('no_de_iban', $user->no_de_iban ?? '') }}"
-                                    placeholder="Ingrese el número de IBAN">
-                            </div>
-
-                            <!-- Campo Número de Identificación Nacional (NIF) -->
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="no_de_identificacion_nacional__nif_" class="block text-sm font-medium text-gray-700">Número de Identificación Nacional (NIF)</label>
-                                <input
-                                    type="text"
-                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                    id="no_de_identificacion_nacional__nif_"
-                                    name="no_de_identificacion_nacional__nif_"
-                                    value="{{ old('no_de_identificacion_nacional__nif_', $user->no_de_identificacion_nacional__nif_ ?? '') }}"
-                                    placeholder="Ingrese el número de identificación nacional (NIF)">
-                            </div>
-                        </div>
-
-                        <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <!-- Campo Vínculo con Antepasados -->
-                            <div style="flex: 1;" class="mb-3">
-                                <label class="block text-sm font-medium text-gray-700">Vínculo con Antepasados</label>
-                                @php
-                                    $vinculosSeleccionados = explode(';', $user->vinculo_antepasados ?? '');
-                                @endphp
-                                <div class="mt-1">
-                                    <label class="flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            name="vinculo_antepasados[]"
-                                            value="Padre/Madre"
-                                            {{ in_array('Padre/Madre', $vinculosSeleccionados) ? 'checked' : '' }}
-                                            class="mr-2">
-                                        Padre/Madre
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            name="vinculo_antepasados[]"
-                                            value="Abuelo(a)"
-                                            {{ in_array('Abuelo(a)', $vinculosSeleccionados) ? 'checked' : '' }}
-                                            class="mr-2">
-                                        Abuelo(a)
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            name="vinculo_antepasados[]"
-                                            value="Bisabuelo(a)"
-                                            {{ in_array('Bisabuelo(a)', $vinculosSeleccionados) ? 'checked' : '' }}
-                                            class="mr-2">
-                                        Bisabuelo(a)
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            name="vinculo_antepasados[]"
-                                            value="Tatarabuelo(a)"
-                                            {{ in_array('Tatarabuelo(a)', $vinculosSeleccionados) ? 'checked' : '' }}
-                                            class="mr-2">
-                                        Tatarabuelo(a)
-                                    </label>
+                            <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
+                                <span class="ctvSefar block text-indigo-600">Otros datos personales</span>
+                            </h2>
+                            <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="conyuge_interesado_en_proceso" class="block text-sm font-medium text-gray-700">Conyuge Interesado</label>
+                                    <input
+                                        type="checkbox"
+                                        class="mt-1 py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                        id="conyuge_interesado_en_proceso"
+                                        name="conyuge_interesado_en_proceso"
+                                        style="width: 33.6px!important; height: 33.6px!important;"
+                                        value="1"
+                                        {{ old('conyuge_interesado_en_proceso', $user->conyuge_interesado_en_proceso ? 'checked' : '') }}
+                                    />
+                                </div>
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="nombre_completo_del_conyuge" class="block text-sm font-medium text-gray-700">Nombre de Conyuge</label>
+                                    <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="nombre_completo_del_conyuge" name="nombre_completo_del_conyuge" value="{{ old('nombre_completo_del_conyuge', $user->nombre_completo_del_conyuge) }}" placeholder="Ingrese su Ciudad de Nacimiento">
                                 </div>
                             </div>
-                        </div>
-                        @endif
-                        @if(auth()->user()->roles[0]->id == 1)
+                            <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                <!-- Campo Partida de Nacimiento Simple -->
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="partida_de_nacimiento_simple" class="block text-sm font-medium text-gray-700">Partida de Nacimiento Simple</label>
+                                    <input
+                                        type="text"
+                                        class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                        id="partida_de_nacimiento_simple"
+                                        name="partida_de_nacimiento_simple"
+                                        value="{{ old('partida_de_nacimiento_simple', $user->partida_de_nacimiento_simple ?? '') }}"
+                                        placeholder="Ingrese información sobre la partida de nacimiento">
+                                </div>
+                            </div>
+                            <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                <!-- Campo Número de IBAN -->
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="no_de_iban" class="block text-sm font-medium text-gray-700">Número de IBAN</label>
+                                    <input
+                                        type="text"
+                                        class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                        id="no_de_iban"
+                                        name="no_de_iban"
+                                        value="{{ old('no_de_iban', $user->no_de_iban ?? '') }}"
+                                        placeholder="Ingrese el número de IBAN">
+                                </div>
 
-                        <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
-                            <span class="ctvSefar block text-indigo-600">AIV</span>
-                        </h2>
-                        <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="n6__aiv_recibido_en_espana" class="block text-sm font-medium text-gray-700">Fecha AIV recibido en España</label>
-                                <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n6__aiv_recibido_en_espana" name="n6__aiv_recibido_en_espana" value="{{ old('n6__aiv_recibido_en_espana', $user->n6__aiv_recibido_en_espana) }}" placeholder="Fecha AIV Recibido en España">
+                                <!-- Campo Número de Identificación Nacional (NIF) -->
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="no_de_identificacion_nacional__nif_" class="block text-sm font-medium text-gray-700">Número de Identificación Nacional (NIF)</label>
+                                    <input
+                                        type="text"
+                                        class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                        id="no_de_identificacion_nacional__nif_"
+                                        name="no_de_identificacion_nacional__nif_"
+                                        value="{{ old('no_de_identificacion_nacional__nif_', $user->no_de_identificacion_nacional__nif_ ?? '') }}"
+                                        placeholder="Ingrese el número de identificación nacional (NIF)">
+                                </div>
                             </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="n2__aiv_notificacion_aprobado" class="block text-sm font-medium text-gray-700">AIV Notificación Aprobado</label>
-                                <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n2__aiv_notificacion_aprobado" name="n2__aiv_notificacion_aprobado" value="{{ old('n2__aiv_notificacion_aprobado', $user->n2__aiv_notificacion_aprobado) }}" placeholder="Ingrese AIV Notificación Aprobado">
-                            </div>
-                        </div>
 
-                        <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
-                            <span class="ctvSefar block text-indigo-600">AACS</span>
-                        </h2>
-                        <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="n1__aacs_introducido_asociacion" class="block text-sm font-medium text-gray-700">AACS Introducido Asociacion</label>
-                                <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n1__aacs_introducido_asociacion" name="n1__aacs_introducido_asociacion" value="{{ old('n1__aacs_introducido_asociacion', $user->n1__aacs_introducido_asociacion) }}" placeholder="Ingrese AACS INTRODUCIDO ASOCIACIÓN">
+                            <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                <!-- Campo Vínculo con Antepasados -->
+                                <div style="flex: 1;" class="mb-3">
+                                    <label class="block text-sm font-medium text-gray-700">Vínculo con Antepasados</label>
+                                    @php
+                                        $vinculosSeleccionados = explode(';', $user->vinculo_antepasados ?? '');
+                                    @endphp
+                                    <div class="mt-1">
+                                        <label class="flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                name="vinculo_antepasados[]"
+                                                value="Padre/Madre"
+                                                {{ in_array('Padre/Madre', $vinculosSeleccionados) ? 'checked' : '' }}
+                                                class="mr-2">
+                                            Padre/Madre
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                name="vinculo_antepasados[]"
+                                                value="Abuelo(a)"
+                                                {{ in_array('Abuelo(a)', $vinculosSeleccionados) ? 'checked' : '' }}
+                                                class="mr-2">
+                                            Abuelo(a)
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                name="vinculo_antepasados[]"
+                                                value="Bisabuelo(a)"
+                                                {{ in_array('Bisabuelo(a)', $vinculosSeleccionados) ? 'checked' : '' }}
+                                                class="mr-2">
+                                            Bisabuelo(a)
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                name="vinculo_antepasados[]"
+                                                value="Tatarabuelo(a)"
+                                                {{ in_array('Tatarabuelo(a)', $vinculosSeleccionados) ? 'checked' : '' }}
+                                                class="mr-2">
+                                            Tatarabuelo(a)
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="n2__aacs_notificacion_aprobado" class="block text-sm font-medium text-gray-700">AACS Notificacion Aprobado</label>
-                                <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n2__aacs_notificacion_aprobado" name="n2__aacs_notificacion_aprobado" value="{{ old('n2__aacs_notificacion_aprobado', $user->n2__aacs_notificacion_aprobado) }}" placeholder="Ingrese AACS Notificación Aprobado">
-                            </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="n2__fecha_aacs_notificacion_aprobado" class="block text-sm font-medium text-gray-700">Fecha AACS Notificacion Aprobado</label>
-                                <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n2__fecha_aacs_notificacion_aprobado" name="n2__fecha_aacs_notificacion_aprobado" value="{{ old('n2__fecha_aacs_notificacion_aprobado', $user->n2__fecha_aacs_notificacion_aprobado) }}" placeholder="Ingrese Fecha AACS Notificacion Aprobado">
-                            </div>
-                        </div>
-                        <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="n4__aacs_retirado_asociacion" class="block text-sm font-medium text-gray-700">AACS Retirado Asociacion</label>
-                                <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__aacs_retirado_asociacion" name="n4__aacs_retirado_asociacion" value="{{ old('n4__aacs_retirado_asociacion', $user->n4__aacs_retirado_asociacion) }}" placeholder="Ingrese aacs retirado asociacion">
-                            </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="n6__aacs_recibido_en_espana" class="block text-sm font-medium text-gray-700">AACS Recibido en España</label>
-                                <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n6__aacs_recibido_en_espana" name="n6__aacs_recibido_en_espana" value="{{ old('n6__aacs_recibido_en_espana', $user->n6__aacs_recibido_en_espana) }}" placeholder="AACS Recibido en España">
-                            </div>
-                        </div>
 
-                        <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
-                            <span class="ctvSefar block text-indigo-600">CCSE</span>
-                        </h2>
-                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="ccse_archivado_espana" class="block text-sm font-medium text-gray-700">CCSE Archivado España</label>
-                                <input type="text" value="{{ old('ccse_archivado_espana', $user->ccse_archivado_espana) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="ccse_archivado_espana" name="ccse_archivado_espana" placeholder="CCSE Archivado España">
+                            <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
+                                <span class="ctvSefar block text-indigo-600">AIV</span>
+                            </h2>
+                            <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="n6__aiv_recibido_en_espana" class="block text-sm font-medium text-gray-700">Fecha AIV recibido en España</label>
+                                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n6__aiv_recibido_en_espana" name="n6__aiv_recibido_en_espana" value="{{ old('n6__aiv_recibido_en_espana', $user->n6__aiv_recibido_en_espana) }}" placeholder="Fecha AIV Recibido en España">
+                                </div>
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="n2__aiv_notificacion_aprobado" class="block text-sm font-medium text-gray-700">AIV Notificación Aprobado</label>
+                                    <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n2__aiv_notificacion_aprobado" name="n2__aiv_notificacion_aprobado" value="{{ old('n2__aiv_notificacion_aprobado', $user->n2__aiv_notificacion_aprobado) }}" placeholder="Ingrese AIV Notificación Aprobado">
+                                </div>
                             </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="ccse_resultado" class="block text-sm font-medium text-gray-700">CCSE Resultado</label>
-                                <input type="text" value="{{ old('ccse_resultado', $user->ccse_resultado) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="ccse_resultado" name="ccse_resultado">
-                            </div>
-                        </div>
 
-                        <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
-                            <span class="ctvSefar block text-indigo-600">CIF</span>
-                        </h2>
-                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="cif" class="block text-sm font-medium text-gray-700">CIF</label>
-                                <input type="text" value="{{ old('cif', $user->cif) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="cif" name="cif" placeholder="CIF">
+                            <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
+                                <span class="ctvSefar block text-indigo-600">AACS</span>
+                            </h2>
+                            <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="n1__aacs_introducido_asociacion" class="block text-sm font-medium text-gray-700">AACS Introducido Asociacion</label>
+                                    <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n1__aacs_introducido_asociacion" name="n1__aacs_introducido_asociacion" value="{{ old('n1__aacs_introducido_asociacion', $user->n1__aacs_introducido_asociacion) }}" placeholder="Ingrese AACS INTRODUCIDO ASOCIACIÓN">
+                                </div>
                             </div>
-                        </div>
+                            <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="n2__aacs_notificacion_aprobado" class="block text-sm font-medium text-gray-700">AACS Notificacion Aprobado</label>
+                                    <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n2__aacs_notificacion_aprobado" name="n2__aacs_notificacion_aprobado" value="{{ old('n2__aacs_notificacion_aprobado', $user->n2__aacs_notificacion_aprobado) }}" placeholder="Ingrese AACS Notificación Aprobado">
+                                </div>
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="n2__fecha_aacs_notificacion_aprobado" class="block text-sm font-medium text-gray-700">Fecha AACS Notificacion Aprobado</label>
+                                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n2__fecha_aacs_notificacion_aprobado" name="n2__fecha_aacs_notificacion_aprobado" value="{{ old('n2__fecha_aacs_notificacion_aprobado', $user->n2__fecha_aacs_notificacion_aprobado) }}" placeholder="Ingrese Fecha AACS Notificacion Aprobado">
+                                </div>
+                            </div>
+                            <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="n4__aacs_retirado_asociacion" class="block text-sm font-medium text-gray-700">AACS Retirado Asociacion</label>
+                                    <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__aacs_retirado_asociacion" name="n4__aacs_retirado_asociacion" value="{{ old('n4__aacs_retirado_asociacion', $user->n4__aacs_retirado_asociacion) }}" placeholder="Ingrese aacs retirado asociacion">
+                                </div>
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="n6__aacs_recibido_en_espana" class="block text-sm font-medium text-gray-700">AACS Recibido en España</label>
+                                    <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n6__aacs_recibido_en_espana" name="n6__aacs_recibido_en_espana" value="{{ old('n6__aacs_recibido_en_espana', $user->n6__aacs_recibido_en_espana) }}" placeholder="AACS Recibido en España">
+                                </div>
+                            </div>
 
-                        <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
-                            <span class="ctvSefar block text-indigo-600">Otros datos</span>
-                        </h2>
-                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="n1__acta_notarial" class="block text-sm font-medium text-gray-700">Acta Notarial</label>
-                                <input type="text" value="{{ old('n1__acta_notarial', $user->n1__acta_notarial) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n1__acta_notarial" name="n1__acta_notarial" placeholder="Ingrese Acta Notarial">
+                            <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
+                                <span class="ctvSefar block text-indigo-600">CCSE</span>
+                            </h2>
+                            <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="ccse_archivado_espana" class="block text-sm font-medium text-gray-700">CCSE Archivado España</label>
+                                    <input type="text" value="{{ old('ccse_archivado_espana', $user->ccse_archivado_espana) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="ccse_archivado_espana" name="ccse_archivado_espana" placeholder="CCSE Archivado España">
+                                </div>
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="ccse_resultado" class="block text-sm font-medium text-gray-700">CCSE Resultado</label>
+                                    <input type="text" value="{{ old('ccse_resultado', $user->ccse_resultado) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="ccse_resultado" name="ccse_resultado">
+                                </div>
                             </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="n1__f__peticion_por_genealogia" class="block text-sm font-medium text-gray-700">Fecha Petición por Genealogía</label>
-                                <input type="date" value="{{ old('n1__f__peticion_por_genealogia', $user->n1__f__peticion_por_genealogia) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n1__f__peticion_por_genealogia" name="n1__f__peticion_por_genealogia">
-                            </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="n1__f__solicitado_por_genealogia" class="block text-sm font-medium text-gray-700">Fecha Solicitado por Genealogía</label>
-                                <input type="date" value="{{ old('n1__f__solicitado_por_genealogia', $user->n1__f__solicitado_por_genealogia) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n1__f__solicitado_por_genealogia" name="n1__f__solicitado_por_genealogia">
-                            </div>
-                        </div>
 
-                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="n2__f_solicitud_mayor_info" class="block text-sm font-medium text-gray-700">Fecha Solicitud Mayor Información</label>
-                                <input type="date" value="{{ old('n2__f_solicitud_mayor_info', $user->n2__f_solicitud_mayor_info) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n2__f_solicitud_mayor_info" name="n2__f_solicitud_mayor_info">
+                            <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
+                                <span class="ctvSefar block text-indigo-600">CIF</span>
+                            </h2>
+                            <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="cif" class="block text-sm font-medium text-gray-700">CIF</label>
+                                    <input type="text" value="{{ old('cif', $user->cif) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="cif" name="cif" placeholder="CIF">
+                                </div>
                             </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="n2__f__de_solicitud_al_cliente" class="block text-sm font-medium text-gray-700">Fecha Solicitud al Cliente</label>
-                                <input type="date" value="{{ old('n2__f__de_solicitud_al_cliente', $user->n2__f__de_solicitud_al_cliente) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n2__f__de_solicitud_al_cliente" name="n2__f__de_solicitud_al_cliente">
-                            </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="n3__estatus_de_nacionalidad" class="block text-sm font-medium text-gray-700">Estatus de Nacionalidad</label>
-                                <select class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n3__estatus_de_nacionalidad" name="n3__estatus_de_nacionalidad">
-                                    <option value="" {{ old('n3__estatus_de_nacionalidad', $user->n3__estatus_de_nacionalidad ?? '') === '' ? 'selected' : '' }}></option>
-                                    <option value="Concedida" {{ old('n3__estatus_de_nacionalidad', $user->n3__estatus_de_nacionalidad ?? '') === 'Concedida' ? 'selected' : '' }}>Concedida</option>
-                                    <option value="En Tramitación" {{ old('n3__estatus_de_nacionalidad', $user->n3__estatus_de_nacionalidad ?? '') === 'En Tramitación' ? 'selected' : '' }}>En Tramitación</option>
-                                </select>
-                            </div>
-                        </div>
 
-                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="n3__f___recordatorio_filiacion" class="block text-sm font-medium text-gray-700">Fecha Recordatorio Filiación</label>
-                                <input type="date" value="{{ old('n3__f___recordatorio_filiacion', $user->n3__f___recordatorio_filiacion) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n3__f___recordatorio_filiacion" name="n3__f___recordatorio_filiacion">
+                            <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
+                                <span class="ctvSefar block text-indigo-600">Otros datos</span>
+                            </h2>
+                            <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="n1__acta_notarial" class="block text-sm font-medium text-gray-700">Acta Notarial</label>
+                                    <input type="text" value="{{ old('n1__acta_notarial', $user->n1__acta_notarial) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n1__acta_notarial" name="n1__acta_notarial" placeholder="Ingrese Acta Notarial">
+                                </div>
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="n1__f__peticion_por_genealogia" class="block text-sm font-medium text-gray-700">Fecha Petición por Genealogía</label>
+                                    <input type="date" value="{{ old('n1__f__peticion_por_genealogia', $user->n1__f__peticion_por_genealogia) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n1__f__peticion_por_genealogia" name="n1__f__peticion_por_genealogia">
+                                </div>
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="n1__f__solicitado_por_genealogia" class="block text-sm font-medium text-gray-700">Fecha Solicitado por Genealogía</label>
+                                    <input type="date" value="{{ old('n1__f__solicitado_por_genealogia', $user->n1__f__solicitado_por_genealogia) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n1__f__solicitado_por_genealogia" name="n1__f__solicitado_por_genealogia">
+                                </div>
                             </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="n3__fcje_registro" class="block text-sm font-medium text-gray-700">FCJE Registro</label>
-                                <input type="date" value="{{ old('n3__fcje_registro', $user->n3__fcje_registro) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n3__fcje_registro" name="n3__fcje_registro">
-                            </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="n3__fecha_de_recordatorio" class="block text-sm font-medium text-gray-700">Fecha de Recordatorio</label>
-                                <input type="date" value="{{ old('n3__fecha_de_recordatorio', $user->n3__fecha_de_recordatorio) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n3__fecha_de_recordatorio" name="n3__fecha_de_recordatorio">
-                            </div>
-                        </div>
 
-                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="n4__aacs_retirado_asociacion" class="block text-sm font-medium text-gray-700">AACS Retirado Asociación</label>
-                                <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__aacs_retirado_asociacion" name="n4__aacs_retirado_asociacion" value="{{ old('n4__aacs_retirado_asociacion', $user->n4__aacs_retirado_asociacion ?? '') }}" placeholder="Ingrese AACS Retirado Asociación">
+                            <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="n2__f_solicitud_mayor_info" class="block text-sm font-medium text-gray-700">Fecha Solicitud Mayor Información</label>
+                                    <input type="date" value="{{ old('n2__f_solicitud_mayor_info', $user->n2__f_solicitud_mayor_info) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n2__f_solicitud_mayor_info" name="n2__f_solicitud_mayor_info">
+                                </div>
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="n2__f__de_solicitud_al_cliente" class="block text-sm font-medium text-gray-700">Fecha Solicitud al Cliente</label>
+                                    <input type="date" value="{{ old('n2__f__de_solicitud_al_cliente', $user->n2__f__de_solicitud_al_cliente) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n2__f__de_solicitud_al_cliente" name="n2__f__de_solicitud_al_cliente">
+                                </div>
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="n3__estatus_de_nacionalidad" class="block text-sm font-medium text-gray-700">Estatus de Nacionalidad</label>
+                                    <select class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n3__estatus_de_nacionalidad" name="n3__estatus_de_nacionalidad">
+                                        <option value="" {{ old('n3__estatus_de_nacionalidad', $user->n3__estatus_de_nacionalidad ?? '') === '' ? 'selected' : '' }}></option>
+                                        <option value="Concedida" {{ old('n3__estatus_de_nacionalidad', $user->n3__estatus_de_nacionalidad ?? '') === 'Concedida' ? 'selected' : '' }}>Concedida</option>
+                                        <option value="En Tramitación" {{ old('n3__estatus_de_nacionalidad', $user->n3__estatus_de_nacionalidad ?? '') === 'En Tramitación' ? 'selected' : '' }}>En Tramitación</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="n4__f__entregado_genealogia" class="block text-sm font-medium text-gray-700">Fecha Entregado Genealogía</label>
-                                <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__f__entregado_genealogia" name="n4__f__entregado_genealogia" value="{{ old('n4__f__entregado_genealogia', $user->n4__f__entregado_genealogia ?? '') }}">
-                            </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="n4__f__enviada_a_genealogia" class="block text-sm font-medium text-gray-700">Fecha Enviada a Genealogía</label>
-                                <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__f__enviada_a_genealogia" name="n4__f__enviada_a_genealogia" value="{{ old('n4__f__enviada_a_genealogia', $user->n4__f__enviada_a_genealogia ?? '') }}">
-                            </div>
-                        </div>
 
-                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="n4__fcje_certifi__descargado" class="block text-sm font-medium text-gray-700">FCJE Certificado Descargado</label>
-                                <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__fcje_certifi__descargado" name="n4__fcje_certifi__descargado" value="{{ old('n4__fcje_certifi__descargado', $user->n4__fcje_certifi__descargado ?? '') }}">
+                            <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="n3__f___recordatorio_filiacion" class="block text-sm font-medium text-gray-700">Fecha Recordatorio Filiación</label>
+                                    <input type="date" value="{{ old('n3__f___recordatorio_filiacion', $user->n3__f___recordatorio_filiacion) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n3__f___recordatorio_filiacion" name="n3__f___recordatorio_filiacion">
+                                </div>
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="n3__fcje_registro" class="block text-sm font-medium text-gray-700">FCJE Registro</label>
+                                    <input type="date" value="{{ old('n3__fcje_registro', $user->n3__fcje_registro) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n3__fcje_registro" name="n3__fcje_registro">
+                                </div>
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="n3__fecha_de_recordatorio" class="block text-sm font-medium text-gray-700">Fecha de Recordatorio</label>
+                                    <input type="date" value="{{ old('n3__fecha_de_recordatorio', $user->n3__fecha_de_recordatorio) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n3__fecha_de_recordatorio" name="n3__fecha_de_recordatorio">
+                                </div>
                             </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="n4__otros_nombres" class="block text-sm font-medium text-gray-700">Otros Nombres</label>
-                                <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__otros_nombres" name="n4__otros_nombres" value="{{ old('n4__otros_nombres', $user->n4__otros_nombres ?? '') }}" placeholder="Ingrese Otros Nombres">
+
+                            <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="n4__aacs_retirado_asociacion" class="block text-sm font-medium text-gray-700">AACS Retirado Asociación</label>
+                                    <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__aacs_retirado_asociacion" name="n4__aacs_retirado_asociacion" value="{{ old('n4__aacs_retirado_asociacion', $user->n4__aacs_retirado_asociacion ?? '') }}" placeholder="Ingrese AACS Retirado Asociación">
+                                </div>
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="n4__f__entregado_genealogia" class="block text-sm font-medium text-gray-700">Fecha Entregado Genealogía</label>
+                                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__f__entregado_genealogia" name="n4__f__entregado_genealogia" value="{{ old('n4__f__entregado_genealogia', $user->n4__f__entregado_genealogia ?? '') }}">
+                                </div>
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="n4__f__enviada_a_genealogia" class="block text-sm font-medium text-gray-700">Fecha Enviada a Genealogía</label>
+                                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__f__enviada_a_genealogia" name="n4__f__enviada_a_genealogia" value="{{ old('n4__f__enviada_a_genealogia', $user->n4__f__enviada_a_genealogia ?? '') }}">
+                                </div>
                             </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="n5__fecha_de_registro" class="block text-sm font-medium text-gray-700">Fecha de Registro</label>
-                                <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n5__fecha_de_registro" name="n5__fecha_de_registro" value="{{ old('n5__fecha_de_registro', $user->n5__fecha_de_registro ?? '') }}">
+
+                            <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="n4__fcje_certifi__descargado" class="block text-sm font-medium text-gray-700">FCJE Certificado Descargado</label>
+                                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__fcje_certifi__descargado" name="n4__fcje_certifi__descargado" value="{{ old('n4__fcje_certifi__descargado', $user->n4__fcje_certifi__descargado ?? '') }}">
+                                </div>
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="n4__otros_nombres" class="block text-sm font-medium text-gray-700">Otros Nombres</label>
+                                    <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__otros_nombres" name="n4__otros_nombres" value="{{ old('n4__otros_nombres', $user->n4__otros_nombres ?? '') }}" placeholder="Ingrese Otros Nombres">
+                                </div>
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="n5__fecha_de_registro" class="block text-sm font-medium text-gray-700">Fecha de Registro</label>
+                                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n5__fecha_de_registro" name="n5__fecha_de_registro" value="{{ old('n5__fecha_de_registro', $user->n5__fecha_de_registro ?? '') }}">
+                                </div>
                             </div>
-                        </div>
 
 
-                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="estado_de_datos_y_documentos_de_los_antepasados" class="block text-sm font-medium text-gray-700">Estado de datos y documentos de antepasados</label>
-                                <select class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="estado_de_datos_y_documentos_de_los_antepasados" name="estado_de_datos_y_documentos_de_los_antepasados">
-                                    <option value="" {{ old('estado_de_datos_y_documentos_de_los_antepasados', $user->estado_de_datos_y_documentos_de_los_antepasados ?? '') === '' ? 'selected' : '' }}></option>
-                                    <option value="Conoce los datos y tiene los documentos" {{ old('estado_de_datos_y_documentos_de_los_antepasados', $user->estado_de_datos_y_documentos_de_los_antepasados ?? '') === 'Conoce los datos y tiene los documentos' ? 'selected' : '' }}>Conoce los datos y tiene los documentos</option>
-                                    <option value="Conoce los datos, pero no tiene los documentos" {{ old('estado_de_datos_y_documentos_de_los_antepasados', $user->estado_de_datos_y_documentos_de_los_antepasados ?? '') === 'Conoce los datos, pero no tiene los documentos' ? 'selected' : '' }}>Conoce los datos, pero no tiene los documentos</option>
-                                    <option value="No conoce los datos" {{ old('estado_de_datos_y_documentos_de_los_antepasados', $user->estado_de_datos_y_documentos_de_los_antepasados ?? '') === 'No conoce los datos' ? 'selected' : '' }}>No conoce los datos</option>
-                                </select>
+                            <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="estado_de_datos_y_documentos_de_los_antepasados" class="block text-sm font-medium text-gray-700">Estado de datos y documentos de antepasados</label>
+                                    <select class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="estado_de_datos_y_documentos_de_los_antepasados" name="estado_de_datos_y_documentos_de_los_antepasados">
+                                        <option value="" {{ old('estado_de_datos_y_documentos_de_los_antepasados', $user->estado_de_datos_y_documentos_de_los_antepasados ?? '') === '' ? 'selected' : '' }}></option>
+                                        <option value="Conoce los datos y tiene los documentos" {{ old('estado_de_datos_y_documentos_de_los_antepasados', $user->estado_de_datos_y_documentos_de_los_antepasados ?? '') === 'Conoce los datos y tiene los documentos' ? 'selected' : '' }}>Conoce los datos y tiene los documentos</option>
+                                        <option value="Conoce los datos, pero no tiene los documentos" {{ old('estado_de_datos_y_documentos_de_los_antepasados', $user->estado_de_datos_y_documentos_de_los_antepasados ?? '') === 'Conoce los datos, pero no tiene los documentos' ? 'selected' : '' }}>Conoce los datos, pero no tiene los documentos</option>
+                                        <option value="No conoce los datos" {{ old('estado_de_datos_y_documentos_de_los_antepasados', $user->estado_de_datos_y_documentos_de_los_antepasados ?? '') === 'No conoce los datos' ? 'selected' : '' }}>No conoce los datos</option>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
 
                         @endif
 
