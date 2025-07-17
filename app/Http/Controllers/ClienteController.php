@@ -1427,7 +1427,7 @@ class ClienteController extends Controller
             $negocio->teamleader_id = $entry['teamleader_id'];
 
             foreach ($entry['fields'] as $field => $value) {
-                if (Schema::hasColumn((new Negocio)->getTable(), $field)) {
+                if (Schema::hasColumn((new Negocio)->getTable(), $field) && $field != 'documentos') {
                     $negocio->{$field} = $value;
                 }
             }
