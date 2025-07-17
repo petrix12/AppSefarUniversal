@@ -206,7 +206,6 @@ class ClienteController extends Controller
             'n7__enviado_al_dto_juridico' => 'c3feeebf-21a9-0cac-855e-e6f550260ee0',
             'n7__fecha_caducidad_pasaporte' => '6fb8ef4e-6fdb-0241-8354-bda543e4cbff',
             'n7__fecha_de_resolucion' => '3ef52253-5ac1-025a-8c5b-a9d094c468b8',
-            'n4__notario___abogado' => '36fa5b9d-bafd-0e61-9058-72b4ed547197',
             'n8__f_rec__solicitud_doc' => 'e255a259-5328-0ee6-ab52-3e4f9604c9de',
             'n9__enviado_a_legales' => '047dc070-6b23-0434-b858-61a1d7e4c9fd',
             'n9__notif__1__int__subsanar_' => '7918f47c-4097-07e1-af57-d6c435660883',
