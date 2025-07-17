@@ -1428,7 +1428,12 @@ class ClienteController extends Controller
 
             foreach ($entry['fields'] as $field => $value) {
                 if (Schema::hasColumn((new Negocio)->getTable(), $field) && $field != 'documentos') {
-                    $negocio->{$field} = $value;
+                    if (is_array($value)) {
+                        // Puedes usar json_encode o implode dependiendo del caso
+                        $negocio->{$field} = json_encode($value); // o implode(', ', $value)
+                    } else {
+                        $negocio->{$field} = $value;
+                    }
                 }
             }
 
