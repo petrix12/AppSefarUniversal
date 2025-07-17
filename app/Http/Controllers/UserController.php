@@ -1626,7 +1626,6 @@ class UserController extends Controller
             'fase_3_preestab' => 'e41fdbbb-a25a-005b-af56-9f3ca623c700',
             'fecha_de_aceptacion' => 'fbe8df81-7225-0c01-b051-7f1032054ffe',
             'numero_de_pasaporte' => '891080d2-eeeb-030f-a256-d0ee6095773d',
-            'pais_de_residencia' => 'bd374fc3-39a5-0070-9455-67d94cc6b7f7',
             'servicio_solicitado' => 'fcd48891-20f6-049a-a05f-f78a6f951b4d'
         ];
 
