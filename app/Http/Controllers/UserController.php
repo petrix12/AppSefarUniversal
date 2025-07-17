@@ -1625,7 +1625,6 @@ class UserController extends Controller
             'fase_3_pagado__teamleader_' => '9a1df9b7-c92f-09e5-b156-96af3f83dc0e',
             'fase_3_preestab' => 'e41fdbbb-a25a-005b-af56-9f3ca623c700',
             'fecha_de_aceptacion' => 'fbe8df81-7225-0c01-b051-7f1032054ffe',
-            'numero_de_pasaporte' => '891080d2-eeeb-030f-a256-d0ee6095773d',
             'servicio_solicitado' => 'fcd48891-20f6-049a-a05f-f78a6f951b4d'
         ];
 
