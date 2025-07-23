@@ -1056,10 +1056,6 @@
                         <a href="/tree/" class="cfrSefar mb-3 inline-flex items-center justify-center px-3 py-1 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
                             Ir al Arbol
                         </a>
-                        @elseif (auth()->user()->roles[0]->id != 17)
-                        <a href="/tree/{{$user->passport}}" class="cfrSefar mb-3 inline-flex items-center justify-center px-3 py-1 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                            Ir al Arbol
-                        </a>
                         @endif
                     </center>
 
