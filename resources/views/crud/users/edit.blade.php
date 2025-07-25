@@ -74,13 +74,11 @@
                     </button>
                 </li>
                 @endif
-                @if(auth()->user()->roles[0]->id == 5 || auth()->user()->roles[0]->id == 1 || auth()->user()->roles[0]->id == 2 || auth()->user()->roles[0]->id == 3)
                 <li class="nav-item" role="presentation">
                     <button style="color:black" class="nav-link" id="familiars-tab" data-bs-toggle="tab" data-bs-target="#familiars" type="button" role="tab" aria-controls="familiars" aria-selected="false">
                         Familiares registrados
                     </button>
                 </li>
-                @endif
                 @if(auth()->user()->roles[0]->id == 1 || auth()->user()->roles[0]->id == 4 || auth()->user()->roles[0]->id == 5 || auth()->user()->roles[0]->id == 15 || auth()->user()->roles[0]->id == 16)
                 <li class="nav-item" role="presentation">
                     <button style="color:black" class="nav-link" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments" type="button" role="tab" aria-controls="payments" aria-selected="false">
@@ -1056,7 +1054,7 @@
                         <a href="/tree/" class="cfrSefar mb-3 inline-flex items-center justify-center px-3 py-1 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
                             Ir al Arbol
                         </a>
-                        @elseif (auth()->user()->roles[0]->id != 17)
+                        @else
                         <a href="/tree/{{$user->passport}}" class="cfrSefar mb-3 inline-flex items-center justify-center px-3 py-1 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
                             Ir al Arbol
                         </a>

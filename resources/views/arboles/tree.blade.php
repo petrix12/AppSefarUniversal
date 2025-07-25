@@ -65,8 +65,11 @@
                                 background-color: rgb(247,176,52);
                             }
                         </style>
+
                         @can('descargarGedcom')
+
                         <div style="display:flex;">
+                        <!--
                             <div class="px-4 py-2 m-2">
                                 {{-- FAMILIARES --}}
                                 <div class="justify-center">
@@ -77,6 +80,7 @@
                                     </a>
                                 </div>
                             </div>
+                        -->
                             <div class="px-4 py-2 m-2">
                                 {{-- FAMILIARES --}}
                                 <div class="justify-center">
@@ -89,6 +93,7 @@
                             </div>
                         </div>
                         @endcan
+
                         <div style="display: flex;">
                             <div class="px-4 py-2 m-2">
                                 {{-- FAMILIARES --}}
