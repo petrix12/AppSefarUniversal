@@ -164,7 +164,7 @@
                                 <div class="justify-center">
                                     <label for="change_person" class="px-3 block text-sm font-medium text-gray-700"
                                         title="Zoom">Ir al COS</label>
-                                    <button onclick="window.location.href='/users/{{$user->id}}/edit/'" style="height: 36px; border-radius: 10px; padding: 0px 10px;" class="csrSefar">Regresar a Cliente</button>
+                                    <button onclick="window.location.href='/users/{{$user->id}}/edit/'" style="height: 36px; border-radius: 10px; padding: 0px 10px;" class="csrSefar">Ir al COS</button>
                                 </div>
                             </div>
                             @endif
