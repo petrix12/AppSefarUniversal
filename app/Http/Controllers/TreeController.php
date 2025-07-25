@@ -419,9 +419,11 @@ class TreeController extends Controller
 
             $parentnumber = $parenttocheck;
 
+            $user = User::where('passport', $IDCliente)->first();
+
             $htmlGenerado = view('arboles.vistatree', compact('generacionBase', 'columnasparatabla', 'parentescos', 'checkBtn', 'parentnumber'))->render();
 
-            return view('arboles.tree', compact('IDCliente', 'people', 'columnasparatabla', 'cliente', 'tipoarchivos', 'parentescos', 'htmlGenerado', 'checkBtn', 'generacionBase', 'parentnumber'));
+            return view('arboles.tree', compact('user', 'IDCliente', 'people', 'columnasparatabla', 'cliente', 'tipoarchivos', 'parentescos', 'htmlGenerado', 'checkBtn', 'generacionBase', 'parentnumber'));
 
         }else{
             return redirect()->route('crud.agclientes.index')->with('info','IDCliente: '.$IDCliente.' no encontrado');
@@ -811,6 +813,8 @@ class TreeController extends Controller
             $checkBtn = "no";
 
             $parentnumber = 0;
+
+            $user = User::where('passport', $IDCliente)->first();
 
             $htmlGenerado = view('arboles.vistatree', compact('generacionBase', 'columnasparatabla', 'parentescos', 'checkBtn', 'parentnumber'))->render();
 

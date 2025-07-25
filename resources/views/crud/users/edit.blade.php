@@ -79,7 +79,6 @@
                         Familiares registrados
                     </button>
                 </li>
-                @if(auth()->user()->roles[0]->id == 1 || auth()->user()->roles[0]->id == 4 || auth()->user()->roles[0]->id == 5 || auth()->user()->roles[0]->id == 15 || auth()->user()->roles[0]->id == 16)
                 <li class="nav-item" role="presentation">
                     <button style="color:black" class="nav-link" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments" type="button" role="tab" aria-controls="payments" aria-selected="false">
                         Pagos realizados
@@ -90,7 +89,6 @@
                         Pagos pendientes
                     </button>
                 </li>
-                @endif
                 @if(auth()->user()->roles[0]->id == 5)
                 <li class="nav-item">
                     <button style="color:black" class="nav-link" id="client-req-tab"
