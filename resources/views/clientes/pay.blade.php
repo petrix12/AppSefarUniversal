@@ -254,6 +254,22 @@
                 <!-- Columna izquierda: Datos de pago -->
                 <div class="col-12 col-md-5 mb-3 order-2 order-md-1">
                     <div class="card card-body shadow">
+                        <div class="form-group required mb-3">
+                            <label for="coupon" class="control-label">Ingresar Cupón</label>
+                            <input
+                                autocomplete="off"
+                                name="coupon"
+                                id="coupon"
+                                class="form-control coupon"
+                                type="text">
+                        </div>
+
+                        <div class="d-flex justify-content-center mb-3">
+                            <button type="btn csrSefar" class="btn btn-info me-2" id="valcoupon">Validar cupón</button>
+                        </div>
+
+                        <div class="separator"></div>
+
                         <h2 class="text-center mb-4">
                             <b>Datos de Pago</b>
                         </h2>
@@ -313,22 +329,6 @@
 
                         <div class="d-flex justify-content-center mb-3">
                             <div id="paypal-button-container" class="w-100"></div>
-                        </div>
-
-                        <div class="separator"></div>
-
-                        <div class="form-group required mb-3">
-                            <label for="coupon" class="control-label">Ingresar Cupón</label>
-                            <input
-                                autocomplete="off"
-                                name="coupon"
-                                id="coupon"
-                                class="form-control coupon"
-                                type="text">
-                        </div>
-
-                        <div class="d-flex justify-content-center mb-3">
-                            <button type="btn csrSefar" class="btn btn-info me-2" id="valcoupon">Validar cupón</button>
                         </div>
                     </div>
                 </div>
