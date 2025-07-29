@@ -156,7 +156,13 @@
                             <td class="whitespace-nowrap" style="padding: 5px 15px;">
                                 <div style="display: flex; justify-content:center;">
                                     @can('crud.users.edit')
-                                        <a href="{{ route('crud.users.edit', $user) }}" class="btn btn-primary" title="Editar Usuario"><i class="fas fa-edit fa-fw"></i></a>&#160;
+                                        <a href="{{ route('crud.users.edit', $user) }}"
+   class="btn btn-primary edit-user-btn"
+   data-href="{{ route('crud.users.edit', $user) }}"
+   title="Editar Usuario">
+   <i class="fas fa-edit fa-fw"></i>
+</a>
+&#160;
                                     @endcan
                                     @can('crud.users.destroy')
                                         <form action="{{ route('crud.users.destroy', $user) }}" method="POST">
@@ -171,7 +177,13 @@
                                         </form>&#160;
                                     @endcan
                                     @if($user->getRoleNames()->first() == "Cliente")
-                                        <a style="color:white!important;" href="{{ route('crud.users.edit', $user) }}" class="btn btn-warning" title="Estatus del Cliente"><i class="fas fa-exclamation fa-fw"></i></a>&#160;
+                                        <a style="color:white!important;"
+   href="{{ route('crud.users.edit', $user) }}"
+   class="btn btn-warning edit-user-btn"
+   data-href="{{ route('crud.users.edit', $user) }}"
+   title="Estatus del Cliente">
+   <i class="fas fa-exclamation fa-fw"></i>
+</a>&#160;
                                     @endif
                                     @if ($user->getRoleNames()->first() == "Cliente" && isset($user->passport))
                                         <a style="color:white!important;" href="{{ route('arboles.tree.index', $user->passport) }}" title="Ver Arbol - Vista Horizontal" class="btn btn-success" ><i class="fab fa-pagelines fa-fw"></i></a>
@@ -195,3 +207,34 @@
         </div>
     </div>
 </div>
+
+<!-- Modal de carga -->
+<div id="loadingModal" class="fixed z-50 inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
+    <div class="bg-white rounded-lg p-6 text-center shadow-xl">
+        <h2 class="text-lg font-semibold text-gray-800 mb-2">Estamos cargando la información del estatus del cliente</h2>
+        <p class="text-sm text-gray-600">Espere un momento...</p>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const editButtons = document.querySelectorAll('.edit-user-btn');
+        const modal = document.getElementById('loadingModal');
+
+        editButtons.forEach(button => {
+            button.addEventListener('click', function (event) {
+                event.preventDefault();
+                const url = this.getAttribute('href') || this.dataset.href;
+
+                // Mostrar modal
+                modal.classList.remove('hidden');
+
+                // Continuar con la redirección sin frenar ejecución
+                setTimeout(() => {
+                    window.location.href = url;
+                }, 800); // ajusta si deseas más o menos retardo
+            });
+        });
+    });
+</script>
+
