@@ -13,6 +13,35 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <div id="loadingModal" class="fixed z-50 inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="bg-white rounded-lg p-6 text-center shadow-xl">
+            <h2 class="text-lg font-semibold text-gray-800 mb-2">Estamos cargando la información del estatus del cliente</h2>
+            <p class="text-sm text-gray-600">Espere un momento...</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const editButtons = document.querySelectorAll('.edit-user-btn');
+            const modal = document.getElementById('loadingModal');
+
+            editButtons.forEach(button => {
+                button.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    const url = this.getAttribute('href') || this.dataset.href;
+
+                    // Mostrar modal
+                    modal.classList.remove('hidden');
+
+                    // Continuar con la redirección sin frenar ejecución
+                    setTimeout(() => {
+                        window.location.href = url;
+                    }, 800); // ajusta si deseas más o menos retardo
+                });
+            });
+        });
+    </script>
+
     <button id="back-to-top"><i class="fa-solid fa-arrow-up"></i></button>
         @if (session('refresh'))
         <script>
@@ -164,7 +193,7 @@
                                 <div class="justify-center">
                                     <label for="change_person" class="px-3 block text-sm font-medium text-gray-700"
                                         title="Zoom">Ir al COS</label>
-                                    <button onclick="window.location.href='/users/{{$user->id}}/edit/'" style="height: 36px; border-radius: 10px; padding: 0px 10px;" class="csrSefar">Ir al COS</button>
+                                    <button onclick="window.location.href='/users/{{$user->id}}/edit/'" style="height: 36px; border-radius: 10px; padding: 0px 10px;" class="csrSefar edit-user-btn">Ir al COS</button>
                                 </div>
                             </div>
                             @endif
