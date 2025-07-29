@@ -193,7 +193,7 @@
                                 <div class="justify-center">
                                     <label for="change_person" class="px-3 block text-sm font-medium text-gray-700"
                                         title="Zoom">Ir al COS</label>
-                                    <a href="/users/{{$user->id}}/edit/" style="height: 36px; border-radius: 10px; padding: 0px 10px;" class="csrSefar edit-user-btn">Ir al COS</button>
+                                    <a href="/users/{{$user->id}}/edit/" style="height: 36px; border-radius: 10px; padding: 0px 10px;" class="csrSefar edit-user-btn">Ir al COS</a>
                                 </div>
                             </div>
                             @endif
