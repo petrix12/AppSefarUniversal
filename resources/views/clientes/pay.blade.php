@@ -120,23 +120,135 @@
             </style>
 
             @if ($alertas->isNotEmpty())
-                @foreach ($alertas as $alerta)
-                    <script>
-                        $(document).ready(function() {
-                            Swal.fire({
-                                imageUrl: '{{ $alerta->image ?? $alerta["image"] }}',
-                                imageAlt: '{{ $alerta->title ?? $alerta["title"] }}',
-                                showConfirmButton: true,
-                                confirmButtonText: 'Cerrar',
-                                customClass: {
-                                    popup: 'custom-swal-popup',      // Clase personalizada para el popup
-                                    image: 'custom-swal-image'       // Clase personalizada para la imagen
-                                }
-                            });
-                        });
-                    </script>
-                @endforeach
+                <script>
+                    const alertas = {!! json_encode($alertas) !!};
+                </script>
+            @else
+                <script>
+                    const alertas = [];
+                </script>
             @endif
+
+            <div id="alerta-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;"></div>
+
+            <!-- Estilos -->
+            <style>
+            .alerta-popup {
+                display: inline-block;
+                height: 200px !important;
+                border-radius: 10px;
+                overflow: hidden;
+                position: relative;
+                background-size: cover;
+                background-repeat: no-repeat;
+                background-position: center;
+                margin-top: 10px;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+                font-family: 'Roboto', sans-serif;
+                max-width: 400px;
+                transition: all 0.3s ease;
+            }
+
+            .alerta-close {
+                position: absolute;
+                top: 5px;
+                right: 5px;
+                width: 25px;
+                height: 25px;
+                border-radius: 50%;
+                background-color: #F8F8F7;
+                color: #000;
+                font-size: 16px;
+                text-align: center;
+                line-height: 25px;
+                cursor: pointer;
+                z-index: 10;
+            }
+
+            /* Botón copiar cupón */
+            .alerta-cupon {
+                position: absolute;
+                bottom: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                background-color: #06C2CC;
+                color: white;
+                padding: 6px 12px;
+                border-radius: 6px;
+                font-size: 14px;
+                cursor: pointer;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                z-index: 5;
+                font-weight: bold;
+            }
+
+            /* Mostrar el botón al hacer hover */
+            .alerta-popup:hover .alerta-cupon {
+                opacity: 1;
+            }
+            </style>
+
+            <script>
+                $(document).ready(function() {
+                    if (Array.isArray(alertas) && alertas.length > 0) {
+                        const container = document.getElementById('alerta-container');
+
+                        alertas.forEach(alerta => {
+                            const popup = document.createElement('div');
+                            popup.classList.add('alerta-popup');
+
+                            const img = new Image();
+                            img.src = alerta.image;
+
+                            img.onload = function () {
+                                popup.style.width = img.width + 'px';
+                                popup.style.height = img.height + 'px';
+                                popup.style.backgroundImage = `url(${alerta.image})`;
+                            };
+
+                            const cuponBtn = document.createElement('div');
+                            cuponBtn.classList.add('alerta-cupon');
+                            cuponBtn.textContent = 'Copiar Cupón';
+                            cuponBtn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                navigator.clipboard.writeText(alerta.title).then(() => {
+                                    cuponBtn.textContent = '¡Copiado!';
+                                    setTimeout(() => {
+                                        cuponBtn.textContent = 'Copiar Cupón';
+                                    }, 2000);
+                                }).catch(() => {
+                                    alert("No se pudo copiar el cupón");
+                                });
+                            });
+
+                            const closeBtn = document.createElement('div');
+                            closeBtn.classList.add('alerta-close');
+                            closeBtn.textContent = '×';
+                            closeBtn.addEventListener('click', () => {
+                                popup.remove();
+                            });
+
+                            const link = document.createElement('a');
+                            link.href = alerta.link || "#";
+                            link.target = "_blank";
+                            link.style.position = "absolute";
+                            link.style.top = "0";
+                            link.style.left = "0";
+                            link.style.width = "100%";
+                            link.style.height = "100%";
+                            link.style.zIndex = "1";
+
+                            popup.appendChild(link);
+                            popup.appendChild(closeBtn);
+                            popup.appendChild(cuponBtn);
+                            container.appendChild(popup);
+                        });
+                    }
+                });
+            </script>
+
             <script>
 
                 document.addEventListener('DOMContentLoaded', () => {
@@ -254,8 +366,10 @@
                 <!-- Columna izquierda: Datos de pago -->
                 <div class="col-12 col-md-5 mb-3 order-2 order-md-1">
                     <div class="card card-body shadow">
+                        <h2 class="text-center mb-4">
+                            <b>Ingresar Cupón</b>
+                        </h2>
                         <div class="form-group required mb-3">
-                            <label for="coupon" class="control-label">Ingresar Cupón</label>
                             <input
                                 autocomplete="off"
                                 name="coupon"
