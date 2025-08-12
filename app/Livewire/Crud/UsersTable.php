@@ -138,8 +138,9 @@ class UsersTable extends Component
         return view('livewire.crud.users-table', [
             'users' => $users,
             'compras' => Compras::all(),
-            'listaServicios' => $listaAgrupada,
-            'serviciosParaFiltro' => $serviciosParaFiltro
+            'listaServicios' => $listaAgrupada,       // Para mostrar agrupados
+            'serviciosPlano' => $serviciosParaFiltro, // Para el select (formato plano)
+            'serviciosParaFiltro' => $serviciosParaFiltro // Mantener compatibilidad
         ]);
     }
 
@@ -165,10 +166,8 @@ class UsersTable extends Component
 
     public function clearFilters()
     {
-        $this->filterServicio = '';
-        $this->filterContrato = '';
-        $this->filterPago = '';
-        $this->resetPage();
+        $this->reset('filterServicio', 'filterContrato', 'filterPago');
+        $this->resetPage(); // Opcional: solo si quieres resetear la paginación
     }
 
     public function updatedSearch()
