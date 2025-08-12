@@ -166,8 +166,9 @@ class UsersTable extends Component
 
     public function clearFilters()
     {
-        $this->reset('filterServicio', 'filterContrato', 'filterPago');
-        $this->resetPage(); // Opcional: solo si quieres resetear la paginación
+        $this->reset(['filterServicio', 'filterContrato', 'filterPago']);
+        $this->resetPage(); // Reset pagination
+        $this->dispatch('filtersCleared'); // Optional: Dispatch an event to notify the frontend
     }
 
     public function updatedSearch()

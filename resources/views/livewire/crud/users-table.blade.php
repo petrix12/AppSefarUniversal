@@ -55,7 +55,7 @@
                     <div class="flex flex-wrap items-end bg-white px-4 py-3 sm:px-6 gap-2">
                         {{-- Servicio contratado --}}
                         <div class="flex-1 min-w-[200px]">
-                            <select wire:model.live="filterServicio" class="mt-1 block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <select wire:model.live="filterServicio" id="filterServicio" class="mt-1 block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                 <option value="">Todos los servicios</option>
                                 @foreach ($listaServicios as $categoria => $servicios)
                                     @if(count($servicios) > 0)
@@ -97,6 +97,17 @@
                         </div>
                         @endif
                     </div>
+
+                    <script>
+                        document.addEventListener('livewire:init', () => {
+                            Livewire.on('filtersCleared', () => {
+                                const select = document.getElementById('filterServicio');
+                                if (select) {
+                                    select.value = ''; // Force reset the select to the default option
+                                }
+                            });
+                        });
+                    </script>
 
                     @if ($users->count())
                     <table class="min-w-full divide-y divide-gray-200" style="max-width: 100%;">
