@@ -57,8 +57,14 @@
                         <div class="flex-1 min-w-[200px]">
                             <select wire:model.live="filterServicio" class="mt-1 block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                 <option value="">Todos los servicios</option>
-                                @foreach ($listaServicios as $servicio)
-                                    <option value="{{ $servicio }}">{{ $servicio }}</option>
+                                @foreach ($listaServicios as $categoria => $servicios)
+                                    @if(count($servicios) > 0)
+                                        <optgroup label="{{ $categoria }}">
+                                            @foreach ($servicios as $servicio)
+                                                <option value="{{ $servicio }}">{{ $servicio }}</option>
+                                            @endforeach
+                                        </optgroup>
+                                    @endif
                                 @endforeach
                             </select>
                         </div>
