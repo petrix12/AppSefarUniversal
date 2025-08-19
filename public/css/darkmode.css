@@ -1,6 +1,4 @@
 body.dark-mode,
-body.dark-mode .main-header,
-body.dark-mode .main-header,
 body.dark-mode .bg-white,
 body.dark-mode .card ,
 body.dark-mode input,
@@ -34,10 +32,6 @@ body.dark-mode input[type='checkbox']:checked{
 
 body.dark-mode .nav-link, body.dark-mode .fontwhite, body.dark-mode .contentfiles {
     color: #eeeeee!important;
-}
-
-body.dark-mode .active, body.dark-mode .sidebar .nav-link.active p{
-  color: #343A40 !important;
 }
 
 body.dark-mode .styled-table tbody tr:nth-of-type(even){

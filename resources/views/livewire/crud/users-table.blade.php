@@ -32,7 +32,7 @@
                         <input
                             wire:model.live="search"
                             type="text"
-                            placeholder="Buscar..."
+                            placeholder="Buscar por nombre, correo o número de pasaporte..."
                             class="mr-2 mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                         />
                         <div class="col-span-6 sm:col-span-3">
@@ -51,6 +51,9 @@
                         @if ($search !== '')
                         <button wire:click="clear" class="py-1 px-2 mt-1 ml-2 border border-transparent rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"><i class="far fa-window-close"></i></button>
                         @endif
+                    </div>
+                    <div class="flex bg-white sm:px-6" style="padding-top: 0px!important; padding-bottom: 0px!important;">
+                    <small>Para una búsqueda mas exacta, busca por <b>correo</b> o <b>número de pasaporte</b></small>
                     </div>
                     <div class="flex flex-wrap items-end bg-white px-4 py-3 sm:px-6 gap-2">
                         {{-- Servicio contratado --}}

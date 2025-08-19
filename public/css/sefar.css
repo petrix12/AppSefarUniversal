@@ -56,6 +56,38 @@
 	color: rgba(255, 255, 255, .9);
 }
 
+.main-sidebar{
+    background-color:#001B27 !important;
+	color: rgba(255, 255, 255, .9);
+}
+
+.main-header{
+    background-color:#093143 !important;
+	color: rgba(255, 255, 255, 1)!important;
+}
+
+.nav-link .fas.fa-bars, .nav-link .far.fa-moon, .nav-link span{
+    color:white !important;
+}
+
+.nav-link.active {
+    background-color:#093143 !important;
+    color: #ffffff!important;
+}
+
+.nav-link.active p{
+    color: #ffffff!important;
+}
+
+.nav-link p{
+    color: #c3c3c3!important;
+}
+
+.nav-treeview {
+    background-color: rgba(255, 255, 255, 0.05)!important;
+        border-radius: .25rem!important;
+}
+
 /* Color de texto amarillo Sefar */
 .ctaSefar{
 	color:rgb(247,176,52) !important;
