@@ -4,10 +4,10 @@
             <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
                 <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
                     <div class="flex bg-white px-4 py-3 sm:px-6">
-                        <input 
+                        <input
                             wire:model.live="search"
-                            type="text" 
-                            placeholder="Buscar..." 
+                            type="text"
+                            placeholder="Buscar..."
                             class="mr-2 mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                         >
                         <div class="col-span-6 sm:col-span-3">
@@ -53,16 +53,16 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                         @foreach ($onidexes as $onidex)
-                        <tr>   
+                        <tr>
                             <td class="px-6 py-2 text-left text-xs whitespace-nowrap">
                                 {{ $onidex->cedula }}
-                            </td>  
+                            </td>
                             <td class="px-6 py-2 text-left text-xs whitespace-nowrap">
                                 {{ $onidex->apellido1 }}
-                            </td>   
+                            </td>
                             <td class="px-6 py-2 text-left text-xs whitespace-nowrap">
                                 {{ $onidex->apellido2 }}
-                            </td>  
+                            </td>
                             <td class="px-6 py-2 text-left text-xs whitespace-nowrap">
                                 {{ $onidex->nombre1 }}
                             </td>
@@ -83,10 +83,10 @@
                     {{ $onidexes->links() }}
                     </div>
                     @else
-                    <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6 text-gray-500">
-                        No hay resultado para la búsqueda {{ $search }} en la página {{ $page }} al mostrar {{ $perPage }} por página
-                    </div>
-                    @endif
+<div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6 text-gray-500">
+    No hay resultado para la búsqueda "{{ $search }}" en la página {{ $currentPage }} al mostrar {{ $perPage }} por página
+</div>
+@endif
                 </div>
             </div>
         </div>

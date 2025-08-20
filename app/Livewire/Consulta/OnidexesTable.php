@@ -39,11 +39,11 @@ class OnidexesTable extends Component
     public $rangofecha;
     public $fechainicial;
     public $fechafinal;
-    
+
     public function render()
     {
         $onidexes = null;
-        if(!is_null($this->search) and $this->search != ''){
+        if(!is_null($this->search) && $this->search != ''){
             // Búsqueda simple
             $onidexes = Onidex::where('apellido1','LIKE',"%$this->search%")
                 ->orWhere('apellido2','LIKE',"%$this->search%")
@@ -52,7 +52,7 @@ class OnidexesTable extends Component
                 ->orWhere('cedula','LIKE',"%$this->search%")
                 ->orWhere('nacion','LIKE',"%$this->search%")
                 ->paginate($this->perPage);
-        }else{
+        } else {
             // Búsqueda avanzada
             $onidexes = Onidex::y1nombres($this->nombre1, $this->cbx_nombre1, $this->cbx_nombre)
                             ->y2nombres($this->nombre2, $this->cbx_nombre2)
@@ -63,12 +63,16 @@ class OnidexesTable extends Component
                             ->yfechas($this->fec_nac, $this->cbx_anho, $this->cbx_mes, $this->cbx_dia, $this->rangofecha, $this->fechainicial, $this->fechafinal)
                             ->paginate($this->perPage);
         }
-        return view('livewire.consulta.onidexes-table',compact('onidexes'));
+
+        // Pasar la página actual a la vista
+        return view('livewire.consulta.onidexes-table', [
+            'onidexes' => $onidexes,
+            'currentPage' => $onidexes->currentPage() // Añadimos la página actual
+        ]);
     }
 
     public function clear(){
         $this->search = '';
-        $this->page = 1;
         $this->perPage = '10';
         $this->nombre1 = '';
         $this->nombre2 = '';
@@ -90,5 +94,8 @@ class OnidexesTable extends Component
         $this->rangofecha = '';
         $this->fechainicial = '';
         $this->fechafinal = '';
+
+        // Resetear a la primera página
+        $this->resetPage();
     }
 }
