@@ -512,6 +512,20 @@
                                 <input type="tel" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="phone" name="phone" value="{{ old('phone', $user->phone) }}" placeholder="Ingrese su número de teléfono">
                             </div>
                         </div>
+
+                        <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1;" class="mb-3">
+                                <label for="tiene_hermanos" class="block text-sm font-medium text-gray-700">¿Tiene Hermanos realizando procesos en Sefar Universal?</label>
+                                <select
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    id="tiene_hermanos"
+                                    name="tiene_hermanos">
+                                    <option value="" {{ old('tiene_hermanos', $user->tiene_hermanos ?? '') == '' ? 'selected' : '' }}>Seleccione una opción</option>
+                                    <option value="0" {{ old('tiene_hermanos', $user->tiene_hermanos ?? '') == 0 ? 'selected' : '' }}>No</option>
+                                    <option value="1" {{ old('tiene_hermanos', $user->tiene_hermanos ?? '') == 1 ? 'selected' : '' }}>Si</option>
+                                </select>
+                            </div>
+                        </div>
                         @if(auth()->user()->roles[0]->id == 1 || auth()->user()->roles[0]->id == 15 || auth()->user()->roles[0]->id == 16)
                         <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
                             <div style="flex: 1;" class="mb-3">
