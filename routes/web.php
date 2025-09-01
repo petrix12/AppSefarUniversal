@@ -42,7 +42,13 @@ use App\Http\Controllers\TreenaController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DocumentRequestController;
+use App\Http\Controllers\Auth\RegisterV2Controller;
 
+Route::get('/registerv2', function () {
+    return view('auth.registerv2');
+})->name('register.v2.form');
+
+Route::post('/registerv2', [RegisterV2Controller::class, 'store'])->name('register.v2');
 
 // Vista inicio
 Route::get('/', [Controller::class, 'index'])->name('inicio')->middleware(['auth', 'verified']);
