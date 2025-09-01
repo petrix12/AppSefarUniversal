@@ -22,7 +22,7 @@ class ClaveGeneradaMail extends Mailable
 
     public function build()
     {
-        return $this->subject('Bienvenido a SEFAR Universal')
+        return $this->subject($this->user->nombres. ', ¡BIENVENIDO a Sefar Universal! Aquí estan tus credenciales de acceso')
                     ->view('mail.clave_generada'); // 👈 aquí va tu HTML Blade
     }
 }

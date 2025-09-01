@@ -51,22 +51,6 @@
                                         <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
                                             Estimado(a) <strong>{{ $user->name }}</strong> hemos recibido el inicio de su proceso.
                                         </p>
-                                        <p style="font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
-                                            Te hemos generado una contraseña temporal para que puedas acceder a la plataforma:
-                                        </p>
-
-                                        <ul>
-                                            <li><strong>Usuario:</strong> {{ $user->email }}</li>
-                                            <li><strong>Contraseña temporal:</strong> {{ $password }}</li>
-                                        </ul>
-
-                                        <p style="font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
-                                            Te recomendamos iniciar sesión lo antes posible y cambiar tu contraseña por motivos de seguridad:
-                                            <br>
-                                            <a href="https://app.sefaruniversal.com/login" target="_blank">
-                                                Ingresar a mi cuenta
-                                            </a>
-                                        </p>
                                         <p style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left;">
                                             En estos momentos su información será remitida al departamento de genealogía e historia para el respectivo análisis de su árbol genealógico.
                                         </p>

@@ -151,7 +151,7 @@ class RegisterV2Controller extends Controller
             Mail::to($user->email)->send(new ClaveGeneradaMail($user, $password));
 
             if ($rol === 'cliente') {
-                Mail::to($user->email)->send(new RegistroCliente($user));
+                //Mail::to($user->email)->send(new RegistroCliente($user));
                 Mail::to([
                     'pedro.bazo@sefarvzla.com',
                     'sistemasccs@sefarvzla.com',
