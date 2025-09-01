@@ -18,7 +18,7 @@
             </div>
 
             {{-- Correo / Teléfono --}}
-            <div class="flex gap-4">
+            <div class="flex gap-4 mt-4">
                 <div class="flex-1">
                     <label for="email" class="block text-sm font-medium">Correo *</label>
                     <input type="email" id="email" name="email" class="w-full border rounded p-2" required>
@@ -30,7 +30,7 @@
             </div>
 
             {{-- Pasaporte / País --}}
-            <div class="flex gap-4">
+            <div class="flex gap-4 mt-4">
                 <div class="flex-1">
                     <label for="passport" class="block text-sm font-medium">Número de Pasaporte *</label>
                     <input type="text" id="passport" class="w-full border rounded p-2" required>
@@ -89,7 +89,7 @@
 
             {{-- Botón --}}
             <div class="mt-6 text-center">
-                <button type="submit" class="bg-red-400 text-white px-6 py-2 rounded-lg">Continuar</button>
+                <button type="submit" class="btn btn-primary cfrSefar">Continuar</button>
             </div>
 
             {{-- Campos ocultos requeridos por tu backend --}}
