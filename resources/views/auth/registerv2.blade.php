@@ -6,36 +6,36 @@
             @csrf
 
             {{-- Nombre / Apellido --}}
-            <div class="grid grid-cols-2 gap-4">
-                <div>
+            <div class="flex gap-4">
+                <div class="flex-1">
                     <label for="nombres" class="block text-sm font-medium">Nombre *</label>
                     <input type="text" id="nombres" class="w-full border rounded p-2" required>
                 </div>
-                <div>
+                <div class="flex-1">
                     <label for="apellidos" class="block text-sm font-medium">Apellido *</label>
                     <input type="text" id="apellidos" class="w-full border rounded p-2" required>
                 </div>
             </div>
 
             {{-- Correo / Teléfono --}}
-            <div class="grid grid-cols-2 gap-4 mt-4">
-                <div>
+            <div class="flex gap-4">
+                <div class="flex-1">
                     <label for="email" class="block text-sm font-medium">Correo *</label>
                     <input type="email" id="email" name="email" class="w-full border rounded p-2" required>
                 </div>
-                <div>
+                <div class="flex-1">
                     <label for="phone" class="block text-sm font-medium">Teléfono *</label>
                     <input type="tel" id="phone" class="w-full border rounded p-2" required>
                 </div>
             </div>
 
             {{-- Pasaporte / País --}}
-            <div class="grid grid-cols-2 gap-4 mt-4">
-                <div>
+            <div class="flex gap-4">
+                <div class="flex-1">
                     <label for="passport" class="block text-sm font-medium">Número de Pasaporte *</label>
                     <input type="text" id="passport" class="w-full border rounded p-2" required>
                 </div>
-                <div>
+                <div class="flex-1">
                     <label for="pais_de_nacimiento" class="block text-sm font-medium">País de nacimiento *</label>
                     <select id="pais_de_nacimiento" class="w-full border rounded p-2" required>
                         <option value="">Selecciona</option>
