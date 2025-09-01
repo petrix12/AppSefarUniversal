@@ -89,7 +89,7 @@
 
             {{-- Botón --}}
             <div class="mt-6 text-center">
-                <button type="submit" style="color: white; border-radius: 12px;" class="py-2 px-2 btn btn-primary cfrSefar">Continuar</button>
+                <button type="submit" style="color: white; border-radius: 12px;" class="py-2 px-4 btn btn-primary cfrSefar">¡Registrarme ahora!</button>
             </div>
 
             {{-- Campos ocultos requeridos por tu backend --}}
