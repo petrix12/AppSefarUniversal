@@ -19,10 +19,11 @@ use App\Mail\RegistroCliente;
 use App\Mail\RegistroSefar;
 use App\Mail\ClaveGeneradaMail;
 use Laravel\Jetstream\Jetstream;
+use App\Services\HubspotService;
 
 class RegisterV2Controller extends Controller
 {
-    public function store(Request $request)
+    public function store(Request $request, HubspotService $hubspotService)
     {
         $input = $request->all();
         $rol = $input['rol'] ?? 'cliente';
@@ -114,6 +115,7 @@ class RegisterV2Controller extends Controller
                 // referidos / familia
                 'referido_por' => $input['referido'] ?? null,
                 'tiene_hermanos' => (int)($input['tiene_hermanos'] ?? 0),
+                'tiene_algun_familiar_que_este_o_haya_realizado_algun_proceso_con_nosotros_' => (int)($input['tiene_hermanos'] ?? 0),
                 'nombre_de_familiar_realizando_procesos' => $input['nombre_de_familiar_realizando_procesos'] ?? null,
 
                 // contrato
@@ -144,6 +146,37 @@ class RegisterV2Controller extends Controller
                     ->where('id', $compra->id)
                     ->update(['pagado' => 1, 'hash_factura' => $hash_factura]);
             }
+
+            // -------------------------
+            // CREAR/VERIFICAR CONTACTO HUBSPOT
+            // -------------------------
+            $hsContact = $hubspotService->searchContactByEmail($user->email);
+
+            if (!$hsContact) {
+                // Crear nuevo contacto
+                $response = $hubspotService->hubspot->crm()->contacts()->basicApi()->create([
+                    'properties' => [
+                        'email'                => $user->email,
+                        'firstname'            => $user->nombres,
+                        'lastname'             => $user->apellidos,
+                        'phone'                => $user->phone,
+                        'pais_de_nacimiento'   => $user->pais_de_nacimiento,
+                        'numero_de_pasaporte'  => $user->passport,
+                        'servicio_solicitado'  => $user->servicio,
+                        'n000__referido_por__clonado_' => $user->referido_por,
+                        'nombre_de_familiar_realizando_procesos' => $user->nombre_de_familiar_realizando_procesos,
+
+                    ]
+                ]);
+
+                $hsId = $response->getId();
+            } else {
+                $hsId = $hsContact['id'];
+            }
+
+            // Guardar el ID en el usuario
+            $user->hs_id = $hsId;
+            $user->save();
 
             // -------------------------
             // NOTIFICACIONES
