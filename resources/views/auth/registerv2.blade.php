@@ -37,15 +37,7 @@
                 </div>
                 <div class="flex-1">
                     <label for="pais_de_nacimiento" class="block text-sm font-medium">País de nacimiento *</label>
-                    <select id="pais_de_nacimiento" class="w-full border rounded p-2" required>
-                        <option value="">Selecciona</option>
-                        <option value="España">España</option>
-                        <option value="Italia">Italia</option>
-                        <option value="Venezuela">Venezuela</option>
-                        <option value="Argentina">Argentina</option>
-                        <option value="Colombia">Colombia</option>
-                        {{-- TODO: lista completa --}}
-                    </select>
+                    <input type="text" id="pais_de_nacimiento" class="w-full border rounded p-2" required>
                 </div>
             </div>
 
