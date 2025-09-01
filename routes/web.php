@@ -42,7 +42,7 @@ use App\Http\Controllers\TreenaController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DocumentRequestController;
-use App\Http\Controllers\Auth\RegisterV2Controller;
+use App\Http\Controllers\RegisterV2Controller;
 
 Route::get('/registerv2', function () {
     return view('auth.registerv2');

@@ -32,6 +32,6 @@ class RegistroCliente extends Mailable
     public function build()
     {
         return $this->view('mail.registro-cliente')
-            ->subject('¡BIENVENIDO ' . strtoupper($this->user->name) . '! SE HA REGISTRADO EXITOSAMENTE');
+            ->subject($this->user->nombres. ', ¡BIENVENIDO a Sefar Universal! Aquí estan tus credenciales de acceso');
     }
 }
