@@ -65,6 +65,34 @@
                 </select>
             </div>
 
+            {{-- Campo oculto por defecto --}}
+            <div class="mt-4 hidden" id="familiarContainer">
+                <label for="nombre_de_familiar_realizando_procesos" class="block text-sm font-medium">
+                    Nombre del familiar que realiza procesos *
+                </label>
+                <input type="text"
+                    id="nombre_de_familiar_realizando_procesos"
+                    name="nombre_de_familiar_realizando_procesos"
+                    class="w-full border rounded p-2">
+            </div>
+
+            <script>
+                const selectHermanos = document.getElementById("tiene_hermanos");
+                const familiarContainer = document.getElementById("familiarContainer");
+                const familiarInput = document.getElementById("nombre_de_familiar_realizando_procesos");
+
+                selectHermanos.addEventListener("change", function () {
+                    if (this.value === "1") {
+                        familiarContainer.classList.remove("hidden");
+                        familiarInput.setAttribute("required", "required");
+                    } else {
+                        familiarContainer.classList.add("hidden");
+                        familiarInput.removeAttribute("required");
+                        familiarInput.value = ""; // limpiar por si acaso
+                    }
+                });
+            </script>
+
             {{-- Checkboxes --}}
             <div class="mt-4">
                 <label class="inline-flex items-center">
