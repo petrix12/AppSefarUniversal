@@ -225,7 +225,7 @@ class RegisterV2Controller extends Controller
 
         } catch (ValidationException $e) {
             // Depuración: ver errores exactos
-            dd($e->errors());
+             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             // Loguear cualquier error general
             \Log::error('Error en el registro: ' . $e->getMessage(), [

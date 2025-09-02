@@ -23,6 +23,27 @@
         </div>
     </div>
 
+    @if (session('error'))
+    <div id="errorModal" class="fixed inset-0 bg-[rgba(255,255,255,0.6)] overlay-blur flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-lg shadow-lg max-w-md text-center">
+            <!-- Ícono de error -->
+            <div class="mx-auto mb-4 h-16 w-16 rounded-full bg-red-100 flex items-center justify-center">
+                <svg class="h-10 w-10 text-red-600" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M6 18L18 6M6 6l12 12"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"/>
+                </svg>
+            </div>
+
+            <h3 class="text-xl font-bold mb-4">¡Error en el registro!</h3>
+            <p class="mb-4">{{ session('error') }}</p>
+            <button onclick="document.getElementById('errorModal').classList.add('hidden')" class="py-2 px-4 bg-red-600 text-white rounded">Aceptar</button>
+        </div>
+    </div>
+    @endif
+
     <style>
         .overlay-blur {
             background: rgba(255, 255, 255, 0.3);   /* semitransparente */
