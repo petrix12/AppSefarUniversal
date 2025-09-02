@@ -122,6 +122,10 @@ class RegisterV2Controller extends Controller
                 'contrato'   => 0,
             ]);
 
+            if (!empty($input['tiene_antepasados_espanoles'])) {
+                $userData['tiene_antepasados_espanoles'] = $input['tiene_antepasados_espanoles'] == '1' ? 'true' : 'false';
+            }
+
             // -------------------------
             // COMPRAS / FACTURAS
             // -------------------------
@@ -153,8 +157,7 @@ class RegisterV2Controller extends Controller
             $hsContact = $hubspotService->searchContactByEmail($user->email);
 
             if (!$hsContact) {
-                // Crear nuevo contacto usando la función del servicio
-                $hsId = $hubspotService->createContact([
+                $contactData = [
                     'email'                => $user->email,
                     'firstname'            => $user->nombres,
                     'lastname'             => $user->apellidos,
@@ -163,10 +166,16 @@ class RegisterV2Controller extends Controller
                     'numero_de_pasaporte'  => $user->passport,
                     'servicio_solicitado'  => $user->servicio,
                     'n000__referido_por__clonado_' => $user->referido_por ?? '',
-                    //'tiene_hermanos' => $input['tiene_hermanos'] == '1' ? 'true' : 'false',
                     'tiene_algun_familiar_que_este_o_haya_realizado_algun_proceso_con_nosotros_' => $input['tiene_hermanos'] == '1' ? 'true' : 'false',
                     'nombre_de_familiar_realizando_procesos' => $user->nombre_de_familiar_realizando_procesos ?? '',
-                ]);
+                ];
+
+                // Solo agregar si no es vacío o null
+                if (!empty($input['tiene_antepasados_espanoles'])) {
+                    $contactData['tiene_antepasados_espanoles'] = $input['tiene_antepasados_espanoles'] == '1' ? 'true' : 'false';
+                }
+
+                $hsId = $hubspotService->createContact($contactData);
             } else {
                 $hsId = $hsContact['id'];
             }
