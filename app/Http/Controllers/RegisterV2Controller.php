@@ -69,7 +69,7 @@ class RegisterV2Controller extends Controller
                     'referido'  => ['nullable', 'string', 'max:255'],
                     'tiene_hermanos' => ['required', 'in:0,1'],
                     'nombre_de_familiar_realizando_procesos' => [
-                        'exclude_unless:tiene_hermanos,1','required','string','max:255'
+                        'exclude_unless:tiene_hermanos,1', 'required', 'string', 'max:255'
                     ],
                 ])->validate();
             } else {
@@ -86,7 +86,7 @@ class RegisterV2Controller extends Controller
             // -------------------------
             // CREAR USER
             // -------------------------
-            $servicio = Servicio::where('id_hubspot', "like", $input['servicio']."%")->first();
+            $servicio = Servicio::where('id_hubspot', "like", $input['servicio'] . "%")->first();
 
             $user = User::create([
                 // básicos
@@ -153,23 +153,18 @@ class RegisterV2Controller extends Controller
             $hsContact = $hubspotService->searchContactByEmail($user->email);
 
             if (!$hsContact) {
-                // Crear nuevo contacto
-                $response = $hubspotService->hubspot->crm()->contacts()->basicApi()->create([
-                    'properties' => [
-                        'email'                => $user->email,
-                        'firstname'            => $user->nombres,
-                        'lastname'             => $user->apellidos,
-                        'phone'                => $user->phone,
-                        'pais_de_nacimiento'   => $user->pais_de_nacimiento,
-                        'numero_de_pasaporte'  => $user->passport,
-                        'servicio_solicitado'  => $user->servicio,
-                        'n000__referido_por__clonado_' => $user->referido_por,
-                        'nombre_de_familiar_realizando_procesos' => $user->nombre_de_familiar_realizando_procesos,
-
-                    ]
+                // Crear nuevo contacto usando la función del servicio
+                $hsId = $hubspotService->createContact([
+                    'email'                => $user->email,
+                    'firstname'            => $user->nombres,
+                    'lastname'             => $user->apellidos,
+                    'phone'                => $user->phone ?? '',
+                    'pais_de_nacimiento'   => $user->pais_de_nacimiento,
+                    'numero_de_pasaporte'  => $user->passport,
+                    'servicio_solicitado'  => $user->servicio,
+                    'n000__referido_por__clonado_' => $user->referido_por ?? '',
+                    'nombre_de_familiar_realizando_procesos' => $user->nombre_de_familiar_realizando_procesos ?? '',
                 ]);
-
-                $hsId = $response->getId();
             } else {
                 $hsId = $hsContact['id'];
             }
@@ -210,8 +205,15 @@ class RegisterV2Controller extends Controller
             return redirect()->away('https://app.sefaruniversal.com/');
 
         } catch (ValidationException $e) {
-            // 👀 Depuración: ver errores exactos
+            // Depuración: ver errores exactos
             dd($e->errors());
+        } catch (\Exception $e) {
+            // Loguear cualquier error general
+            \Log::error('Error en el registro: ' . $e->getMessage(), [
+                'input' => $input,
+                'stack' => $e->getTraceAsString()
+            ]);
+            throw $e;
         }
     }
 }

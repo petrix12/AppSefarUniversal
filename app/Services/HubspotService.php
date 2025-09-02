@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use HubSpot\Factory;
+use HubSpot\Client\Crm\Contacts\Model\SimplePublicObjectInput;
 use HubSpot\Client\Crm\Contacts\ApiException as ContactException;
 use HubSpot\Client\Crm\Deals\ApiException as DealException;
 use HubSpot\Client\Crm\Associations\Model\BatchInputPublicObjectId;
@@ -24,6 +25,30 @@ class HubspotService
     public function __construct()
     {
         $this->hubspot = Factory::createWithAccessToken(env('HUBSPOT_KEY'));
+    }
+
+    public function createContact(array $properties): ?string
+    {
+        try {
+            // Crear el objeto de entrada para la API de HubSpot
+            $contactInput = new SimplePublicObjectInput([
+                'properties' => array_filter($properties, fn($value) => !is_null($value)) // Filtra valores nulos
+            ]);
+
+            // Enviar solicitud para crear el contacto
+            $response = $this->hubspot->crm()->contacts()->basicApi()->create($contactInput);
+
+            // Retornar el ID del contacto creado
+            return $response->getId();
+        } catch (ContactException $e) {
+            // Loguear el error para depuración
+            \Log::error('Error al crear contacto en HubSpot: ' . $e->getMessage(), [
+                'response' => $e->getResponseBody(),
+                'code' => $e->getCode(),
+                'properties' => $properties
+            ]);
+            throw new \Exception('No se pudo crear el contacto en HubSpot: ' . $e->getMessage());
+        }
     }
 
     public function executeConcurrent(array $callbacks)
