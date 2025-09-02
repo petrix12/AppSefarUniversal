@@ -204,7 +204,7 @@ class RegisterV2Controller extends Controller
             // -------------------------
             // REDIRECCIÓN
             // -------------------------
-            return redirect()->away('https://app.sefaruniversal.com/');
+            return view('redirect', ['redirect_url' => 'https://app.sefaruniversal.com/']);
 
         } catch (ValidationException $e) {
             // Depuración: ver errores exactos
