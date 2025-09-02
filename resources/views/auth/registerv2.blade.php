@@ -85,6 +85,57 @@
                     <option value="soporteit+google@sefarvzla.com" {{ old('referido')=='soporteit+google@sefarvzla.com' ? 'selected' : '' }}>..Google</option>
                     <option value="soporteit+rrss@sefarvzla.com" {{ old('referido')=='soporteit+rrss@sefarvzla.com' ? 'selected' : '' }}>..Redes Sociales</option>
                     <option value="soporteit+otros@sefarvzla.com" {{ old('referido')=='soporteit+otros@sefarvzla.com' ? 'selected' : '' }}>..Otros</option>
+                    <option value="admin.sefar@sefarvzla.com" {{ old('referido')=='admin.sefar@sefarvzla.com' ? 'selected' : '' }}>Abel Tejeda Molina</option>
+                    <option value="avillasmil@sefarvzla.com" {{ old('referido')=='avillasmil@sefarvzla.com' ? 'selected' : '' }}>Adela Villasmil</option>
+                    <option value="agoiticoa@sefarvzla.com" {{ old('referido')=='agoiticoa@sefarvzla.com' ? 'selected' : '' }}>Alex Goiticoa González</option>
+                    <option value="a.delgado@sefarvzla.com" {{ old('referido')=='a.delgado@sefarvzla.com' ? 'selected' : '' }}>Ana María Delgado</option>
+                    <option value="arosales@sefarvzla.com" {{ old('referido')=='arosales@sefarvzla.com' ? 'selected' : '' }}>Angel Rosales</option>
+                    <option value="amonroy@sefarvzla.com" {{ old('referido')=='amonroy@sefarvzla.com' ? 'selected' : '' }}>Angelica Monroy Gualteros</option>
+                    <option value="bnarvaez@sefarvzla.com" {{ old('referido')=='bnarvaez@sefarvzla.com' ? 'selected' : '' }}>Belsy Del Carmen Narvaez Colon</option>
+                    <option value="cmolina@sefarvzla.com" {{ old('referido')=='cmolina@sefarvzla.com' ? 'selected' : '' }}>Carmen Alicia Molina Moscarella</option>
+                    <option value="cguerrero@sefarvzla.com" {{ old('referido')=='cguerrero@sefarvzla.com' ? 'selected' : '' }}>Carolina Guerrero Villegas</option>
+                    <option value="c.alcantara@sefarvzla.com" {{ old('referido')=='c.alcantara@sefarvzla.com' ? 'selected' : '' }}>Celeste Alcantara</option>
+                    <option value="cora.diaz@sefarvzla.com" {{ old('referido')=='cora.diaz@sefarvzla.com' ? 'selected' : '' }}>Cora Diaz</option>
+                    <option value="crisantoantonio@sefarvzla.com" {{ old('referido')=='crisantoantonio@sefarvzla.com' ? 'selected' : '' }}>Crisanto Bello</option>
+                    <option value="dgarcia@sefarvzla.com" {{ old('referido')=='dgarcia@sefarvzla.com' ? 'selected' : '' }}>Dangmar García de Segnini</option>
+                    <option value="daniela.cernik@sefaruniversal.eu" {{ old('referido')=='daniela.cernik@sefaruniversal.eu' ? 'selected' : '' }}>Daniela Cernik Vera</option>
+                    <option value="dgutierrez@sefarvzla.com" {{ old('referido')=='dgutierrez@sefarvzla.com' ? 'selected' : '' }}>Dayvelis Carolina Gutiérrez Rodríguez</option>
+                    <option value="gromero@sefarvzla.com" {{ old('referido')=='gromero@sefarvzla.com' ? 'selected' : '' }}>Gabriella Romero Garay</option>
+                    <option value="hleon@sefaruniversal.eu" {{ old('referido')=='hleon@sefaruniversal.eu' ? 'selected' : '' }}>Hernando León</option>
+                    <option value="irodriguez@sefarvzla.com" {{ old('referido')=='irodriguez@sefarvzla.com' ? 'selected' : '' }}>Ingrid Cecilia Rodriguez Valderrama</option>
+                    <option value="iardila@sefarvzla.com" {{ old('referido')=='iardila@sefarvzla.com' ? 'selected' : '' }}>Ivette Ardila</option>
+                    <option value="admin.presidencia@sefarvzla.com" {{ old('referido')=='admin.presidencia@sefarvzla.com' ? 'selected' : '' }}>Jose Alejandro Zuñiga</option>
+                    <option value="jquero@sefaruniversal.eu" {{ old('referido')=='jquero@sefaruniversal.eu' ? 'selected' : '' }}>José Quero</option>
+                    <option value="jbelisario@sefaruniversal.eu" {{ old('referido')=='jbelisario@sefaruniversal.eu' ? 'selected' : '' }}>Juan Belisario</option>
+                    <option value="jcordova@sefaruniversal.eu" {{ old('referido')=='jcordova@sefaruniversal.eu' ? 'selected' : '' }}>Juan Miguel Cordova</option>
+                    <option value="jlozano@sefarvzla.com" {{ old('referido')=='jlozano@sefarvzla.com' ? 'selected' : '' }}>Julibeth Del Carmen Lozano Alvarado</option>
+                    <option value="j.munoz@sefaruniversal.eu" {{ old('referido')=='j.munoz@sefaruniversal.eu' ? 'selected' : '' }}>Julieth Muñoz</option>
+                    <option value="katherine.agraz@sefaruniversal.eu" {{ old('referido')=='katherine.agraz@sefaruniversal.eu' ? 'selected' : '' }}>Katherine del Valle Agráz</option>
+                    <option value="lauram@sefarvzla.com" {{ old('referido')=='lauram@sefarvzla.com' ? 'selected' : '' }}>Laura Muñoz Gabiria</option>
+                    <option value="automatizacion@sefarvzla.com" {{ old('referido')=='automatizacion@sefarvzla.com' ? 'selected' : '' }}>Leandro Roman</option>
+                    <option value="libsen.rodriguez@sefarvzla.com" {{ old('referido')=='libsen.rodriguez@sefarvzla.com' ? 'selected' : '' }}>Libsen Rodríguez</option>
+                    <option value="lguzmanposso@sefarvzla.com" {{ old('referido')=='lguzmanposso@sefarvzla.com' ? 'selected' : '' }}>Lina Marcela Guzman Posso&nbsp;</option>
+                    <option value="lrondon@sefaruniversal.eu" {{ old('referido')=='lrondon@sefaruniversal.eu' ? 'selected' : '' }}>Luisa Rondon</option>
+                    <option value="mbriceno@sefarvzla.com" {{ old('referido')=='mbriceno@sefarvzla.com' ? 'selected' : '' }}>Maria Soledad Briceño</option>
+                    <option value="m.moreno@sefarvzla.com" {{ old('referido')=='m.moreno@sefarvzla.com' ? 'selected' : '' }}>Marisol Moreno González</option>
+                    <option value="mhernandez@sefarvzla.com" {{ old('referido')=='mhernandez@sefarvzla.com' ? 'selected' : '' }}>María Carolina Hernandez</option>
+                    <option value="mgimenez@sefaruniversal.eu" {{ old('referido')=='mgimenez@sefaruniversal.eu' ? 'selected' : '' }}>María Giménez</option>
+                    <option value="mchavez@sefarvzla.com" {{ old('referido')=='mchavez@sefarvzla.com' ? 'selected' : '' }}>María Luisa Chávez</option>
+                    <option value="mlopez@sefaruniversal.eu" {{ old('referido')=='mlopez@sefaruniversal.eu' ? 'selected' : '' }}>Mauricio Lopez Cisneros</option>
+                    <option value="milenacera@sefarvzla.com" {{ old('referido')=='milenacera@sefarvzla.com' ? 'selected' : '' }}>Milena Lucia Cera Avendaño</option>
+                    <option value="nnavarro@sefarvzla.com" {{ old('referido')=='"nnavarro@sefarvzla.com' ? 'selected' : '' }}>Nathalie Navarro González</option>
+                    <option value="odettevera@sefarvzla.com" {{ old('referido')=='odettevera@sefarvzla.com' ? 'selected' : '' }}>Odette Vera</option>
+                    <option value="auxatc1@sefarvzla.com" {{ old('referido')=='auxatc1@sefarvzla.com' ? 'selected' : '' }}>Orlando Enrique Angulo Osorio</option>
+                    <option value="ocastro@sefarvzla.com" {{ old('referido')=='ocastro@sefarvzla.com' ? 'selected' : '' }}>Oscar Enrique Castro Rodriguez</option>
+                    <option value="osanabria@sefaruniversal.eu" {{ old('referido')=='osanabria@sefaruniversal.eu' ? 'selected' : '' }}>Oscar Sanabria Garcia</option>
+                    <option value="p.urdaneta@sefaruniversal.eu" {{ old('referido')=='p.urdaneta@sefaruniversal.eu' ? 'selected' : '' }}>Paula Urdaneta</option>
+                    <option value="rorozco@sefarvzla.com" {{ old('referido')=='rorozco@sefarvzla.com' ? 'selected' : '' }}>Roberto Enrique Orozco Zuleta</option>
+                    <option value="sscuzzarello@sefaruniversal.eu" {{ old('referido')=='sscuzzarello@sefaruniversal.eu' ? 'selected' : '' }}>Sarah Scuzzarello</option>
+                    <option value="alfredo.machado@somaconsultores.com" {{ old('referido')=='alfredo.machado@somaconsultores.com' ? 'selected' : '' }}>Soma Consultores//Alfredo Machado</option>
+                    <option value="TRANSFORMANDO 360 GRADOS A.C." {{ old('referido')=='TRANSFORMANDO 360 GRADOS A.C.' ? 'selected' : '' }}>TRANSFORMANDO 360</option>
+                    <option value="veronica.poletto@sefarvzla.com" {{ old('referido')=='veronica.poletto@sefarvzla.com' ? 'selected' : '' }}>Veronica Poletto</option>
+                    <option value="yeinsondiaz@sefarvzla.com" {{ old('referido')=='yeinsondiaz@sefarvzla.com' ? 'selected' : '' }}>Yeinson Diaz</option>
+                    <option value="y.hernandez@sefaruniversal.eu" {{ old('referido')=='y.hernandez@sefaruniversal.eu' ? 'selected' : '' }}>Yineska Hernández</option></select>
                 </select>
             </div>
 
