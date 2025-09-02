@@ -1,4 +1,26 @@
 <x-guest-layout>
+    <div id="successModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-8 rounded-lg shadow-lg max-w-md text-center">
+            <h3 class="text-xl font-bold mb-4">¡Registro exitoso!</h3>
+            <p class="mb-4">
+                Te has registrado exitosamente.<br>
+                Hemos enviado tu contraseña a tu correo.<br>
+                En breve serás redirigido a nuestra plataforma.
+            </p>
+            <div class="animate-pulse text-gray-500">Redirigiendo...</div>
+        </div>
+    </div>
+
+    <script>
+    const form = document.getElementById("registerV2Form");
+        const modal = document.getElementById("successModal");
+
+        form.addEventListener("submit", function(e) {
+            // Mostramos el modal inmediatamente al hacer submit
+            modal.classList.remove("hidden");
+        });
+    </script>
+
     <div class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow">
         <h2 class="text-center text-xl font-bold mb-6">Inicia tu análisis preliminar</h2>
 
