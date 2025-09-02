@@ -163,8 +163,8 @@ class RegisterV2Controller extends Controller
                     'numero_de_pasaporte'  => $user->passport,
                     'servicio_solicitado'  => $user->servicio,
                     'n000__referido_por__clonado_' => $user->referido_por ?? '',
-                    //'tiene_hermanos' => (int)($input['tiene_hermanos'] ?? 0),
-                    'tiene_algun_familiar_que_este_o_haya_realizado_algun_proceso_con_nosotros_' => (int)($input['tiene_hermanos'] == '1' ? true : false),
+                    //'tiene_hermanos' => $input['tiene_hermanos'] == '1' ? 'true' : 'false',
+                    'tiene_algun_familiar_que_este_o_haya_realizado_algun_proceso_con_nosotros_' => $input['tiene_hermanos'] == '1' ? 'true' : 'false',
                     'nombre_de_familiar_realizando_procesos' => $user->nombre_de_familiar_realizando_procesos ?? '',
                 ]);
             } else {
