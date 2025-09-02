@@ -139,6 +139,15 @@
                 </select>
             </div>
 
+            <div class="mt-4 {{ request('servicio')==="Española LMD" ? "" : "hidden" }}" >
+                <label for="tiene_antepasados_espanoles" class="block text-sm font-medium">¿Sabes si usted tiene uno o más antepasados Españoles? *</label>
+                <select id="tiene_antepasados_espanoles" name="tiene_antepasados_espanoles" class="w-full border rounded p-2" {{ request('servicio')==="Española LMD" ? "required" : "" }}>
+                    <option value="">Selecciona</option>
+                    <option value="0" {{ old('tiene_antepasados_espanoles')==='0' ? 'selected' : '' }}>No</option>
+                    <option value="1" {{ old('tiene_antepasados_espanoles')==='1' ? 'selected' : '' }}>Sí</option>
+                </select>
+            </div>
+
             {{-- Tiene hermanos --}}
             <div class="mt-4">
                 <label for="tiene_hermanos" class="block text-sm font-medium">¿Tiene hermanos realizando procesos en Sefar Universal? *</label>
