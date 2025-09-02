@@ -123,7 +123,7 @@ class RegisterV2Controller extends Controller
             ]);
 
             if (!empty($input['tiene_antepasados_espanoles'])) {
-                $userData['tiene_antepasados_espanoles'] = $input['tiene_antepasados_espanoles'] == '1' ? 'true' : 'false';
+                $userData['tiene_antepasados_espanoles'] = $input['tiene_antepasados_espanoles'] == '1' ? 'Si' : 'No';
             }
 
             // -------------------------
@@ -172,7 +172,7 @@ class RegisterV2Controller extends Controller
 
                 // Solo agregar si no es vacío o null
                 if (!empty($input['tiene_antepasados_espanoles'])) {
-                    $contactData['tiene_antepasados_espanoles'] = $input['tiene_antepasados_espanoles'] == '1' ? 'true' : 'false';
+                    $contactData['tiene_antepasados_espanoles'] = $input['tiene_antepasados_espanoles'] == '1' ? 'Si' : 'No';
                 }
 
                 $hsId = $hubspotService->createContact($contactData);
