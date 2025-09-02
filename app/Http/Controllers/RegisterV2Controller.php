@@ -114,8 +114,8 @@ class RegisterV2Controller extends Controller
 
                 // referidos / familia
                 'referido_por' => $input['referido'] ?? null,
-                'tiene_hermanos' => (int)($input['tiene_hermanos'] ?? 0),
-                'tiene_algun_familiar_que_este_o_haya_realizado_algun_proceso_con_nosotros_' => (int)($input['tiene_hermanos'] ?? 0),
+                //'tiene_hermanos' => (int)($input['tiene_hermanos'] ?? 0),
+                //'tiene_algun_familiar_que_este_o_haya_realizado_algun_proceso_con_nosotros_' => (int)($input['tiene_hermanos'] ?? 0),
                 'nombre_de_familiar_realizando_procesos' => $input['nombre_de_familiar_realizando_procesos'] ?? null,
 
                 // contrato
@@ -163,6 +163,8 @@ class RegisterV2Controller extends Controller
                     'numero_de_pasaporte'  => $user->passport,
                     'servicio_solicitado'  => $user->servicio,
                     'n000__referido_por__clonado_' => $user->referido_por ?? '',
+                    //'tiene_hermanos' => (int)($input['tiene_hermanos'] ?? 0),
+                    'tiene_algun_familiar_que_este_o_haya_realizado_algun_proceso_con_nosotros_' => (int)($input['tiene_hermanos'] ?? 0),
                     'nombre_de_familiar_realizando_procesos' => $user->nombre_de_familiar_realizando_procesos ?? '',
                 ]);
             } else {
