@@ -262,6 +262,10 @@
                     familiarInput.value = "";
                 }
             });
+
+            @if (session('error'))
+            document.getElementById('errorModal').classList.remove('hidden');
+            @endif
         });
     </script>
 </x-guest-layout>
