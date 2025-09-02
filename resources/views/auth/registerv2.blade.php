@@ -1,6 +1,6 @@
 <x-guest-layout>
     <!-- Modal de éxito -->
-    <div id="successModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50">
+    <div id="successModal" class="fixed inset-0 bg-[rgba(255,255,255,0.6)] overlay-blur flex items-center justify-center hidden z-50">
         <div class="bg-white p-8 rounded-lg shadow-lg max-w-md text-center">
             <!-- Ícono check -->
             <div class="mx-auto mb-4 h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
@@ -22,6 +22,15 @@
             <div class="animate-pulse text-gray-500">Redirigiendo...</div>
         </div>
     </div>
+
+    <style>
+        .overlay-blur {
+            background: rgba(255, 255, 255, 0.3);   /* semitransparente */
+            backdrop-filter: blur(6px);             /* difuminado */
+            -webkit-backdrop-filter: blur(6px);     /* Safari */
+        }
+
+    </style>
 
     <!-- Contenido -->
     <div class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow">
