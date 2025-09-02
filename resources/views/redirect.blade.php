@@ -8,7 +8,7 @@
         // Send the new URL to the parent window
         window.parent.postMessage({
             url: "{{ $redirect_url }}"
-        }, "https://www.sefaruniversal.com");
+        }, "https://sefaruniversal.com");
     </script>
 </body>
 </html>
