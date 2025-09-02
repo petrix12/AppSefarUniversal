@@ -1,6 +1,18 @@
 <x-guest-layout>
+    <!-- Modal de éxito -->
     <div id="successModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50">
         <div class="bg-white p-8 rounded-lg shadow-lg max-w-md text-center">
+            <!-- Ícono check -->
+            <div class="mx-auto mb-4 h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
+                <svg class="h-10 w-10 text-green-600" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M5 13l4 4L19 7"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"/>
+                </svg>
+            </div>
+
             <h3 class="text-xl font-bold mb-4">¡Registro exitoso!</h3>
             <p class="mb-4">
                 Te has registrado exitosamente.<br>
@@ -11,16 +23,7 @@
         </div>
     </div>
 
-    <script>
-    const form = document.getElementById("registerV2Form");
-        const modal = document.getElementById("successModal");
-
-        form.addEventListener("submit", function(e) {
-            // Mostramos el modal inmediatamente al hacer submit
-            modal.classList.remove("hidden");
-        });
-    </script>
-
+    <!-- Contenido -->
     <div class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow">
         <h2 class="text-center text-xl font-bold mb-6">Inicia tu análisis preliminar</h2>
 
@@ -86,7 +89,7 @@
                 </select>
             </div>
 
-            {{-- Campo oculto por defecto --}}
+            {{-- Campo oculto --}}
             <div class="mt-4 {{ old('tiene_hermanos')==='1' ? '' : 'hidden' }}" id="familiarContainer">
                 <label for="nombre_de_familiar_realizando_procesos" class="block text-sm font-medium">
                     Nombre del familiar que realiza procesos *
@@ -98,23 +101,6 @@
                     class="w-full border rounded p-2"
                     {{ old('tiene_hermanos')==='1' ? 'required' : '' }}>
             </div>
-
-            <script>
-                const selectHermanos = document.getElementById("tiene_hermanos");
-                const familiarContainer = document.getElementById("familiarContainer");
-                const familiarInput = document.getElementById("nombre_de_familiar_realizando_procesos");
-
-                selectHermanos.addEventListener("change", function () {
-                    if (this.value === "1") {
-                        familiarContainer.classList.remove("hidden");
-                        familiarInput.setAttribute("required", "required");
-                    } else {
-                        familiarContainer.classList.add("hidden");
-                        familiarInput.removeAttribute("required");
-                        familiarInput.value = "";
-                    }
-                });
-            </script>
 
             {{-- Checkboxes --}}
             <div class="mt-4">
@@ -135,7 +121,7 @@
                 <button type="submit" style="color: white; border-radius: 12px;" class="py-2 px-4 btn btn-primary cfrSefar">¡Registrarme ahora!</button>
             </div>
 
-            {{-- Campos ocultos requeridos por tu backend --}}
+            {{-- Campos ocultos --}}
             <input type="hidden" name="lastname" id="hiddenLastname" value="{{ old('lastname') }}">
             <input type="hidden" name="numero_de_pasaporte" id="hiddenPasaporte" value="{{ old('numero_de_pasaporte') }}">
             <input type="hidden" name="servicio" value="{{ request('servicio') }}">
@@ -146,4 +132,31 @@
             <input type="hidden" name="vinculo_antepasados" value="{{ old('vinculo_antepasados', 0) }}">
         </form>
     </div>
+
+    <!-- Scripts -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.getElementById("registerV2Form");
+            const modal = document.getElementById("successModal");
+
+            form.addEventListener("submit", function () {
+                modal.classList.remove("hidden");
+            });
+
+            const selectHermanos = document.getElementById("tiene_hermanos");
+            const familiarContainer = document.getElementById("familiarContainer");
+            const familiarInput = document.getElementById("nombre_de_familiar_realizando_procesos");
+
+            selectHermanos.addEventListener("change", function () {
+                if (this.value === "1") {
+                    familiarContainer.classList.remove("hidden");
+                    familiarInput.setAttribute("required", "required");
+                } else {
+                    familiarContainer.classList.add("hidden");
+                    familiarInput.removeAttribute("required");
+                    familiarInput.value = "";
+                }
+            });
+        });
+    </script>
 </x-guest-layout>
