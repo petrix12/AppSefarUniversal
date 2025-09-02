@@ -33,7 +33,7 @@
     </style>
 
     <!-- Contenido -->
-    <div class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow">
+    <div class="max-w-lg mx-auto bg-white p-6 rounded-lg">
         <h2 class="text-center text-xl font-bold mb-6">Inicia tu análisis preliminar</h2>
 
         <form method="POST" action="{{ route('register.v2') }}" id="registerV2Form">
