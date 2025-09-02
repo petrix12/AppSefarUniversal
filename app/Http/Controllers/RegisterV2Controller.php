@@ -126,6 +126,10 @@ class RegisterV2Controller extends Controller
                 $userData['tiene_antepasados_espanoles'] = $input['tiene_antepasados_espanoles'] == '1' ? 'Si' : 'No';
             }
 
+            if (!empty($input['tiene_antepasados_italianos'])) {
+                $userData['tiene_antepasados_italianos'] = $input['tiene_antepasados_italianos'] == '1' ? 'Si' : 'No';
+            }
+
             // -------------------------
             // COMPRAS / FACTURAS
             // -------------------------
@@ -173,6 +177,10 @@ class RegisterV2Controller extends Controller
                 // Solo agregar si no es vacío o null
                 if (!empty($input['tiene_antepasados_espanoles'])) {
                     $contactData['tiene_antepasados_espanoles'] = $input['tiene_antepasados_espanoles'] == '1' ? 'Si' : 'No';
+                }
+
+                if (!empty($input['tiene_antepasados_italianos'])) {
+                    $contactData['tiene_antepasados_italianos'] = $input['tiene_antepasados_italianos'] == '1' ? 'Si' : 'No';
                 }
 
                 $hsId = $hubspotService->createContact($contactData);

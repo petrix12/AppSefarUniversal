@@ -154,6 +154,15 @@
                 </select>
             </div>
 
+            <div class="mt-4 {{ request('servicio')==="Italiana" ? "" : "hidden" }}" >
+                <label for="tiene_antepasados_italianos" class="block text-sm font-medium">¿Sabes si usted tiene uno o más antepasados italianos? *</label>
+                <select id="tiene_antepasados_italianos" name="tiene_antepasados_italianos" class="w-full border rounded p-2" {{ request('servicio')==="Italiana" ? "required" : "" }}>
+                    <option value="">Selecciona</option>
+                    <option value="0" {{ old('tiene_antepasados_italianos')==='0' ? 'selected' : '' }}>No</option>
+                    <option value="1" {{ old('tiene_antepasados_italianos')==='1' ? 'selected' : '' }}>Sí</option>
+                </select>
+            </div>
+
             {{-- Tiene hermanos --}}
             <div class="mt-4">
                 <label for="tiene_hermanos" class="block text-sm font-medium">¿Tiene hermanos realizando procesos en Sefar Universal? *</label>
