@@ -1,23 +1,23 @@
 <x-guest-layout>
     <!-- Modal de éxito -->
-    <div id="successModal" class="fixed inset-0 bg-[rgba(255,255,255,0.6)] overlay-blur flex items-center justify-center hidden z-50">
+    <div id="successModal" class="fixed inset-0 bg-[rgba(255,255,255,0.6)] overlay-blur flex items-center hidden justify-center z-50">
         <div class="bg-white p-8 rounded-lg shadow-lg max-w-md text-center">
-            <div class="mx-auto mb-4 h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
-                <svg class="h-10 w-10 text-green-600" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <div class="flex justify-center items-center">
+                <svg class="spin h-8 w-8 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                 </svg>
             </div>
-            <h3 class="text-xl font-bold mb-4">¡Registro exitoso!</h3>
-            <p class="mb-4">
-                Te has registrado exitosamente.<br>
-                Hemos enviado tu contraseña a tu correo.<br>
-                En breve serás redirigido a nuestra plataforma.
-            </p>
-            <div class="animate-pulse text-gray-500">Redirigiendo...</div>
         </div>
     </div>
 
     <style>
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .spin {
+            animation: spin 1s linear infinite;
+        }
         .overlay-blur {
             background: rgba(255, 255, 255, 0.3);
             backdrop-filter: blur(6px);
