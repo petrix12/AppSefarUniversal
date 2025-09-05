@@ -45,17 +45,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DocumentRequestController;
 use App\Http\Controllers\RegisterV2Controller;
 
-Route::get('/registerv2', function () {
-    if (Auth::check()) {
-        // Si el usuario ya está logueado
-        return view('redirect', [
-            'redirect_url' => 'https://app.sefaruniversal.com/'
-        ]);
-    }
-
-    // Si no está logueado, muestra el formulario normal
-    return view('auth.registerv2');
-})->name('register.v2.form');
+Route::get('/registerv2', [RegisterV2Controller::class, 'index'])->name('register.v2.form');
 
 Route::post('/registerv2', [RegisterV2Controller::class, 'store'])->name('register.v2');
 

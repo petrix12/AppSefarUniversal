@@ -23,6 +23,15 @@ use App\Services\HubspotService;
 
 class RegisterV2Controller extends Controller
 {
+    public function index()
+    {
+        if (Auth::check()) {
+            Auth::logout();
+        }
+
+        return view('auth.registerv2');
+    }
+
     public function store(Request $request, HubspotService $hubspotService)
     {
         $input = $request->all();
@@ -35,7 +44,70 @@ class RegisterV2Controller extends Controller
             // -------------------------
             if ($rol === 'cliente') {
                 // Verificar si ya existe user con el mismo pasaporte
-                $userCheck = User::where('passport', 'LIKE', $passport)->first();
+                $userCheck = User::where('passport', 'LIKE', $passport)
+                    ->orWhere('email', 'LIKE', $input['email'])
+                    ->first();
+
+                if ($userCheck) {
+                    // Actualizar datos del usuario existente
+                    $userCheck->update([
+                        'pay' => 0,
+                    ]);
+
+                    // Crear registro en Compras
+                    $servicio = Servicio::where('id_hubspot', "like", $input['servicio'] . "%")->first();
+                    $compras = Compras::where('id_user', $userCheck->id)->where('pagado', 0)->whereNull('deal_id')->get();
+
+                    if ($userCheck->tiene_hermanos == 1 || $userCheck->tiene_hermanos == "1" || $userCheck->tiene_hermanos == "Si") {
+                        $servicio = Servicio::where('id_hubspot', 'like', $userCheck->servicio . '% - Hermano')->get();
+                    } else {
+                        $servicio = Servicio::where('id_hubspot', "like", $userCheck->servicio . "%")->get();
+                    }
+
+                    $cps = json_decode(json_encode($compras), true);
+
+                    if (count($cps) == 0) {
+                        $hss = json_decode(json_encode($servicio), true);
+
+                        if ($userCheck->servicio == "Recurso de Alzada") {
+                            $monto = $hss[0]["precio"] * $userCheck->cantidad_alzada;
+                        } else {
+                            $monto = $hss[0]["precio"];
+                        }
+
+                        if ($userCheck->servicio == "Española LMD" || $userCheck->servicio == "Italiana") {
+                            $desc = "Pago Fase Inicial: Investigación Preliminar y Preparatoria: " . $hss[0]["nombre"];
+                            if ($userCheck->servicio == "Española LMD") {
+                                if ($userCheck->antepasados == 0) {
+                                    $monto = 99;
+                                }
+                            }
+                            if ($userCheck->servicio == "Italiana") {
+                                if ($userCheck->antepasados == 1) {
+                                    $desc = $desc . " + (Consulta Gratuita)";
+                                }
+                            }
+                        } elseif ($userCheck->servicio == "Gestión Documental") {
+                            $desc = $hss[0]["nombre"];
+                        } elseif ($servicio[0]['tipov'] == 1) {
+                            $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
+                        } else {
+                            $desc = "Análisis genealógico: " . $hss[0]["nombre"];
+                        }
+
+                        Compras::create([
+                            'id_user' => $userCheck->id,
+                            'servicio_hs_id' => $userCheck->servicio,
+                            'descripcion' => $desc,
+                            'pagado' => 0,
+                            'monto' => $monto
+                        ]);
+                    }
+
+                    // Siempre redirigir a app.sefaruniversal.com
+                    return view('redirect', ['redirect_url' => 'https://app.sefaruniversal.com/']);
+                }
+
                 if (!$userCheck) {
                     $agcliente_v = Agcliente::where('IDCliente', trim($passport))
                         ->where('IDPersona', 1)

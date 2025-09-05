@@ -2141,7 +2141,7 @@ class ClienteController extends Controller
             if(Auth::user()->pay==0){
                 return redirect()->route('clientes.pay');
             }
-            if(Auth::user()->pay==2){
+            if(Auth::user()->pay==2 || auth()->user()->cerocerouno == 1){
                 return redirect('/tree');
             }
         }
@@ -2180,7 +2180,7 @@ class ClienteController extends Controller
                 }
             }
 
-            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]); // no borrar esta linea
+            DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2, 'cerocerouno' => 1]); // no borrar esta linea
             auth()->user()->revokePermissionTo('finish.register');
 
             /* Aquí actualizo la base de datos */
