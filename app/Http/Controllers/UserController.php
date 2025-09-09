@@ -2794,25 +2794,23 @@ class UserController extends Controller
             [
                 "role" => "user",
                 "content" => "
-                        INPUT:"
-                        .
-                        $inputJSON
-                        .
-                        "
+                        INPUT:
+
+                        Nombre del tablero: {$mondaydataforAI['tablero']}
+                        Etiquetas: {$mondaydataforAI['etiquetas']}
 
                         REGLAS:
 
-                        1. **otrosProcesos**: 'true' si el tablero es 'Ventas' o las etiquetas incluyen 'no apto', 'apto para otros procesos' o similares.
-                        2. **pericial**: 'true' si alguna etiqueta contiene 'Informe Pericial' o 'Defensa Jurídica' y el tablero contiene 'CNAT', 'SEFARDI ESPAÑA' o 'SEFARDI PORTUGAL'.
-                        3. **genealogiaAprobada**: 'true' si alguna etiqueta contiene 'aprobado' o algo que indique aprobación explícita de genealogía.
-                        4. **genealogia**: 'true' si 'información_genealogia' contiene análisis, árbol, tatarabuelos, validaciones, etc.
+                        1. **otrosProcesos**: 'true' si las etiquetas incluyen 'no apto', 'apto para otros procesos' o similares.
+                        2. **pericial**: 'true' si alguna etiqueta contiene 'Informe Pericial' o 'Defensa Jurídica'.
+                        3. **genealogiaAprobada**: 'true' si alguna etiqueta contiene 'aprobado' o 'aceptado' algo que indique aprobación explícita de genealogía.
+                        4. **genealogia**: 'true' si 'genealogiaAprobada' es true.
                         5. **investigacionProfunda**: 'true' si hay una etiqueta con 'Investigación más profunda'.
                         6. **investigacionInSitu**: 'true' si hay una etiqueta con 'Investigación in situ'.
                         7. **analisisYCorreccion**: Devuelve 'true' si hay evidencia de que se realizó análisis o corrección del árbol genealógico. Para esto, revisa si existen campos como 'Solicitud cliente', 'respuesta de la Solicitud', o si se indica que el 'Arbol fue Cargado' en el campo de Arbol Cargado.
                         NOTA: Solicitud cliente y respuesta de la solicitud son campos que se encuentran en el tablero 'Analisis preliminar'. Si el nombre del tablero no es ese, entonces, analisisYCorreccion será false.
-                        8. **investigacionIntuituPersonae**: Devuelve 'true' si el tablero actual es 'Análisis'. Si el tablero es 'Ventas', entonces 'otrosProcesos' será 'true' y esta fase no se debe marcar como activa.
+                        8. **investigacionIntuituPersonae**: Devuelve 'true' si el tablero actual es Análisis. De resto, es 'false'.
                         9. **inicioInvestigacion**: Devuelve 'true' si el tablero actual es Análisis. De resto, es 'false'.
-                        10. Si el cliente se encuentra en el tablero 'Análisis preliminar', no confundir con 'Analisis', TODO es false.
                         Ejemplo de respuesta esperada:
                         {
                             'otrosProcesos': false,
