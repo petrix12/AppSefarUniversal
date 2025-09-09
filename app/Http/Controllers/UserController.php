@@ -2844,6 +2844,7 @@ class UserController extends Controller
             $resultado = json_decode($json, true);
 
             if (is_array($resultado)) {
+                dd($resultado);
                 return $resultado;
             } else {
                 Log::warning("Respuesta IA no válida: $json");
