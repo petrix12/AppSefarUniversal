@@ -2189,7 +2189,7 @@ class UserController extends Controller
         $cos2      = $user->arraycos;          // datos ya calculados
         $expires  = $user->arraycos_expire;
 
-        if (!(isset($expires) && $expires > now())){
+        //if (!(isset($expires) && $expires > now())){
             if( count($negocios)>0 && $user->pay > 1 && $user->contrato !=0) {
                 foreach($negocios as $negocio) {
 
@@ -2569,9 +2569,12 @@ class UserController extends Controller
             $user->arraycos        = $cosuser;
             $user->arraycos_expire = Carbon::now()->addDays(2);
             $user->save();
+        /*
         } else {
             $cosuser = $cos2;
         }
+
+        */
 
         $comprasConDealNoPagadas = Compras::where('deal_id', '!=', null)
                                 ->where('pagado', 0)
