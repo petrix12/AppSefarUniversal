@@ -2782,8 +2782,8 @@ class UserController extends Controller
         $inputJSON = json_encode([
             'tablero' => $mondaydataforAI['tablero'] ?? '',
             'etiquetas' => $mondaydataforAI['etiquetas'] ?? '',
-            'información_genealogia' => $mondaydataforAI['información_genealogia'] ?? '',
-            'información_ventas' => $mondaydataforAI['información_ventas'] ?? '',
+            //'información_genealogia' => $mondaydataforAI['información_genealogia'] ?? '',
+            //'información_ventas' => $mondaydataforAI['información_ventas'] ?? '',
         ], JSON_UNESCAPED_UNICODE);
 
         $mensaje = [
