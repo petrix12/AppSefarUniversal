@@ -2305,7 +2305,8 @@ class ClienteController extends Controller
                     'enlace' => $link . " " . $link,
                     'estado54' => 'Arbol Incompleto',
                     'texto1' => $servicios,
-                    'texto4' => auth()->user()->hs_id
+                    'texto4' => auth()->user()->hs_id,
+                    'texto_largo88' => auth()->user()->nombre_de_familiar_realizando_procesos
                 ])
             ];
 
@@ -2326,7 +2327,8 @@ class ClienteController extends Controller
                                 'enlace' => $link . " " . $link,
                                 'estado54' => 'Arbol Incompleto',
                                 'texto1' => $servicios,
-                                'texto6' => auth()->user()->hs_id
+                                'texto6' => auth()->user()->hs_id,
+                                'texto_largo2' => auth()->user()->nombre_de_familiar_realizando_procesos
                             ])
                         ];
                     }
