@@ -217,8 +217,6 @@ class UserController extends Controller
         $userpre = User::where('passport', '=', $agcliente->IDCliente)->get();
 
         $user = $userpre[0];
-
-        dd($user);
     }
 
     public function my_status()
@@ -2846,7 +2844,6 @@ class UserController extends Controller
             $resultado = json_decode($json, true);
 
             if (is_array($resultado)) {
-                dd($mensaje, $resultado);
                 return $resultado;
             } else {
                 Log::warning("Respuesta IA no válida: $json");
