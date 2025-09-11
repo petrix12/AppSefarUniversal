@@ -2195,8 +2195,6 @@ class UserController extends Controller
                         $certificadoDescargado = 1;
                     }
 
-                    dd($certificadoDescargado);
-
                     if (
                         isset($negocio->fase_2_pagado) || isset($negocio->fase_2_pagado__teamleader_) ||
                         isset($negocio->fase_3_pagado) || isset($negocio->fase_3_pagado__teamleader_)
