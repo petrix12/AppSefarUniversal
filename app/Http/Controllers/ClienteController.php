@@ -796,7 +796,7 @@ class ClienteController extends Controller
                 foreach($negocios as $negocio) {
                     $certificadoDescargado = 0;
                     if(!isset($negocio->n4__certificado_descargado)){
-                        $certificadoDescargado = 1;
+                        $certificadoDescargado = 2;
                     }
 
                     if (
