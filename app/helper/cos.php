@@ -500,10 +500,9 @@ if (!function_exists("array_cos")) {
                         "nombre_largo" =>
                         "Revisión final del expediente jurídico-documental",
                         "nombre_corto" => "Revisión del expediente",
-                        "promesa" => [
+                        "promesa" =>
                             "Antes de presentar tu caso ante las autoridades, nuestro equipo jurídico realiza una revisión exhaustiva para asegurar que cada documento cumpla con la normativa vigente. Lo ideal sería contar en este paso con la certificación de origen sefardí. Sin embargo, en el caso de que aún no haya sido emitida por la organización responsable de emitirla, necesitamos seguir avanzando<br><br>Para acelerar el proceso y evitar dilaciones innecesarias, procedemos a formalizar sin la certificación de origen sefardí, con la intención de hacer valer tu derecho ante el organismo que debe emitirla y, al recibirla, subsanar el expediente para incluirla. De esta manera podremos lograr tiempos de espera más cortos",
-                            "",
-                        ],
+
                         "textos_adicionales" => [],
                         "ctas" => [
                             ['text' => 'Asistencia documental. En caso que sea factible y más fácil encontrar un documento requerido específico, activa tu servicio de asistencia documental', 'url' => 'https://sefaruniversal.com/asistencia-documental-registro-gratuito/'],
@@ -1270,10 +1269,9 @@ if (!function_exists("array_cos")) {
                         "nombre_largo" =>
                         "Revisión final del expediente jurídico-documental",
                         "nombre_corto" => "Revisión del expediente",
-                        "promesa" => [
+                        "promesa" =>
                             "Antes de presentar tu caso ante las autoridades, nuestro equipo jurídico realiza una revisión exhaustiva para asegurar que cada documento cumpla con la normativa vigente. Lo ideal sería contar en este paso con la certificación de origen sefardí. Sin embargo, en el caso de que aún no haya sido emitida por la organización responsable de emitirla, necesitamos seguir avanzando<br><br>Para acelerar el proceso y evitar dilaciones innecesarias, procedemos a formalizar sin la certificación de origen sefardí, con la intención de hacer valer tu derecho ante el organismo que debe emitirla y, al recibirla, subsanar el expediente para incluirla. De esta manera podremos lograr tiempos de espera más cortos",
-                            "",
-                        ],
+
                         "textos_adicionales" => [],
                         "ctas" => [
                             ['text' => 'Asistencia documental en caso que sea más fácil encontrar un documento requerido, ¡activalo ahora!', 'url' => 'https://sefaruniversal.com/asistencia-documental-registro-gratuito/'],
