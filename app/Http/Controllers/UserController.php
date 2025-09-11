@@ -2191,7 +2191,7 @@ class UserController extends Controller
             if( count($negocios)>0 && $user->pay > 1 && $user->contrato !=0) {
                 foreach($negocios as $negocio) {
                     $certificadoDescargado = 0;
-                    if(isset($negocio->n4__certificado_descargado)){
+                    if(!isset($negocio->n4__certificado_descargado)){
                         $certificadoDescargado = 1;
                     }
 
