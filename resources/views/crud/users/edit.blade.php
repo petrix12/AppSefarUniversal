@@ -254,7 +254,7 @@
                                                     $numeroPaso += $jur;
                                                 }
 
-                                                $numeroPaso += 1;
+                                                $numeroPaso += 1+ $certificadoDescargado;
 
                                                 // Buscar ese paso en array_cos
                                                 foreach ($cos[$co["servicio"]] as $rama) {
