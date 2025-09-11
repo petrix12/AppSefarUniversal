@@ -2192,6 +2192,10 @@ class UserController extends Controller
         //if (!(isset($expires) && $expires > now())){
             if( count($negocios)>0 && $user->pay > 1 && $user->contrato !=0) {
                 foreach($negocios as $negocio) {
+                    $certificadoDescargado = 0;
+                    if(isset($negocio->n4__certificado_descargado)){
+                        $certificadoDescargado = 1;
+                    }
 
                     if (
                         isset($negocio->fase_2_pagado) || isset($negocio->fase_2_pagado__teamleader_) ||
@@ -2216,7 +2220,7 @@ class UserController extends Controller
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
                                 "warning" => null,
-                                "currentStepGen" => 18,
+                                "currentStepGen" => 18 - $certificadoDescargado,
                                 "currentStepJur" => 8
                             ];
                             continue;
@@ -2234,7 +2238,7 @@ class UserController extends Controller
                                     $cosuser[] = [
                                         "servicio" => $negocio->servicio_solicitado,
                                         "warning" => $warning,
-                                        "currentStepGen" => 18,
+                                        "currentStepGen" => 18 - $certificadoDescargado,
                                         "currentStepJur" => 7
                                     ];
                                     continue;
@@ -2257,7 +2261,7 @@ class UserController extends Controller
                                     $cosuser[] = [
                                         "servicio" => $negocio->servicio_solicitado,
                                         "warning" => $warning,
-                                        "currentStepGen" => 18,
+                                        "currentStepGen" => 18 - $certificadoDescargado,
                                         "currentStepJur" => 6
                                     ];
                                     continue;
@@ -2271,7 +2275,7 @@ class UserController extends Controller
                                     $cosuser[] = [
                                         "servicio" => $negocio->servicio_solicitado,
                                         "warning" => $warning,
-                                        "currentStepGen" => 18,
+                                        "currentStepGen" => 18 - $certificadoDescargado,
                                         "currentStepJur" => 5
                                     ];
                                     continue;
@@ -2280,7 +2284,7 @@ class UserController extends Controller
                                 $cosuser[] = [
                                     "servicio" => $negocio->servicio_solicitado,
                                     "warning" => '<b>¡Consulta si requieres subsanación o mejora de expediente!</b><br><br><a style="border:0!important;" href="https://sefaruniversal.com/landing-registro-subsanacion-de-la-nacionalidad-espanola-sefardi/" class="cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">¡Consulta ahora!</a>',
-                                    "currentStepGen" => 18,
+                                    "currentStepGen" => 18 - $certificadoDescargado,
                                     "currentStepJur" => 4
                                 ];
                                 continue;
@@ -2288,7 +2292,7 @@ class UserController extends Controller
                                 $cosuser[] = [
                                     "servicio" => $negocio->servicio_solicitado,
                                     "warning" => null,
-                                    "currentStepGen" => 18,
+                                    "currentStepGen" => 18 - $certificadoDescargado,
                                     "currentStepJur" => 3
                                 ];
                                 continue;
@@ -2299,7 +2303,7 @@ class UserController extends Controller
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
                                 "warning" => null,
-                                "currentStepGen" => 18,
+                                "currentStepGen" => 18 - $certificadoDescargado,
                                 "currentStepJur" => 2
                             ];
                             continue;
@@ -2309,7 +2313,7 @@ class UserController extends Controller
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
                                 "warning" => null,
-                                "currentStepGen" => 18,
+                                "currentStepGen" => 18 - $certificadoDescargado,
                                 "currentStepJur" => 1
                             ];
                             continue;
@@ -2318,7 +2322,7 @@ class UserController extends Controller
                         $cosuser[] = [
                             "servicio" => $negocio->servicio_solicitado,
                             "warning" => null,
-                            "currentStepGen" => 18,
+                            "currentStepGen" => 18 - $certificadoDescargado,
                             "currentStepJur" => 0
                         ];
                         continue;
@@ -2328,7 +2332,7 @@ class UserController extends Controller
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
                                 "warning" => "<b>Realiza el pago para la formalización del expediente</b> y aseguremos juntos el siguiente gran paso hacia tu ciudadanía española.",
-                                "currentStepGen" => 18,
+                                "currentStepGen" => 18 - $certificadoDescargado,
                                 "currentStepJur" => -1
                             ];
                             continue;
