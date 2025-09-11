@@ -2810,7 +2810,7 @@ class UserController extends Controller
                         7. **analisisYCorreccion**: Devuelve 'true' si hay evidencia de que se realizó análisis o corrección del árbol genealógico. Para esto, revisa si existen campos como 'Solicitud cliente', 'respuesta de la Solicitud', o si se indica que el 'Arbol fue Cargado' en el campo de Arbol Cargado.
                         NOTA: Solicitud cliente y respuesta de la solicitud son campos que se encuentran en el tablero 'Analisis preliminar'. Si el nombre del tablero no es ese, entonces, analisisYCorreccion será false.
                         8. **investigacionIntuituPersonae**: Devuelve 'true' si el tablero actual es Análisis. De resto, es 'false'.
-                        9. **inicioInvestigacion**: Devuelve 'true' si el tablero actual es Análisis. De resto, es 'false'.
+                        9. **inicioInvestigacion**: Devuelve 'true' si el tablero actual es 'Análisis' (ojo, no 'Analisis preliminar'). De resto, es 'false'.
                         Ejemplo de respuesta esperada:
                         {
                             'otrosProcesos': false,
