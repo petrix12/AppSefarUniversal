@@ -273,7 +273,7 @@
                                             <p class="pb-4">Estatus actual: <b>No iniciado</b></p>
                                         @endif
 
-                                        <p class="pb-4">{!! $pasoFinal["promesa"] !!}</p>
+                                        <p class="pb-4">{!! json_encode($pasoFinal["promesa"]) !!}</p>
 
                                         @if (isset($co["warning"]))
                                             <div class="alert alert-warning fade show small py-4" role="alert">
