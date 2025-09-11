@@ -2592,7 +2592,7 @@ class UserController extends Controller
                                    ->latest()
                                    ->get();
 
-        $html = view('crud.users.edit', compact('documentRequests', 'comprasConDealNoPagadas', 'comprasSinDealNoPagadas', 'imageUrls', 'cosuser', 'cos', 'servicename', 'negocios', 'usuariosMonday', 'dataMonday', 'mondayData', 'boardId', 'boardName', 'mondayFormBuilder', 'archivos', 'user', 'roles', 'permissions', 'facturas', 'servicios', 'columnasparatabla'))->render();
+        $html = view('crud.users.edit', compact('certificadoDescargado', 'documentRequests', 'comprasConDealNoPagadas', 'comprasSinDealNoPagadas', 'imageUrls', 'cosuser', 'cos', 'servicename', 'negocios', 'usuariosMonday', 'dataMonday', 'mondayData', 'boardId', 'boardName', 'mondayFormBuilder', 'archivos', 'user', 'roles', 'permissions', 'facturas', 'servicios', 'columnasparatabla'))->render();
         return $html;
 
     }
