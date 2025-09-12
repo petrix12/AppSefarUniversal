@@ -52,6 +52,8 @@ Route::post('/registerv2', [RegisterV2Controller::class, 'store'])->name('regist
 // Vista inicio
 Route::get('/', [Controller::class, 'index'])->name('inicio')->middleware(['auth', 'verified']);
 
+Route::get('listProjectsWithProductoField', [ClienteController::class, 'listProjectsWithProductoField'])->name('listProjectsWithProductoField');
+
 // Grupo de rutas CRUD
 Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
     Route::resource('permissions', PermissionController::class)->names('permissions')

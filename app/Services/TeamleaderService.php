@@ -12,6 +12,8 @@ class TeamleaderService
 {
     protected $provider;
 
+    private $customFieldId = '624a9810-53dc-0770-965b-65891c631673';
+
     public function __construct()
     {
         $this->provider = new TeamleaderFocusProvider([
@@ -691,6 +693,169 @@ class TeamleaderService
     public function updateProjectPromise($projectId, $updatedData)
     {
         return Promise\Create::promiseFor($this->updateProject($projectId, $updatedData));
+    }
+
+    public function findCustomFieldIdByLabel(string $label, string $context = 'project', int $pageSize = 100): ?string
+    {
+        try {
+            $accessToken = $this->getAccessToken();
+            $pageNumber = 1;
+
+            do {
+                $payload = [
+                    'filter' => [
+                        'context' => $context,
+                    ],
+                    'page' => [
+                        'size' => $pageSize,
+                        'number' => $pageNumber,
+                    ],
+                    'sort' => [
+                        ['field' => 'label', 'direction' => 'asc']
+                    ]
+                ];
+
+                $response = Http::withToken($accessToken)
+                    ->withHeaders([
+                        'Content-Type' => 'application/json',
+                    ])
+                    ->post('https://api.focus.teamleader.eu/customFieldDefinitions.list', $payload);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $customFields = $data['data'] ?? [];
+
+                    dd($data);
+
+                    // Buscar el campo con el label exacto
+                    foreach ($customFields as $field) {
+                        if (strtolower($field['label']) === strtolower($label)) {
+                            return $field['id'];
+                        }
+                    }
+
+                    dd($customFields);
+
+                    // Verificar si hay más páginas
+                    $hasMorePages = !empty($data['meta']['page']['next']) || ($data['meta']['page']['total'] > ($pageNumber * $pageSize));
+                    $pageNumber++;
+                } else {
+                    $error = $response->json();
+                    $errorMessage = $error['errors'][0]['title'] ?? 'Error desconocido';
+                    throw new \Exception('Error al listar campos personalizados: ' . $errorMessage);
+                }
+            } while ($hasMorePages);
+
+            // No se encontró el campo
+            return null;
+        } catch (\Exception $e) {
+            throw new \Exception('Error al buscar el ID del campo personalizado: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Listar todos los proyectos de Teamleader con todos sus detalles, incluyendo solo el campo personalizado "PRODUCTO".
+     *
+     * @return array Lista de proyectos con detalles y solo el campo personalizado "PRODUCTO"
+     * @throws \Exception
+     */
+    public function listAllProjectsWithDetails(): array
+    {
+        try {
+            // Buscar el ID del campo personalizado "PRODUCTO"
+            $customFieldId = "fcd48891-20f6-049a-a05f-f78a6f951b4d";
+
+            if (is_null($customFieldId)) {
+                throw new \Exception('No se encontró el campo personalizado con el nombre "PRODUCTO" para proyectos.');
+            }
+
+            $accessToken = $this->getAccessToken();
+            $allProjects = [];
+            $pageNumber = 1;
+            $pageSize = 100; // Tamaño máximo por página según la API
+
+            // Obtener todos los proyectos con paginación
+            do {
+                $payload = [
+                    'page' => [
+                        'size' => $pageSize,
+                        'number' => $pageNumber,
+                    ],
+                ];
+
+                $response = Http::withToken($accessToken)
+                    ->withHeaders([
+                        'Content-Type' => 'application/json',
+                    ])
+                    ->post('https://api.focus.teamleader.eu/projects.list', $payload);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $projects = $data['data'] ?? [];
+                    $allProjects = array_merge($allProjects, $projects);
+
+                    dd($data['meta']['page']);
+
+                    // Verificar si hay más páginas
+                    $hasMorePages = false;
+                    $pageNumber++;
+                } else {
+                    $error = $response->json();
+                    $errorMessage = $error['errors'][0]['title'] ?? 'Error desconocido';
+                    throw new \Exception('Error al listar proyectos: ' . $errorMessage);
+                }
+            } while ($hasMorePages);
+
+            /*
+
+            // Obtener detalles completos de cada proyecto en paralelo
+            $detailPromises = [];
+            foreach ($allProjects as $project) {
+                $detailPromises['project_' . $project['id']] = $this->getProjectDetailsPromise($project['id']);
+            }
+
+            $details = $this->executeConcurrent($detailPromises);
+
+            // Combinar proyectos con sus detalles, filtrando solo el campo personalizado "PRODUCTO"
+            $detailedProjects = [];
+            foreach ($allProjects as $project) {
+                $projectId = $project['id'];
+                $detailKey = 'project_' . $projectId;
+                if (isset($details[$detailKey])) {
+                    // Filtrar los custom_fields para incluir solo "PRODUCTO"
+                    $filteredCustomFields = [];
+                    if (!empty($details[$detailKey]['custom_fields'])) {
+                        foreach ($details[$detailKey]['custom_fields'] as $field) {
+                            if ($field['id'] === $customFieldId) {
+                                $filteredCustomFields[] = $field;
+                                break;
+                            }
+                        }
+                    }
+                    // Reemplazar los custom_fields originales con el filtrado
+                    $details[$detailKey]['custom_fields'] = $filteredCustomFields;
+                    $detailedProjects[] = array_merge($project, $details[$detailKey]);
+                } else {
+                    // Si no hay detalles, incluir el proyecto sin custom_fields
+                    $project['custom_fields'] = [];
+                    $detailedProjects[] = $project;
+                }
+            }
+
+            return $detailedProjects;*/
+        } catch (\Exception $e) {
+            throw new \Exception('Error al obtener todos los proyectos con detalles: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Versión con promesa de listAllProjectsWithDetails
+     *
+     * @return \GuzzleHttp\Promise\PromiseInterface
+     */
+    public function listAllProjectsWithDetailsPromise()
+    {
+        return Promise\Create::promiseFor($this->listAllProjectsWithDetails());
     }
 
 }
