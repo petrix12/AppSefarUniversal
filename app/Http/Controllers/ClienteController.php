@@ -1544,7 +1544,7 @@ class ClienteController extends Controller
                         INPUT:
 
                         Nombre del tablero: {$mondaydataforAI['tablero']}
-                        Etiquetas: {$mondaydataforAI['etiquetas']}
+                        Etiquetas: " . ($mondaydataforAI['etiquetas'] ?? 'NO TIENE ETIQUETAS TODAVIA'). "
 
                         REGLAS:
 
