@@ -1208,6 +1208,16 @@ class ClienteController extends Controller
             $cosuser = $cos2;
         }
 
+        $comprasConDealNoPagadas = Compras::where('deal_id', '!=', null)
+            ->where('pagado', 0)
+            ->where('id_user', $user->id)
+            ->get();
+
+        $comprasSinDealNoPagadas = Compras::whereNull('deal_id')
+                                ->where('pagado', 0)
+                                ->where('id_user', $user->id)
+                                ->get();
+
         $documentRequests = DocumentRequest::where('user_id', $user->id)
                                    ->latest()
                                    ->get();
