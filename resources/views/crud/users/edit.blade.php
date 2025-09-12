@@ -254,7 +254,7 @@
                                                     $numeroPaso += $jur;
                                                 }
 
-                                                $numeroPaso += 1+ $certificadoDescargado;
+                                                $numeroPaso += 1+ $co["certificadoDescargado"];
 
                                                 // Buscar ese paso en array_cos
                                                 foreach ($cos[$co["servicio"]] as $rama) {
@@ -365,7 +365,7 @@
                                                 <div class="progress-line" style="width: {{ $co['progressPercentageJur'] }}%;"></div>
 
                                                 @foreach ($cos[$co['servicio']]["juridico"] as $step)
-                                                    <div class="progress-step {{ $co['currentStepGen'] + $certificadoDescargado + $co['currentStepJur']+1 >= $step['paso'] ? 'active' : '' }}" data-step="{{ $step['paso'] }}">
+                                                    <div class="progress-step {{ $co['currentStepGen'] + $co["certificadoDescargado"] + $co['currentStepJur']+1 >= $step['paso'] ? 'active' : '' }}" data-step="{{ $step['paso'] }}">
                                                         <i class="fas fa-check-circle"></i>
                                                         <span class="step-label">{{ $step['nombre_corto'] }}</span>
                                                     </div>

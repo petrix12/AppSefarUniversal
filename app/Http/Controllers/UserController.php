@@ -2218,6 +2218,7 @@ class UserController extends Controller
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
                                 "warning" => null,
+                                "certificadoDescargado" => $certificadoDescargado,
                                 "currentStepGen" => 18 - $certificadoDescargado,
                                 "currentStepJur" => 8
                             ];
@@ -2236,6 +2237,7 @@ class UserController extends Controller
                                     $cosuser[] = [
                                         "servicio" => $negocio->servicio_solicitado,
                                         "warning" => $warning,
+                                        "certificadoDescargado" => $certificadoDescargado,
                                         "currentStepGen" => 18 - $certificadoDescargado,
                                         "currentStepJur" => 7
                                     ];
@@ -2259,6 +2261,7 @@ class UserController extends Controller
                                     $cosuser[] = [
                                         "servicio" => $negocio->servicio_solicitado,
                                         "warning" => $warning,
+                                        "certificadoDescargado" => $certificadoDescargado,
                                         "currentStepGen" => 18 - $certificadoDescargado,
                                         "currentStepJur" => 6
                                     ];
@@ -2273,6 +2276,7 @@ class UserController extends Controller
                                     $cosuser[] = [
                                         "servicio" => $negocio->servicio_solicitado,
                                         "warning" => $warning,
+                                        "certificadoDescargado" => $certificadoDescargado,
                                         "currentStepGen" => 18 - $certificadoDescargado,
                                         "currentStepJur" => 5
                                     ];
@@ -2281,6 +2285,7 @@ class UserController extends Controller
                             } else if ($fechaFormalizacionMas1Meses->greaterThan($hoy)){
                                 $cosuser[] = [
                                     "servicio" => $negocio->servicio_solicitado,
+                                    "certificadoDescargado" => $certificadoDescargado,
                                     "warning" => '<b>¡Consulta si requieres subsanación o mejora de expediente!</b><br><br><a style="border:0!important;" href="https://sefaruniversal.com/landing-registro-subsanacion-de-la-nacionalidad-espanola-sefardi/" class="cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">¡Consulta ahora!</a>',
                                     "currentStepGen" => 18 - $certificadoDescargado,
                                     "currentStepJur" => 4
@@ -2290,6 +2295,7 @@ class UserController extends Controller
                                 $cosuser[] = [
                                     "servicio" => $negocio->servicio_solicitado,
                                     "warning" => null,
+                                    "certificadoDescargado" => $certificadoDescargado,
                                     "currentStepGen" => 18 - $certificadoDescargado,
                                     "currentStepJur" => 3
                                 ];
@@ -2301,6 +2307,7 @@ class UserController extends Controller
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
                                 "warning" => null,
+                                "certificadoDescargado" => $certificadoDescargado,
                                 "currentStepGen" => 18 - $certificadoDescargado,
                                 "currentStepJur" => 2
                             ];
@@ -2311,6 +2318,7 @@ class UserController extends Controller
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
                                 "warning" => null,
+                                "certificadoDescargado" => $certificadoDescargado,
                                 "currentStepGen" => 18 - $certificadoDescargado,
                                 "currentStepJur" => 1
                             ];
@@ -2320,6 +2328,7 @@ class UserController extends Controller
                         $cosuser[] = [
                             "servicio" => $negocio->servicio_solicitado,
                             "warning" => null,
+                            "certificadoDescargado" => $certificadoDescargado,
                             "currentStepGen" => 18 - $certificadoDescargado,
                             "currentStepJur" => 0
                         ];
@@ -2329,6 +2338,7 @@ class UserController extends Controller
                         if (isset($negocio->fase_3_preestab) || isset($negocio->fase_3_preestab) || isset($negocio->fase_3_preestab)) {
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
+                                "certificadoDescargado" => $certificadoDescargado,
                                 "warning" => "<b>Realiza el pago para la formalización del expediente</b> y aseguremos juntos el siguiente gran paso hacia tu ciudadanía española.",
                                 "currentStepGen" => 18 - $certificadoDescargado,
                                 "currentStepJur" => -1
@@ -2340,6 +2350,7 @@ class UserController extends Controller
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
                                 "warning" => null,
+                                "certificadoDescargado" => $certificadoDescargado,
                                 "currentStepGen" => 18,
                                 "currentStepJur" => -1
                             ];
@@ -2354,6 +2365,7 @@ class UserController extends Controller
                                 $cosuser[] = [
                                     "servicio" => $negocio->servicio_solicitado,
                                     "warning" => null,
+                                    "certificadoDescargado" => $certificadoDescargado,
                                     "currentStepGen" => 17,
                                     "currentStepJur" => -1
                                 ];
@@ -2362,6 +2374,7 @@ class UserController extends Controller
                                 $cosuser[] = [
                                     "servicio" => $negocio->servicio_solicitado,
                                     "warning" => null,
+                                    "certificadoDescargado" => $certificadoDescargado,
                                     "currentStepGen" => 16,
                                     "currentStepJur" => -1
                                 ];
@@ -2372,6 +2385,7 @@ class UserController extends Controller
                         $cosuser[] = [
                             "servicio" => $negocio->servicio_solicitado,
                             "warning" => null,
+                            "certificadoDescargado" => $certificadoDescargado,
                             "currentStepGen" => 15,
                             "currentStepJur" => -1
                         ];
@@ -2380,6 +2394,7 @@ class UserController extends Controller
                         if (isset($negocio->fase_2_preestab) || isset($negocio->fase_2_preestab) || isset($negocio->fase_2_preestab)){
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
+                                "certificadoDescargado" => $certificadoDescargado,
                                 "warning" => "Para continuar con el proceso y proceder con el envío del informe y las pruebas correspondientes a la institución mencionada, <b>es necesario que realices el siguiente pago.</b>",
                                 "currentStepGen" => 15,
                                 "currentStepJur" => -1
@@ -2390,6 +2405,7 @@ class UserController extends Controller
                         if ($resultadoIA['otrosProcesos']) {
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
+                                "certificadoDescargado" => $certificadoDescargado,
                                 "warning" => "<b>Tu caso ha sido derivado a otro proceso.</b> Recibirás seguimiento personalizado.",
                                 "currentStepGen" => 11,
                                 "currentStepJur" => -1
@@ -2417,6 +2433,7 @@ class UserController extends Controller
                                 $cosuser[] = [
                                     "servicio" => $negocio->servicio_solicitado,
                                     "warning" => null,
+                                    "certificadoDescargado" => $certificadoDescargado,
                                     "currentStepGen" => 10,
                                     "currentStepJur" => -1
                                 ];
@@ -2427,6 +2444,7 @@ class UserController extends Controller
                                 $cosuser[] = [
                                     "servicio" => $negocio->servicio_solicitado,
                                     "warning" => null,
+                                    "certificadoDescargado" => $certificadoDescargado,
                                     "currentStepGen" => 9,
                                     "currentStepJur" => -1
                                 ];
@@ -2436,6 +2454,7 @@ class UserController extends Controller
                             if ($documentsEnEsperaCliente>0) {
                                 $cosuser[] = [
                                     "servicio" => $negocio->servicio_solicitado,
+                                    "certificadoDescargado" => $certificadoDescargado,
                                     "warning" => "Tienes solicitudes de documentos pendientes. Para resolverlas, dirígete a la pestaña de 'Mis solicitudes de documentos'",
                                     "currentStepGen" => 8,
                                     "currentStepJur" => -1
@@ -2447,6 +2466,7 @@ class UserController extends Controller
                         $cosuser[] = [
                             "servicio" => $negocio->servicio_solicitado,
                             "warning" => null,
+                            "certificadoDescargado" => $certificadoDescargado,
                             "currentStepGen" => 8,
                             "currentStepJur" => -1
                         ];
@@ -2456,6 +2476,7 @@ class UserController extends Controller
                         if (isset($negocio->fase_1_preestab) || isset($negocio->fase_1_preestab) || isset($negocio->fase_1_preestab)){
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
+                                "certificadoDescargado" => $certificadoDescargado,
                                 "warning" => "Para continuar con el proceso y proceder con la redacción del informe, <b>es necesario que realices el siguiente pago.</b>",
                                 "currentStepGen" => 7,
                                 "currentStepJur" => -1
@@ -2467,6 +2488,7 @@ class UserController extends Controller
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
                                 "warning" => null,
+                                "certificadoDescargado" => $certificadoDescargado,
                                 "currentStepGen" => 5,
                                 "currentStepJur" => -1
                             ];
@@ -2477,6 +2499,7 @@ class UserController extends Controller
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
                                 "warning" => null,
+                                "certificadoDescargado" => $certificadoDescargado,
                                 "currentStepGen" => 4,
                                 "currentStepJur" => -1
                             ];
@@ -2487,6 +2510,7 @@ class UserController extends Controller
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
                                 "warning" => null,
+                                "certificadoDescargado" => $certificadoDescargado,
                                 "currentStepGen" => 3,
                                 "currentStepJur" => -1
                             ];
@@ -2497,6 +2521,7 @@ class UserController extends Controller
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
                                 "warning" => null,
+                                "certificadoDescargado" => $certificadoDescargado,
                                 "currentStepGen" => 2,
                                 "currentStepJur" => -1
                             ];
@@ -2507,6 +2532,7 @@ class UserController extends Controller
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
                                 "warning" => null,
+                                "certificadoDescargado" => $certificadoDescargado,
                                 "currentStepGen" => 1,
                                 "currentStepJur" => -1,
                                 "subproceso" => 1
@@ -2518,9 +2544,10 @@ class UserController extends Controller
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
                                 "warning" => null,
+                                "certificadoDescargado" => $certificadoDescargado,
                                 "currentStepGen" => 1,
                                 "currentStepJur" => -1,
-                                "subproceso" => 0
+                                "subproceso" => 0,
                             ];
                             continue;
                         }
@@ -2528,9 +2555,10 @@ class UserController extends Controller
                         $cosuser[] = [
                             "servicio" => $negocio->servicio_solicitado,
                             "warning" => null,
+                            "certificadoDescargado" => $certificadoDescargado,
                             "currentStepGen" => 1,
                             "currentStepJur" => -1,
-                            "subproceso" => -1
+                            "subproceso" => -1,
                         ];
                         continue;
                     }
@@ -2550,6 +2578,7 @@ class UserController extends Controller
                     $cosuser[0]["currentStepGen"] = 0;
                     $cosuser[0]["currentStepJur"] = -1;
                 }
+                $cosuser[0]["certificadoDescargado"] = 0;
             }
 
             foreach ($cosuser as &$co) {
@@ -2592,7 +2621,7 @@ class UserController extends Controller
                                    ->latest()
                                    ->get();
 
-        $html = view('crud.users.edit', compact('certificadoDescargado', 'documentRequests', 'comprasConDealNoPagadas', 'comprasSinDealNoPagadas', 'imageUrls', 'cosuser', 'cos', 'servicename', 'negocios', 'usuariosMonday', 'dataMonday', 'mondayData', 'boardId', 'boardName', 'mondayFormBuilder', 'archivos', 'user', 'roles', 'permissions', 'facturas', 'servicios', 'columnasparatabla'))->render();
+        $html = view('crud.users.edit', compact('documentRequests', 'comprasConDealNoPagadas', 'comprasSinDealNoPagadas', 'imageUrls', 'cosuser', 'cos', 'servicename', 'negocios', 'usuariosMonday', 'dataMonday', 'mondayData', 'boardId', 'boardName', 'mondayFormBuilder', 'archivos', 'user', 'roles', 'permissions', 'facturas', 'servicios', 'columnasparatabla'))->render();
         return $html;
 
     }
