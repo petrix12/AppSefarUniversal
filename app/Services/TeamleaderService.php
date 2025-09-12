@@ -296,6 +296,67 @@ class TeamleaderService
         }
     }
 
+    private $customFieldDefinitionsCache = [];
+
+    public function getCustomFieldDefinitions(string $context = 'project'): array
+    {
+        if (!empty($this->customFieldDefinitionsCache[$context])) {
+            return $this->customFieldDefinitionsCache[$context];
+        }
+
+        $accessToken = $this->getAccessToken();
+        $pageNumber = 1;
+        $pageSize = 100;
+        $allFields = [];
+
+        do {
+            $payload = [
+                'filter' => [
+                    'context' => $context,
+                ],
+                'page' => [
+                    'size' => $pageSize,
+                    'number' => $pageNumber,
+                ],
+            ];
+
+            $response = Http::withToken($accessToken)
+                ->withHeaders(['Content-Type' => 'application/json'])
+                ->post('https://api.focus.teamleader.eu/customFieldDefinitions.list', $payload);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $fields = $data['data'] ?? [];
+                $allFields = array_merge($allFields, $fields);
+
+                $total = $data['meta']['page']['total'] ?? 0;
+                $hasMorePages = $pageNumber * $pageSize < $total;
+                $pageNumber++;
+            } else {
+                $error = $response->json();
+                $errorMessage = $error['errors'][0]['title'] ?? 'Error desconocido';
+                throw new \Exception("Error al obtener definiciones de campos: " . $errorMessage);
+            }
+        } while ($hasMorePages);
+
+        // cachearlo
+        $this->customFieldDefinitionsCache[$context] = $allFields;
+
+        return $allFields;
+    }
+
+    public function getCustomFieldLabel(string $id, string $context = 'project'): ?string
+    {
+        $fields = $this->getCustomFieldDefinitions($context);
+
+        foreach ($fields as $field) {
+            if ($field['id'] === $id) {
+                return $field['label'];
+            }
+        }
+
+        return null;
+    }
 
     public function getProjectDetails(string $projectId)
     {
@@ -857,5 +918,64 @@ class TeamleaderService
     {
         return Promise\Create::promiseFor($this->listAllProjectsWithDetails());
     }
+
+    public function listProjectsPage(int $pageNumber, int $pageSize = 100): array
+    {
+        try {
+            $accessToken = $this->getAccessToken();
+            $customFieldId = "fcd48891-20f6-049a-a05f-f78a6f951b4d"; // ID del campo PRODUCTO
+
+            $payload = [
+                'page' => [
+                    'size' => $pageSize,
+                    'number' => $pageNumber,
+                ],
+            ];
+
+            $response = Http::withToken($accessToken)
+                ->withHeaders(['Content-Type' => 'application/json'])
+                ->post('https://api.focus.teamleader.eu/projects.list', $payload);
+
+            if (!$response->successful()) {
+                $error = $response->json();
+                $errorMessage = $error['errors'][0]['title'] ?? 'Error desconocido';
+                throw new \Exception('Error al listar proyectos: ' . $errorMessage);
+            }
+
+            $data = $response->json();
+            $projects = $data['data'] ?? [];
+
+            // --- Obtener detalles de cada proyecto ---
+            $enrichedProjects = [];
+            foreach ($projects as $project) {
+                $details = $this->getProjectDetails($project['id']);
+                $filteredCustomFields = [];
+
+                if (!empty($details['custom_fields'])) {
+                    foreach ($details['custom_fields'] as $field) {
+                        if ($field['definition']['id'] === $customFieldId) {
+                            $filteredCustomFields[] = [
+                                'id' => $field['definition']['id'],
+                                'label' => $this->getCustomFieldLabel($field['definition']['id'], 'project'),
+                                'value' => $field['value'],
+                            ];
+                        }
+                    }
+                }
+
+                $project['custom_fields'] = $filteredCustomFields;
+
+                $enrichedProjects[] = $project;
+            }
+
+            // devolver misma estructura que antes, pero con proyectos enriquecidos
+            $data['data'] = $enrichedProjects;
+            return $data;
+
+        } catch (\Exception $e) {
+            throw new \Exception("Error en {$e->getFile()} línea {$e->getLine()}: " . $e->getMessage());
+        }
+    }
+
 
 }

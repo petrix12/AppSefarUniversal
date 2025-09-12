@@ -1602,20 +1602,9 @@ class ClienteController extends Controller
 
     public function listProjectsWithProductoField()
     {
-        try {
-            // Llamar a la función del servicio para obtener proyectos con el campo "PRODUCTO"
-            $projects = $this->teamleaderService->listAllProjectsWithDetails();
+        $projects = $this->teamleaderService->listAllProjectsWithDetails();
 
-            // Devolver los proyectos a una vista
-            dd($projects);
-
-        } catch (\Exception $e) {
-            // Registrar el error
-            Log::error('Error al obtener proyectos con campo PRODUCTO: ' . $e->getMessage());
-
-            // Mostrar un mensaje de error en la vista
-            return back()->withErrors(['msg' => 'Error al obtener los proyectos: ' . $e->getMessage()]);
-        }
+        dd($projects);
     }
 
     public function savePersonalData(Request $request){
