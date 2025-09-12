@@ -2188,9 +2188,6 @@ class UserController extends Controller
         if( count($negocios)>0 && $user->pay > 1 && $user->contrato !=0) {
             foreach($negocios as $negocio) {
                 $certificadoDescargado = 0;
-                if(!isset($negocio->n4__certificado_descargado)){
-                    $certificadoDescargado = 2;
-                }
 
                 if (
                     isset($negocio->fase_2_pagado) || isset($negocio->fase_2_pagado__teamleader_) ||
@@ -2211,6 +2208,9 @@ class UserController extends Controller
                 }
 
                 if(isset($negocio->fase_3_pagado) || isset($negocio->fase_3_pagado__teamleader_)) {
+                    if(!isset($negocio->n4__certificado_descargado)){
+                        $certificadoDescargado = 2;
+                    }
                     if (isset($negocio->nacionalidad_concedida)){
                         $cosuser[] = [
                             "servicio" => $negocio->servicio_solicitado,
@@ -2333,6 +2333,9 @@ class UserController extends Controller
 
                 } else if ( isset($negocio->fase_2_pagado) || isset($negocio->fase_2_pagado__teamleader_) ) {
                     if (isset($negocio->fase_3_preestab) || isset($negocio->fase_3_preestab) || isset($negocio->fase_3_preestab)) {
+                        if(!isset($negocio->n4__certificado_descargado)){
+                            $certificadoDescargado = 2;
+                        }
                         $cosuser[] = [
                             "servicio" => $negocio->servicio_solicitado,
                             "certificadoDescargado" => $certificadoDescargado,
