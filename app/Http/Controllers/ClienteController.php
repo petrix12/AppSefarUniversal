@@ -1419,15 +1419,18 @@ class ClienteController extends Controller
                 if ($hsField === 'servicio_solicitado2') {
                     if (!is_null($hsValue)) {
                         // Guardamos SIEMPRE en DB desde HubSpot
-                        $dbUpdates[$hsField] = $hsValue;
+                        $dbUpdates['servicio_solicitado2'] = $hsValue;
+                        $dbUpdates['servicio_solicitado']  = $hsValue; // ✅ Mantén sincronizado también servicio_solicitado
 
-                        // Opcional: si quieres forzar que TL también se actualice con lo de HS
+                        // Opcional: actualiza también en HubSpot el campo "servicio_solicitado"
+                        $hsUpdates['servicio_solicitado'] = $hsValue;
+
+                        // Y en Teamleader
                         $tlCustomFields[] = [
                             'id' => $tlFieldId,
                             'value' => $hsValue
                         ];
                     }
-                    // Saltamos al siguiente campo
                     continue;
                 }
 
