@@ -1487,6 +1487,7 @@ class ClienteController extends Controller
         }
 
         // Actualizar DB
+
         foreach ($updatesToDBAll as $entry) {
             $negocio = Negocio::firstOrNew([
                 'hubspot_id' => $entry['hubspot_id']
