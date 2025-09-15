@@ -1415,6 +1415,23 @@ class ClienteController extends Controller
                 $tlField = collect($existingFields)->firstWhere('definition.id', $tlFieldId);
                 $tlValue = $tlField['value'] ?? null;
 
+                // 🚨 Excepción: HubSpot manda en servicio_solicitado
+                if ($hsField === 'servicio_solicitado') {
+                    if (!is_null($hsValue)) {
+                        // Guardamos SIEMPRE en DB desde HubSpot
+                        $dbUpdates[$hsField] = $hsValue;
+
+                        // Opcional: si quieres forzar que TL también se actualice con lo de HS
+                        $tlCustomFields[] = [
+                            'id' => $tlFieldId,
+                            'value' => $hsValue
+                        ];
+                    }
+                    // Saltamos al siguiente campo
+                    continue;
+                }
+
+                // --- Lógica normal para los demás campos ---
                 $finalValue = null;
                 if ($hsValue && (!$tlValue || $hubspotLastMod > $teamleaderLastMod)) {
                     $finalValue = $hsValue;
