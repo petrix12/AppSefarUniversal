@@ -36,9 +36,7 @@
                 <tr>
                     <th>#</th>
                     <th>Usuario</th>
-                    <th>Email usuario</th>
                     <th>Cliente</th>
-                    <th>Email cliente</th>
                     <th>Fecha de visita</th>
                 </tr>
             </thead>
@@ -118,10 +116,8 @@
             const tr = `
                 <tr>
                     <td>${index + 1}</td>
-                    <td>${v.user?.nombres || v.user?.name || "Usuario desconocido"}</td>
-                    <td>${v.user?.email || "-"}</td>
-                    <td>${v.cliente?.nombres || v.cliente?.name || "Cliente desconocido"}</td>
-                    <td>${v.cliente?.email || "-"}</td>
+                    <td>${v.user?.nombres + " " + v.user?.apellidos || "Usuario desconocido"}</td>
+                    <td>${v.cliente?.nombres + " " + v.cliente?.apellidos || v.cliente?.name || "Cliente desconocido"}</td>
                     <td>${new Date(v.fecha_visita).toLocaleString()}</td>
                 </tr>
             `;
@@ -135,6 +131,6 @@
     });
 
     // Render inicial
-    renderizar("mes");
+    renderizar("todo");
 </script>
 @stop
