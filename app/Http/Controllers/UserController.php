@@ -2616,6 +2616,44 @@ class UserController extends Controller
                                    ->latest()
                                    ->get();
 
+        $cosuserFinal = [];
+        $duplicadosDetectados = false;
+
+        foreach ($cosuser as $item) {
+            $servicio = $item['servicio'];
+
+            if (!isset($cosuserFinal[$servicio])) {
+                $cosuserFinal[$servicio] = $item;
+            } else {
+                $duplicadosDetectados = true;
+
+                // Comparar con el ya guardado
+                $existente = $cosuserFinal[$servicio];
+
+                // Se queda con el que tenga los valores más altos de currentStepGen y currentStepJur
+                if (
+                    $item['currentStepGen'] > $existente['currentStepGen'] ||
+                    $item['currentStepJur'] > $existente['currentStepJur']
+                ) {
+                    $cosuserFinal[$servicio] = $item;
+                }
+            }
+        }
+
+        // Reemplazar $cosuser con la versión final
+        $cosuser = array_values($cosuserFinal);
+
+        if ($duplicadosDetectados) {
+            try {
+                \Mail::raw("REVISA LOS NEGOCIOS DEL CLIENTE ID {$user->id}", function ($message) use ($user) {
+                    $message->to('sistemasccs@sefarvzla.com') // <-- cámbialo al real
+                            ->subject("Duplicados detectados en COSUSER - Cliente ID {$user->id}");
+                });
+            } catch (\Exception $e) {
+                \Log::error("Error enviando correo a sistemasccs: " . $e->getMessage());
+            }
+        }
+
         CosVisit::create([
             'user_id' => auth()->id(),
             'fecha_visita' => now(),
