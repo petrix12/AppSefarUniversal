@@ -44,6 +44,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DocumentRequestController;
 use App\Http\Controllers\RegisterV2Controller;
+use App\Http\Controllers\CosVisitController;
 
 Route::get('/registerv2', [RegisterV2Controller::class, 'index'])->name('register.v2.form');
 
@@ -202,6 +203,8 @@ Route::get('/my_status', [UserController::class, 'my_status'])->name('my_status'
 
 //panel Pasaportes erroneos
 Route::get('/fixpassport', [UserController::class, 'fixpassport'])->name('fixpassport')->middleware('can:administrador');
+
+Route::get('/cosvisitas', [CosVisitController::class, 'index'])->name('cosvisitas')->middleware('can:cosvisitas.index');
 
 //panel Pasaportes erroneos
 Route::post('/fixpassport', [UserController::class, 'fixpassportprocess'])->name('fixpassportprocess');

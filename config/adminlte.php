@@ -309,6 +309,14 @@ return [
             'url'           => 'fixpassport',
             'can'           => 'administrador',
         ],
+        /* *** Visitas a COS *** */
+        [
+            'text'          => 'Visitas a COS',
+            'icon'          => 'fa-fw fas fa-users',
+            'icon_color'    => 'white',
+            'url'           => 'cosvisitas',
+            'can'           => 'cosvisitas.index',
+        ],
 
         [
             'text'          => 'Prompt Treena',

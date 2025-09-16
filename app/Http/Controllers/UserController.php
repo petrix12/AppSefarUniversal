@@ -7,6 +7,7 @@ use App\Models\Servicio;
 use App\Models\HsReferido;
 use App\Models\Compras;
 use App\Models\Factura;
+use App\Models\CosVisit;
 use App\Models\Negocio;
 use Illuminate\Support\Facades\Http;
 use App\Models\File;
@@ -2614,6 +2615,12 @@ class UserController extends Controller
         $documentRequests = DocumentRequest::where('user_id', $user->id)
                                    ->latest()
                                    ->get();
+
+        CosVisit::create([
+            'user_id' => auth()->id(),
+            'fecha_visita' => now(),
+            'cliente_id' => $user->id
+        ]);
 
         $html = view('crud.users.edit', compact('documentRequests', 'comprasConDealNoPagadas', 'comprasSinDealNoPagadas', 'imageUrls', 'cosuser', 'cos', 'servicename', 'negocios', 'usuariosMonday', 'dataMonday', 'mondayData', 'boardId', 'boardName', 'mondayFormBuilder', 'archivos', 'user', 'roles', 'permissions', 'facturas', 'servicios', 'columnasparatabla'))->render();
         return $html;
