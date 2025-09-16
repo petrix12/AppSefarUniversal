@@ -19,7 +19,7 @@ class CosVisitController extends Controller
             return response()->json($visitas);
         }
 
-        return view('cos_visitas.index', compact('visitas'));
+        return view('cosvisitas.index', compact('visitas'));
     }
 
 }
