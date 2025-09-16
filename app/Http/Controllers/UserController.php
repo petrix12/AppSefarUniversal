@@ -2659,9 +2659,13 @@ class UserController extends Controller
         }
 
         foreach ($cosuser as $item) {
-            $servicio = $item['servicio'];
+            // Normalizar servicio del usuario
+            $servicio = trim(mb_strtolower($item['servicio']));
 
-            if (array_key_exists($servicio, $cos)) {
+            // Normalizar las llaves del array $cos
+            $cosKeys = array_map(fn($k) => mb_strtolower($k), array_keys($cos));
+
+            if (in_array($servicio, $cosKeys)) {
                 $user->cosready = 1;
                 $user->save();
                 break; // basta con que uno coincida
