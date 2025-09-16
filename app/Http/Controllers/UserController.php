@@ -2616,6 +2616,8 @@ class UserController extends Controller
                                    ->latest()
                                    ->get();
 
+
+
         $cosuserFinal = [];
         $duplicadosDetectados = false;
 
@@ -2640,6 +2642,8 @@ class UserController extends Controller
             }
         }
 
+        $cos = array_cos();
+
         // Reemplazar $cosuser con la versión final
         $cosuser = array_values($cosuserFinal);
 
@@ -2651,6 +2655,16 @@ class UserController extends Controller
                 });
             } catch (\Exception $e) {
                 \Log::error("Error enviando correo a sistemasccs: " . $e->getMessage());
+            }
+        }
+
+        foreach ($cosuser as $item) {
+            $servicio = $item['servicio'];
+
+            if (array_key_exists($servicio, $cos)) {
+                $user->cosready = 1;
+                $user->save();
+                break; // basta con que uno coincida
             }
         }
 

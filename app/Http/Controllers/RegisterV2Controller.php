@@ -192,6 +192,7 @@ class RegisterV2Controller extends Controller
 
                 // contrato
                 'contrato'   => 0,
+                'cosready'  => 1,
             ]);
 
             if (!empty($input['tiene_antepasados_espanoles'])) {
