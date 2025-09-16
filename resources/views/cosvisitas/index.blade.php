@@ -13,9 +13,9 @@
         <label for="filtro">Filtrar por:</label>
         <select id="filtro" class="form-control w-auto d-inline-block">
             <option value="semana">Semana</option>
-            <option value="mes" selected>Mes</option>
+            <option value="mes">Mes</option>
             <option value="año">Año</option>
-            <option value="todo">Todo</option>
+            <option value="todo" selected>Todo</option>
         </select>
     </div>
 
