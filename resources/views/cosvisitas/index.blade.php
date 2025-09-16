@@ -116,7 +116,7 @@
             const tr = `
                 <tr>
                     <td>${index + 1}</td>
-                    <td>${v.user?.nombres + " " + v.user?.apellidos || "Usuario desconocido"}</td>
+                    <td>${v.user?.name || v.user?.nombres + " " + v.user?.apellidos || "Usuario desconocido"}</td>
                     <td>${v.cliente?.nombres + " " + v.cliente?.apellidos || v.cliente?.name || "Cliente desconocido"}</td>
                     <td>${new Date(v.fecha_visita).toLocaleString()}</td>
                 </tr>
