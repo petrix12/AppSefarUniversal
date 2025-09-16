@@ -226,7 +226,7 @@ class ClienteController extends Controller
             'fase_3_pagado__teamleader_' => '9a1df9b7-c92f-09e5-b156-96af3f83dc0e',
             'fase_3_preestab' => 'e41fdbbb-a25a-005b-af56-9f3ca623c700',
             'fecha_de_aceptacion' => 'fbe8df81-7225-0c01-b051-7f1032054ffe',
-            'servicio_solicitado' => 'fcd48891-20f6-049a-a05f-f78a6f951b4d'
+            'servicio_solicitado2' => 'fcd48891-20f6-049a-a05f-f78a6f951b4d'
         ];
 
         if (is_null($user->tl_id)) {
@@ -820,7 +820,7 @@ class ClienteController extends Controller
                         }
                         if (isset($negocio->nacionalidad_concedida)){
                             $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
+                                "servicio" => $negocio->servicio_solicitado2,
                                 "warning" => null,
                                 "certificadoDescargado" => $certificadoDescargado,
                                 "currentStepGen" => 18 - $certificadoDescargado,
@@ -839,7 +839,7 @@ class ClienteController extends Controller
                                         : "<b>¡Puedes solicitar la vía judicial!</b>";
 
                                     $cosuser[] = [
-                                        "servicio" => $negocio->servicio_solicitado,
+                                        "servicio" => $negocio->servicio_solicitado2,
                                         "warning" => $warning,
                                         "certificadoDescargado" => $certificadoDescargado,
                                         "currentStepGen" => 18 - $certificadoDescargado,
@@ -863,7 +863,7 @@ class ClienteController extends Controller
                                         : '<b>¡Solicita tu Recurso de Alzada!</b><br><a style="border:0!important;" href="https://sefaruniversal.com/landing-email-de-recurso-de-alzada/" class="cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita el Recurso de Alzada</a>';
 
                                     $cosuser[] = [
-                                        "servicio" => $negocio->servicio_solicitado,
+                                        "servicio" => $negocio->servicio_solicitado2,
                                         "warning" => $warning,
                                         "certificadoDescargado" => $certificadoDescargado,
                                         "currentStepGen" => 18 - $certificadoDescargado,
@@ -878,7 +878,7 @@ class ClienteController extends Controller
                                         : '<b>¡Solicita tu resolución expresa!</b><br><br><a href="https://sefaruniversal.com/resolucion-expresa/" style="border:0!important;" class="cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita tu Resolución Expresa</a>';
 
                                     $cosuser[] = [
-                                        "servicio" => $negocio->servicio_solicitado,
+                                        "servicio" => $negocio->servicio_solicitado2,
                                         "warning" => $warning,
                                         "certificadoDescargado" => $certificadoDescargado,
                                         "currentStepGen" => 18 - $certificadoDescargado,
@@ -888,7 +888,7 @@ class ClienteController extends Controller
                                 }
                             } else if ($fechaFormalizacionMas1Meses->greaterThan($hoy)){
                                 $cosuser[] = [
-                                    "servicio" => $negocio->servicio_solicitado,
+                                    "servicio" => $negocio->servicio_solicitado2,
                                     "certificadoDescargado" => $certificadoDescargado,
                                     "warning" => '<b>¡Consulta si requieres subsanación o mejora de expediente!</b><br><br><a style="border:0!important;" href="https://sefaruniversal.com/landing-registro-subsanacion-de-la-nacionalidad-espanola-sefardi/" class="cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">¡Consulta ahora!</a>',
                                     "currentStepGen" => 18 - $certificadoDescargado,
@@ -897,7 +897,7 @@ class ClienteController extends Controller
                                 continue;
                             } else {
                                 $cosuser[] = [
-                                    "servicio" => $negocio->servicio_solicitado,
+                                    "servicio" => $negocio->servicio_solicitado2,
                                     "warning" => null,
                                     "certificadoDescargado" => $certificadoDescargado,
                                     "currentStepGen" => 18 - $certificadoDescargado,
@@ -909,7 +909,7 @@ class ClienteController extends Controller
 
                         if (isset($negocio->tasa_pagada)){
                             $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
+                                "servicio" => $negocio->servicio_solicitado2,
                                 "warning" => null,
                                 "certificadoDescargado" => $certificadoDescargado,
                                 "currentStepGen" => 18 - $certificadoDescargado,
@@ -920,7 +920,7 @@ class ClienteController extends Controller
 
                         if (isset($negocio->enviado_a_pago_de_tasas)){
                             $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
+                                "servicio" => $negocio->servicio_solicitado2,
                                 "warning" => null,
                                 "certificadoDescargado" => $certificadoDescargado,
                                 "currentStepGen" => 18 - $certificadoDescargado,
@@ -930,7 +930,7 @@ class ClienteController extends Controller
                         }
 
                         $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado,
+                            "servicio" => $negocio->servicio_solicitado2,
                             "warning" => null,
                             "certificadoDescargado" => $certificadoDescargado,
                             "currentStepGen" => 18 - $certificadoDescargado,
@@ -944,7 +944,7 @@ class ClienteController extends Controller
                                 $certificadoDescargado = 2;
                             }
                             $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
+                                "servicio" => $negocio->servicio_solicitado2,
                                 "certificadoDescargado" => $certificadoDescargado,
                                 "warning" => "<b>Realiza el pago para la formalización del expediente</b> y aseguremos juntos el siguiente gran paso hacia tu ciudadanía española.",
                                 "currentStepGen" => 18 - $certificadoDescargado,
@@ -955,7 +955,7 @@ class ClienteController extends Controller
 
                         if(isset($negocio->n4__certificado_descargado)){
                             $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
+                                "servicio" => $negocio->servicio_solicitado2,
                                 "warning" => null,
                                 "certificadoDescargado" => $certificadoDescargado,
                                 "currentStepGen" => 18,
@@ -970,7 +970,7 @@ class ClienteController extends Controller
 
                             if ($fechaInformeCargadoMas1Meses->greaterThan($hoy)) {
                                 $cosuser[] = [
-                                    "servicio" => $negocio->servicio_solicitado,
+                                    "servicio" => $negocio->servicio_solicitado2,
                                     "warning" => null,
                                     "certificadoDescargado" => $certificadoDescargado,
                                     "currentStepGen" => 17,
@@ -979,7 +979,7 @@ class ClienteController extends Controller
                                 continue;
                             } else {
                                 $cosuser[] = [
-                                    "servicio" => $negocio->servicio_solicitado,
+                                    "servicio" => $negocio->servicio_solicitado2,
                                     "warning" => null,
                                     "certificadoDescargado" => $certificadoDescargado,
                                     "currentStepGen" => 16,
@@ -990,7 +990,7 @@ class ClienteController extends Controller
                         }
 
                         $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado,
+                            "servicio" => $negocio->servicio_solicitado2,
                             "warning" => null,
                             "certificadoDescargado" => $certificadoDescargado,
                             "currentStepGen" => 15,
@@ -1000,7 +1000,7 @@ class ClienteController extends Controller
                     } else if ( isset($negocio->fase_1_pagado) || isset($negocio->fase_1_pagado__teamleader_) ) {
                         if (isset($negocio->fase_2_preestab) || isset($negocio->fase_2_preestab) || isset($negocio->fase_2_preestab)){
                             $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
+                                "servicio" => $negocio->servicio_solicitado2,
                                 "certificadoDescargado" => $certificadoDescargado,
                                 "warning" => "Para continuar con el proceso y proceder con el envío del informe y las pruebas correspondientes a la institución mencionada, <b>es necesario que realices el siguiente pago.</b>",
                                 "currentStepGen" => 15,
@@ -1011,7 +1011,7 @@ class ClienteController extends Controller
 
                         if ($resultadoIA['otrosProcesos']) {
                             $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
+                                "servicio" => $negocio->servicio_solicitado2,
                                 "certificadoDescargado" => $certificadoDescargado,
                                 "warning" => "<b>Tu caso ha sido derivado a otro proceso.</b> Recibirás seguimiento personalizado.",
                                 "currentStepGen" => 11,
@@ -1038,7 +1038,7 @@ class ClienteController extends Controller
 
                             if ($documentsAprobados>0) {
                                 $cosuser[] = [
-                                    "servicio" => $negocio->servicio_solicitado,
+                                    "servicio" => $negocio->servicio_solicitado2,
                                     "warning" => null,
                                     "certificadoDescargado" => $certificadoDescargado,
                                     "currentStepGen" => 10,
@@ -1049,7 +1049,7 @@ class ClienteController extends Controller
 
                             if ($documentsEnRevision>0) {
                                 $cosuser[] = [
-                                    "servicio" => $negocio->servicio_solicitado,
+                                    "servicio" => $negocio->servicio_solicitado2,
                                     "warning" => null,
                                     "certificadoDescargado" => $certificadoDescargado,
                                     "currentStepGen" => 9,
@@ -1060,7 +1060,7 @@ class ClienteController extends Controller
 
                             if ($documentsEnEsperaCliente>0) {
                                 $cosuser[] = [
-                                    "servicio" => $negocio->servicio_solicitado,
+                                    "servicio" => $negocio->servicio_solicitado2,
                                     "certificadoDescargado" => $certificadoDescargado,
                                     "warning" => "Tienes solicitudes de documentos pendientes. Para resolverlas, dirígete a la pestaña de 'Mis solicitudes de documentos'",
                                     "currentStepGen" => 8,
@@ -1071,7 +1071,7 @@ class ClienteController extends Controller
                         }
 
                         $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado,
+                            "servicio" => $negocio->servicio_solicitado2,
                             "warning" => null,
                             "certificadoDescargado" => $certificadoDescargado,
                             "currentStepGen" => 8,
@@ -1082,7 +1082,7 @@ class ClienteController extends Controller
                     } else {
                         if (isset($negocio->fase_1_preestab) || isset($negocio->fase_1_preestab) || isset($negocio->fase_1_preestab)){
                             $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
+                                "servicio" => $negocio->servicio_solicitado2,
                                 "certificadoDescargado" => $certificadoDescargado,
                                 "warning" => "Para continuar con el proceso y proceder con la redacción del informe, <b>es necesario que realices el siguiente pago.</b>",
                                 "currentStepGen" => 7,
@@ -1093,7 +1093,7 @@ class ClienteController extends Controller
 
                         if ($resultadoIA['genealogia']) {
                             $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
+                                "servicio" => $negocio->servicio_solicitado2,
                                 "warning" => null,
                                 "certificadoDescargado" => $certificadoDescargado,
                                 "currentStepGen" => 5,
@@ -1104,7 +1104,7 @@ class ClienteController extends Controller
 
                         if ($resultadoIA['inicioInvestigacion']) {
                             $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
+                                "servicio" => $negocio->servicio_solicitado2,
                                 "warning" => null,
                                 "certificadoDescargado" => $certificadoDescargado,
                                 "currentStepGen" => 4,
@@ -1115,7 +1115,7 @@ class ClienteController extends Controller
 
                         if ($resultadoIA['investigacionProfunda']) {
                             $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
+                                "servicio" => $negocio->servicio_solicitado2,
                                 "warning" => null,
                                 "certificadoDescargado" => $certificadoDescargado,
                                 "currentStepGen" => 3,
@@ -1126,7 +1126,7 @@ class ClienteController extends Controller
 
                         if ($resultadoIA['investigacionInSitu']) {
                             $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
+                                "servicio" => $negocio->servicio_solicitado2,
                                 "warning" => null,
                                 "certificadoDescargado" => $certificadoDescargado,
                                 "currentStepGen" => 2,
@@ -1137,7 +1137,7 @@ class ClienteController extends Controller
 
                         if ($resultadoIA['investigacionIntuituPersonae']) {
                             $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
+                                "servicio" => $negocio->servicio_solicitado2,
                                 "warning" => null,
                                 "certificadoDescargado" => $certificadoDescargado,
                                 "currentStepGen" => 1,
@@ -1149,7 +1149,7 @@ class ClienteController extends Controller
 
                         if ($resultadoIA['analisisYCorreccion'] || $hayTatarabuelo) {
                             $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
+                                "servicio" => $negocio->servicio_solicitado2,
                                 "warning" => null,
                                 "certificadoDescargado" => $certificadoDescargado,
                                 "currentStepGen" => 1,
@@ -1160,7 +1160,7 @@ class ClienteController extends Controller
                         }
 
                         $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado,
+                            "servicio" => $negocio->servicio_solicitado2,
                             "warning" => null,
                             "certificadoDescargado" => $certificadoDescargado,
                             "currentStepGen" => 1,
@@ -1415,6 +1415,26 @@ class ClienteController extends Controller
                 $tlField = collect($existingFields)->firstWhere('definition.id', $tlFieldId);
                 $tlValue = $tlField['value'] ?? null;
 
+                // 🚨 Excepción: HubSpot manda en servicio_solicitado
+                if ($hsField === 'servicio_solicitado2') {
+                    if (!is_null($hsValue)) {
+                        // Guardamos SIEMPRE en DB desde HubSpot
+                        $dbUpdates['servicio_solicitado2'] = $hsValue;
+                        $dbUpdates['servicio_solicitado']  = $hsValue; // ✅ Mantén sincronizado también servicio_solicitado
+
+                        // Opcional: actualiza también en HubSpot el campo "servicio_solicitado"
+                        $hsUpdates['servicio_solicitado'] = $hsValue;
+
+                        // Y en Teamleader
+                        $tlCustomFields[] = [
+                            'id' => $tlFieldId,
+                            'value' => $hsValue
+                        ];
+                    }
+                    continue;
+                }
+
+                // --- Lógica normal para los demás campos ---
                 $finalValue = null;
                 if ($hsValue && (!$tlValue || $hubspotLastMod > $teamleaderLastMod)) {
                     $finalValue = $hsValue;
@@ -1467,6 +1487,7 @@ class ClienteController extends Controller
         }
 
         // Actualizar DB
+
         foreach ($updatesToDBAll as $entry) {
             $negocio = Negocio::firstOrNew([
                 'hubspot_id' => $entry['hubspot_id']
