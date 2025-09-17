@@ -109,6 +109,20 @@ class RegisterV2Controller extends Controller
                         ]);
                     }
 
+                    Mail::to([
+                        'pedro.bazo@sefarvzla.com',
+                        'sistemasccs@sefarvzla.com',
+                        'automatizacion@sefarvzla.com',
+                        'sistemascol@sefarvzla.com',
+                        'asistentedeproduccion@sefarvzla.com',
+                        'organizacionrrhh@sefarvzla.com',
+                        'operacionesc@sefarvzla.com',
+                        '20053496@bcc.hubspot.com'
+                    ])->send(new RegistroSefar($userCheck));
+
+                    // asigna rol y permisos
+                    $userCheck->assignRole('Cliente')->givePermissionTo(['pay.services', 'finish.register']);
+
                     // Siempre redirigir a app.sefaruniversal.com
                     return view('redirect', ['redirect_url' => 'https://app.sefaruniversal.com/login?alert=existe']);
                 }
@@ -284,6 +298,7 @@ class RegisterV2Controller extends Controller
                     'sistemascol@sefarvzla.com',
                     'asistentedeproduccion@sefarvzla.com',
                     'organizacionrrhh@sefarvzla.com',
+                    'operacionesc@sefarvzla.com',
                     '20053496@bcc.hubspot.com'
                 ])->send(new RegistroSefar($user));
 
