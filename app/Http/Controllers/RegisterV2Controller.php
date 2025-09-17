@@ -97,7 +97,7 @@ class RegisterV2Controller extends Controller
 
                         Compras::create([
                             'id_user' => $userCheck->id,
-                            'servicio_hs_id' => $userCheck->servicio,
+                            'servicio_hs_id' => $request->servicio,
                             'descripcion' => $desc,
                             'pagado' => 0,
                             'monto' => $monto
