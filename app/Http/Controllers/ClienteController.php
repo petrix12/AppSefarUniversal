@@ -2798,6 +2798,7 @@ class ClienteController extends Controller
                             'organizacionrrhh@sefarvzla.com',
                             '20053496@bcc.hubspot.com',
                             'contabilidad@sefaruniversal.com',
+                            'operacionesc@sefarvzla.com',
                         ])->subject(strtoupper($user->name) . ' (ID: ' .
                             strtoupper($user->passport) . ') HA REALIZADO UN PAGO EN App Sefar Universal')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
                     });
@@ -3082,6 +3083,7 @@ class ClienteController extends Controller
                 'organizacionrrhh@sefarvzla.com',
                 '20053496@bcc.hubspot.com',
                 'contabilidad@sefaruniversal.com',
+                'operacionesc@sefarvzla.com',
             ])->subject(strtoupper($user->name) . ' (ID: ' .
                 strtoupper($user->passport) . ') HA REALIZADO UN PAGO EN App Sefar Universal')->attachData($pdfContent2, 'Comprobante.pdf', ['mime' => 'application/pdf']);
         });
@@ -3439,6 +3441,7 @@ class ClienteController extends Controller
                 'organizacionrrhh@sefarvzla.com',
                 '20053496@bcc.hubspot.com',
                 'contabilidad@sefaruniversal.com',
+                'operacionesc@sefarvzla.com',
             ])->subject(strtoupper($user->name) . ' (ID: ' .
                 strtoupper($user->passport) . ') HA REALIZADO UN PAGO EN App Sefar Universal')->attachData($pdfContent2, 'Comprobante.pdf', ['mime' => 'application/pdf']);
         });
@@ -3736,6 +3739,7 @@ class ClienteController extends Controller
                         'organizacionrrhh@sefarvzla.com',
                         '20053496@bcc.hubspot.com',
                         'contabilidad@sefaruniversal.com',
+                        'operacionesc@sefarvzla.com',
                     ])->subject(strtoupper($user->name) . ' (ID: ' .
                         strtoupper($user->passport) . ') HA REALIZADO UN PAGO EN App Sefar Universal')->attachData($pdfContent2, 'Comprobante.pdf', ['mime' => 'application/pdf']);
                 });
@@ -4178,6 +4182,7 @@ class ClienteController extends Controller
                         'organizacionrrhh@sefarvzla.com',
                         '20053496@bcc.hubspot.com',
                         'contabilidad@sefaruniversal.com',
+                        'operacionesc@sefarvzla.com',
                     ])->subject(strtoupper($user->name) . ' (ID: ' .
                         strtoupper($user->passport) . ') HA REALIZADO UN PAGO EN App Sefar Universal')->attachData($pdfContent2, 'Comprobante.pdf', ['mime' => 'application/pdf']);
                 });
