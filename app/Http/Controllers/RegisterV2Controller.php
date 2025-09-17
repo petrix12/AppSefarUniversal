@@ -48,6 +48,11 @@ class RegisterV2Controller extends Controller
                     ->orWhere('email', 'LIKE', $input['email'])
                     ->first();
 
+                if ($userCheck->servicio == null){
+                    $userCheck->servicio = $input['servicio'];
+                    $userCheck->save();
+                }
+
                 if ($userCheck) {
                     // Actualizar datos del usuario existente
                     $userCheck->update([
@@ -87,7 +92,7 @@ class RegisterV2Controller extends Controller
                                     $desc = $desc . " + (Consulta Gratuita)";
                                 }
                             }
-                        } elseif ($userCheck->servicio == "Gestión Documental") {
+                        } elseif ($request->servicio == "Gestión Documental") {
                             $desc = $hss[0]["nombre"];
                         } elseif ($servicio[0]['tipov'] == 1) {
                             $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
@@ -105,7 +110,7 @@ class RegisterV2Controller extends Controller
                     }
 
                     // Siempre redirigir a app.sefaruniversal.com
-                    return view('redirect', ['redirect_url' => 'https://app.sefaruniversal.com/']);
+                    return view('redirect', ['redirect_url' => 'https://app.sefaruniversal.com/login?alert=existe']);
                 }
 
                 if (!$userCheck) {

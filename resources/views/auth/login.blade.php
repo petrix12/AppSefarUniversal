@@ -14,14 +14,25 @@
             </div>
         @endif
 
-        @if(session()->has('warning'))
-            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+        @if(session()->has('warning'))
             <script>
                 Swal.fire({
                   icon: 'warning',
                   title: '¡Aviso!',
                   html: '{{ session("warning") }}'
+                })
+            </script>
+        @endif
+
+        @if(request()->query('alert') === 'existe')
+            <script>
+                Swal.fire({
+                    icon: 'info',
+                    title: '¡Bienvenido de vuelta!',
+                    html: 'Ya te encuentras registrado en la App de Sefar.<br>Si no recuerdas tu usuario o contraseña, puedes <a href="/forgot-password">recuperarla aquí</a>.',
+                    confirmButtonText: 'Entendido'
                 })
             </script>
         @endif
