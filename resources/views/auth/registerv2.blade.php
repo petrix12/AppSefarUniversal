@@ -158,6 +158,8 @@
                     <option value="veronica.poletto@sefarvzla.com" {{ old('referido')=='veronica.poletto@sefarvzla.com' ? 'selected' : '' }}>Veronica Poletto</option>
                     <option value="yeinsondiaz@sefarvzla.com" {{ old('referido')=='yeinsondiaz@sefarvzla.com' ? 'selected' : '' }}>Yeinson Diaz</option>
                     <option value="y.hernandez@sefaruniversal.eu" {{ old('referido')=='y.hernandez@sefaruniversal.eu' ? 'selected' : '' }}>Yineska Hernández</option>
+                    <option value="ahernandez@sefarvzla.com" {{ old('referido')=='ahernandez@sefarvzla.com' ? 'selected' : '' }}>Alexandra Hernández Gómez</option>
+                    <option value="mherrera@sefarvzla.com" {{ old('referido')=='mherrera@sefarvzla.com' ? 'selected' : '' }}>Marla Herrera Sulbarán</option>
                 </select>
                 @error('referido')
                     <p class="error-text">{{ $message }}</p>
