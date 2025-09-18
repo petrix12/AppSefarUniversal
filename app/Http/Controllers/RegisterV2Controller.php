@@ -48,12 +48,11 @@ class RegisterV2Controller extends Controller
                     ->orWhere('email', 'LIKE', $input['email'])
                     ->first();
 
-                if ($userCheck->servicio == null){
-                    $userCheck->servicio = $input['servicio'];
-                    $userCheck->save();
-                }
-
                 if ($userCheck) {
+                    if ($userCheck->servicio == null){
+                        $userCheck->servicio = $input['servicio'];
+                        $userCheck->save();
+                    }
                     // Actualizar datos del usuario existente
                     $userCheck->update([
                         'pay' => 0,
