@@ -39,19 +39,19 @@ class ServicioController extends Controller
      */
     public function store(Request $request)
     {
-        try { 
+        try {
             Servicio::create([
                 'id_hubspot' => trim($request->id_hubspot),
                 'nombre' => trim($request->nombre),
                 'precio' => trim($request->precio),
                 'tipov' => trim($request->tipov)
             ]);
-        } catch(\Illuminate\Database\QueryException $ex){ 
+        } catch(\Illuminate\Database\QueryException $ex){
             Alert::error('Error', 'El servicio ya existe');
             return back();
         }
 
-        // Mensaje 
+        // Mensaje
         Alert::success('¡Éxito!', 'Se ha añadido el servicio: ' . $request->nombre);
 
         // Redireccionar a la vista que invocó este método
@@ -95,16 +95,16 @@ class ServicioController extends Controller
         $servicio->precio = trim($request->precio);
         $servicio->tipov = trim($request->tipov);
 
-        try { 
+        try {
             $servicio->save();
-        } catch(\Illuminate\Database\QueryException $ex){ 
+        } catch(\Illuminate\Database\QueryException $ex){
             Alert::error('Error', 'El servicio ya existe. No puedes duplicarlo.');
             return back();
         }
 
-        // Mensaje 
+        // Mensaje
         Alert::success('¡Éxito!', 'Se ha actualizado el servicio: ' . $request->nombre);
-        
+
         // Redireccionar a la vista que invocó este método
         $servicios = Servicio::orderBy('created_at', 'desc')->get();
         return view('crud.servicios.index', compact('servicios'));
@@ -119,11 +119,11 @@ class ServicioController extends Controller
     public function destroy(Servicio $servicio)
     {
         $titulo = $servicio->couponcode;
-        
+
         $servicio->delete();
 
         Alert::info('¡Advertencia!', 'Se ha eliminado el cupón: ' . $titulo);
-        
+
         $servicios = Servicio::orderBy('created_at', 'desc')->get();
         return view('crud.servicios.index', compact('servicios'));
     }
@@ -140,9 +140,9 @@ class ServicioController extends Controller
         $precio = [];
 
         if ($resultados) {
-            $precio["precio"] = number_format($resultados->precio, 2);
+            $precio["precio"] = $resultados->precio;
         } else {
-            $precio["precio"] = number_format(0, 2);
+            $precio["precio"] = 0;
         }
 
         return response()->json($precio);
