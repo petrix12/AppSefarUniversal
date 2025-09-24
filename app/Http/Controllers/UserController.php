@@ -2565,7 +2565,7 @@ class UserController extends Controller
                 }
             }
         } else {
-            $cosuser[0]["servicio"] = $servicename["id_hubspot"];
+            $cosuser[0]["servicio"] = $servicename["id_hubspot"] ?? "";
             if ($user->pay == 0) {
                 $cosuser[0]["warning"] = "Debes realizar el pago del registro de tu proceso.<br><br><a style='border:0!important;'  href='/pay' class='cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Pagar registro</a>";
                 $cosuser[0]["currentStepGen"] = 0;
