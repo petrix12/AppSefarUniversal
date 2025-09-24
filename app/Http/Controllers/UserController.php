@@ -61,6 +61,23 @@ class UserController extends Controller
         return view('crud.users.index');
     }
 
+    public function checkEmail(Request $request)
+    {
+        // Validar que el email venga en la petición
+        $request->validate([
+            'email' => 'required|email'
+        ]);
+
+        // Verificar si el email existe
+        $exists = User::where('email', $request->email)->exists();
+
+        return response()->json([
+            'success' => true,
+            'exists' => $exists,
+            'email' => $request->email
+        ]);
+    }
+
     /**
      * Show the form for creating a new resource.
      *

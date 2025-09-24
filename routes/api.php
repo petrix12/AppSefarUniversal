@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ServicioController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AlertController;
-
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\AssistantController;
 
 /*
@@ -31,3 +31,5 @@ Route::post('/assistant/chat', [AssistantController::class, 'chat']);
 
 Route::post('/chat/iniciar', [ChatController::class, 'iniciarChat']);
 Route::post('/chat/enviar', [ChatController::class, 'enviarMensaje']);
+
+Route::post('/user/check-email', [UserController::class, 'checkEmail']);
