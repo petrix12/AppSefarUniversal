@@ -2264,10 +2264,6 @@ class UserController extends Controller
                     if (isset($negocio->n5__fecha_de_formalizacion)){
                         $fechaFormalizacion = Carbon::parse($negocio->n5__fecha_de_formalizacion);
 
-                        //formalizacion = 02/12/2024
-                        // hoy = 30/09/2025
-                        // for
-
                         $fechaFormalizacionMas12Meses = $fechaFormalizacion->copy()->addMonths(12);
                         $fechaFormalizacionMas6Meses = $fechaFormalizacion->copy()->addMonths(6);
                         $fechaFormalizacionMas1Meses = $fechaFormalizacion->copy()->addMonths(1);
