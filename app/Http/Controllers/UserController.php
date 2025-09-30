@@ -2264,11 +2264,15 @@ class UserController extends Controller
                     if (isset($negocio->n5__fecha_de_formalizacion)){
                         $fechaFormalizacion = Carbon::parse($negocio->n5__fecha_de_formalizacion);
 
+                        //formalizacion = 02/12/2024
+                        // hoy = 30/09/2025
+                        // for
+
                         $fechaFormalizacionMas12Meses = $fechaFormalizacion->copy()->addMonths(12);
                         $fechaFormalizacionMas6Meses = $fechaFormalizacion->copy()->addMonths(6);
                         $fechaFormalizacionMas1Meses = $fechaFormalizacion->copy()->addMonths(1);
-                        if ($fechaFormalizacionMas12Meses->greaterThan($hoy)){
-                            if ($fechaFormalizacionMas12Meses->greaterThan($hoy)) {
+                        if ($hoy->greaterThan($fechaFormalizacionMas12Meses)){
+                            if ($hoy->greaterThan($fechaFormalizacionMas12Meses)) {
                                 $warning = isset($negocio->fecha_solicitud_recursoalzada)
                                     ? null
                                     : '<b>¡Solicita tu Recurso de Alzada!</b><br><a style="border:0!important;" href="https://sefaruniversal.com/landing-email-de-recurso-de-alzada/" class="cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita el Recurso de Alzada</a>';
@@ -2282,8 +2286,8 @@ class UserController extends Controller
                                 ];
                                 continue;
                             }
-                        } else if ($fechaFormalizacionMas6Meses->greaterThan($hoy)){
-                            if ($fechaFormalizacionMas6Meses->greaterThan($hoy)) {
+                        } else if ($hoy->greaterThan($fechaFormalizacionMas6Meses)){
+                            if ($hoy->greaterThan($fechaFormalizacionMas6Meses)) {
                                 $warning = isset($negocio->fecha_solicitud_resolucionexpresa)
                                     ? null
                                     : '<b>¡Solicita tu resolución expresa!</b><br><br><a href="https://sefaruniversal.com/resolucion-expresa/" style="border:0!important;" class="cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita tu Resolución Expresa</a>';
@@ -2297,7 +2301,7 @@ class UserController extends Controller
                                 ];
                                 continue;
                             }
-                        } else if ($fechaFormalizacionMas1Meses->greaterThan($hoy)){
+                        } else if ($hoy->greaterThan($fechaFormalizacionMas1Meses)){
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado2,
                                 "certificadoDescargado" => $certificadoDescargado,
