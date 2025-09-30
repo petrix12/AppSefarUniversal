@@ -2229,7 +2229,7 @@ class UserController extends Controller
                     if(!isset($negocio->n4__certificado_descargado)){
                         $certificadoDescargado = 2;
                     }
-                    if (isset($negocio->nacionalidad_concedida)){
+                    if (isset($negocio->nacionalidad_concedida) || isset($negocio->n7__fecha_de_resolucion)){
                         $cosuser[] = [
                             "servicio" => $negocio->servicio_solicitado2,
                             "warning" => null,
