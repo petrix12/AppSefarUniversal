@@ -181,7 +181,7 @@
                                 window.location.href = "/tree";
                             }
                         });
-                    }, 12500 );
+                    }, 1500 );
                 }
             });
         </script>
