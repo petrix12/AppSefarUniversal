@@ -2231,12 +2231,18 @@ class ClienteController extends Controller
         return view('clientes.gracias');
     }
 
-    public function procesargetinfo(Request $request){
+    public function procesargetinfo(Request $request, HubspotService $hubspotService){
         /*
 
             Aqui recibo y organizo el arreglo que viene del Jquery
 
         */
+
+        $contactData = $this->hubspotService->check001(auth()->user()->hs_id);
+
+        if (!$contactData) {
+            return response()->json(['error' => 'El formulario no se ha completado en HubSpot aún'], 504);
+        }
 
         if (auth()->user()->pay == 3){
             DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]); // no borrar esta linea

@@ -152,8 +152,8 @@
                         }
                     }, 1000 );
                 },
-                onFormSubmited: function($form){
-                        console.log($form);
+                onFormSubmit: function($form){
+                    setTimeout( function() {
 
                         var formData = $form;
 
@@ -181,6 +181,7 @@
                                 window.location.href = "/tree";
                             }
                         });
+                    }, 12500 );
                 }
             });
         </script>
