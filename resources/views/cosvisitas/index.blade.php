@@ -134,3 +134,10 @@
     renderizar("todo");
 </script>
 @stop
+
+@section('css')
+    <link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
+@stop
+
+@section('js')
+@stop
