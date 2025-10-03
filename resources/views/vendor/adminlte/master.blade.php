@@ -12,11 +12,11 @@
     <link rel="stylesheet" href='/css/darkmode.css'>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
 
-    <script>
+    <style>
         body, div, h1, h2, h3, h4, h5, h6, p, a, span, label, input, select, textarea, button {
-            font-family: 'Lato', sans-serif;
+            font-family: 'Lato', sans-serif !important;
         }
-    </script>
+    </style>
 
     {{-- Custom Meta Tags --}}
     @yield('meta_tags')
