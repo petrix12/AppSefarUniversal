@@ -152,34 +152,38 @@
                         }
                     }, 1000 );
                 },
-                onFormSubmitted: function($form){
+                onFormSubmited: function($form){
+                    setTimeout( function() {
 
-                    var formData = $form;
+                        console.log($form);
 
-                    if($('input[name="firstname"]').val() == "" || $('input[name="lastname"]').val() == "" || $('input[name="email"]').val() == "" || $('input[name="numero_de_pasaporte"]').val() == "" || $('input[name="pais_de_nacimiento"]').val() == "" || $('input[name="nacionalidad_solicitada"]').val() == "" || $('#hs-form-iframe-0').contents().find('input[name="firstname"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="lastname"]').val() == "" || $('#hs-form-iframe-0').contents().find('input[name="email"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="numero_de_pasaporte"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="pais_de_nacimiento"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="nacionalidad_solicitada"]').val() == ""){
-                        return false;
-                    }
+                        var formData = $form;
 
-                    $("#ajaxload2").show();
-
-                    var data = formData.serializeArray();
-
-                    $.ajaxSetup({
-                        headers: {
-                            'X-CSRF-TOKEN': $("input[name='_token']").val()
+                        if($('input[name="firstname"]').val() == "" || $('input[name="lastname"]').val() == "" || $('input[name="email"]').val() == "" || $('input[name="numero_de_pasaporte"]').val() == "" || $('input[name="pais_de_nacimiento"]').val() == "" || $('input[name="nacionalidad_solicitada"]').val() == "" || $('#hs-form-iframe-0').contents().find('input[name="firstname"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="lastname"]').val() == "" || $('#hs-form-iframe-0').contents().find('input[name="email"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="numero_de_pasaporte"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="pais_de_nacimiento"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="nacionalidad_solicitada"]').val() == ""){
+                            return false;
                         }
-                    });
 
-                    $.ajax({
-                        url: '{{ route("procesargetinfo") }}',
-                        method: 'POST',
-                        data: {
-                            data
-                        },
-                        success: function(response){
-                            window.location.href = "/tree";
-                        }
-                    });
+                        $("#ajaxload2").show();
+
+                        var data = formData.serializeArray();
+
+                        $.ajaxSetup({
+                            headers: {
+                                'X-CSRF-TOKEN': $("input[name='_token']").val()
+                            }
+                        });
+
+                        $.ajax({
+                            url: '{{ route("procesargetinfo") }}',
+                            method: 'POST',
+                            data: {
+                                data
+                            },
+                            success: function(response){
+                                window.location.href = "/tree";
+                            }
+                        });
+                    }, 1000 );
                 }
             });
         </script>
