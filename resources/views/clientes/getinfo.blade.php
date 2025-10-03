@@ -111,52 +111,59 @@
                 portalId: "20053496",
                 formId: "ae73e323-14a8-40f4-a20c-4a33a30aabde",
                 onFormReady: function($form){
-                    setTimeout(function() {
+                    setTimeout( function() {
                         $("#ajaxload").hide();
                         var antepasados = <?php echo (auth()->user()->antepasados ? auth()->user()->antepasados : 0); ?>;
                         var servicio = "<?php echo (auth()->user()->servicio); ?>";
-
-                        var iframe = $('#hs-form-iframe-0').contents();
-
-                        iframe.find('input[name="firstname"]').val("{{ auth()->user()->nombres }}").change();
-                        iframe.find('input[name="lastname"]').val("{{ auth()->user()->apellidos }}").change();
-                        iframe.find('input[name="phone"]').val("{{ auth()->user()->phone }}").change();
-                        iframe.find('input[name="email"]').val("{{ auth()->user()->email }}").change();
-                        iframe.find('input[name="numero_de_pasaporte"]').val("{{ auth()->user()->passport }}").change();
-                        iframe.find('input[name="pais_de_nacimiento"]').val("{{ auth()->user()->pais_de_nacimiento }}").change();
-                        iframe.find('select[name="nacionalidad_solicitada"]').val("{{ auth()->user()->servicio }}").change();
-
-                        if (servicio === 'Italiana'){
+                        $('#hs-form-iframe-0').contents().find('input[name="firstname"]').val("{{ auth()->user()->nombres }}").change();
+                        $('#hs-form-iframe-0').contents().find('input[name="lastname"]').val("{{ auth()->user()->apellidos }}").change();
+                        $('#hs-form-iframe-0').contents().find('input[name="phone"]').val("{{ auth()->user()->phone }}").change();
+                        $('#hs-form-iframe-0').contents().find('input[name="email"]').val("{{ auth()->user()->email }}").change();
+                        $('#hs-form-iframe-0').contents().find('input[name="numero_de_pasaporte"]').val("{{ auth()->user()->passport }}").change();
+                        $('#hs-form-iframe-0').contents().find('input[name="pais_de_nacimiento"]').val("{{ auth()->user()->pais_de_nacimiento }}").change();
+                        $('#hs-form-iframe-0').contents().find('select[name="nacionalidad_solicitada"]').val("{{ auth()->user()->servicio }}").change();
+                        if (servicio == 'Italiana'){
                             if (antepasados == 2){
-                                iframe.find('select[name="tiene_antepasados_italianos"]').val("Si").change();
-                                iframe.find('input[name="tiene_antepasados_italianos"]').val("Si").change();
-                                iframe.find('input[value="<?php echo(auth()->user()->vinculo_antepasados); ?>"]').prop('checked', true);
-                                iframe.find('select[name="estado_de_datos_y_documentos_de_los_antepasados"]').val("<?php echo(auth()->user()->estado_de_datos_y_documentos_de_los_antepasados); ?>").change();
-                            } else {
-                                iframe.find('select[name="tiene_antepasados_italianos"]').val("No").change();
-                                iframe.find('input[name="tiene_antepasados_italianos"]').val("No").change();
-                            }
-                        }
+                                $('#hs-form-iframe-0').contents().find('select[name="tiene_antepasados_italianos"]').val("Si").change();
+                                $('#hs-form-iframe-0').contents().find('input[name="tiene_antepasados_italianos"]').val("Si").change();
 
-                        if (servicio === 'Española LMD'){
-                            if (antepasados == 1){
-                                iframe.find('select[name="tiene_antepasados_espanoles"]').val("Si").change();
-                                iframe.find('input[name="tiene_antepasados_espanoles"]').val("Si").change();
-                                iframe.find('input[value="<?php echo(auth()->user()->vinculo_antepasados); ?>"]').prop('checked', true);
-                                iframe.find('select[name="estado_de_datos_y_documentos_de_los_antepasados"]').val("<?php echo(auth()->user()->estado_de_datos_y_documentos_de_los_antepasados); ?>").change();
+                                var checkbox = $('#hs-form-iframe-0').contents().find('input[value="<?php echo(auth()->user()->vinculo_antepasados); ?>"]');
+                                checkbox.prop('checked', true);
+
+                                $('#hs-form-iframe-0').contents().find('select[name="estado_de_datos_y_documentos_de_los_antepasados"]').val("<?php echo(auth()->user()->estado_de_datos_y_documentos_de_los_antepasados); ?>").change();
                             } else {
-                                iframe.find('select[name="tiene_antepasados_espanoles"]').val("No").change();
-                                iframe.find('input[name="tiene_antepasados_espanoles"]').val("No").change();
+                                $('#hs-form-iframe-0').contents().find('select[name="tiene_antepasados_italianos"]').val("No").change();
+                                $('#hs-form-iframe-0').contents().find('input[name="tiene_antepasados_italianos"]').val("No").change();
                             }
                         }
-                    }, 1000);
-                },
-                onFormSubmit: function($form){
-                    // Mostrar loader apenas el usuario envía
-                    $("#ajaxload2").show();
+                        if (servicio == 'Española LMD'){
+                            if (antepasados == 1){
+                                $('#hs-form-iframe-0').contents().find('select[name="tiene_antepasados_espanoles"]').val("Si").change();
+                                $('#hs-form-iframe-0').contents().find('input[name="tiene_antepasados_espanoles"]').val("Si").change();
+
+                                var checkbox = $('#hs-form-iframe-0').contents().find('input[value="<?php echo(auth()->user()->vinculo_antepasados); ?>"]');
+                                checkbox.prop('checked', true);
+
+                                $('#hs-form-iframe-0').contents().find('select[name="estado_de_datos_y_documentos_de_los_antepasados"]').val("<?php echo(auth()->user()->estado_de_datos_y_documentos_de_los_antepasados); ?>").change();
+                            } else {
+                                $('#hs-form-iframe-0').contents().find('select[name="tiene_antepasados_espanoles"]').val("No").change();
+                                $('#hs-form-iframe-0').contents().find('input[name="tiene_antepasados_espanoles"]').val("No").change();
+                            }
+                        }
+                    }, 1000 );
                 },
                 onFormSubmitted: function($form){
-                    // Aquí ya se confirmó que HubSpot recibió los datos
+
+                    var formData = $form;
+
+                    if($('input[name="firstname"]').val() == "" || $('input[name="lastname"]').val() == "" || $('input[name="email"]').val() == "" || $('input[name="numero_de_pasaporte"]').val() == "" || $('input[name="pais_de_nacimiento"]').val() == "" || $('input[name="nacionalidad_solicitada"]').val() == "" || $('#hs-form-iframe-0').contents().find('input[name="firstname"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="lastname"]').val() == "" || $('#hs-form-iframe-0').contents().find('input[name="email"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="numero_de_pasaporte"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="pais_de_nacimiento"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="nacionalidad_solicitada"]').val() == ""){
+                        return false;
+                    }
+
+                    $("#ajaxload2").show();
+
+                    var data = formData.serializeArray();
+
                     $.ajaxSetup({
                         headers: {
                             'X-CSRF-TOKEN': $("input[name='_token']").val()
@@ -166,7 +173,9 @@
                     $.ajax({
                         url: '{{ route("procesargetinfo") }}',
                         method: 'POST',
-                        data: $form.serializeArray ? $form.serializeArray() : {},
+                        data: {
+                            data
+                        },
                         success: function(response){
                             window.location.href = "/tree";
                         }
