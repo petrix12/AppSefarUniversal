@@ -1,5 +1,33 @@
 /* Color de fondo rojo Sefar */
 
+body {
+  zoom: 1.05; /* 90% */
+}
+
+.alert-warning {
+    --bs-alert-color: #fae0de!important;
+    --bs-alert-bg:  #ac2630!important;
+    --bs-alert-border-color: #f3a7a8!important;
+    --bs-alert-link-color: #fae0de!important
+}
+
+.alert-warning a {
+    background-color: #f49e01 !important;
+    color:#093143!important;
+    font-weight: bold !important;
+    border: 0 !important;
+}
+
+.alert-warning a:hover {
+    background-color: #f5aa34 !important;
+    color:#093143!important;
+    border: 0 !important;
+}
+
+.alert-warning a {
+    font-weight: bold !important;
+}
+
 :root {
   --main-bg-color: #093143;
 }

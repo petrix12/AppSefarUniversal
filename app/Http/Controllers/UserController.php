@@ -2271,7 +2271,7 @@ class UserController extends Controller
                             if ($hoy->greaterThan($fechaFormalizacionMas12Meses)) {
                                 $warning = isset($negocio->fecha_solicitud_recursoalzada)
                                     ? null
-                                    : '<b>¡Solicita tu Recurso de Alzada!</b><br><a style="border:0!important;" href="https://sefaruniversal.com/landing-email-de-recurso-de-alzada/" class="cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita el Recurso de Alzada</a>';
+                                    : '<b>¡Solicita tu Recurso de Alzada!</b><a style="border:0!important;" href="https://sefaruniversal.com/landing-email-de-recurso-de-alzada/" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none   text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita el Recurso de Alzada</a>';
 
                                 $cosuser[] = [
                                     "servicio" => $negocio->servicio_solicitado2,
@@ -2286,7 +2286,7 @@ class UserController extends Controller
                             if ($hoy->greaterThan($fechaFormalizacionMas6Meses)) {
                                 $warning = isset($negocio->fecha_solicitud_resolucionexpresa)
                                     ? null
-                                    : '<b>¡Solicita tu resolución expresa!</b><br><br><a href="https://sefaruniversal.com/resolucion-expresa/" style="border:0!important;" class="cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita tu Resolución Expresa</a>';
+                                    : '<b>¡Solicita tu resolución expresa!</b><a href="https://sefaruniversal.com/resolucion-expresa/" style="border:0!important;" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none   text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita tu Resolución Expresa</a>';
 
                                 $cosuser[] = [
                                     "servicio" => $negocio->servicio_solicitado2,
@@ -2301,7 +2301,7 @@ class UserController extends Controller
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado2,
                                 "certificadoDescargado" => $certificadoDescargado,
-                                "warning" => '<b>¡Consulta si requieres subsanación o mejora de expediente!</b><br><br><a style="border:0!important;" href="https://sefaruniversal.com/landing-registro-subsanacion-de-la-nacionalidad-espanola-sefardi/" class="cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">¡Consulta ahora!</a>',
+                                "warning" => '<b>¡Consulta si requieres subsanación o mejora de expediente!</b><a style="border:0!important;" href="https://sefaruniversal.com/landing-registro-subsanacion-de-la-nacionalidad-espanola-sefardi/" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none   text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">¡Consulta ahora!</a>',
                                 "currentStepGen" => 18 - $certificadoDescargado,
                                 "currentStepJur" => 4
                             ];
@@ -2584,15 +2584,15 @@ class UserController extends Controller
         } else {
             $cosuser[0]["servicio"] = $servicename["id_hubspot"] ?? "";
             if ($user->pay == 0) {
-                $cosuser[0]["warning"] = "Debes realizar el pago del registro de tu proceso.<br><br><a style='border:0!important;'  href='/pay' class='cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Pagar registro</a>";
+                $cosuser[0]["warning"] = "Debes realizar el pago del registro de tu proceso.<a style='border:0!important;'  href='/pay' class='cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none   text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Pagar registro</a>";
                 $cosuser[0]["currentStepGen"] = 0;
                 $cosuser[0]["currentStepJur"] = -1;
             } else if ($user->pay == 1){
-                $cosuser[0]["warning"] = "Debes completar tu información para continuar con el proceso.<br><br><a style='border:0!important;'  href='/getinfo' class='cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Completar información</a>";
+                $cosuser[0]["warning"] = "Debes completar tu información para continuar con el proceso.<a style='border:0!important;'  href='/getinfo' class='cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none   text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Completar información</a>";
                 $cosuser[0]["currentStepGen"] = 0;
                 $cosuser[0]["currentStepJur"] = -1;
             } else if ($user->contrato == 0){
-                $cosuser[0]["warning"] = "Debes firmar tu contrato para continuar con el proceso.<br><br><a style='border:0!important;'  href='/contrato' class='cfrSefar inline-flex items-center justify-center px-5 py-3  text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Firmar contrato</a>";
+                $cosuser[0]["warning"] = "Debes firmar tu contrato para continuar con el proceso.<a style='border:0!important;'  href='/contrato' class='cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none   text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Firmar contrato</a>";
                 $cosuser[0]["currentStepGen"] = 0;
                 $cosuser[0]["currentStepJur"] = -1;
             }

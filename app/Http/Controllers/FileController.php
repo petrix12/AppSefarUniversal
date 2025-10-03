@@ -188,13 +188,6 @@ class FileController extends Controller
     public function viewfile($id)
     {
         $file = File::findOrFail($id);
-        // Verificar si el usuario es administrador
-        if (!auth()->user()->hasRole('Administrador')) {
-            // Si no es administrador, verificar que el archivo pertenece al usuario
-            if ($file->IDCliente !== auth()->user()->passport) {
-                abort(404);
-            }
-        }
 
         $fileroute = preg_replace('/\/+/', '/', $file->location . "/" . $file->file);
 

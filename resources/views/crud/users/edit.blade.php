@@ -229,12 +229,7 @@
 
                                 <div class="card">
                                     <div class="card-header" style="text-align: center;">
-                                        <center>
-                                            <img class="img-fluid" style="max-width:100px;"
-                                                src="/img/logonormal.png"
-                                                alt="Logo Sefar">
-                                        </center>
-                                        <h2 class="card-title mb-4">Estatus de mi proceso: {!! $co["servicio"] !!}</h2>
+                                        <h1 style="font-size:1.8rem;" class="card-title mt-4 mb-2">Proceso: {!! $co["servicio"] !!}</h1>
                                         @php
                                             $gen = $co["currentStepGen"] ?? -1;
                                             $jur = $co["currentStepJur"] ?? -1;
@@ -268,19 +263,60 @@
                                             }
                                         @endphp
                                         @if($pasoFinal)
-                                            <p class="pb-4">Estatus actual: <b>{{ $pasoFinal['nombre_corto'] }}</b></p>
+                                            <p class="pb-4" style="font-size:1.4rem;">Estatus actual: <b>{{ $pasoFinal['nombre_corto'] }}</b></p>
                                         @else
-                                            <p class="pb-4">Estatus actual: <b>No iniciado</b></p>
+                                            <p class="pb-4" style="font-size:1.4rem;">Estatus actual: <b>No iniciado</b></p>
                                         @endif
-
-                                        <p class="pb-4">{!! $pasoFinal["promesa"] !!}</p>
 
                                         @if (isset($co["warning"]))
-                                            <div class="alert alert-warning fade show small py-4" role="alert">
-                                                <i class="fas fa-exclamation-triangle me-2" style="font-size: 30px"></i><br><br>
-                                                {!! $co["warning"] !!}
+    <div class="alert alert-warning fade show small py-2 d-flex justify-content-center align-items-center gap-2 text-center" role="alert">
+        <i class="fas fa-exclamation-triangle" style="font-size: 20px"></i>
+        <div style="font-size:1rem;">
+            {!! $co["warning"] !!}
+        </div>
+    </div>
+@endif
+
+                                    </div>
+
+                                    <div class="card-body text-center" style="text-align: center; background: rgba(0,0,0,0.05);">
+
+                                        <h4 class="mb-4 mt-4"><b>Progreso Genealógico</b></h4>
+                                        <div class="progress-scroll-container mb-4">
+                                            <div class="progress-container" id="progressContainerGen">
+                                                <div class="progress-line-full"></div>
+                                                <div class="progress-line" style="width: {{ $co['progressPercentageGen'] }}%;"></div>
+
+                                                @foreach ($cos[$co['servicio']]["genealogico"] as $step)
+                                                    <div class="progress-step {{ $co['currentStepGen']+1 >= $step['paso'] ? 'active' : '' }}" data-step="{{ $step['paso'] }}">
+                                                        <i class="fas fa-check-circle"></i>
+                                                        <span class="step-label">{{ $step['nombre_corto'] }}</span>
+                                                    </div>
+                                                @endforeach
                                             </div>
-                                        @endif
+                                        </div>
+
+                                        <h4 class="mb-4"><b>Progreso Jurídico</b></h4>
+                                        <div class="progress-scroll-container">
+                                            <div class="progress-container" id="progressContainerJur">
+                                                <div class="progress-line-full"></div>
+                                                <div class="progress-line" style="width: {{ $co['progressPercentageJur'] }}%;"></div>
+
+                                                @foreach ($cos[$co['servicio']]["juridico"] as $step)
+                                                    <div class="progress-step {{ $co['currentStepGen'] + $co["certificadoDescargado"] + $co['currentStepJur']+1 >= $step['paso'] ? 'active' : '' }}" data-step="{{ $step['paso'] }}">
+                                                        <i class="fas fa-check-circle"></i>
+                                                        <span class="step-label">{{ $step['nombre_corto'] }}</span>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="py-2 px-2">
+                                        <div class="card-header" style="text-align: center;">
+                                            <h4 class="mb-4 mt-4" style="font-size:1.4rem;"><b>Detalle de tu estatus</b></h4>
+                                            <p class="pb-4">{!! $pasoFinal["promesa"] !!}</p>
+                                        </div>
                                     </div>
 
                                     <div style="text-align: center; border-bottom: #DEE2E6 solid 1px;height: 220px; overflow: hidden; ">
@@ -340,39 +376,6 @@
                                             </div>
                                         </div>
                                     @endif
-
-                                    <div class="card-body text-center" style="text-align: center; border-bottom: #DEE2E6 solid 1px; background: rgba(0,0,0,0.05);">
-
-                                        <h4 class="mb-4 mt-4"><b>Progreso Genealógico</b></h4>
-                                        <div class="progress-scroll-container mb-4">
-                                            <div class="progress-container" id="progressContainerGen">
-                                                <div class="progress-line-full"></div>
-                                                <div class="progress-line" style="width: {{ $co['progressPercentageGen'] }}%;"></div>
-
-                                                @foreach ($cos[$co['servicio']]["genealogico"] as $step)
-                                                    <div class="progress-step {{ $co['currentStepGen']+1 >= $step['paso'] ? 'active' : '' }}" data-step="{{ $step['paso'] }}">
-                                                        <i class="fas fa-check-circle"></i>
-                                                        <span class="step-label">{{ $step['nombre_corto'] }}</span>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        </div>
-
-                                        <h4 class="mb-4"><b>Progreso Jurídico</b></h4>
-                                        <div class="progress-scroll-container">
-                                            <div class="progress-container" id="progressContainerJur">
-                                                <div class="progress-line-full"></div>
-                                                <div class="progress-line" style="width: {{ $co['progressPercentageJur'] }}%;"></div>
-
-                                                @foreach ($cos[$co['servicio']]["juridico"] as $step)
-                                                    <div class="progress-step {{ $co['currentStepGen'] + $co["certificadoDescargado"] + $co['currentStepJur']+1 >= $step['paso'] ? 'active' : '' }}" data-step="{{ $step['paso'] }}">
-                                                        <i class="fas fa-check-circle"></i>
-                                                        <span class="step-label">{{ $step['nombre_corto'] }}</span>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    </div>
 
                                     @if(isset($pasoFinal["ctas"]) && sizeof($pasoFinal["ctas"])>1)
                                     <div class="card-body text-center" style="text-align: center; border-bottom: #DEE2E6 solid 1px; background: rgba(0,0,0,0.05);">

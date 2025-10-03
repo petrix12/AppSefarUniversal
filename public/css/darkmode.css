@@ -5,7 +5,7 @@ body.dark-mode input,
 body.dark-mode select,
 body.dark-mode textarea, body.dark-mode .paginate_button, body.dark-mode .page-link, body.dark-mode .contentmodaladdfamiliar
 {
-    background-color: #343A40 !important;
+    background-color: #05111c !important;
     color: #eeeeee!important;
 }
 
@@ -19,11 +19,11 @@ body.dark-mode .cerrarmodal svg, body.dark-mode .cerrarmodalarchivo svg, body.da
 }
 
 body.dark-mode .bg-gray-50, body.dark-mode .cajapernew_min{
-  background-color: #3e4c59 !important;
+  background-color: #0c1823 !important;
 }
 
 body.dark-mode .content , body.dark-mode .container-fluid, body.dark-mode .bg-gray-100, body.dark-mode .content-wrapper {
-    background-color: #232a30 !important;
+    background-color: #000d1a !important;
 }
 
 body.dark-mode input[type='checkbox']:checked{
@@ -35,7 +35,7 @@ body.dark-mode .nav-link, body.dark-mode .fontwhite, body.dark-mode .contentfile
 }
 
 body.dark-mode .styled-table tbody tr:nth-of-type(even){
-	background-color: #3e4c59 !important;
+	background-color: #0c1823 !important;
 	color: #eeeeee!important;
 }
 
@@ -52,7 +52,7 @@ body.dark-mode #nightlygraph{
 }
 
 body.dark-mode .flatpickr-calendar {
-    background-color: #343A40!important;
+    background-color: #05111c!important;
 }
 
 body.dark-mode .flatpickr-disabled {
