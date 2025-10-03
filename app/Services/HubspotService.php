@@ -27,6 +27,33 @@ class HubspotService
         $this->hubspot = Factory::createWithAccessToken(env('HUBSPOT_KEY'));
     }
 
+    public function check001(string $hsId, int $maxRetries = 100, int $sleepSeconds = 2): ?array
+    {
+        $contactData = null;
+
+        for ($i = 0; $i < $maxRetries; $i++) {
+            try {
+                $contactData = $this->getContactById($hsId);
+
+                if ($contactData) {
+                    $props = $contactData['properties'] ?? [];
+
+                    // Checar campo de archivo "pasaporte__documento_"
+                    if (!empty($props['pasaporte__documento_'])) {
+                        // Contacto encontrado y con el archivo cargado
+                        return $contactData;
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::warning("HubSpot check001 intento $i fallo: " . $e->getMessage());
+            }
+
+            sleep($sleepSeconds);
+        }
+
+        return null; // no se encontró en el tiempo esperado
+    }
+
     public function createContact(array $properties): ?string
     {
         try {

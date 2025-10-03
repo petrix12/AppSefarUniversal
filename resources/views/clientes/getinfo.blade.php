@@ -12,7 +12,7 @@
     <div style="position: fixed; top: 0; left: 0; background-color:rgba(0, 0, 0, 0.5); z-index: 6000; width: 100%; height: 100%;" id="ajaxload"></div>
 
     <div style="position: fixed;top: 0;left: 0;background-color:rgba(0, 0, 0, 0.5);z-index: 6000;width: 100%;height: 100%; display: none;" id="ajaxload2">
-        
+
         <div class="card" style="
             position: fixed;
             top: 50%;
@@ -149,12 +149,12 @@
                                 $('#hs-form-iframe-0').contents().find('select[name="tiene_antepasados_espanoles"]').val("No").change();
                                 $('#hs-form-iframe-0').contents().find('input[name="tiene_antepasados_espanoles"]').val("No").change();
                             }
-                        }                  
+                        }
                     }, 1000 );
                 },
                 onFormSubmit: function($form){
                     setTimeout( function() {
-                        
+
                         var formData = $form;
 
                         if($('input[name="firstname"]').val() == "" || $('input[name="lastname"]').val() == "" || $('input[name="email"]').val() == "" || $('input[name="numero_de_pasaporte"]').val() == "" || $('input[name="pais_de_nacimiento"]').val() == "" || $('input[name="nacionalidad_solicitada"]').val() == "" || $('#hs-form-iframe-0').contents().find('input[name="firstname"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="lastname"]').val() == "" || $('#hs-form-iframe-0').contents().find('input[name="email"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="numero_de_pasaporte"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="pais_de_nacimiento"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="nacionalidad_solicitada"]').val() == ""){
@@ -181,7 +181,7 @@
                                 window.location.href = "/tree";
                             }
                         });
-                    }, 12500 );
+                    }, 1500 );
                 }
             });
         </script>
