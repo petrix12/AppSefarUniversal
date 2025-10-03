@@ -27,7 +27,7 @@ class HubspotService
         $this->hubspot = Factory::createWithAccessToken(env('HUBSPOT_KEY'));
     }
 
-    public function check001(string $hsId, int $maxRetries = 50, int $sleepSeconds = 2): ?array
+    public function check001(string $hsId, int $maxRetries = 100, int $sleepSeconds = 2): ?array
     {
         $contactData = null;
 
