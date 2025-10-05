@@ -194,7 +194,7 @@
 
             {{-- Tiene hermanos --}}
             <div class="mt-4">
-                <label for="tiene_hermanos" class="block text-sm font-medium">¿Tiene hermanos realizando procesos en Sefar Universal? *</label>
+                <label for="tiene_hermanos" class="block text-sm font-medium">¿Tiene hermanos o algún familiar que esté o haya realizando procesos en Sefar Universal? *</label>
                 <select id="tiene_hermanos" name="tiene_hermanos" class="w-full border rounded p-2" required>
                     <option value="">Selecciona</option>
                     <option value="0" {{ old('tiene_hermanos')==='0' ? 'selected' : '' }}>No</option>
