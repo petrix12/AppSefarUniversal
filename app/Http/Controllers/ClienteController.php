@@ -2256,9 +2256,17 @@ class ClienteController extends Controller
 
             foreach ($input_u as $key => $value) {
                 if($input_u[$key]["name"]!="hs_context") {
-                    $input[$input_u[$key]["name"]] = $input_u[$key]["value"];
+                    if ($input_u[$key]["name"] == "vinculo_antepasados") {
+                        $input[$input_u[$key]["name"]][] = $input_u[$key]["value"];
+                    } else {
+                        $input[$input_u[$key]["name"]] = $input_u[$key]["value"];
+                    }
                 }
             }
+
+            $input['vinculo_antepasados'] = isset($input['vinculo_antepasados'])
+                ? implode(';', $input['vinculo_antepasados'])
+                : null;
 
             DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2, 'cerocerouno' => 1]); // no borrar esta linea
             auth()->user()->revokePermissionTo('finish.register');
@@ -2408,7 +2416,9 @@ class ClienteController extends Controller
                                 'estado54' => 'Arbol Incompleto',
                                 'texto1' => $servicios,
                                 'texto6' => auth()->user()->hs_id,
-                                'texto_largo2' => auth()->user()->nombre_de_familiar_realizando_procesos
+                                'texto_largo2' => auth()->user()->nombre_de_familiar_realizando_procesos,
+                                'color' => trim($input['tengo_certeza_de_mi_antepasado_espanol_']),
+                                'text' => trim($input['vinculo_antepasados'])
                             ])
                         ];
                     }
