@@ -27,12 +27,18 @@ class UsersTable extends Component
     {
         $users = User::query()
             ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('name', 'LIKE', "%{$this->search}%")
-                    ->orWhere('nombres', 'LIKE', "%{$this->search}%")
-                    ->orWhere('apellidos', 'LIKE', "%{$this->search}%")
-                    ->orWhere('email', 'LIKE', "%{$this->search}%")
-                    ->orWhere('passport', 'LIKE', "%{$this->search}%");
+                $terms = explode(' ', $this->search); // divide la búsqueda por espacios
+
+                $query->where(function ($q) use ($terms) {
+                    foreach ($terms as $term) {
+                        $q->where(function ($sub) use ($term) {
+                            $sub->where('name', 'LIKE', "%{$term}%")
+                                ->orWhere('nombres', 'LIKE', "%{$term}%")
+                                ->orWhere('apellidos', 'LIKE', "%{$term}%")
+                                ->orWhere('email', 'LIKE', "%{$term}%")
+                                ->orWhere('passport', 'LIKE', "%{$term}%");
+                        });
+                    }
                 });
             })
             ->when($this->filterServicio !== '', function ($query) {
