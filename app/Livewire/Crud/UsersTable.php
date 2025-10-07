@@ -29,6 +29,8 @@ class UsersTable extends Component
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('name', 'LIKE', "%{$this->search}%")
+                    ->orWhere('nombres', 'LIKE', "%{$this->search}%")
+                    ->orWhere('apellidos', 'LIKE', "%{$this->search}%")
                     ->orWhere('email', 'LIKE', "%{$this->search}%")
                     ->orWhere('passport', 'LIKE', "%{$this->search}%");
                 });
