@@ -193,6 +193,10 @@
                     color: #ffffff;
                 }
 
+                .warningesfera {
+                    background-color: #ff9700 !important
+                }
+
                 /* Etiquetas de los pasos */
                 .step-label {
                     position: absolute;
@@ -288,8 +292,8 @@
                                                 <div class="progress-line" style="width: {{ $co['progressPercentageGen'] }}%;"></div>
 
                                                 @foreach ($cos[$co['servicio']]["genealogico"] as $step)
-                                                    <div class="progress-step {{ $co['currentStepGen']+1 >= $step['paso'] ? 'active' : '' }}" data-step="{{ $step['paso'] }}">
-                                                        <i class="fas fa-check-circle"></i>
+                                                    <div class="progress-step {{ ($co['currentStepGen'] + 1 >= $step['paso']) ? (isset($co['warning']) && $co['currentStepGen'] + $co["certificadoDescargado"] + $co['currentStepJur']+1 == $step['paso'] ? 'warningesfera' : 'active') : '' }} data-step="{{ $step['paso'] }}">
+                                                        <i class="fas fa-{{ $co['currentStepGen'] + $co["certificadoDescargado"] + $co['currentStepJur']+1 >= $step['paso'] ? (isset($co['warning']) && $co['currentStepGen'] + $co["certificadoDescargado"] + $co['currentStepJur']+1 == $step['paso'] ? 'exclamation' : 'check-circle') : 'check-circle' }}"></i>
                                                         <span class="step-label">{{ $step['nombre_corto'] }}</span>
                                                     </div>
                                                 @endforeach
@@ -303,8 +307,8 @@
                                                 <div class="progress-line" style="width: {{ $co['progressPercentageJur'] }}%;"></div>
 
                                                 @foreach ($cos[$co['servicio']]["juridico"] as $step)
-                                                    <div class="progress-step {{ $co['currentStepGen'] + $co["certificadoDescargado"] + $co['currentStepJur']+1 >= $step['paso'] ? 'active' : '' }}" data-step="{{ $step['paso'] }}">
-                                                        <i class="fas fa-check-circle"></i>
+                                                    <div class="progress-step {{ $co['currentStepGen'] + $co["certificadoDescargado"] + $co['currentStepJur']+1 >= $step['paso'] ? (isset($co['warning']) && $co['currentStepGen'] + $co["certificadoDescargado"] + $co['currentStepJur']+1 == $step['paso'] ? 'warningesfera' : 'active') : '' }}">
+                                                        <i class="fas fa-{{ $co['currentStepGen'] + $co["certificadoDescargado"] + $co['currentStepJur']+1 >= $step['paso'] ? (isset($co['warning']) && $co['currentStepGen'] + $co["certificadoDescargado"] + $co['currentStepJur']+1 == $step['paso'] ? 'exclamation' : 'check-circle') : 'check-circle' }}"></i>
                                                         <span class="step-label">{{ $step['nombre_corto'] }}</span>
                                                     </div>
                                                 @endforeach
@@ -350,7 +354,7 @@
 
                                     @if(sizeof($pasoFinal["textos_adicionales"]) > 0)
                                         <div style="text-align: center; border-bottom: #DEE2E6 solid 1px; background: rgba(0,0,0,0.05);" class="pb-4">
-                                            <h4 class="mb-4"><b>Información Adicional</b></h4>
+                                            <h4 class="my-4"><b>Información Adicional</b></h4>
                                             <div class="accordion accordion-flush" id="accordionFlushExample" style="max-width: 800px; margin: 0 auto;">
                                                 @foreach($pasoFinal["textos_adicionales"] as $index => $item)
                                                     <div class="accordion-item">
