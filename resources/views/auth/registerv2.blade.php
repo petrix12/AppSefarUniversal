@@ -160,6 +160,8 @@
                     <option value="y.hernandez@sefaruniversal.eu" {{ old('referido')=='y.hernandez@sefaruniversal.eu' ? 'selected' : '' }}>Yineska Hernández</option>
                     <option value="ahernandez@sefarvzla.com" {{ old('referido')=='ahernandez@sefarvzla.com' ? 'selected' : '' }}>Alexandra Hernández Gómez</option>
                     <option value="mherrera@sefarvzla.com" {{ old('referido')=='mherrera@sefarvzla.com' ? 'selected' : '' }}>Marla Herrera Sulbarán</option>
+                    <option value="h.alvarado@sefaruniversal.eu" {{ old('referido')=='h.alvarado@sefaruniversal.eu' ? 'selected' : '' }}>Haidy Alvarado</option>
+                    <option value="gmorales@sefaruniversal.eu" {{ old('referido')=='gmorales@sefaruniversal.eu' ? 'selected' : '' }}>Gabriela Morales Veitia</option>
                 </select>
                 @error('referido')
                     <p class="error-text">{{ $message }}</p>
