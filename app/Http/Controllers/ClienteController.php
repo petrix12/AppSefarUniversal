@@ -814,7 +814,99 @@ class ClienteController extends Controller
                         $resultadoIA = $this->analizarEtiquetasYDevolverJSON($mondaydataforAI);
                     }
 
-                    if(isset($negocio->fase_3_pagado) || isset($negocio->fase_3_pagado__teamleader_)) {
+                    if (isset($negocio->n5__fecha_de_formalizacion)){
+                        if(!isset($negocio->n4__certificado_descargado)){
+                            $certificadoDescargado = 2;
+                        }
+                        if (isset($negocio->nacionalidad_concedida) || isset($negocio->n7__fecha_de_resolucion)){
+                            $cosuser[] = [
+                                "servicio" => $negocio->servicio_solicitado2,
+                                "warning" => null,
+                                "certificadoDescargado" => $certificadoDescargado,
+                                "currentStepGen" => 18 - $certificadoDescargado,
+                                "currentStepJur" => 8
+                            ];
+                            continue;
+                        }
+
+                        if (isset($negocio->n13__fecha_recurso_alzada)){
+                            $fechaRecurso = Carbon::parse($negocio->n13__fecha_recurso_alzada);
+                            $fechaRecursoMas3Meses = $fechaRecurso->copy()->addMonths(3);
+                            if ($fechaRecursoMas3Meses->greaterThan($hoy)){
+                                if ($fechaRecursoMas3Meses->greaterThan($hoy)) {
+                                    $warning = isset($negocio->fecha_solicitud_viajudicial)
+                                        ? null
+                                        : "<b>¡Puedes solicitar la vía judicial!</b>";
+
+                                    $cosuser[] = [
+                                        "servicio" => $negocio->servicio_solicitado2,
+                                        "warning" => $warning,
+                                        "certificadoDescargado" => $certificadoDescargado,
+                                        "currentStepGen" => 18 - $certificadoDescargado,
+                                        "currentStepJur" => 7
+                                    ];
+                                    continue;
+                                }
+                            }
+                        }
+
+                        if (isset($negocio->n5__fecha_de_formalizacion)){
+                            $fechaFormalizacion = Carbon::parse($negocio->n5__fecha_de_formalizacion);
+
+                            $fechaFormalizacionMas12Meses = $fechaFormalizacion->copy()->addMonths(12);
+                            $fechaFormalizacionMas6Meses = $fechaFormalizacion->copy()->addMonths(6);
+                            $fechaFormalizacionMas1Meses = $fechaFormalizacion->copy()->addMonths(1);
+                            if ($hoy->greaterThan($fechaFormalizacionMas12Meses)){
+                                if ($hoy->greaterThan($fechaFormalizacionMas12Meses)) {
+                                    $warning = isset($negocio->fecha_solicitud_recursoalzada)
+                                        ? null
+                                        : '<b>¡Solicita tu Recurso de Alzada!</b><a style="border:0!important;" href="https://sefaruniversal.com/landing-email-de-recurso-de-alzada/" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none   text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita el Recurso de Alzada</a>';
+
+                                    $cosuser[] = [
+                                        "servicio" => $negocio->servicio_solicitado2,
+                                        "warning" => $warning,
+                                        "certificadoDescargado" => $certificadoDescargado,
+                                        "currentStepGen" => 18 - $certificadoDescargado,
+                                        "currentStepJur" => 6
+                                    ];
+                                    continue;
+                                }
+                            } else if ($hoy->greaterThan($fechaFormalizacionMas6Meses)){
+                                if ($hoy->greaterThan($fechaFormalizacionMas6Meses)) {
+                                    $warning = isset($negocio->fecha_solicitud_resolucionexpresa)
+                                        ? null
+                                        : '<b>¡Solicita tu resolución expresa!</b><a href="https://sefaruniversal.com/resolucion-expresa/" style="border:0!important;" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none   text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita tu Resolución Expresa</a>';
+
+                                    $cosuser[] = [
+                                        "servicio" => $negocio->servicio_solicitado2,
+                                        "warning" => $warning,
+                                        "certificadoDescargado" => $certificadoDescargado,
+                                        "currentStepGen" => 18 - $certificadoDescargado,
+                                        "currentStepJur" => 5
+                                    ];
+                                    continue;
+                                }
+                            } else if ($hoy->greaterThan($fechaFormalizacionMas1Meses)){
+                                $cosuser[] = [
+                                    "servicio" => $negocio->servicio_solicitado2,
+                                    "certificadoDescargado" => $certificadoDescargado,
+                                    "warning" => '<b>¡Consulta si requieres subsanación o mejora de expediente!</b><a style="border:0!important;" href="https://sefaruniversal.com/landing-registro-subsanacion-de-la-nacionalidad-espanola-sefardi/" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none   text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">¡Consulta ahora!</a>',
+                                    "currentStepGen" => 18 - $certificadoDescargado,
+                                    "currentStepJur" => 4
+                                ];
+                                continue;
+                            } else {
+                                $cosuser[] = [
+                                    "servicio" => $negocio->servicio_solicitado2,
+                                    "warning" => null,
+                                    "certificadoDescargado" => $certificadoDescargado,
+                                    "currentStepGen" => 18 - $certificadoDescargado,
+                                    "currentStepJur" => 3
+                                ];
+                                continue;
+                            }
+                        }
+                    } else if(isset($negocio->fase_3_pagado) || isset($negocio->fase_3_pagado__teamleader_)) {
                         if(!isset($negocio->n4__certificado_descargado)){
                             $certificadoDescargado = 2;
                         }
