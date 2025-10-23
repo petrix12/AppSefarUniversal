@@ -201,21 +201,180 @@
                     </div>
                 </div>
 
+                @php
+                    $boxheight = 120;
+                    $nodeHeight = 130;
+                    $columnWidth = 300;
+                    $initialOffset = 20;
+
+                    // Altura total fija para el árbol
+                    $totalTreeHeight = 2000; // Ajusta según necesites
+                @endphp
+
                 <div style="width: 100%; height: 80vh; overflow: auto;" id="containertree">
                     <div class="treecont_minimized" id="zoomableContent" style="position:relative;">
                         <div id="mylines" class="mylines"></div>
-                        <div class="arbolflex">
-                            <div style="width:20px">
-                                <div style="width:20px">
-                                </div>
-                            </div>
+                        <div class="arbolflex" style="height: {{$totalTreeHeight}}px;">
 
-                            {!! $htmlGenerado !!}
+                            @foreach ($columnasparatabla as $key1 => $columna)
+                                @php
+                                    $posX = ($key1 * $columnWidth) + $initialOffset;
+                                    $nodesInThisColumn = count($columna);
 
-                            <div style="width:50px">
-                                <div style="width:50px">
+                                    // Altura de cada contenedor en esta columna
+                                    $containerHeight = $nodesInThisColumn > 0 ? ($totalTreeHeight / $nodesInThisColumn) : $totalTreeHeight;
+                                @endphp
+
+                                <div class="cliente" style="left: {{$posX}}px; top: 0; width: {{$columnWidth}}px; height: 100%;" data-column="{{$key1}}">
+                                    @foreach ($columna as $key2 => $persona)
+                                        @php
+                                            // Posición Y del contenedor
+                                            $containerY = $key2 * $containerHeight;
+                                        @endphp
+
+                                        @if ($persona["showbtn"]==2)
+                                            <div class="contnodo-wrapper"
+                                                style="position: absolute;
+                                                        top: {{$containerY}}px;
+                                                        left: 0;
+                                                        width: 100%;
+                                                        height: {{$containerHeight}}px;
+                                                        display: flex;
+                                                        align-items: center;
+                                                        justify-content: center;"
+                                                data-column="{{$key1}}"
+                                                data-row="{{$key2}}"
+                                                data-container-y="{{$containerY}}"
+                                                data-container-height="{{$containerHeight}}">
+
+                                                <div class="cajapernew_min min_persona_id_{{ $persona['id'] }} min_padre_id_{{ $persona['idPadreNew'] ?? 'no' }} min_madre_id_{{ $persona['idMadreNew'] ?? 'no' }}"
+                                                    id="min_{{ $persona['id'] }}_{{ $persona['idPadreNew'] ?? 'no' }}_{{ $persona['idMadreNew'] ?? 'no' }}"
+                                                    data-person-id="{{ $persona['id'] }}"
+                                                    data-column="{{$key1}}"
+                                                    data-row="{{$key2}}"
+                                                    data-container-y="{{$containerY}}"
+                                                    data-container-height="{{$containerHeight}}">
+
+                                                    <div class="encabezadonew_min">
+                                                        {{$persona["Nombres"] . ' ' . $persona["Apellidos"]}}<br>
+                                                        @if($checkBtn == "si")
+                                                            @if ($key1+$generacionBase == 1)
+                                                                @if ($key2 == 0)
+                                                                    (Padre)
+                                                                @else
+                                                                    (Madre)
+                                                                @endif
+                                                            @else
+                                                                ({{$parentescos[$key1-2+$generacionBase][$persona['PersonaIDNew']]}})
+                                                            @endif
+                                                        @else
+                                                            @if ($key1 == 0)
+                                                                (Cliente)
+                                                            @elseif ($key1 == 1)
+                                                                @if ($key2 == 0)
+                                                                    (Padre)
+                                                                @else
+                                                                    (Madre)
+                                                                @endif
+                                                            @else
+                                                                @if(isset($parentescos[$key1 - 2 + $generacionBase][$persona['PersonaIDNew']]))
+                                                                    ({{ $parentescos[$key1 - 2 + $generacionBase][$persona['PersonaIDNew']] }})
+                                                                @else
+                                                                    <script>window.location.reload();</script>
+                                                                @endif
+                                                            @endif
+                                                        @endif
+                                                    </div>
+
+                                                    <div id="datacopy_{{ $persona['id'] }}" style="display: none;">
+                                                        @if (!empty($persona['Nombres']))
+                                                            <p>{{ $persona['Nombres'] }}{{!empty($persona['Apellidos']) ? " ".$persona['Apellidos'] : "" }}|</p>
+                                                        @endif
+                                                        @if (!empty($persona['AnhoNac']))
+                                                            <p><strong>n </strong>@if (!empty($persona['LugarNac']))en {{ $persona['LugarNac'] }}@endif {{ !empty($persona['DiaNac']) ? $persona['DiaNac'] : '' }}{{ !empty($persona['DiaNac']) ? '/' : '' }}{{ !empty($persona['MesNac']) ? $persona['MesNac'] : '' }}{{ !empty($persona['MesNac']) ? '/' : '' }}{{ $persona['AnhoNac'] }}|</p>
+                                                        @endif
+                                                        @if (!empty($persona['AnhoBtzo']))
+                                                            <p><strong>b </strong>@if (!empty($persona['LugarBtzo']))en {{ $persona['LugarBtzo'] }}@endif {{ !empty($persona['DiaBtzo']) ? $persona['DiaBtzo'] : '' }}{{ !empty($persona['DiaBtzo']) ? '/' : '' }}{{ !empty($persona['MesBtzo']) ? $persona['MesBtzo'] : '' }}{{ !empty($persona['MesBtzo']) ? '/' : '' }}{{ $persona['AnhoBtzo'] }}|</p>
+                                                        @endif
+                                                        @if (!empty($persona['AnhoMatr']))
+                                                            <p><strong>m </strong>@if (!empty($persona['LugarMatr']))en {{ $persona['LugarMatr'] }}@endif {{ !empty($persona['DiaMatr']) ? $persona['DiaMatr'] : '' }}{{ !empty($persona['DiaMatr']) ? '/' : '' }}{{ !empty($persona['MesMatr']) ? $persona['MesMatr'] : '' }}{{ !empty($persona['MesMatr']) ? '/' : '' }}{{ $persona['AnhoMatr'] }}|</p>
+                                                        @endif
+                                                        @if (!empty($persona['AnhoDef']))
+                                                            <p><strong>f </strong>@if (!empty($persona['LugarDef']))en {{ $persona['LugarDef'] }}@endif {{ !empty($persona['DiaDef']) ? $persona['DiaDef'] : '' }}{{ !empty($persona['DiaDef']) ? '/' : '' }}{{ !empty($persona['MesDef']) ? $persona['MesDef'] : '' }}{{ !empty($persona['MesDef']) ? '/' : '' }}{{ $persona['AnhoDef'] }}|</p>
+                                                        @endif
+                                                    </div>
+
+                                                    <div class="continfo">
+                                                        @if (!empty($persona['AnhoNac']))
+                                                            <p><strong>○ </strong>{{ !empty($persona['DiaNac']) ? $persona['DiaNac'] : '' }}{{ !empty($persona['DiaNac']) ? '/' : '' }}{{ !empty($persona['MesNac']) ? $persona['MesNac'] : '' }}{{ !empty($persona['MesNac']) ? '/' : '' }}{{ $persona['AnhoNac'] }} {{!empty($persona['LugarNac']) ? '(' . $persona['LugarNac'] . ')' : '' }}</p>
+                                                        @endif
+                                                        @if (!empty($persona['AnhoDef']))
+                                                            <p><strong>✟ </strong>{{ !empty($persona['DiaDef']) ? $persona['DiaDef'] : '' }}{{ !empty($persona['DiaDef']) ? '/' : '' }}{{ !empty($persona['MesDef']) ? $persona['MesDef'] : '' }}{{ !empty($persona['MesDef']) ? '/' : '' }}{{ $persona['AnhoDef'] }} {{!empty($persona['LugarDef']) ? '(' . $persona['LugarDef'] . ')' : '' }}</p>
+                                                        @endif
+                                                        <div style="width: 100%; height:0.5rem; border-bottom: #093143 1px solid ; margin-bottom:0.5rem;"></div>
+                                                        @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
+                                                            <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : json_encode($persona['Observaciones'])}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar</button>
+                                                            <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Archivos</button>
+                                                            <button class="copydata" onclick="copydata('datacopy_{{ $persona['id'] }}')">Copiar</button>
+                                                            <button class="copydata" onclick="window.location.href='/tree/{{$persona["IDCliente"]}}/{{$persona["id"]}}/{{$key1+$generacionBase}}/{{$key2}}'">Extender</button>
+                                                        @elseif(auth()->user() && auth()->user()->hasRole(['Cliente']))
+                                                            <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : json_encode($persona['Observaciones'])}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar</button>
+                                                            <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Archivos</button>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        @elseif ($persona["showbtn"]==1)
+                                            <div class="contnodo-wrapper"
+                                                style="position: absolute;
+                                                        top: {{$containerY}}px;
+                                                        left: 0;
+                                                        width: 100%;
+                                                        height: {{$containerHeight}}px;
+                                                        display: flex;
+                                                        align-items: center;
+                                                        justify-content: center;"
+                                                data-column="{{$key1}}"
+                                                data-row="{{$key2}}"
+                                                data-container-y="{{$containerY}}"
+                                                data-container-height="{{$containerHeight}}">
+
+                                                <div class="cajapernew_min cajabtn_add addbtn {{ $persona["showbtnsex"] == "m" ? "M" : "F" }}_{{$persona["id_hijo"]}}"
+                                                    id="{{ $persona["showbtnsex"] == "m" ? "M" : "F" }}_{{$persona["id_hijo"]}}_{{$columnasparatabla[0][0]["IDCliente"]}}"
+                                                    data-column="{{$key1}}"
+                                                    data-row="{{$key2}}"
+                                                    data-container-y="{{$containerY}}"
+                                                    data-container-height="{{$containerHeight}}">
+                                                    <div class="encabezadonew_min">
+                                                        <button
+                                                                data-column="{{$key1}}"
+                                                                data-row="{{$key2}}"
+                                                                data-container-y="{{$containerY}}"
+                                                                data-container-height="{{$containerHeight}}">
+                                                            <i class="fa-solid fa-plus"></i>
+                                                        </button>
+                                                        Agregar {{ $persona["showbtnsex"] == "m" ? "Padre" : "Madre" }}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        @else
+                                            <div class="contnodo-wrapper"
+                                                style="position: absolute;
+                                                        top: {{$containerY}}px;
+                                                        left: 0;
+                                                        width: 100%;
+                                                        height: {{$containerHeight}}px;"
+                                                data-column="{{$key1}}"
+                                                data-row="{{$key2}}"
+                                                data-container-y="{{$containerY}}"
+                                                data-container-height="{{$containerHeight}}">
+                                            </div>
+                                        @endif
+                                    @endforeach
                                 </div>
-                            </div>
+                            @endforeach
                         </div>
                     </div>
                 </div>
@@ -1385,304 +1544,410 @@
     <link rel="stylesheet" href="{{ asset('css\sefar.css') }}">
     <style>
         #back-to-top {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: rgb(6, 194, 204);
-            border: none;
-            padding: 10px 20px;
-            border-radius: 50%;
-            color: white;
-            font-size: 35px;
-            cursor: pointer;
-            width: 56px;
-            height: 56px;
-            transition: box-shadow 0.3s ease-in-out, background-color 0.3s ease-in-out;
-            display: flex;
-            justify-content: center; /* Centrar horizontalmente */
-            align-items: center; /* Centrar verticalmente */
-            z-index: 6555;
-        }
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: rgb(6, 194, 204);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 50%;
+    color: white;
+    font-size: 35px;
+    cursor: pointer;
+    width: 56px;
+    height: 56px;
+    transition: box-shadow 0.3s ease-in-out, background-color 0.3s ease-in-out;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 6555;
+}
 
-        #back-to-top:hover {
-            background-color: rgb(4, 150, 158); /* Color al pasar el cursor */
-            box-shadow: 0 0 25px rgb(6, 194, 204); /* Intensificar el glow al hacer hover */
-        }
-        .glow-effect {
-            box-shadow: 0 0 15px rgb(6, 194, 204);
-            transition: box-shadow 0.5s ease-in-out;
-        }
-        .fontwhite{
-            color: rgba(55, 65, 81, 1);
-        }
-        .tablafiles {
-            width: 100%;
-        }
-        .rowfile{
-            border-radius: 5px;
-            border: rgba(0, 0, 0, 0.3) solid 2px;
-            padding: 15px 10px;
-            margin: 10px 0px;
-        }
-        .contentfiles {
-            padding: 15px 30px;
-            overflow-y: auto;
-            max-height: 58vh;
-            min-height: 58vh;
-            color: rgba(55, 65, 81, 1);
-        }
-        #mylines {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            pointer-events: none;
-        }
-        .modaleditfamiliar, .modaladdfamiliar, .modalverarchivos, .modaladdarchivo, .modaleditararchivo{
-            position: fixed;
-            z-index: 100000;
-            top: 0;
-            left: 0;
-            background-color: rgba(0, 0, 0, 0.50);
-            height: 100%;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            align-content: center;
-            justify-content: center;
-            display: none;
-        }
-        .contentmodaladdfamiliar{
-            height: 80vh;
-            width: 70vw;
-            overflow-y: auto;
-            color: white;
-            border-radius: 20px;
-            background-color: white;
-            margin: auto;
-        }
-        .addbtntext{
-            font-size: 0.7rem;
-        }
-        .cliente {
-            display: inline-flex;
-            flex-direction: column;
-            justify-content: space-around; /* Distribuye el espacio alrededor de los elementos */
-            align-items: center; /* Alinea los elementos al centro horizontalmente */
-        }
-        .treecont_minimized{
-            padding: 30px 20px;
-            margin-bottom: 20px;
-            width: 100%;
-            height: 100%;
-            position: relative;
-        }
+#back-to-top:hover {
+    background-color: rgb(4, 150, 158);
+    box-shadow: 0 0 25px rgb(6, 194, 204);
+}
 
-        .tooltip {
-            visibility: hidden;
-            width: 200px;
-            background-color: #f9f9f9;
-            color: #000;
-            text-align: left;
-            border-radius: 6px;
-            padding: 10px;
-            position: absolute;
-            z-index: 1;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
+.glow-effect {
+    box-shadow: 0 0 15px rgb(6, 194, 204);
+    transition: box-shadow 0.5s ease-in-out;
+}
 
-        .arbolflex {
-            display: flex;
-            height: 100%;
-            z-index: 2;
-        }
+.fontwhite {
+    color: rgba(55, 65, 81, 1);
+}
 
-        .editperson, .filebtn, .copydata {
-            background-color: #093143;
-            color: white;
-            border-radius: 10px;
-            padding: 2px 10px;
-            border: 1px solid #093143 !important;
-            transition: all 0.3s ease;
-            font-size: 0.7rem;
-        }
+.tablafiles {
+    width: 100%;
+}
 
-        .editperson:hover, .filebtn:hover, .copydata:hover {
-            color: #093143 !important;
-            background-color: rgb(6, 194, 204)!important;
-        }
+.rowfile {
+    border-radius: 5px;
+    border: rgba(0, 0, 0, 0.3) solid 2px;
+    padding: 15px 10px;
+    margin: 10px 0px;
+}
 
-        .zoomableContent{
-            -webkit-font-smoothing: subpixel-antialiased;
-        }
+.contentfiles {
+    padding: 15px 30px;
+    overflow-y: auto;
+    max-height: 58vh;
+    min-height: 58vh;
+    color: rgba(55, 65, 81, 1);
+}
 
-        .addbtn {
-            width: 20px;
-            height: 1.3rem;
-            font-size: 20px;
-            background-color: #093143;
-            border: 2px solid #093143 !important;
-            border-radius: 200px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 0;
-            margin: 0px 5px 0px 0px;
-            line-height: 1;
-            color: white;
-            transition: all 0.3s ease;
-        }
+#mylines {
+    position: absolute;
+    top: 30px;
+    left: 0;
+    width: 100vw;
+    height: 2000px;
+    z-index: 0;
+    pointer-events: none;
+}
 
-        .addbtn:hover {
-            color: #093143 !important;
-            background-color: rgb(6, 194, 204)!important;
-        }
+.modaleditfamiliar,
+.modaladdfamiliar,
+.modalverarchivos,
+.modaladdarchivo,
+.modaleditararchivo {
+    position: fixed;
+    z-index: 100000;
+    top: 0;
+    left: 0;
+    background-color: rgba(0, 0, 0, 0.50);
+    height: 100%;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    align-content: center;
+    justify-content: center;
+    display: none;
+}
 
-        .cajapernew {
-            border: 1px solid rgb(22, 43, 27);
-            width: 16rem;
-            height: 1.3rem;
-            border-radius: 5px;
-            padding: 0;
-            overflow: hidden;
-            z-index: 1;
-            text-align: center;
-        }
+.contentmodaladdfamiliar {
+    height: 80vh;
+    width: 70vw;
+    overflow-y: auto;
+    color: white;
+    border-radius: 20px;
+    background-color: white;
+    margin: auto;
+}
 
-        .cajabtn {
-            width: 16rem;
-            padding: 0;
-            overflow: hidden;
-            z-index: 1;
-            text-align: left;
-            display: flex;
-            align-content: center;
-            align-items: center;
-        }
+.addbtntext {
+    font-size: 0.7rem;
+}
 
-        .cajapernew_min{
-            background-color: white !important;
-            position: relative;
-            border: 1px solid rgb(22, 43, 27);
-            width: 18rem;
-            height: auto;
-            border-radius: 5px;
-            padding: 0;
-            overflow: hidden;
-            z-index: 1;
-            text-align: center;
+.cliente {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+}
 
-        }
+.contnodo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    position: relative;
+    width: 100%;
+}
 
-        .cajaperemptynew_min{
-            position: relative;
-            width: 16rem;
-            border-radius: 5px;
-            padding: 0;
-            overflow: hidden;
-            z-index: 1;
-            text-align: center;
-        }
+.treecont_minimized {
+    padding: 30px 20px;
+    margin-bottom: 20px;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
 
-        .cajapernew_min p {
-            font-size: 0.67rem;
-        }
+.tooltip {
+    visibility: hidden;
+    width: 200px;
+    background-color: #f9f9f9;
+    color: #000;
+    text-align: left;
+    border-radius: 6px;
+    padding: 10px;
+    position: absolute;
+    z-index: 1;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
 
-        .cajapernew_min .encabezadonew_min {
-            transition: all 0.3s ease;
-        }
+.arbolflex {
+    position: relative;
+    height: 100%;
+    width: fit-content;
+    min-width: 100%;
+    z-index: 2;
+}
 
-        .cajapernew_min:hover .encabezadonew_min {
-            color: #093143 !important;
-            background-color: rgb(6, 194, 204)!important;
-        }
+.editperson,
+.filebtn,
+.copydata {
+    background-color: #093143;
+    color: white;
+    border-radius: 10px;
+    padding: 2px 10px;
+    border: 1px solid #093143 !important;
+    transition: all 0.3s ease;
+    font-size: 0.7rem;
+}
 
-        .cajapernew_min {
-            will-change: transform;
-            transition: all 0.3s ease;
-        }
+.editperson:hover,
+.filebtn:hover,
+.copydata:hover {
+    color: #093143 !important;
+    background-color: rgb(6, 194, 204) !important;
+}
 
-        .mr1{
-            margin-right: 5px;
-        }
+.zoomableContent {
+    -webkit-font-smoothing: subpixel-antialiased;
+}
 
-        .cajabtn_min{
-            width: 14rem;
-            padding: 0;
-            overflow: hidden;
-            z-index: 1;
-            text-align: left;
-            display: flex;
-            align-content: center;
-            align-items: center;
-        }
+.addbtn {
+    width: 20px;
+    height: 1.3rem;
+    font-size: 20px;
+    background-color: #093143;
+    border: 2px solid #093143 !important;
+    border-radius: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    margin: 0px 5px 0px 0px;
+    line-height: 1;
+    color: white;
+    transition: all 0.3s ease;
+}
 
-        .lineas{
-            width: 30px!important;
-        }
+.addbtn:hover {
+    color: #093143 !important;
+    background-color: rgb(6, 194, 204) !important;
+}
 
-        .miniinfo {
-            width: 100%;
-            height: 100%;
-            font-size: 0.75rem;
-            line-height: 0.85rem;
-            align-content: center;
-        }
+.cajapernew {
+    border: 1px solid rgb(22, 43, 27);
+    width: 16rem;
+    height: 1.3rem;
+    border-radius: 5px;
+    padding: 0;
+    overflow: hidden;
+    z-index: 1;
+    text-align: center;
+}
 
-        input, textarea {
-            color: #093143 !important;
-        }
+.contnodo-wrapper {
+    position: absolute;
+}
 
-        .continfo{
-            text-align: center;
-            padding: 5px;
-        }
+.cajabtn_add {
+    background-color: white !important;
+    position: relative;
+    border: 1px solid rgb(22, 43, 27);
+    width: 18rem;
+    height: auto;
+    border-radius: 10px; /* Rounded corners for a modern look */
+    padding: 0;
+    overflow: hidden;
+    z-index: 1;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-height: 60px; /* Reduced height for a compact look */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    transition: all 0.3s ease;
+}
 
-        .encabezadonew {
-            text-align: center;
-            font-weight: bold;
-            background-color: #093143 !important;
-            color: rgba(255, 255, 255, .9);
-            font-size: 0.9rem;
-        }
-        .encabezadonew_min {
-            text-align: center;
-            font-weight: bold;
-            background-color: #093143 !important;
-            color: rgba(255, 255, 255, .9);
-            font-size: 0.78rem;
-            height: auto;
-        }
+.cajabtn_add:hover {
+    transform: scale(1.05); /* Slight scale effect on hover */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* Enhanced shadow on hover */
+    background-color: #06c2cc;
+}
 
-        .nombres,.apellidos {
-            text-align: center;
-            font-weight: bold;
-        }
+.cajabtn_add .encabezadonew_min {
+    background: linear-gradient(90deg, #093143, #1a5a7a); /* Gradient background */
+    color: white;
+    font-size: 0.8rem;
+    font-weight: bold;
+    width: 100%;
+    padding: 8px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px; /* Space between button and text */
+}
 
-        dialog[open] {
-            animation: appear .15s cubic-bezier(0, 1.8, 1, 1.8);
-        }
+.encabezadonew_min:hover{
+    background: #06c2cc;
+}
 
-        dialog::backdrop {
-            background: linear-gradient(45deg, rgba(121, 22, 15, 0.5), rgba(63, 61, 61, 0.5));
-            backdrop-filter: blur(3px);
-        }
+.addbtn {
+    width: 24px;
+    height: 24px;
+    font-size: 16px;
+    background-color: #06c2cc; /* Vibrant cyan background */
+    border: 2px solid #093143 !important;
+    border-radius: 50%; /* Circular button */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    color: white;
+    transition: all 0.3s ease;
+}
 
-        @keyframes appear {
-            from {
-                opacity: 0;
-                transform: translateX(-3rem);
-            }
+.cajabtn {
+    width: 16rem;
+    padding: 0;
+    overflow: hidden;
+    z-index: 1;
+    text-align: left;
+    display: flex;
+    align-content: center;
+    align-items: center;
+}
 
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
+.cajapernew_min {
+    background-color: white !important;
+    position: relative;
+    border: 1px solid rgb(22, 43, 27);
+    width: 18rem;
+    height: auto;
+    border-radius: 5px;
+    padding: 0;
+    overflow: hidden;
+    z-index: 1;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-height: 180px;
+}
+
+.cajaperemptynew_min {
+    position: relative;
+    width: 16rem;
+    border-radius: 5px;
+    padding: 0;
+    overflow: hidden;
+    z-index: 1;
+    text-align: center;
+}
+
+.cajapernew_min p {
+    font-size: 0.67rem;
+}
+
+.cajapernew_min .encabezadonew_min {
+    transition: all 0.3s ease;
+}
+
+.cajapernew_min:hover .encabezadonew_min {
+    color: #093143 !important;
+    background-color: rgb(6, 194, 204) !important;
+}
+
+.cajapernew_min {
+    will-change: transform;
+    transition: all 0.3s ease;
+}
+
+.mr1 {
+    margin-right: 5px;
+}
+
+.cajabtn_min {
+    width: 14rem;
+    padding: 0;
+    overflow: hidden;
+    z-index: 1;
+    text-align: left;
+    display: flex;
+    align-content: center;
+    align-items: center;
+}
+
+.lineas {
+    width: 30px !important;
+}
+
+.miniinfo {
+    width: 100%;
+    height: 100%;
+    font-size: 0.75rem;
+    line-height: 0.85rem;
+    align-content: center;
+}
+
+input, textarea {
+    color: #093143 !important;
+}
+
+.continfo {
+    text-align: center;
+    padding: 5px;
+}
+
+.encabezadonew {
+    text-align: center;
+    font-weight: bold;
+    background-color: #093143 !important;
+    color: rgba(255, 255, 255, .9);
+    font-size: 0.9rem;
+}
+
+.encabezadonew_min {
+    text-align: center;
+    font-weight: bold;
+    background-color: #093143 !important;
+    color: rgba(255, 255, 255, .9);
+    font-size: 0.78rem;
+    height: auto;
+    width: 100%;
+}
+
+.nombres, .apellidos {
+    text-align: center;
+    font-weight: bold;
+}
+
+dialog[open] {
+    animation: appear .15s cubic-bezier(0, 1.8, 1, 1.8);
+}
+
+dialog::backdrop {
+    background: linear-gradient(45deg, rgba(121, 22, 15, 0.5), rgba(63, 61, 61, 0.5));
+    backdrop-filter: blur(3px);
+}
+
+@keyframes appear {
+    from {
+        opacity: 0;
+        transform: translateX(-3rem);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.downloadgedcom {
+    background-color: rgb(22, 43, 27);
+}
+
+.downloadgedcom:hover {
+    background-color: rgb(247, 176, 52);
+}
     </style>
 @stop
 
@@ -1740,6 +2005,11 @@
         } else {
             document.getElementById('zoomOut').disabled = false;
         }
+
+        // Redibujar líneas después del zoom
+        setTimeout(() => {
+            reloadlines();
+        }, 100);
     }
 
     document.getElementById('zoomIn').addEventListener('click', function() {
@@ -2100,27 +2370,51 @@
         });
     }
 
-    function reloadlines(){
-        $("#mylines").html("");
+function reloadlines(){
+    $("#mylines").html("");
+
+    // Esperar a que el DOM esté completamente renderizado
+    setTimeout(() => {
         const $cajasPersonas = $('.cajapernew_min');
+
+        console.log("Total de cajas encontradas:", $cajasPersonas.length);
 
         $cajasPersonas.each(function() {
             const $caja = $(this);
 
-            const idPersona = $caja.attr('class').match(/min_persona_id_(\d+)/)[1];
-            const idPadre = $caja.attr('class').match(/min_padre_id_(\d+|no)/)[1];
-            const idMadre = $caja.attr('class').match(/min_madre_id_(\d+|no)/)[1];
+            const classAttr = $caja.attr('class');
+            const idPersonaMatch = classAttr.match(/min_persona_id_(\d+)/);
+            const idPadreMatch = classAttr.match(/min_padre_id_(\d+|no)/);
+            const idMadreMatch = classAttr.match(/min_madre_id_(\d+|no)/);
+
+            if (!idPersonaMatch) return;
+
+            const idPersona = idPersonaMatch[1];
+            const idPadre = idPadreMatch ? idPadreMatch[1] : 'no';
+            const idMadre = idMadreMatch ? idMadreMatch[1] : 'no';
 
             if (idPadre !== 'no') {
-                dibujarLineaSVG($caja, $(`.min_persona_id_${idPadre}`));
+                const $cajaPadre = $(`.min_persona_id_${idPadre}`);
+                if ($cajaPadre.length > 0) {
+                    dibujarLineaSVG($caja, $cajaPadre);
+                } else {
+                    console.log("No se encontró el padre con ID:", idPadre);
+                }
             }
 
             if (idMadre !== 'no') {
-                dibujarLineaSVG($caja, $(`.min_persona_id_${idMadre}`));
+                const $cajaMadre = $(`.min_persona_id_${idMadre}`);
+                if ($cajaMadre.length > 0) {
+                    dibujarLineaSVG($caja, $cajaMadre);
+                } else {
+                    console.log("No se encontró la madre con ID:", idMadre);
+                }
             }
         });
 
         const $botonesAgregar = $('.addbtn');
+
+        console.log("Total de botones encontrados:", $botonesAgregar.length);
 
         $botonesAgregar.each(function() {
             const $boton = $(this);
@@ -2138,35 +2432,52 @@
                 const $cajaHijo = $(`.min_persona_id_${idHijo}`);
                 if ($cajaHijo.length > 0) {
                     dibujarLineaSVG($boton, $cajaHijo);
+                } else {
+                    console.log("No se encontró el hijo con ID:", idHijo, "para el botón");
                 }
             }
         });
+
+        console.log("Líneas dibujadas");
+    }, 200); // Espera 200ms para que el DOM se actualice completamente
+}
+
+function dibujarLineaSVG($caja1, $caja2) {
+    if ($caja2.length === 0) {
+        return;
     }
 
-    function dibujarLineaSVG($caja1, $caja2) {
-        if ($caja2.length === 0) {
-            return; // No dibujar si la caja relacionada no existe
-        }
+    // Obtener datos de posición
+    const col1 = parseInt($caja1.attr('data-column'));
+    const row1 = parseInt($caja1.attr('data-row'));
+    const containerY1 = parseFloat($caja1.attr('data-container-y'));
+    const containerHeight1 = parseFloat($caja1.attr('data-container-height'));
 
-        const offset1 = $caja1.offset();
-        const offset2 = $caja2.offset();
+    const col2 = parseInt($caja2.attr('data-column'));
+    const row2 = parseInt($caja2.attr('data-row'));
+    const containerY2 = parseFloat($caja2.attr('data-container-y'));
+    const containerHeight2 = parseFloat($caja2.attr('data-container-height'));
 
-        const x1 = offset1.left + $caja1.outerWidth() / 2;
-        const y1 = offset1.top + $caja1.outerHeight() / 2;
-        const x2 = offset2.left + $caja2.outerWidth() / 2;
-        const y2 = offset2.top + $caja2.outerHeight() / 2;
+    const columnWidth = 300;
+    const initialOffset = 20;
 
-        const svgWidth = Math.abs(x2 - x1);
-        const svgHeight = Math.abs(y2 - y1);
-        const xOffset = Math.min(x1, x2) - $('#mylines').offset().left;
-        const yOffset = Math.min(y1, y2) - $('#mylines').offset().top;
+    // Calcular centros exactos (centro del contenedor)
+    const x1 = (col1 * columnWidth) + initialOffset + (columnWidth / 2);
+    const y1 = containerY1 + (containerHeight1 / 2);
 
-        const svg = `<svg class="linea_conexion" style="position:absolute; top:${yOffset}px; left:${xOffset}px; width:${svgWidth}px; height:${svgHeight}px;">
-                        <line x1="${x1 < x2 ? 0 : svgWidth}" y1="${y1 < y2 ? 0 : svgHeight}" x2="${x1 < x2 ? svgWidth : 0}" y2="${y1 < y2 ? svgHeight : 0}" stroke="black" stroke-width="2" />
-                    </svg>`;
+    const x2 = (col2 * columnWidth) + initialOffset + (columnWidth / 2);
+    const y2 = containerY2 + (containerHeight2 / 2);
 
-        $('#mylines').append(svg);
-    }
+    // Crear SVG
+    const svg = `<svg class="linea_conexion" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index: 0;">
+                    <line x1="${x1}" y1="${y1}"
+                          x2="${x2}" y2="${y2}"
+                          stroke="#093143"
+                          stroke-width="2" />
+                </svg>`;
+
+    $('#mylines').append(svg);
+}
 
     $('#modeview').on('change', function(){
         if ($('#modeview').val() == '1' || $('#modeview').val() == 1){

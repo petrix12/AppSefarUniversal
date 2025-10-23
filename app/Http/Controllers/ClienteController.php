@@ -2199,7 +2199,7 @@ class ClienteController extends Controller
 
         $htmlGenerado = view('arboles.vistatree', compact('generacionBase', 'columnasparatabla', 'parentescos', 'checkBtn', 'parentnumber'))->render();
 
-        return view('arboles.tree', compact('user', 'IDCliente', 'people', 'columnasparatabla', 'cliente', 'tipoarchivos', 'parentescos', 'htmlGenerado', 'checkBtn', 'generacionBase', 'parentnumber'));
+        return view('arboles.tree', compact('generacionBase', 'user', 'IDCliente', 'people', 'columnasparatabla', 'cliente', 'tipoarchivos', 'parentescos', 'htmlGenerado', 'checkBtn', 'generacionBase', 'parentnumber'));
     }
 
     private function storeMondayUserData($user, $mondayUserDetailsPre)
