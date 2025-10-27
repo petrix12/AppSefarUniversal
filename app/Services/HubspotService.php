@@ -15,6 +15,7 @@ use GuzzleHttp\Exception\RequestException;
 use HubSpot\Client\Files\ApiException as FilesApiException;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Promise;
+use GuzzleHttp\Psr7\Response;
 
 use HubSpot\Client\Files\Model\FileUpdateInput;
 
@@ -254,13 +255,57 @@ class HubspotService
     public function updateDeals($hsId, $properties)
     {
         try {
+            // Primer intento
             $this->hubspot->crm()->deals()->basicApi()->update($hsId, [
                 'properties' => $properties
             ]);
-        } catch (ContactException $e) {
-            // Aquí puedes ver el código de estado (por ejemplo, 400) y la respuesta completa
-            $statusCode   = $e->getCode();
-            $responseBody = $e->getResponseBody();
+        } catch (DealException $e) {
+
+            // ===========================================================
+            // 🔍 CAPTURAR RESPUESTA COMPLETA
+            // ===========================================================
+            $rawBody = (string) $e->getResponseBody();
+
+            if (property_exists($e, 'response') && $e->response instanceof Response) {
+                $rawBody = (string) $e->response->getBody();
+            }
+
+            $decoded = json_decode($rawBody, true);
+            $statusCode = $e->getCode();
+
+            \Log::error("❌ HubSpot update error ({$statusCode}): " . $rawBody);
+
+            // ===========================================================
+            // 🧩 ELIMINAR TODAS LAS PROPIEDADES INVÁLIDAS Y REINTENTAR 1 VEZ
+            // ===========================================================
+            if (!empty($decoded['message']) && str_contains($decoded['message'], 'Property values were not valid')) {
+
+                // Detecta TODAS las propiedades conflictivas en una sola pasada
+                preg_match_all('/"([a-zA-Z0-9_]+)" was not one of the allowed options/', $decoded['message'], $matches);
+                $invalidProps = array_unique($matches[1] ?? []);
+
+                if (!empty($invalidProps)) {
+                    foreach ($invalidProps as $prop) {
+                        unset($properties[$prop]);
+                    }
+
+                    \Log::warning("⚠️ Removed invalid HubSpot properties: " . implode(', ', $invalidProps));
+
+                    // Solo un segundo intento
+                    try {
+                        $this->hubspot->crm()->deals()->basicApi()->update($hsId, [
+                            'properties' => $properties
+                        ]);
+                        \Log::info("✅ HubSpot update successful after cleaning invalid properties.");
+                    } catch (DealException $retryException) {
+                        $retryRaw = (string) $retryException->getResponseBody();
+                        if (property_exists($retryException, 'response') && $retryException->response instanceof Response) {
+                            $retryRaw = (string) $retryException->response->getBody();
+                        }
+                        \Log::error("❌ HubSpot retry failed: " . $retryRaw);
+                    }
+                }
+            }
         }
     }
 
