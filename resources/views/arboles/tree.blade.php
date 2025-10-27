@@ -188,7 +188,7 @@
                                 </div>
                             </div>
                             @endif
-                            @if(auth()->user()->roles[0]->id != 5)
+                            @if(auth()->user()->roles[0]->id != 5 && isset($user))
                             <div class="px-4 py-2 m-2">
                                 <div class="justify-center">
                                     <label for="change_person" class="px-3 block text-sm font-medium text-gray-700"
