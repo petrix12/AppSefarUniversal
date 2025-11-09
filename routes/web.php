@@ -426,3 +426,14 @@ Route::prefix('client/requests')->group(function () {
     Route::post('/{documentRequest}/upload', [DocumentRequestController::class, 'upload'])->name('upload');
     Route::post('/{documentRequest}/no-doc', [DocumentRequestController::class, 'noDoc'])->name('no_doc');
 });
+
+
+Route::get('/cron/scheduler-run', function () {
+    // Ejecuta el scheduler
+    Artisan::call('schedule:run');
+    return response()->json([
+        'status' => 'ok',
+        'message' => 'Laravel scheduler ejecutado correctamente',
+        'time' => now()->toDateTimeString(),
+    ]);
+});
