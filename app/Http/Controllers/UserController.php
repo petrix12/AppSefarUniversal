@@ -2203,7 +2203,7 @@ class UserController extends Controller
         $cos2      = $user->arraycos;          // datos ya calculados
         $expires  = $user->arraycos_expire;
 
-        if( count($negocios)>0 && $user->pay > 1 && $user->contrato !=0) {
+        if(count($negocios)>0) {
             foreach($negocios as $negocio) {
                 $certificadoDescargado = 0;
 
@@ -2749,6 +2749,14 @@ class UserController extends Controller
                 }
             }
         }
+
+        uasort($cosuserFinal, function ($a, $b) {
+            $sumaA = ($a['currentStepGen'] ?? 0) + ($a['currentStepJur'] ?? 0);
+            $sumaB = ($b['currentStepGen'] ?? 0) + ($b['currentStepJur'] ?? 0);
+
+            // Orden descendente (de mayor a menor)
+            return $sumaB <=> $sumaA;
+        });
 
         $cos = array_cos();
 

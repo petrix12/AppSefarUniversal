@@ -790,7 +790,7 @@ class ClienteController extends Controller
         $cos2      = $user->arraycos;          // datos ya calculados
         $expires  = $user->arraycos_expire;
 
-        if( count($negocios)>0 && $user->pay > 1 && $user->contrato !=0) {
+        if( count($negocios)>0 ) {
             foreach($negocios as $negocio) {
                 $certificadoDescargado = 0;
 
@@ -1340,10 +1340,46 @@ class ClienteController extends Controller
             }
         }
 
+        uasort($cosuserFinal, function ($a, $b) {
+            $sumaA = ($a['currentStepGen'] ?? 0) + ($a['currentStepJur'] ?? 0);
+            $sumaB = ($b['currentStepGen'] ?? 0) + ($b['currentStepJur'] ?? 0);
+
+            // Orden descendente (de mayor a menor)
+            return $sumaB <=> $sumaA;
+        });
+
         $cos = array_cos();
 
         // Reemplazar $cosuser con la versión final
         $cosuser = array_values($cosuserFinal);
+
+        if ($duplicadosDetectados) {
+            try {
+                \Mail::raw("REVISA LOS NEGOCIOS DEL CLIENTE ID {$user->id}", function ($message) use ($user) {
+                    $message->to('sistemasccs@sefarvzla.com') // <-- cámbialo al real
+                            ->subject("Duplicados detectados en COSUSER - Cliente ID {$user->id}");
+                });
+            } catch (\Exception $e) {
+                \Log::error("Error enviando correo a sistemasccs: " . $e->getMessage());
+            }
+        }
+
+        $user->cosready = 0;
+
+        foreach ($cosuser as $item) {
+            // Normalizar servicio del usuario
+            $servicio = trim(mb_strtolower($item['servicio']));
+
+            // Normalizar las llaves del array $cos
+            $cosKeys = array_map(fn($k) => mb_strtolower($k), array_keys($cos));
+
+            if (in_array($servicio, $cosKeys)) {
+                $user->cosready = 1;
+                break; // basta con que uno coincida
+            }
+        }
+
+        $user->save();
 
         $html = view('crud.users.edit', compact('documentRequests', 'comprasConDealNoPagadas', 'comprasSinDealNoPagadas', 'imageUrls', 'cosuser', 'cos', 'servicename', 'negocios', 'usuariosMonday', 'dataMonday', 'mondayData', 'boardId', 'boardName', 'mondayFormBuilder', 'archivos', 'user', 'roles', 'permissions', 'facturas', 'servicios', 'columnasparatabla'))->render();
         return $html;
