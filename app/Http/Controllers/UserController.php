@@ -2254,17 +2254,23 @@ class UserController extends Controller
                             ['Demanda', 'Judicial']
                         );
 
-                        $warning = ($tieneViajudicialActivo || isset($negocio->fecha_solicitud_viajudicial))
-                            ? null
-                            : "<b>¡Puedes solicitar la vía judicial!</b>";
-
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado,
-                            "warning" => $warning,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "currentStepGen" => 18 - $certificadoDescargado,
-                            "currentStepJur" => 7
-                        ];
+                        if ($tieneViajudicialActivo) {
+                            $cosuser[] = [
+                                "servicio" => $negocio->servicio_solicitado,
+                                "warning" => null,
+                                "certificadoDescargado" => $certificadoDescargado,
+                                "currentStepGen" => 18 - $certificadoDescargado,
+                                "currentStepJur" => 7
+                            ];
+                        } else {
+                            $cosuser[] = [
+                                "servicio" => $negocio->servicio_solicitado,
+                                "warning" => "<b>¡Puedes solicitar la vía judicial!</b>",
+                                "certificadoDescargado" => $certificadoDescargado,
+                                "currentStepGen" => 18 - $certificadoDescargado,
+                                "currentStepJur" => 7
+                            ];
+                        }
 
                         continue;
                     } else if (isset($negocio->n13__fecha_recurso_alzada)){
