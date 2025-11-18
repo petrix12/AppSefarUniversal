@@ -138,6 +138,7 @@ class ClienteController extends Controller
                                 ->where('id_user', $user->id)
                                 ->get();
 
+        // Ruta completa a la carpeta dentro de public
         $path = public_path('img/IMAGENESCOS/');
 
         // Obtener todos los archivos del directorio
@@ -339,11 +340,14 @@ class ClienteController extends Controller
                 return json_encode($arrayData, JSON_UNESCAPED_UNICODE);
             };
 
-            $existingDealIds = Negocio::whereIn('hubspot_id', array_column($updatedDeals, 'id'))
-                ->pluck('hubspot_id')
-                ->toArray();
+            // Obtener deals existentes indexados por hubspot_id
+            $existingDeals = Negocio::whereIn('hubspot_id', array_column($updatedDeals, 'id'))
+                ->get()
+                ->keyBy('hubspot_id');
 
             $newDeals = [];
+            $dealsToUpdate = [];
+
             foreach ($updatedDeals as $deal) {
                 // Procesar propiedades especiales
                 $propsToProcess = ['argumento_de_ventas__new_', 'n2__antecedentes_penales', 'documentos'];
@@ -353,24 +357,55 @@ class ClienteController extends Controller
                     }
                 }
 
-                if (!in_array($deal['id'], $existingDealIds)) {
-                    $data = [
-                        'hubspot_id' => $deal['id'],
-                        'teamleader_id' => array_search($deal['properties']['dealname'] ?? null, $teamleaderDealNames) ?: null,
-                        'user_id' => $user->id,
-                    ];
+                // Preparar datos comunes
+                $data = [
+                    'dealname' => $deal['properties']['dealname'] ?? null,
+                    'teamleader_id' => array_search($deal['properties']['dealname'] ?? null, $teamleaderDealNames) ?: null,
+                ];
 
-                    foreach ($fillableColumns as $column) {
-                        $data[$column] = $deal['properties'][$column] ?? null;
+                foreach ($fillableColumns as $column) {
+                    $data[$column] = $deal['properties'][$column] ?? null;
+                }
+
+                // Verificar si el deal existe
+                if ($existingDeals->has($deal['id'])) {
+                    // Actualizar deal existente
+                    $existingDeal = $existingDeals->get($deal['id']);
+
+                    // Solo actualizar si hay cambios
+                    $hasChanges = false;
+                    foreach ($data as $key => $value) {
+                        if ($existingDeal->{$key} != $value) {
+                            $hasChanges = true;
+                            break;
+                        }
                     }
 
-                    $newDeals[] = $data;
+                    if ($hasChanges) {
+                        $dealsToUpdate[] = [
+                            'id' => $existingDeal->id,
+                            'data' => $data
+                        ];
+                    }
+                } else {
+                    // Insertar nuevo deal
+                    $newDeals[] = array_merge([
+                        'hubspot_id' => $deal['id'],
+                        'user_id' => $user->id,
+                    ], $data);
                 }
             }
 
-            // Inserción masiva
+            // Inserción masiva de nuevos deals
             if (!empty($newDeals)) {
                 Negocio::insert($newDeals);
+            }
+
+            // Actualización masiva de deals existentes
+            if (!empty($dealsToUpdate)) {
+                foreach ($dealsToUpdate as $dealUpdate) {
+                    Negocio::where('id', $dealUpdate['id'])->update($dealUpdate['data']);
+                }
             }
 
             $negocios = Negocio::where("user_id", $user->id)->get();
@@ -614,6 +649,8 @@ class ClienteController extends Controller
             $boardName = "";
         }
 
+
+
         // Preparar datos para la vista
         $roles = Role::all();
         $permissions = Permission::all();
@@ -783,12 +820,10 @@ class ClienteController extends Controller
             $mondaydataforAI["inicio_investigacion"] = $this->obtenerValorPorTitulo($result, 'ARBOL CARGADO');
         }
 
-        //dd($mondaydataforAI, $result);
-
         $cos2      = $user->arraycos;          // datos ya calculados
         $expires  = $user->arraycos_expire;
 
-        if( count($negocios)>0 ) {
+        if(count($negocios)>0) {
             foreach($negocios as $negocio) {
                 $certificadoDescargado = 0;
 
@@ -810,7 +845,6 @@ class ClienteController extends Controller
                 } else {
                     $resultadoIA = $this->analizarEtiquetasYDevolverJSON($mondaydataforAI);
                 }
-
                 if (isset($negocio->n5__fecha_de_formalizacion)){
                     if(!isset($negocio->n4__certificado_descargado)){
                         $certificadoDescargado = 2;
@@ -826,39 +860,25 @@ class ClienteController extends Controller
                         continue;
                     }
 
-                    $tieneRecursoAlzadaActivoV2 = $this->verificarNegocioActivo(
-                                $negocios,
-                                'Recurso de Alzada',
-                                ['Recurso', 'Alzada']
-                            );
-
-                    if ($tieneRecursoAlzadaActivoV2) {
-                        $tieneViajudicialActivo = $this->verificarNegocioActivo(
+                    $tieneViajudicialActivo = $this->verificarNegocioActivo(
                             $negocios,
                             'Demanda Judicial',
                             ['Demanda', 'Judicial']
                         );
 
-                        if ($tieneViajudicialActivo) {
-                            $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
-                                "warning" => null,
-                                "certificadoDescargado" => $certificadoDescargado,
-                                "currentStepGen" => 18 - $certificadoDescargado,
-                                "currentStepJur" => 7
-                            ];
-                        } else {
-                            $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
-                                "warning" => "<b>¡Puedes solicitar la vía judicial!</b>",
-                                "certificadoDescargado" => $certificadoDescargado,
-                                "currentStepGen" => 18 - $certificadoDescargado,
-                                "currentStepJur" => 7
-                            ];
-                        }
+                    if ($tieneViajudicialActivo) {
+                        $cosuser[] = [
+                            "servicio" => $negocio->servicio_solicitado,
+                            "warning" => null,
+                            "certificadoDescargado" => $certificadoDescargado,
+                            "currentStepGen" => 18 - $certificadoDescargado,
+                            "currentStepJur" => 7
+                        ];
 
                         continue;
-                    } else if (isset($negocio->n13__fecha_recurso_alzada)){
+                    }
+
+                    if (isset($negocio->n13__fecha_recurso_alzada)){
                         $fechaRecurso = Carbon::parse($negocio->n13__fecha_recurso_alzada);
                         $fechaRecursoMas3Meses = $fechaRecurso->copy()->addMonths(3);
                         if ($fechaRecursoMas3Meses->greaterThan($hoy)){
@@ -979,38 +999,11 @@ class ClienteController extends Controller
                         continue;
                     }
 
-                    $tieneRecursoAlzadaActivoV2 = $this->verificarNegocioActivo(
-                                $negocios,
-                                'Recurso de Alzada',
-                                ['Recurso', 'Alzada']
-                            );
-
-                    if ($tieneRecursoAlzadaActivoV2) {
-                        $tieneViajudicialActivo = $this->verificarNegocioActivo(
-                            $negocios,
-                            'Demanda Judicial',
-                            ['Demanda', 'Judicial']
-                        );
-
-                        $warning = $tieneViajudicialActivo
-                            ? null
-                            : "<b>¡Puedes solicitar la vía judicial!</b>";
-
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado,
-                            "warning" => $warning,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "currentStepGen" => 18 - $certificadoDescargado,
-                            "currentStepJur" => 7
-                        ];
-
-                        continue;
-                    } else if (isset($negocio->n13__fecha_recurso_alzada)){
+                    if (isset($negocio->n13__fecha_recurso_alzada)){
                         $fechaRecurso = Carbon::parse($negocio->n13__fecha_recurso_alzada);
                         $fechaRecursoMas3Meses = $fechaRecurso->copy()->addMonths(3);
                         if ($fechaRecursoMas3Meses->greaterThan($hoy)){
                             if ($fechaRecursoMas3Meses->greaterThan($hoy)) {
-
                                 $tieneViajudicialActivo = $this->verificarNegocioActivo(
                                     $negocios,
                                     'Demanda Judicial',
@@ -1408,6 +1401,7 @@ class ClienteController extends Controller
             }
 
         }
+
         unset($co);
         $user->arraycos        = $cosuser;
         $user->arraycos_expire = Carbon::now()->addDays(2);
@@ -1424,8 +1418,8 @@ class ClienteController extends Controller
                                 ->get();
 
         $documentRequests = DocumentRequest::where('user_id', $user->id)
-                                ->latest()
-                                ->get();
+                                   ->latest()
+                                   ->get();
 
 
 
@@ -1478,6 +1472,7 @@ class ClienteController extends Controller
         }
 
         $user->cosready = 0;
+        $user->save();
 
         foreach ($cosuser as $item) {
             // Normalizar servicio del usuario
@@ -1488,11 +1483,18 @@ class ClienteController extends Controller
 
             if (in_array($servicio, $cosKeys)) {
                 $user->cosready = 1;
+                $user->save();
                 break; // basta con que uno coincida
             }
         }
 
-        $user->save();
+        /*
+        CosVisit::create([
+            'user_id' => auth()->id(),
+            'fecha_visita' => now(),
+            'cliente_id' => $user->id
+        ]);
+        */
 
         $html = view('crud.users.edit', compact('documentRequests', 'comprasConDealNoPagadas', 'comprasSinDealNoPagadas', 'imageUrls', 'cosuser', 'cos', 'servicename', 'negocios', 'usuariosMonday', 'dataMonday', 'mondayData', 'boardId', 'boardName', 'mondayFormBuilder', 'archivos', 'user', 'roles', 'permissions', 'facturas', 'servicios', 'columnasparatabla'))->render();
         return $html;

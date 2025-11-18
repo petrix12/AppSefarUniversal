@@ -1754,11 +1754,14 @@ class UserController extends Controller
                 return json_encode($arrayData, JSON_UNESCAPED_UNICODE);
             };
 
-            $existingDealIds = Negocio::whereIn('hubspot_id', array_column($updatedDeals, 'id'))
-                ->pluck('hubspot_id')
-                ->toArray();
+            // Obtener deals existentes indexados por hubspot_id
+            $existingDeals = Negocio::whereIn('hubspot_id', array_column($updatedDeals, 'id'))
+                ->get()
+                ->keyBy('hubspot_id');
 
             $newDeals = [];
+            $dealsToUpdate = [];
+
             foreach ($updatedDeals as $deal) {
                 // Procesar propiedades especiales
                 $propsToProcess = ['argumento_de_ventas__new_', 'n2__antecedentes_penales', 'documentos'];
@@ -1768,25 +1771,55 @@ class UserController extends Controller
                     }
                 }
 
-                if (!in_array($deal['id'], $existingDealIds)) {
-                    $data = [
-                        'hubspot_id' => $deal['id'],
-                        'dealname' => $deal['properties']['dealname'] ?? null,
-                        'teamleader_id' => array_search($deal['properties']['dealname'] ?? null, $teamleaderDealNames) ?: null,
-                        'user_id' => $user->id,
-                    ];
+                // Preparar datos comunes
+                $data = [
+                    'dealname' => $deal['properties']['dealname'] ?? null,
+                    'teamleader_id' => array_search($deal['properties']['dealname'] ?? null, $teamleaderDealNames) ?: null,
+                ];
 
-                    foreach ($fillableColumns as $column) {
-                        $data[$column] = $deal['properties'][$column] ?? null;
+                foreach ($fillableColumns as $column) {
+                    $data[$column] = $deal['properties'][$column] ?? null;
+                }
+
+                // Verificar si el deal existe
+                if ($existingDeals->has($deal['id'])) {
+                    // Actualizar deal existente
+                    $existingDeal = $existingDeals->get($deal['id']);
+
+                    // Solo actualizar si hay cambios
+                    $hasChanges = false;
+                    foreach ($data as $key => $value) {
+                        if ($existingDeal->{$key} != $value) {
+                            $hasChanges = true;
+                            break;
+                        }
                     }
 
-                    $newDeals[] = $data;
+                    if ($hasChanges) {
+                        $dealsToUpdate[] = [
+                            'id' => $existingDeal->id,
+                            'data' => $data
+                        ];
+                    }
+                } else {
+                    // Insertar nuevo deal
+                    $newDeals[] = array_merge([
+                        'hubspot_id' => $deal['id'],
+                        'user_id' => $user->id,
+                    ], $data);
                 }
             }
 
-            // Inserción masiva
+            // Inserción masiva de nuevos deals
             if (!empty($newDeals)) {
                 Negocio::insert($newDeals);
+            }
+
+            // Actualización masiva de deals existentes
+            if (!empty($dealsToUpdate)) {
+                foreach ($dealsToUpdate as $dealUpdate) {
+                    Negocio::where('id', $dealUpdate['id'])->update($dealUpdate['data']);
+                }
             }
 
             $negocios = Negocio::where("user_id", $user->id)->get();
@@ -2241,41 +2274,25 @@ class UserController extends Controller
                         continue;
                     }
 
-                    $tieneRecursoAlzadaActivoV2 = $this->verificarNegocioActivo(
-                                $negocios,
-                                'Recurso de Alzada',
-                                ['Recurso', 'Alzada']
-                            );
-
-                    if ($tieneRecursoAlzadaActivoV2) {
-                        $tieneViajudicialActivo = $this->verificarNegocioActivo(
+                    $tieneViajudicialActivo = $this->verificarNegocioActivo(
                             $negocios,
                             'Demanda Judicial',
                             ['Demanda', 'Judicial']
                         );
 
-                        dd($tieneViajudicialActivo);
-
-                        if ($tieneViajudicialActivo) {
-                            $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
-                                "warning" => null,
-                                "certificadoDescargado" => $certificadoDescargado,
-                                "currentStepGen" => 18 - $certificadoDescargado,
-                                "currentStepJur" => 7
-                            ];
-                        } else {
-                            $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
-                                "warning" => "<b>¡Puedes solicitar la vía judicial!</b>",
-                                "certificadoDescargado" => $certificadoDescargado,
-                                "currentStepGen" => 18 - $certificadoDescargado,
-                                "currentStepJur" => 7
-                            ];
-                        }
+                    if ($tieneViajudicialActivo) {
+                        $cosuser[] = [
+                            "servicio" => $negocio->servicio_solicitado,
+                            "warning" => null,
+                            "certificadoDescargado" => $certificadoDescargado,
+                            "currentStepGen" => 18 - $certificadoDescargado,
+                            "currentStepJur" => 7
+                        ];
 
                         continue;
-                    } else if (isset($negocio->n13__fecha_recurso_alzada)){
+                    }
+
+                    if (isset($negocio->n13__fecha_recurso_alzada)){
                         $fechaRecurso = Carbon::parse($negocio->n13__fecha_recurso_alzada);
                         $fechaRecursoMas3Meses = $fechaRecurso->copy()->addMonths(3);
                         if ($fechaRecursoMas3Meses->greaterThan($hoy)){
@@ -2919,7 +2936,7 @@ class UserController extends Controller
         foreach ($negocios as $negocioItem) {
             // Buscar por servicio_solicitado exacto
             $coincideServicio = isset($negocioItem->servicio_solicitado) &&
-                            $negocioItem->servicio_solicitado === $servicioSolicitado;
+                            $negocioItem->servicio_solicitado == $servicioSolicitado;
 
             // Buscar por palabras clave en dealname
             $coincideDealname = false;
@@ -2928,7 +2945,7 @@ class UserController extends Controller
                 $todasCoinciden = true;
 
                 foreach ($palabrasClave as $palabra) {
-                    if (strpos($dealnameLower, mb_strtolower($palabra)) === false) {
+                    if (strpos($dealnameLower, mb_strtolower($palabra)) == false) {
                         $todasCoinciden = false;
                         break;
                     }
@@ -2939,22 +2956,21 @@ class UserController extends Controller
 
             // Si encontramos el negocio (por servicio O por dealname)
             if ($coincideServicio || $coincideDealname) {
-                // Verificar si tiene algún pago
+
+                // Para este servicio, consideramos que siempre tiene pagos
                 foreach ($camposPago as $campo) {
                     if (isset($negocioItem->{$campo}) && !empty($negocioItem->{$campo})) {
-                        dd("tiene negocios y tiene pagos");
                         return true; // ✅ Negocio encontrado Y con pagos
                     }
                 }
 
                 // Negocio encontrado pero SIN pagos (está en "interesado")
-                dd("tiene negocios pero no tiene pagos");
                 return false;
+
             }
         }
 
         // No se encontró ningún negocio relacionado
-        dd("no tiene negocios y no tiene pagos");
         return false;
     }
 
