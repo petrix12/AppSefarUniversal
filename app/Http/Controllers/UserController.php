@@ -2254,6 +2254,8 @@ class UserController extends Controller
                             ['Demanda', 'Judicial']
                         );
 
+                        dd($tieneViajudicialActivo);
+
                         if ($tieneViajudicialActivo) {
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
