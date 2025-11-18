@@ -177,7 +177,7 @@
                                 <div style="display: flex; justify-content:center;">
                                     @can('crud.users.edit')
                                         <a href="{{ route('crud.users.edit', $user) }}"
-   class="btn btn-primary edit-user-btn"
+   class="btn btn-primary edit-user-btn btn_status_loader"
    data-href="{{ route('crud.users.edit', $user) }}"
    title="Editar Usuario">
    <i class="fas fa-edit fa-fw"></i>
@@ -199,7 +199,7 @@
                                     @if($user->getRoleNames()->first() == "Cliente")
                                         <a style="color:white!important;"
    href="{{ route('crud.users.edit', $user) }}"
-   class="btn btn-warning edit-user-btn"
+   class="btn btn-warning edit-user-btn btn_status_loader"
    data-href="{{ route('crud.users.edit', $user) }}"
    title="Estatus del Cliente">
    <i class="fas fa-exclamation fa-fw"></i>
@@ -226,33 +226,5 @@
             </div>
         </div>
     </div>
-    <div id="loadingModal" class="fixed z-50 inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
-        <div class="bg-white rounded-lg p-6 text-center shadow-xl">
-            <h2 class="text-lg font-semibold text-gray-800 mb-2">Estamos cargando la información del estatus del cliente</h2>
-            <p class="text-sm text-gray-600">Espere un momento...</p>
-        </div>
-    </div>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const editButtons = document.querySelectorAll('.edit-user-btn');
-            const modal = document.getElementById('loadingModal');
-
-            editButtons.forEach(button => {
-                button.addEventListener('click', function (event) {
-                    event.preventDefault();
-                    const url = this.getAttribute('href') || this.dataset.href;
-
-                    // Mostrar modal
-                    modal.classList.remove('hidden');
-
-                    // Continuar con la redirección sin frenar ejecución
-                    setTimeout(() => {
-                        window.location.href = url;
-                    }, 800); // ajusta si deseas más o menos retardo
-                });
-            });
-        });
-    </script>
 </div>
 

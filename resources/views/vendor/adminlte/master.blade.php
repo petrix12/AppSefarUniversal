@@ -150,6 +150,124 @@
     {{-- Custom Scripts --}}
     @yield('adminlte_js')
 
+    {{-- Modal de carga para Estatus - Versión con spinner circular --}}
+    <div class="modal fade" id="statusLoadingModal" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 shadow-lg" style="background: #1e3a52;">
+                <div class="modal-body text-center py-5">
+                    {{-- Spinner de puntos circular con colores Sefar --}}
+                    <div class="dot-spinner mb-4" style="--uib-color: #f8b739;">
+                        <div class="dot-spinner__dot"></div>
+                        <div class="dot-spinner__dot"></div>
+                        <div class="dot-spinner__dot"></div>
+                        <div class="dot-spinner__dot"></div>
+                        <div class="dot-spinner__dot"></div>
+                        <div class="dot-spinner__dot"></div>
+                        <div class="dot-spinner__dot"></div>
+                        <div class="dot-spinner__dot"></div>
+                    </div>
+
+                    {{-- Texto con puntos animados --}}
+                    <h5 class="text-white mb-2">
+                        Cargando información<span class="loading-dots"></span>
+                    </h5>
+                    <small class="text-white-50">Por favor, espera un momento</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+    .loading-dots::after {
+        content: '';
+        animation: dots 1.5s steps(4, end) infinite;
+        color: #f8b739;
+    }
+
+    @keyframes dots {
+        0%, 20% { content: ''; }
+        40% { content: '.'; }
+        60% { content: '..'; }
+        80%, 100% { content: '...'; }
+    }
+
+    .dot-spinner {
+        --uib-size: 3rem;
+        --uib-speed: 1s;
+        --uib-color: #f8b739;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: var(--uib-size);
+        width: var(--uib-size);
+        margin: 0 auto;
+    }
+
+    .dot-spinner__dot {
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        height: 100%;
+        width: 100%;
+    }
+
+    .dot-spinner__dot::before {
+        content: '';
+        height: 20%;
+        width: 20%;
+        border-radius: 50%;
+        background-color: var(--uib-color);
+        transform: scale(0);
+        opacity: 0.8;
+        animation: pulse calc(var(--uib-speed) * 1.111) ease-in-out infinite;
+        box-shadow: 0 0 10px var(--uib-color);
+    }
+
+    .dot-spinner__dot:nth-child(2) { transform: rotate(45deg); }
+    .dot-spinner__dot:nth-child(2)::before { animation-delay: calc(var(--uib-speed) * -0.875); }
+
+    .dot-spinner__dot:nth-child(3) { transform: rotate(90deg); }
+    .dot-spinner__dot:nth-child(3)::before { animation-delay: calc(var(--uib-speed) * -0.75); }
+
+    .dot-spinner__dot:nth-child(4) { transform: rotate(135deg); }
+    .dot-spinner__dot:nth-child(4)::before { animation-delay: calc(var(--uib-speed) * -0.625); }
+
+    .dot-spinner__dot:nth-child(5) { transform: rotate(180deg); }
+    .dot-spinner__dot:nth-child(5)::before { animation-delay: calc(var(--uib-speed) * -0.5); }
+
+    .dot-spinner__dot:nth-child(6) { transform: rotate(225deg); }
+    .dot-spinner__dot:nth-child(6)::before { animation-delay: calc(var(--uib-speed) * -0.375); }
+
+    .dot-spinner__dot:nth-child(7) { transform: rotate(270deg); }
+    .dot-spinner__dot:nth-child(7)::before { animation-delay: calc(var(--uib-speed) * -0.25); }
+
+    .dot-spinner__dot:nth-child(8) { transform: rotate(315deg); }
+    .dot-spinner__dot:nth-child(8)::before { animation-delay: calc(var(--uib-speed) * -0.125); }
+
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(0);
+            opacity: 0.5;
+        }
+        50% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+    </style>
+
+    <script>
+    $(document).on('click', '.btn_status_loader', function(e) {
+        e.preventDefault();
+        $('#statusLoadingModal').modal('show');
+        setTimeout(() => window.location.href = $(this).attr('href'), 400);
+    });
+    </script>
+
 </body>
 
 </html>

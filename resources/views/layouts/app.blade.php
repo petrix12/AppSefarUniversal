@@ -87,5 +87,6 @@
         @if(auth()->user() && auth()->user()->hasRole('Administrador'))
             <x-chat-bubble />
         @endif
+
     </body>
 </html>

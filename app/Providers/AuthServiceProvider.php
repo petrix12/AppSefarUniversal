@@ -25,6 +25,10 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
+        Gate::define('ver.mi.estatus', function ($user) {
+            return $user->cosready == 1;
+        });
+
         //
     }
 }

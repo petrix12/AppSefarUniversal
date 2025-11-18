@@ -94,6 +94,7 @@ class CreateNewUser implements CreatesNewUsers
             'contrato' => 0,
             'referido_por' => $input['referido'],
             'tiene_hermanos' => $input['tiene_hermanos'],
+            'cosready' => 1
         ]);
 
         if($input['pay']==='1'){

@@ -679,7 +679,9 @@ return [
                     'icon_color'    => 'rgba(255,255,255,0.8)',
                     'route'         => 'clientes.tree',
                     'can'           => 'cliente',
-                ],/*
+                ],
+
+                /*
                 [
                     'text'          => 'Mi Estatus',
                     'classes'       => "btn_payments",
@@ -695,14 +697,15 @@ return [
                     'icon_color'    => 'rgba(255,255,255,0.8)',
                     'route'         => 'cliente.hermanos',
                     'can'           => 'cliente',
-                ],
+                ],*/
                 [
                     'text'          => 'Estatus de mi Proceso',
+                    'classes'       => 'btn_status_loader',
                     'icon'          => 'fa-fw fas fa-exclamation',
                     'icon_color'    => 'rgba(255,255,255,0.8)',
-                    'url'           => 'my_status',
-                    'can'           => 'cliente',
-                ],*/
+                    'url'           => '/status',
+                    'can'           => 'ver.mi.estatus',
+                ],
                 [
                     'text'          => 'Perfil de usuario',
                     'icon'          => 'fa-fw fas fa-user-cog',
