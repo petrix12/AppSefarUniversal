@@ -2254,8 +2254,6 @@ class UserController extends Controller
                             ['Demanda', 'Judicial']
                         );
 
-                        dd($tieneViajudicialActivo);
-
                         if ($tieneViajudicialActivo) {
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
@@ -2942,16 +2940,19 @@ class UserController extends Controller
                 // Verificar si tiene algún pago
                 foreach ($camposPago as $campo) {
                     if (isset($negocioItem->{$campo}) && !empty($negocioItem->{$campo})) {
+                        dd("tiene negocios y tiene pagos");
                         return true; // ✅ Negocio encontrado Y con pagos
                     }
                 }
 
                 // Negocio encontrado pero SIN pagos (está en "interesado")
+                dd("tiene negocios pero no tiene pagos");
                 return false;
             }
         }
 
         // No se encontró ningún negocio relacionado
+        dd("no tiene negocios y no tiene pagos");
         return false;
     }
 
