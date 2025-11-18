@@ -828,7 +828,33 @@ class ClienteController extends Controller
                         continue;
                     }
 
-                    if (isset($negocio->n13__fecha_recurso_alzada)){
+                    $tieneRecursoAlzadaActivoV2 = $this->verificarNegocioActivo(
+                                $negocios,
+                                'Recurso de Alzada',
+                                ['Recurso', 'Alzada']
+                            );
+
+                    if ($tieneRecursoAlzadaActivoV2) {
+                        $tieneViajudicialActivo = $this->verificarNegocioActivo(
+                            $negocios,
+                            'Demanda Judicial',
+                            ['Demanda', 'Judicial']
+                        );
+
+                        $warning = $tieneViajudicialActivo
+                            ? null
+                            : "<b>¡Puedes solicitar la vía judicial!</b>";
+
+                        $cosuser[] = [
+                            "servicio" => $negocio->servicio_solicitado,
+                            "warning" => $warning,
+                            "certificadoDescargado" => $certificadoDescargado,
+                            "currentStepGen" => 18 - $certificadoDescargado,
+                            "currentStepJur" => 7
+                        ];
+
+                        continue;
+                    } else if (isset($negocio->n13__fecha_recurso_alzada)){
                         $fechaRecurso = Carbon::parse($negocio->n13__fecha_recurso_alzada);
                         $fechaRecursoMas3Meses = $fechaRecurso->copy()->addMonths(3);
                         if ($fechaRecursoMas3Meses->greaterThan($hoy)){

@@ -2247,7 +2247,27 @@ class UserController extends Controller
                                 ['Recurso', 'Alzada']
                             );
 
-                    if (isset($negocio->n13__fecha_recurso_alzada)){
+                    if ($tieneRecursoAlzadaActivoV2) {
+                        $tieneViajudicialActivo = $this->verificarNegocioActivo(
+                            $negocios,
+                            'Demanda Judicial',
+                            ['Demanda', 'Judicial']
+                        );
+
+                        $warning = ($tieneViajudicialActivo || isset($negocio->fecha_solicitud_viajudicial))
+                            ? null
+                            : "<b>¡Puedes solicitar la vía judicial!</b>";
+
+                        $cosuser[] = [
+                            "servicio" => $negocio->servicio_solicitado,
+                            "warning" => $warning,
+                            "certificadoDescargado" => $certificadoDescargado,
+                            "currentStepGen" => 18 - $certificadoDescargado,
+                            "currentStepJur" => 7
+                        ];
+
+                        continue;
+                    } else if (isset($negocio->n13__fecha_recurso_alzada)){
                         $fechaRecurso = Carbon::parse($negocio->n13__fecha_recurso_alzada);
                         $fechaRecursoMas3Meses = $fechaRecurso->copy()->addMonths(3);
                         if ($fechaRecursoMas3Meses->greaterThan($hoy)){
@@ -2273,25 +2293,6 @@ class UserController extends Controller
                                 continue;
                             }
                         }
-                    } else if ($tieneRecursoAlzadaActivoV2) {
-                        $tieneViajudicialActivo = $this->verificarNegocioActivo(
-                            $negocios,
-                            'Demanda Judicial',
-                            ['Demanda', 'Judicial']
-                        );
-
-                        $warning = ($tieneViajudicialActivo || isset($negocio->fecha_solicitud_viajudicial))
-                            ? null
-                            : "<b>¡Puedes solicitar la vía judicial!</b>";
-
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado,
-                            "warning" => $warning,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "currentStepGen" => 18 - $certificadoDescargado,
-                            "currentStepJur" => 7
-                        ];
-                        continue;
                     }
 
                     $fechaFormalizacion = Carbon::parse($negocio->n5__fecha_de_formalizacion);
@@ -2789,6 +2790,7 @@ class UserController extends Controller
             }
 
         }
+
         unset($co);
         $user->arraycos        = $cosuser;
         $user->arraycos_expire = Carbon::now()->addDays(2);
