@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\Storage;
 use Telegram\Bot\Api;
 use Telegram\Bot\FileUpload\InputFile;
 use Carbon\Carbon;
+use App\Models\WhatsappBotURL;
+use App\Models\ReportPhoneNumbers;
+use Illuminate\Support\Facades\Http;
 
 class SendMonthReportEmails extends Command
 {
@@ -541,6 +544,32 @@ class SendMonthReportEmails extends Command
                     'mime' => 'application/pdf',
                 ]);
         });
+
+        try {
+            // Convertir PDF a base64
+            $pdfBase64 = base64_encode($pdfContent);
+            $fileName = 'reporte_mensual_' . $nombreMes . '.pdf';
+
+            $numbers = ReportPhoneNumbers::all();
+
+            foreach ($numbers as $number) {
+                $response = Http::timeout(30)->post(WhatsappBotURL::findOrFail(1) . '/send-file', [
+                    'number' => $number->phone_number,
+                    'message' => "📊 *Reporte Mensual de ". $nombreMes,
+                    'fileData' => $pdfBase64,
+                    'fileName' => $fileName
+                ]);
+            }
+
+            if ($response->successful()) {
+                $this->info('PDF enviado por WhatsApp: ' . $response->json()['file']);
+            } else {
+                $this->error('Error: ' . $response->status() . ' - ' . $response->body());
+            }
+
+        } catch (\Exception $e) {
+            $this->error('Error enviando PDF: ' . $e->getMessage());
+        }
 
         $this->info('Reporte diario generado y enviado con éxito.');
     }

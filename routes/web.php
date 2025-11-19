@@ -45,6 +45,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DocumentRequestController;
 use App\Http\Controllers\RegisterV2Controller;
 use App\Http\Controllers\CosVisitController;
+use App\Http\Controllers\WhatsappBotURLController;
+use App\Http\Controllers\ReportPhoneNumbersController;
 
 Route::get('/registerv2', [RegisterV2Controller::class, 'index'])->name('register.v2.form');
 
@@ -342,6 +344,15 @@ Route::post('/procesarpaypalfases', [ClienteController::class, 'procesarpaypalfa
 
 Route::post('/procesarpaypal', [ClienteController::class, 'procesarPaypal'])->name('procesarpaypal');
 
+// 1. Ruta GET para mostrar el formulario (C, R)
+Route::get('/whatsapp/url', [WhatsappBotURLController::class, 'index'])->name('whatsapp.url.form');
+
+Route::resource('/whatsapp/numbers', ReportPhoneNumbersController::class)
+    ->names('whatsapp.numbers') // Define el prefijo de nombre de ruta
+    ->except(['create', 'show', 'edit']);
+
+// 2. Ruta POST para manejar el envío y la lógica de upsert (C, U)
+Route::post('/whatsapp/url', [WhatsappBotURLController::class, 'storeOrUpdate'])->name('whatsapp.url.store');
 
 Route::get('/revisarcupon', [ClienteController::class, 'revisarcupon'])->name('revisarcupon')
         ->middleware('can:cliente');

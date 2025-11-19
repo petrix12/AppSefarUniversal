@@ -8,12 +8,15 @@ use Mail;
 use App\Models\User;
 use App\Models\Factura;
 use App\Models\Compras;
+use App\Models\WhatsappBotURL;
+use App\Models\ReportPhoneNumbers;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Telegram\Bot\Api;
 use Telegram\Bot\FileUpload\InputFile;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Http;
 
 class SendDailyReportEmails extends Command
 {
@@ -465,6 +468,33 @@ class SendDailyReportEmails extends Command
                         'mime' => 'application/pdf',
                     ]);
                 });
+
+        // ===== Enviar PDF al servidor de WhatsApp =====
+        try {
+            // Convertir PDF a base64
+            $pdfBase64 = base64_encode($pdfContent);
+            $fileName = 'reporte_diario_' . $peticion["dia"] . '-' . $peticion["mes"] . '-' . $peticion["año"] . '.pdf';
+
+            $numbers = ReportPhoneNumbers::all();
+
+            foreach ($numbers as $number) {
+                $response = Http::timeout(30)->post(WhatsappBotURL::findOrFail(1) . '/send-file', [
+                    'number' => $number->phone_number,
+                    'message' => "📊 *Reporte Diario*\n\nFecha: {$peticion['dia']}/{$peticion['mes']}/{$peticion['año']}",
+                    'fileData' => $pdfBase64,
+                    'fileName' => $fileName
+                ]);
+            }
+
+            if ($response->successful()) {
+                $this->info('PDF enviado por WhatsApp: ' . $response->json()['file']);
+            } else {
+                $this->error('Error: ' . $response->status() . ' - ' . $response->body());
+            }
+
+        } catch (\Exception $e) {
+            $this->error('Error enviando PDF: ' . $e->getMessage());
+        }
 
         $this->info('Reporte diario generado y enviado con éxito.');
     }

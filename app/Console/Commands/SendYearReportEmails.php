@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\Storage;
 use Telegram\Bot\Api;
 use Telegram\Bot\FileUpload\InputFile;
 use Carbon\Carbon;
+use App\Models\WhatsappBotURL;
+use App\Models\ReportPhoneNumbers;
+use Illuminate\Support\Facades\Http;
 
 class SendYearReportEmails extends Command
 {
@@ -256,6 +259,32 @@ class SendYearReportEmails extends Command
                 'mime' => 'application/pdf',
             ]);
         });
+
+         try {
+            // Convertir PDF a base64
+            $pdfBase64 = base64_encode($pdfContent);
+            $fileName = 'reporte_anual_' . $anio . '.pdf';
+
+            $numbers = ReportPhoneNumbers::all();
+
+            foreach ($numbers as $number) {
+                $response = Http::timeout(30)->post(WhatsappBotURL::findOrFail(1) . '/send-file', [
+                    'number' => $number->phone_number,
+                    'message' => "📊 *Reporte Anual - " . $anio ,
+                    'fileData' => $pdfBase64,
+                    'fileName' => $fileName
+                ]);
+            }
+
+            if ($response->successful()) {
+                $this->info('PDF enviado por WhatsApp: ' . $response->json()['file']);
+            } else {
+                $this->error('Error: ' . $response->status() . ' - ' . $response->body());
+            }
+
+        } catch (\Exception $e) {
+            $this->error('Error enviando PDF: ' . $e->getMessage());
+        }
 
         $this->info('Reporte anual generado y enviado con éxito.');
     }
