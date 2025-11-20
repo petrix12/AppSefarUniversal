@@ -476,8 +476,16 @@ class SendDailyReportWhatsapp extends Command
 
             $numbers = ReportPhoneNumbers::all();
 
+            $this->info('Enviando PDF por WhatsApp a ' . $numbers->count() . ' números.');
+
+            $url = WhatsappBotURL::findOrFail(1) . '/send-file';
+
             foreach ($numbers as $number) {
-                $response = Http::timeout(120)->post(WhatsappBotURL::findOrFail(1) . '/send-file', [
+                $this->info('Enviando a: ' . $number->phone_number);
+
+                $this->info('Usando URL: ' . $url);
+
+                $response = Http::timeout(120)->post($url, [
                     'number' => $number->phone_number,
                     'message' => "📊 *Reporte Diario*\n\nFecha: {$peticion['dia']}/{$peticion['mes']}/{$peticion['año']}",
                     'fileData' => $pdfBase64,
