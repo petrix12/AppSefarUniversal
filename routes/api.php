@@ -7,6 +7,7 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AssistantController;
+use App\Http\Controllers\WhatsappController;
 
 /*
 |--------------------------------------------------------------------------
@@ -33,3 +34,7 @@ Route::post('/chat/iniciar', [ChatController::class, 'iniciarChat']);
 Route::post('/chat/enviar', [ChatController::class, 'enviarMensaje']);
 
 Route::post('/user/check-email', [UserController::class, 'checkEmail']);
+
+Route::get('/whatsapp-requests/pending', [WhatsappController::class, 'pending']);
+Route::post('/whatsapp-requests/{id}/success', [WhatsappController::class, 'success']);
+Route::post('/whatsapp-requests/{id}/fail', [WhatsappController::class, 'fail']);

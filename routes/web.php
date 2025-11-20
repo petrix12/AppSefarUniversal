@@ -352,10 +352,6 @@ Route::resource('/whatsapp/numbers', ReportPhoneNumbersController::class)
     ->names('whatsapp.numbers') // Define el prefijo de nombre de ruta
     ->except(['create', 'show', 'edit']);
 
-Route::get('/whatsapp-requests/pending', [WhatsappController::class, 'pending']);
-Route::post('/whatsapp-requests/{id}/success', [WhatsappController::class, 'success']);
-Route::post('/whatsapp-requests/{id}/fail', [WhatsappController::class, 'fail']);
-
 // 2. Ruta POST para manejar el envío y la lógica de upsert (C, U)
 Route::post('/whatsapp/url', [WhatsappBotURLController::class, 'storeOrUpdate'])->name('whatsapp.url.store');
 
