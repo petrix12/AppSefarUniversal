@@ -17,6 +17,7 @@ use Telegram\Bot\Api;
 use Telegram\Bot\FileUpload\InputFile;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
+use App\Models\WhatsappRequest;
 
 class SendDailyReportWhatsapp extends Command
 {
@@ -471,37 +472,34 @@ class SendDailyReportWhatsapp extends Command
         // ===== Enviar PDF al servidor de WhatsApp =====
         try {
             // Convertir PDF a base64
-            $pdfBase64 = base64_encode($pdfContent);
             $fileName = 'reporte_diario_' . $peticion["dia"] . '-' . $peticion["mes"] . '-' . $peticion["año"] . '.pdf';
 
+            // Subir PDF a S3 (public link)
+            $path = Storage::disk('s3')->put("reports/" . $fileName, $pdfContent, 'public');
+            $url = Storage::disk('s3')->url($path);
+
             $numbers = ReportPhoneNumbers::all();
-
-            $this->info('Enviando PDF por WhatsApp a ' . $numbers->count() . ' números.');
-
-            $url = WhatsappBotURL::findOrFail(1);
+            $this->info('Creando solicitudes para ' . $numbers->count() . ' números.');
 
             foreach ($numbers as $number) {
-                $this->info('Enviando a: ' . $number->phone_number);
 
-                $this->info('Usando URL: ' . $url->url.'/send-file');
-
-                $response = Http::timeout(120)->post($url->url . '/send-file', [
-                    'number' => $number->phone_number,
-                    'message' => "📊 *Reporte Diario*\n\nFecha: {$peticion['dia']}/{$peticion['mes']}/{$peticion['año']}",
-                    'fileData' => $pdfBase64,
-                    'fileName' => $fileName
+                WhatsappRequest::create([
+                    "phone_number" => $number->phone_number,
+                    "message" => "📊 *Reporte Diario*\n\nFecha: {$peticion['dia']}/{$peticion['mes']}/{$peticion['año']}",
+                    "file_url" => $url,
+                    "file_name" => $fileName,
+                    "status" => "pending"
                 ]);
-            }
 
-            if ($response->successful()) {
-                $this->info('PDF enviado por WhatsApp: ' . $response->json()['file']);
-            } else {
-                $this->error('Error: ' . $response->status() . ' - ' . $response->body());
+                $this->info("Solicitud creada para: " . $number->phone_number);
             }
 
         } catch (\Exception $e) {
-            $this->error('Error enviando PDF: ' . $e->getMessage());
+            $this->error("Error creando solicitudes: " . $e->getMessage());
         }
+
+        $this->info("Solicitudes creadas correctamente.");
+
 
         $this->info('Reporte diario generado y enviado con éxito.');
     }
