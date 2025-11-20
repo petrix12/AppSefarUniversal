@@ -482,8 +482,9 @@ class SendDailyReportWhatsapp extends Command
 
             foreach ($numbers as $number) {
                 $this->info('Enviando a: ' . $number->phone_number);
+                $this->info('Usando URL: ' . $url["url"] . '/send-file');
 
-                $response = Http::timeout(120)->post($url->url . '/send-file', [
+                $response = Http::timeout(120)->post($url["url"] . '/send-file', [
                     'number' => $number->phone_number,
                     'message' => "📊 *Reporte Diario*\n\nFecha: {$peticion['dia']}/{$peticion['mes']}/{$peticion['año']}",
                     'fileData' => $pdfBase64,
