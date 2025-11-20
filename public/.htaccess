@@ -1,8 +1,8 @@
 # Configuración PHP
 <IfModule mod_php.c>
-    php_value max_execution_time 3000
+    php_value max_execution_time 780
     php_value memory_limit 2048M
-    php_value max_input_time 3000
+    php_value max_input_time 780
 </IfModule>
 
 # Headers específicos para Varnish de OVH
