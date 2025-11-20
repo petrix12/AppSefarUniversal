@@ -427,8 +427,6 @@ class SendDailyReportWhatsapp extends Command
             'datosgraficos',
             'datosgraficosporcentaje',
             'registrations',
-            'chartUrl',
-            'chartNight',
             'usuariosPorServicio',
             'facturas'
         ));
