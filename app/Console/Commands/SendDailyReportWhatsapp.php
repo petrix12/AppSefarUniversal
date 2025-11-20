@@ -415,7 +415,7 @@ class SendDailyReportWhatsapp extends Command
 
 
 
-        $pdf = PDF::loadView('reportes.plantilladiario', compact(
+        $pdf = PDF::loadView('reportes.plantilladiario2', compact(
             'peticion',
             'usuariosHoy',
             'usuariosUltimos30Dias',
