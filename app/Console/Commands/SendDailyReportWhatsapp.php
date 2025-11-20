@@ -389,8 +389,8 @@ class SendDailyReportWhatsapp extends Command
             ]
         ];
 
-        $chartUrl = mostrarGraficoQuickChartwpd('https://quickchart.io/chart?c=' . urlencode(json_encode($chartConfig)));
-        $chartNight = 'https://quickchart.io/chart?c=' . urlencode(json_encode($chartConfignight));
+        //$chartUrl = mostrarGraficoQuickChartwpd('https://quickchart.io/chart?c=' . urlencode(json_encode($chartConfig)));
+        //$chartNight = 'https://quickchart.io/chart?c=' . urlencode(json_encode($chartConfignight));
 
         $usuariosPorServicio = [];
 
@@ -501,7 +501,7 @@ class SendDailyReportWhatsapp extends Command
     }
 }
 
-
+/*
 function mostrarGraficoQuickChartwpd($chartUrl, $mimeType = 'image/png') {
     // Intentar obtener la imagen
     $imageData = file_get_contents($chartUrl);
@@ -515,3 +515,4 @@ function mostrarGraficoQuickChartwpd($chartUrl, $mimeType = 'image/png') {
         return false; // O puedes devolver un mensaje de error personalizado
     }
 }
+*/
