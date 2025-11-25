@@ -4537,6 +4537,552 @@ class ClienteController extends Controller
         }
     }
 
+    public function procesarPagoStripe(Request $request) {
+        try {
+            $hubspot = HubSpot\Factory::createWithAccessToken(env('HUBSPOT_KEY'));
+
+            // Determinar qué clave de Stripe usar
+            /*
+            if (auth()->user()->servicio == 'Constitución de Empresa' ||
+                auth()->user()->servicio == 'Representante Fiscal' ||
+                auth()->user()->servicio == 'Codigo  Fiscal' ||
+                auth()->user()->servicio == 'Apertura de cuenta' ||
+                auth()->user()->servicio == 'Trimestre contable' ||
+                auth()->user()->servicio == 'Cooperativa 10 años' ||
+                auth()->user()->servicio == 'Cooperativa 5 años' ||
+                auth()->user()->servicio == 'Portuguesa Sefardi' ||
+                auth()->user()->servicio == 'Portuguesa Sefardi - Subsanación' ||
+                auth()->user()->servicio == 'Certificación de Documentos - Portugal') {
+                \Stripe\Stripe::setApiKey(env('STRIPE_SECRET_PORT'));
+            } else {
+
+            }
+                */
+            \Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+
+            // Obtener datos del request
+            // ✅ CORRECTO
+            $data = json_decode($request->getContent(), true);
+            $paymentMethodId = $data['payment_method_id'] ?? null;
+
+            // Validar que existe el payment_method_id
+            if (!$paymentMethodId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se recibió el método de pago.'
+                ], 400);
+            }
+
+            // Obtener compras pendientes
+            $compras = Compras::where('id_user', auth()->user()->id)
+                ->where('pagado', 0)
+                ->whereNull('deal_id')
+                ->get();
+
+            // Calcular monto total
+            $monto = 0;
+            foreach ($compras as $compra) {
+                $monto += $compra->monto;
+            }
+
+            // Validar que haya compras
+            if ($compras->isEmpty() || $monto <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay compras pendientes de pago.'
+                ], 400);
+            }
+
+            $errorcod = "error";
+            $customer = null;
+            $paymentIntent = null;
+
+            try {
+                // 1. Crear o recuperar el cliente en Stripe
+                if (auth()->user()->stripe_cus_id) {
+                    // Cliente ya existe
+                    $customer = \Stripe\Customer::retrieve(auth()->user()->stripe_cus_id);
+
+                    // Actualizar información del cliente
+                    \Stripe\Customer::update(auth()->user()->stripe_cus_id, [
+                        'name' => $data['first_name'] . ' ' . $data['last_name'],
+                        'email' => $data['email'],
+                        'phone' => $data['phone'] ?? null,
+                        'address' => [
+                            'line1' => $data['address_line1'],
+                            'line2' => $data['address_line2'] ?? null,
+                            'city' => $data['city'],
+                            'state' => $data['state'] ?? null,
+                            'postal_code' => $data['postal_code'],
+                            'country' => $data['country'],
+                        ]
+                    ]);
+                } else {
+                    // Crear nuevo cliente
+                    $customer = \Stripe\Customer::create([
+                        'name' => $data['first_name'] . ' ' . $data['last_name'],
+                        'email' => $data['email'],
+                        'phone' => $data['phone'] ?? null,
+                        'address' => [
+                            'line1' => $data['address_line1'],
+                            'line2' => $data['address_line2'] ?? null,
+                            'city' => $data['city'],
+                            'state' => $data['state'] ?? null,
+                            'postal_code' => $data['postal_code'],
+                            'country' => $data['country'],
+                        ]
+                    ]);
+
+                    // Guardar el customer ID en la base de datos
+                    DB::table('users')
+                        ->where('id', auth()->user()->id)
+                        ->update(['stripe_cus_id' => $customer->id]);
+                }
+
+                // 2. Adjuntar el método de pago al cliente
+                \Stripe\PaymentMethod::retrieve($paymentMethodId)->attach([
+                    'customer' => $customer->id
+                ]);
+
+                // 3. Establecer como método de pago predeterminado
+                \Stripe\Customer::update($customer->id, [
+                    'invoice_settings' => [
+                        'default_payment_method' => $paymentMethodId
+                    ]
+                ]);
+
+                // 4. Crear el Payment Intent
+                $paymentIntent = \Stripe\PaymentIntent::create([
+                    'amount' => $monto * 100, // Stripe trabaja en centavos
+                    'currency' => 'eur',
+                    'customer' => $customer->id,
+                    'payment_method' => $paymentMethodId,
+                    'off_session' => false,
+                    'confirm' => true,
+                    'description' => 'Sefar Universal: Gestión de Pago Múltiple (Carrito)',
+                    'automatic_payment_methods' => [
+                        'enabled' => true,
+                        'allow_redirects' => 'never' // ✅ Deshabilita métodos que redirigen
+                    ],
+                    'metadata' => [
+                        'user_id' => auth()->user()->id,
+                        'user_email' => auth()->user()->email,
+                        'user_passport' => auth()->user()->passport ?? 'N/A',
+                    ]
+                ]);
+
+                $errorcod = "success";
+
+            } catch(\Stripe\Exception\CardException $e) {
+                $errorcod = "errorx";
+                $errorCode = $e->getError()->code;
+                return response()->json([
+                    'success' => false,
+                    'message' => $this->getStripeErrorMessage($e->getError()->code),
+                    'error_code' => $errorCode
+                ], 400);
+
+            } catch (\Stripe\Exception\RateLimitException $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Se realizaron varios intentos sin éxito. Por favor, comunicarse con el emisor de su tarjeta.'
+                ], 429);
+
+            } catch (\Stripe\Exception\InvalidRequestException $e) {
+                \Log::error('Stripe InvalidRequestException: ' . $e->getMessage());
+                \Log::error('Stripe Error: ' . json_encode($e->getJsonBody()));
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error: ' . $e->getMessage(), // <-- Cambia esto para ver el error real
+                    'debug' => $e->getJsonBody() // <-- Agregado para debug
+                ], 400);
+            } catch (\Stripe\Exception\AuthenticationException $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error de autenticación con Stripe. Por favor, comunicar este error a Sistemas.'
+                ], 401);
+
+            } catch (\Stripe\Exception\ApiConnectionException $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error conectándose a la pasarela de pago. Por favor, comunicar este error a Sistemas.'
+                ], 500);
+
+            } catch (\Stripe\Exception\ApiErrorException $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'En este momento, la pasarela de pago está en mantenimiento. Por favor, intente pagar más tarde.'
+                ], 503);
+
+            } catch (\Exception $e) {
+                \Log::error('Error procesando pago Stripe: ' . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ha ocurrido un error desconocido al realizar su pago.'
+                ], 500);
+            }
+
+            // Verificar que el pago fue exitoso
+            if ($paymentIntent && $paymentIntent->status === 'succeeded') {
+
+                // Generar hash de factura
+                $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                $hash_factura = "sef_" . $this->generate_string($permitted_chars, 50);
+
+                // Crear factura
+                Factura::create([
+                    'id_cliente' => auth()->user()->id,
+                    'hash_factura' => $hash_factura,
+                    'met' => 'stripe',
+                    'idcus' => $customer->id,
+                    'idcharge' => $paymentIntent->id
+                ]);
+
+                // Actualizar compras a pagado
+                foreach ($compras as $compra) {
+                    DB::table('compras')
+                        ->where('id', $compra->id)
+                        ->update([
+                            'pagado' => 1,
+                            'hash_factura' => $hash_factura
+                        ]);
+                }
+
+                // Obtener datos del usuario
+                $datos = DB::table('users')
+                    ->where('id', auth()->user()->id)
+                    ->first();
+
+                // Actualizar array de cargos
+                $cargostemp = [];
+                if (isset($datos->id_pago) && !empty($datos->id_pago)) {
+                    $existingCargos = json_decode($datos->id_pago, true);
+                    if (is_array($existingCargos)) {
+                        $cargostemp = $existingCargos;
+                    } else {
+                        $cargostemp[] = $datos->id_pago;
+                    }
+                }
+                $cargostemp[] = $paymentIntent->id;
+                $cargos = json_encode($cargostemp);
+
+                // Actualizar array de cupones (vacío si no se usó cupón)
+                $cuponestemp = [];
+                if (isset($datos->pago_cupon) && !empty($datos->pago_cupon)) {
+                    $existingCupones = json_decode($datos->pago_cupon, true);
+                    if (is_array($existingCupones)) {
+                        $cuponestemp = $existingCupones;
+                    } else {
+                        $cuponestemp[] = $datos->pago_cupon;
+                    }
+                }
+                $cuponestemp[] = ''; // No se usó cupón en este pago
+                $cupones = json_encode($cuponestemp);
+
+                // Actualizar historial de pagos
+                $pago_registrotemp = [];
+                if (isset($datos->pago_registro_hist) && !empty($datos->pago_registro_hist)) {
+                    $existingPagos = json_decode($datos->pago_registro_hist, true);
+                    if (is_array($existingPagos)) {
+                        $pago_registrotemp = $existingPagos;
+                    } else {
+                        $pago_registrotemp[] = $datos->pago_registro;
+                    }
+                }
+                $pago_registrotemp[] = $monto;
+                $pago_registro = json_encode($pago_registrotemp);
+
+                // Actualizar usuario
+                DB::table('users')
+                    ->where('id', auth()->user()->id)
+                    ->update([
+                        'pay' => 1,
+                        'pago_registro_hist' => $pago_registro,
+                        'pago_registro' => $monto,
+                        'id_pago' => $cargos,
+                        'pago_cupon' => $cupones,
+                        'stripe_cus_id' => $customer->id,
+                        'contrato' => 0
+                    ]);
+
+                // Verificar si debe setear pay = 2
+                $setto2 = 1;
+                foreach ($compras as $compra) {
+                    $servicio = Servicio::where('id_hubspot', $compra->servicio_hs_id)->first();
+
+                    if ($compra->servicio_hs_id == 'Árbol genealógico de Deslinde' ||
+                        $compra->servicio_hs_id == 'Acumulación de linajes' ||
+                        $compra->servicio_hs_id == 'Procedimiento de Urgencia' ||
+                        $compra->servicio_hs_id == 'Recurso de Alzada' ||
+                        $compra->servicio_hs_id == 'Gestión Documental' ||
+                        ($servicio && $servicio->tipov == 1)) {
+                        $setto2 = 1;
+                    } else {
+                        $setto2 = 0;
+                        break;
+                    }
+                }
+
+                if ($setto2 == 1) {
+                    DB::table('users')
+                        ->where('id', auth()->user()->id)
+                        ->update(['pay' => 2]);
+
+                    auth()->user()->revokePermissionTo('finish.register');
+                }
+
+                auth()->user()->revokePermissionTo('pay.services');
+
+                // Actualizar HubSpot
+                try {
+                    $filter = new \HubSpot\Client\Crm\Contacts\Model\Filter();
+                    $filter->setOperator('EQ')
+                        ->setPropertyName('email')
+                        ->setValue(auth()->user()->email);
+
+                    $filterGroup = new \HubSpot\Client\Crm\Contacts\Model\FilterGroup();
+                    $filterGroup->setFilters([$filter]);
+
+                    $searchRequest = new \HubSpot\Client\Crm\Contacts\Model\PublicObjectSearchRequest();
+                    $searchRequest->setFilterGroups([$filterGroup]);
+                    $searchRequest->setProperties([
+                        "registro_pago",
+                        "registro_cupon",
+                        "transaction_id"
+                    ]);
+
+                    $contactHS = $hubspot->crm()->contacts()->searchApi()->doSearch($searchRequest);
+
+                    if ($contactHS['total'] != 0) {
+                        $idcontact = $contactHS['results'][0]['id'];
+
+                        DB::table('users')
+                            ->where('id', auth()->user()->id)
+                            ->update(['hs_id' => $idcontact]);
+
+                        $properties1 = [
+                            'registro_pago' => $monto,
+                            'registro_cupon' => $cupones,
+                            'transaction_id' => $cargos,
+                            'hist_pago_registro' => $pago_registro
+                        ];
+
+                        $simplePublicObjectInput = new \HubSpot\Client\Crm\Contacts\Model\SimplePublicObjectInput([
+                            'properties' => $properties1,
+                        ]);
+
+                        $hubspot->crm()->contacts()->basicApi()->update($idcontact, $simplePublicObjectInput);
+
+                        // Crear deals
+                        foreach ($compras as $compra) {
+                            $dealInput = new \HubSpot\Client\Crm\Deals\Model\SimplePublicObjectInput();
+                            $dealInput->setProperties([
+                                'dealname' => auth()->user()->name . ' - ' . $compra->servicio_hs_id,
+                                'pipeline' => "94794",
+                                'dealstage' => "429097",
+                                'servicio_solicitado' => $compra->servicio_hs_id,
+                                'servicio_solicitado2' => $compra->servicio_hs_id,
+                            ]);
+
+                            $dealResponse = $hubspot->crm()->deals()->basicApi()->create($dealInput);
+                            $iddeal = $dealResponse->id;
+
+                            $associationSpec1 = new \HubSpot\Client\Crm\Associations\Model\AssociationSpec([
+                                'association_category' => 'HUBSPOT_DEFINED',
+                                'association_type_id' => 3
+                            ]);
+
+                            $hubspot->crm()->deals()->associationsApi()->create(
+                                $iddeal,
+                                'contacts',
+                                $idcontact,
+                                [$associationSpec1]
+                            );
+
+                            sleep(2);
+                        }
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Error actualizando HubSpot: ' . $e->getMessage());
+                }
+
+                // Enviar emails
+                try {
+                    $user = User::findOrFail(auth()->user()->id);
+                    $pdfContent = $this->createPDF($hash_factura);
+
+                    Mail::send('mail.comprobante-mail', ['user' => $user], function ($m) use ($pdfContent, $user) {
+                        $m->to(auth()->user()->email)
+                            ->subject('SEFAR UNIVERSAL - Hemos procesado su pago satisfactoriamente')
+                            ->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
+                    });
+
+                    $pdfContent2 = $this->createPDFintel($hash_factura);
+
+                    Mail::send('mail.comprobante-mail-intel', ['user' => $user], function ($m) use ($pdfContent2, $user) {
+                        $m->to([
+                            'pedro.bazo@sefarvzla.com',
+                            'crisantoantonio@gmail.com',
+                            'sistemasccs@sefarvzla.com',
+                            'automatizacion@sefarvzla.com',
+                            'sistemascol@sefarvzla.com',
+                            'asistentedeproduccion@sefarvzla.com',
+                            'organizacionrrhh@sefarvzla.com',
+                            '20053496@bcc.hubspot.com',
+                            'contabilidad@sefaruniversal.com',
+                            'operacionesc@sefarvzla.com',
+                        ])->subject(strtoupper($user->name) . ' (ID: ' .
+                            strtoupper($user->passport) . ') HA REALIZADO UN PAGO EN App Sefar Universal')
+                            ->attachData($pdfContent2, 'Comprobante.pdf', ['mime' => 'application/pdf']);
+                    });
+                } catch (\Exception $e) {
+                    \Log::error('Error enviando emails: ' . $e->getMessage());
+                }
+
+                // Crear item en Monday si corresponde
+                if ($setto2 == 1) {
+                    try {
+                        $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro
+                                FROM facturas as a, users as b
+                                WHERE a.id_cliente = b.id AND b.passport='" . $user->passport . "'
+                                ORDER BY a.id DESC LIMIT 1;";
+
+                        $datos_factura = DB::select($query);
+                        $productos = Compras::where("hash_factura", $datos_factura[0]->hash_factura)->get();
+
+                        $servicios = "";
+                        foreach ($productos as $key => $value) {
+                            $servicios .= $value->servicio_hs_id;
+                            if ($key != count($productos) - 1) {
+                                $servicios .= ", ";
+                            }
+                        }
+
+                        $token = env('MONDAY_TOKEN');
+                        $apiUrl = 'https://api.monday.com/v2';
+                        $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
+
+                        $query = 'mutation ($myItemName: String!, $columnVals: JSON!) {
+                            create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) {
+                                id
+                            }
+                        }';
+
+                        $link = 'https://app.sefaruniversal.com/tree/' . auth()->user()->passport;
+
+                        $vars = [
+                            'myItemName' => auth()->user()->apellidos . " " . auth()->user()->nombres,
+                            'columnVals' => json_encode([
+                                'texto' => auth()->user()->passport,
+                                'enlace' => $link . " " . $link,
+                                'estado54' => 'Arbol Incompleto',
+                                'texto1' => $servicios,
+                                'texto4' => auth()->user()->hs_id,
+                                'texto_largo88' => auth()->user()->nombre_de_familiar_realizando_procesos
+                            ])
+                        ];
+
+                        @file_get_contents($apiUrl, false, stream_context_create([
+                            'http' => [
+                                'method' => 'POST',
+                                'header' => $headers,
+                                'content' => json_encode(['query' => $query, 'variables' => $vars]),
+                            ]
+                        ]));
+                    } catch (\Exception $e) {
+                        \Log::error('Error creando item en Monday: ' . $e->getMessage());
+                    }
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Pago procesado exitosamente',
+                    'payment_intent_id' => $paymentIntent->id
+                ]);
+
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El pago no pudo ser completado. Estado: ' . ($paymentIntent->status ?? 'desconocido')
+                ], 400);
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Error general en procesarPagoStripe: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Ha ocurrido un error inesperado. Por favor, intente nuevamente.'
+            ], 500);
+        }
+    }
+
+    // Función auxiliar para generar string aleatorio
+    private function generate_string($input, $strength = 16) {
+        $input_length = strlen($input);
+        $random_string = '';
+        for($i = 0; $i < $strength; $i++) {
+            $random_character = $input[mt_rand(0, $input_length - 1)];
+            $random_string .= $random_character;
+        }
+        return $random_string;
+    }
+
+    // Función auxiliar para traducir códigos de error de Stripe
+    private function getStripeErrorMessage($code) {
+        $errors = [
+            'authentication_required' => 'La tarjeta fue rechazada porque la transacción requiere autenticación.',
+            'approve_with_id' => 'No se puede autorizar el pago.',
+            'call_issuer' => 'La tarjeta fue rechazada por un motivo desconocido.',
+            'card_not_supported' => 'La tarjeta no admite este tipo de compra.',
+            'card_velocity_exceeded' => 'El cliente ha superado el saldo o límite de crédito disponible en su tarjeta.',
+            'currency_not_supported' => 'La tarjeta no admite la moneda especificada.',
+            'do_not_honor' => 'La tarjeta fue rechazada por un motivo desconocido.',
+            'do_not_try_again' => 'La tarjeta fue rechazada por un motivo desconocido.',
+            'duplicate_transaction' => 'Recientemente se envió una transacción con la misma cantidad e información de la tarjeta de crédito.',
+            'expired_card' => 'La tarjeta ha caducado.',
+            'fraudulent' => 'El pago fue rechazado porque Stripe sospecha que es fraudulento.',
+            'generic_decline' => 'La tarjeta fue rechazada por un motivo desconocido.',
+            'incorrect_number' => 'El número de tarjeta es incorrecto.',
+            'incorrect_cvc' => 'El número CVC es incorrecto.',
+            'incorrect_pin' => 'El PIN ingresado es incorrecto.',
+            'incorrect_zip' => 'El código postal es incorrecto.',
+            'insufficient_funds' => 'La tarjeta no tiene fondos suficientes para completar la compra.',
+            'invalid_account' => 'La tarjeta o la cuenta a la que está conectada la tarjeta no es válida.',
+            'invalid_amount' => 'El monto del pago no es válido o excede el monto permitido.',
+            'invalid_cvc' => 'El número CVC es incorrecto.',
+            'invalid_expiry_month' => 'El mes de vencimiento no es válido.',
+            'invalid_expiry_year' => 'El año de caducidad no es válido.',
+            'invalid_number' => 'El número de tarjeta es incorrecto.',
+            'invalid_pin' => 'El PIN ingresado es incorrecto.',
+            'issuer_not_available' => 'No se pudo contactar al emisor de la tarjeta, por lo que no se pudo autorizar el pago.',
+            'lost_card' => 'El pago fue rechazado porque la tarjeta se reportó perdida.',
+            'merchant_blacklist' => 'El pago fue rechazado porque coincide con un valor en la lista de bloqueo.',
+            'new_account_information_available' => 'La tarjeta o la cuenta a la que está conectada la tarjeta no es válida.',
+            'no_action_taken' => 'La tarjeta fue rechazada por un motivo desconocido.',
+            'not_permitted' => 'El pago no está permitido.',
+            'offline_pin_required' => 'La tarjeta fue rechazada porque requiere un PIN.',
+            'online_or_offline_pin_required' => 'La tarjeta fue rechazada porque requiere un PIN.',
+            'pickup_card' => 'El cliente no puede usar esta tarjeta para realizar este pago.',
+            'pin_try_exceeded' => 'Se superó el número permitido de intentos de PIN.',
+            'processing_error' => 'Ocurrió un error al procesar la tarjeta.',
+            'reenter_transaction' => 'El emisor no pudo procesar el pago por un motivo desconocido.',
+            'restricted_card' => 'El cliente no puede usar esta tarjeta para realizar este pago.',
+            'revocation_of_all_authorizations' => 'La tarjeta fue rechazada por un motivo desconocido.',
+            'revocation_of_authorization' => 'La tarjeta fue rechazada por un motivo desconocido.',
+            'security_violation' => 'La tarjeta fue rechazada por un motivo desconocido.',
+            'service_not_allowed' => 'La tarjeta fue rechazada por un motivo desconocido.',
+            'stolen_card' => 'El pago fue rechazado porque la tarjeta fue reportada como robada.',
+            'stop_payment_order' => 'La tarjeta fue rechazada por un motivo desconocido.',
+            'testmode_decline' => 'Se utilizó un número de tarjeta de prueba.',
+            'transaction_not_allowed' => 'La tarjeta fue rechazada por un motivo desconocido.',
+            'try_again_later' => 'La tarjeta fue rechazada por un motivo desconocido.',
+            'withdrawal_count_limit_exceeded' => 'El cliente ha superado el saldo o límite de crédito disponible en su tarjeta.',
+        ];
+
+        return $errors[$code] ?? 'Error desconocido: ' . $code;
+    }
+
     public function checkRegAlzada(Request $request) {
         $mailpass = json_decode(json_encode(DB::table('users')->where('email', $request->email)->where('passport', $request->numero_de_pasaporte)->get()),true);
         $mail = json_decode(json_encode(DB::table('users')->where('email', $request->email)->get()),true);

@@ -358,6 +358,8 @@ Route::post('/whatsapp/url', [WhatsappBotURLController::class, 'storeOrUpdate'])
 Route::get('/revisarcupon', [ClienteController::class, 'revisarcupon'])->name('revisarcupon')
         ->middleware('can:cliente');
 
+Route::post('/procesar-pago-stripe', [ClienteController::class, 'procesarPagoStripe'])->name('procesar-pago-stripe');
+
 // Grupo de rutas para realizar pruebas
 Route::group(['middleware' => ['auth'], 'as' => 'test.'], function(){
     // Pruebas con Flex de Tailwind
