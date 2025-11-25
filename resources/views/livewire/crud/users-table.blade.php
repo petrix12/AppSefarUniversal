@@ -1,32 +1,52 @@
 <div>
-    <!-- This example requires Tailwind CSS v2.0+ -->
-    <div class="flex flex-col">
-        <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-            <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                {{-- Inicio --}}
-                <div class="bg-gray-50">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:py-6 lg:px-8 lg:flex lg:items-center lg:justify-between">
-                        <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-                            <span class="ctvSefar block text-indigo-600">{{ __('Users') }}</span>
-                        </h2>
-                        @can('crud.users.create')
-                        <div class="mt-8 flex lg:mt-0 lg:flex-shrink-0">
-                            <div class="inline-flex rounded-md shadow">
-                                <a href="{{ route('crud.users.create') }}" class="cfrSefar inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                                    {{ __('Create user') }}
-                                </a>
-                            </div>
-                        </div>
-                        @endcan
-                    </div>
-                </div>
-                {{-- Fin --}}
-            </div>
-        </div>
-    </div>
-
-    {{-- Estilos para tooltips --}}
+    {{-- Estilos CSS puros para responsive --}}
     <style>
+        /* ========== FILTROS RESPONSIVE ========== */
+        .filters-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* En pantallas horizontales (mayor a 1023px) - 2 FILAS */
+        @media (min-width: 1024px) {
+            .filters-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                grid-template-rows: auto auto;
+                gap: 16px;
+            }
+
+            .filter-item {
+                grid-row: 1;
+            }
+
+            .filter-button {
+                grid-column: 1 / -1;
+                grid-row: 2;
+                justify-self: end;
+            }
+        }
+
+        /* ========== TABLA vs CARDS ========== */
+        .table-view {
+            display: block;
+        }
+
+        .cards-view {
+            display: none;
+        }
+
+        @media (max-width: 1023px) {
+            .table-view {
+                display: none;
+            }
+            .cards-view {
+                display: block;
+            }
+        }
+
+        /* ========== TOOLTIPS ========== */
         .tooltip-container {
             position: relative;
             display: inline-block;
@@ -65,12 +85,119 @@
             visibility: visible;
             opacity: 1;
         }
+
+        /* ========== ESTILOS DE TABLA ========== */
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .users-table thead {
+            background-color: #f9fafb;
+        }
+
+        .users-table th {
+            padding: 12px 24px;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .users-table tbody tr {
+            border-bottom: 1px solid #e5e7eb;
+            transition: background-color 0.15s;
+        }
+
+        .users-table tbody tr:hover {
+            background-color: #f9fafb;
+        }
+
+        .users-table td {
+            padding: 16px 24px;
+            vertical-align: top;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+
+        .user-info {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 2px;
+        }
+
+        .service-item {
+            font-size: 0.875rem;
+            margin-bottom: 4px;
+        }
+
+        .badge-paid {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-unpaid {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .actions-cell {
+            text-align: center;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+        }
     </style>
 
+    <!-- Header -->
+    <div class="flex flex-col">
+        <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+            <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                <div class="bg-gray-50">
+                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:py-6 lg:px-8 lg:flex lg:items-center lg:justify-between">
+                        <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                            <span class="ctvSefar block text-indigo-600">{{ __('Users') }}</span>
+                        </h2>
+                        @can('crud.users.create')
+                        <div class="mt-8 flex lg:mt-0 lg:flex-shrink-0">
+                            <div class="inline-flex rounded-md shadow">
+                                <a href="{{ route('crud.users.create') }}" class="cfrSefar inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                                    {{ __('Create user') }}
+                                </a>
+                            </div>
+                        </div>
+                        @endcan
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros y búsqueda -->
     <div class="flex flex-col">
         <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
             <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
                 <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                    <!-- Barra de búsqueda -->
                     <div class="flex flex-col sm:flex-row bg-white px-4 py-3 sm:px-6 gap-2">
                         <input
                             wire:model.live="search"
@@ -93,7 +220,7 @@
                         </div>
                         @if ($search !== '')
                         <button wire:click="clear" class="py-1 px-4 mt-1 border border-transparent rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            <i class="far fa-window-close"></i> <span class="sm:hidden">Limpiar</span>
+                            <i class="far fa-window-close"></i>
                         </button>
                         @endif
                     </div>
@@ -102,11 +229,11 @@
                         <small>Para una búsqueda más exacta, busca por <b>correo</b> o <b>número de pasaporte</b></small>
                     </div>
 
-                    {{-- FILTROS: Columna vertical en móvil, 2-3 columnas en desktop --}}
+                    <!-- Filtros en 2 líneas -->
                     <div class="bg-white px-4 py-3 sm:px-6">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {{-- Servicio contratado --}}
-                            <div class="w-full">
+                        <div class="filters-container">
+                            <!-- Filtro 1: Servicio -->
+                            <div class="filter-item">
                                 <label for="filterServicio" class="block text-xs font-medium text-gray-700 mb-1">Servicio</label>
                                 <select wire:model.live="filterServicio" id="filterServicio" class="block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                     <option value="">Todos los servicios</option>
@@ -122,8 +249,8 @@
                                 </select>
                             </div>
 
-                            {{-- Contrato firmado --}}
-                            <div class="w-full">
+                            <!-- Filtro 2: Contrato -->
+                            <div class="filter-item">
                                 <label for="filterContrato" class="block text-xs font-medium text-gray-700 mb-1">Contrato</label>
                                 <select wire:model.live="filterContrato" id="filterContrato" class="block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                     <option value="">Todos</option>
@@ -132,8 +259,8 @@
                                 </select>
                             </div>
 
-                            {{-- Pago --}}
-                            <div class="w-full">
+                            <!-- Filtro 3: Pago -->
+                            <div class="filter-item">
                                 <label for="filterPago" class="block text-xs font-medium text-gray-700 mb-1">Estado de Pago</label>
                                 <select wire:model.live="filterPago" id="filterPago" class="block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                     <option value="">Todos</option>
@@ -143,10 +270,10 @@
                                 </select>
                             </div>
 
-                            {{-- Botón limpiar - Segunda fila, alineado a la derecha --}}
+                            <!-- Botón limpiar - Segunda fila en desktop -->
                             @if ($filterServicio || $filterContrato !== '' || $filterPago !== '')
-                            <div class="w-full sm:col-span-2 lg:col-span-3 flex justify-start sm:justify-end">
-                                <button wire:click="clearFilters" class="w-full sm:w-auto py-2 px-4 border border-transparent rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <div class="filter-button">
+                                <button wire:click="clearFilters" class="w-full py-2 px-4 border border-transparent rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" style="max-width: 200px;">
                                     Limpiar filtros <i class="fas fa-times ml-1"></i>
                                 </button>
                             </div>
@@ -167,11 +294,10 @@
 
                     @if ($users->count())
 
-                    {{-- ✅ VISTA MÓVIL (cards) - Solo móviles y tablets pequeñas --}}
-                    <div class="lg:hidden">
+                    {{-- ========== VISTA CARDS (Móvil/Vertical) ========== --}}
+                    <div class="cards-view">
                         @foreach ($users as $user)
                         <div class="bg-white border-b border-gray-200 p-4">
-                            {{-- Nombre y datos principales --}}
                             <div class="mb-3">
                                 <h3 class="text-lg font-semibold text-gray-900">{{ Str::limit($user->name, 30) }}</h3>
                                 <p class="text-sm text-gray-600 mt-1">
@@ -184,7 +310,6 @@
                                 @endif
                             </div>
 
-                            {{-- Servicios y pago --}}
                             <div class="mb-3 p-3 bg-gray-50 rounded-md">
                                 <h4 class="text-xs font-semibold text-gray-700 uppercase mb-2">Servicios y Pago</h4>
                                 <?php
@@ -230,13 +355,11 @@
                                 </p>
                             </div>
 
-                            {{-- Fecha e ID --}}
                             <div class="mb-3 flex justify-between text-sm text-gray-500">
                                 <span><i class="fas fa-calendar mr-1"></i> {{ date_format($user->created_at,"Y-m-d") }}</span>
                                 <span><i class="fas fa-id-card mr-1"></i> ID: {{ $user->id }}</span>
                             </div>
 
-                            {{-- Botones de acción CON TOOLTIPS --}}
                             <div class="flex flex-wrap gap-2 justify-center pt-3 border-t border-gray-200">
                                 @can('crud.users.edit')
                                     <div class="tooltip-container flex-1">
@@ -254,10 +377,7 @@
                                         <form action="{{ route('crud.users.destroy', $user) }}" method="POST" class="w-full">
                                             @csrf
                                             @method('delete')
-                                            <button
-                                                type="submit"
-                                                class="btn btn-danger w-full"
-                                                onclick="return confirm('¿Está seguro que desea eliminar a este usuario?')">
+                                            <button type="submit" class="btn btn-danger w-full" onclick="return confirm('¿Está seguro que desea eliminar a este usuario?')">
                                                 <i class="fas fa-trash fa-fw"></i>
                                             </button>
                                         </form>
@@ -292,35 +412,27 @@
                         @endforeach
                     </div>
 
-                    {{-- ✅ VISTA DESKTOP (tabla) - Solo pantallas grandes --}}
-                    <div class="hidden lg:block">
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
+                    {{-- ========== VISTA TABLA (Desktop/Horizontal) ========== --}}
+                    <div class="table-view">
+                        <div style="overflow-x: auto;">
+                            <table class="users-table">
+                                <thead>
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Nombre, Correo y Pasaporte
-                                        </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Servicios Solicitados / Pago
-                                        </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Fecha Registro / ID
-                                        </th>
-                                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Opciones
-                                        </th>
+                                        <th>Nombre, Correo y Pasaporte</th>
+                                        <th>Servicios Solicitados / Pago</th>
+                                        <th>Fecha Registro / ID</th>
+                                        <th style="text-align: center;">Opciones</th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
+                                <tbody>
                                 @foreach ($users as $user)
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <p class="font-semibold">{{ Str::limit($user->name, 25) }}</p>
-                                        <p class="text-sm text-gray-500">{{ $user->email }}</p>
-                                        <p class="text-sm text-gray-500">{{ $user->passport }}</p>
+                                    <td>
+                                        <p class="user-name">{{ Str::limit($user->name, 25) }}</p>
+                                        <p class="user-info">{{ $user->email }}</p>
+                                        <p class="user-info">{{ $user->passport }}</p>
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td>
                                         <?php
                                             $helperc = 0;
                                             foreach ($compras as $compra) {
@@ -333,30 +445,40 @@
                                         @if ($helperc==1)
                                             @foreach ($compras as $compra)
                                                 @if ($compra['id_user'] == $user->id && $compra['servicio_hs_id'])
-                                                    <p class="text-sm"><b>{{ $compra['servicio_hs_id'] }}</b> - {{ $compra->pagado == 0 ? 'No ha pagado' : 'Pagó' }}</p>
+                                                    <p class="service-item">
+                                                        <b>{{ $compra['servicio_hs_id'] }}</b>
+                                                        <span class="{{ $compra->pagado == 0 ? 'badge-unpaid' : 'badge-paid' }}">
+                                                            {{ $compra->pagado == 0 ? 'No pagó' : 'Pagó' }}
+                                                        </span>
+                                                    </p>
                                                 @endif
                                             @endforeach
-                                            <p class="text-sm">{{ $user->pay == 2 ? 'El usuario completó información' : 'El usuario NO completó información' }}<b>{{ $user->pay == 3 ? ' - Estatus 3 activo' : '' }}</b></p>
+                                            <p class="service-item">{{ $user->pay == 2 ? 'Completó información' : 'NO completó información' }}<b>{{ $user->pay == 3 ? ' - Estatus 3' : '' }}</b></p>
                                         @else
                                             @if (auth()->user()->roles[0]->id == 1)
-                                                <p class="text-sm">{{ $user->servicio == null ? $user->getRoleNames()[0] ?? 'Sin rol' : $user->servicio }}</p>
+                                                <p class="service-item">{{ $user->servicio == null ? $user->getRoleNames()[0] ?? 'Sin rol' : $user->servicio }}</p>
                                             @else
-                                                <p class="text-sm">{{ $user->servicio != null ? $user->servicio : "Usuario App" }}</p>
+                                                <p class="service-item">{{ $user->servicio != null ? $user->servicio : "Usuario App" }}</p>
                                             @endif
-                                            <p class="text-sm">{{ $user->pay == 0 ? 'No ha pagado' : ($user->pay == 1 ? 'Pagó' : 'Pagó y completó información') }}<b>{{ $user->pay == 3 ? ' - Estatus 3 activo' : '' }}</b></p>
+                                            <p class="service-item">
+                                                <span class="{{ $user->pay == 0 ? 'badge-unpaid' : 'badge-paid' }}">
+                                                    {{ $user->pay == 0 ? 'No pagó' : ($user->pay == 1 ? 'Pagó' : 'Pagó y completó info') }}
+                                                </span>
+                                                <b>{{ $user->pay == 3 ? ' - Estatus 3' : '' }}</b>
+                                            </p>
                                         @endif
                                         @if($user->contrato)
-                                            <p class="text-sm">El usuario ya firmó su contrato</p>
+                                            <p class="service-item" style="color: #065f46;">✓ Contrato firmado</p>
                                         @else
-                                            <p class="text-sm">El usuario <b>NO</b> ha firmado su contrato</p>
+                                            <p class="service-item" style="color: #991b1b;">✗ NO firmó contrato</p>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <p class="text-sm">{{ date_format($user->created_at,"Y-m-d") }}</p>
-                                        <p class="text-sm text-gray-500">ID: {{ $user->id }}</p>
+                                    <td>
+                                        <p class="service-item">{{ date_format($user->created_at,"Y-m-d") }}</p>
+                                        <p class="user-info">ID: {{ $user->id }}</p>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex justify-center items-center space-x-2">
+                                    <td class="actions-cell">
+                                        <div class="action-buttons">
                                             @can('crud.users.edit')
                                                 <div class="tooltip-container">
                                                     <a href="{{ route('crud.users.edit', $user) }}"
@@ -369,13 +491,10 @@
                                             @endcan
                                             @can('crud.users.destroy')
                                                 <div class="tooltip-container">
-                                                    <form action="{{ route('crud.users.destroy', $user) }}" method="POST" class="inline-block">
+                                                    <form action="{{ route('crud.users.destroy', $user) }}" method="POST" style="display: inline-block;">
                                                         @csrf
                                                         @method('delete')
-                                                        <button
-                                                            type="submit"
-                                                            class="btn btn-danger"
-                                                            onclick="return confirm('¿Está seguro que desea eliminar a este usuario?')">
+                                                        <button type="submit" class="btn btn-danger" onclick="return confirm('¿Está seguro que desea eliminar a este usuario?')">
                                                             <i class="fas fa-trash fa-fw"></i>
                                                         </button>
                                                     </form>
