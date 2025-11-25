@@ -764,7 +764,7 @@
         };
 
         // Crear elemento de tarjeta
-        var cardElement = elements.create('card', {style: style});
+        var cardElement = elements.create('card', {style: style, hidePostalCode: true});
         cardElement.mount('#card-element');
 
         // Manejar errores de validación en tiempo real
