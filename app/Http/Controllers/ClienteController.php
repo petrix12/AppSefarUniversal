@@ -845,7 +845,7 @@ class ClienteController extends Controller
                 } else {
                     $resultadoIA = $this->analizarEtiquetasYDevolverJSON($mondaydataforAI);
                 }
-                if (isset($negocio->n5__fecha_de_formalizacion)){
+                if (isset($negocio->n5__fecha_de_formalizacion) || ( isset($negocio->codigo_de_proceso) && $negocio->codigo_de_proceso == "FORMALIZADO 2024" )) {
                     if(!isset($negocio->n4__certificado_descargado)){
                         $certificadoDescargado = 2;
                     }
@@ -906,7 +906,12 @@ class ClienteController extends Controller
                         }
                     }
 
-                    $fechaFormalizacion = Carbon::parse($negocio->n5__fecha_de_formalizacion);
+                    // ✅ MODIFICACIÓN: Si es FORMALIZADO 2024, usar 01-01-2024 como fecha base
+                    if (isset($negocio->codigo_de_proceso) && $negocio->codigo_de_proceso == "FORMALIZADO 2024") {
+                        $fechaFormalizacion = Carbon::parse('2024-01-01');
+                    } else {
+                        $fechaFormalizacion = Carbon::parse($negocio->n5__fecha_de_formalizacion);
+                    }
 
                     $fechaFormalizacionMas12Meses = $fechaFormalizacion->copy()->addMonths(12);
                     $fechaFormalizacionMas6Meses = $fechaFormalizacion->copy()->addMonths(6);
