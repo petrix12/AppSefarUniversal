@@ -1026,7 +1026,7 @@ class ClienteController extends Controller
                         }
                     }
 
-                    if (isset($negocio->n5__fecha_de_formalizacion)){
+                    if (isset($negocio->n5__fecha_de_formalizacion)  || ( isset($negocio->codigo_de_proceso) && $negocio->codigo_de_proceso == "FORMALIZADO 2024" )){
                         $fechaFormalizacion = Carbon::parse($negocio->n5__fecha_de_formalizacion);
 
                         $fechaFormalizacionMas12Meses = $fechaFormalizacion->copy()->addMonths(12);

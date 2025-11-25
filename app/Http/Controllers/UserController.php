@@ -2259,7 +2259,7 @@ class UserController extends Controller
                 } else {
                     $resultadoIA = $this->analizarEtiquetasYDevolverJSON($mondaydataforAI);
                 }
-                if (isset($negocio->n5__fecha_de_formalizacion)){
+                if (isset($negocio->n5__fecha_de_formalizacion) || ( isset($negocio->codigo_de_proceso) && $negocio->codigo_de_proceso == "FORMALIZADO 2024" )) {
                     if(!isset($negocio->n4__certificado_descargado)){
                         $certificadoDescargado = 2;
                     }
