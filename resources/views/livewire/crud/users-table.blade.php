@@ -24,6 +24,49 @@
             </div>
         </div>
     </div>
+
+    {{-- Estilos para tooltips --}}
+    <style>
+        .tooltip-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip-container .tooltip-text {
+            visibility: hidden;
+            opacity: 0;
+            background-color: #1f2937;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 10px;
+            position: absolute;
+            z-index: 1000;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            font-size: 0.75rem;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .tooltip-container .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #1f2937 transparent transparent transparent;
+        }
+
+        .tooltip-container:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+
     <div class="flex flex-col">
         <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
             <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
@@ -59,50 +102,56 @@
                         <small>Para una búsqueda más exacta, busca por <b>correo</b> o <b>número de pasaporte</b></small>
                     </div>
 
-                    <div class="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-end bg-white px-4 py-3 sm:px-6 gap-2">
-                        {{-- Servicio contratado --}}
-                        <div class="flex-1 min-w-full sm:min-w-[200px]">
-                            <select wire:model.live="filterServicio" id="filterServicio" class="mt-1 block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                <option value="">Todos los servicios</option>
-                                @foreach ($listaServicios as $categoria => $servicios)
-                                    @if(count($servicios) > 0)
-                                        <optgroup label="{{ $categoria }}">
-                                            @foreach ($servicios as $servicio)
-                                                <option value="{{ $servicio }}">{{ $servicio }}</option>
-                                            @endforeach
-                                        </optgroup>
-                                    @endif
-                                @endforeach
-                            </select>
-                        </div>
+                    {{-- FILTROS: Columna vertical en móvil, 2 filas en desktop --}}
+                    <div class="bg-white px-4 py-3 sm:px-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {{-- Servicio contratado --}}
+                            <div class="w-full">
+                                <label for="filterServicio" class="block text-xs font-medium text-gray-700 mb-1">Servicio</label>
+                                <select wire:model.live="filterServicio" id="filterServicio" class="block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                    <option value="">Todos los servicios</option>
+                                    @foreach ($listaServicios as $categoria => $servicios)
+                                        @if(count($servicios) > 0)
+                                            <optgroup label="{{ $categoria }}">
+                                                @foreach ($servicios as $servicio)
+                                                    <option value="{{ $servicio }}">{{ $servicio }}</option>
+                                                @endforeach
+                                            </optgroup>
+                                        @endif
+                                    @endforeach
+                                </select>
+                            </div>
 
-                        {{-- Contrato firmado --}}
-                        <div class="flex-1 min-w-full sm:min-w-[200px]">
-                            <select wire:model.live="filterContrato" class="mt-1 block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                <option value="">--Contrato--</option>
-                                <option value="1">Firmado</option>
-                                <option value="0">No firmado</option>
-                            </select>
-                        </div>
+                            {{-- Contrato firmado --}}
+                            <div class="w-full">
+                                <label for="filterContrato" class="block text-xs font-medium text-gray-700 mb-1">Contrato</label>
+                                <select wire:model.live="filterContrato" id="filterContrato" class="block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                    <option value="">Todos</option>
+                                    <option value="1">Firmado</option>
+                                    <option value="0">No firmado</option>
+                                </select>
+                            </div>
 
-                        {{-- Pago --}}
-                        <div class="flex-1 min-w-full sm:min-w-[200px]">
-                            <select wire:model.live="filterPago" class="mt-1 block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                <option value="">--Pago--</option>
-                                <option value="2">Pagó y completó información</option>
-                                <option value="1">Pagó pero no completó información</option>
-                                <option value="0">No pagó</option>
-                            </select>
-                        </div>
+                            {{-- Pago --}}
+                            <div class="w-full">
+                                <label for="filterPago" class="block text-xs font-medium text-gray-700 mb-1">Estado de Pago</label>
+                                <select wire:model.live="filterPago" id="filterPago" class="block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                    <option value="">Todos</option>
+                                    <option value="2">Pagó y completó información</option>
+                                    <option value="1">Pagó pero no completó información</option>
+                                    <option value="0">No pagó</option>
+                                </select>
+                            </div>
 
-                        {{-- Botón limpiar --}}
-                        @if ($filterServicio || $filterContrato !== '' || $filterPago !== '')
-                        <div class="w-full sm:w-auto sm:ml-auto">
-                            <button wire:click="clearFilters" class="w-full sm:w-auto py-2 px-4 border border-transparent rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                Limpiar <i class="fas fa-times ml-1"></i>
-                            </button>
+                            {{-- Botón limpiar - Segunda fila, alineado a la derecha --}}
+                            @if ($filterServicio || $filterContrato !== '' || $filterPago !== '')
+                            <div class="w-full md:col-span-2 lg:col-span-3 flex justify-start md:justify-end">
+                                <button wire:click="clearFilters" class="w-full md:w-auto py-2 px-4 border border-transparent rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    Limpiar filtros <i class="fas fa-times ml-1"></i>
+                                </button>
+                            </div>
+                            @endif
                         </div>
-                        @endif
                     </div>
 
                     <script>
@@ -118,118 +167,8 @@
 
                     @if ($users->count())
 
-                    {{-- VISTA DESKTOP (tabla) - Oculta en móviles --}}
-                    <div class="hidden lg:block overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Nombre, Correo y Pasaporte
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Servicios Solicitados / Pago
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Fecha Registro / ID
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Opciones
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach ($users as $user)
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <p class="font-semibold">{{ Str::limit($user->name, 25) }}</p>
-                                    <p class="text-sm text-gray-500">{{ $user->email }}</p>
-                                    <p class="text-sm text-gray-500">{{ $user->passport }}</p>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <?php
-                                        $helperc = 0;
-                                        foreach ($compras as $compra) {
-                                            if ($compra['id_user'] == $user->id){
-                                                $helperc = 1;
-                                                break;
-                                            }
-                                        }
-                                    ?>
-                                    @if ($helperc==1)
-                                        @foreach ($compras as $compra)
-                                            @if ($compra['id_user'] == $user->id && $compra['servicio_hs_id'])
-                                                <p class="text-sm"><b>{{ $compra['servicio_hs_id'] }}</b> - {{ $compra->pagado == 0 ? 'No ha pagado' : 'Pagó' }}</p>
-                                            @endif
-                                        @endforeach
-                                        <p class="text-sm">{{ $user->pay == 2 ? 'El usuario completó información' : 'El usuario NO completó información' }}<b>{{ $user->pay == 3 ? ' - Estatus 3 activo' : '' }}</b></p>
-                                    @else
-                                        @if (auth()->user()->roles[0]->id == 1)
-                                            <p class="text-sm">{{ $user->servicio == null ? $user->getRoleNames()[0] ?? 'Sin rol' : $user->servicio }}</p>
-                                        @else
-                                            <p class="text-sm">{{ $user->servicio != null ? $user->servicio : "Usuario App" }}</p>
-                                        @endif
-                                        <p class="text-sm">{{ $user->pay == 0 ? 'No ha pagado' : ($user->pay == 1 ? 'Pagó' : 'Pagó y completó información') }}<b>{{ $user->pay == 3 ? ' - Estatus 3 activo' : '' }}</b></p>
-                                    @endif
-                                    @if($user->contrato)
-                                        <p class="text-sm">El usuario ya firmó su contrato</p>
-                                    @else
-                                        <p class="text-sm">El usuario <b>NO</b> ha firmado su contrato</p>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <p class="text-sm">{{ date_format($user->created_at,"Y-m-d") }}</p>
-                                    <p class="text-sm text-gray-500">ID: {{ $user->id }}</p>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex justify-center space-x-2">
-                                        @can('crud.users.edit')
-                                            <a href="{{ route('crud.users.edit', $user) }}"
-                                               class="btn btn-primary edit-user-btn btn_status_loader"
-                                               data-href="{{ route('crud.users.edit', $user) }}"
-                                               title="Editar Usuario">
-                                               <i class="fas fa-edit fa-fw"></i>
-                                            </a>
-                                        @endcan
-                                        @can('crud.users.destroy')
-                                            <form action="{{ route('crud.users.destroy', $user) }}" method="POST">
-                                                @csrf
-                                                @method('delete')
-                                                <button
-                                                    type="submit"
-                                                    class="btn btn-danger"
-                                                    title="Eliminar Usuario"
-                                                    onclick="return confirm('¿Está seguro que desea eliminar a este usuario?')">
-                                                    <i class="fas fa-trash fa-fw"></i>
-                                                </button>
-                                            </form>
-                                        @endcan
-                                        @if($user->getRoleNames()->first() == "Cliente")
-                                            <a style="color:white!important;"
-                                               href="{{ route('crud.users.edit', $user) }}"
-                                               class="btn btn-warning edit-user-btn btn_status_loader"
-                                               data-href="{{ route('crud.users.edit', $user) }}"
-                                               title="Estatus del Cliente">
-                                               <i class="fas fa-exclamation fa-fw"></i>
-                                            </a>
-                                        @endif
-                                        @if ($user->getRoleNames()->first() == "Cliente" && isset($user->passport))
-                                            <a style="color:white!important;"
-                                               href="{{ route('arboles.tree.index', $user->passport) }}"
-                                               title="Ver Arbol - Vista Horizontal"
-                                               class="btn btn-success">
-                                               <i class="fab fa-pagelines fa-fw"></i>
-                                            </a>
-                                        @endif
-                                    </div>
-                                </td>
-                            </tr>
-                            @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {{-- VISTA MÓVIL (cards) - Visible solo en móviles --}}
-                    <div class="lg:hidden">
+                    {{-- VISTA MÓVIL (cards) - Visible solo en móviles y tablets --}}
+                    <div class="block md:hidden">
                         @foreach ($users as $user)
                         <div class="bg-white border-b border-gray-200 p-4">
                             {{-- Nombre y datos principales --}}
@@ -297,52 +236,178 @@
                                 <span><i class="fas fa-id-card mr-1"></i> ID: {{ $user->id }}</span>
                             </div>
 
-                            {{-- Botones de acción --}}
+                            {{-- Botones de acción CON TOOLTIPS --}}
                             <div class="flex flex-wrap gap-2 justify-center pt-3 border-t border-gray-200">
                                 @can('crud.users.edit')
-                                    <a href="{{ route('crud.users.edit', $user) }}"
-                                       class="btn btn-primary edit-user-btn btn_status_loader flex-1 text-center"
-                                       data-href="{{ route('crud.users.edit', $user) }}"
-                                       title="Editar Usuario">
-                                       <i class="fas fa-edit fa-fw"></i> Editar
-                                    </a>
+                                    <div class="tooltip-container flex-1">
+                                        <a href="{{ route('crud.users.edit', $user) }}"
+                                           class="btn btn-primary edit-user-btn btn_status_loader w-full text-center"
+                                           data-href="{{ route('crud.users.edit', $user) }}">
+                                           <i class="fas fa-edit fa-fw"></i>
+                                        </a>
+                                        <span class="tooltip-text">Editar Usuario</span>
+                                    </div>
                                 @endcan
 
                                 @can('crud.users.destroy')
-                                    <form action="{{ route('crud.users.destroy', $user) }}" method="POST" class="flex-1">
-                                        @csrf
-                                        @method('delete')
-                                        <button
-                                            type="submit"
-                                            class="btn btn-danger w-full"
-                                            title="Eliminar Usuario"
-                                            onclick="return confirm('¿Está seguro que desea eliminar a este usuario?')">
-                                            <i class="fas fa-trash fa-fw"></i> Eliminar
-                                        </button>
-                                    </form>
+                                    <div class="tooltip-container flex-1">
+                                        <form action="{{ route('crud.users.destroy', $user) }}" method="POST" class="w-full">
+                                            @csrf
+                                            @method('delete')
+                                            <button
+                                                type="submit"
+                                                class="btn btn-danger w-full"
+                                                onclick="return confirm('¿Está seguro que desea eliminar a este usuario?')">
+                                                <i class="fas fa-trash fa-fw"></i>
+                                            </button>
+                                        </form>
+                                        <span class="tooltip-text">Eliminar Usuario</span>
+                                    </div>
                                 @endcan
 
                                 @if($user->getRoleNames()->first() == "Cliente")
-                                    <a style="color:white!important;"
-                                       href="{{ route('crud.users.edit', $user) }}"
-                                       class="btn btn-warning edit-user-btn btn_status_loader flex-1 text-center"
-                                       data-href="{{ route('crud.users.edit', $user) }}"
-                                       title="Estatus del Cliente">
-                                       <i class="fas fa-exclamation fa-fw"></i> Estatus
-                                    </a>
+                                    <div class="tooltip-container flex-1">
+                                        <a style="color:white!important;"
+                                           href="{{ route('crud.users.edit', $user) }}"
+                                           class="btn btn-warning edit-user-btn btn_status_loader w-full text-center"
+                                           data-href="{{ route('crud.users.edit', $user) }}">
+                                           <i class="fas fa-exclamation fa-fw"></i>
+                                        </a>
+                                        <span class="tooltip-text">Estatus del Cliente</span>
+                                    </div>
                                 @endif
 
                                 @if ($user->getRoleNames()->first() == "Cliente" && isset($user->passport))
-                                    <a style="color:white!important;"
-                                       href="{{ route('arboles.tree.index', $user->passport) }}"
-                                       title="Ver Arbol"
-                                       class="btn btn-success flex-1 text-center">
-                                       <i class="fab fa-pagelines fa-fw"></i> Árbol
-                                    </a>
+                                    <div class="tooltip-container flex-1">
+                                        <a style="color:white!important;"
+                                           href="{{ route('arboles.tree.index', $user->passport) }}"
+                                           class="btn btn-success w-full text-center">
+                                           <i class="fab fa-pagelines fa-fw"></i>
+                                        </a>
+                                        <span class="tooltip-text">Ver Árbol Genealógico</span>
+                                    </div>
                                 @endif
                             </div>
                         </div>
                         @endforeach
+                    </div>
+
+                    {{-- VISTA DESKTOP (tabla) CON TOOLTIPS - Visible solo en desktop --}}
+                    <div class="hidden md:block overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Nombre, Correo y Pasaporte
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Servicios Solicitados / Pago
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Fecha Registro / ID
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Opciones
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach ($users as $user)
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <p class="font-semibold">{{ Str::limit($user->name, 25) }}</p>
+                                    <p class="text-sm text-gray-500">{{ $user->email }}</p>
+                                    <p class="text-sm text-gray-500">{{ $user->passport }}</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <?php
+                                        $helperc = 0;
+                                        foreach ($compras as $compra) {
+                                            if ($compra['id_user'] == $user->id){
+                                                $helperc = 1;
+                                                break;
+                                            }
+                                        }
+                                    ?>
+                                    @if ($helperc==1)
+                                        @foreach ($compras as $compra)
+                                            @if ($compra['id_user'] == $user->id && $compra['servicio_hs_id'])
+                                                <p class="text-sm"><b>{{ $compra['servicio_hs_id'] }}</b> - {{ $compra->pagado == 0 ? 'No ha pagado' : 'Pagó' }}</p>
+                                            @endif
+                                        @endforeach
+                                        <p class="text-sm">{{ $user->pay == 2 ? 'El usuario completó información' : 'El usuario NO completó información' }}<b>{{ $user->pay == 3 ? ' - Estatus 3 activo' : '' }}</b></p>
+                                    @else
+                                        @if (auth()->user()->roles[0]->id == 1)
+                                            <p class="text-sm">{{ $user->servicio == null ? $user->getRoleNames()[0] ?? 'Sin rol' : $user->servicio }}</p>
+                                        @else
+                                            <p class="text-sm">{{ $user->servicio != null ? $user->servicio : "Usuario App" }}</p>
+                                        @endif
+                                        <p class="text-sm">{{ $user->pay == 0 ? 'No ha pagado' : ($user->pay == 1 ? 'Pagó' : 'Pagó y completó información') }}<b>{{ $user->pay == 3 ? ' - Estatus 3 activo' : '' }}</b></p>
+                                    @endif
+                                    @if($user->contrato)
+                                        <p class="text-sm">El usuario ya firmó su contrato</p>
+                                    @else
+                                        <p class="text-sm">El usuario <b>NO</b> ha firmado su contrato</p>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <p class="text-sm">{{ date_format($user->created_at,"Y-m-d") }}</p>
+                                    <p class="text-sm text-gray-500">ID: {{ $user->id }}</p>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex justify-center space-x-2">
+                                        @can('crud.users.edit')
+                                            <div class="tooltip-container">
+                                                <a href="{{ route('crud.users.edit', $user) }}"
+                                                   class="btn btn-primary edit-user-btn btn_status_loader"
+                                                   data-href="{{ route('crud.users.edit', $user) }}">
+                                                   <i class="fas fa-edit fa-fw"></i>
+                                                </a>
+                                                <span class="tooltip-text">Editar Usuario</span>
+                                            </div>
+                                        @endcan
+                                        @can('crud.users.destroy')
+                                            <div class="tooltip-container">
+                                                <form action="{{ route('crud.users.destroy', $user) }}" method="POST">
+                                                    @csrf
+                                                    @method('delete')
+                                                    <button
+                                                        type="submit"
+                                                        class="btn btn-danger"
+                                                        onclick="return confirm('¿Está seguro que desea eliminar a este usuario?')">
+                                                        <i class="fas fa-trash fa-fw"></i>
+                                                    </button>
+                                                </form>
+                                                <span class="tooltip-text">Eliminar Usuario</span>
+                                            </div>
+                                        @endcan
+                                        @if($user->getRoleNames()->first() == "Cliente")
+                                            <div class="tooltip-container">
+                                                <a style="color:white!important;"
+                                                   href="{{ route('crud.users.edit', $user) }}"
+                                                   class="btn btn-warning edit-user-btn btn_status_loader"
+                                                   data-href="{{ route('crud.users.edit', $user) }}">
+                                                   <i class="fas fa-exclamation fa-fw"></i>
+                                                </a>
+                                                <span class="tooltip-text">Estatus del Cliente</span>
+                                            </div>
+                                        @endif
+                                        @if ($user->getRoleNames()->first() == "Cliente" && isset($user->passport))
+                                            <div class="tooltip-container">
+                                                <a style="color:white!important;"
+                                                   href="{{ route('arboles.tree.index', $user->passport) }}"
+                                                   class="btn btn-success">
+                                                   <i class="fab fa-pagelines fa-fw"></i>
+                                                </a>
+                                                <span class="tooltip-text">Ver Árbol Genealógico</span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforeach
+                            </tbody>
+                        </table>
                     </div>
 
                     <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
