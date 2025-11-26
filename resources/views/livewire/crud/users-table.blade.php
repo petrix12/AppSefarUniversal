@@ -501,17 +501,15 @@
                                                     <span class="tooltip-text">Eliminar Usuario</span>
                                                 </div>
                                             @endif
-                                            @if($user->getRoleNames()->first() == "Cliente")
-                                                <div class="tooltip-container">
-                                                    <a style="color:white!important;"
-                                                       href="{{ route('crud.users.edit', $user) }}"
-                                                       class="btn btn-warning edit-user-btn btn_status_loader"
-                                                       data-href="{{ route('crud.users.edit', $user) }}">
-                                                       <i class="fas fa-exclamation fa-fw"></i>
-                                                    </a>
-                                                    <span class="tooltip-text">Estatus del Cliente</span>
-                                                </div>
-                                            @endif
+                                            <div class="tooltip-container">
+                                                <a style="color:white!important;"
+                                                    href="{{ route('crud.users.edit', $user) }}"
+                                                    class="btn btn-warning edit-user-btn btn_status_loader"
+                                                    data-href="{{ route('crud.users.edit', $user) }}">
+                                                    <i class="fas fa-exclamation fa-fw"></i>
+                                                </a>
+                                                <span class="tooltip-text">Estatus del Cliente</span>
+                                            </div>
                                             @if ($user->getRoleNames()->first() == "Cliente" && isset($user->passport))
                                                 <div class="tooltip-container">
                                                     <a style="color:white!important;"
