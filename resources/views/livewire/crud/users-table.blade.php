@@ -372,7 +372,7 @@
                                     </div>
                                 @endcan
 
-                                @can('crud.users.destroy')
+                                @if(auth()->user()->roles[0]->id == 1)
                                     <div class="tooltip-container flex-1">
                                         <form action="{{ route('crud.users.destroy', $user) }}" method="POST" class="w-full">
                                             @csrf
@@ -383,7 +383,7 @@
                                         </form>
                                         <span class="tooltip-text">Eliminar Usuario</span>
                                     </div>
-                                @endcan
+                                @endif
 
                                 @if($user->getRoleNames()->first() == "Cliente")
                                     <div class="tooltip-container flex-1">
@@ -489,7 +489,7 @@
                                                     <span class="tooltip-text">Editar Usuario</span>
                                                 </div>
                                             @endcan
-                                            @can('crud.users.destroy')
+                                            @if(auth()->user()->roles[0]->id == 1)
                                                 <div class="tooltip-container">
                                                     <form action="{{ route('crud.users.destroy', $user) }}" method="POST" style="display: inline-block;">
                                                         @csrf
@@ -500,7 +500,7 @@
                                                     </form>
                                                     <span class="tooltip-text">Eliminar Usuario</span>
                                                 </div>
-                                            @endcan
+                                            @endif
                                             @if($user->getRoleNames()->first() == "Cliente")
                                                 <div class="tooltip-container">
                                                     <a style="color:white!important;"
