@@ -5391,37 +5391,26 @@ class ClienteController extends Controller
             ]
         ));
     }
-}
 
-function generate_string($input, $strength = 16) {
-    $input_length = strlen($input);
-    $random_string = '';
-    for($i = 0; $i < $strength; $i++) {
-        $random_character = $input[mt_rand(0, $input_length - 1)];
-        $random_string .= $random_character;
+    function createPDF($dato){
+        $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND a.hash_factura='$dato';";
+        $datos_factura = json_decode(json_encode(DB::select($query)),true);
+
+        $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
+
+        $pdf = PDF::loadView('crud.comprobantes.pdf', compact('datos_factura', 'productos'));
+
+        return $pdf->output();
     }
 
-    return $random_string;
-}
+    function createPDFintel($dato){
+        $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND a.hash_factura='$dato';";
+        $datos_factura = json_decode(json_encode(DB::select($query)),true);
 
-function createPDF($dato){
-    $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND a.hash_factura='$dato';";
-    $datos_factura = json_decode(json_encode(DB::select($query)),true);
+        $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
 
-    $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
+        $pdf = PDF::loadView('crud.comprobantes.pdfintel', compact('datos_factura', 'productos'));
 
-    $pdf = PDF::loadView('crud.comprobantes.pdf', compact('datos_factura', 'productos'));
-
-    return $pdf->output();
-}
-
-function createPDFintel($dato){
-    $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND a.hash_factura='$dato';";
-    $datos_factura = json_decode(json_encode(DB::select($query)),true);
-
-    $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
-
-    $pdf = PDF::loadView('crud.comprobantes.pdfintel', compact('datos_factura', 'productos'));
-
-    return $pdf->output();
+        return $pdf->output();
+    }
 }
