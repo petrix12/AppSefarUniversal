@@ -2259,140 +2259,149 @@ class UserController extends Controller
                 } else {
                     $resultadoIA = $this->analizarEtiquetasYDevolverJSON($mondaydataforAI);
                 }
-                if (isset($negocio->n5__fecha_de_formalizacion) || ( isset($negocio->codigo_de_proceso) && $negocio->codigo_de_proceso == "FORMALIZADO 2024" )) {
-                    if(!isset($negocio->n4__certificado_descargado)){
-                        $certificadoDescargado = 2;
-                    }
-                    if (isset($negocio->nacionalidad_concedida) || isset($negocio->n7__fecha_de_resolucion)){
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado,
-                            "warning" => null,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "currentStepGen" => 18 - $certificadoDescargado,
-                            "currentStepJur" => 8
-                        ];
-                        continue;
-                    }
 
-                    $tieneViajudicialActivo = $this->verificarNegocioActivo(
-                            $negocios,
-                            'Demanda Judicial',
-                            ['Demanda', 'Judicial']
-                        );
+                if(!isset($negocio->n4__certificado_descargado)){
+                    $certificadoDescargado = 2;
+                }
 
-                    if ($tieneViajudicialActivo) {
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado,
-                            "warning" => null,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "currentStepGen" => 18 - $certificadoDescargado,
-                            "currentStepJur" => 7
-                        ];
 
-                        continue;
-                    }
 
-                    if (isset($negocio->n13__fecha_recurso_alzada)){
-                        $fechaRecurso = Carbon::parse($negocio->n13__fecha_recurso_alzada);
-                        $fechaRecursoMas3Meses = $fechaRecurso->copy()->addMonths(3);
-                        if ($fechaRecursoMas3Meses->greaterThan($hoy)){
-                            if ($fechaRecursoMas3Meses->greaterThan($hoy)) {
+                if (isset($negocio->nacionalidad_concedida) || isset($negocio->n7__fecha_de_resolucion)){
+                    $cosuser[] = [
+                        "servicio" => $negocio->servicio_solicitado,
+                        "warning" => null,
+                        "certificadoDescargado" => $certificadoDescargado,
+                        "currentStepGen" => 18 - $certificadoDescargado,
+                        "currentStepJur" => 8
+                    ];
+                    continue;
+                }
 
-                                $tieneViajudicialActivo = $this->verificarNegocioActivo(
-                                    $negocios,
-                                    'Demanda Judicial',
-                                    ['Demanda', 'Judicial']
-                                );
+                $tieneViajudicialActivo = $this->verificarNegocioActivo(
+                        $negocios,
+                        'Demanda Judicial',
+                        ['Demanda', 'Judicial']
+                    );
 
-                                $warning = ($tieneViajudicialActivo || isset($negocio->fecha_solicitud_viajudicial))
-                                    ? null
-                                    : "<b>¡Puedes solicitar la vía judicial!</b>";
+                if ($tieneViajudicialActivo) {
+                    $cosuser[] = [
+                        "servicio" => $negocio->servicio_solicitado,
+                        "warning" => null,
+                        "certificadoDescargado" => $certificadoDescargado,
+                        "currentStepGen" => 18 - $certificadoDescargado,
+                        "currentStepJur" => 7
+                    ];
 
-                                $cosuser[] = [
-                                    "servicio" => $negocio->servicio_solicitado,
-                                    "warning" => $warning,
-                                    "certificadoDescargado" => $certificadoDescargado,
-                                    "currentStepGen" => 18 - $certificadoDescargado,
-                                    "currentStepJur" => 7
-                                ];
-                                continue;
-                            }
-                        }
-                    }
+                    continue;
+                }
 
-                    // ✅ MODIFICACIÓN: Si es FORMALIZADO 2024, usar 01-01-2024 como fecha base
-                    if (isset($negocio->codigo_de_proceso) && $negocio->codigo_de_proceso == "FORMALIZADO 2024") {
-                        $fechaFormalizacion = Carbon::parse('2024-01-01');
-                    } else {
-                        $fechaFormalizacion = Carbon::parse($negocio->n5__fecha_de_formalizacion);
-                    }
+                if (isset($negocio->n13__fecha_recurso_alzada)){
+                    $fechaRecurso = Carbon::parse($negocio->n13__fecha_recurso_alzada);
+                    $fechaRecursoMas3Meses = $fechaRecurso->copy()->addMonths(3);
+                    if ($fechaRecursoMas3Meses->greaterThan($hoy)){
+                        if ($fechaRecursoMas3Meses->greaterThan($hoy)) {
 
-                    $fechaFormalizacionMas12Meses = $fechaFormalizacion->copy()->addMonths(12);
-                    $fechaFormalizacionMas6Meses = $fechaFormalizacion->copy()->addMonths(6);
-                    $fechaFormalizacionMas1Meses = $fechaFormalizacion->copy()->addMonths(1);
-                    if ($hoy->greaterThan($fechaFormalizacionMas12Meses)){
-                        if ($hoy->greaterThan($fechaFormalizacionMas12Meses)) {
-                            $tieneRecursoAlzadaActivo = $this->verificarNegocioActivo(
+                            $tieneViajudicialActivo = $this->verificarNegocioActivo(
                                 $negocios,
-                                'Recurso de Alzada',
-                                ['Recurso', 'Alzada']
+                                'Demanda Judicial',
+                                ['Demanda', 'Judicial']
                             );
 
-                            $warning = ($tieneRecursoAlzadaActivo || isset($negocio->fecha_solicitud_recursoalzada))
+                            $warning = ($tieneViajudicialActivo || isset($negocio->fecha_solicitud_viajudicial))
                                 ? null
-                                : '<b>¡Solicita tu Recurso de Alzada!</b><a style="border:0!important;" href="https://sefaruniversal.com/landing-email-de-recurso-de-alzada/" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita el Recurso de Alzada</a>';
+                                : "<b>¡Puedes solicitar la vía judicial!</b>";
 
                             $cosuser[] = [
                                 "servicio" => $negocio->servicio_solicitado,
                                 "warning" => $warning,
                                 "certificadoDescargado" => $certificadoDescargado,
                                 "currentStepGen" => 18 - $certificadoDescargado,
-                                "currentStepJur" => 6
+                                "currentStepJur" => 7
                             ];
                             continue;
                         }
-                    } else if ($hoy->greaterThan($fechaFormalizacionMas6Meses)){
-                        if ($hoy->greaterThan($fechaFormalizacionMas6Meses)) {
-                            $tieneResolucionExpresaActivo = $this->verificarNegocioActivo(
-                                $negocios,
-                                'SOLICITUD DE DOCUMENTO DE RESOLUCIÓN EXPRESA',
-                                ['Resolución', 'Expresa']
-                            );
+                    }
+                }
 
-                            $warning = ($tieneResolucionExpresaActivo || isset($negocio->fecha_solicitud_resolucionexpresa))
-                                ? null
-                                : '<b>¡Solicita tu resolución expresa!</b><a href="https://sefaruniversal.com/resolucion-expresa/" style="border:0!important;" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita tu Resolución Expresa</a>';
+                // ✅ MODIFICACIÓN: Si es FORMALIZADO 2024, usar 01-01-2024 como fecha base
+                if (isset($negocio->codigo_de_proceso) && $negocio->codigo_de_proceso == "FORMALIZADO 2024") {
+                    $fechaFormalizacion = Carbon::parse('2024-01-01');
+                } else {
+                    $fechaFormalizacion = Carbon::parse($negocio->n5__fecha_de_formalizacion);
+                }
 
-                            $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
-                                "warning" => $warning,
-                                "certificadoDescargado" => $certificadoDescargado,
-                                "currentStepGen" => 18 - $certificadoDescargado,
-                                "currentStepJur" => 5
-                            ];
-                            continue;
-                        }
-                    } else if ($hoy->greaterThan($fechaFormalizacionMas1Meses)){
-                        // ✅ Verificar si tiene negocio de Subsanación activo
-                        $tieneSubsanacionActivo = $this->verificarNegocioActivo(
+                $fechaFormalizacionMas12Meses = $fechaFormalizacion->copy()->addMonths(12);
+                $fechaFormalizacionMas6Meses = $fechaFormalizacion->copy()->addMonths(6);
+                $fechaFormalizacionMas1Meses = $fechaFormalizacion->copy()->addMonths(1);
+                if ($hoy->greaterThan($fechaFormalizacionMas12Meses)){
+                    if ($hoy->greaterThan($fechaFormalizacionMas12Meses)) {
+                        $tieneRecursoAlzadaActivo = $this->verificarNegocioActivo(
                             $negocios,
-                            'Subsanación de Expediente',
-                            ['Subsanación']
+                            'Recurso de Alzada',
+                            ['Recurso', 'Alzada']
                         );
 
-                        $warning = $tieneSubsanacionActivo
+                        $warning = ($tieneRecursoAlzadaActivo || isset($negocio->fecha_solicitud_recursoalzada))
                             ? null
-                            : '<b>¡Consulta si requieres subsanación o mejora de expediente!</b><a style="border:0!important;" href="https://sefaruniversal.com/landing-registro-subsanacion-de-la-nacionalidad-espanola-sefardi/" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">¡Consulta ahora!</a>';
+                            : '<b>¡Solicita tu Recurso de Alzada!</b><a style="border:0!important;" href="https://sefaruniversal.com/landing-email-de-recurso-de-alzada/" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita el Recurso de Alzada</a>';
 
                         $cosuser[] = [
                             "servicio" => $negocio->servicio_solicitado,
-                            "certificadoDescargado" => $certificadoDescargado,
                             "warning" => $warning,
+                            "certificadoDescargado" => $certificadoDescargado,
                             "currentStepGen" => 18 - $certificadoDescargado,
-                            "currentStepJur" => 4
+                            "currentStepJur" => 6
                         ];
                         continue;
                     }
+                }
+
+                if ($hoy->greaterThan($fechaFormalizacionMas6Meses)){
+                    if ($hoy->greaterThan($fechaFormalizacionMas6Meses)) {
+                        $tieneResolucionExpresaActivo = $this->verificarNegocioActivo(
+                            $negocios,
+                            'SOLICITUD DE DOCUMENTO DE RESOLUCIÓN EXPRESA',
+                            ['Resolución', 'Expresa']
+                        );
+
+                        $warning = ($tieneResolucionExpresaActivo || isset($negocio->fecha_solicitud_resolucionexpresa))
+                            ? null
+                            : '<b>¡Solicita tu resolución expresa!</b><a href="https://sefaruniversal.com/resolucion-expresa/" style="border:0!important;" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita tu Resolución Expresa</a>';
+
+                        $cosuser[] = [
+                            "servicio" => $negocio->servicio_solicitado,
+                            "warning" => $warning,
+                            "certificadoDescargado" => $certificadoDescargado,
+                            "currentStepGen" => 18 - $certificadoDescargado,
+                            "currentStepJur" => 5
+                        ];
+                        continue;
+                    }
+                }
+
+                if ($hoy->greaterThan($fechaFormalizacionMas1Meses)){
+                    // ✅ Verificar si tiene negocio de Subsanación activo
+                    $tieneSubsanacionActivo = $this->verificarNegocioActivo(
+                        $negocios,
+                        'Subsanación de Expediente',
+                        ['Subsanación']
+                    );
+
+                    $warning = $tieneSubsanacionActivo
+                        ? null
+                        : '<b>¡Consulta si requieres subsanación o mejora de expediente!</b><a style="border:0!important;" href="https://sefaruniversal.com/landing-registro-subsanacion-de-la-nacionalidad-espanola-sefardi/" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">¡Consulta ahora!</a>';
+
+                    $cosuser[] = [
+                        "servicio" => $negocio->servicio_solicitado,
+                        "certificadoDescargado" => $certificadoDescargado,
+                        "warning" => $warning,
+                        "currentStepGen" => 18 - $certificadoDescargado,
+                        "currentStepJur" => 4
+                    ];
+                    continue;
+                }
+
+                if (isset($negocio->n5__fecha_de_formalizacion) || ( isset($negocio->codigo_de_proceso) && $negocio->codigo_de_proceso == "FORMALIZADO 2024" )) {
 
                     $cosuser[] = [
                         "servicio" => $negocio->servicio_solicitado,
@@ -2403,148 +2412,31 @@ class UserController extends Controller
                     ];
                     continue;
 
-                } else if(isset($negocio->fase_3_pagado) || isset($negocio->fase_3_pagado__teamleader_)) {
-                    if(!isset($negocio->n4__certificado_descargado)){
-                        $certificadoDescargado = 2;
-                    }
-                    if (isset($negocio->nacionalidad_concedida) || isset($negocio->n7__fecha_de_resolucion)){
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado2,
-                            "warning" => null,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "currentStepGen" => 18 - $certificadoDescargado,
-                            "currentStepJur" => 8
-                        ];
-                        continue;
-                    }
+                }
 
-                    if (isset($negocio->n13__fecha_recurso_alzada)){
-                        $fechaRecurso = Carbon::parse($negocio->n13__fecha_recurso_alzada);
-                        $fechaRecursoMas3Meses = $fechaRecurso->copy()->addMonths(3);
-                        if ($fechaRecursoMas3Meses->greaterThan($hoy)){
-                            if ($fechaRecursoMas3Meses->greaterThan($hoy)) {
-                                $tieneViajudicialActivo = $this->verificarNegocioActivo(
-                                    $negocios,
-                                    'Demanda Judicial',
-                                    ['Demanda', 'Judicial']
-                                );
+                if (isset($negocio->tasa_pagada)){
+                    $cosuser[] = [
+                        "servicio" => $negocio->servicio_solicitado2,
+                        "warning" => null,
+                        "certificadoDescargado" => $certificadoDescargado,
+                        "currentStepGen" => 18 - $certificadoDescargado,
+                        "currentStepJur" => 2
+                    ];
+                    continue;
+                }
 
-                                $warning = ($tieneViajudicialActivo || isset($negocio->fecha_solicitud_viajudicial))
-                                    ? null
-                                    : "<b>¡Puedes solicitar la vía judicial!</b>";
+                if (isset($negocio->enviado_a_pago_de_tasas)){
+                    $cosuser[] = [
+                        "servicio" => $negocio->servicio_solicitado2,
+                        "warning" => null,
+                        "certificadoDescargado" => $certificadoDescargado,
+                        "currentStepGen" => 18 - $certificadoDescargado,
+                        "currentStepJur" => 1
+                    ];
+                    continue;
+                }
 
-                                $cosuser[] = [
-                                    "servicio" => $negocio->servicio_solicitado,
-                                    "warning" => $warning,
-                                    "certificadoDescargado" => $certificadoDescargado,
-                                    "currentStepGen" => 18 - $certificadoDescargado,
-                                    "currentStepJur" => 7
-                                ];
-                                continue;
-                            }
-                        }
-                    }
-
-                    if (isset($negocio->n5__fecha_de_formalizacion)){
-                        $fechaFormalizacion = Carbon::parse($negocio->n5__fecha_de_formalizacion);
-
-                        $fechaFormalizacionMas12Meses = $fechaFormalizacion->copy()->addMonths(12);
-                        $fechaFormalizacionMas6Meses = $fechaFormalizacion->copy()->addMonths(6);
-                        $fechaFormalizacionMas1Meses = $fechaFormalizacion->copy()->addMonths(1);
-                        if ($hoy->greaterThan($fechaFormalizacionMas12Meses)){
-                            if ($hoy->greaterThan($fechaFormalizacionMas12Meses)) {
-                               $tieneRecursoAlzadaActivo = $this->verificarNegocioActivo(
-                                    $negocios,
-                                    'Recurso de Alzada',
-                                    ['Recurso', 'Alzada']
-                                );
-
-                                $warning = ($tieneRecursoAlzadaActivo || isset($negocio->fecha_solicitud_recursoalzada))
-                                    ? null
-                                    : '<b>¡Solicita tu Recurso de Alzada!</b><a style="border:0!important;" href="https://sefaruniversal.com/landing-email-de-recurso-de-alzada/" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita el Recurso de Alzada</a>';
-
-                                $cosuser[] = [
-                                    "servicio" => $negocio->servicio_solicitado,
-                                    "warning" => $warning,
-                                    "certificadoDescargado" => $certificadoDescargado,
-                                    "currentStepGen" => 18 - $certificadoDescargado,
-                                    "currentStepJur" => 6
-                                ];
-                                continue;
-                            }
-                        } else if ($hoy->greaterThan($fechaFormalizacionMas6Meses)){
-                            if ($hoy->greaterThan($fechaFormalizacionMas6Meses)) {
-                                $tieneResolucionExpresaActivo = $this->verificarNegocioActivo(
-                                    $negocios,
-                                    'SOLICITUD DE DOCUMENTO DE RESOLUCIÓN EXPRESA',
-                                    ['Resolución', 'Expresa']
-                                );
-
-                                $warning = ($tieneResolucionExpresaActivo || isset($negocio->fecha_solicitud_resolucionexpresa))
-                                    ? null
-                                    : '<b>¡Solicita tu resolución expresa!</b><a href="https://sefaruniversal.com/resolucion-expresa/" style="border:0!important;" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita tu Resolución Expresa</a>';
-
-                                $cosuser[] = [
-                                    "servicio" => $negocio->servicio_solicitado,
-                                    "warning" => $warning,
-                                    "certificadoDescargado" => $certificadoDescargado,
-                                    "currentStepGen" => 18 - $certificadoDescargado,
-                                    "currentStepJur" => 5
-                                ];
-                                continue;
-                            }
-                        } else if ($hoy->greaterThan($fechaFormalizacionMas1Meses)){
-                            $tieneSubsanacionActivo = $this->verificarNegocioActivo(
-                                $negocios,
-                                'Subsanación de Expediente',
-                                ['Subsanación']
-                            );
-
-                            $warning = $tieneSubsanacionActivo
-                                ? null
-                                : '<b>¡Consulta si requieres subsanación o mejora de expediente!</b><a style="border:0!important;" href="https://sefaruniversal.com/landing-registro-subsanacion-de-la-nacionalidad-espanola-sefardi/" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">¡Consulta ahora!</a>';
-
-                            $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
-                                "certificadoDescargado" => $certificadoDescargado,
-                                "warning" => $warning,
-                                "currentStepGen" => 18 - $certificadoDescargado,
-                                "currentStepJur" => 4
-                            ];
-                            continue;
-                        } else {
-                            $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado2,
-                                "warning" => null,
-                                "certificadoDescargado" => $certificadoDescargado,
-                                "currentStepGen" => 18 - $certificadoDescargado,
-                                "currentStepJur" => 3
-                            ];
-                            continue;
-                        }
-                    }
-
-                    if (isset($negocio->tasa_pagada)){
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado2,
-                            "warning" => null,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "currentStepGen" => 18 - $certificadoDescargado,
-                            "currentStepJur" => 2
-                        ];
-                        continue;
-                    }
-
-                    if (isset($negocio->enviado_a_pago_de_tasas)){
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado2,
-                            "warning" => null,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "currentStepGen" => 18 - $certificadoDescargado,
-                            "currentStepJur" => 1
-                        ];
-                        continue;
-                    }
+                if(isset($negocio->fase_3_pagado) || isset($negocio->fase_3_pagado__teamleader_)) {
 
                     $cosuser[] = [
                         "servicio" => $negocio->servicio_solicitado2,
@@ -2555,56 +2447,59 @@ class UserController extends Controller
                     ];
                     continue;
 
-                } else if ( isset($negocio->fase_2_pagado) || isset($negocio->fase_2_pagado__teamleader_) ) {
-                    if (isset($negocio->fase_3_preestab) || isset($negocio->fase_3_preestab) || isset($negocio->fase_3_preestab)) {
-                        if(!isset($negocio->n4__certificado_descargado)){
-                            $certificadoDescargado = 2;
-                        }
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado2,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "warning" => "<b>Realiza el pago para la formalización del expediente</b> y aseguremos juntos el siguiente gran paso hacia tu ciudadanía española.",
-                            "currentStepGen" => 18 - $certificadoDescargado,
-                            "currentStepJur" => -1
-                        ];
-                        continue;
-                    }
+                }
 
-                    if(isset($negocio->n4__certificado_descargado)){
+                if (isset($negocio->fase_3_preestab) || isset($negocio->fase_3_preestab) || isset($negocio->fase_3_preestab)) {
+                    if(!isset($negocio->n4__certificado_descargado)){
+                        $certificadoDescargado = 2;
+                    }
+                    $cosuser[] = [
+                        "servicio" => $negocio->servicio_solicitado2,
+                        "certificadoDescargado" => $certificadoDescargado,
+                        "warning" => "<b>Realiza el pago para la formalización del expediente</b> y aseguremos juntos el siguiente gran paso hacia tu ciudadanía española.",
+                        "currentStepGen" => 18 - $certificadoDescargado,
+                        "currentStepJur" => -1
+                    ];
+                    continue;
+                }
+
+                if(isset($negocio->n4__certificado_descargado)){
+                    $cosuser[] = [
+                        "servicio" => $negocio->servicio_solicitado2,
+                        "warning" => null,
+                        "certificadoDescargado" => $certificadoDescargado,
+                        "currentStepGen" => 18,
+                        "currentStepJur" => -1
+                    ];
+                    continue;
+                }
+
+                if (isset($negocio->n3__informe_cargado)){
+                    $fechaInformeCargado = Carbon::parse($negocio->n3__informe_cargado);
+                    $fechaInformeCargadoMas1Meses = $fechaInformeCargado->copy()->addMonths(1);
+
+                    if ($fechaInformeCargadoMas1Meses->greaterThan($hoy)) {
                         $cosuser[] = [
                             "servicio" => $negocio->servicio_solicitado2,
                             "warning" => null,
                             "certificadoDescargado" => $certificadoDescargado,
-                            "currentStepGen" => 18,
+                            "currentStepGen" => 17,
+                            "currentStepJur" => -1
+                        ];
+                        continue;
+                    } else {
+                        $cosuser[] = [
+                            "servicio" => $negocio->servicio_solicitado2,
+                            "warning" => null,
+                            "certificadoDescargado" => $certificadoDescargado,
+                            "currentStepGen" => 16,
                             "currentStepJur" => -1
                         ];
                         continue;
                     }
+                }
 
-                    if (isset($negocio->n3__informe_cargado)){
-                        $fechaInformeCargado = Carbon::parse($negocio->n3__informe_cargado);
-                        $fechaInformeCargadoMas1Meses = $fechaInformeCargado->copy()->addMonths(1);
-
-                        if ($fechaInformeCargadoMas1Meses->greaterThan($hoy)) {
-                            $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado2,
-                                "warning" => null,
-                                "certificadoDescargado" => $certificadoDescargado,
-                                "currentStepGen" => 17,
-                                "currentStepJur" => -1
-                            ];
-                            continue;
-                        } else {
-                            $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado2,
-                                "warning" => null,
-                                "certificadoDescargado" => $certificadoDescargado,
-                                "currentStepGen" => 16,
-                                "currentStepJur" => -1
-                            ];
-                            continue;
-                        }
-                    }
+                if ( isset($negocio->fase_2_pagado) || isset($negocio->fase_2_pagado__teamleader_) ) {
 
                     $cosuser[] = [
                         "servicio" => $negocio->servicio_solicitado2,
@@ -2614,78 +2509,81 @@ class UserController extends Controller
                         "currentStepJur" => -1
                     ];
                     continue;
-                } else if ( isset($negocio->fase_1_pagado) || isset($negocio->fase_1_pagado__teamleader_) ) {
-                    if (isset($negocio->fase_2_preestab) || isset($negocio->fase_2_preestab) || isset($negocio->fase_2_preestab)){
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado2,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "warning" => "Para continuar con el proceso y proceder con el envío del informe y las pruebas correspondientes a la institución mencionada, <b>es necesario que realices el siguiente pago.</b>",
-                            "currentStepGen" => 15,
-                            "currentStepJur" => -1
-                        ];
-                        continue;
-                    }
+                }
 
-                    if ($resultadoIA['otrosProcesos']) {
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado2,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "warning" => "<b>Tu caso ha sido derivado a otro proceso.</b> Recibirás seguimiento personalizado.",
-                            "currentStepGen" => 11,
-                            "currentStepJur" => -1
-                        ];
-                        continue;
-                    }
+                if (isset($negocio->fase_2_preestab) || isset($negocio->fase_2_preestab) || isset($negocio->fase_2_preestab)){
+                    $cosuser[] = [
+                        "servicio" => $negocio->servicio_solicitado2,
+                        "certificadoDescargado" => $certificadoDescargado,
+                        "warning" => "Para continuar con el proceso y proceder con el envío del informe y las pruebas correspondientes a la institución mencionada, <b>es necesario que realices el siguiente pago.</b>",
+                        "currentStepGen" => 15,
+                        "currentStepJur" => -1
+                    ];
+                    continue;
+                }
 
-                    $documentsTOTAL = DocumentRequest::where('user_id', $user->id)
+                if ($resultadoIA['otrosProcesos']) {
+                    $cosuser[] = [
+                        "servicio" => $negocio->servicio_solicitado2,
+                        "certificadoDescargado" => $certificadoDescargado,
+                        "warning" => "<b>Tu caso ha sido derivado a otro proceso.</b> Recibirás seguimiento personalizado.",
+                        "currentStepGen" => 11,
+                        "currentStepJur" => -1
+                    ];
+                    continue;
+                }
+
+                $documentsTOTAL = DocumentRequest::where('user_id', $user->id)
+                                ->count();
+
+                if($documentsTOTAL>0) {
+                    $documentsEnEsperaCliente = DocumentRequest::where('user_id', $user->id)
+                                    ->whereIn('status', ['en_espera_cliente', 'rechazada'])
                                     ->count();
 
-                    if($documentsTOTAL>0) {
-                        $documentsEnEsperaCliente = DocumentRequest::where('user_id', $user->id)
-                                        ->whereIn('status', ['en_espera_cliente', 'rechazada'])
-                                        ->count();
+                    $documentsEnRevision = DocumentRequest::where('user_id', $user->id)
+                                    ->where('status', 'resuelto')
+                                    ->count();
 
-                        $documentsEnRevision = DocumentRequest::where('user_id', $user->id)
-                                        ->where('status', 'resuelto')
-                                        ->count();
+                    $documentsAprobados = DocumentRequest::where('user_id', $user->id)
+                                    ->whereIn('status', ['no_documento', 'aprobada'])
+                                    ->count();
 
-                        $documentsAprobados = DocumentRequest::where('user_id', $user->id)
-                                        ->whereIn('status', ['no_documento', 'aprobada'])
-                                        ->count();
-
-                        if ($documentsAprobados>0) {
-                            $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado2,
-                                "warning" => null,
-                                "certificadoDescargado" => $certificadoDescargado,
-                                "currentStepGen" => 10,
-                                "currentStepJur" => -1
-                            ];
-                            continue;
-                        }
-
-                        if ($documentsEnRevision>0) {
-                            $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado2,
-                                "warning" => null,
-                                "certificadoDescargado" => $certificadoDescargado,
-                                "currentStepGen" => 9,
-                                "currentStepJur" => -1
-                            ];
-                            continue;
-                        }
-
-                        if ($documentsEnEsperaCliente>0) {
-                            $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado2,
-                                "certificadoDescargado" => $certificadoDescargado,
-                                "warning" => "Tienes solicitudes de documentos pendientes. Para resolverlas, dirígete a la pestaña de 'Mis solicitudes de documentos'",
-                                "currentStepGen" => 8,
-                                "currentStepJur" => -1
-                            ];
-                            continue;
-                        }
+                    if ($documentsAprobados>0) {
+                        $cosuser[] = [
+                            "servicio" => $negocio->servicio_solicitado2,
+                            "warning" => null,
+                            "certificadoDescargado" => $certificadoDescargado,
+                            "currentStepGen" => 10,
+                            "currentStepJur" => -1
+                        ];
+                        continue;
                     }
+
+                    if ($documentsEnRevision>0) {
+                        $cosuser[] = [
+                            "servicio" => $negocio->servicio_solicitado2,
+                            "warning" => null,
+                            "certificadoDescargado" => $certificadoDescargado,
+                            "currentStepGen" => 9,
+                            "currentStepJur" => -1
+                        ];
+                        continue;
+                    }
+
+                    if ($documentsEnEsperaCliente>0) {
+                        $cosuser[] = [
+                            "servicio" => $negocio->servicio_solicitado2,
+                            "certificadoDescargado" => $certificadoDescargado,
+                            "warning" => "Tienes solicitudes de documentos pendientes. Para resolverlas, dirígete a la pestaña de 'Mis solicitudes de documentos'",
+                            "currentStepGen" => 8,
+                            "currentStepJur" => -1
+                        ];
+                        continue;
+                    }
+                }
+
+                if ( isset($negocio->fase_1_pagado) || isset($negocio->fase_1_pagado__teamleader_) ) {
 
                     $cosuser[] = [
                         "servicio" => $negocio->servicio_solicitado2,
