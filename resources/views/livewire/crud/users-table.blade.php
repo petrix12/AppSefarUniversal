@@ -200,7 +200,7 @@
                     <!-- Barra de búsqueda -->
                     <div class="flex flex-col sm:flex-row bg-white px-4 py-3 sm:px-6 gap-2">
                         <input
-                            wire:model.live="search"
+                            wire:model.debounce.500ms="search"
                             type="text"
                             placeholder="Buscar por nombre, correo o pasaporte..."
                             class="flex-1 mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"

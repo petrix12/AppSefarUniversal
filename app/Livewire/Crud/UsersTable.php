@@ -149,19 +149,20 @@ class UsersTable extends Component
 
                 foreach ($terms as $term) {
                     $query->where(function ($q) use ($term) {
-                        $q->where('name', 'LIKE', "%{$term}%")
-                        ->orWhere('nombres', 'LIKE', "%{$term}%")
-                        ->orWhere('apellidos', 'LIKE', "%{$term}%")
-                        ->orWhere('email', 'LIKE', "%{$term}%")
-                        ->orWhere('passport', 'LIKE', "%{$term}%");
+                        $like = "%{$term}%";
+                        $q->whereRaw("CONCAT_WS(' ', name, nombres, apellidos, email, passport) LIKE ?", [$like]);
                     });
                 }
             })
 
             // 🔵 FILTRO SERVICIO (AHORA SQL PURO, SIN SUBQUERY COMPLEJO)
             ->when($this->filterServicio !== '', function ($query) {
-                $query->where('servicio', $this->filterServicio)
-                      ->orWhereRelation('compras', 'servicio_hs_id', $this->filterServicio);
+                $query->where(function ($q) {
+                    $q->where('servicio', $this->filterServicio)
+                    ->orWhereHas('compras', function ($c) {
+                        $c->where('servicio_hs_id', $this->filterServicio);
+                    });
+                });
             })
 
             // 🔵 FILTROS SIMPLES
@@ -170,7 +171,7 @@ class UsersTable extends Component
 
             // 🔥 PAGINACIÓN SUPER RÁPIDA
             ->orderBy('created_at', 'DESC')
-            ->simplePaginate($this->perPage);
+            ->paginate($this->perPage);
 
         return view('livewire.crud.users-table', [
             'users' => $users,
