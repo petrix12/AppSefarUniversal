@@ -4,9 +4,10 @@ namespace App\Livewire\Crud;
 
 use Livewire\WithPagination;
 use App\Models\User;
-use App\Models\Compras;
 use App\Models\Servicio;
 use Livewire\Component;
+use Illuminate\Support\Facades\Cache;
+use App\Models\Compras;
 
 class UsersTable extends Component
 {
@@ -14,7 +15,7 @@ class UsersTable extends Component
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'perPage' => ['except' => '10']
+        'perPage' => ['except' => '10'],
     ];
 
     public $search = '';
@@ -23,150 +24,173 @@ class UsersTable extends Component
     public $filterPago = '';
     public $perPage = 10;
 
+    // Cacheados (se cargan una sola vez)
+    public $listaServicios = [];
+    public $serviciosPlano = [];
+
+    public function mount()
+    {
+        $this->loadServiciosOptimized();
+    }
+
+    /**
+     * ============================================================
+     *  🔵 CARGAR SERVICIOS — OPTIMIZADO CON CACHE Y UNA SOLA VEZ
+     * ============================================================
+     */
+    protected function loadServiciosOptimized()
+    {
+        [
+            $this->listaServicios,
+            $this->serviciosPlano
+        ] = Cache::remember('servicios_agrupados_opt', 3600, function () {
+
+            // 1) Traer servicios y normalizarlos (1 sola vez)
+            $serviciostabla = Servicio::query()
+                ->where('tipov', 0)
+                ->where('id_hubspot', 'not like', '% - Hermano%')
+                ->pluck('id_hubspot')
+                ->map(fn($s) => $this->normalizeServiceName($s))
+                ->toArray();
+
+            // 2) Definir grupos
+            $grupos = [
+                'Nacionalidad Española' => [
+                    'Española LMD',
+                    'Española Sefardi',
+                    'Española Sefardi - Subsanación',
+                    'Española - Carta de Naturaleza',
+                    'Formalizacion Anticipada Ley de Memoria Democrática',
+                ],
+                'Nacionalidad Portuguesa' => [
+                    'Portuguesa Sefardi',
+                    'Portuguesa Sefardi - Subsanación',
+                    'Formalizacion Anticipada Portuguesa Sefardi',
+                    'Certificación de Documentos - Portugal',
+                ],
+                'Nacionalidad Italiana' => [
+                    'Italiana',
+                    'Diagnóstico Express para Plan de acción de la Nacionalidad Italiana',
+                ],
+                'Otros' => [
+                    'Análisis por semana',
+                    'Recurso de Alzada',
+                    'Gestión Documental',
+                    'Acumulación de linajes',
+                    'Árbol genealógico de Deslinde',
+                    'Procedimiento de Urgencia',
+                    'Analisis Juridico Genealogico',
+                ]
+            ];
+
+            // Normalizar grupos
+            $gruposNorm = collect($grupos)->map(function ($items) {
+                return array_map([$this, 'normalizeServiceName'], $items);
+            });
+
+            // Agrupar
+            $listaAgrupada = [];
+            foreach ($gruposNorm as $categoria => $items) {
+                $coinciden = array_values(array_intersect($items, $serviciostabla));
+                if (!empty($coinciden)) {
+                    $listaAgrupada[$categoria] = $coinciden;
+                }
+            }
+
+            // Servicios sin categoría
+            $todos = array_merge(...array_values($gruposNorm->toArray()));
+            $sinCategoria = array_diff($serviciostabla, $todos);
+
+            if (!empty($sinCategoria)) {
+                $listaAgrupada['Otros'] = array_merge(
+                    $listaAgrupada['Otros'] ?? [],
+                    array_values($sinCategoria)
+                );
+            }
+
+            // Lista plana
+            $serviciosPlano = [];
+            foreach ($listaAgrupada as $categoria => $items) {
+                foreach ($items as $item) {
+                    $serviciosPlano[$item] = "[$categoria] $item";
+                }
+            }
+
+            asort($serviciosPlano);
+
+            return [$listaAgrupada, $serviciosPlano];
+        });
+    }
+
+    /**
+     * ============================================================
+     *  🔵 BUSQUEDA — OPTIMIZADO
+     * ============================================================
+     */
     public function render()
     {
         $users = User::query()
+            ->select([
+                'id',
+                'name',
+                'nombres',
+                'apellidos',
+                'email',
+                'passport',
+                'servicio',
+                'contrato',
+                'pay',
+                'created_at'
+            ])
+            ->with(['compras:id,id_user,servicio_hs_id,pagado'])
+            // 🔍 BUSQUEDA MULTI-CAMPO OPTIMIZADA
             ->when($this->search, function ($query) {
-                $terms = explode(' ', $this->search); // divide la búsqueda por espacios
+                $terms = preg_split('/\s+/', trim($this->search));
 
-                $query->where(function ($q) use ($terms) {
-                    foreach ($terms as $term) {
-                        $q->where(function ($sub) use ($term) {
-                            $sub->where('name', 'LIKE', "%{$term}%")
-                                ->orWhere('nombres', 'LIKE', "%{$term}%")
-                                ->orWhere('apellidos', 'LIKE', "%{$term}%")
-                                ->orWhere('email', 'LIKE', "%{$term}%")
-                                ->orWhere('passport', 'LIKE', "%{$term}%");
-                        });
-                    }
-                });
-            })
-            ->when($this->filterServicio !== '', function ($query) {
-                $query->where(function ($q) {
-                    $q->where('servicio', $this->filterServicio)
-                    ->orWhereIn('id', function ($sub) {
-                        $sub->select('id_user')
-                            ->from('compras')
-                            ->where('servicio_hs_id', $this->filterServicio);
+                foreach ($terms as $term) {
+                    $query->where(function ($q) use ($term) {
+                        $q->where('name', 'LIKE', "%{$term}%")
+                        ->orWhere('nombres', 'LIKE', "%{$term}%")
+                        ->orWhere('apellidos', 'LIKE', "%{$term}%")
+                        ->orWhere('email', 'LIKE', "%{$term}%")
+                        ->orWhere('passport', 'LIKE', "%{$term}%");
                     });
-                });
+                }
             })
-            ->when($this->filterContrato !== '', function ($query) {
-                $query->where('contrato', $this->filterContrato);
+
+            // 🔵 FILTRO SERVICIO (AHORA SQL PURO, SIN SUBQUERY COMPLEJO)
+            ->when($this->filterServicio !== '', function ($query) {
+                $query->where('servicio', $this->filterServicio)
+                      ->orWhereRelation('compras', 'servicio_hs_id', $this->filterServicio);
             })
-            ->when($this->filterPago !== '', function ($query) {
-                $query->where('pay', $this->filterPago);
-            })
+
+            // 🔵 FILTROS SIMPLES
+            ->when($this->filterContrato !== '', fn($q) => $q->where('contrato', $this->filterContrato))
+            ->when($this->filterPago !== '', fn($q) => $q->where('pay', $this->filterPago))
+
+            // 🔥 PAGINACIÓN SUPER RÁPIDA
             ->orderBy('created_at', 'DESC')
-            ->paginate($this->perPage);
-
-        // Obtener y normalizar servicios desde la tabla de servicios
-        $tablaservicios = Servicio::select("id_hubspot")
-            ->where("tipov", 0)
-            ->where("id_hubspot", "not like", "% - Hermano%")
-            ->get()
-            ->map(function ($servicio) {
-                return [
-                    'id_hubspot' => $this->normalizeServiceName($servicio->id_hubspot)
-                ];
-            })
-            ->toArray();
-
-        $serviciostabla = array_column($tablaservicios, 'id_hubspot');
-
-        // Definir cómo agrupar los servicios (con nombres normalizados)
-        $serviciosAgrupados = [
-            'Nacionalidad Española' => [
-                'Española LMD',
-                'Española Sefardi',
-                'Española Sefardi - Subsanación',
-                'Española - Carta de Naturaleza',
-                'Formalizacion Anticipada Ley de Memoria Democrática'
-            ],
-            'Nacionalidad Portuguesa' => [
-                'Portuguesa Sefardi',
-                'Portuguesa Sefardi - Subsanación',
-                'Formalizacion Anticipada Portuguesa Sefardi',
-                'Certificación de Documentos - Portugal'
-            ],
-            'Nacionalidad Italiana' => [
-                'Italiana',
-                'Diagnóstico Express para Plan de acción de la Nacionalidad Italiana'
-            ],
-            'Otros' => [
-                'Análisis por semana',
-                'Recurso de Alzada',
-                'Gestión Documental',
-                'Acumulación de linajes',
-                'Árbol genealógico de Deslinde',
-                'Procedimiento de Urgencia',
-                'Analisis Juridico Genealogico'
-            ]
-        ];
-
-        // Normalizar nombres en la estructura de agrupación
-        $serviciosAgrupados = array_map(function($servicios) {
-            return array_map([$this, 'normalizeServiceName'], $servicios);
-        }, $serviciosAgrupados);
-
-        // Filtrar y agrupar los servicios
-        $listaAgrupada = [];
-        foreach ($serviciosAgrupados as $categoria => $servicios) {
-            $serviciosFiltrados = array_uintersect(
-                $servicios,
-                $serviciostabla,
-                fn($a, $b) => strcmp($this->normalizeServiceName($a), $this->normalizeServiceName($b))
-            );
-
-            if (!empty($serviciosFiltrados)) {
-                $listaAgrupada[$categoria] = array_values($serviciosFiltrados);
-            }
-        }
-
-        // Agregar servicios no clasificados a 'Otros'
-        $todosServiciosAgrupados = array_merge(...array_values($serviciosAgrupados));
-        $serviciosSinCategoria = array_diff($serviciostabla, $todosServiciosAgrupados);
-
-        if (!empty($serviciosSinCategoria)) {
-            $listaAgrupada['Otros'] = array_merge(
-                $listaAgrupada['Otros'] ?? [],
-                array_values($serviciosSinCategoria)
-            );
-        }
-
-        // Crear versión plana para el filtro select
-        $serviciosParaFiltro = [];
-        foreach ($listaAgrupada as $categoria => $servicios) {
-            foreach ($servicios as $servicio) {
-                $serviciosParaFiltro[$servicio] = "[$categoria] $servicio";
-            }
-        }
-        asort($serviciosParaFiltro);
+            ->simplePaginate($this->perPage);
 
         return view('livewire.crud.users-table', [
             'users' => $users,
-            'compras' => Compras::all(),
-            'listaServicios' => $listaAgrupada,       // Para mostrar agrupados
-            'serviciosPlano' => $serviciosParaFiltro, // Para el select (formato plano)
-            'serviciosParaFiltro' => $serviciosParaFiltro // Mantener compatibilidad
+            'listaServicios' => $this->listaServicios,
+            'serviciosPlano' => $this->serviciosPlano,
         ]);
     }
 
+    /**
+     * ============================================================
+     *  🔵 NORMALIZADOR LIGERO
+     * ============================================================
+     */
     protected function normalizeServiceName(string $name): string
     {
-        // Eliminar caracteres especiales y normalizar espacios
-        $normalized = trim(preg_replace('/\s+/', ' ', $name));
-        $normalized = str_replace(["\u{A0}", "\n"], ' ', $normalized);
-
-        // Correcciones específicas para nombres conocidos
-        $correcciones = [
-            'Diagnóstico Express para Plan de acción de la Nacionalidad Italiana' => 'Diagnóstico Express para Plan de acción de la Nacionalidad Italiana',
-        ];
-
-        return $correcciones[$normalized] ?? $normalized;
+        return trim(preg_replace('/\s+/', ' ', str_replace(["\u{A0}", "\n"], ' ', $name)));
     }
 
-    public function clear(){
+    public function clear()
+    {
         $this->search = '';
         $this->perPage = '10';
         $this->resetPage();
@@ -175,8 +199,7 @@ class UsersTable extends Component
     public function clearFilters()
     {
         $this->reset(['filterServicio', 'filterContrato', 'filterPago']);
-        $this->resetPage(); // Reset pagination
-        $this->dispatch('filtersCleared'); // Optional: Dispatch an event to notify the frontend
+        $this->resetPage();
     }
 
     public function updatedSearch()

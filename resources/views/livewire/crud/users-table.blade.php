@@ -314,7 +314,7 @@
                                 <h4 class="text-xs font-semibold text-gray-700 uppercase mb-2">Servicios y Pago</h4>
                                 <?php
                                     $helperc = 0;
-                                    foreach ($compras as $compra) {
+                                    foreach ($user->compras as $compra) {
                                         if ($compra['id_user'] == $user->id){
                                             $helperc = 1;
                                             break;
@@ -322,7 +322,7 @@
                                     }
                                 ?>
                                 @if ($helperc==1)
-                                    @foreach ($compras as $compra)
+                                    @foreach ($user->compras as $compra)
                                         @if ($compra['id_user'] == $user->id && $compra['servicio_hs_id'])
                                             <p class="text-sm mb-1">
                                                 <span class="font-semibold">{{ $compra['servicio_hs_id'] }}</span>
@@ -435,7 +435,7 @@
                                     <td>
                                         <?php
                                             $helperc = 0;
-                                            foreach ($compras as $compra) {
+                                            foreach ($user->compras as $compra) {
                                                 if ($compra['id_user'] == $user->id){
                                                     $helperc = 1;
                                                     break;
@@ -443,7 +443,7 @@
                                             }
                                         ?>
                                         @if ($helperc==1)
-                                            @foreach ($compras as $compra)
+                                            @foreach ($user->compras as $compra)
                                                 @if ($compra['id_user'] == $user->id && $compra['servicio_hs_id'])
                                                     <p class="service-item">
                                                         <b>{{ $compra['servicio_hs_id'] }}</b>
