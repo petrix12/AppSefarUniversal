@@ -1387,6 +1387,10 @@ class ClienteController extends Controller
                 $cosuser[0]["warning"] = "Debes firmar tu contrato para continuar con el proceso.<a style='border:0!important;'  href='/contrato' class='cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none   text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Firmar contrato</a>";
                 $cosuser[0]["currentStepGen"] = 0;
                 $cosuser[0]["currentStepJur"] = -1;
+            } else {
+                $cosuser[0]["warning"] = null;
+                $cosuser[0]["currentStepGen"] = 1;
+                $cosuser[0]["currentStepJur"] = -1;
             }
             $cosuser[0]["certificadoDescargado"] = 0;
         }

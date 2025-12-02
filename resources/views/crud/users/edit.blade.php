@@ -273,13 +273,13 @@
                                         @endif
 
                                         @if (isset($co["warning"]))
-    <div class="alert alert-warning fade show small py-2 d-flex justify-content-center align-items-center gap-2 text-center" role="alert">
-        <i class="fas fa-exclamation-triangle" style="font-size: 20px"></i>
-        <div style="font-size:1rem;">
-            {!! $co["warning"] !!}
-        </div>
-    </div>
-@endif
+                                            <div class="alert alert-warning fade show small py-2 d-flex justify-content-center align-items-center gap-2 text-center" role="alert">
+                                                <i class="fas fa-exclamation-triangle" style="font-size: 20px"></i>
+                                                <div style="font-size:1rem;">
+                                                    {!! $co["warning"] !!}
+                                                </div>
+                                            </div>
+                                        @endif
 
                                     </div>
 
