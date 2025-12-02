@@ -2258,8 +2258,6 @@ class UserController extends Controller
                     ];
                 } else {
                     $resultadoIA = $this->analizarEtiquetasYDevolverJSON($mondaydataforAI);
-
-                    dd($resultadoIA);
                 }
 
                 if(!isset($negocio->n4__certificado_descargado)){
