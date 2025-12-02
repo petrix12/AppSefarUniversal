@@ -1453,7 +1453,7 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach ( $negocios as $negocio )
                                 <tr>
-                                    <td>{{$negocio["servicio_solicitado"]}}<br>{!!$negocio["hubspot_id"] ? "<small>Se encuentra en <b><a href='https://app.hubspot.com/contacts/20053496/record/0-3/".$negocio['hubspot_id']."'>Hubspot</a></b></small>" : ''!!}{!! $negocio["teamleader_id"] ? "<small> y en <b><a href='https://focus.teamleader.eu/web/projects/".$negocio['teamleader_id']."'>Teamleader</a></b></small>" : '' !!}</td>
+                                    <td>{{$negocio["servicio_solicitado"]}}<br>{!!$negocio["hubspot_id"] ? "<small>Se encuentra en <b><a target='_blank' href='https://app.hubspot.com/contacts/20053496/record/0-3/".$negocio['hubspot_id']."'>Hubspot</a></b></small>" : ''!!}{!! $negocio["teamleader_id"] ? "<small> y en <b><a target='_blank' href='https://focus.teamleader.eu/web/projects/".$negocio['teamleader_id']."'>Teamleader</a></b></small>" : '' !!}</td>
                                     <td>
                                         <a href="/deal/{{$negocio['id']}}/edit" target="_blank" class="btn btn-primary">
                                             <i class="fas fa-eye"></i>
