@@ -7,7 +7,6 @@ use App\Models\User;
 use App\Models\Compras;
 use App\Models\Servicio;
 use Livewire\Component;
-use Illuminate\Support\Facades\Cache;
 
 class UsersTable extends Component
 {
@@ -26,31 +25,12 @@ class UsersTable extends Component
 
     public function render()
     {
-        // Cache de servicios agrupados por 60 minutos
-        $serviciosData = Cache::remember('servicios_agrupados', 3600, function () {
-            return $this->buildServiciosData();
-        });
+        $users = User::query()
+            ->when($this->search, function ($query) {
+                $terms = explode(' ', $this->search); // divide la búsqueda por espacios
 
-        $users = $this->buildUsersQuery()->paginate($this->perPage);
-
-        return view('livewire.crud.users-table', [
-            'users' => $users,
-            'listaServicios' => $serviciosData['listaAgrupada'],
-            'serviciosPlano' => $serviciosData['serviciosParaFiltro'],
-            'serviciosParaFiltro' => $serviciosData['serviciosParaFiltro']
-        ]);
-    }
-
-    protected function buildUsersQuery()
-    {
-        $query = User::query();
-
-        // Optimizar búsqueda con índices
-        if (!empty($this->search)) {
-            $terms = explode(' ', trim($this->search));
-            $query->where(function ($q) use ($terms) {
-                foreach ($terms as $term) {
-                    if (strlen($term) >= 2) { // Evitar búsquedas muy cortas
+                $query->where(function ($q) use ($terms) {
+                    foreach ($terms as $term) {
                         $q->where(function ($sub) use ($term) {
                             $sub->where('name', 'LIKE', "%{$term}%")
                                 ->orWhere('nombres', 'LIKE', "%{$term}%")
@@ -59,93 +39,43 @@ class UsersTable extends Component
                                 ->orWhere('passport', 'LIKE', "%{$term}%");
                         });
                     }
-                }
-            });
-        }
-
-        // Filtro de servicio optimizado
-        if ($this->filterServicio !== '') {
-            $query->where(function ($q) {
-                $q->where('servicio', $this->filterServicio)
-                  ->orWhereExists(function ($sub) {
-                      $sub->selectRaw(1)
-                          ->from('compras')
-                          ->whereColumn('compras.id_user', 'users.id')
-                          ->where('compras.servicio_hs_id', $this->filterServicio);
-                  });
-            });
-        }
-
-        // Otros filtros
-        if ($this->filterContrato !== '') {
-            $query->where('contrato', $this->filterContrato);
-        }
-
-        if ($this->filterPago !== '') {
-            $query->where('pay', $this->filterPago);
-        }
-
-        return $query->orderBy('created_at', 'DESC');
-    }
-
-    protected function buildServiciosData()
-    {
-        // Obtener servicios de forma más eficiente
-        $servicios = Servicio::select('id_hubspot')
-            ->where('tipov', 0)
-            ->where('id_hubspot', 'not like', '% - Hermano%')
-            ->pluck('id_hubspot')
-            ->map(function ($servicio) {
-                return $this->normalizeServiceName($servicio);
+                });
             })
-            ->unique()
-            ->values()
+            ->when($this->filterServicio !== '', function ($query) {
+                $query->where(function ($q) {
+                    $q->where('servicio', $this->filterServicio)
+                    ->orWhereIn('id', function ($sub) {
+                        $sub->select('id_user')
+                            ->from('compras')
+                            ->where('servicio_hs_id', $this->filterServicio);
+                    });
+                });
+            })
+            ->when($this->filterContrato !== '', function ($query) {
+                $query->where('contrato', $this->filterContrato);
+            })
+            ->when($this->filterPago !== '', function ($query) {
+                $query->where('pay', $this->filterPago);
+            })
+            ->orderBy('created_at', 'DESC')
+            ->paginate($this->perPage);
+
+        // Obtener y normalizar servicios desde la tabla de servicios
+        $tablaservicios = Servicio::select("id_hubspot")
+            ->where("tipov", 0)
+            ->where("id_hubspot", "not like", "% - Hermano%")
+            ->get()
+            ->map(function ($servicio) {
+                return [
+                    'id_hubspot' => $this->normalizeServiceName($servicio->id_hubspot)
+                ];
+            })
             ->toArray();
 
-        // Configuración estática de servicios agrupados
-        $serviciosAgrupados = $this->getServiciosAgrupados();
+        $serviciostabla = array_column($tablaservicios, 'id_hubspot');
 
-        // Procesar agrupación
-        $listaAgrupada = [];
-        foreach ($serviciosAgrupados as $categoria => $serviciosCategoria) {
-            $serviciosNormalizados = array_map([$this, 'normalizeServiceName'], $serviciosCategoria);
-            $serviciosFiltrados = array_intersect($serviciosNormalizados, $servicios);
-
-            if (!empty($serviciosFiltrados)) {
-                $listaAgrupada[$categoria] = array_values($serviciosFiltrados);
-            }
-        }
-
-        // Servicios sin categoría
-        $todosServiciosAgrupados = array_merge(...array_values($serviciosAgrupados));
-        $todosServiciosAgrupados = array_map([$this, 'normalizeServiceName'], $todosServiciosAgrupados);
-        $serviciosSinCategoria = array_diff($servicios, $todosServiciosAgrupados);
-
-        if (!empty($serviciosSinCategoria)) {
-            $listaAgrupada['Otros'] = array_merge(
-                $listaAgrupada['Otros'] ?? [],
-                array_values($serviciosSinCategoria)
-            );
-        }
-
-        // Crear lista plana para filtros
-        $serviciosParaFiltro = [];
-        foreach ($listaAgrupada as $categoria => $serviciosLista) {
-            foreach ($serviciosLista as $servicio) {
-                $serviciosParaFiltro[$servicio] = "[$categoria] $servicio";
-            }
-        }
-        asort($serviciosParaFiltro);
-
-        return [
-            'listaAgrupada' => $listaAgrupada,
-            'serviciosParaFiltro' => $serviciosParaFiltro
-        ];
-    }
-
-    protected function getServiciosAgrupados()
-    {
-        return [
+        // Definir cómo agrupar los servicios (con nombres normalizados)
+        $serviciosAgrupados = [
             'Nacionalidad Española' => [
                 'Española LMD',
                 'Española Sefardi',
@@ -173,22 +103,70 @@ class UsersTable extends Component
                 'Analisis Juridico Genealogico'
             ]
         ];
+
+        // Normalizar nombres en la estructura de agrupación
+        $serviciosAgrupados = array_map(function($servicios) {
+            return array_map([$this, 'normalizeServiceName'], $servicios);
+        }, $serviciosAgrupados);
+
+        // Filtrar y agrupar los servicios
+        $listaAgrupada = [];
+        foreach ($serviciosAgrupados as $categoria => $servicios) {
+            $serviciosFiltrados = array_uintersect(
+                $servicios,
+                $serviciostabla,
+                fn($a, $b) => strcmp($this->normalizeServiceName($a), $this->normalizeServiceName($b))
+            );
+
+            if (!empty($serviciosFiltrados)) {
+                $listaAgrupada[$categoria] = array_values($serviciosFiltrados);
+            }
+        }
+
+        // Agregar servicios no clasificados a 'Otros'
+        $todosServiciosAgrupados = array_merge(...array_values($serviciosAgrupados));
+        $serviciosSinCategoria = array_diff($serviciostabla, $todosServiciosAgrupados);
+
+        if (!empty($serviciosSinCategoria)) {
+            $listaAgrupada['Otros'] = array_merge(
+                $listaAgrupada['Otros'] ?? [],
+                array_values($serviciosSinCategoria)
+            );
+        }
+
+        // Crear versión plana para el filtro select
+        $serviciosParaFiltro = [];
+        foreach ($listaAgrupada as $categoria => $servicios) {
+            foreach ($servicios as $servicio) {
+                $serviciosParaFiltro[$servicio] = "[$categoria] $servicio";
+            }
+        }
+        asort($serviciosParaFiltro);
+
+        return view('livewire.crud.users-table', [
+            'users' => $users,
+            'compras' => Compras::all(),
+            'listaServicios' => $listaAgrupada,       // Para mostrar agrupados
+            'serviciosPlano' => $serviciosParaFiltro, // Para el select (formato plano)
+            'serviciosParaFiltro' => $serviciosParaFiltro // Mantener compatibilidad
+        ]);
     }
 
     protected function normalizeServiceName(string $name): string
     {
-        static $correcciones = [
-            'Diagnóstico Express para Plan de acción de la Nacionalidad Italiana' => 'Diagnóstico Express para Plan de acción de la Nacionalidad Italiana',
-        ];
-
+        // Eliminar caracteres especiales y normalizar espacios
         $normalized = trim(preg_replace('/\s+/', ' ', $name));
         $normalized = str_replace(["\u{A0}", "\n"], ' ', $normalized);
+
+        // Correcciones específicas para nombres conocidos
+        $correcciones = [
+            'Diagnóstico Express para Plan de acción de la Nacionalidad Italiana' => 'Diagnóstico Express para Plan de acción de la Nacionalidad Italiana',
+        ];
 
         return $correcciones[$normalized] ?? $normalized;
     }
 
-    public function clear()
-    {
+    public function clear(){
         $this->search = '';
         $this->perPage = '10';
         $this->resetPage();
@@ -197,19 +175,12 @@ class UsersTable extends Component
     public function clearFilters()
     {
         $this->reset(['filterServicio', 'filterContrato', 'filterPago']);
-        $this->resetPage();
-        $this->dispatch('filtersCleared');
+        $this->resetPage(); // Reset pagination
+        $this->dispatch('filtersCleared'); // Optional: Dispatch an event to notify the frontend
     }
 
     public function updatedSearch()
     {
         $this->resetPage();
-    }
-
-    // Limpiar cache cuando sea necesario
-    public function refreshServicios()
-    {
-        Cache::forget('servicios_agrupados');
-        $this->dispatch('serviciosRefreshed');
     }
 }
