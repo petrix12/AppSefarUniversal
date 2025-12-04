@@ -465,3 +465,10 @@ Route::get('/cron/queue-worker', function () {
         'timestamp' => now()
     ]);
 });
+
+// routes/web.php (solo para admins)
+Route::post('/admin/process-queue', function () {
+    Artisan::call('queue:work', ['--stop-when-empty' => true]);
+
+    return back()->with('success', 'Jobs procesados');
+});
