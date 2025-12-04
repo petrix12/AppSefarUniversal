@@ -451,3 +451,17 @@ Route::get('/cron/scheduler-run', function () {
         'time' => now()->toDateTimeString(),
     ]);
 });
+
+Route::get('/cron/queue-worker', function () {
+    // Ejecutar jobs pendientes
+    Artisan::call('queue:work', [
+        '--stop-when-empty' => true,
+        '--tries' => 3,
+        '--max-time' => 60
+    ]);
+
+    return response()->json([
+        'status' => 'ok',
+        'timestamp' => now()
+    ]);
+});

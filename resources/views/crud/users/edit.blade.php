@@ -221,221 +221,108 @@
                 <!-- Primer Formulario -->
 
                 <div class="tab-pane fade show active" id="mystatus" role="tabpanel" aria-labelledby="mystatus-tab">
-                    @php
-                        $errorNotAvailable = 0;
-                    @endphp
-                    @if (count($cosuser)>0)
-                        @foreach ($cosuser as $co)
-                            @if(array_key_exists($co["servicio"], $cos))
-                                @php
-                                    $errorNotAvailable = $errorNotAvailable + 1;
-                                @endphp
+                    @forelse ($cosuser as $index => $proceso)
+                        @if(array_key_exists($proceso['servicio'], $cos))
+                            <div class="card mb-4 shadow-sm">
+                                {{-- Header con título y estatus --}}
+                                <div class="card-header text-center bg-white">
+                                    <h1 class="card-title mt-4 mb-2" style="font-size:1.8rem;">
+                                        Proceso: {!! $proceso['servicio'] !!}
+                                    </h1>
 
-                                <div class="card">
-                                    <div class="card-header" style="text-align: center;">
-                                        <h1 style="font-size:1.8rem;" class="card-title mt-4 mb-2">Proceso: {!! $co["servicio"] !!}</h1>
-                                        @php
-                                            $gen = $co["currentStepGen"] ?? -1;
-                                            $jur = $co["currentStepJur"] ?? -1;
+                                    <p class="pb-4" style="font-size:1.4rem;">
+                                        Estatus actual: <b>{{ $proceso['currentStepName'] ?? 'No iniciado' }}</b>
+                                    </p>
 
-                                            $pasoFinal = null;
-                                            $numeroPaso = null;
-
-                                            // Calcular paso solo si alguna línea ha comenzado
-                                            if ($gen !== -1 || $jur !== -1) {
-                                                $numeroPaso = 0;
-
-                                                if ($gen !== -1) {
-                                                    $numeroPaso += $gen;
-                                                }
-
-                                                if ($jur !== -1) {
-                                                    $numeroPaso += $jur;
-                                                }
-
-                                                $numeroPaso += 1+ $co["certificadoDescargado"];
-
-                                                // Buscar ese paso en array_cos
-                                                foreach ($cos[$co["servicio"]] as $rama) {
-                                                    foreach ($rama as $paso) {
-                                                        if ($paso['paso'] === $numeroPaso) {
-                                                            $pasoFinal = $paso;
-                                                            break 2;
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        @endphp
-                                        @if($pasoFinal)
-                                            <p class="pb-4" style="font-size:1.4rem;">Estatus actual: <b>{{ $pasoFinal['nombre_corto'] }}</b></p>
-                                        @else
-                                            <p class="pb-4" style="font-size:1.4rem;">Estatus actual: <b>No iniciado</b></p>
-                                        @endif
-
-                                        @if (isset($co["warning"]))
-                                            <div class="alert alert-warning fade show small py-2 d-flex justify-content-center align-items-center gap-2 text-center" role="alert">
-                                                <i class="fas fa-exclamation-triangle" style="font-size: 20px"></i>
-                                                <div style="font-size:1rem;">
-                                                    {!! $co["warning"] !!}
-                                                </div>
-                                            </div>
-                                        @endif
-
-                                    </div>
-
-                                    <div class="card-body text-center" style="text-align: center; background: rgba(0,0,0,0.05);">
-
-                                        <h4 class="mb-4 mt-4"><b>Progreso Genealógico</b></h4>
-                                        <div class="progress-scroll-container mb-4">
-                                            <div class="progress-container" id="progressContainerGen">
-                                                <div class="progress-line-full"></div>
-                                                <div class="progress-line" style="width: {{ $co['progressPercentageGen'] }}%;"></div>
-
-                                                @foreach ($cos[$co['servicio']]["genealogico"] as $step)
-                                                    <div class="progress-step {{ ($co['currentStepGen'] + 1 >= $step['paso']) ? (isset($co['warning']) && $co['currentStepGen'] + $co["certificadoDescargado"] + $co['currentStepJur']+1 == $step['paso'] ? 'warningesfera' : 'active') : '' }} data-step="{{ $step['paso'] }}">
-                                                        <i class="fas fa-{{ $co['currentStepGen'] + $co["certificadoDescargado"] + $co['currentStepJur']+1 >= $step['paso'] ? (isset($co['warning']) && $co['currentStepGen'] + $co["certificadoDescargado"] + $co['currentStepJur']+1 == $step['paso'] ? 'exclamation' : 'check-circle') : 'check-circle' }}"></i>
-                                                        <span class="step-label">{{ $step['nombre_corto'] }}</span>
-                                                    </div>
-                                                @endforeach
-                                            </div>
+                                    @if(isset($proceso['warning']))
+                                        <div class="alert alert-warning fade show py-2 d-flex justify-content-center align-items-center gap-2" role="alert">
+                                            <i class="fas fa-exclamation-triangle" style="font-size: 20px"></i>
+                                            <div style="font-size:1rem;">{!! $proceso['warning'] !!}</div>
                                         </div>
-
-                                        <h4 class="mb-4"><b>Progreso Jurídico</b></h4>
-                                        <div class="progress-scroll-container">
-                                            <div class="progress-container" id="progressContainerJur">
-                                                <div class="progress-line-full"></div>
-                                                <div class="progress-line" style="width: {{ $co['progressPercentageJur'] }}%;"></div>
-
-                                                @foreach ($cos[$co['servicio']]["juridico"] as $step)
-                                                    <div class="progress-step {{ $co['currentStepGen'] + $co["certificadoDescargado"] + $co['currentStepJur']+1 >= $step['paso'] ? (isset($co['warning']) && $co['currentStepGen'] + $co["certificadoDescargado"] + $co['currentStepJur']+1 == $step['paso'] ? 'warningesfera' : 'active') : '' }}">
-                                                        <i class="fas fa-{{ $co['currentStepGen'] + $co["certificadoDescargado"] + $co['currentStepJur']+1 >= $step['paso'] ? (isset($co['warning']) && $co['currentStepGen'] + $co["certificadoDescargado"] + $co['currentStepJur']+1 == $step['paso'] ? 'exclamation' : 'check-circle') : 'check-circle' }}"></i>
-                                                        <span class="step-label">{{ $step['nombre_corto'] }}</span>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="py-2 px-2">
-                                        <div class="card-header" style="text-align: center;">
-                                            <h4 class="mb-4 mt-4" style="font-size:1.4rem;"><b>Detalle de tu estatus</b></h4>
-                                            <p class="pb-4">{!! $pasoFinal["promesa"] !!}</p>
-                                        </div>
-                                    </div>
-
-                                    <div style="text-align: center; border-bottom: #DEE2E6 solid 1px;height: 220px; overflow: hidden; ">
-                                        <div id="carouselExampleSlidesOnly" class="carousel slide" data-ride="carousel">
-                                            <div class="carousel-inner">
-                                                @php
-                                                    $flag = true;
-                                                @endphp
-                                                @foreach($imageUrls as $key => $url)
-
-                                                    <div class="carousel-item {{ $flag ? 'active' : '' }}">
-                                                        <img
-                                                            class="d-block w-100"
-                                                            src="{{$url}}"
-                                                            alt="First slide"
-                                                            style="
-                                                                object-fit: cover;
-                                                                height: 220px;
-                                                                width: 100%;
-                                                            "
-                                                        />
-                                                    </div>
-
-                                                    @php
-                                                        $flag = false;
-                                                    @endphp
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    @if(sizeof($pasoFinal["textos_adicionales"]) > 0)
-                                        <div style="text-align: center; border-bottom: #DEE2E6 solid 1px; background: rgba(0,0,0,0.05);" class="pb-4">
-                                            <h4 class="my-4"><b>Información Adicional</b></h4>
-                                            <div class="accordion accordion-flush" id="accordionFlushExample" style="max-width: 800px; margin: 0 auto;">
-                                                @foreach($pasoFinal["textos_adicionales"] as $index => $item)
-                                                    <div class="accordion-item">
-                                                        <h2 class="accordion-header" id="flush-heading-{{ $index }}">
-                                                            <button class="accordion-button collapsed" type="button"
-                                                                    data-bs-toggle="collapse"
-                                                                    data-bs-target="#flush-collapse-{{ $index }}"
-                                                                    aria-expanded="false"
-                                                                    aria-controls="flush-collapse-{{ $index }}">
-                                                                {{ $item['nombre'] ?? '' }}
-                                                            </button>
-                                                        </h2>
-                                                        <div id="flush-collapse-{{ $index }}"
-                                                            class="accordion-collapse collapse"
-                                                            aria-labelledby="flush-heading-{{ $index }}"
-                                                            data-bs-parent="#textosAdicionalesAccordion">
-                                                            <div class="accordion-body">
-                                                                {!! $item['texto'] ?? '' !!}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    @endif
-
-                                    @if(isset($pasoFinal["ctas"]) && sizeof($pasoFinal["ctas"])>1)
-                                    <div class="card-body text-center" style="text-align: center; border-bottom: #DEE2E6 solid 1px; background: rgba(0,0,0,0.05);">
-                                        <h2 class="card-title mb-4">Contrata nuestros servicios adicionales y<br><b>asegura tu ciudadania europea:</b></h2>
-                                        @foreach ($pasoFinal["ctas"] as $cta)
-                                            <a href="{{$cta['url']}}" target="_blank" class="cfrSefar inline-flex items-center justify-center px-3 py-2 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 my-2">
-                                                {{$cta['text']}}
-                                            </a>
-                                        @endforeach
-                                    </div>
                                     @endif
                                 </div>
-                            @endif
-                        @endforeach
-                    @endif
 
-                    @if ($errorNotAvailable==0)
-                        <div class="alert alert-info text-center my-5 p-5" role="alert" style="max-width: 700px; margin: 0 auto; background-color: rgba(0,0,0,0.05); border: 1px solid #b6e0fe; border-radius: 15px;">
-                            <center>
-                                <img class="img-fluid" style="max-width:100px;"
-                                        src="/img/logonormal.png"
-                                        alt="Logo Sefar">
-                                <h4 class="alert-heading"><b>¡Muy pronto disponible!</b></h4>
-                                <p class="mt-3">Estamos trabajando para que puedas visualizar el estatus de tu proceso directamente desde esta plataforma.</p>
-                                <hr>
-                                <p class="mb-0">Te avisaremos tan pronto esté activo. Gracias por tu paciencia.</p>
-                            </center>
-                        </div>
-                    @endif
+                                {{-- Barras de progreso --}}
+                                <div class="card-body text-center" style="background: rgba(0,0,0,0.05);">
+                                    @include('crud.users.partials.progress-bars', [
+                                        'proceso' => $proceso,
+                                        'cos' => $cos,
+                                        'index' => $index
+                                    ])
+                                </div>
+
+                                {{-- Detalle del estatus --}}
+                                @if(isset($proceso['currentStepDetails']))
+                                    <div class="py-2 px-2">
+                                        <div class="card-header text-center bg-white">
+                                            <h4 class="mb-4 mt-4" style="font-size:1.4rem;"><b>Detalle de tu estatus</b></h4>
+                                            <p class="pb-4">{!! $proceso['currentStepDetails']['promesa'] ?? '' !!}</p>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                {{-- Carrusel de imágenes --}}
+                                @if(isset($imageUrls) && count($imageUrls) > 0)
+                                    @include('crud.users.partials.image-carousel', [
+                                        'imageUrls' => $imageUrls,
+                                        'carouselId' => "carousel-{$index}"
+                                    ])
+                                @endif
+
+                                {{-- Información adicional (Acordeón) --}}
+                                @if(isset($proceso['currentStepDetails']['textos_adicionales']) && count($proceso['currentStepDetails']['textos_adicionales']) > 0)
+                                    @include('crud.users.partials.additional-info', [
+                                        'textos' => $proceso['currentStepDetails']['textos_adicionales'],
+                                        'accordionId' => "accordion-{$index}"
+                                    ])
+                                @endif
+
+                                {{-- CTAs --}}
+                                @if(isset($proceso['currentStepDetails']['ctas']) && count($proceso['currentStepDetails']['ctas']) > 0)
+                                    @include('crud.users.partials.ctas', [
+                                        'ctas' => $proceso['currentStepDetails']['ctas']
+                                    ])
+                                @endif
+                            </div>
+                        @endif
+                    @empty
+                        {{-- Mensaje cuando no hay procesos disponibles --}}
+                        @include('crud.users.partials.no-status-available')
+                    @endforelse
                 </div>
 
-                <script>
-                    document.addEventListener('DOMContentLoaded', function () {
-                        const containers = document.querySelectorAll('.progress-scroll-container');
+                @push('scripts')
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function () {
+                            // Auto-scroll a paso activo
+                            document.querySelectorAll('.progress-scroll-container').forEach(container => {
+                                const activeSteps = container.querySelectorAll('.progress-step.active');
 
-                        containers.forEach(container => {
-                            const progressContainer = container.querySelector('.progress-container');
-                            const activeSteps = container.querySelectorAll('.progress-step.active');
+                                if (activeSteps.length > 0) {
+                                    const lastActive = activeSteps[activeSteps.length - 1];
+                                    const containerWidth = container.clientWidth;
+                                    const stepRect = lastActive.getBoundingClientRect();
+                                    const containerRect = container.getBoundingClientRect();
+                                    const stepCenter = stepRect.left - containerRect.left + stepRect.width / 2;
 
-                            if (activeSteps.length > 0) {
-                                const lastActiveStep = activeSteps[activeSteps.length - 1];
+                                    container.scrollTo({
+                                        left: stepCenter - containerWidth / 2 + container.scrollLeft,
+                                        behavior: 'smooth'
+                                    });
+                                }
+                            });
 
-                                const containerWidth = container.clientWidth;
-                                const stepRect = lastActiveStep.getBoundingClientRect();
-                                const containerRect = container.getBoundingClientRect();
-                                const stepCenter = stepRect.left - containerRect.left + stepRect.width / 2;
-                                const scrollTo = stepCenter - containerWidth / 2 + container.scrollLeft;
-
-                                container.scrollTo({
-                                    left: scrollTo,
-                                    behavior: 'smooth'
+                            // Auto-play carruseles
+                            const carousels = document.querySelectorAll('.carousel');
+                            carousels.forEach(carousel => {
+                                new bootstrap.Carousel(carousel, {
+                                    interval: 3000,
+                                    ride: 'carousel'
                                 });
-                            }
+                            });
                         });
-                    });
-                </script>
+                    </script>
+                @endpush
 
 
                 <div class="tab-pane fade show" id="personal_data" role="tabpanel" aria-labelledby="personal-data-tab">
@@ -1067,41 +954,65 @@
                 </div>
 
                 <div class="tab-pane fade" id="familiars" role="tabpanel" aria-labelledby="familiars-tab">
-
                     <center>
                         @if(auth()->user()->roles[0]->id == 5)
-                        <a href="/tree/" class="cfrSefar mb-3 inline-flex items-center justify-center px-3 py-1 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                        <a href="/tree/" class="btn btn-primary mb-3">
                             Ir al Arbol
                         </a>
                         @else
-                        <a href="/tree/{{$user->passport}}" class="cfrSefar mb-3 inline-flex items-center justify-center px-3 py-1 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                        <a href="/tree/{{$user->passport}}" class="btn btn-primary mb-3">
                             Ir al Arbol
                         </a>
                         @endif
                     </center>
 
-                    <table id="familiarsTable" class="min-w-full divide-y divide-gray-200 w-100">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th scope="col">Nombre</th>
-                                <th scope="col">Parentesco</th>
-                                <th scope="col">Generacion</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach ( $columnasparatabla as $generacion => $grupo )
-                                @foreach ( $grupo as $persona)
-                                    @if (isset($persona["showbtn"]) && $persona["showbtn"] == 2)
-                                    <tr>
-                                        <td>{{$persona["Nombres"]}} {{$persona["Apellidos"]}}</td>
-                                        <td>{{$persona["parentesco"]}}</td>
-                                        <td>{{$generacion+1}}</td>
-                                    </tr>
-                                    @endif
+                    @if(isset($columnasparatabla) && count($columnasparatabla) > 0)
+                        <table id="familiarsTable" class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Parentesco</th>
+                                    <th>Generación</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @php $totalMostrados = 0; @endphp
+                                @foreach ($columnasparatabla as $generacion => $grupo)
+                                    @foreach ($grupo as $persona)
+                                        @php
+                                            // Condiciones para mostrar:
+                                            // 1. showbtn debe ser 1 o 2 (no 0)
+                                            // 2. Debe tener nombre (no "Sin nombre")
+                                            $tieneNombre = !empty($persona['Nombres']) &&
+                                                        $persona['Nombres'] !== 'Sin nombre';
+
+                                            $showbtnValido = isset($persona['showbtn']) &&
+                                                            in_array($persona['showbtn'], [1, 2]);
+
+                                            $mostrar = $tieneNombre && $showbtnValido;
+                                        @endphp
+
+                                        @if($mostrar)
+                                            <tr>
+                                                <td>{{ $persona['Nombres'] ?? '' }} {{ $persona['Apellidos'] ?? '' }}</td>
+                                                <td>{{ $persona['parentesco'] ?? 'N/A' }}</td>
+                                                <td>{{ $generacion + 1 }}</td>
+                                            </tr>
+                                            @php $totalMostrados++; @endphp
+                                        @endif
+                                    @endforeach
                                 @endforeach
-                            @endforeach
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
+
+                        <div class="alert alert-info mt-3">
+                            Total de familiares registrados: {{ $totalMostrados }}
+                        </div>
+                    @else
+                        <div class="alert alert-warning">
+                            No se encontraron datos de familiares.
+                        </div>
+                    @endif
                 </div>
 
                 <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">

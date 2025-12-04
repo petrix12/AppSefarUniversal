@@ -2678,117 +2678,31 @@ if (!function_exists("array_cos")) {
                     ],
                     [
                         "paso" => 15,
-                        "nombre_largo" => "Envío del informe genealógico final",
-                        "nombre_corto" => "Envío del informe genealógico final",
+                        "nombre_largo" =>
+                        "¡Tu informe genealógico está listo!",
+                        "nombre_corto" => "Informe genealógico listo",
                         "promesa" =>
-                        "En esta etapa, hemos preparado un informe sólido, claro y formal, diseñado para cumplir con los estándares exigidos por la FCJE y apto para ser presentado ante cualquier autoridad europea. Este documento constituye una prueba legal en sí misma, elaborada con rigor y respaldo documental.",
+                        "",
                         "textos_adicionales" => [],
-                        "ctas" => [
-                            ['text' => 'Visados y residencias', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Asesoría para permisos por arraigo, estudio o inversión', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Monitoreo de bases genealógicas para activación futura', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Expediente de respaldo para segunda vía', 'url' => 'http://sefaruniversal.com/nacionalidades'],
-                            ['text' => 'Consulta estratégica con nuestro director legal', 'url' => 'https://sefaruniversal.com/asistencia-legal/'],
-                            ['text' => 'Nacionalidad Portuguesa por origen sefardí', 'url' => 'https://sefaruniversal.com/landing-registro-nacionalidad-portuguesa-sefardi/'],
-                            ['text' => 'Seguimiento personalizado semanal, reunión semanal con un abogado genealogista para hacer seguimiento al proceso', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Consulta migratoria con abogado genealogista para Europa', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-
-                            ['text' => 'Formaliza tu solicitud de nacionalidad portuguesa antes que publiquen el reglamento', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Asistencia documental, te ayudamos a conseguir los documentos históricos, genealógicos o jurídicos que necesites para ti o para tu familia', 'url' => 'https://sefaruniversal.com/asistencia-documental-registro-gratuito/'],
-                            ['text' => 'Traducción oficial a y de idiomas inglés, portugués, italiano, español', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Apostilla internacional', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Envío físico de documentación probatoria', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Revisión de documentos familiares adicionales (testamentos, cartas, etc)', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                        ],
+                        "ctas" => [],
                         "subfases" => [],
                     ],
+
                     [
                         "paso" => 16,
                         "nombre_largo" =>
-                        "¡Hemos cargado tu informe con éxito!",
-                        "nombre_corto" => "Informe cargado",
+                        "¡Tu informe genealógico fue anexado al expediente!",
+                        "nombre_corto" => "Informe genealógico anexado a expediente",
                         "promesa" =>
-                        "Nuestros expertos en Derecho Genealogista de Sefar Universal han colgado en la plataforma de la FCJE tu informe y cada una de las pruebas de cada una de las generaciones, debidamente adaptadas al formato exigido por la institución, transcritas y subrayadas. Estamos listos para comenzar con la defensa de tu genealogía",
+                        "",
                         "textos_adicionales" => [],
-                        "ctas" => [
-                            ['text' => 'Visados y residencias', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Asesoría para permisos por arraigo, estudio o inversión', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Monitoreo de bases genealógicas para activación futura', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Expediente de respaldo para segunda vía', 'url' => 'http://sefaruniversal.com/nacionalidades'],
-                            ['text' => 'Consulta estratégica con nuestro director legal', 'url' => 'https://sefaruniversal.com/asistencia-legal/'],
-                            ['text' => 'Nacionalidad Portuguesa por origen sefardí', 'url' => 'https://sefaruniversal.com/landing-registro-nacionalidad-portuguesa-sefardi/'],
-                            ['text' => 'Seguimiento personalizado semanal, reunión semanal con un abogado genealogista para hacer seguimiento al proceso', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Consulta migratoria con abogado genealogista para Europa', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-
-                            ['text' => 'Formaliza tu solicitud de nacionalidad portuguesa antes que publiquen el reglamento', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Asistencia documental, te ayudamos a conseguir los documentos históricos, genealógicos o jurídicos que necesites para ti o para tu familia', 'url' => 'https://sefaruniversal.com/asistencia-documental-registro-gratuito/'],
-                            ['text' => 'Traducción oficial a y de idiomas inglés, portugués, italiano, español', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Apostilla internacional', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Envío físico de documentación probatoria', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Revisión de documentos familiares adicionales (testamentos, cartas, etc)', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                        ],
-                        "subfases" => [],
-                    ],
-                    [
-                        "paso" => 17,
-                        "nombre_largo" =>
-                        "¡Comenzamos a defender tu genealogía!",
-                        "nombre_corto" => "Defensa de Genealogía",
-                        "promesa" =>
-                        "Hemos activado la búsqueda de documentos adicionales que la FCJE ha solicitado en ocasiones anteriores, tales como partidas, testamentos, actas de matrimonio o defunción, certificados de limpieza de sangre o de propiedad. Estos documentos son esenciales para reforzar las pruebas ya presentadas en tu expediente.<br><br>Aun cuando se hayan acreditado correctamente todas las generaciones, la FCJE, en muchos casos, opta por no valorar adecuadamente las pruebas aportadas. Aunque legalmente no pueden desestimar pruebas válidas sin fundamento, nuestro equipo de investigación actúa estratégicamente y responde mediante nuevas indagaciones que permitan subsanar esta situación.<br><br>En caso de que la investigación requiera desplazamientos para realizar revisiones in situ de archivos físicos o manuscritos históricos, el costo adicional deberá ser asumido por el cliente. No obstante, nuestro equipo está preparado y comprometido a continuar con la labor investigativa hasta completar satisfactoriamente el proceso.<br><br>Adicionalmente, si lo deseas, también ofrecemos la posibilidad de judicializar el caso. En ese escenario, se exigirá legalmente a la FCJE que cumpla con su obligación de emitir una respuesta formal y realizar una valoración efectiva y transparente de cada prueba presentada.",
-                        "textos_adicionales" => [],
-                        "ctas" => [
-                            ['text' => 'Judicaliza tu defensa. Tienes derecho a recibir una respuesta por parte de la FCJE de cada prueba aportada. En caso que sea necesario te podemos ayudar a forzar a la FCJE a pronunciarse', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Asistencia documental. En caso que sea factible y más fácil encontrar un documento requerido específico, activa tu servicio de asistencia documental', 'url' => 'https://sefaruniversal.com/asistencia-documental-registro-gratuito/'],
-                            ['text' => 'Visados y residencias', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Asesoría para permisos por arraigo, estudio o inversión', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Monitoreo de bases genealógicas para activación futura', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Expediente de respaldo para segunda vía', 'url' => 'http://sefaruniversal.com/nacionalidades'],
-                            ['text' => 'Consulta estratégica con nuestro director legal', 'url' => 'https://sefaruniversal.com/asistencia-legal/'],
-                            ['text' => 'Nacionalidad Portuguesa por origen sefardí', 'url' => 'https://sefaruniversal.com/landing-registro-nacionalidad-portuguesa-sefardi/'],
-                            ['text' => 'Seguimiento personalizado semanal, reunión semanal con un abogado genealogista para hacer seguimiento al proceso', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Consulta migratoria con abogado genealogista para Europa', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-
-                            ['text' => 'Formaliza tu solicitud de nacionalidad portuguesa antes que publiquen el reglamento', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Asistencia documental, te ayudamos a conseguir los documentos históricos, genealógicos o jurídicos que necesites para ti o para tu familia', 'url' => 'https://sefaruniversal.com/asistencia-documental-registro-gratuito/'],
-                            ['text' => 'Traducción oficial a y de idiomas inglés, portugués, italiano, español', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Apostilla internacional', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Envío físico de documentación probatoria', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Revisión de documentos familiares adicionales (testamentos, cartas, etc)', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                        ],
-                        "subfases" => [],
-                    ],
-                    [
-                        "paso" => 18,
-                        "nombre_largo" =>
-                        "Aprobación del certificado de la FCJE – ¡Tu origen sefardí ha sido reconocido!",
-                        "nombre_corto" => "Certificado Aprobado",
-                        "promesa" =>
-                        "¡Felicidades! La <b>Federación de Comunidades Judías de España (FCJE)</b> ha aprobado favorablemente tu solicitud y ha emitido el <b>certificado oficial que acredita tu origen sefardí.</b><br><br>Este documento es <b>exclusivo, confidencial y reservado para uso institucional</b>, y será gestionado directamente por nuestro equipo legal para su incorporación inmediata al expediente de nacionalidad.<br><br>Este paso marca un <b>hito crucial</b> en tu proceso. El reconocimiento de la FCJE es una validación de alto nivel que nos permite avanzar con paso firme hacia la presentación jurídica ante el Estado español.",
-                        "textos_adicionales" => [
-                            [
-                                "nombre" => "¿Qué implica este avance?",
-                                "texto" =>
-                                '<ul><li><span class="highlight">Conexión reconocida:</span> Tu vinculación con la comunidad sefardí ha sido oficialmente validada.</li><li><span class="highlight">Certificado en custodia:</span> Nuestro equipo jurídico ya tiene el documento, listo para incorporarse a tu expediente.</li><li><span class="highlight">Hito alcanzado:</span> Has completado una fase clave del proceso, con el respaldo de nuestra experiencia especializada.</li></ul>',
-                            ],
-                            [
-                                "nombre" => "¿Que sigue?",
-                                "texto" =>
-                                "Con este aval en nuestras manos, iniciaremos la <b>formalización legal del expediente.</b>Este procedimiento incluye la compilación, validación y presentación de toda la documentación ante las autoridades competentes.<br><br>Para ello, es necesario realizar el pago correspondiente al avance jurídico, lo cual habilitará a nuestro equipo para avanzar sin interrupciones.",
-                            ],
-                            [
-                                "nombre" => "Incluye",
-                                "texto" =>
-                                '<ul><li><span class="highlight">Custodia legal:</span> Gestión profesional del certificado FCJE por nuestro equipo jurídico</li><li><span class="highlight">Integración documental:</span> Incorporación del certificado a tu expediente jurídico completo</li><li><span class="highlight">Planificación estratégica:</span> Coordinación de tiempos y estrategia legal para presentación oficial</li><li><span class="highlight">Seguimiento personalizado:</span> Acceso exclusivo al área privada para monitorear tu expediente</li></ul>',
-                            ],
-                        ],
                         "ctas" => [],
                         "subfases" => [],
                     ],
                 ],
                 "juridico" => [
                     [
-                        "paso" => 19,
+                        "paso" => 17,
                         "nombre_largo" =>
                         "Solicitud de documentos jurídicos para la formalización del expediente",
                         "nombre_corto" => "Solicitud de documentos juridicos",
@@ -2810,7 +2724,7 @@ if (!function_exists("array_cos")) {
                         "subfases" => [],
                     ],
                     [
-                        "paso" => 20,
+                        "paso" => 18,
                         "nombre_largo" =>
                         "Revisión final del expediente jurídico-documental",
                         "nombre_corto" => "Revisión del expediente",
@@ -2839,7 +2753,7 @@ if (!function_exists("array_cos")) {
                         "subfases" => [],
                     ],
                     [
-                        "paso" => 21,
+                        "paso" => 19,
                         "nombre_largo" =>
                         "Presentación de la solicitud de nacionalidad",
                         "nombre_corto" =>
@@ -2868,7 +2782,7 @@ if (!function_exists("array_cos")) {
                         "subfases" => [],
                     ],
                     [
-                        "paso" => 22,
+                        "paso" => 20,
                         "nombre_largo" =>
                         "¡Formalización Exitosa! Seguimiento de expediente ante autoridades",
                         "nombre_corto" => "Formalización Exitosa",
@@ -2896,7 +2810,7 @@ if (!function_exists("array_cos")) {
                         "subfases" => [],
                     ],
                     [
-                        "paso" => 23,
+                        "paso" => 21,
                         "nombre_largo" =>
                         "Subsanación y mejoras del expediente",
                         "nombre_corto" =>
@@ -2927,7 +2841,7 @@ if (!function_exists("array_cos")) {
                         "subfases" => [],
                     ],
                     [
-                        "paso" => 24,
+                        "paso" => 22,
                         "nombre_largo" =>
                         "Impulsa tu expediente: Solicita resolución expresa",
                         "nombre_corto" => "Resolución Expresa",
@@ -2965,7 +2879,7 @@ if (!function_exists("array_cos")) {
                         "subfases" => [],
                     ],
                     [
-                        "paso" => 25,
+                        "paso" => 23,
                         "nombre_largo" => "Recurso de Alzada",
                         "nombre_corto" => "Recurso de Alzada",
                         "promesa" =>
@@ -3018,7 +2932,7 @@ if (!function_exists("array_cos")) {
                         "subfases" => [],
                     ],
                     [
-                        "paso" => 26,
+                        "paso" => 24,
                         "nombre_largo" => "Via Judicial",
                         "nombre_corto" => "Via Judicial",
                         "promesa" =>
@@ -3053,7 +2967,7 @@ if (!function_exists("array_cos")) {
                         "subfases" => [],
                     ],
                     [
-                        "paso" => 27,
+                        "paso" => 25,
                         "nombre_largo" => "¡Nacionalidad concedida!",
                         "nombre_corto" => "¡Nacionalidad concedida!",
                         "promesa" =>
@@ -3449,112 +3363,27 @@ if (!function_exists("array_cos")) {
                         ],
                         "subfases" => [],
                     ],
+
                     [
                         "paso" => 15,
-                        "nombre_largo" => "Envío del informe genealógico final",
-                        "nombre_corto" => "Envío del informe genealógico final",
+                        "nombre_largo" =>
+                        "¡Tu informe genealógico está listo!",
+                        "nombre_corto" => "Informe genealógico listo",
                         "promesa" =>
-                        "En esta etapa, hemos preparado un informe sólido, claro y formal, diseñado para cumplir con los estándares exigidos por la FCJE y apto para ser presentado ante cualquier autoridad europea. Este documento constituye una prueba legal en sí misma, elaborada con rigor y respaldo documental.",
+                        "",
                         "textos_adicionales" => [],
-                        "ctas" => [
-                            ['text' => 'Visados y residencias', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Asesoría para permisos por arraigo, estudio o inversión', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Monitoreo de bases genealógicas para activación futura', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Expediente de respaldo para segunda vía', 'url' => 'http://sefaruniversal.com/nacionalidades'],
-                            ['text' => 'Consulta estratégica con nuestro director legal', 'url' => 'https://sefaruniversal.com/asistencia-legal/'],
-                            ['text' => 'Nacionalidad Portuguesa por origen sefardí', 'url' => 'https://sefaruniversal.com/landing-registro-nacionalidad-portuguesa-sefardi/'],
-                            ['text' => 'Seguimiento personalizado semanal, reunión semanal con un abogado genealogista para hacer seguimiento al proceso', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Consulta migratoria con abogado genealogista para Europa', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-
-                            ['text' => 'Formaliza tu solicitud de nacionalidad portuguesa antes que publiquen el reglamento', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Asistencia documental, te ayudamos a conseguir los documentos históricos, genealógicos o jurídicos que necesites para ti o para tu familia', 'url' => 'https://sefaruniversal.com/asistencia-documental-registro-gratuito/'],
-                            ['text' => 'Traducción oficial a y de idiomas inglés, portugués, italiano, español', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Apostilla internacional', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Envío físico de documentación probatoria', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Revisión de documentos familiares adicionales (testamentos, cartas, etc)', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                        ],
+                        "ctas" => [],
                         "subfases" => [],
                     ],
+
                     [
                         "paso" => 16,
                         "nombre_largo" =>
-                        "¡Hemos cargado tu informe con éxito!",
-                        "nombre_corto" => "Informe cargado",
+                        "¡Tu informe genealógico fue anexado al expediente!",
+                        "nombre_corto" => "Informe genealógico anexado a expediente",
                         "promesa" =>
-                        "Nuestros expertos en Derecho Genealogista de Sefar Universal han colgado en la plataforma de la FCJE tu informe y cada una de las pruebas de cada una de las generaciones, debidamente adaptadas al formato exigido por la institución, transcritas y subrayadas. Estamos listos para comenzar con la defensa de tu genealogía",
+                        "",
                         "textos_adicionales" => [],
-                        "ctas" => [
-                            ['text' => 'Visados y residencias', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Asesoría para permisos por arraigo, estudio o inversión', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Monitoreo de bases genealógicas para activación futura', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Expediente de respaldo para segunda vía', 'url' => 'http://sefaruniversal.com/nacionalidades'],
-                            ['text' => 'Consulta estratégica con nuestro director legal', 'url' => 'https://sefaruniversal.com/asistencia-legal/'],
-                            ['text' => 'Nacionalidad Portuguesa por origen sefardí', 'url' => 'https://sefaruniversal.com/landing-registro-nacionalidad-portuguesa-sefardi/'],
-                            ['text' => 'Seguimiento personalizado semanal, reunión semanal con un abogado genealogista para hacer seguimiento al proceso', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Consulta migratoria con abogado genealogista para Europa', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-
-                            ['text' => 'Formaliza tu solicitud de nacionalidad portuguesa antes que publiquen el reglamento', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Asistencia documental, te ayudamos a conseguir los documentos históricos, genealógicos o jurídicos que necesites para ti o para tu familia', 'url' => 'https://sefaruniversal.com/asistencia-documental-registro-gratuito/'],
-                            ['text' => 'Traducción oficial a y de idiomas inglés, portugués, italiano, español', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Apostilla internacional', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Envío físico de documentación probatoria', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Revisión de documentos familiares adicionales (testamentos, cartas, etc)', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                        ],
-                        "subfases" => [],
-                    ],
-                    [
-                        "paso" => 17,
-                        "nombre_largo" =>
-                        "¡Comenzamos a defender tu genealogía!",
-                        "nombre_corto" => "Defensa de Genealogía",
-                        "promesa" =>
-                        "Hemos activado la búsqueda de documentos adicionales que la FCJE ha solicitado en ocasiones anteriores, tales como partidas, testamentos, actas de matrimonio o defunción, certificados de limpieza de sangre o de propiedad. Estos documentos son esenciales para reforzar las pruebas ya presentadas en tu expediente.<br><br>Aun cuando se hayan acreditado correctamente todas las generaciones, la FCJE, en muchos casos, opta por no valorar adecuadamente las pruebas aportadas. Aunque legalmente no pueden desestimar pruebas válidas sin fundamento, nuestro equipo de investigación actúa estratégicamente y responde mediante nuevas indagaciones que permitan subsanar esta situación.<br><br>En caso de que la investigación requiera desplazamientos para realizar revisiones in situ de archivos físicos o manuscritos históricos, el costo adicional deberá ser asumido por el cliente. No obstante, nuestro equipo está preparado y comprometido a continuar con la labor investigativa hasta completar satisfactoriamente el proceso.<br><br>Adicionalmente, si lo deseas, también ofrecemos la posibilidad de judicializar el caso. En ese escenario, se exigirá legalmente a la FCJE que cumpla con su obligación de emitir una respuesta formal y realizar una valoración efectiva y transparente de cada prueba presentada.",
-                        "textos_adicionales" => [],
-                        "ctas" => [
-                            ['text' => 'Judicaliza tu defensa. Tienes derecho a recibir una respuesta por parte de la FCJE de cada prueba aportada. En caso que sea necesario te podemos ayudar a forzar a la FCJE a pronunciarse', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Asistencia documental. En caso que sea factible y más fácil encontrar un documento requerido específico, activa tu servicio de asistencia documental', 'url' => 'https://sefaruniversal.com/asistencia-documental-registro-gratuito/'],
-                            ['text' => 'Visados y residencias', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Asesoría para permisos por arraigo, estudio o inversión', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Monitoreo de bases genealógicas para activación futura', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Expediente de respaldo para segunda vía', 'url' => 'http://sefaruniversal.com/nacionalidades'],
-                            ['text' => 'Consulta estratégica con nuestro director legal', 'url' => 'https://sefaruniversal.com/asistencia-legal/'],
-                            ['text' => 'Nacionalidad Portuguesa por origen sefardí', 'url' => 'https://sefaruniversal.com/landing-registro-nacionalidad-portuguesa-sefardi/'],
-                            ['text' => 'Seguimiento personalizado semanal, reunión semanal con un abogado genealogista para hacer seguimiento al proceso', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Consulta migratoria con abogado genealogista para Europa', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-
-                            ['text' => 'Formaliza tu solicitud de nacionalidad portuguesa antes que publiquen el reglamento', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Asistencia documental, te ayudamos a conseguir los documentos históricos, genealógicos o jurídicos que necesites para ti o para tu familia', 'url' => 'https://sefaruniversal.com/asistencia-documental-registro-gratuito/'],
-                            ['text' => 'Traducción oficial a y de idiomas inglés, portugués, italiano, español', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Apostilla internacional', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Envío físico de documentación probatoria', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                            ['text' => 'Revisión de documentos familiares adicionales (testamentos, cartas, etc)', 'url' => 'https://sefaruniversal.com/bancaonline/'],
-                        ],
-                        "subfases" => [],
-                    ],
-                    [
-                        "paso" => 18,
-                        "nombre_largo" =>
-                        "Aprobación del certificado de la FCJE – ¡Tu origen sefardí ha sido reconocido!",
-                        "nombre_corto" => "Certificado Aprobado",
-                        "promesa" =>
-                        "¡Felicidades! La <b>Federación de Comunidades Judías de España (FCJE)</b> ha aprobado favorablemente tu solicitud y ha emitido el <b>certificado oficial que acredita tu origen sefardí.</b><br><br>Este documento es <b>exclusivo, confidencial y reservado para uso institucional</b>, y será gestionado directamente por nuestro equipo legal para su incorporación inmediata al expediente de nacionalidad.<br><br>Este paso marca un <b>hito crucial</b> en tu proceso. El reconocimiento de la FCJE es una validación de alto nivel que nos permite avanzar con paso firme hacia la presentación jurídica ante el Estado español.",
-                        "textos_adicionales" => [
-                            [
-                                "nombre" => "¿Qué implica este avance?",
-                                "texto" =>
-                                '<ul><li><span class="highlight">Conexión reconocida:</span> Tu vinculación con la comunidad sefardí ha sido oficialmente validada.</li><li><span class="highlight">Certificado en custodia:</span> Nuestro equipo jurídico ya tiene el documento, listo para incorporarse a tu expediente.</li><li><span class="highlight">Hito alcanzado:</span> Has completado una fase clave del proceso, con el respaldo de nuestra experiencia especializada.</li></ul>',
-                            ],
-                            [
-                                "nombre" => "¿Que sigue?",
-                                "texto" =>
-                                "Con este aval en nuestras manos, iniciaremos la <b>formalización legal del expediente.</b>Este procedimiento incluye la compilación, validación y presentación de toda la documentación ante las autoridades competentes.<br><br>Para ello, es necesario realizar el pago correspondiente al avance jurídico, lo cual habilitará a nuestro equipo para avanzar sin interrupciones.",
-                            ],
-                            [
-                                "nombre" => "Incluye",
-                                "texto" =>
-                                '<ul><li><span class="highlight">Custodia legal:</span> Gestión profesional del certificado FCJE por nuestro equipo jurídico</li><li><span class="highlight">Integración documental:</span> Incorporación del certificado a tu expediente jurídico completo</li><li><span class="highlight">Planificación estratégica:</span> Coordinación de tiempos y estrategia legal para presentación oficial</li><li><span class="highlight">Seguimiento personalizado:</span> Acceso exclusivo al área privada para monitorear tu expediente</li></ul>',
-                            ],
-                        ],
                         "ctas" => [],
                         "subfases" => [],
                     ],
