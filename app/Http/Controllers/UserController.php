@@ -2458,6 +2458,12 @@ class UserController extends Controller
     // Procesar y eliminar duplicados
     $cosuserFinal = $this->removeDuplicatesAndSort($cosuser);
 
+    $cosuser = array_filter($cosuserFinal, function ($proceso) use ($cos) {
+                    return array_key_exists($proceso['servicio'], $cos);
+                });
+
+    $cosuserFinal = $cosuser;
+
     // Guardar en usuario
     $user->arraycos = array_values($cosuserFinal);
     $user->arraycos_expire = Carbon::now()->addDays(2);

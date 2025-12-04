@@ -221,7 +221,6 @@
                 <!-- Primer Formulario -->
 
                 <div class="tab-pane fade show active" id="mystatus" role="tabpanel" aria-labelledby="mystatus-tab">
-
                     @if(sizeof($cosuser)>0)
                         @foreach ($cosuser as $index => $proceso)
                             @if(array_key_exists($proceso['servicio'], $cos))
