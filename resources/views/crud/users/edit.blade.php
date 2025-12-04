@@ -221,74 +221,76 @@
                 <!-- Primer Formulario -->
 
                 <div class="tab-pane fade show active" id="mystatus" role="tabpanel" aria-labelledby="mystatus-tab">
-                    @forelse ($cosuser as $index => $proceso)
-                        @if(array_key_exists($proceso['servicio'], $cos))
-                            <div class="card mb-4 shadow-sm">
-                                {{-- Header con título y estatus --}}
-                                <div class="card-header text-center bg-white">
-                                    <h1 class="card-title mt-4 mb-2" style="font-size:1.8rem;">
-                                        Proceso: {!! $proceso['servicio'] !!}
-                                    </h1>
 
-                                    <p class="pb-4" style="font-size:1.4rem;">
-                                        Estatus actual: <b>{{ $proceso['currentStepName'] ?? 'No iniciado' }}</b>
-                                    </p>
+                    @if(sizeof($cosuser)>0)
+                        @foreach ($cosuser as $index => $proceso)
+                            @if(array_key_exists($proceso['servicio'], $cos))
+                                <div class="card mb-4 shadow-sm">
+                                    {{-- Header con título y estatus --}}
+                                    <div class="card-header text-center bg-white">
+                                        <h1 class="card-title mt-4 mb-2" style="font-size:1.8rem;">
+                                            Proceso: {!! $proceso['servicio'] !!}
+                                        </h1>
 
-                                    @if(isset($proceso['warning']))
-                                        <div class="alert alert-warning fade show py-2 d-flex justify-content-center align-items-center gap-2" role="alert">
-                                            <i class="fas fa-exclamation-triangle" style="font-size: 20px"></i>
-                                            <div style="font-size:1rem;">{!! $proceso['warning'] !!}</div>
+                                        <p class="pb-4" style="font-size:1.4rem;">
+                                            Estatus actual: <b>{{ $proceso['currentStepName'] ?? 'No iniciado' }}</b>
+                                        </p>
+
+                                        @if(isset($proceso['warning']))
+                                            <div class="alert alert-warning fade show py-2 d-flex justify-content-center align-items-center gap-2" role="alert">
+                                                <i class="fas fa-exclamation-triangle" style="font-size: 20px"></i>
+                                                <div style="font-size:1rem;">{!! $proceso['warning'] !!}</div>
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    {{-- Barras de progreso --}}
+                                    <div class="card-body text-center" style="background: rgba(0,0,0,0.05);">
+                                        @include('crud.users.partials.progress-bars', [
+                                            'proceso' => $proceso,
+                                            'cos' => $cos,
+                                            'index' => $index
+                                        ])
+                                    </div>
+
+                                    {{-- Detalle del estatus --}}
+                                    @if(isset($proceso['currentStepDetails']))
+                                        <div class="py-2 px-2">
+                                            <div class="card-header text-center bg-white">
+                                                <h4 class="mb-4 mt-4" style="font-size:1.4rem;"><b>Detalle de tu estatus</b></h4>
+                                                <p class="pb-4">{!! $proceso['currentStepDetails']['promesa'] ?? '' !!}</p>
+                                            </div>
                                         </div>
                                     @endif
+
+                                    {{-- Carrusel de imágenes --}}
+                                    @if(isset($imageUrls) && count($imageUrls) > 0)
+                                        @include('crud.users.partials.image-carousel', [
+                                            'imageUrls' => $imageUrls,
+                                            'carouselId' => "carousel-{$index}"
+                                        ])
+                                    @endif
+
+                                    {{-- Información adicional (Acordeón) --}}
+                                    @if(isset($proceso['currentStepDetails']['textos_adicionales']) && count($proceso['currentStepDetails']['textos_adicionales']) > 0)
+                                        @include('crud.users.partials.additional-info', [
+                                            'textos' => $proceso['currentStepDetails']['textos_adicionales'],
+                                            'accordionId' => "accordion-{$index}"
+                                        ])
+                                    @endif
+
+                                    {{-- CTAs --}}
+                                    @if(isset($proceso['currentStepDetails']['ctas']) && count($proceso['currentStepDetails']['ctas']) > 0)
+                                        @include('crud.users.partials.ctas', [
+                                            'ctas' => $proceso['currentStepDetails']['ctas']
+                                        ])
+                                    @endif
                                 </div>
-
-                                {{-- Barras de progreso --}}
-                                <div class="card-body text-center" style="background: rgba(0,0,0,0.05);">
-                                    @include('crud.users.partials.progress-bars', [
-                                        'proceso' => $proceso,
-                                        'cos' => $cos,
-                                        'index' => $index
-                                    ])
-                                </div>
-
-                                {{-- Detalle del estatus --}}
-                                @if(isset($proceso['currentStepDetails']))
-                                    <div class="py-2 px-2">
-                                        <div class="card-header text-center bg-white">
-                                            <h4 class="mb-4 mt-4" style="font-size:1.4rem;"><b>Detalle de tu estatus</b></h4>
-                                            <p class="pb-4">{!! $proceso['currentStepDetails']['promesa'] ?? '' !!}</p>
-                                        </div>
-                                    </div>
-                                @endif
-
-                                {{-- Carrusel de imágenes --}}
-                                @if(isset($imageUrls) && count($imageUrls) > 0)
-                                    @include('crud.users.partials.image-carousel', [
-                                        'imageUrls' => $imageUrls,
-                                        'carouselId' => "carousel-{$index}"
-                                    ])
-                                @endif
-
-                                {{-- Información adicional (Acordeón) --}}
-                                @if(isset($proceso['currentStepDetails']['textos_adicionales']) && count($proceso['currentStepDetails']['textos_adicionales']) > 0)
-                                    @include('crud.users.partials.additional-info', [
-                                        'textos' => $proceso['currentStepDetails']['textos_adicionales'],
-                                        'accordionId' => "accordion-{$index}"
-                                    ])
-                                @endif
-
-                                {{-- CTAs --}}
-                                @if(isset($proceso['currentStepDetails']['ctas']) && count($proceso['currentStepDetails']['ctas']) > 0)
-                                    @include('crud.users.partials.ctas', [
-                                        'ctas' => $proceso['currentStepDetails']['ctas']
-                                    ])
-                                @endif
-                            </div>
-                        @endif
-                    @empty
-                        {{-- Mensaje cuando no hay procesos disponibles --}}
+                            @endif
+                        @endforeach
+                    @else
                         @include('crud.users.partials.no-status-available')
-                    @endforelse
+                    @endif
                 </div>
 
                 @push('scripts')
