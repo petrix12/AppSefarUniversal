@@ -713,14 +713,14 @@ class CosService
 
     private function getServiceName(): string
     {
-        return $this->negocio->servicio_solicitado
-            ?? $this->negocio->servicio_solicitado2
+        return $this->negocio->servicio_solicitado2
+            ?? $this->negocio->servicio_solicitado
             ?? 'Española Sefardi';
     }
 
     private function getServicioDisplay(): string
     {
-        return $this->negocio->servicio_solicitado ?? $this->negocio->servicio_solicitado2 ?? '';
+        return $this->negocio->servicio_solicitado2 ?? $this->negocio->servicio_solicitado ?? '';
     }
 
     private function calculateTotalSteps(): void
