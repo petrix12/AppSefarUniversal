@@ -2157,20 +2157,20 @@ if (!function_exists("array_cos")) {
                     [
                         "paso" => 24,
                         "nombre_largo" =>
-                        "Impulsa tu expediente: Solicita resolución expresa",
-                        "nombre_corto" => "Resolución Expresa",
+                        "Impulsa tu expediente: Solicita recurso de urgencia",
+                        "nombre_corto" => "Recurso de Urgencia",
                         "promesa" =>
                         'Han pasado más de seis meses desde que nuestro equipo especializado en Derecho Genealogista formalizó tu solicitud para conseguir tu nacionalidad portuguesa. <b>Es momento de actuar.</b>',
                         "textos_adicionales" => [
                             [
                                 "nombre" =>
-                                "¿Qué beneficios tiene contratar una resolución expresa de tu solicitud?",
+                                "¿Qué beneficios tiene contratar una recurso de urgencia de tu solicitud?",
                                 "texto" =>
                                 "<ul><li><b>A. Acelera el procedimiento</b><br>Al ejercer presión legal, se recuerda a la administración que está obligada a resolver en plazo. Esto puede acelerar el dictado de una resolución, especialmente si el expediente está estancado por inercia administrativa.</li><li><b>B. Genera constancia documental</b><br>Al presentar este escrito, dejas constancia formal de tu solicitud y del incumplimiento de plazos por parte de la administración, lo cual es muy valioso si luego se necesita:<br><ul><li>Interponer un recurso de alzada o contencioso-administrativo.</li><li>Solicitar responsabilidad patrimonial por dilaciones indebidas.</li><li>Invocar el silencio administrativo.</li></ul></li><li><b>C. Refuerza tu posición legal y psicológica</b><br>Este movimiento muestra iniciativa y conocimiento, proyectando una imagen de firmeza y control frente a la administración. Es una técnica que activa la atención del funcionario responsable, quien sabe que podrías escalar la situación.</li><li><b>D. Prepara el terreno para el silencio administrativo</b><br>Si la administración no responde en el plazo legal tras tu requerimiento, puedes hacer valer el silencio positivo o negativo, según el caso. Tu solicitud es una especie de “ancla“ que fija fechas y legitima tus siguientes pasos jurídicos.</li><li><b>E. Mejora la defensa futura</b><br>En caso de acudir a los tribunales, este requerimiento demuestra agotamiento de la vía administrativa y deja claro que diste oportunidad para que la administración cumpliera con su deber.</li></ul>",
                             ],
                         ],
                         "ctas" => [
-                            ['text' => 'Solicita Resolución Expresa de tu nacionalidad', 'url' => 'https://sefaruniversal.com/bancaonline/'],
+                            ['text' => 'Solicita recurso de urgencia de tu nacionalidad', 'url' => 'https://sefaruniversal.com/bancaonline/'],
                             ['text' => 'Subsanación de tu expediente en vía administrativa', 'url' => 'https://sefaruniversal.com/bancaonline/'],
                             ['text' => 'Mejora de tu expediente', 'url' => 'https://sefaruniversal.com/bancaonline/'],
                             ['text' => 'Asistencia documental en caso que sea más fácil encontrar un documento requerido, ¡activalo ahora!', 'url' => 'https://sefaruniversal.com/asistencia-documental-registro-gratuito/'],
