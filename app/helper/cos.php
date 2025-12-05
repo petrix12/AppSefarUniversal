@@ -2194,6 +2194,44 @@ if (!function_exists("array_cos")) {
                     ],
                     [
                         "paso" => 25,
+                        "nombre_largo" =>
+                        "Impulsa tu expediente: Solicita Recurso Jerárquico",
+                        "nombre_corto" => "Recurso Jerárquico",
+                        "promesa" =>
+                        'Han pasado más de seis meses desde que nuestro equipo especializado en Derecho Genealogista formalizó tu solicitud para conseguir tu nacionalidad portuguesa. <b>Es momento de actuar.</b>',
+                        "textos_adicionales" => [
+                            [
+                                "nombre" =>
+                                "¿Qué beneficios tiene contratar una Recurso Jerárquico de tu solicitud?",
+                                "texto" =>
+                                "<ul><li><b>A. Acelera el procedimiento</b><br>Al ejercer presión legal, se recuerda a la administración que está obligada a resolver en plazo. Esto puede acelerar el dictado de una resolución, especialmente si el expediente está estancado por inercia administrativa.</li><li><b>B. Genera constancia documental</b><br>Al presentar este escrito, dejas constancia formal de tu solicitud y del incumplimiento de plazos por parte de la administración, lo cual es muy valioso si luego se necesita:<br><ul><li>Interponer un recurso de alzada o contencioso-administrativo.</li><li>Solicitar responsabilidad patrimonial por dilaciones indebidas.</li><li>Invocar el silencio administrativo.</li></ul></li><li><b>C. Refuerza tu posición legal y psicológica</b><br>Este movimiento muestra iniciativa y conocimiento, proyectando una imagen de firmeza y control frente a la administración. Es una técnica que activa la atención del funcionario responsable, quien sabe que podrías escalar la situación.</li><li><b>D. Prepara el terreno para el silencio administrativo</b><br>Si la administración no responde en el plazo legal tras tu requerimiento, puedes hacer valer el silencio positivo o negativo, según el caso. Tu solicitud es una especie de “ancla“ que fija fechas y legitima tus siguientes pasos jurídicos.</li><li><b>E. Mejora la defensa futura</b><br>En caso de acudir a los tribunales, este requerimiento demuestra agotamiento de la vía administrativa y deja claro que diste oportunidad para que la administración cumpliera con su deber.</li></ul>",
+                            ],
+                        ],
+                        "ctas" => [
+                            ['text' => 'Solicita Recurso Jerárquico de tu nacionalidad', 'url' => 'https://sefaruniversal.com/bancaonline/'],
+                            ['text' => 'Subsanación de tu expediente en vía administrativa', 'url' => 'https://sefaruniversal.com/bancaonline/'],
+                            ['text' => 'Mejora de tu expediente', 'url' => 'https://sefaruniversal.com/bancaonline/'],
+                            ['text' => 'Asistencia documental en caso que sea más fácil encontrar un documento requerido, ¡activalo ahora!', 'url' => 'https://sefaruniversal.com/asistencia-documental-registro-gratuito/'],
+                            ['text' => 'Visados y residencias', 'url' => 'https://sefaruniversal.com/bancaonline/'],
+                            ['text' => 'Asesoría para permisos por arraigo, estudio o inversión', 'url' => 'https://sefaruniversal.com/bancaonline/'],
+                            ['text' => 'Monitoreo de bases genealógicas para activación futura', 'url' => 'https://sefaruniversal.com/bancaonline/'],
+                            ['text' => 'Expediente de respaldo para segunda vía', 'url' => 'https://sefaruniversal.com/bancaonline/'],
+                            ['text' => 'Consulta estratégica con nuestro director legal', 'url' => 'https://sefaruniversal.com/asistencia-legal/'],
+                            ['text' => 'Nacionalidad Española por origen sefardí', 'url' => 'https://sefaruniversal.com/landing-registro-nacionalidad-espanola-sefardi/'],
+                            ['text' => 'Seguimiento personalizado semanal, reunión semanal con un abogado genealogista para hacer seguimiento al proceso', 'url' => 'https://sefaruniversal.com/bancaonline/'],
+                            ['text' => 'Consulta migratoria con abogado genealogista para Europa', 'url' => 'https://sefaruniversal.com/bancaonline/'],
+
+                            ['text' => 'Formaliza tu solicitud de nacionalidad portuguesa antes que publiquen el reglamento', 'url' => 'https://sefaruniversal.com/bancaonline/'],
+                            ['text' => 'Asistencia documental, te ayudamos a conseguir los documentos históricos, genealógicos o jurídicos que necesites para ti o para tu familia', 'url' => 'https://sefaruniversal.com/asistencia-documental-registro-gratuito/'],
+                            ['text' => 'Traducción oficial a y de idiomas inglés, portugués, italiano, español', 'url' => 'https://sefaruniversal.com/bancaonline/'],
+                            ['text' => 'Apostilla internacional', 'url' => 'https://sefaruniversal.com/bancaonline/'],
+                            ['text' => 'Envío físico de documentación probatoria', 'url' => 'https://sefaruniversal.com/bancaonline/'],
+                            ['text' => 'Revisión de documentos familiares adicionales (testamentos, cartas, etc.)', 'url' => 'https://sefaruniversal.com/bancaonline/'],
+                        ],
+                        "subfases" => [],
+                    ],
+                    [
+                        "paso" => 26,
                         "nombre_largo" => "Recurso jerarquico",
                         "nombre_corto" => "Recurso jerarquico",
                         "promesa" =>
@@ -2246,7 +2284,7 @@ if (!function_exists("array_cos")) {
                         "subfases" => [],
                     ],
                     [
-                        "paso" => 26,
+                        "paso" => 27,
                         "nombre_largo" => "Via Judicial",
                         "nombre_corto" => "Via Judicial",
                         "promesa" =>
@@ -2281,7 +2319,7 @@ if (!function_exists("array_cos")) {
                         "subfases" => [],
                     ],
                     [
-                        "paso" => 27,
+                        "paso" => 28,
                         "nombre_largo" => "¡Nacionalidad concedida!",
                         "nombre_corto" => "¡Nacionalidad concedida!",
                         "promesa" =>
