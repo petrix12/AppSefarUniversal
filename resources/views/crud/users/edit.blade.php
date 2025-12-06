@@ -171,6 +171,15 @@
                     width: 0; /* Se sobrescribe con el style inline */
                 }
 
+                .progress-line-warning {
+                    background-color: #FFB84D !important; /* Naranja/Amarillo que combina con warning */
+                    /* Alternativas:
+                    #FFA500 - Naranja más vivo
+                    #FFB84D - Amarillo dorado
+                    #FF9800 - Material Orange
+                    */
+                }
+
                 /* Pasos individuales */
                 .progress-step {
                     width: 50px;

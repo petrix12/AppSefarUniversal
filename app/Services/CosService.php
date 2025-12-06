@@ -96,7 +96,7 @@ class CosService
                 'warning' => null,
             ],
 
-            // PASO 6: RECURSO DE ALZADA
+            // 🔄 PASO 6: RECURSO DE ALZADA (+12 MESES) - EVALUAR PRIMERO
             [
                 'name' => 'Recurso de Alzada Elegible',
                 'condition' => fn() => $this->isRecursoAlzadaElegible($hoy),
@@ -105,7 +105,7 @@ class CosService
                 'warning' => fn() => $this->getRecursoAlzadaWarning(),
             ],
 
-            // PASO 5: RESOLUCIÓN EXPRESA
+            // 🔄 PASO 5: RESOLUCIÓN EXPRESA (+6 MESES) - EVALUAR SEGUNDO
             [
                 'name' => 'Resolución Expresa Elegible',
                 'condition' => fn() => $this->isResolucionExpresaElegible($hoy),
@@ -114,7 +114,7 @@ class CosService
                 'warning' => fn() => $this->getResolucionExpresaWarning(),
             ],
 
-            // PASO 4: SUBSANACIÓN
+            // 🔄 PASO 4: SUBSANACIÓN (+1 MES) - EVALUAR ÚLTIMO
             [
                 'name' => 'Subsanación Elegible',
                 'condition' => fn() => $this->isSubsanacionElegible($hoy),
@@ -417,53 +417,77 @@ class CosService
     private function getCurrentStepDetails(int $gen, int $jur, int $cert): ?array
     {
         // Si ambos son -1, no ha iniciado
-        if ($gen === -1 && $jur === -1) {
+        if ($gen == -1 && $jur == -1) {
             return null;
         }
-
-        // Calcular número de paso total
-        $numeroPaso = 0;
-
-        if ($gen !== -1) {
-            $numeroPaso += $gen;
-        }
-
-        if ($jur !== -1) {
-            $numeroPaso += $jur;
-        }
-
-        $numeroPaso += 1 + $cert;
 
         // Verificar que existe el servicio en array_cos
         if (!isset($this->cos[$this->serviceName])) {
             Log::warning("COS: Servicio no encontrado en array_cos", [
-                'servicio' => $this->serviceName,
-                'negocio_id' => $this->negocio->hubspot_id ?? 'unknown'
+                'servicio' => $this->serviceName
             ]);
             return null;
         }
 
-        // Buscar el paso en las ramas (genealogico y juridico)
-        foreach ($this->cos[$this->serviceName] as $ramaKey => $rama) {
-            foreach ($rama as $paso) {
-                if ($paso['paso'] === $numeroPaso) {
-                    Log::info("COS: Paso encontrado en array_cos", [
-                        'paso_numero' => $numeroPaso,
-                        'paso_nombre' => $paso['nombre_corto'],
-                        'rama' => $ramaKey
-                    ]);
-                    return $paso;
+        // ========== PRIORIDAD ABSOLUTA: SI ESTÁ EN JURÍDICA, BUSCAR AHÍ ==========
+        if ($jur >= 0) {
+            $pasoJuridicoBuscado = $jur + 1; // Los pasos son base 1
+
+            Log::info("COS: Cliente en fase jurídica, buscando paso", [
+                'paso_buscado' => $pasoJuridicoBuscado,
+                'jur_index' => $jur,
+                'servicio' => $this->serviceName
+            ]);
+
+            // Buscar en rama jurídica
+            if (isset($this->cos[$this->serviceName]['juridico'])) {
+                foreach ($this->cos[$this->serviceName]['juridico'] as $paso) {
+                    //dd($pasoJuridicoBuscado, $paso['paso'], $jur, $this->serviceName);
+                    if ($paso['paso'] == $pasoJuridicoBuscado) {
+                        Log::info("COS: ✅ Paso jurídico encontrado", [
+                            'paso_numero' => $pasoJuridicoBuscado,
+                            'paso_nombre' => $paso['nombre_corto']
+                        ]);
+                        return $paso; // ← RETORNAR INMEDIATAMENTE
+                    }
                 }
             }
+
+            Log::error("COS: ❌ CRÍTICO - Paso jurídico no encontrado", [
+                'paso_buscado' => $pasoJuridicoBuscado,
+                'jur' => $jur,
+                'servicio' => $this->serviceName,
+                'pasos_disponibles' => array_column($this->cos[$this->serviceName]['juridico'] ?? [], 'paso')
+            ]);
         }
 
-        Log::warning("COS: Paso no encontrado en array_cos", [
-            'paso_numero' => $numeroPaso,
-            'servicio' => $this->serviceName,
-            'gen' => $gen,
-            'jur' => $jur,
-            'cert' => $cert
-        ]);
+        // ========== SOLO SI NO ESTÁ EN JURÍDICA, BUSCAR EN GENEALÓGICA ==========
+        if ($gen >= 0 && $jur == -1) { // ← CAMBIO: SOLO SI jur === -1
+            $pasoGenealogicoBuscado = $gen + 1;
+
+            Log::info("COS: Cliente en fase genealógica, buscando paso", [
+                'paso_buscado' => $pasoGenealogicoBuscado,
+                'gen_index' => $gen,
+                'servicio' => $this->serviceName
+            ]);
+
+            if (isset($this->cos[$this->serviceName]['genealogico'])) {
+                foreach ($this->cos[$this->serviceName]['genealogico'] as $paso) {
+                    if ($paso['paso'] == $pasoGenealogicoBuscado) {
+                        Log::info("COS: ✅ Paso genealógico encontrado", [
+                            'paso_numero' => $pasoGenealogicoBuscado,
+                            'paso_nombre' => $paso['nombre_corto']
+                        ]);
+                        return $paso;
+                    }
+                }
+            }
+
+            Log::warning("COS: ❌ Paso genealógico no encontrado", [
+                'paso_buscado' => $pasoGenealogicoBuscado,
+                'pasos_disponibles' => array_column($this->cos[$this->serviceName]['genealogico'] ?? [], 'paso')
+            ]);
+        }
 
         return null;
     }
@@ -487,33 +511,17 @@ class CosService
 
     private function isRecursoAlzadaElegible($hoy): bool
     {
-        if (!isset($this->negocio->n13__fecha_recurso_alzada)) {
-            return false;
+        // Si ya tiene Recurso de Alzada en progreso (dentro de 3 meses)
+        if (isset($this->negocio->n13__fecha_recurso_alzada)) {
+            $fechaRecurso = Carbon::parse($this->negocio->n13__fecha_recurso_alzada);
+            $fechaLimite = $fechaRecurso->copy()->addMonths(3);
+
+            if ($fechaLimite->greaterThan($hoy)) {
+                return true; // Ya está en proceso de Recurso
+            }
         }
 
-        $fechaRecurso = Carbon::parse($this->negocio->n13__fecha_recurso_alzada);
-        $fechaLimite = $fechaRecurso->copy()->addMonths(3);
-
-        return $fechaLimite->greaterThan($hoy);
-    }
-
-    private function getRecursoAlzadaWarning(): ?string
-    {
-        $tieneViajudicial = $this->verificarNegocioActivo(
-            $this->negocios,
-            'Demanda Judicial',
-            ['Demanda', 'Judicial']
-        );
-
-        if ($tieneViajudicial || isset($this->negocio->fecha_solicitud_viajudicial)) {
-            return null;
-        }
-
-        return "<b>¡Puedes solicitar la vía judicial!</b>";
-    }
-
-    private function isResolucionExpresaElegible($hoy): bool
-    {
+        // Si pasaron +12 meses desde formalización → Elegible para Recurso
         $fechaFormalizacion = $this->getFechaFormalizacion();
         if (!$fechaFormalizacion) {
             return false;
@@ -523,8 +531,9 @@ class CosService
         return $hoy->greaterThan($fechaLimite);
     }
 
-    private function getResolucionExpresaWarning(): ?string
+    private function getRecursoAlzadaWarning(): ?string
     {
+        // Si ya tiene Recurso de Alzada solicitado, no mostrar warning
         $tieneRecursoAlzada = $this->verificarNegocioActivo(
             $this->negocios,
             'Recurso de Alzada',
@@ -535,21 +544,32 @@ class CosService
             return null;
         }
 
+        // Si tiene Vía Judicial, no mostrar warning de Recurso
+        $tieneViajudicial = $this->verificarNegocioActivo(
+            $this->negocios,
+            'Demanda Judicial',
+            ['Demanda', 'Judicial']
+        );
+
+        if ($tieneViajudicial || isset($this->negocio->fecha_solicitud_viajudicial)) {
+            return null;
+        }
+
         return '<b>¡Solicita tu Recurso de Alzada!</b><a style="border:0!important;" href="https://sefaruniversal.com/landing-email-de-recurso-de-alzada/" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita el Recurso de Alzada</a>';
     }
 
-    private function isSubsanacionElegible($hoy): bool
+    private function isResolucionExpresaElegible($hoy): bool
     {
         $fechaFormalizacion = $this->getFechaFormalizacion();
         if (!$fechaFormalizacion) {
             return false;
         }
 
-        $fechaLimite = $fechaFormalizacion->copy()->addMonths(6);
+        $fechaLimite = $fechaFormalizacion->copy()->addMonths(6); // ← CAMBIO: era 12
         return $hoy->greaterThan($fechaLimite);
     }
 
-    private function getSubsanacionWarning(): ?string
+    private function getResolucionExpresaWarning(): ?string
     {
         $tieneResolucionExpresa = $this->verificarNegocioActivo(
             $this->negocios,
@@ -562,6 +582,32 @@ class CosService
         }
 
         return '<b>¡Solicita tu resolución expresa!</b><a href="https://sefaruniversal.com/resolucion-expresa/" style="border:0!important;" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita tu Resolución Expresa</a>';
+    }
+
+    private function isSubsanacionElegible($hoy): bool
+    {
+        $fechaFormalizacion = $this->getFechaFormalizacion();
+        if (!$fechaFormalizacion) {
+            return false;
+        }
+
+        $fechaLimite = $fechaFormalizacion->copy()->addMonths(1); // ← CAMBIO: era 6
+        return $hoy->greaterThan($fechaLimite);
+    }
+
+    private function getSubsanacionWarning(): ?string
+    {
+        $tieneSubsanacion = $this->verificarNegocioActivo(
+            $this->negocios,
+            'Subsanación de Expediente',
+            ['Subsanación']
+        );
+
+        if ($tieneSubsanacion) {
+            return null;
+        }
+
+        return '<b>¡Consulta si requieres subsanación o mejora de expediente!</b><a style="border:0!important;" href="https://sefaruniversal.com/landing-registro-subsanacion-de-la-nacionalidad-espanola-sefardi/" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">¡Consulta ahora!</a>';
     }
 
     private function isFormalizado(): bool
@@ -639,7 +685,46 @@ class CosService
 
     private function calculateCertificadoStatus(): int
     {
+        // Carta de Naturaleza: sin certificado en genealógica
+        if ($this->isCartaNaturaleza()) {
+            // Si ya empezó jurídica pero NO tiene n7__enviado_al_dto_juridico
+            if ($this->isJuridicoProcess() && !isset($this->negocio->n7__enviado_al_dto_juridico)) {
+                return 1; // Restar 1 a genealógica
+            }
+            return 0;
+        }
+
+        // Portuguesa Sefardí: certificado descargado O CIL pre-aprobado
+        if ($this->isPortuguesaSefardi()) {
+            // Si tiene certificado descargado o CIL pre-aprobado, paso completo (0)
+            if (isset($this->negocio->n4__certificado_descargado) || isset($this->negocio->n6__cil_preaprobado)) {
+                return 0;
+            }
+            // Si tiene fase jurídica pero ninguno de los dos, restar 1
+            if ($this->isJuridicoProcess()) {
+                return 1;
+            }
+            return 1; // Por defecto, no descargado
+        }
+
+        // Española Sefardí: lógica original
         return !isset($this->negocio->n4__certificado_descargado) ? 1 : 0;
+    }
+
+    private function isCartaNaturaleza(): bool
+    {
+        return in_array($this->serviceName, [
+            'Española - Carta de Naturaleza General',
+            'Nacionalidad por Carta de Naturaleza'
+        ]);
+    }
+
+    private function isPortuguesaSefardi(): bool
+    {
+        return in_array($this->serviceName, [
+            'Portuguesa Sefardí',
+            'Portuguesa - Sefardí'
+        ]);
     }
 
     private function isJuridicoProcess(): bool
@@ -692,17 +777,37 @@ class CosService
         return $this->analizarEtiquetasYDevolverJSON($this->mondayData);
     }
 
-    private function verificarNegocioActivo($negocios, $nombreCompleto, $palabrasClave): bool
+    private function verificarNegocioActivo($negocios, $nombreCompleto, $palabrasClave = []): bool
     {
         foreach ($negocios as $negocio) {
             $servicio = $negocio->servicio_solicitado ?? '';
+            $servicio2 = $negocio->servicio_solicitado2 ?? '';
 
-            if ($servicio === $nombreCompleto) {
+            // Buscar por servicio_solicitado exacto
+            if ($servicio === $nombreCompleto || $servicio2 === $nombreCompleto) {
                 return true;
             }
 
+            // Buscar por palabras clave en servicio_solicitado
             foreach ($palabrasClave as $palabra) {
-                if (stripos($servicio, $palabra) !== false) {
+                if (stripos($servicio, $palabra) !== false || stripos($servicio2, $palabra) !== false) {
+                    return true;
+                }
+            }
+
+            // 🆕 Buscar por palabras clave en dealname
+            if (isset($negocio->dealname)) {
+                $dealnameLower = mb_strtolower($negocio->dealname);
+                $todasCoinciden = true;
+
+                foreach ($palabrasClave as $palabra) {
+                    if (stripos($dealnameLower, mb_strtolower($palabra)) === false) {
+                        $todasCoinciden = false;
+                        break;
+                    }
+                }
+
+                if ($todasCoinciden && count($palabrasClave) > 0) {
                     return true;
                 }
             }
