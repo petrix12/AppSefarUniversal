@@ -28,6 +28,7 @@ class CosService
     private $totalStepsJur;
     private $cos;
     private $serviceName;
+    private $currentStepJur = -1;
 
     /**
      * Constructor del servicio
@@ -384,6 +385,14 @@ class CosService
         ?int $subproceso = null,
         string $description = ''
     ): array {
+        // ========== GUARDAR currentStepJur EN LA CLASE ==========
+        $this->currentStepJur = $currentStepJur;
+
+        // ========== EVALUAR WARNING AUTOMÁTICO ==========
+        if (empty($warning)) {
+            $warning = $this->getWarning();
+        }
+
         $result = [
             'servicio' => $this->getServicioDisplay(),
             'warning' => $warning,
@@ -608,6 +617,92 @@ class CosService
         }
 
         return '<b>¡Consulta si requieres subsanación o mejora de expediente!</b><a style="border:0!important;" href="https://sefaruniversal.com/landing-registro-subsanacion-de-la-nacionalidad-espanola-sefardi/" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">¡Consulta ahora!</a>';
+    }
+
+    /**
+     * Obtiene el warning apropiado según servicio y paso actual
+     * Compatible con múltiples tipos de recursos administrativos
+     */
+    private function getWarning(): ?string
+    {
+        // Si no está en jurídica, no hay warning
+        if ($this->currentStepJur < 0) {
+            return null;
+        }
+
+        $currentStepNumber = $this->currentStepJur + 1;
+        $serviceName = $this->serviceName;
+
+        // ========== SERVICIOS ESPAÑOLES (TODOS USAN RECURSO DE ALZADA) ==========
+        $serviciosEspanoles = [
+            'Española Sefardi',
+            'Subsanación de Expediente',
+            'Nacionalidad por Carta de Naturaleza',
+            'Española - Carta de Naturaleza General'
+        ];
+
+        if (in_array($serviceName, $serviciosEspanoles)) {
+            // Paso 7 = Recurso de Alzada
+            if ($currentStepNumber === 7) {
+                $tieneRecurso = $this->negocios->contains(function ($negocio) {
+                    $servicio = strtolower($negocio->servicio_solicitado2 ?? '');
+                    $titulo = strtolower($negocio->titulo ?? '');
+                    $dealname = strtolower($negocio->dealname ?? '');
+
+                    return $servicio === 'recurso de alzada'
+                        || str_contains($titulo, 'alzada')
+                        || str_contains($dealname, 'alzada')
+                        || str_contains($titulo, 'recurso alzada');
+                });
+
+                if (!$tieneRecurso) {
+                    return '¡Solicita tu Recurso de Alzada!';
+                }
+            }
+        }
+
+        // ========== PORTUGUESA SEFARDÍ (TIENE 2 RECURSOS) ==========
+        if ($serviceName === 'Portuguesa Sefardi') {
+            // Paso 7 = Recurso de Urgencia
+            if ($currentStepNumber === 7) {
+                $tieneRecurso = $this->negocios->contains(function ($negocio) {
+                    $servicio = strtolower($negocio->servicio_solicitado2 ?? '');
+                    $titulo = strtolower($negocio->titulo ?? '');
+                    $dealname = strtolower($negocio->dealname ?? '');
+
+                    return $servicio === 'recurso de urgencia'
+                        || str_contains($titulo, 'urgencia')
+                        || str_contains($dealname, 'urgencia')
+                        || str_contains($titulo, 'recurso urgencia');
+                });
+
+                if (!$tieneRecurso) {
+                    return '¡Solicita tu Recurso de Urgencia!';
+                }
+            }
+
+            // Paso 8 = Recurso Jerárquico
+            if ($currentStepNumber === 8) {
+                $tieneRecurso = $this->negocios->contains(function ($negocio) {
+                    $servicio = strtolower($negocio->servicio_solicitado2 ?? '');
+                    $titulo = strtolower($negocio->titulo ?? '');
+                    $dealname = strtolower($negocio->dealname ?? '');
+
+                    return $servicio === 'recurso jerárquico'
+                        || $servicio === 'recurso jerarquico'
+                        || str_contains($titulo, 'jerárquico')
+                        || str_contains($titulo, 'jerarquico')
+                        || str_contains($dealname, 'jerarquico')
+                        || str_contains($dealname, 'jerárquico');
+                });
+
+                if (!$tieneRecurso) {
+                    return '¡Solicita tu Recurso Jerárquico!';
+                }
+            }
+        }
+
+        return null;
     }
 
     private function isFormalizado(): bool
