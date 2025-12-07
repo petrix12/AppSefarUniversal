@@ -117,7 +117,7 @@
                 <tr>
                     <td>${index + 1}</td>
                     <td>${v.user?.name || v.user?.nombres + " " + v.user?.apellidos || "Usuario desconocido"}</td>
-                    <td><a href="${v.cliente?.id}">${v.cliente?.nombres + " " + v.cliente?.apellidos || v.cliente?.name || "Cliente desconocido"}</a></td>
+                    <td><a href="/users/${v.cliente?.id}/edit">${v.cliente?.nombres + " " + v.cliente?.apellidos || v.cliente?.name || "Cliente desconocido"}</a></td>
                     <td>${new Date(v.fecha_visita).toLocaleString()}</td>
                 </tr>
             `;
