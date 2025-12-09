@@ -51,7 +51,16 @@
                 $iconoEsfera = $isActive ? ($hayWarning ? 'exclamation' : 'check-circle') : 'check-circle';
             @endphp
 
-            <div class="progress-step {{ $claseEsfera }}" data-step="{{ $step['paso'] }}">
+            <div class="progress-step {{ $claseEsfera }}"
+                data-step="{{ $step['paso'] }}"
+
+                @if($isActive)
+                    data-nombre="{{ $step['nombre_corto'] }}"
+                    data-descripcion="{{ $step['promesa'] ?? '' }}"
+                    title="Haz clic para ver resumen de esta fase"
+                    data-bs-toggle="tooltip"
+                @endif
+            >
                 <i class="fas fa-{{ $iconoEsfera }}"></i>
                 <span class="step-label">{{ $step['nombre_corto'] }}</span>
             </div>
@@ -87,7 +96,16 @@
                 $iconoEsfera = $isActive ? ($hayWarning ? 'exclamation' : 'check-circle') : 'check-circle';
             @endphp
 
-            <div class="progress-step {{ $claseEsfera }}">
+            <div class="progress-step {{ $claseEsfera }}"
+                data-step="{{ $step['paso'] }}"
+
+                @if($isActive)
+                    data-nombre="{{ $step['nombre_corto'] }}"
+                    data-descripcion="{{ $step['promesa'] ?? '' }}"
+                    title="Haz clic para ver resumen de esta fase"
+                    data-bs-toggle="tooltip"
+                @endif
+            >
                 <i class="fas fa-{{ $iconoEsfera }}"></i>
                 <span class="step-label">{{ $step['nombre_corto'] }}</span>
             </div>

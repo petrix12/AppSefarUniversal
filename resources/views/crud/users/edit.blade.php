@@ -296,6 +296,55 @@
                                 </div>
                             @endif
                         @endforeach
+
+                        <!-- Modal Resumen de Paso -->
+                        <div class="modal fade" id="modalResumenPaso" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="tituloPaso"></h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                    </div>
+
+                                    <div class="modal-body" id="descripcionPaso"></div>
+
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                            Cerrar
+                                        </button>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <script>
+                        document.addEventListener("DOMContentLoaded", function () {
+
+                            const modalEl = document.getElementById("modalResumenPaso");
+                            const modal = new bootstrap.Modal(modalEl);
+
+                            document.querySelectorAll(".progress-step.active, .progress-step.warningesfera")
+                                .forEach(step => {
+
+                                    step.addEventListener("click", function () {
+
+                                        modalEl.dataset.titulo = `${this.dataset.nombre}`;
+                                        modalEl.dataset.descripcion = this.dataset.descripcion;
+
+                                        modal.show();
+                                    });
+
+                                });
+
+                            modalEl.addEventListener("shown.bs.modal", function () {
+                                document.getElementById("tituloPaso").innerHTML = modalEl.dataset.titulo;
+                                document.getElementById("descripcionPaso").innerHTML = modalEl.dataset.descripcion;
+                            });
+
+                        });
+                        </script>
                     @else
                         @include('crud.users.partials.no-status-available')
                     @endif
