@@ -43,6 +43,18 @@ body.dark-mode .addborderbottom {
   border-bottom: 2px solid #cccccc!important;
 }
 
+body.dark-mode .users-table tbody tr:hover {
+    background-color: #081623!important;
+}
+
+body.dark-mode .badge-paid {
+    background-color: darkgreen;
+}
+
+body.dark-mode .badge-unpaid {
+    background-color: #991b1b;
+}
+
 body.dark-mode #dailygraph{
   display: none!important;
 }
