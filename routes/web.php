@@ -48,6 +48,7 @@ use App\Http\Controllers\CosVisitController;
 use App\Http\Controllers\WhatsappBotURLController;
 use App\Http\Controllers\WhatsappController;
 use App\Http\Controllers\ReportPhoneNumbersController;
+use App\Http\Controllers\CosPasoEditorController;
 
 Route::get('/registerv2', [RegisterV2Controller::class, 'index'])->name('register.v2.form');
 
@@ -57,6 +58,12 @@ Route::post('/registerv2', [RegisterV2Controller::class, 'store'])->name('regist
 Route::get('/', [Controller::class, 'index'])->name('inicio')->middleware(['auth', 'verified']);
 
 Route::get('listProjectsWithProductoField', [ClienteController::class, 'listProjectsWithProductoField'])->name('listProjectsWithProductoField');
+
+Route::prefix('admin/procesos')->middleware(['auth'])->group(function () {
+    Route::get('/', [CosPasoEditorController::class, 'index'])->name('admin.procesos.index');
+    Route::get('/{cos}', [CosPasoEditorController::class, 'show'])->name('admin.procesos.show');
+    Route::put('/pasos/{paso}', [CosPasoEditorController::class, 'updatePasoFull'])->name('admin.procesos.pasos.updateFull');
+});
 
 // Grupo de rutas CRUD
 Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
@@ -209,7 +216,7 @@ Route::get('/my_status', [UserController::class, 'my_status'])->name('my_status'
 //panel Pasaportes erroneos
 Route::get('/fixpassport', [UserController::class, 'fixpassport'])->name('fixpassport')->middleware('can:administrador');
 
-Route::get('/cosvisitas', [CosVisitController::class, 'index'])->name('cosvisitas')->middleware('can:cosvisitas.index');
+Route::get('/cosvisitas', [CosVisitController::class, 'listado'])->name('cosvisitas')->middleware('can:cosvisitas.index');
 
 //panel Pasaportes erroneos
 Route::post('/fixpassport', [UserController::class, 'fixpassportprocess'])->name('fixpassportprocess');

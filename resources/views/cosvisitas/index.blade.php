@@ -3,141 +3,116 @@
 @section('title', 'Visitas COS')
 
 @section('content_header')
-    <h1>Visitas COS</h1>
-    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-@stop
+  <h1>Visitas COS</h1>
+@endsection
 
 @section('content')
-    <div class="mb-3">
-        <label for="filtro">Filtrar por:</label>
-        <select id="filtro" class="form-control w-auto d-inline-block">
-            <option value="semana">Semana</option>
-            <option value="mes">Mes</option>
-            <option value="año">Año</option>
-            <option value="todo" selected>Todo</option>
-        </select>
-    </div>
+  <div class="mb-3 d-flex align-items-center">
+    <label for="filtro" class="mr-2 mb-0">Filtrar por:</label>
 
-    <div class="row">
-        <div class="col-md-8">
-            <canvas id="visitasChart"></canvas>
+    <form method="GET" action="{{ url('cosvisitas') }}">
+      <select id="filtro" name="filtro" class="form-control w-auto d-inline-block" onchange="this.form.submit()">
+        <option value="semana" @selected($filtro==='semana')>Semana</option>
+        <option value="mes" @selected($filtro==='mes')>Mes</option>
+        <option value="anio" @selected($filtro==='anio')>Año</option>
+        <option value="todo" @selected($filtro==='todo')>Todo</option>
+      </select>
+    </form>
+  </div>
+
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-body">
+          <canvas id="visitasChart"></canvas>
         </div>
-        <div class="col-md-4">
-            <h4 id="totalVisitas"></h4>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body">
+          <h4 id="totalVisitas">Total visitas: {{ $totalVisitas }}</h4>
         </div>
+      </div>
     </div>
+  </div>
 
-    <hr>
+  <div class="card mt-3">
+    <div class="card-header"><b>Detalle</b></div>
+    <div class="card-body table-responsive">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Usuario</th>
+            <th>Cliente</th>
+            <th>Fecha de visita</th>
+          </tr>
+        </thead>
+        <tbody>
+          @foreach($visitas as $i => $v)
+            @php
+              $u = $v->user;
+              $c = $v->cliente;
 
-    <div class="table-responsive">
-        <table class="table table-striped" id="tablaVisitas">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Usuario</th>
-                    <th>Cliente</th>
-                    <th>Fecha de visita</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+              $usuario = $u?->nombres
+                ? trim($u->nombres.' '.($u->apellidos ?? ''))
+                : ($u?->name ?? 'Usuario desconocido');
+
+              $cliente = $c?->nombres
+                ? trim($c->nombres.' '.($c->apellidos ?? ''))
+                : ($c?->name ?? 'Cliente desconocido');
+            @endphp
+
+            <tr>
+              <td>{{ $visitas->firstItem() + $i }}</td>
+              <td>{{ $usuario }}</td>
+              <td>
+                @if($c)
+                  <a href="{{ url("/users/{$c->id}/edit") }}">{{ $cliente }}</a>
+                @else
+                  {{ $cliente }}
+                @endif
+              </td>
+              <td>{{ optional($v->fecha_visita)->format('Y-m-d H:i:s') ?? $v->fecha_visita }}</td>
+            </tr>
+          @endforeach
+        </tbody>
+      </table>
+
+      {{ $visitas->links('pagination::bootstrap-4') }}
     </div>
-@stop
+  </div>
+@endsection
 
-@section('js')
+@push('js')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Laravel pasa todos los registros al frontend
-    const todasLasVisitas = @json($visitas);
+  const chartData = @json($visitasPorUsuario);
 
-    // Inicializar gráfico
-    const ctx = document.getElementById('visitasChart').getContext('2d');
-    let visitasChart = new Chart(ctx, {
-        type: 'bar',
-        data: { labels: [], datasets: [] },
-        options: {
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true } }
-        }
-    });
+  const labels = chartData.map(x => x.label);
+  const values = chartData.map(x => x.total);
 
-    // Filtrar visitas según el rango elegido
-    function filtrarVisitas(filtro) {
-        const hoy = new Date();
-        let inicio;
-
-        if (filtro === "semana") {
-            inicio = new Date();
-            inicio.setDate(hoy.getDate() - 7);
-        } else if (filtro === "mes") {
-            inicio = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-        } else if (filtro === "año") {
-            inicio = new Date(hoy.getFullYear(), 0, 1);
-        } else {
-            inicio = new Date(0); // trae todo
-        }
-
-        return todasLasVisitas.filter(v => {
-            const fecha = new Date(v.fecha_visita);
-            return fecha >= inicio;
-        });
+  const ctx = document.getElementById('visitasChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Visitas por usuario',
+        data: values
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
     }
-
-    // Renderizar gráfico y tabla
-    function renderizar(filtro) {
-        const visitas = filtrarVisitas(filtro);
-
-        // Agrupar por usuario
-        const visitasPorUsuario = {};
-        visitas.forEach(v => {
-            const nombre = v.user?.nombres || v.user?.name || "Usuario desconocido";
-            visitasPorUsuario[nombre] = (visitasPorUsuario[nombre] || 0) + 1;
-        });
-
-        // Actualizar gráfico
-        visitasChart.data.labels = Object.keys(visitasPorUsuario);
-        visitasChart.data.datasets = [{
-            label: 'Visitas por usuario',
-            data: Object.values(visitasPorUsuario),
-            backgroundColor: 'rgba(75, 192, 192, 0.6)',
-            borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 1
-        }];
-        visitasChart.update();
-
-        // Total
-        document.getElementById('totalVisitas').innerText = "Total visitas: " + visitas.length;
-
-        // Tabla de visitas
-        const tbody = document.querySelector("#tablaVisitas tbody");
-        tbody.innerHTML = "";
-        visitas.forEach((v, index) => {
-            const tr = `
-                <tr>
-                    <td>${index + 1}</td>
-                    <td>${v.user?.name || v.user?.nombres + " " + v.user?.apellidos || "Usuario desconocido"}</td>
-                    <td><a href="/users/${v.cliente?.id}/edit">${v.cliente?.nombres + " " + v.cliente?.apellidos || v.cliente?.name || "Cliente desconocido"}</a></td>
-                    <td>${new Date(v.fecha_visita).toLocaleString()}</td>
-                </tr>
-            `;
-            tbody.innerHTML += tr;
-        });
-    }
-
-    // Inicializar filtros
-    document.getElementById("filtro").addEventListener("change", (e) => {
-        renderizar(e.target.value);
-    });
-
-    // Render inicial
-    renderizar("todo");
+  });
 </script>
-@stop
+@endpush
 
 @section('css')
-    <link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
-@stop
-
-@section('js')
-@stop
+  <link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
+@endsection

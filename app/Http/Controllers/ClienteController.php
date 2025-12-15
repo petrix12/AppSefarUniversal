@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Models\File;
 use App\Models\Negocio;
 use App\Models\TFile;
+use Monday;
 use App\Models\Hermano;
 use App\Models\Alert as Alertas;
 use App\Models\GeneralCoupon;
@@ -43,7 +44,6 @@ use HubSpot\Client\Crm\Contacts\Model\SimplePublicObjectInput;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Mail;
 use Illuminate\Support\Facades\Mail as Mail2;
-use Monday;
 use Carbon\Carbon;
 use App\Services\TeamleaderService;
 use App\Services\HubspotService;
@@ -54,7 +54,11 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Promise;
 use App\Models\DocumentRequest;
 use Illuminate\Support\Facades\Storage;
-
+use App\Services\UserSyncService;
+use App\Services\GenealogyService;
+use App\Jobs\SyncUserDealsJob;
+use App\Services\CosService;
+use Illuminate\Support\Facades\Cache;
 class ClienteController extends Controller
 {
     protected $teamleaderService;
@@ -125,1315 +129,285 @@ class ClienteController extends Controller
         return null;
     }
 
+    private function getRandomImages(): array
+    {
+        $cacheKey = "random_images";
+
+        return Cache::remember($cacheKey, 3600, function () {
+            $path = public_path('img/IMAGENESCOS/');
+
+            if (!is_dir($path)) {
+                return [];
+            }
+
+            $files = scandir($path);
+
+            $images = array_filter($files, function($file) {
+                return preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $file);
+            });
+
+            $images = array_values($images);
+            shuffle($images);
+
+            return array_map(function($image) {
+                return asset('img/IMAGENESCOS/' . $image);
+            }, $images);
+        });
+    }
+
     public function status(){
         $user = Auth::user();
 
-        $comprasConDealNoPagadas = Compras::where('deal_id', '!=', null)
-                                ->where('pagado', 0)
-                                ->where('id_user', $user->id)
-                                ->get();
+        $startTime = microtime(true);
 
-        $comprasSinDealNoPagadas = Compras::whereNull('deal_id')
-                                ->where('pagado', 0)
-                                ->where('id_user', $user->id)
-                                ->get();
+        // ==========================================
+        // CACHE BÁSICO
+        // ==========================================
+        $imageUrls = $this->getRandomImages();
+        $cos = app(\App\Services\CosHelperService::class)->get();
 
-        // Ruta completa a la carpeta dentro de public
-        $path = public_path('img/IMAGENESCOS/');
+        // ==========================================
+        // SINCRONIZACIÓN CONCURRENTE DE APIS
+        // ==========================================
+        $syncService = new UserSyncService($this->hubspotService, $this->teamleaderService);
 
-        // Obtener todos los archivos del directorio
-        $files = scandir($path);
+        // Ejecutar sincronizaciones en paralelo usando el método existente
+        $apiResults = $this->hubspotService->executeConcurrent([
+            'hubspot' => fn() => $syncService->syncWithHubspot($user),
+            'teamleader' => fn() => $syncService->syncWithTeamleader($user),
+        ]);
 
-        // Filtrar solo imágenes
-        $images = array_filter($files, function($file) {
-            return preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $file);
-        });
+        // Extraer resultados
+        $HScontact = $apiResults['hubspot']['contact'] ?? null;
+        $HScontactFiles = $apiResults['hubspot']['files'] ?? [];
+        $deals = $apiResults['hubspot']['deals'] ?? [];
+        $TLcontact = $apiResults['teamleader']['contact'] ?? null;
+        $TLdeals = $apiResults['teamleader']['deals'] ?? [];
 
-        $images = array_values($images);
-
-        // Mezclar las imágenes aleatoriamente
-        shuffle($images);
-
-        // Si necesitas las rutas completas:
-        $imagePaths = array_map(function($image) use ($path) {
-            return $path . '/' . $image;
-        }, $images);
-
-        // Si necesitas las URLs accesibles desde web:
-        $imageUrls = array_map(function($image) {
-            return asset('img/IMAGENESCOS/' . $image);
-        }, $images);
-
-        $cos = array_cos();
-
-        $usuariosMonday = $this->getUsersForSelect()->original ?? [];
-
-        $facturas = Factura::with('compras')->where('id_cliente', $user->id)->get();
-
-        if (is_null($user->hs_id)) {
-            $this->syncUserWithHubspot($user);
+        if (!$HScontact) {
+            Log::error("No se pudo obtener datos de HubSpot para el usuario", ['user_id' => $user->id]);
+            abort(500, "Error al sincronizar con HubSpot");
         }
 
-        $hubspotData = $this->getHubspotData($user->hs_id);
+        // ==========================================
+        // OBTENER ETAPAS DE PIPELINES
+        // ==========================================
+        $pipelineStages = [];
+        $usedPipelineIds = array_unique(array_filter(
+            array_column(array_column($deals, 'properties'), 'pipeline')
+        ));
 
-        $HScontact = $hubspotData['contact'];
-        $HScontactFiles = $hubspotData['files'];
-        $urls = $hubspotData['urls'];
-        $deals = $hubspotData['deals'];
-
-        $camposDeTeamleader = [
-            'n1__enviada_al_cliente' => '4203d8ab-f1de-0145-af52-1bb278951268',
-            'documentos' => 'e254d7ed-3c93-097d-b659-852a3b74c5e5',
-            'n1__lugar_del_expediente' => '4bbfdc08-686d-0a03-8557-bd1d60d46f57',
-            'n1__monto_preestablecido' => '6f7a4408-b146-0e58-a35b-8f02fed60887',
-            'n10__fecha_asignacion_de_juez' => '497e7359-8b1a-056a-9e5e-28fa0cf5b2f1',
-            'n11__envio_redaccion_abogada' => 'e04af721-8808-0a43-9356-df374565b2fa',
-            'n12__notas___no__expediente' => '4b822322-17a1-06ba-9b5b-82db70f46f5b',
-            'n13__fecha_recurso_alzada' => '7c06cfed-87f4-00ac-8a5a-946b0b9643b8',
-            'n2__firmado_por_el_cliente' => '5f090e48-4a5b-0504-8259-9e945e95126a',
-            'n2__antecedentes_penales' => '35c68020-1160-068b-b055-1b5e6fe4ca11',
-            'n2__ciudad_formalizacion' => 'ad849a21-82b3-0032-995e-6e9dbcd46f53',
-            'n2__enviado_a_redaccion_informe' => 'ed8167e1-00e2-05fb-8a5c-900699b54d88',
-            'n2__monto_pagado' => '4bef5482-f2e4-02da-8653-691944760f84',
-            'n3__gestionado___entregado' => 'b0421965-2b39-0c4d-9e51-1e567b05126b',
-            'n3__contratos_y_permisos' => '39085084-d206-073e-8057-ef23ab046f5a',
-            'n3__f__vencimiento_ant__penal' => '578e17da-c01b-0a97-bc5a-7d9255b4c9d5',
-            'n3__informe_cargado' => '1c067d8e-1b3b-0b4b-8c5f-436233b4c3f2',
-            'n4__certificado_descargado' => '62a2cd97-1898-00bf-885c-029939e4c40f',
-            'n4__pago_tasa' => 'a2d11316-e31b-0b2c-bd5e-0c7ad13491d0',
-            'n5___f_solicitud_documentos' => 'e0919d4b-322a-0c06-9759-0a6607f4c9db',
-            'n5__fecha_de_formalizacion' => '7c87a75b-ce63-01da-9c58-5277f6c40fa9',
-            'n5__notas_genealogia' => 'edc41efc-e52f-0c9a-8e5d-41b8fff4c3f3',
-            'n6__cil_preaprobado' => '57535be4-4738-00b5-9251-b53739e607c0',
-            'n6__fecha_acta_remitida_' => '8091a7fc-3023-0625-8051-de85a4c46f59',
-            'n7__enviado_al_dto_juridico' => 'c3feeebf-21a9-0cac-855e-e6f550260ee0',
-            'n7__fecha_caducidad_pasaporte' => '6fb8ef4e-6fdb-0241-8354-bda543e4cbff',
-            'n7__fecha_de_resolucion' => '3ef52253-5ac1-025a-8c5b-a9d094c468b8',
-            'n8__f_rec__solicitud_doc' => 'e255a259-5328-0ee6-ab52-3e4f9604c9de',
-            'n9__enviado_a_legales' => '047dc070-6b23-0434-b858-61a1d7e4c9fd',
-            'n9__notif__1__int__subsanar_' => '7918f47c-4097-07e1-af57-d6c435660883',
-            'n91__recepcion_recaudos_fisico' => '8e8ea98b-5137-047b-8157-c44935a4c3f1',
-            'carta_nat_pagado' => '4339375f-ed77-02d9-a157-7da9f9e4bfac',
-            'carta_nat_preestab' => 'a42ed217-b570-0973-9052-fab97214c229',
-            'cil___fcje_pagado' => 'f23fbe3b-5d13-0a41-a857-e9ab1c63dc42',
-            'cil___fcje_preestab' => 'aa1ce4b9-a410-00f2-a953-5f8c2713dc35',
-            'codigo_de_proceso' => 'a42f63f5-d527-0544-ab50-9c03857707f2',
-            'argumento_de_ventas__new_' => 'c34c71b3-331e-0524-a45a-95a654e51b4c',
-            'fase_0_pagado__teamleader_' => 'd90b2e44-2e9b-0f29-945a-71c34bb3def0',
-            'fase_1_pagado__teamleader_' => 'a1b50c58-8175-0d13-9856-f661e783dc08',
-            'fase_1_preestab' => '73173887-a0e8-0f4f-bb55-b61f33d3c6e9',
-            'fase_2_pagado__teamleader_' => 'a5b94ccc-3ea8-06fc-b259-0a487073dc0d',
-            'fase_2_preestab' => 'c66a9c15-c965-0812-ad5b-7e48f183c6f9',
-            'fase_3_pagado__teamleader_' => '9a1df9b7-c92f-09e5-b156-96af3f83dc0e',
-            'fase_3_preestab' => 'e41fdbbb-a25a-005b-af56-9f3ca623c700',
-            'fecha_de_aceptacion' => 'fbe8df81-7225-0c01-b051-7f1032054ffe',
-            'servicio_solicitado2' => 'fcd48891-20f6-049a-a05f-f78a6f951b4d'
-        ];
-
-        if (is_null($user->tl_id)) {
+        foreach ($usedPipelineIds as $pipelineId) {
             try {
-                $TLcontactByEmail = $this->teamleaderService->searchContactByEmail($user->email);
-
-                if (!is_null($TLcontactByEmail)) {
-                    $user->tl_id = $TLcontactByEmail['id'];
-                } else {
-                    $newContact = $this->teamleaderService->createContact($user);
-                    $user->tl_id = $newContact['id'];
-                }
-
-                $user->save();
+                $pipelineStages[$pipelineId] = $this->hubspotService->getDealStagesByPipeline($pipelineId);
             } catch (\Exception $e) {
-                \Log::error("Error al sincronizar con Teamleader: " . $e->getMessage());
-            }
-        }
-
-        // 2. Obtener datos en paralelo
-        try {
-            $concurrentResults = $this->hubspotService->executeConcurrent([
-                'pipelineStages' => function() use ($deals) {
-                    $usedPipelineIds = array_unique(array_filter(
-                        array_column(array_column($deals, 'properties'), 'pipeline')
-                    ));
-                    $stages = [];
-                    foreach ($usedPipelineIds as $pipelineId) {
-                        $stages[$pipelineId] = $this->hubspotService->getDealStagesByPipeline($pipelineId);
-                    }
-                    return $stages;
-                },
-                'TLcontact' => function() use ($user) {
-                    return $this->teamleaderService->getContactById($user->tl_id);
-                },
-                'TLdeals' => function() use ($user) {
-                    return $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id);
-                }
-            ]);
-
-            $pipelineStages = $concurrentResults['pipelineStages'] ?? [];
-            $TLcontact = $concurrentResults['TLcontact'] ?? null;
-            $TLdeals = $concurrentResults['TLdeals'] ?? [];
-
-            // 3. Procesar negocios con etapas
-            $dealsWithStages = array_map(function ($deal) use ($pipelineStages) {
-                $properties = $deal['properties'];
-                $dealstageId = $properties['dealstage'] ?? null;
-                $pipelineId = $properties['pipeline'] ?? null;
-
-                $dealstageName = null;
-                $dealstageOptions = [];
-
-                if ($pipelineId && isset($pipelineStages[$pipelineId])) {
-                    $dealstageName = collect($pipelineStages[$pipelineId])->firstWhere('id', $dealstageId)['name'] ?? null;
-                    $dealstageOptions = $pipelineStages[$pipelineId];
-                }
-
-                return array_merge($deal, [
-                    'dealstage_name' => $dealstageName,
-                    'dealstage_options' => $dealstageOptions,
+                Log::warning("Error obteniendo etapas del pipeline {$pipelineId}", [
+                    'error' => $e->getMessage()
                 ]);
-            }, $deals);
-
-            // 4. Sincronizar tratos con Teamleader
-            $teamleaderDealNames = [];
-            if (is_array($TLdeals)) {
-                $teamleaderDealNames = array_column($TLdeals, 'title');
-            }
-
-            if (count($dealsWithStages) > count($teamleaderDealNames)) {
-                foreach ($dealsWithStages as $deal) {
-                    $dealName = $deal['properties']['dealname'] ?? '';
-                    if (!in_array($dealName, $teamleaderDealNames)) {
-                        try {
-                            $this->teamleaderService->createProjectFromHubspotDeal(
-                                $deal,
-                                $user->tl_id,
-                                $camposDeTeamleader
-                            );
-                        } catch (\Exception $e) {
-                            \Log::error("Error al crear proyecto en Teamleader: " . $e->getMessage());
-                        }
-                    }
-                }
-
-                // Actualizar lista de tratos después de las creaciones
-                $TLdeals = $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id);
-            }
-
-            // 5. Obtener datos actualizados
-            $updatedDeals = $this->hubspotService->getDealsByContactId($user->hs_id);
-            $updatedTLdeals = $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id);
-
-            $this->syncDealFieldsBetweenPlatforms($updatedDeals, $updatedTLdeals, $camposDeTeamleader, $user);
-
-            $teamleaderDealNames = [];
-            if (is_array($updatedTLdeals)) {
-                $teamleaderDealNames = array_column($updatedTLdeals, 'title', 'id');
-            }
-
-            // 6. Procesar propiedades y actualizar base de datos
-            $columns = Schema::getColumnListing((new Negocio)->getTable());
-            $excludedColumns = ['id', 'created_at', 'updated_at', 'hubspot_id', 'teamleader_id', 'user_id'];
-            $fillableColumns = array_diff($columns, $excludedColumns);
-
-            $processProperty = function($value) {
-                if (is_null($value)) return null;
-                $arrayData = strpos($value, ';') !== false ? explode(';', $value) : [$value];
-                return json_encode($arrayData, JSON_UNESCAPED_UNICODE);
-            };
-
-            // Obtener deals existentes indexados por hubspot_id
-            $existingDeals = Negocio::whereIn('hubspot_id', array_column($updatedDeals, 'id'))
-                ->get()
-                ->keyBy('hubspot_id');
-
-            $newDeals = [];
-            $dealsToUpdate = [];
-
-            foreach ($updatedDeals as $deal) {
-                // Procesar propiedades especiales
-                $propsToProcess = ['argumento_de_ventas__new_', 'n2__antecedentes_penales', 'documentos'];
-                foreach ($propsToProcess as $prop) {
-                    if (isset($deal['properties'][$prop])) {
-                        $deal['properties'][$prop] = $processProperty($deal['properties'][$prop]);
-                    }
-                }
-
-                // Preparar datos comunes
-                $data = [
-                    'dealname' => $deal['properties']['dealname'] ?? null,
-                    'teamleader_id' => array_search($deal['properties']['dealname'] ?? null, $teamleaderDealNames) ?: null,
-                ];
-
-                foreach ($fillableColumns as $column) {
-                    $data[$column] = $deal['properties'][$column] ?? null;
-                }
-
-                // Verificar si el deal existe
-                if ($existingDeals->has($deal['id'])) {
-                    // Actualizar deal existente
-                    $existingDeal = $existingDeals->get($deal['id']);
-
-                    // Solo actualizar si hay cambios
-                    $hasChanges = false;
-                    foreach ($data as $key => $value) {
-                        if ($existingDeal->{$key} != $value) {
-                            $hasChanges = true;
-                            break;
-                        }
-                    }
-
-                    if ($hasChanges) {
-                        $dealsToUpdate[] = [
-                            'id' => $existingDeal->id,
-                            'data' => $data
-                        ];
-                    }
-                } else {
-                    // Insertar nuevo deal
-                    $newDeals[] = array_merge([
-                        'hubspot_id' => $deal['id'],
-                        'user_id' => $user->id,
-                    ], $data);
-                }
-            }
-
-            // Inserción masiva de nuevos deals
-            if (!empty($newDeals)) {
-                Negocio::insert($newDeals);
-            }
-
-            // Actualización masiva de deals existentes
-            if (!empty($dealsToUpdate)) {
-                foreach ($dealsToUpdate as $dealUpdate) {
-                    Negocio::where('id', $dealUpdate['id'])->update($dealUpdate['data']);
-                }
-            }
-
-            $negocios = Negocio::where("user_id", $user->id)->get();
-
-        } catch (\Exception $e) {
-            \Log::error("Error en el proceso principal: " . $e->getMessage());
-            throw $e;
-        }
-
-        $processedUrls = $this->processFilesConcurrently($urls, $user, $this->hubspotService);
-        $processedContactFiles = $this->processFilesConcurrently($HScontactFiles, $user, $this->hubspotService);
-
-        // Obtener archivos del cliente
-        $archivos = File::where("IDCliente", $user->passport)->get();
-
-        // Mapear campos de HubSpot con los de la base de datos
-        $hubspotFields = [
-            'fecha_nac' => 'date_of_birth',
-            'firstname' => 'nombres',
-            'lastmodifieddate' => 'updated_at',
-            'lastname' => 'apellidos',
-            'n000__referido_por__clonado_' => 'referido_por',
-            'numero_de_pasaporte' => 'passport',
-            'servicio_solicitado' => 'servicio',
-        ];
-
-        // Recorrer propiedades de HubSpot y añadir las faltantes al arreglo
-        foreach ($HScontact['properties'] as $hsField => $value) {
-            if (!array_key_exists($hsField, $hubspotFields) && $hsField != "createdate" && $hsField != "hs_object_id") {
-                // Agrega automáticamente un nuevo campo con una clave genérica
-                $hubspotFields[$hsField] = $hsField; // Usa el mismo nombre como clave en DB
             }
         }
 
-        $updatesToDB = [];
-        $updatesToHubSpot = [];
+        // Procesar deals con etapas
+        $dealsWithStages = array_map(function ($deal) use ($pipelineStages) {
+            $properties = $deal['properties'];
+            $dealstageId = $properties['dealstage'] ?? null;
+            $pipelineId = $properties['pipeline'] ?? null;
 
-        $hsLastModified = new \DateTime($HScontact['properties']['lastmodifieddate']);
-        $dbLastModified = new \DateTime($user->updated_at);
+            $dealstageName = null;
+            $dealstageOptions = [];
 
-        $utcTimezone = new \DateTimeZone('UTC');
-        $hsLastModified->setTimezone($utcTimezone);
-        $dbLastModified->setTimezone($utcTimezone);
-
-        foreach ($hubspotFields as $hsField => $dbField) {
-            $hubspotValue = $HScontact['properties'][$hsField] ?? null;
-            $dbValue = $user->{$dbField};
-
-            if ($hsField != 'lastmodifieddate') {
-                if ($hubspotValue !== $dbValue) {
-                    if ($hubspotValue && (!$dbValue || $hsLastModified > $dbLastModified)) {
-                        if ($hsField != "updated_at") {
-
-                            // 🚨 PROTECCIÓN PARA FECHA NACIMIENTO
-                            if (in_array($hsField, ['fecha_nac', 'date_of_birth'])) {
-                                if (!empty($dbValue) && $dbValue != '0000-00-00') {
-                                    // Si ya tienes una fecha válida, NO sobreescribas
-                                    continue;
-                                } else {
-                                    // Si no tienes fecha, convierte EPOCH a fecha normal antes de guardar
-                                    if (is_numeric($hubspotValue)) {
-                                        $hubspotDate = (new \DateTime())->setTimestamp($hubspotValue / 1000);
-                                        $hubspotValue = $hubspotDate->format('Y-m-d');
-                                    }
-                                }
-                            }
-
-                            $user->{$dbField} = $hubspotValue;
-                            $updatesToDB[$dbField] = $hubspotValue;
-                        }
-                    } else if ($dbValue && (!$hubspotValue || $dbLastModified > $hsLastModified)) {
-                        switch ($hsField) {
-                            case 'fecha_nac':
-                            case 'date_of_birth':
-                                if (!empty($dbValue) && $dbValue != "0000-00-00") {
-                                    try {
-                                        // Convertir fecha DB a EPOCH para Hubspot
-                                        $onlyDate = (new \DateTime($dbValue))->format('Y-m-d');
-                                        $dbDate = new \DateTime($onlyDate, new \DateTimeZone('UTC'));
-                                        $dbTimestampMs = $dbDate->getTimestamp() * 1000;
-
-                                        $hubspotTimestampMs = null;
-                                        if ($hubspotValue !== null && is_numeric($hubspotValue)) {
-                                            $hubspotDate = (new \DateTime())->setTimestamp($hubspotValue / 1000);
-                                            $hubspotDate->setTimezone(new \DateTimeZone('UTC'));
-                                            $hubspotTimestampMs = $hubspotDate->getTimestamp() * 1000;
-                                        }
-
-                                        if ($hubspotTimestampMs !== $dbTimestampMs) {
-                                            $updatesToHubSpot[$hsField] = $dbTimestampMs;
-                                        }
-                                    } catch (\Exception $e) {
-                                        // Manejar error si fecha inválida
-                                    }
-                                }
-                                break;
-
-                            case 'genero':
-                                $cleanValue = trim($dbValue);
-                                $mapping = [
-                                    'MASCULINO' => 'MASCULINO / MALE',
-                                    'FEMENINO'  => 'FEMENINO / FEMALE',
-                                    'OTROS'     => 'OTROS / OTHERS',
-                                ];
-                                if (isset($mapping[$cleanValue])) {
-                                    $mappedValue = $mapping[$cleanValue];
-                                    if ($hubspotValue !== $mappedValue) {
-                                        $updatesToHubSpot[$hsField] = $mappedValue;
-                                    }
-                                }
-                                break;
-
-                            default:
-                                if ($hsField == "cantidad_alzada") {
-                                    if (strval($hubspotValue) !== strval($dbValue)) {
-                                        $updatesToHubSpot[$hsField] = $dbValue;
-                                    }
-                                } else {
-                                    if ($hubspotValue !== $dbValue) {
-                                        $updatesToHubSpot[$hsField] = $dbValue;
-                                    }
-                                }
-                                break;
-                        }
-                    }
-                }
+            if ($pipelineId && isset($pipelineStages[$pipelineId])) {
+                $dealstageName = collect($pipelineStages[$pipelineId])
+                    ->firstWhere('id', $dealstageId)['name'] ?? null;
+                $dealstageOptions = $pipelineStages[$pipelineId];
             }
-        }
 
+            return array_merge($deal, [
+                'dealstage_name' => $dealstageName,
+                'dealstage_options' => $dealstageOptions,
+            ]);
+        }, $deals);
 
-        $excludedKeys = ['lastmodifieddate', 'referido_por']; // Lista de claves a excluir
-        $updatesToHubSpot = array_filter(
-            $updatesToHubSpot,
-            fn($key) => !in_array($key, $excludedKeys),
-            ARRAY_FILTER_USE_KEY
-        );
+        // ==========================================
+        // SINCRONIZACIÓN DE CAMPOS
+        // ==========================================
+        $fieldUpdates = $syncService->calculateFieldUpdates($user, $HScontact);
 
-        if (isset($updatesToDB['date_of_birth']) && is_numeric($updatesToDB['date_of_birth'])) {
-            if ((int)$updatesToDB['date_of_birth']) {
-                unset($updatesToDB['date_of_birth']); // Elimina el campo si es EPOCH
+        // Actualizar DB si hay cambios
+        if (!empty($fieldUpdates['updatesToDB'])) {
+            foreach ($fieldUpdates['updatesToDB'] as $field => $value) {
+                $user->{$field} = $value;
             }
-        }
-
-        // Guardar los cambios en la base de datos si hubo actualizaciones
-        if (!empty($updatesToDB)) {
             $user->save();
+
+            Log::info("Usuario actualizado desde HubSpot", [
+                'user_id' => $user->id,
+                'fields_updated' => array_keys($fieldUpdates['updatesToDB'])
+            ]);
         }
 
-        // Actualizar HubSpot si hubo cambios
-        if (!empty($updatesToHubSpot)) {
-            try {
-                // Aquí llamas a tu servicio HubSpot que hace el PATCH
-                $this->hubspotService->updateContact($user->hs_id, $updatesToHubSpot);
-            } catch (ClientException $e) {
-                // Obtén la respuesta completa en formato string
-                $responseBodyAsString = (string) $e->getResponse()->getBody();
-            }
+        // Actualizar HubSpot de forma asíncrona si hay cambios
+        if (!empty($fieldUpdates['updatesToHubSpot'])) {
+            dispatch(new \App\Jobs\UpdateHubspotContactJob(
+                $user->hs_id,
+                $fieldUpdates['updatesToHubSpot'],
+                $this->hubspotService
+            ));
         }
 
-        // Obtener tratos asociados desde HubSpot
-        $HSdeals = $this->hubspotService->getDealsByContactId($user->hs_id);
+        // ==========================================
+        // SINCRONIZACIÓN DE DEALS (ASÍNCRONO)
+        // ==========================================
+        dispatch(new SyncUserDealsJob($user));
 
-        // Monday
-        if (!$user->monday_id) {
-            $mondayUserDetailsPre = $this->searchUserInMonday($user->passport, $user);
-        }
+        // Obtener deals existentes de la DB
+        $negocios = Negocio::where("user_id", $user->id)->get();
 
-        $query = "
-            items(ids: [{$user->monday_id}]) {
-                id
-                name
-                board {
-                    id
-                    name
-                }
-                column_values {
-                    id
-                    column {
-                        title
-                        type
-                    }
-                    text
-                    value
-                }
-            }
-        ";
+        // ==========================================
+        // MONDAY (CON CACHE)
+        // ==========================================
+        $mondayData = $this->getMondayDataCached($user);
 
-        $result = json_decode(json_encode(Monday::customQuery($query)), true);
+        // ==========================================
+        // GENEALOGÍA (CON CACHE)
+        // ==========================================
+        $genealogyService = new GenealogyService();
+        $genealogyData = $genealogyService->getProcessedTree($user->passport);
 
-        if (isset($result['items'][0]['board']['name'])){
-            $mondaydataforAI = [
-                "tablero" => $result['items'][0]['board']['name']
-            ];
-        } else {
-            $mondaydataforAI = [];
-        }
+        $columnasparatabla = $genealogyData['columnasparatabla'];
+        $hayTatarabuelo = $genealogyData['hayTatarabuelo'];
 
-        // Registrar hora de fin
-
-        $mondayUserDetailsPre = $result['items'][0] ?? null;
-
-        // Guardar datos del usuario en Monday
-        if ($mondayUserDetailsPre) {
-            $this->storeMondayUserData($user, $mondayUserDetailsPre);
-            $boardId = $mondayUserDetailsPre['board']['id'] ?? null;
-            $boardName = $mondayUserDetailsPre['board']['name'] ?? null;
-
-            // Guardar las columnas del board en `monday_form_builder`
-            if ($boardId) {
-                $this->storeMondayBoardColumns($boardId);
-            }
-
-            $mondayData = json_decode(MondayData::where('user_id', $user->id)->first(), true);
-            $mondayData["data"] = json_decode($mondayData["data"] , true);
-
-            $dataMonday = [];
-
-            foreach($mondayData["data"]["column_values"] as $key => $campo){
-                $dataMonday[$campo["id"]] = $campo["text"];
-            }
-
-            $mondayFormBuilder = json_decode(MondayFormBuilder::where('board_id', $boardId)->get(), true);
-
-            foreach($mondayFormBuilder as $key=>$campo){
-                $mondayFormBuilder[$key]["settings"] = json_decode($campo["settings"], true);
-            }
-
-            $mondayUserDetails = [];
-            $mondayUserDetails["nombre"] = $mondayUserDetailsPre["name"];
-            $mondayUserDetails["id"] = $mondayUserDetailsPre["id"];
-
-            foreach($mondayUserDetailsPre["column_values"] as $key=>$element){
-                $mondayUserDetails["propiedades"][$element["id"]] = [$element["column"]["title"], $element["text"]];
-            }
-        } else {
-            $dataMonday = [];
-            $mondayData = [];
-            $mondayFormBuilder = [];
-            $mondayUserDetails = [];
-            $boardId = 0;
-            $boardName = "";
-        }
-
-
-
-        // Preparar datos para la vista
-        $roles = Role::all();
-        $permissions = Permission::all();
-        $servicios = Servicio::all();
-
-        // Obtener datos de la base de datos de forma más eficiente
-        $people = Agcliente::where("IDCliente", trim($user->passport))->get()->toArray();
-
-        // Optimización 1: Crear un mapa rápido de búsqueda por ID
-        $peopleMap = [];
-        foreach ($people as $person) {
-            $peopleMap[$person['id']] = $person;
-        }
-
-        // Optimización 2: Calcular generaciones usando un enfoque iterativo mejorado
-        $generaciones = [];
-
-        // Primera pasada: identificar raíces (personas sin padres)
-        $queue = [];
-        foreach ($people as $person) {
-            if ($person['idPadreNew'] === null && $person['idMadreNew'] === null) {
-                $generaciones[$person['id']] = 1;
-                $queue[] = $person['id'];
-            }
-        }
-
-        // Procesamiento por niveles (BFS usando array en lugar de SplQueue)
-        while (!empty($queue)) {
-            $currentId = array_shift($queue);
-            $currentGeneration = $generaciones[$currentId];
-
-            // Buscar hijos de esta persona
-            foreach ($people as $person) {
-                if ($person['idPadreNew'] == $currentId || $person['idMadreNew'] == $currentId) {
-                    if (!isset($generaciones[$person['id']]) || $generaciones[$person['id']] < $currentGeneration + 1) {
-                        $generaciones[$person['id']] = $currentGeneration + 1;
-                        $queue[] = $person['id'];
-                    }
-                }
-            }
-        }
-
-        $maxGeneraciones = empty($generaciones) ? 1 : max($generaciones) + 1;
-
-        // Optimización 3: Construir la estructura de columnas
-        $columnasparatabla = [];
-
-        for ($i = 0; $i < $maxGeneraciones; $i++) {
-            $columnasparatabla[$i] = [];
-
-            if ($i == 0) {
-                // Caso especial para el cliente (primera generación)
-                if (!empty($people)) {
-                    $people[0]['showbtn'] = 2;
-                    $columnasparatabla[$i][] = $people[0];
-                }
-                continue;
-            }
-
-            // Procesar generación anterior para construir la actual
-            foreach ($columnasparatabla[$i-1] as $personaAnterior) {
-                // Procesar padre
-                $this->processParent($columnasparatabla[$i], $personaAnterior, 'idPadreNew', 'm', $peopleMap);
-
-                // Procesar madre
-                $this->processParent($columnasparatabla[$i], $personaAnterior, 'idMadreNew', 'f', $peopleMap);
-            }
-        }
-
-        // Optimización 4: Precalcular parentescos
-        $parentescos = [
-            0 => ["Cliente"],
-            1 => ["Padre", "Madre"]
-        ];
-
-        $parentescos_post_padres = [
-            "Abuel",
-            "Bisabuel",
-            "Tatarabuel",
-            "Trastatarabuel",
-            "Retatarabuel",
-            "Sestarabuel",
-            "Setatarabuel",
-            "Octatarabuel",
-            "Nonatarabuel",
-            "Decatarabuel",
-            "Undecatarabuel",
-            "Duodecatarabuel",
-            "Trececatarabuel",
-            "Catorcatarabuel",
-            "Quincecatarabuel",
-            "Deciseiscatarabuel",
-            "Decisietecatarabuel",
-            "Deciochocatarabuel",
-            "Decinuevecatarabuel",
-            "Vigecatarabuel",
-            "Vigecimoprimocatarabuel",
-            "Vigecimosegundocatarabuel",
-            "Vigecimotercercatarabuel",
-            "Vigecimocuartocatarabuel",
-            "Vigecimoquintocatarabuel",
-            "Vigecimosextocatarabuel",
-            "Vigecimoseptimocatarabuel",
-            "Vigecimooctavocatarabuel",
-            "Vigecimonovenocatarabuel",
-            "Trigecatarabuel",
-            "Trigecimoprimocatarabuel",
-            "Trigecimosegundocatarabuel",
-            "Trigecimotercercatarabuel",
-            "Trigecimocuartocatarabuel",
-            "Trigecimoquintocatarabuel",
-            "Trigecimosextocatarabuel",
-            "Trigecimoseptimocatarabuel",
-            "Trigecimooctavocatarabuel",
-            "Trigecimonovenocatarabuel",
-            "Cuarentacatarabuel",
-            "Cuarentaprimocatarabuel",
-            "Cuarentasegundocatarabuel",
-            "Cuarentatercercatarabuel",
-        ];
-
-        $prepar = 4;
-        foreach ($parentescos_post_padres as $key => $parentesco) {
-            if ($key + 2 < $maxGeneraciones) {
-                $parentescos[$key + 2] = [];
-                for ($i = 0; $i < $prepar; $i++) {
-                    $suffix = ($i % 2 == 0 ? "o" : "a");
-                    $text = $this->generateRelationshipText($i, $key);
-                    $parentescos[$key + 2][] = $parentesco . $suffix . " " . $text;
-                }
-                $prepar *= 2;
-            }
-        }
-
-        // Asignar parentescos
-        foreach ($columnasparatabla as $key => $generacion) {
-            foreach ($generacion as $idx => $persona) {
-                $columnasparatabla[$key][$idx]['parentesco'] = $parentescos[$key][$idx] ?? 'Desconocido';
-            }
-        }
-
-        $hayTatarabuelo = isset($columnasparatabla[4]) && count($columnasparatabla[4]) > 0;
-
-        // aqui arranca el COS
-
-        /* UPDATE 06/16/2025
-
-        En esta versión, el proceso va al revés... es decir: de FIN, desde la fase final (cuando le aprueban la nacionalidad al cliente)
-        hasta el registro del cliente (no es mala idea, si me lo preguntas... porque esto me permite revisar muchas cosas que, convenientemente,
-        son importantes en el proceso, y voy dandole mas prioridad a lo que va de último)... así, resuelvo un peo gigante.*/
-
-        //Esta variable sirve para obtener el servicio contratado por el usuario...
-        //pero tomaremos en consideración el del negocio, en caso de que tenga negocios.
+        // ==========================================
+        // CUSTOMER ORDER STATUS
+        // ==========================================
         $servicename = Servicio::where("id_hubspot", "like", $user->servicio."%")->first();
 
         $cosuser = [];
 
-        $hoy = Carbon::now();
+        if (count($negocios) > 0) {
+            foreach ($negocios as $negocio) {
+                $statusService = new CosService(
+                    $negocio,
+                    $user,
+                    $negocios,
+                    $mondayData['mondaydataforAI'] ?? []
+                );
 
-        if (isset($dataMonday["men__desplegable"])){
-            $mondaydataforAI["etiquetas"] = $dataMonday["men__desplegable"];
-            $mondaydataforAI["información_genealogia"] = $this->obtenerValorPorTitulo($result, 'INFO GENEALOGIA');
-            $mondaydataforAI["información_ventas"] = $this->obtenerValorPorTitulo($result, 'INFO VENTAS/ATC');
-            $mondaydataforAI["solicitud_cliente"] = $this->obtenerValorPorTitulo($result, 'CLIENTE SOLICITUD');
-            $mondaydataforAI["respuesta_solicitud"] = $this->obtenerValorPorTitulo($result, 'Estado Solicitud CDD');
-            $mondaydataforAI["arbol_cargado"] = $this->obtenerValorPorTitulo($result, 'ARBOL CARGADO');
-            $mondaydataforAI["inicio_investigacion"] = $this->obtenerValorPorTitulo($result, 'ARBOL CARGADO');
-        }
+                $status = $statusService->calculateStatus();
+                $status = $statusService->calculateProgress($status);
 
-        $cos2      = $user->arraycos;          // datos ya calculados
-        $expires  = $user->arraycos_expire;
-
-        if(count($negocios)>0) {
-            foreach($negocios as $negocio) {
-                $certificadoDescargado = 0;
-
-                if (
-                    isset($negocio->fase_2_pagado) || isset($negocio->fase_2_pagado__teamleader_) ||
-                    isset($negocio->fase_3_pagado) || isset($negocio->fase_3_pagado__teamleader_) ||
-                    isset($negocio->n5__fecha_de_formalizacion)
-                ) {
-                    $resultadoIA = [
-                        "otrosProcesos" => false,
-                        "pericial" => false,
-                        "genealogiaAprobada" => false,
-                        "genealogia" => false,
-                        "investigacionProfunda" => false,
-                        "investigacionInSitu" => false,
-                        "analisisYCorreccion" => false,
-                        "investigacionIntuituPersonae" => false
-                    ];
-                } else {
-                    $resultadoIA = $this->analizarEtiquetasYDevolverJSON($mondaydataforAI);
-                }
-                if (isset($negocio->n5__fecha_de_formalizacion) || ( isset($negocio->codigo_de_proceso) && $negocio->codigo_de_proceso == "FORMALIZADO 2024" )) {
-                    if(!isset($negocio->n4__certificado_descargado)){
-                        $certificadoDescargado = 2;
-                    }
-                    if (isset($negocio->nacionalidad_concedida) || isset($negocio->n7__fecha_de_resolucion)){
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado,
-                            "warning" => null,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "currentStepGen" => 18 - $certificadoDescargado,
-                            "currentStepJur" => 8
-                        ];
-                        continue;
-                    }
-
-                    $tieneViajudicialActivo = $this->verificarNegocioActivo(
-                            $negocios,
-                            'Demanda Judicial',
-                            ['Demanda', 'Judicial']
-                        );
-
-                    if ($tieneViajudicialActivo) {
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado,
-                            "warning" => null,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "currentStepGen" => 18 - $certificadoDescargado,
-                            "currentStepJur" => 7
-                        ];
-
-                        continue;
-                    }
-
-                    if (isset($negocio->n13__fecha_recurso_alzada)){
-                        $fechaRecurso = Carbon::parse($negocio->n13__fecha_recurso_alzada);
-                        $fechaRecursoMas3Meses = $fechaRecurso->copy()->addMonths(3);
-                        if ($fechaRecursoMas3Meses->greaterThan($hoy)){
-                            if ($fechaRecursoMas3Meses->greaterThan($hoy)) {
-
-                                $tieneViajudicialActivo = $this->verificarNegocioActivo(
-                                    $negocios,
-                                    'Demanda Judicial',
-                                    ['Demanda', 'Judicial']
-                                );
-
-                                $warning = ($tieneViajudicialActivo || isset($negocio->fecha_solicitud_viajudicial))
-                                    ? null
-                                    : "<b>¡Puedes solicitar la vía judicial!</b>";
-
-                                $cosuser[] = [
-                                    "servicio" => $negocio->servicio_solicitado,
-                                    "warning" => $warning,
-                                    "certificadoDescargado" => $certificadoDescargado,
-                                    "currentStepGen" => 18 - $certificadoDescargado,
-                                    "currentStepJur" => 7
-                                ];
-                                continue;
-                            }
-                        }
-                    }
-
-                    // ✅ MODIFICACIÓN: Si es FORMALIZADO 2024, usar 01-01-2024 como fecha base
-                    if (isset($negocio->codigo_de_proceso) && $negocio->codigo_de_proceso == "FORMALIZADO 2024") {
-                        $fechaFormalizacion = Carbon::parse('2024-01-01');
-                    } else {
-                        $fechaFormalizacion = Carbon::parse($negocio->n5__fecha_de_formalizacion);
-                    }
-
-                    $fechaFormalizacionMas12Meses = $fechaFormalizacion->copy()->addMonths(12);
-                    $fechaFormalizacionMas6Meses = $fechaFormalizacion->copy()->addMonths(6);
-                    $fechaFormalizacionMas1Meses = $fechaFormalizacion->copy()->addMonths(1);
-                    if ($hoy->greaterThan($fechaFormalizacionMas12Meses)){
-                        if ($hoy->greaterThan($fechaFormalizacionMas12Meses)) {
-                            $tieneRecursoAlzadaActivo = $this->verificarNegocioActivo(
-                                $negocios,
-                                'Recurso de Alzada',
-                                ['Recurso', 'Alzada']
-                            );
-
-                            $warning = ($tieneRecursoAlzadaActivo || isset($negocio->fecha_solicitud_recursoalzada))
-                                ? null
-                                : '<b>¡Solicita tu Recurso de Alzada!</b><a style="border:0!important;" href="https://sefaruniversal.com/landing-email-de-recurso-de-alzada/" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita el Recurso de Alzada</a>';
-
-                            $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
-                                "warning" => $warning,
-                                "certificadoDescargado" => $certificadoDescargado,
-                                "currentStepGen" => 18 - $certificadoDescargado,
-                                "currentStepJur" => 6
-                            ];
-                            continue;
-                        }
-                    } else if ($hoy->greaterThan($fechaFormalizacionMas6Meses)){
-                        if ($hoy->greaterThan($fechaFormalizacionMas6Meses)) {
-                            $tieneResolucionExpresaActivo = $this->verificarNegocioActivo(
-                                $negocios,
-                                'SOLICITUD DE DOCUMENTO DE RESOLUCIÓN EXPRESA',
-                                ['Resolución', 'Expresa']
-                            );
-
-                            $warning = ($tieneResolucionExpresaActivo || isset($negocio->fecha_solicitud_resolucionexpresa))
-                                ? null
-                                : '<b>¡Solicita tu resolución expresa!</b><a href="https://sefaruniversal.com/resolucion-expresa/" style="border:0!important;" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita tu Resolución Expresa</a>';
-
-                            $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
-                                "warning" => $warning,
-                                "certificadoDescargado" => $certificadoDescargado,
-                                "currentStepGen" => 18 - $certificadoDescargado,
-                                "currentStepJur" => 5
-                            ];
-                            continue;
-                        }
-                    } else if ($hoy->greaterThan($fechaFormalizacionMas1Meses)){
-                        // ✅ Verificar si tiene negocio de Subsanación activo
-                        $tieneSubsanacionActivo = $this->verificarNegocioActivo(
-                            $negocios,
-                            'Subsanación de Expediente',
-                            ['Subsanación']
-                        );
-
-                        $warning = $tieneSubsanacionActivo
-                            ? null
-                            : '<b>¡Consulta si requieres subsanación o mejora de expediente!</b><a style="border:0!important;" href="https://sefaruniversal.com/landing-registro-subsanacion-de-la-nacionalidad-espanola-sefardi/" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">¡Consulta ahora!</a>';
-
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "warning" => $warning,
-                            "currentStepGen" => 18 - $certificadoDescargado,
-                            "currentStepJur" => 4
-                        ];
-                        continue;
-                    }
-
-                    $cosuser[] = [
-                        "servicio" => $negocio->servicio_solicitado,
-                        "warning" => null,
-                        "certificadoDescargado" => $certificadoDescargado,
-                        "currentStepGen" => 18 - $certificadoDescargado,
-                        "currentStepJur" => 3
-                    ];
-                    continue;
-
-                } else if(isset($negocio->fase_3_pagado) || isset($negocio->fase_3_pagado__teamleader_)) {
-                    if(!isset($negocio->n4__certificado_descargado)){
-                        $certificadoDescargado = 2;
-                    }
-                    if (isset($negocio->nacionalidad_concedida) || isset($negocio->n7__fecha_de_resolucion)){
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado2,
-                            "warning" => null,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "currentStepGen" => 18 - $certificadoDescargado,
-                            "currentStepJur" => 8
-                        ];
-                        continue;
-                    }
-
-                    if (isset($negocio->n13__fecha_recurso_alzada)){
-                        $fechaRecurso = Carbon::parse($negocio->n13__fecha_recurso_alzada);
-                        $fechaRecursoMas3Meses = $fechaRecurso->copy()->addMonths(3);
-                        if ($fechaRecursoMas3Meses->greaterThan($hoy)){
-                            if ($fechaRecursoMas3Meses->greaterThan($hoy)) {
-                                $tieneViajudicialActivo = $this->verificarNegocioActivo(
-                                    $negocios,
-                                    'Demanda Judicial',
-                                    ['Demanda', 'Judicial']
-                                );
-
-                                $warning = ($tieneViajudicialActivo || isset($negocio->fecha_solicitud_viajudicial))
-                                    ? null
-                                    : "<b>¡Puedes solicitar la vía judicial!</b>";
-
-                                $cosuser[] = [
-                                    "servicio" => $negocio->servicio_solicitado,
-                                    "warning" => $warning,
-                                    "certificadoDescargado" => $certificadoDescargado,
-                                    "currentStepGen" => 18 - $certificadoDescargado,
-                                    "currentStepJur" => 7
-                                ];
-                                continue;
-                            }
-                        }
-                    }
-
-                    if (isset($negocio->n5__fecha_de_formalizacion)  || ( isset($negocio->codigo_de_proceso) && $negocio->codigo_de_proceso == "FORMALIZADO 2024" )){
-                        $fechaFormalizacion = Carbon::parse($negocio->n5__fecha_de_formalizacion);
-
-                        $fechaFormalizacionMas12Meses = $fechaFormalizacion->copy()->addMonths(12);
-                        $fechaFormalizacionMas6Meses = $fechaFormalizacion->copy()->addMonths(6);
-                        $fechaFormalizacionMas1Meses = $fechaFormalizacion->copy()->addMonths(1);
-                        if ($hoy->greaterThan($fechaFormalizacionMas12Meses)){
-                            if ($hoy->greaterThan($fechaFormalizacionMas12Meses)) {
-                               $tieneRecursoAlzadaActivo = $this->verificarNegocioActivo(
-                                    $negocios,
-                                    'Recurso de Alzada',
-                                    ['Recurso', 'Alzada']
-                                );
-
-                                $warning = ($tieneRecursoAlzadaActivo || isset($negocio->fecha_solicitud_recursoalzada))
-                                    ? null
-                                    : '<b>¡Solicita tu Recurso de Alzada!</b><a style="border:0!important;" href="https://sefaruniversal.com/landing-email-de-recurso-de-alzada/" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita el Recurso de Alzada</a>';
-
-                                $cosuser[] = [
-                                    "servicio" => $negocio->servicio_solicitado,
-                                    "warning" => $warning,
-                                    "certificadoDescargado" => $certificadoDescargado,
-                                    "currentStepGen" => 18 - $certificadoDescargado,
-                                    "currentStepJur" => 6
-                                ];
-                                continue;
-                            }
-                        } else if ($hoy->greaterThan($fechaFormalizacionMas6Meses)){
-                            if ($hoy->greaterThan($fechaFormalizacionMas6Meses)) {
-                                $tieneResolucionExpresaActivo = $this->verificarNegocioActivo(
-                                    $negocios,
-                                    'SOLICITUD DE DOCUMENTO DE RESOLUCIÓN EXPRESA',
-                                    ['Resolución', 'Expresa']
-                                );
-
-                                $warning = ($tieneResolucionExpresaActivo || isset($negocio->fecha_solicitud_resolucionexpresa))
-                                    ? null
-                                    : '<b>¡Solicita tu resolución expresa!</b><a href="https://sefaruniversal.com/resolucion-expresa/" style="border:0!important;" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita tu Resolución Expresa</a>';
-
-                                $cosuser[] = [
-                                    "servicio" => $negocio->servicio_solicitado,
-                                    "warning" => $warning,
-                                    "certificadoDescargado" => $certificadoDescargado,
-                                    "currentStepGen" => 18 - $certificadoDescargado,
-                                    "currentStepJur" => 5
-                                ];
-                                continue;
-                            }
-                        } else if ($hoy->greaterThan($fechaFormalizacionMas1Meses)){
-                            $tieneSubsanacionActivo = $this->verificarNegocioActivo(
-                                $negocios,
-                                'Subsanación de Expediente',
-                                ['Subsanación']
-                            );
-
-                            $warning = $tieneSubsanacionActivo
-                                ? null
-                                : '<b>¡Consulta si requieres subsanación o mejora de expediente!</b><a style="border:0!important;" href="https://sefaruniversal.com/landing-registro-subsanacion-de-la-nacionalidad-espanola-sefardi/" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">¡Consulta ahora!</a>';
-
-                            $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado,
-                                "certificadoDescargado" => $certificadoDescargado,
-                                "warning" => $warning,
-                                "currentStepGen" => 18 - $certificadoDescargado,
-                                "currentStepJur" => 4
-                            ];
-                            continue;
-                        } else {
-                            $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado2,
-                                "warning" => null,
-                                "certificadoDescargado" => $certificadoDescargado,
-                                "currentStepGen" => 18 - $certificadoDescargado,
-                                "currentStepJur" => 3
-                            ];
-                            continue;
-                        }
-                    }
-
-                    if (isset($negocio->tasa_pagada)){
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado2,
-                            "warning" => null,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "currentStepGen" => 18 - $certificadoDescargado,
-                            "currentStepJur" => 2
-                        ];
-                        continue;
-                    }
-
-                    if (isset($negocio->enviado_a_pago_de_tasas)){
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado2,
-                            "warning" => null,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "currentStepGen" => 18 - $certificadoDescargado,
-                            "currentStepJur" => 1
-                        ];
-                        continue;
-                    }
-
-                    $cosuser[] = [
-                        "servicio" => $negocio->servicio_solicitado2,
-                        "warning" => null,
-                        "certificadoDescargado" => $certificadoDescargado,
-                        "currentStepGen" => 18 - $certificadoDescargado,
-                        "currentStepJur" => 0
-                    ];
-                    continue;
-
-                } else if ( isset($negocio->fase_2_pagado) || isset($negocio->fase_2_pagado__teamleader_) ) {
-                    if (isset($negocio->fase_3_preestab) || isset($negocio->fase_3_preestab) || isset($negocio->fase_3_preestab)) {
-                        if(!isset($negocio->n4__certificado_descargado)){
-                            $certificadoDescargado = 2;
-                        }
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado2,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "warning" => "<b>Realiza el pago para la formalización del expediente</b> y aseguremos juntos el siguiente gran paso hacia tu ciudadanía española.",
-                            "currentStepGen" => 18 - $certificadoDescargado,
-                            "currentStepJur" => -1
-                        ];
-                        continue;
-                    }
-
-                    if(isset($negocio->n4__certificado_descargado)){
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado2,
-                            "warning" => null,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "currentStepGen" => 18,
-                            "currentStepJur" => -1
-                        ];
-                        continue;
-                    }
-
-                    if (isset($negocio->n3__informe_cargado)){
-                        $fechaInformeCargado = Carbon::parse($negocio->n3__informe_cargado);
-                        $fechaInformeCargadoMas1Meses = $fechaInformeCargado->copy()->addMonths(1);
-
-                        if ($fechaInformeCargadoMas1Meses->greaterThan($hoy)) {
-                            $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado2,
-                                "warning" => null,
-                                "certificadoDescargado" => $certificadoDescargado,
-                                "currentStepGen" => 17,
-                                "currentStepJur" => -1
-                            ];
-                            continue;
-                        } else {
-                            $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado2,
-                                "warning" => null,
-                                "certificadoDescargado" => $certificadoDescargado,
-                                "currentStepGen" => 16,
-                                "currentStepJur" => -1
-                            ];
-                            continue;
-                        }
-                    }
-
-                    $cosuser[] = [
-                        "servicio" => $negocio->servicio_solicitado2,
-                        "warning" => null,
-                        "certificadoDescargado" => $certificadoDescargado,
-                        "currentStepGen" => 15,
-                        "currentStepJur" => -1
-                    ];
-                    continue;
-                } else if ( isset($negocio->fase_1_pagado) || isset($negocio->fase_1_pagado__teamleader_) ) {
-                    if (isset($negocio->fase_2_preestab) || isset($negocio->fase_2_preestab) || isset($negocio->fase_2_preestab)){
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado2,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "warning" => "Para continuar con el proceso y proceder con el envío del informe y las pruebas correspondientes a la institución mencionada, <b>es necesario que realices el siguiente pago.</b>",
-                            "currentStepGen" => 15,
-                            "currentStepJur" => -1
-                        ];
-                        continue;
-                    }
-
-                    if ($resultadoIA['otrosProcesos']) {
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado2,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "warning" => "<b>Tu caso ha sido derivado a otro proceso.</b> Recibirás seguimiento personalizado.",
-                            "currentStepGen" => 11,
-                            "currentStepJur" => -1
-                        ];
-                        continue;
-                    }
-
-                    $documentsTOTAL = DocumentRequest::where('user_id', $user->id)
-                                    ->count();
-
-                    if($documentsTOTAL>0) {
-                        $documentsEnEsperaCliente = DocumentRequest::where('user_id', $user->id)
-                                        ->whereIn('status', ['en_espera_cliente', 'rechazada'])
-                                        ->count();
-
-                        $documentsEnRevision = DocumentRequest::where('user_id', $user->id)
-                                        ->where('status', 'resuelto')
-                                        ->count();
-
-                        $documentsAprobados = DocumentRequest::where('user_id', $user->id)
-                                        ->whereIn('status', ['no_documento', 'aprobada'])
-                                        ->count();
-
-                        if ($documentsAprobados>0) {
-                            $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado2,
-                                "warning" => null,
-                                "certificadoDescargado" => $certificadoDescargado,
-                                "currentStepGen" => 10,
-                                "currentStepJur" => -1
-                            ];
-                            continue;
-                        }
-
-                        if ($documentsEnRevision>0) {
-                            $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado2,
-                                "warning" => null,
-                                "certificadoDescargado" => $certificadoDescargado,
-                                "currentStepGen" => 9,
-                                "currentStepJur" => -1
-                            ];
-                            continue;
-                        }
-
-                        if ($documentsEnEsperaCliente>0) {
-                            $cosuser[] = [
-                                "servicio" => $negocio->servicio_solicitado2,
-                                "certificadoDescargado" => $certificadoDescargado,
-                                "warning" => "Tienes solicitudes de documentos pendientes. Para resolverlas, dirígete a la pestaña de 'Mis solicitudes de documentos'",
-                                "currentStepGen" => 8,
-                                "currentStepJur" => -1
-                            ];
-                            continue;
-                        }
-                    }
-
-                    $cosuser[] = [
-                        "servicio" => $negocio->servicio_solicitado2,
-                        "warning" => null,
-                        "certificadoDescargado" => $certificadoDescargado,
-                        "currentStepGen" => 8,
-                        "currentStepJur" => -1
-                    ];
-                    continue;
-
-                } else {
-                    if (isset($negocio->fase_1_preestab) || isset($negocio->fase_1_preestab) || isset($negocio->fase_1_preestab)){
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado2,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "warning" => "Para continuar con el proceso y proceder con la redacción del informe, <b>es necesario que realices el siguiente pago.</b>",
-                            "currentStepGen" => 7,
-                            "currentStepJur" => -1
-                        ];
-                        continue;
-                    }
-
-                    if ($resultadoIA['genealogia']) {
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado2,
-                            "warning" => null,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "currentStepGen" => 5,
-                            "currentStepJur" => -1
-                        ];
-                        continue;
-                    }
-
-                    if ($resultadoIA['inicioInvestigacion']) {
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado2,
-                            "warning" => null,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "currentStepGen" => 4,
-                            "currentStepJur" => -1
-                        ];
-                        continue;
-                    }
-
-                    if ($resultadoIA['investigacionProfunda']) {
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado2,
-                            "warning" => null,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "currentStepGen" => 3,
-                            "currentStepJur" => -1
-                        ];
-                        continue;
-                    }
-
-                    if ($resultadoIA['investigacionInSitu']) {
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado2,
-                            "warning" => null,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "currentStepGen" => 2,
-                            "currentStepJur" => -1
-                        ];
-                        continue;
-                    }
-
-                    if ($resultadoIA['investigacionIntuituPersonae']) {
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado2,
-                            "warning" => null,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "currentStepGen" => 1,
-                            "currentStepJur" => -1,
-                            "subproceso" => 1
-                        ];
-                        continue;
-                    }
-
-                    if ($resultadoIA['analisisYCorreccion'] || $hayTatarabuelo) {
-                        $cosuser[] = [
-                            "servicio" => $negocio->servicio_solicitado2,
-                            "warning" => null,
-                            "certificadoDescargado" => $certificadoDescargado,
-                            "currentStepGen" => 1,
-                            "currentStepJur" => -1,
-                            "subproceso" => 0,
-                        ];
-                        continue;
-                    }
-
-                    $cosuser[] = [
-                        "servicio" => $negocio->servicio_solicitado2,
-                        "warning" => null,
-                        "certificadoDescargado" => $certificadoDescargado,
-                        "currentStepGen" => 1,
-                        "currentStepJur" => -1,
-                        "subproceso" => -1,
-                    ];
-                    continue;
-                }
+                $cosuser[] = $status;
             }
         } else {
-            $cosuser[0]["servicio"] = $servicename["id_hubspot"] ?? "";
-            if ($user->pay == 0) {
-                $cosuser[0]["warning"] = "Debes realizar el pago del registro de tu proceso.<a style='border:0!important;'  href='/pay' class='cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none   text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Pagar registro</a>";
-                $cosuser[0]["currentStepGen"] = 0;
-                $cosuser[0]["currentStepJur"] = -1;
-            } else if ($user->pay == 1){
-                $cosuser[0]["warning"] = "Debes completar tu información para continuar con el proceso.<a style='border:0!important;'  href='/getinfo' class='cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none   text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Completar información</a>";
-                $cosuser[0]["currentStepGen"] = 0;
-                $cosuser[0]["currentStepJur"] = -1;
-            } else if ($user->contrato == 0){
-                $cosuser[0]["warning"] = "Debes firmar tu contrato para continuar con el proceso.<a style='border:0!important;'  href='/contrato' class='cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none   text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Firmar contrato</a>";
-                $cosuser[0]["currentStepGen"] = 0;
-                $cosuser[0]["currentStepJur"] = -1;
-            } else {
-                $cosuser[0]["warning"] = null;
-                $cosuser[0]["currentStepGen"] = 1;
-                $cosuser[0]["currentStepJur"] = -1;
-            }
-            $cosuser[0]["certificadoDescargado"] = 0;
+            $cosuser[] = $this->handleNoNegocios($user, $servicename);
         }
 
-        foreach ($cosuser as &$co) {
-            if(isset($cos[$co['servicio']])){
-                $maxGen = sizeof($cos[$co['servicio']]["genealogico"]);
-                $maxJur = sizeof($cos[$co['servicio']]["juridico"]);
+        // Procesar y eliminar duplicados
+        $cosuserFinal = $this->removeDuplicatesAndSort($cosuser);
 
-                $co['progressPercentageGen'] = isset($co['currentStepGen']) && $co['currentStepGen'] >= 0
-                    ? round(($co['currentStepGen'] / $maxGen) * 100)
-                    : 0;
+        $cosuser = array_filter($cosuserFinal, function ($proceso) use ($cos) {
+                        return array_key_exists($proceso['servicio'], $cos);
+                    });
 
-                $co['progressPercentageJur'] = isset($co['currentStepJur']) && $co['currentStepJur'] >= 0
-                    ? round(($co['currentStepJur'] / $maxJur) * 100)
-                    : 0;
-            }
+        $cosuserFinal = $cosuser;
 
-        }
-
-        unset($co);
-        $user->arraycos        = $cosuser;
+        // Guardar en usuario
+        $user->arraycos = array_values($cosuserFinal);
         $user->arraycos_expire = Carbon::now()->addDays(2);
+        $user->cosready = $this->checkCosReady($cosuserFinal, $cos);
         $user->save();
 
+        // ==========================================
+        // DATOS ADICIONALES
+        // ==========================================
         $comprasConDealNoPagadas = Compras::where('deal_id', '!=', null)
-                                ->where('pagado', 0)
-                                ->where('id_user', $user->id)
-                                ->get();
+            ->where('pagado', 0)
+            ->where('id_user', $user->id)
+            ->get();
 
         $comprasSinDealNoPagadas = Compras::whereNull('deal_id')
-                                ->where('pagado', 0)
-                                ->where('id_user', $user->id)
-                                ->get();
+            ->where('pagado', 0)
+            ->where('id_user', $user->id)
+            ->get();
 
         $documentRequests = DocumentRequest::where('user_id', $user->id)
-                                   ->latest()
-                                   ->get();
+            ->latest()
+            ->get();
 
+        $archivos = File::where("IDCliente", $user->passport)->get();
 
+        $facturas = Factura::with('compras')
+            ->where('id_cliente', $user->id)
+            ->get();
 
+        // ==========================================
+        // PREPARAR DATOS PARA VISTA
+        // ==========================================
+        $usuariosMonday = $this->getUsersForSelect()->original ?? [];
+        $roles = Role::all();
+        $permissions = Permission::all();
+        $servicios = Servicio::all();
+
+        // Procesar URLs de archivos (ya existente en tu código)
+        $urls = $this->hubspotService->getEngagementsByContactId($user->hs_id);
+        $processedUrls = $this->processFilesConcurrently($urls, $user, $this->hubspotService);
+        $processedContactFiles = $this->processFilesConcurrently($HScontactFiles, $user, $this->hubspotService);
+
+        $html = view('crud.users.edit', compact('documentRequests', 'comprasConDealNoPagadas', 'comprasSinDealNoPagadas', 'imageUrls', 'cosuser', 'cos', 'servicename', 'negocios', 'usuariosMonday', 'dataMonday', 'mondayData', 'boardId', 'boardName', 'mondayFormBuilder', 'archivos', 'user', 'roles', 'permissions', 'facturas', 'servicios', 'columnasparatabla'))->render();
+        return $html;
+    }
+
+    private function checkCosReady($cosuserFinal, $cos): int
+    {
+        foreach ($cosuserFinal as $item) {
+            $servicio = trim(mb_strtolower($item['servicio']));
+            $cosKeys = array_map(fn($k) => mb_strtolower($k), array_keys($cos));
+
+            if (in_array($servicio, $cosKeys)) {
+                return 1;
+            }
+        }
+
+        return 0;
+    }
+
+    private function handleNoNegocios($user, $servicename): array
+    {
+        // Tu lógica existente
+        $cos = app(\App\Services\CosHelperService::class)->get();
+        $serviceName = $servicename["id_hubspot"] ?? "Española Sefardi";
+
+        $totalStepsGen = isset($cos[$serviceName]['genealogico'])
+            ? count($cos[$serviceName]['genealogico'])
+            : 18;
+
+        $status = [
+            "servicio" => $serviceName,
+            "certificadoDescargado" => 0,
+            "currentStepGen" => 0,
+            "currentStepJur" => -1,
+        ];
+
+        if ($user->pay == 0) {
+            $status["warning"] = "Debes realizar el pago del registro de tu proceso.<a style='border:0!important;' href='/pay' class='cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Pagar registro</a>";
+        } elseif ($user->pay == 1) {
+            $status["warning"] = "Debes completar tu información para continuar con el proceso.<a style='border:0!important;' href='/getinfo' class='cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Completar información</a>";
+        } elseif ($user->contrato == 0) {
+            $status["warning"] = "Debes firmar tu contrato para continuar con el proceso.<a style='border:0!important;' href='/contrato' class='cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Firmar contrato</a>";
+        } else {
+            $status["warning"] = null;
+            $status["currentStepGen"] = 1;
+        }
+
+        $status['progressPercentageGen'] = round(($status['currentStepGen'] / $totalStepsGen) * 100);
+        $status['progressPercentageJur'] = 0;
+
+        return $status;
+    }
+
+    private function removeDuplicatesAndSort(array $cosuser): array
+    {
         $cosuserFinal = [];
-        $duplicadosDetectados = false;
 
         foreach ($cosuser as $item) {
             $servicio = $item['servicio'];
@@ -1441,15 +415,11 @@ class ClienteController extends Controller
             if (!isset($cosuserFinal[$servicio])) {
                 $cosuserFinal[$servicio] = $item;
             } else {
-                $duplicadosDetectados = true;
-
-                // Comparar con el ya guardado
                 $existente = $cosuserFinal[$servicio];
 
-                // Se queda con el que tenga los valores más altos de currentStepGen y currentStepJur
                 if (
-                    $item['currentStepGen'] > $existente['currentStepGen'] ||
-                    $item['currentStepJur'] > $existente['currentStepJur']
+                    ($item['currentStepGen'] ?? 0) > ($existente['currentStepGen'] ?? 0) ||
+                    ($item['currentStepJur'] ?? 0) > ($existente['currentStepJur'] ?? 0)
                 ) {
                     $cosuserFinal[$servicio] = $item;
                 }
@@ -1459,54 +429,81 @@ class ClienteController extends Controller
         uasort($cosuserFinal, function ($a, $b) {
             $sumaA = ($a['currentStepGen'] ?? 0) + ($a['currentStepJur'] ?? 0);
             $sumaB = ($b['currentStepGen'] ?? 0) + ($b['currentStepJur'] ?? 0);
-
-            // Orden descendente (de mayor a menor)
             return $sumaB <=> $sumaA;
         });
 
-        $cos = array_cos();
+        return $cosuserFinal;
+    }
 
-        // Reemplazar $cosuser con la versión final
-        $cosuser = array_values($cosuserFinal);
+    private function getMondayDataCached(User $user): array
+    {
+        $cacheKey = "monday_data_{$user->id}_{$user->monday_id}";
 
-        if ($duplicadosDetectados) {
-            try {
-                \Mail::raw("REVISA LOS NEGOCIOS DEL CLIENTE ID {$user->id}", function ($message) use ($user) {
-                    $message->to('sistemasccs@sefarvzla.com') // <-- cámbialo al real
-                            ->subject("Duplicados detectados en COSUSER - Cliente ID {$user->id}");
-                });
-            } catch (\Exception $e) {
-                \Log::error("Error enviando correo a sistemasccs: " . $e->getMessage());
+        return Cache::remember($cacheKey, 600, function () use ($user) {
+            if (!$user->monday_id) {
+                $this->searchUserInMonday($user->passport, $user);
             }
-        }
 
-        $user->cosready = 0;
-        $user->save();
-
-        foreach ($cosuser as $item) {
-            // Normalizar servicio del usuario
-            $servicio = trim(mb_strtolower($item['servicio']));
-
-            // Normalizar las llaves del array $cos
-            $cosKeys = array_map(fn($k) => mb_strtolower($k), array_keys($cos));
-
-            if (in_array($servicio, $cosKeys)) {
-                $user->cosready = 1;
-                $user->save();
-                break; // basta con que uno coincida
+            if (!$user->monday_id) {
+                return [
+                    'mondayUserDetails' => null,
+                    'mondaydataforAI' => []
+                ];
             }
-        }
 
-        /*
-        CosVisit::create([
-            'user_id' => auth()->id(),
-            'fecha_visita' => now(),
-            'cliente_id' => $user->id
-        ]);
-        */
+            $query = "
+                items(ids: [{$user->monday_id}]) {
+                    id
+                    name
+                    board {
+                        id
+                        name
+                    }
+                    column_values {
+                        id
+                        column {
+                            title
+                            type
+                        }
+                        text
+                        value
+                    }
+                }
+            ";
 
-        $html = view('crud.users.edit', compact('documentRequests', 'comprasConDealNoPagadas', 'comprasSinDealNoPagadas', 'imageUrls', 'cosuser', 'cos', 'servicename', 'negocios', 'usuariosMonday', 'dataMonday', 'mondayData', 'boardId', 'boardName', 'mondayFormBuilder', 'archivos', 'user', 'roles', 'permissions', 'facturas', 'servicios', 'columnasparatabla'))->render();
-        return $html;
+            $result = json_decode(json_encode(Monday::customQuery($query)), true);
+
+            $mondayUserDetailsPre = $result['items'][0] ?? null;
+
+            if ($mondayUserDetailsPre) {
+                $this->storeMondayUserData($user, $mondayUserDetailsPre);
+                $boardId = $mondayUserDetailsPre['board']['id'] ?? null;
+
+                if ($boardId) {
+                    $this->storeMondayBoardColumns($boardId);
+                }
+            }
+
+            $mondaydataforAI = [];
+            if (isset($mondayUserDetailsPre['board']['name'])) {
+                $mondaydataforAI['tablero'] = $mondayUserDetailsPre['board']['name'];
+            }
+
+            // Extraer etiquetas si existen
+            if (isset($mondayUserDetailsPre['column_values'])) {
+                foreach ($mondayUserDetailsPre['column_values'] as $column) {
+                    if ($column['id'] === 'men__desplegable') {
+                        $mondaydataforAI['etiquetas'] = $column['text'];
+                        break;
+                    }
+                }
+            }
+
+            return [
+                'mondayUserDetails' => $mondayUserDetailsPre,
+                'mondaydataforAI' => $mondaydataforAI
+            ];
+        });
     }
 
     private function verificarNegocioActivo($negocios, $servicioSolicitado, $palabrasClave = []) {

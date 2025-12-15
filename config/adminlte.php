@@ -311,13 +311,27 @@ return [
         ],
         /* *** Visitas a COS *** */
         [
-            'text'          => 'Visitas a COS',
-            'icon'          => 'fa-fw fas fa-users',
-            'icon_color'    => 'white',
-            'url'           => 'cosvisitas',
-            'can'           => 'cosvisitas.index',
+            'text'        => 'Herramientas del COS',
+            'icon'        => 'fa-fw fas fa-cogs',
+            'icon_color'  => 'white',
+            'can'  => 'admin.payments',
+            'submenu' => [
+                [
+                    'text'          => 'Visitas a COS',
+                    'icon'          => 'fa-fw fas fa-chart-line',
+                    'icon_color'    => 'white',
+                    'url'           => 'cosvisitas',
+                    'can'           => 'cosvisitas.index',
+                ],
+                [
+                    'text'          => 'Textos del COS',
+                    'icon'          => 'fa-fw fas fa-edit',
+                    'icon_color'    => 'white',
+                    'url'           => 'admin/procesos',
+                    'can'           => 'cosvisitas.index',
+                ],
+            ],
         ],
-
         [
             'text'          => 'Prompt Treena',
             'icon'          => 'fa-fw fas fa-comment',

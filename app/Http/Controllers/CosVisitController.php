@@ -3,23 +3,56 @@
 namespace App\Http\Controllers;
 
 use App\Models\CosVisit;
+use Illuminate\Http\Request;
 
 class CosVisitController extends Controller
 {
     /**
-     * Mostrar todas las visitas (sin paginar).
+     * Listado de visitas al COS (con filtros).
      */
-    public function index()
+    public function listado(Request $request)
     {
-        $visitas = CosVisit::with(['user', 'cliente'])
+        $filtro = $request->get('filtro', 'todo');
+
+        $inicio = match ($filtro) {
+            'semana' => now()->subDays(7),
+            'mes'    => now()->startOfMonth(),
+            'anio'   => now()->startOfYear(),
+            default  => null,
+        };
+
+        $baseQuery = \App\Models\CosVisit::query()
+            ->with([
+                'user:id,name,nombres,apellidos',
+                'cliente:id,name,nombres,apellidos',
+            ])
+            ->when($inicio, fn ($q) => $q->where('fecha_visita', '>=', $inicio));
+
+        // ✅ Tabla (paginada)
+        $visitas = (clone $baseQuery)
             ->orderByDesc('fecha_visita')
-            ->get();
+            ->paginate(50)
+            ->withQueryString();
 
-        if (request()->wantsJson()) {
-            return response()->json($visitas);
-        }
+        // ✅ Total (NO paginado)
+        $totalVisitas = (clone $baseQuery)->count();
 
-        return view('cosvisitas.index', compact('visitas'));
+        // ✅ Chart (NO paginado)
+        $visitasPorUsuario = (clone $baseQuery)
+            ->selectRaw('user_id, COUNT(*) as total')
+            ->groupBy('user_id')
+            ->with(['user:id,name,nombres,apellidos'])
+            ->get()
+            ->map(function ($row) {
+                $u = $row->user;
+                $nombre = $u?->nombres
+                    ? trim($u->nombres . ' ' . ($u->apellidos ?? ''))
+                    : ($u?->name ?? 'Usuario desconocido');
+
+                return ['label' => $nombre, 'total' => (int) $row->total];
+            })
+            ->values(); // importante para @json
+
+        return view('cosvisitas.index', compact('visitas','visitasPorUsuario','totalVisitas','filtro'));
     }
-
 }

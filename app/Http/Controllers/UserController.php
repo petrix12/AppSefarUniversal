@@ -2317,7 +2317,7 @@ class UserController extends Controller
     // CACHE BÁSICO
     // ==========================================
     $imageUrls = $this->getRandomImages();
-    $cos = array_cos();
+    $cos = $cos = app(\App\Services\CosHelperService::class)->get();
 
     // ==========================================
     // SINCRONIZACIÓN CONCURRENTE DE APIS
@@ -2724,7 +2724,7 @@ private function checkCosReady($cosuserFinal, $cos): int
 private function handleNoNegocios($user, $servicename): array
 {
     // Tu lógica existente
-    $cos = array_cos();
+    $cos = app(\App\Services\CosHelperService::class)->get();
     $serviceName = $servicename["id_hubspot"] ?? "Española Sefardi";
 
     $totalStepsGen = isset($cos[$serviceName]['genealogico'])
