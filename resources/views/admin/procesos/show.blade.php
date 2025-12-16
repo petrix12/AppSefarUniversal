@@ -100,7 +100,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Promesa</label>
+                        <label>Promesa (PASADO)</label>
                         <textarea class="form-control" id="promesapasado-{{ $paso->id }}" name="promesa_pasado" rows="6">{!! $paso->promesa_pasado !!}</textarea>
                     </div>
 
