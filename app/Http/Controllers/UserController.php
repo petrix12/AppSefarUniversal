@@ -2733,6 +2733,12 @@ private function handleNoNegocios($user, $servicename): array
 
     $status = [
         "servicio" => $serviceName,
+        "currentStepName" => $cos[$serviceName]["genealogico"][0]["nombre_largo"],
+        'currentStepDetails' => [
+            'promesa' => $cos[$serviceName]["genealogico"][0]["promesa"],
+            'textos_adicionales' => $cos[$serviceName]["genealogico"][0]["textos_adicionales"] ?? [],
+            'ctas' => $cos[$serviceName]["genealogico"][0]["ctas"] ?? [],
+        ],
         "certificadoDescargado" => 0,
         "currentStepGen" => 0,
         "currentStepJur" => -1,
@@ -2740,13 +2746,23 @@ private function handleNoNegocios($user, $servicename): array
 
     if ($user->pay == 0) {
         $status["warning"] = "Debes realizar el pago del registro de tu proceso.<a style='border:0!important;' href='/pay' class='cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Pagar registro</a>";
+        $status["description"]["promesa"] = $cos[$serviceName]["genealogico"][0] ?? "";
     } elseif ($user->pay == 1) {
+        $status["description"]["promesa"] = $cos[$serviceName]["genealogico"][0] ?? "";
         $status["warning"] = "Debes completar tu información para continuar con el proceso.<a style='border:0!important;' href='/getinfo' class='cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Completar información</a>";
     } elseif ($user->contrato == 0) {
+        $status["description"]["promesa"] = $cos[$serviceName]["genealogico"][0] ?? "";
         $status["warning"] = "Debes firmar tu contrato para continuar con el proceso.<a style='border:0!important;' href='/contrato' class='cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Firmar contrato</a>";
     } else {
         $status["warning"] = null;
+        $status["description"]["promesa"] = $cos[$serviceName]["genealogico"][1] ?? "";
         $status["currentStepGen"] = 1;
+        $status["currentStepName"] = $cos[$serviceName]["genealogico"][1]["nombre_largo"];
+        $status["currentStepDetails"] = [
+            'promesa' => $cos[$serviceName]["genealogico"][1]["promesa"],
+            'textos_adicionales' => $cos[$serviceName]["genealogico"][1]["textos_adicionales"] ?? [],
+            'ctas' => $cos[$serviceName]["genealogico"][0]["ctas"] ?? [],
+        ];
     }
 
     $status['progressPercentageGen'] = round(($status['currentStepGen'] / $totalStepsGen) * 100);
