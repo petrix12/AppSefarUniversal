@@ -41,6 +41,7 @@ class CosPasoEditorController extends Controller
             'titulo' => 'required|string|max:255',
             'nombre_corto' => 'nullable|string|max:255',
             'promesa' => 'nullable|string',
+            'promesa_pasado' => 'nullable|string',
             'main_cta_texto' => 'nullable|string|max:255',
             'main_cta_url' => 'nullable|string|max:255',
 
@@ -73,6 +74,7 @@ class CosPasoEditorController extends Controller
                 'titulo' => $data['titulo'],
                 'nombre_corto' => $data['nombre_corto'] ?? null,
                 'promesa' => $data['promesa'] ?? null,
+                'promesa_pasado' => $data['promesa_pasado'] ?? null,
                 'main_cta_texto' => $data['main_cta_texto'] ?? null,
                 'main_cta_url' => $data['main_cta_url'] ?? null,
             ]);

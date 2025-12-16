@@ -48,6 +48,7 @@ class CosEditorController extends Controller
             'titulo' => 'required|string|max:255',
             'nombre_corto' => 'nullable|string|max:255',
             'promesa' => 'nullable|string',
+            'promesa_pasado' => 'nullable|string',
             'main_cta_texto' => 'nullable|string|max:255',
             'main_cta_url' => 'nullable|string|max:255',
         ]);

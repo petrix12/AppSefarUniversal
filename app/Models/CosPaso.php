@@ -17,6 +17,7 @@ class CosPaso extends Model
         'titulo',
         'nombre_corto',
         'promesa',
+        'promesa_pasado',
         'main_cta_texto',
         'main_cta_url',
     ];

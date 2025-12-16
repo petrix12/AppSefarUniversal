@@ -15,7 +15,7 @@
 <script>
   function initTinyMCE() {
     tinymce.init({
-      selector: 'textarea[id^="promesa-"]',
+      selector: 'textarea[id^="promesa-"], textarea[id^="promesapasado-"]',
       height: 220,
       menubar: false,
       branding: false,
@@ -97,6 +97,11 @@
                     <div class="form-group">
                         <label>Promesa</label>
                         <textarea class="form-control" id="promesa-{{ $paso->id }}" name="promesa" rows="6">{!! $paso->promesa !!}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Promesa</label>
+                        <textarea class="form-control" id="promesapasado-{{ $paso->id }}" name="promesa_pasado" rows="6">{!! $paso->promesa_pasado !!}</textarea>
                     </div>
 
 
