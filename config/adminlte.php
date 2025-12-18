@@ -694,24 +694,6 @@ return [
                     'route'         => 'clientes.tree',
                     'can'           => 'cliente',
                 ],
-
-                /*
-                [
-                    'text'          => 'Mi Estatus',
-                    'classes'       => "btn_payments",
-                    'icon'          => 'fa-fw fas fa-exclamation-triangle',
-                    'icon_color'    => 'rgba(255,255,255,0.8)',
-                    'route'         => 'clientes.status',
-                    'can'           => 'cliente',
-                ],
-                [
-                    'text'          => 'Registrar hermanos',
-                    'classes'       => "btn_tree",
-                    'icon'          => 'fa-fw fas fa-users',
-                    'icon_color'    => 'rgba(255,255,255,0.8)',
-                    'route'         => 'cliente.hermanos',
-                    'can'           => 'cliente',
-                ],*/
                 [
                     'text'          => 'Estatus de mi Proceso',
                     'classes'       => 'btn_status_loader',

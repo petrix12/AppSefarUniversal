@@ -13,13 +13,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <div id="loadingModal" class="fixed z-50 inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
-        <div class="bg-white rounded-lg p-6 text-center shadow-xl">
-            <h2 class="text-lg font-semibold text-gray-800 mb-2">Estamos cargando la información del estatus del cliente</h2>
-            <p class="text-sm text-gray-600">Espere un momento...</p>
-        </div>
-    </div>
-
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const editButtons = document.querySelectorAll('.edit-user-btn');
@@ -193,7 +186,7 @@
                                 <div class="justify-center">
                                     <label for="change_person" class="px-3 block text-sm font-medium text-gray-700"
                                         title="Zoom">Ir al COS</label>
-                                    <a href="/users/{{$user->id}}/edit/" style="height: 36px; border-radius: 10px; padding: 0px 10px;" class="csrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 edit-user-btn">Ir al COS</a>
+                                    <a href="/users/{{$user->id}}/edit/" style="height: 36px; border-radius: 10px; padding: 0px 10px;" class="btn_status_loader csrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 edit-user-btn">Ir al COS</a>
                                 </div>
                             </div>
                             @endif
@@ -1952,10 +1945,6 @@ dialog::backdrop {
 @stop
 
 @section('js')
-<script
-  src="https://code.jquery.com/jquery-3.7.1.min.js"
-  integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
-  crossorigin="anonymous"></script>
 <script>
     const container = document.getElementById('containertree');
     const zoomableContent = document.getElementById('zoomableContent');
