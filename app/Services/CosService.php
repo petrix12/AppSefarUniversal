@@ -55,6 +55,12 @@ class CosService
         $certificadoDescargado = $this->calculateCertificadoStatus();
         $isJuridico = $this->isJuridicoProcess();
 
+        if($isJuridico) {
+            Log::info("COS: Proceso Jurídico detectado");
+        } else {
+            Log::info("COS: Proceso Genealógico detectado");
+        }
+
         Log::info("COS: Calculando estado", [
             'negocio_id' => $this->negocio->hubspot_id ?? 'unknown',
             'user_id' => $this->user->id,
@@ -722,6 +728,14 @@ class CosService
 
     private function hasFase3Preestablecida(): bool
     {
+        Log::info("COS: negocio attributes keys", [
+            'hubspot_id' => $this->negocio->hubspot_id ?? null,
+            'attr_keys' => array_keys($this->negocio->getAttributes()),
+            'fase_3_preestab' => $this->negocio->getAttribute('fase_3_preestab'),
+            'fase_3_preestablecida' => $this->negocio->getAttribute('fase_3_preestablecida'),
+            'fase_3_pagado' => $this->negocio->getAttribute('fase_3_pagado'),
+        ]);
+
         return isset($this->negocio->fase_3_preestab);
     }
 
@@ -824,8 +838,7 @@ class CosService
 
     private function isJuridicoProcess(): bool
     {
-        return isset($this->negocio->n7__enviado_al_dto_juridico)
-            || isset($this->negocio->fase_3_pagado)
+        return isset($this->negocio->fase_3_pagado)
             || isset($this->negocio->fase_3_pagado__teamleader_)
             || $this->negocio->servicio_solicitado == "Española - Carta de Naturaleza General"
             || $this->negocio->servicio_solicitado == "Nacionalidad por Carta de Naturaleza";
