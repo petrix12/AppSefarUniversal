@@ -55,11 +55,7 @@ class CosService
         $certificadoDescargado = $this->calculateCertificadoStatus();
         $isJuridico = $this->isJuridicoProcess();
 
-        if($isJuridico) {
-            Log::info("COS: Proceso Jurídico detectado");
-        } else {
-            Log::info("COS: Proceso Genealógico detectado");
-        }
+        if($isJuridico)
 
         Log::info("COS: Calculando estado", [
             'negocio_id' => $this->negocio->hubspot_id ?? 'unknown',
@@ -165,7 +161,16 @@ class CosService
                 'stepGen' => $this->getLastGenStep($certificadoDescargado),
                 'warning' => null,
             ],
+
+            [
+                'name' => 'Esperando Pago Fase 3',
+                'condition' => fn() => $this->hasFase3Preestablecida(),
+                'stepGen' => $this->totalStepsGen - 1 - $certificadoDescargado,
+                'stepJur' => -1,
+                'warning' => "<b>Realiza el pago para la formalización del expediente</b> y aseguremos juntos el siguiente gran paso hacia tu ciudadanía española.",
+            ]
         ];
+
 
         return $this->evaluateRules($rules, $certificadoDescargado, true);
     }
@@ -180,7 +185,7 @@ class CosService
         $rules = [
             // PASO 18: CERTIFICADO APROBADO - ESPERANDO PAGO FASE 3
             [
-                'name' => 'Certificado Aprobado - Esperando Pago',
+                'name' => 'Esperando Pago Fase 3',
                 'condition' => fn() => $this->hasFase3Preestablecida(),
                 'stepGen' => $this->totalStepsGen - 1 - $certificadoDescargado,
                 'stepJur' => -1,
@@ -838,7 +843,8 @@ class CosService
 
     private function isJuridicoProcess(): bool
     {
-        return isset($this->negocio->fase_3_pagado)
+        return isset($this->negocio->n7__enviado_al_dto_juridico)
+            || isset($this->negocio->fase_3_pagado)
             || isset($this->negocio->fase_3_pagado__teamleader_)
             || $this->negocio->servicio_solicitado == "Española - Carta de Naturaleza General"
             || $this->negocio->servicio_solicitado == "Nacionalidad por Carta de Naturaleza";
