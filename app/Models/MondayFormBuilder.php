@@ -10,6 +10,10 @@ class MondayFormBuilder extends Model
     use HasFactory;
 
     protected $table = 'monday_form_builder';
-
     protected $guarded = [];
+
+    protected $casts = [
+        'settings' => 'array',
+        'tag_ids'  => 'array',
+    ];
 }

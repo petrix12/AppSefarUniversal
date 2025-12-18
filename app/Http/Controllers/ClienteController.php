@@ -353,7 +353,106 @@ class ClienteController extends Controller
         $processedUrls = $this->processFilesConcurrently($urls, $user, $this->hubspotService);
         $processedContactFiles = $this->processFilesConcurrently($HScontactFiles, $user, $this->hubspotService);
 
-        $html = view('crud.users.edit', compact('documentRequests', 'comprasConDealNoPagadas', 'comprasSinDealNoPagadas', 'imageUrls', 'cosuser', 'cos', 'servicename', 'negocios', 'usuariosMonday', 'dataMonday', 'mondayData', 'boardId', 'boardName', 'mondayFormBuilder', 'archivos', 'user', 'roles', 'permissions', 'facturas', 'servicios', 'columnasparatabla'))->render();
+        // ==========================================
+        // LOG DE RENDIMIENTO
+        // ==========================================
+        $executionTime = microtime(true) - $startTime;
+        Log::info("Edit ejecutado", [
+            'user_id' => $user->id,
+            'execution_time' => round($executionTime, 2) . 's',
+            'negocios_count' => count($negocios)
+        ]);
+
+        // ==========================================
+        // RENDERIZAR VISTA
+        // ==========================================
+        $cosuser = array_values($cosuserFinal);
+
+        // Extraer datos de Monday para vista
+        $dataMonday = [];
+        $mondayFormBuilder = [];
+        $mondayUserDetails = [];
+        $boardId = 0;
+        $boardName = "";
+
+        if (isset($mondayData['mondayUserDetails']) && !empty($mondayData['mondayUserDetails'])) {
+            $mondayUserDetailsPre = $mondayData['mondayUserDetails'];
+            $boardId = $mondayUserDetailsPre['board']['id'] ?? 0;
+            $boardName = $mondayUserDetailsPre['board']['name'] ?? "";
+
+            // Obtener form builder si hay board
+            if ($boardId) {
+                $mondayFormBuilder = MondayFormBuilder::where('board_id', $boardId)
+                    ->get()
+                    ->map(function ($item) {
+
+                        // settings puede venir como string (data vieja) o array (casts / data nueva)
+                        if (is_string($item->settings)) {
+                            $item->settings = json_decode($item->settings, true) ?: [];
+                        } elseif (is_null($item->settings)) {
+                            $item->settings = [];
+                        }
+
+                        // tag_ids igual (por si lo usas en la vista)
+                        if (is_string($item->tag_ids)) {
+                            $item->tag_ids = json_decode($item->tag_ids, true) ?: [];
+                        } elseif (is_null($item->tag_ids)) {
+                            $item->tag_ids = [];
+                        }
+
+                        return $item;
+                    })
+                    ->toArray();
+            }
+
+            // Procesar columnas
+            $dataMonday = [];
+            if (isset($mondayUserDetailsPre['column_values'])) {
+                foreach($mondayUserDetailsPre['column_values'] as $campo){
+                    $dataMonday[$campo["id"]] = $campo["text"];
+                }
+            }
+
+            // Preparar detalles del usuario
+            $mondayUserDetails = [
+                "nombre" => $mondayUserDetailsPre["name"],
+                "id" => $mondayUserDetailsPre["id"],
+                "propiedades" => []
+            ];
+
+            foreach($mondayUserDetailsPre["column_values"] as $element){
+                $mondayUserDetails["propiedades"][$element["id"]] = [
+                    $element["column"]["title"],
+                    $element["text"]
+                ];
+            }
+        }
+
+        $html = view('crud.users.edit', compact(
+            'documentRequests',
+            'comprasConDealNoPagadas',
+            'comprasSinDealNoPagadas',
+            'imageUrls',
+            'cosuser',
+            'cos',
+            'servicename',
+            'negocios',
+            'usuariosMonday',
+            'dataMonday',
+            'mondayData',
+            'mondayFormBuilder',
+            'mondayUserDetails',
+            'boardId',
+            'boardName',
+            'archivos',
+            'user',
+            'roles',
+            'permissions',
+            'facturas',
+            'servicios',
+            'columnasparatabla'
+        ))->render();
+
         return $html;
     }
 
