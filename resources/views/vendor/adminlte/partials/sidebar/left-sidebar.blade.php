@@ -1,4 +1,10 @@
-<aside class="main-sidebar {{ config('adminlte.classes_sidebar', 'sidebar-dark-primary elevation-4') }}">
+@php
+    $md = \Carbon\Carbon::now()->format('m-d');
+    $showSnow = ($md >= '12-21' || $md <= '01-07');
+@endphp
+
+<aside class="main-sidebar {{ config('adminlte.classes_sidebar', 'sidebar-dark-primary elevation-4') }}
+     @if($showSnow) sidebar-snow @endif">
 
     {{-- Sidebar brand logo --}}
     @if(config('adminlte.logo_img_xl'))
@@ -24,4 +30,75 @@
         </nav>
     </div>
 
+    {{-- CONTENEDOR DE NIEVE - SOLO SI ES TEMPORADA --}}
+    @if($showSnow)
+    <div class="sidebar-snow-container">
+        @for($i = 0; $i < 25; $i++)
+            <div class="sidebar-snowflake"
+                 style="
+                    left: {{ rand(0, 100) }}%;
+                    --delay: {{ rand(0, 30) / 10 }}s;
+                    --duration: {{ rand(8, 15) }}s;
+                    --size: {{ rand(6, 14) }}px;
+                    --opacity: {{ rand(50, 90) / 100 }};
+                 ">
+                {{ collect(['❄','❅','❆','✻'])->random() }}
+            </div>
+        @endfor
+    </div>
+    @endif
 </aside>
+
+@if($showSnow)
+<style>
+/* NIEVE SOLO EN SIDEBAR */
+.sidebar-snow-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 15;
+    overflow: hidden;
+}
+
+.sidebar-snowflake {
+    position: absolute;
+    top: -20px;
+    font-size: var(--size, 10px);
+    opacity: var(--opacity, 0.8);
+    color: #e3f2fd;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    animation: sidebarSnowfall var(--duration, 10s) linear infinite;
+    animation-delay: var(--delay, 0s);
+    will-change: transform;
+}
+
+/* Animación suave dentro del sidebar */
+@keyframes sidebarSnowfall {
+    0% {
+        transform: translateY(-30px) rotate(0deg) translateX(0px);
+        opacity: var(--opacity, 0.8);
+    }
+    50% {
+        transform: translateY(50vh) rotate(180deg) translateX(20px);
+        opacity: calc(var(--opacity, 0.8) * 0.7);
+    }
+    100% {
+        transform: translateY(100vh) rotate(360deg) translateX(-10px);
+        opacity: 0;
+    }
+}
+
+/* Responsive: menos nieve en mobile */
+@media (max-width: 768px) {
+    .sidebar-snowflake {
+        --size: 8px !important;
+    }
+    .sidebar-snow-container {
+        display: none; /* Ocultar en mobile colapsado */
+    }
+}
+</style>
+@endif
