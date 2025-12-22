@@ -1980,52 +1980,74 @@ private function checkCosReady($cosuserFinal, $cos): int
 
 private function handleNoNegocios($user, $servicename): array
 {
-    // Tu lógica existente
     $cos = app(\App\Services\CosHelperService::class)->get();
-    $serviceName = $servicename["id_hubspot"] ?? "Española Sefardi";
 
-    $totalStepsGen = isset($cos[$serviceName]['genealogico'])
-        ? count($cos[$serviceName]['genealogico'])
-        : 18;
+    // Servicio solicitado (NO inventamos ninguno)
+    $serviceName = $servicename["id_hubspot"] ?? null;
 
-    $status = [
+    // Si no viene servicio, también es inválido (decides si esto debe ser error duro)
+    if (!$serviceName) {
+        return [
+            "servicio" => null,
+            "serviceExists" => false,
+            "error" => "El usuario no tiene servicio asignado (id_hubspot es null).",
+            "currentStepName" => null,
+            "currentStepDetails" => null,
+            "certificadoDescargado" => 0,
+            "currentStepGen" => -1,
+            "currentStepJur" => -1,
+            "totalStepsGen" => 0,
+        ];
+    }
+
+    // Validar que exista EXACTAMENTE ese servicio en COS (sin fallback)
+    if (!isset($cos[$serviceName])) {
+        return [
+            "servicio" => $serviceName,
+            "serviceExists" => false,
+            "error" => "Servicio no encontrado en COS: {$serviceName}",
+            "currentStepName" => null,
+            "currentStepDetails" => null,
+            "certificadoDescargado" => 0,
+            "currentStepGen" => -1,
+            "currentStepJur" => -1,
+            "totalStepsGen" => 0,
+        ];
+    }
+
+    // Validar que tenga genealogico y al menos 1 paso
+    $genealogico = $cos[$serviceName]["genealogico"] ?? [];
+    if (!is_array($genealogico) || empty($genealogico) || !isset($genealogico[0])) {
+        return [
+            "servicio" => $serviceName,
+            "serviceExists" => true,
+            "error" => "El servicio existe pero no tiene flujo genealógico configurado.",
+            "currentStepName" => null,
+            "currentStepDetails" => null,
+            "certificadoDescargado" => 0,
+            "currentStepGen" => -1,
+            "currentStepJur" => -1,
+            "totalStepsGen" => is_array($genealogico) ? count($genealogico) : 0,
+        ];
+    }
+
+    $first = $genealogico[0];
+
+    return [
         "servicio" => $serviceName,
-        "currentStepName" => $cos[$serviceName]["genealogico"][0]["nombre_largo"],
-        'currentStepDetails' => [
-            'promesa' => $cos[$serviceName]["genealogico"][0]["promesa"],
-            'textos_adicionales' => $cos[$serviceName]["genealogico"][0]["textos_adicionales"] ?? [],
-            'ctas' => $cos[$serviceName]["genealogico"][0]["ctas"] ?? [],
+        "serviceExists" => true,
+        "error" => null,
+        "currentStepName" => $first["nombre_largo"] ?? null,
+        "currentStepDetails" => [
+            "promesa" => $first["promesa"] ?? "",
+            "textos_adicionales" => $first["textos_adicionales"] ?? [],
+            "ctas" => $first["ctas"] ?? [],
         ],
         "certificadoDescargado" => 0,
         "currentStepGen" => 0,
         "currentStepJur" => -1,
+        "totalStepsGen" => count($genealogico),
     ];
-
-    if ($user->pay == 0) {
-        $status["warning"] = "Debes realizar el pago del registro de tu proceso.<a style='border:0!important;' href='/pay' class='cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Pagar registro</a>";
-        $status["description"]["promesa"] = $cos[$serviceName]["genealogico"][0] ?? "";
-    } elseif ($user->pay == 1) {
-        $status["description"]["promesa"] = $cos[$serviceName]["genealogico"][0] ?? "";
-        $status["warning"] = "Debes completar tu información para continuar con el proceso.<a style='border:0!important;' href='/getinfo' class='cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Completar información</a>";
-    } elseif ($user->contrato == 0) {
-        $status["description"]["promesa"] = $cos[$serviceName]["genealogico"][0] ?? "";
-        $status["warning"] = "Debes firmar tu contrato para continuar con el proceso.<a style='border:0!important;' href='/contrato' class='cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'>Firmar contrato</a>";
-    } else {
-        $status["warning"] = null;
-        $status["description"]["promesa"] = $cos[$serviceName]["genealogico"][1] ?? "";
-        $status["currentStepGen"] = 1;
-        $status["currentStepName"] = $cos[$serviceName]["genealogico"][1]["nombre_largo"];
-        $status["currentStepDetails"] = [
-            'promesa' => $cos[$serviceName]["genealogico"][1]["promesa"],
-            'textos_adicionales' => $cos[$serviceName]["genealogico"][1]["textos_adicionales"] ?? [],
-            'ctas' => $cos[$serviceName]["genealogico"][0]["ctas"] ?? [],
-        ];
-    }
-
-    $status['progressPercentageGen'] = round(($status['currentStepGen'] / $totalStepsGen) * 100);
-    $status['progressPercentageJur'] = 0;
-
-    return $status;
 }
 
 private function removeDuplicatesAndSort(array $cosuser): array
