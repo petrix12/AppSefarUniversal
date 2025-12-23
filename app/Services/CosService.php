@@ -759,7 +759,10 @@ class CosService
 
     private function hasFase2Preestablecida(): bool
     {
-        return isset($this->negocio->fase_2_preestab);
+        return !isset($this->negocio->n3__informe_cargado) && (
+            !isset($this->negocio->fase_2_pagado) ||
+            !isset($this->negocio->monto_fase_2_pagado)
+        );
     }
 
     private function hasFase1Pagada(): bool
