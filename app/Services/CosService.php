@@ -733,6 +733,7 @@ class CosService
 
     private function hasFase3Preestablecida(): bool
     {
+        /*
         Log::info("COS: negocio attributes keys", [
             'hubspot_id' => $this->negocio->hubspot_id ?? null,
             'attr_keys' => array_keys($this->negocio->getAttributes()),
@@ -740,8 +741,8 @@ class CosService
             'fase_3_preestablecida' => $this->negocio->getAttribute('fase_3_preestablecida'),
             'fase_3_pagado' => $this->negocio->getAttribute('fase_3_pagado'),
         ]);
-
-        return isset($this->negocio->fase_3_preestab);
+        */
+        return isset($this->negocio->fase_3_preestab) && isset($this->negocio->informe_cargado);
     }
 
     private function isInformeCargadoReciente(): bool
@@ -763,8 +764,8 @@ class CosService
 
     private function hasFase1Pagada(): bool
     {
-        return isset($this->negocio->fase_1_pagado)
-            || isset($this->negocio->fase_1_pagado__teamleader_);
+        return isset($this->negocio->fase_1_pagado);
+            /*|| isset($this->negocio->fase_1_pagado__teamleader_);*/
     }
 
     private function hasFase1Preestablecida(): bool
