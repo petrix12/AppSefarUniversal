@@ -725,8 +725,8 @@ class CosService
 
     private function hasFase3Pagada(): bool
     {
-        return isset($this->negocio->fase_3_pagado)
-            || isset($this->negocio->fase_3_pagado__teamleader_);
+        return isset($this->negocio->fase_3_pagado);
+            //|| isset($this->negocio->fase_3_pagado__teamleader_);
     }
 
     // ============ CONDICIONES DE ESTADO GENEALÓGICO ============
@@ -845,7 +845,7 @@ class CosService
     {
         return isset($this->negocio->n7__enviado_al_dto_juridico)
             || isset($this->negocio->fase_3_pagado)
-            || isset($this->negocio->fase_3_pagado__teamleader_)
+            /*|| isset($this->negocio->fase_3_pagado__teamleader_)*/
             || $this->negocio->servicio_solicitado == "Española - Carta de Naturaleza General"
             || $this->negocio->servicio_solicitado == "Nacionalidad por Carta de Naturaleza";
     }
@@ -876,8 +876,8 @@ class CosService
     {
         // Si ya pasó la fase genealógica, no analizar IA
         if (
-            isset($this->negocio->fase_2_pagado) || isset($this->negocio->fase_2_pagado__teamleader_) ||
-            isset($this->negocio->fase_3_pagado) || isset($this->negocio->fase_3_pagado__teamleader_) ||
+            isset($this->negocio->fase_2_pagado) /*|| isset($this->negocio->fase_2_pagado__teamleader_) */ ||
+            isset($this->negocio->fase_3_pagado) /*|| isset($this->negocio->fase_3_pagado__teamleader_) */ ||
             isset($this->negocio->n5__fecha_de_formalizacion) || isset($this->negocio->n7__enviado_al_dto_juridico) ||
             isset($this->negocio->n4__certificado_descargado)
         ) {

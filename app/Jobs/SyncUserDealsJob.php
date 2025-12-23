@@ -38,7 +38,13 @@ class SyncUserDealsJob implements ShouldQueue
 
             // Obtener deals de ambas plataformas
             $deals = $hubspotService->getDealsByContactId($this->user->hs_id);
+
             $tlDeals = $teamleaderService->getProjectsWithDetailsByCustomerId($this->user->tl_id);
+
+            Log::info("Info de Cliente", [
+                'hubspot' => $deals,
+                'teamleader' => $tlDeals
+            ]);
 
             // Sincronizar con Teamleader
             $this->syncDealsToTeamleader($deals, $tlDeals, $teamleaderService);
