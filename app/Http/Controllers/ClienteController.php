@@ -2111,7 +2111,7 @@ class ClienteController extends Controller
                 } else {
                     $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-                    $hash_factura = "sef_".generate_string($permitted_chars, 50);
+                    $hash_factura = "sef_".$this->generate_string($permitted_chars, 50);
 
                     Factura::create([
                         'id_cliente' => auth()->user()->id,
@@ -2376,7 +2376,7 @@ class ClienteController extends Controller
 
         $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-        $hash_factura = "sef_".generate_string($permitted_chars, 50);
+        $hash_factura = "sef_".$this->generate_string($permitted_chars, 50);
 
         Factura::create([
             'id_cliente' => auth()->user()->id,
@@ -2637,7 +2637,7 @@ class ClienteController extends Controller
 
         $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-        $hash_factura = "sef_".generate_string($permitted_chars, 50);
+        $hash_factura = "sef_".$this->generate_string($permitted_chars, 50);
 
         Factura::create([
             'id_cliente' => auth()->user()->id,
@@ -3031,7 +3031,7 @@ class ClienteController extends Controller
 
                 $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-                $hash_factura = "sef_".generate_string($permitted_chars, 50);
+                $hash_factura = "sef_".$this->generate_string($permitted_chars, 50);
 
                 Factura::create([
                     'id_cliente' => auth()->user()->id,
@@ -3378,7 +3378,7 @@ class ClienteController extends Controller
 
                 $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-                $hash_factura = "sef_".generate_string($permitted_chars, 50);
+                $hash_factura = "sef_".$this->generate_string($permitted_chars, 50);
 
                 Factura::create([
                     'id_cliente' => auth()->user()->id,
@@ -4362,7 +4362,7 @@ class ClienteController extends Controller
 
                         $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-                        $hash_factura = "sef_".generate_string($permitted_chars, 50);
+                        $hash_factura = "sef_".$this->generate_string($permitted_chars, 50);
 
                         Factura::create([
                             'id_cliente' => $usuariofinal->id,
@@ -4505,7 +4505,7 @@ class ClienteController extends Controller
 
         $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-        $hash_factura = "PRUEBA".generate_string($permitted_chars, 10);
+        $hash_factura = "PRUEBA".$this->generate_string($permitted_chars, 10);
 
         $link = 'https://app.sefaruniversal.com/tree/' . $hash_factura;
 
