@@ -214,7 +214,7 @@ class CosService
             [
                 'name' => 'Esperando Pago Fase 2',
                 'condition' => fn() => $this->hasFase2Preestablecida(),
-                'stepGen' => 14,
+                'stepGen' => 15,
                 'stepJur' => -1,
                 'warning' => "Para continuar con el proceso y proceder con el envío del informe y las pruebas correspondientes a la institución mencionada, <b>es necesario que realices el siguiente pago.</b>",
             ],
@@ -733,7 +733,6 @@ class CosService
 
     private function hasFase3Preestablecida(): bool
     {
-        /*
         Log::info("COS: negocio attributes keys", [
             'hubspot_id' => $this->negocio->hubspot_id ?? null,
             'attr_keys' => array_keys($this->negocio->getAttributes()),
@@ -741,8 +740,8 @@ class CosService
             'fase_3_preestablecida' => $this->negocio->getAttribute('fase_3_preestablecida'),
             'fase_3_pagado' => $this->negocio->getAttribute('fase_3_pagado'),
         ]);
-        */
-        return isset($this->negocio->fase_3_preestab) && isset($this->negocio->informe_cargado);
+
+        return isset($this->negocio->fase_3_preestab);
     }
 
     private function isInformeCargadoReciente(): bool
@@ -759,16 +758,13 @@ class CosService
 
     private function hasFase2Preestablecida(): bool
     {
-        return !isset($this->negocio->n3__informe_cargado) && (
-            !isset($this->negocio->fase_2_pagado) ||
-            !isset($this->negocio->monto_fase_2_pagado)
-        );
+        return isset($this->negocio->fase_2_preestab);
     }
 
     private function hasFase1Pagada(): bool
     {
-        return isset($this->negocio->fase_1_pagado);
-            /*|| isset($this->negocio->fase_1_pagado__teamleader_);*/
+        return isset($this->negocio->fase_1_pagado)
+            || isset($this->negocio->fase_1_pagado__teamleader_);
     }
 
     private function hasFase1Preestablecida(): bool
@@ -849,7 +845,7 @@ class CosService
     {
         return isset($this->negocio->n7__enviado_al_dto_juridico)
             || isset($this->negocio->fase_3_pagado)
-            /*|| isset($this->negocio->fase_3_pagado__teamleader_)*/
+            || isset($this->negocio->fase_3_pagado__teamleader_)
             || $this->negocio->servicio_solicitado == "Española - Carta de Naturaleza General"
             || $this->negocio->servicio_solicitado == "Nacionalidad por Carta de Naturaleza";
     }
@@ -880,8 +876,8 @@ class CosService
     {
         // Si ya pasó la fase genealógica, no analizar IA
         if (
-            isset($this->negocio->fase_2_pagado) /*|| isset($this->negocio->fase_2_pagado__teamleader_) */ ||
-            isset($this->negocio->fase_3_pagado) /*|| isset($this->negocio->fase_3_pagado__teamleader_) */ ||
+            isset($this->negocio->fase_2_pagado) || isset($this->negocio->fase_2_pagado__teamleader_) ||
+            isset($this->negocio->fase_3_pagado) || isset($this->negocio->fase_3_pagado__teamleader_) ||
             isset($this->negocio->n5__fecha_de_formalizacion) || isset($this->negocio->n7__enviado_al_dto_juridico) ||
             isset($this->negocio->n4__certificado_descargado)
         ) {
