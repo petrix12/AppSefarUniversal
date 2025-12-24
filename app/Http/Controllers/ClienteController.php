@@ -2259,7 +2259,7 @@ class ClienteController extends Controller
                     }
 
                     $user = User::findOrFail(auth()->user()->id);
-                    $pdfContent = createPDF($hash_factura);
+                    $pdfContent = $this->createPDF($hash_factura);
 
                     Mail::send('mail.comprobante-mail', ['user' => $user], function ($m) use ($pdfContent, $request, $user) {
                         $m->to([
@@ -2544,7 +2544,7 @@ class ClienteController extends Controller
 
         }
         $user = User::findOrFail(auth()->user()->id);
-        $pdfContent = createPDF($hash_factura);
+        $pdfContent = $this->createPDF($hash_factura);
 
         Mail::send('mail.comprobante-mail', ['user' => $user], function ($m) use ($pdfContent, $request, $user) {
             $m->to([
@@ -2552,7 +2552,7 @@ class ClienteController extends Controller
             ])->subject('SEFAR UNIVERSAL - Hemos procesado su pago satisfactoriamente')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
         });
 
-        $pdfContent2 = createPDFintel($hash_factura);
+        $pdfContent2 = $this->createPDFintel($hash_factura);
 
         Mail::send('mail.comprobante-mail-intel', ['user' => $user], function ($m) use ($pdfContent2, $request, $user) {
             $m->to([
@@ -2904,7 +2904,7 @@ class ClienteController extends Controller
         $user->pay = $user->pay-10;
         $user->save();
 
-        $pdfContent = createPDF($hash_factura);
+        $pdfContent = $this->createPDF($hash_factura);
 
         Mail::send('mail.comprobante-mail', ['user' => $user], function ($m) use ($pdfContent, $request, $user) {
             $m->to([
@@ -2912,7 +2912,7 @@ class ClienteController extends Controller
             ])->subject('SEFAR UNIVERSAL - Hemos procesado su pago satisfactoriamente')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
         });
 
-        $pdfContent2 = createPDFintel($hash_factura);
+        $pdfContent2 = $this->createPDFintel($hash_factura);
 
         Mail::send('mail.comprobante-mail-intel', ['user' => $user], function ($m) use ($pdfContent2, $request, $user) {
             $m->to([
@@ -3204,7 +3204,7 @@ class ClienteController extends Controller
 
                 }
                 $user = User::findOrFail(auth()->user()->id);
-                $pdfContent = createPDF($hash_factura);
+                $pdfContent = $this->createPDF($hash_factura);
 
                 Mail::send('mail.comprobante-mail', ['user' => $user], function ($m) use ($pdfContent, $request, $user) {
                     $m->to([
@@ -3212,7 +3212,7 @@ class ClienteController extends Controller
                     ])->subject('SEFAR UNIVERSAL - Hemos procesado su pago satisfactoriamente')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
                 });
 
-                $pdfContent2 = createPDFintel($hash_factura);
+                $pdfContent2 = $this->createPDFintel($hash_factura);
 
                 Mail::send('mail.comprobante-mail-intel', ['user' => $user], function ($m) use ($pdfContent2, $request, $user) {
                     $m->to([
@@ -3649,7 +3649,7 @@ class ClienteController extends Controller
 
 
 
-                $pdfContent = createPDF($hash_factura);
+                $pdfContent = $this->createPDF($hash_factura);
 
                 Mail::send('mail.comprobante-mail', ['user' => $user], function ($m) use ($pdfContent, $request, $user) {
                     $m->to([
@@ -3657,7 +3657,7 @@ class ClienteController extends Controller
                     ])->subject('SEFAR UNIVERSAL - Hemos procesado su pago satisfactoriamente')->attachData($pdfContent, 'Comprobante.pdf', ['mime' => 'application/pdf']);
                 });
 
-                $pdfContent2 = createPDFintel($hash_factura);
+                $pdfContent2 = $this->createPDFintel($hash_factura);
 
                 Mail::send('mail.comprobante-mail-intel', ['user' => $user], function ($m) use ($pdfContent2, $request, $user) {
                     $m->to([
@@ -4530,7 +4530,7 @@ class ClienteController extends Controller
         ));
     }
 
-    function createPDF($dato){
+    private function createPDF($dato){
         $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND a.hash_factura='$dato';";
         $datos_factura = json_decode(json_encode(DB::select($query)),true);
 
@@ -4541,7 +4541,7 @@ class ClienteController extends Controller
         return $pdf->output();
     }
 
-    function createPDFintel($dato){
+    private function createPDFintel($dato){
         $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND a.hash_factura='$dato';";
         $datos_factura = json_decode(json_encode(DB::select($query)),true);
 
