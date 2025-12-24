@@ -214,7 +214,7 @@ class CosService
             [
                 'name' => 'Esperando Pago Fase 2',
                 'condition' => fn() => $this->hasFase2Preestablecida(),
-                'stepGen' => 15,
+                'stepGen' => 14,
                 'stepJur' => -1,
                 'warning' => "Para continuar con el proceso y proceder con el envío del informe y las pruebas correspondientes a la institución mencionada, <b>es necesario que realices el siguiente pago.</b>",
             ],
@@ -725,8 +725,8 @@ class CosService
 
     private function hasFase3Pagada(): bool
     {
-        return isset($this->negocio->fase_3_pagado);
-            //|| isset($this->negocio->fase_3_pagado__teamleader_);
+        return isset($this->negocio->fase_3_pagado)
+            || isset($this->negocio->fase_3_pagado__teamleader_);
     }
 
     // ============ CONDICIONES DE ESTADO GENEALÓGICO ============
