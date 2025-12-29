@@ -32,6 +32,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('jotform:obtener-datos 242624572998370')->everyMinute()->timezone('UTC');
         $schedule->command('teamleader:refresh-token')->everyMinute()->timezone('UTC');
         $schedule->command('chat:clean-expired')->everyFiveMinutes();
+        $schedule->command('followups:registration-payment')
+        ->dailyAt('09:00')
+        ->withoutOverlapping();
     }
 
     /**
