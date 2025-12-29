@@ -63,7 +63,7 @@ class SendRegistrationPaymentFollowups extends Command
             $logoUrl = config('app.sefar_logo_email', 'https://www.sefaruniversal.com/assets/email/logo.png');
             $paymentUrl = 'https://app.sefaruniversal.com';
 
-            Mail::to($user->email)->queue(
+            Mail::to($user->email)->send(
                 new RegistrationPaymentReminder(
                     fullName: ($fullName !== '' ? $fullName : 'Cliente'),
                     sequence: $sequence,
