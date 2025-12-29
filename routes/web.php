@@ -479,3 +479,13 @@ Route::post('/admin/process-queue', function () {
 
     return back()->with('success', 'Jobs procesados');
 });
+
+Route::get('/cron/followups-registration-payment', function () {
+    Artisan::call('followups:registration-payment', ['--no-interaction' => true]);
+
+    return response()->json([
+        'ok' => true,
+        'output' => Artisan::output(),
+        'ts' => now(),
+    ]);
+});

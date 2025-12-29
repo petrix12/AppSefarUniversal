@@ -18,6 +18,9 @@ class SendRegistrationPaymentFollowups extends Command
     public function handle(): int
     {
         $today = Carbon::today();
+        $logoUrl = 'https://app.sefaruniversal.com/img/logo2.png';
+        $paymentUrl = 'https://app.sefaruniversal.com';
+        $videoUrl = 'https://www.youtube.com/watch?v=tldBjXVy_P0';
 
         $users = User::query()
             ->whereDate('created_at', '>=', '2024-01-01')
@@ -60,15 +63,14 @@ class SendRegistrationPaymentFollowups extends Command
                 continue;
             }
 
-            $logoUrl = config('app.sefar_logo_email', 'https://www.sefaruniversal.com/assets/email/logo.png');
-            $paymentUrl = 'https://app.sefaruniversal.com';
-
             Mail::to($user->email)->send(
                 new RegistrationPaymentReminder(
                     fullName: ($fullName !== '' ? $fullName : 'Cliente'),
                     sequence: $sequence,
                     subjectLine: $subject,
-                    paymentUrl: $paymentUrl
+                    paymentUrl: $paymentUrl,
+                    logoUrl: $logoUrl,
+                    videoUrl: $videoUrl
                 )
             );
 
@@ -82,8 +84,6 @@ class SendRegistrationPaymentFollowups extends Command
 
             $queued++;
         }
-
-        $this->info("Listo. Encolados: {$queued}. Saltados: {$skipped}.");
 
         return self::SUCCESS;
     }

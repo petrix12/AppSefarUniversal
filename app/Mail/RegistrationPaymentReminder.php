@@ -14,7 +14,9 @@ class RegistrationPaymentReminder extends Mailable
         public string $fullName,
         public int $sequence,
         public string $subjectLine,
-        public string $paymentUrl
+        public string $paymentUrl,
+        public string $logoUrl,
+        public string $videoUrl,
     ) {}
 
     public function build()
