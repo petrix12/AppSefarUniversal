@@ -553,6 +553,43 @@ class CosService
 
     private function getRecursoAlzadaWarning(): ?string
     {
+        $serviceName = $this->serviceName;
+
+        // ================= PORTUGUESA SEFARDÍ =================
+        if ($this->isPortuguesaSefardi()) {
+
+            // Si ya tiene Recurso de Urgencia, no mostrar warning
+            $tieneRecursoUrgencia = $this->verificarNegocioActivo(
+                $this->negocios,
+                'Recurso de Urgencia',
+                ['Recurso', 'Urgencia']
+            );
+
+            if ($tieneRecursoUrgencia || isset($this->negocio->fecha_solicitud_recurso_urgencia)) {
+                return null;
+            }
+
+            // Si tiene Vía Judicial, no mostrar warning
+            $tieneViajudicial = $this->verificarNegocioActivo(
+                $this->negocios,
+                'Demanda Judicial',
+                ['Demanda', 'Judicial']
+            );
+
+            if ($tieneViajudicial || isset($this->negocio->fecha_solicitud_viajudicial)) {
+                return null;
+            }
+
+            return '<b>¡Solicita tu Recurso de Urgencia!</b>
+                <a style="border:0!important;"
+                href="https://sefaruniversal.com/bancaonline/"
+                class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                Solicita el Recurso de Urgencia
+                </a>';
+        }
+
+        // ================= RESTO DE SERVICIOS (ALZADA) =================
+
         // Si ya tiene Recurso de Alzada solicitado, no mostrar warning
         $tieneRecursoAlzada = $this->verificarNegocioActivo(
             $this->negocios,
@@ -575,7 +612,12 @@ class CosService
             return null;
         }
 
-        return '<b>¡Solicita tu Recurso de Alzada!</b><a style="border:0!important;" href="https://sefaruniversal.com/landing-email-de-recurso-de-alzada/" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita el Recurso de Alzada</a>';
+        return '<b>¡Solicita tu Recurso de Alzada!</b>
+            <a style="border:0!important;"
+            href="https://sefaruniversal.com/landing-email-de-recurso-de-alzada/"
+            class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+            Solicita el Recurso de Alzada
+            </a>';
     }
 
     private function isResolucionExpresaElegible($hoy): bool
