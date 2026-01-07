@@ -556,7 +556,7 @@ class CosService
         $serviceName = $this->serviceName;
 
         // ================= PORTUGUESA SEFARDÍ =================
-        if ($this->isPortuguesaSefardi()) {
+        if ($this->isPortuguesaSefardi() || $serviceName == "Portuguesa Sefardi") {
 
             // Si ya tiene Recurso de Urgencia, no mostrar warning
             $tieneRecursoUrgencia = $this->verificarNegocioActivo(
