@@ -255,15 +255,6 @@ return [
             'url'  => 'admin/blog',
             'can'  => 'no_definido',
         ],
-        [
-            'text'        => 'Panel Administrativo',
-            'route'       => 'inicio',
-            'icon'        => 'fa-fw fas fa-tachometer-alt',
-            'icon_color'  => 'white',
-            /* 'label'       => 1,
-            'label_color' => 'success', */
-            'can'  => 'administrador',
-        ],
         /* *** ACCESOS *** */
         [
             'text'        => 'Accesos',
@@ -272,7 +263,7 @@ return [
             'can'  => 'administrador',
             'submenu' => [
                 [
-                    'text'          => 'Usuarios',
+                    'text'          => 'Usuarios (COS)',
                     'icon'          => 'fa-fw fas fa-users',
                     'icon_color'    => 'white',
                     'url'           => 'users',
@@ -295,7 +286,7 @@ return [
             ],
         ],
         [
-            'text'          => 'Usuarios',
+            'text'          => 'Usuarios (COS)',
             'icon'          => 'fa-fw fas fa-users',
             'icon_color'    => 'white',
             'url'           => 'users',
