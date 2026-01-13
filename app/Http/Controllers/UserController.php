@@ -2430,7 +2430,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
             'phone' => 'required|string|max:15',
             'nombres' => 'required|string|max:255',
             'apellidos' => 'required|string|max:255',
-            'date_of_birth' => 'required|date',
+            'date_of_birth' => 'nullable',
             'passport' => 'required|string|max:20|unique:users,passport,' . $request->id,
         ], [
             'correo.required' => 'El campo correo es obligatorio.',
@@ -2439,8 +2439,6 @@ private function removeDuplicatesAndSort(array $cosuser): array
             'phone.required' => 'El campo teléfono es obligatorio.',
             'nombres.required' => 'El campo nombres es obligatorio.',
             'apellidos.required' => 'El campo apellidos es obligatorio.',
-            'date_of_birth.required' => 'El campo fecha de nacimiento es obligatorio.',
-            'date_of_birth.date' => 'La fecha de nacimiento debe ser una fecha válida.',
             'passport.required' => 'El campo pasaporte es obligatorio.',
             'passport.unique' => 'Este pasaporte ya está registrado.',
         ]);
