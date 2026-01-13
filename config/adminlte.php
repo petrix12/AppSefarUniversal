@@ -286,7 +286,7 @@ return [
             ],
         ],
         [
-            'text'          => 'Usuarios (COS)',
+            'text'          => 'Clientes (COS)',
             'icon'          => 'fa-fw fas fa-users',
             'icon_color'    => 'white',
             'url'           => 'users',
