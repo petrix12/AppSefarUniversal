@@ -3982,6 +3982,8 @@ class ClienteController extends Controller
 
                 auth()->user()->revokePermissionTo('pay.services');
 
+                $this->registrarVentaEnMonday($customer, $paymentIntent, $monto, $compras);
+
                 // Actualizar HubSpot
                 try {
                     $filter = new \HubSpot\Client\Crm\Contacts\Model\Filter();
@@ -4164,6 +4166,236 @@ class ClienteController extends Controller
                 'success' => false,
                 'message' => 'Ha ocurrido un error inesperado. Por favor, intente nuevamente.'
             ], 500);
+        }
+    }
+
+    /**
+ * Mapea los nombres de servicios de la base de datos a los valores del dropdown de Monday
+ *
+ * @param string $servicio Nombre del servicio en la base de datos
+ * @return string Nombre del servicio según Monday
+ */
+    protected function mapearServicioParaMonday($servicio)
+    {
+        // Mapeo completo de servicios
+        $mapa = [
+            // Servicios principales
+            'Española LMD' => 'Ley De Memoria Democrática (Supuesto 1)',
+            'Italiana' => 'Nacionalidad Italiana',
+            'Española Sefardi' => 'Carta de Naturaleza Sefardí',
+            'Portuguesa Sefardi' => 'Sefardí Portugal',
+            'Portuguesa Sefardi - Subsanación' => 'Subsanación de Documentos',
+            'Española Sefardi - Subsanación' => 'Subsanación de Documentos',
+            'Española - Carta de Naturaleza' => 'Carta De Naturaleza',
+            'Análisis por semana' => 'Análisis Por Semana',
+            'Recurso de Alzada' => 'Recurso de Alzada',
+            'Gestión Documental' => 'Asistencia Documental',
+            'Constitución de Empresa' => 'Gestorias',
+            'Representante Fiscal' => 'Representante Fiscal',
+            'Codigo  Fiscal' => 'Gestorias',
+            'Apertura de cuenta' => 'Gestorias',
+            'Trimestre contable' => 'Gestorias',
+            'Cooperativa 10 años' => 'Vinculación Portugal (Cooperativas 10 Años)',
+            'Cooperativa 5 años' => 'Vinculaciones Portugal (Cooperativas 5 Años)',
+            'Participaciones sociales' => 'Vinculaciones Portugal',
+            'Acumulación de linajes' => 'Investigacion Genealogica',
+            'Árbol genealógico de Deslinde' => 'Deslinde Genealógico',
+            'Procedimiento de Urgencia' => 'Procedimiento De Urgencia',
+            'Certificación de Documentos - Portugal' => 'Jornada Especial De Certificacion De Documentos',
+
+            // Servicios de hermanos (mapean igual que los principales)
+            'Española LMD - Hermano' => 'Ley De Memoria Democrática (Supuesto 1)',
+            'Italiana - Hermano' => 'Nacionalidad Italiana',
+            'Española Sefardi - Hermano' => 'Carta de Naturaleza Sefardí',
+            'Portuguesa Sefardi - Hermano' => 'Sefardí Portugal',
+            'Portuguesa Sefardi - Subsanación - Hermano' => 'Subsanación de Documentos',
+            'Española Sefardi - Subsanación - Hermano' => 'Subsanación de Documentos',
+            'Española - Carta de Naturaleza - Hermano' => 'Carta De Naturaleza',
+            'Análisis por semana - Hermano' => 'Análisis Por Semana',
+            'Recurso de Alzada - Hermano' => 'Recurso de Alzada',
+            'Gestión Documental - Hermano' => 'Asistencia Documental',
+            'Constitución de Empresa - Hermano' => 'Gestorias',
+            'Representante Fiscal - Hermano' => 'Representante Fiscal',
+            'Codigo  Fiscal - Hermano' => 'Gestorias',
+            'Apertura de cuenta - Hermano' => 'Gestorias',
+            'Trimestre contable - Hermano' => 'Gestorias',
+            'Cooperativa 10 años - Hermano' => 'Vinculación Portugal (Cooperativas 10 Años)',
+            'Cooperativa 5 años - Hermano' => 'Vinculaciones Portugal (Cooperativas 5 Años)',
+            'Participaciones sociales - Hermano' => 'Vinculaciones Portugal',
+            'Acumulación de linajes - Hermano' => 'Investigacion Genealogica',
+            'Árbol genealógico de Deslinde - Hermano' => 'Deslinde Genealógico',
+            'Procedimiento de Urgencia - Hermano' => 'Procedimiento De Urgencia',
+            'Certificación de Documentos - Portugal - Hermano' => 'Jornada Especial De Certificacion De Documentos',
+
+            // Servicios adicionales
+            'Analisis Juridico Genealogico' => 'Plan de Accion Jurídico Sefardi',
+            'Diagnóstico Express para Plan de acción de la Nacionalidad Italiana' => 'Nacionalidad Italiana',
+            'Formalizacion Anticipada Portuguesa Sefardi' => 'Formalizacion De Expediente De Nacionalidad Portuguesa',
+            'Formalizacion Anticipada Ley de Memoria Democrática' => 'Formalización de Expediente españa',
+            'Nacionalidad Portuguesa por Conyuge' => 'Nacionalidad Portuguesa por origen Sefardi',
+            'Nacionalidad Española por Conyuge' => 'Carta De Naturaleza',
+        ];
+
+        // Si existe en el mapa, devolver el valor mapeado
+        if (isset($mapa[$servicio])) {
+            return $mapa[$servicio];
+        }
+
+        // Si no existe en el mapa, intentar una búsqueda parcial
+        foreach ($mapa as $key => $value) {
+            if (stripos($servicio, $key) !== false) {
+                return $value;
+            }
+        }
+
+        // Si no se encuentra coincidencia, devolver "Registro" como valor por defecto
+        \Log::warning('Servicio no mapeado para Monday: ' . $servicio);
+        return 'Registro';
+    }
+
+    /**
+     * Registra la venta en el tablero de Monday.com "Ventas 2026"
+     *
+     * @param object $customer Cliente de Stripe
+     * @param object $paymentIntent Payment Intent de Stripe
+     * @param float $monto Total pagado
+     * @param array $compras Array de compras realizadas
+     * @return bool
+     */
+    protected function registrarVentaEnMonday($customer, $paymentIntent, $monto, $compras)
+    {
+        try {
+            $token = env('MONDAY_TOKEN');
+            $apiUrl = 'https://api.monday.com/v2';
+            $headers = [
+                'Content-Type: application/json',
+                'Authorization: ' . $token
+            ];
+
+            $user = auth()->user();
+
+            // Construir la descripción de servicios vendidos CON MAPEO
+            $serviciosDescripcion = "";
+            $serviciosMapeados = []; // Array para almacenar servicios mapeados
+
+            foreach ($compras as $key => $compra) {
+                // Mapear el servicio
+                $servicioMapeado = $this->mapearServicioParaMonday($compra->servicio_hs_id);
+                $serviciosMapeados[] = $servicioMapeado;
+
+                $serviciosDescripcion .= $servicioMapeado;
+                if ($key != count($compras) - 1) {
+                    $serviciosDescripcion .= ", ";
+                }
+            }
+
+            // Nombre del item (título de la venta)
+            $itemName = count($compras) > 1 ?
+                "Compra Múltiple - " . $user->name :
+                $serviciosDescripcion;
+
+            // Preparar la fecha en formato YYYY-MM-DD
+            $fechaPago = Carbon::now()->format('Y-m-d');
+
+            // ✅ IMPORTANTE: Para el dropdown, si hay múltiples servicios, usar el primero
+            $servicioParaDropdown = $serviciosMapeados[0] ?? 'Registro';
+
+            // Preparar los valores de las columnas
+            $columnValues = [
+                // Cliente
+                'text_mkqswz4p' => $user->name,
+
+                // Número de pasaporte
+                'text_mkzaptd3' => $user->passport ?? 'N/A',
+
+                // Fecha de pago
+                'date' => $fechaPago,
+
+                // Forma de Pago
+                'text_mkrd13sa' => 'Stripe',
+
+                // ✅ Servicio vendidos (dropdown) - USAR VALOR MAPEADO
+                'dropdown_mkt4dwyq' => $servicioParaDropdown,
+
+                // Total pagado
+                'numeric_mkqsn730' => $monto,
+
+                // Personas por las que se paga (IDs de Stripe + Servicios completos)
+                'text_mkza4s9z' => "ID Cliente: " . $customer->id . " | ID Pago: " . $paymentIntent->id . " | Servicios: " . $serviciosDescripcion
+            ];
+
+            // Query de GraphQL para crear el item
+            $query = 'mutation ($myItemName: String!, $columnVals: JSON!) {
+                create_item (
+                    board_id: 18393840903,
+                    item_name: $myItemName,
+                    column_values: $columnVals
+                ) {
+                    id
+                    name
+                }
+            }';
+
+            // Variables para la mutación
+            $vars = [
+                'myItemName' => $itemName,
+                'columnVals' => json_encode($columnValues)
+            ];
+
+            // Preparar el contexto para la petición HTTP
+            $context = stream_context_create([
+                'http' => [
+                    'method' => 'POST',
+                    'header' => $headers,
+                    'content' => json_encode([
+                        'query' => $query,
+                        'variables' => $vars
+                    ]),
+                    'ignore_errors' => true
+                ]
+            ]);
+
+            // Ejecutar la petición
+            $response = file_get_contents($apiUrl, false, $context);
+
+            if ($response === false) {
+                throw new \Exception("No se pudo conectar con Monday.com");
+            }
+
+            $responseData = json_decode($response, true);
+
+            // Verificar si hubo errores
+            if (isset($responseData['errors']) && count($responseData['errors']) > 0) {
+                $errorMessage = $responseData['errors'][0]['message'] ?? 'Error desconocido';
+                throw new \Exception("Error de Monday.com: " . $errorMessage);
+            }
+
+            // Log de éxito
+            \Log::info('Venta registrada en Monday.com exitosamente', [
+                'board_id' => 18393840903,
+                'item_name' => $itemName,
+                'monday_item_id' => $responseData['data']['create_item']['id'] ?? null,
+                'user_id' => $user->id,
+                'passport' => $user->passport,
+                'monto' => $monto,
+                'servicios_originales' => array_column($compras->toArray(), 'servicio_hs_id'),
+                'servicios_mapeados' => $serviciosMapeados
+            ]);
+
+            return true;
+
+        } catch (\Exception $e) {
+            // Log del error con más detalles
+            \Log::error('Error registrando venta en Monday.com: ' . $e->getMessage(), [
+                'user_id' => auth()->user()->id ?? null,
+                'customer_id' => $customer->id ?? null,
+                'payment_intent_id' => $paymentIntent->id ?? null,
+                'monto' => $monto ?? null,
+                'servicios' => $compras ? array_column($compras->toArray(), 'servicio_hs_id') : [],
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return false;
         }
     }
 
