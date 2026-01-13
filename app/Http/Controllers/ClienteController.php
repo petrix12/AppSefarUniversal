@@ -4328,6 +4328,7 @@ class ClienteController extends Controller
             $query = 'mutation ($myItemName: String!, $columnVals: JSON!) {
                 create_item (
                     board_id: 18393840903,
+                    group_id: "group_mkzadajd",
                     item_name: $myItemName,
                     column_values: $columnVals
                 ) {
