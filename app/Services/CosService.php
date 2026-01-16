@@ -57,7 +57,6 @@ class CosService
         Log::info("COS: Calculando estado", [
             'negocio_id' => $this->negocio->hubspot_id ?? 'unknown',
             'user_id' => $this->user->id,
-            'es_juridico' => $isJuridico,
             'certificado_descargado' => $certificadoDescargado
         ]);
 
