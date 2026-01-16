@@ -8,6 +8,7 @@ use App\Models\Servicio;
 use Livewire\Component;
 use Illuminate\Support\Facades\Cache;
 use App\Models\Compras;
+use Illuminate\Support\Facades\Auth;
 
 class UsersTable extends Component
 {
@@ -129,49 +130,59 @@ class UsersTable extends Component
      */
     public function render()
     {
-        $users = User::query()
+        // 1. Obtener el usuario autenticado
+        $authUser = Auth::user()->load('roles');
+
+        $query = User::query()
             ->select([
-                'id',
-                'name',
-                'nombres',
-                'apellidos',
-                'email',
-                'passport',
-                'servicio',
-                'contrato',
-                'pay',
-                'created_at'
+                'id', 'name', 'nombres', 'apellidos', 'email',
+                'passport', 'servicio', 'contrato', 'pay', 'created_at',
+                'owner_id' // Asegúrate de incluirlo en el select
             ])
-            ->with(['compras:id,id_user,servicio_hs_id,pagado'])
-            // 🔍 BUSQUEDA MULTI-CAMPO OPTIMIZADA
-            ->when($this->search, function ($query) {
-                $terms = preg_split('/\s+/', trim($this->search));
+            ->with(['compras:id,id_user,servicio_hs_id,pagado']);
 
-                foreach ($terms as $term) {
-                    $query->where(function ($q) use ($term) {
-                        $like = "%{$term}%";
-                        $q->whereRaw("CONCAT_WS(' ', name, nombres, apellidos, email, passport) LIKE ?", [$like]);
-                    });
-                }
-            })
+        /**
+         * 🛡️ SEGURIDAD: FILTRO POR ROL (17: Coord. Ventas, 15: Ventas)
+         * Si el usuario logueado tiene uno de estos roles, solo ve sus prospectos.
+         */
 
-            // 🔵 FILTRO SERVICIO (AHORA SQL PURO, SIN SUBQUERY COMPLEJO)
-            ->when($this->filterServicio !== '', function ($query) {
-                $query->where(function ($q) {
-                    $q->where('servicio', $this->filterServicio)
-                    ->orWhereHas('compras', function ($c) {
-                        $c->where('servicio_hs_id', $this->filterServicio);
-                    });
+        $rolesIds = $authUser->roles->pluck('id')->toArray();
+
+        $query->when(
+            !empty(array_intersect($rolesIds, [15, 17])),
+            function ($q) use ($authUser) {
+                return $q->where('owner_id', $authUser->id);
+            }
+        );
+
+        // 🔍 BUSQUEDA MULTI-CAMPO
+        $query->when($this->search, function ($query) {
+            $terms = preg_split('/\s+/', trim($this->search));
+            foreach ($terms as $term) {
+                $query->where(function ($q) use ($term) {
+                    $like = "%{$term}%";
+                    $q->whereRaw("CONCAT_WS(' ', name, nombres, apellidos, email, passport) LIKE ?", [$like]);
                 });
-            })
+            }
+        });
 
-            // 🔵 FILTROS SIMPLES
-            ->when($this->filterContrato !== '', fn($q) => $q->where('contrato', $this->filterContrato))
-            ->when($this->filterPago !== '', fn($q) => $q->where('pay', $this->filterPago))
+        // 🔵 FILTRO SERVICIO
+        $query->when($this->filterServicio !== '', function ($query) {
+            $query->where(function ($q) {
+                $q->where('servicio', $this->filterServicio)
+                  ->orWhereHas('compras', function ($c) {
+                      $c->where('servicio_hs_id', $this->filterServicio);
+                  });
+            });
+        });
 
-            // 🔥 PAGINACIÓN SUPER RÁPIDA
-            ->orderBy('created_at', 'DESC')
-            ->paginate($this->perPage);
+        // 🔵 FILTROS SIMPLES
+        $query->when($this->filterContrato !== '', fn($q) => $q->where('contrato', $this->filterContrato))
+              ->when($this->filterPago !== '', fn($q) => $q->where('pay', $this->filterPago));
+
+        // 🔥 PAGINACIÓN
+        $users = $query->orderBy('created_at', 'DESC')
+                       ->paginate($this->perPage);
 
         return view('livewire.crud.users-table', [
             'users' => $users,

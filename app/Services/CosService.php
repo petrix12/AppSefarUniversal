@@ -40,7 +40,7 @@ class CosService
         $this->negocios = $negocios;
         $this->mondayData = $mondayData;
         $this->cos = array_cos();
-        $this->serviceName = $this->getServiceName();
+        $this->negocio->servicio_solicitado2 = $this->getServiceName();
         $this->calculateTotalSteps();
         $this->logServiceInitialization();
     }
@@ -53,9 +53,6 @@ class CosService
     public function calculateStatus(): array
     {
         $certificadoDescargado = $this->calculateCertificadoStatus();
-        $isJuridico = $this->isJuridicoProcess();
-
-        if($isJuridico)
 
         Log::info("COS: Calculando estado", [
             'negocio_id' => $this->negocio->hubspot_id ?? 'unknown',
@@ -64,11 +61,9 @@ class CosService
             'certificado_descargado' => $certificadoDescargado
         ]);
 
-        if ($isJuridico) {
-            return $this->calculateJuridicoStatus($certificadoDescargado);
-        }
+        //dd($this->negocio->servicio_solicitado2);
 
-        return $this->calculateGenealogicStatus($certificadoDescargado);
+        return $this->calculateCOS($certificadoDescargado);
     }
 
     // ============ MÉTODOS DE CÁLCULO DE ESTADO ============
@@ -76,9 +71,13 @@ class CosService
     /**
      * Calcula el estado del proceso jurídico
      */
-    private function calculateJuridicoStatus($certificadoDescargado): array
+    private function calculateCOS($certificadoDescargado): array
     {
         $hoy = Carbon::now();
+
+        $isJuridico = $this->isJuridicoProcess();
+
+        $resultadoIA = $this->getIAResults();
 
         $rules = [
             // PASO 8: NACIONALIDAD CONCEDIDA (FINAL)
@@ -168,22 +167,8 @@ class CosService
                 'stepGen' => $this->totalStepsGen - 1 - $certificadoDescargado,
                 'stepJur' => -1,
                 'warning' => "<b>Realiza el pago para la formalización del expediente</b> y aseguremos juntos el siguiente gran paso hacia tu ciudadanía española.",
-            ]
-        ];
+            ],
 
-
-        return $this->evaluateRules($rules, $certificadoDescargado, true);
-    }
-
-    /**
-     * Calcula el estado del proceso genealógico
-     */
-    private function calculateGenealogicStatus($certificadoDescargado): array
-    {
-        $resultadoIA = $this->getIAResults();
-
-        $rules = [
-            // PASO 18: CERTIFICADO APROBADO - ESPERANDO PAGO FASE 3
             [
                 'name' => 'Esperando Pago Fase 3',
                 'condition' => fn() => $this->hasFase3Preestablecida(),
@@ -442,9 +427,9 @@ class CosService
         }
 
         // Verificar que existe el servicio en array_cos
-        if (!isset($this->cos[$this->serviceName])) {
+        if (!isset($this->cos[$this->negocio->servicio_solicitado2])) {
             Log::warning("COS: Servicio no encontrado en array_cos", [
-                'servicio' => $this->serviceName
+                'servicio' => $this->negocio->servicio_solicitado2
             ]);
             return null;
         }
@@ -456,13 +441,12 @@ class CosService
             Log::info("COS: Cliente en fase jurídica, buscando paso", [
                 'paso_buscado' => $pasoJuridicoBuscado,
                 'jur_index' => $jur,
-                'servicio' => $this->serviceName
+                'servicio' => $this->negocio->servicio_solicitado2
             ]);
 
             // Buscar en rama jurídica
-            if (isset($this->cos[$this->serviceName]['juridico'])) {
-                foreach ($this->cos[$this->serviceName]['juridico'] as $paso) {
-                    //dd($pasoJuridicoBuscado, $paso['paso'], $jur, $this->serviceName);
+            if (isset($this->cos[$this->negocio->servicio_solicitado2]['juridico'])) {
+                foreach ($this->cos[$this->negocio->servicio_solicitado2]['juridico'] as $paso) {
                     if ($paso['paso'] == $pasoJuridicoBuscado) {
                         Log::info("COS: ✅ Paso jurídico encontrado", [
                             'paso_numero' => $pasoJuridicoBuscado,
@@ -476,8 +460,8 @@ class CosService
             Log::error("COS: ❌ CRÍTICO - Paso jurídico no encontrado", [
                 'paso_buscado' => $pasoJuridicoBuscado,
                 'jur' => $jur,
-                'servicio' => $this->serviceName,
-                'pasos_disponibles' => array_column($this->cos[$this->serviceName]['juridico'] ?? [], 'paso')
+                'servicio' => $this->negocio->servicio_solicitado2,
+                'pasos_disponibles' => array_column($this->cos[$this->negocio->servicio_solicitado2]['juridico'] ?? [], 'paso')
             ]);
         }
 
@@ -488,11 +472,11 @@ class CosService
             Log::info("COS: Cliente en fase genealógica, buscando paso", [
                 'paso_buscado' => $pasoGenealogicoBuscado,
                 'gen_index' => $gen,
-                'servicio' => $this->serviceName
+                'servicio' => $this->negocio->servicio_solicitado2
             ]);
 
-            if (isset($this->cos[$this->serviceName]['genealogico'])) {
-                foreach ($this->cos[$this->serviceName]['genealogico'] as $paso) {
+            if (isset($this->cos[$this->negocio->servicio_solicitado2]['genealogico'])) {
+                foreach ($this->cos[$this->negocio->servicio_solicitado2]['genealogico'] as $paso) {
                     if ($paso['paso'] == $pasoGenealogicoBuscado) {
                         Log::info("COS: ✅ Paso genealógico encontrado", [
                             'paso_numero' => $pasoGenealogicoBuscado,
@@ -505,7 +489,7 @@ class CosService
 
             Log::warning("COS: ❌ Paso genealógico no encontrado", [
                 'paso_buscado' => $pasoGenealogicoBuscado,
-                'pasos_disponibles' => array_column($this->cos[$this->serviceName]['genealogico'] ?? [], 'paso')
+                'pasos_disponibles' => array_column($this->cos[$this->negocio->servicio_solicitado2]['genealogico'] ?? [], 'paso')
             ]);
         }
 
@@ -553,7 +537,7 @@ class CosService
 
     private function getRecursoAlzadaWarning(): ?string
     {
-        $serviceName = $this->serviceName;
+        $serviceName = $this->negocio->servicio_solicitado2;
 
         // ================= PORTUGUESA SEFARDÍ =================
         if ($this->isPortuguesaSefardi() || $serviceName == "Portuguesa Sefardi") {
@@ -684,7 +668,7 @@ class CosService
         }
 
         $currentStepNumber = $this->currentStepJur + 1;
-        $serviceName = $this->serviceName;
+        $serviceName = $this->negocio->servicio_solicitado2;
 
         // ========== SERVICIOS ESPAÑOLES (TODOS USAN RECURSO DE ALZADA) ==========
         $serviciosEspanoles = [
@@ -863,13 +847,15 @@ class CosService
             return 1; // Por defecto, no descargado
         }
 
+        //dd($this->negocio->n4__certificado_descargado);
+
         // Española Sefardí: lógica original
-        return !isset($this->negocio->n4__certificado_descargado) ? 1 : 0;
+        return is_null($this->negocio->n4__certificado_descargado) ? 0 : 1;
     }
 
     private function isCartaNaturaleza(): bool
     {
-        return in_array($this->serviceName, [
+        return in_array($this->negocio->servicio_solicitado2, [
             'Española - Carta de Naturaleza General',
             'Nacionalidad por Carta de Naturaleza'
         ]);
@@ -877,7 +863,7 @@ class CosService
 
     private function isPortuguesaSefardi(): bool
     {
-        return in_array($this->serviceName, [
+        return in_array($this->negocio->servicio_solicitado2, [
             'Portuguesa Sefardí',
             'Portuguesa - Sefardí'
         ]);
@@ -986,15 +972,15 @@ class CosService
 
     private function calculateTotalSteps(): void
     {
-        if (isset($this->cos[$this->serviceName])) {
-            $this->totalStepsGen = count($this->cos[$this->serviceName]['genealogico'] ?? []);
-            $this->totalStepsJur = count($this->cos[$this->serviceName]['juridico'] ?? []);
+        if (isset($this->cos[$this->negocio->servicio_solicitado2])) {
+            $this->totalStepsGen = count($this->cos[$this->negocio->servicio_solicitado2]['genealogico'] ?? []);
+            $this->totalStepsJur = count($this->cos[$this->negocio->servicio_solicitado2]['juridico'] ?? []);
         } else {
             $this->totalStepsGen = 18;
             $this->totalStepsJur = 9;
 
             Log::warning("COS: Servicio no encontrado en COS helper", [
-                'servicio' => $this->serviceName,
+                'servicio' => $this->negocio->servicio_solicitado2,
                 'usando_defaults' => true
             ]);
         }
@@ -1003,7 +989,7 @@ class CosService
     private function logServiceInitialization(): void
     {
         Log::info("COS Service inicializado", [
-            'servicio' => $this->serviceName,
+            'servicio' => $this->negocio->servicio_solicitado2,
             'total_gen_steps' => $this->totalStepsGen,
             'total_jur_steps' => $this->totalStepsJur,
             'negocio_id' => $this->negocio->hubspot_id ?? 'unknown',
