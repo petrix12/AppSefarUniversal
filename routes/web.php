@@ -491,4 +491,4 @@ Route::get('/cron/followups-registration-payment', function () {
     ]);
 });
 
-Route::post('/deploy', [DeployController::class, 'deploy'])->name('deploy.run');
+Route::get('/deploy', [DeployController::class, 'deploy'])->name('deploy.run');
