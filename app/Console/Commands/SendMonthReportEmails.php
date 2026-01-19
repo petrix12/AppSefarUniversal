@@ -515,7 +515,8 @@ class SendMonthReportEmails extends Command
             'cguerrero@sefarvzla.com',
             'automatizacion@sefarvzla.com',
             'admin.sefar@sefarvzla.com',
-            'yeinsondiaz@sefarvzla.com'
+            'yeinsondiaz@sefarvzla.com',
+            'gromero@sefarvzla.com'
         ];
 
 
