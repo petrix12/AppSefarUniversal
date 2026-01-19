@@ -836,7 +836,7 @@ class CosService
         // Portuguesa Sefardí: certificado descargado O CIL pre-aprobado
         if ($this->isPortuguesaSefardi()) {
             // Si tiene certificado descargado o CIL pre-aprobado, paso completo (0)
-            if (isset($this->negocio->n4__certificado_descargado) || isset($this->negocio->n6__cil_preaprobado)) {
+            if (isset($this->negocio->n4__certificado_descargado)/* || isset($this->negocio->n6__cil_preaprobado)*/) {
                 return 0;
             }
             // Si tiene fase jurídica pero ninguno de los dos, restar 1
