@@ -171,7 +171,7 @@
 
                 @if($isActive)
                     data-nombre="{{ $step['nombre_corto'] }}"
-                    data-descripcion="{{ $step['promesa_pasado'] ?? $step['promesa'] }}"
+                    data-descripcion="{{ $step['promesa_pasado'] && $step['promesa_pasado']!="" ? $step['promesa_pasado'] : $step['promesa'] }}"
                     title="Haz clic para ver resumen de esta fase"
                     data-bs-toggle="tooltip"
                 @endif
