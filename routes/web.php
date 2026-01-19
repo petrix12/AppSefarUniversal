@@ -49,6 +49,7 @@ use App\Http\Controllers\WhatsappBotURLController;
 use App\Http\Controllers\WhatsappController;
 use App\Http\Controllers\ReportPhoneNumbersController;
 use App\Http\Controllers\CosPasoEditorController;
+use App\Http\Controllers\DeployController;
 
 Route::get('/registerv2', [RegisterV2Controller::class, 'index'])->name('register.v2.form');
 
@@ -489,3 +490,5 @@ Route::get('/cron/followups-registration-payment', function () {
         'ts' => now(),
     ]);
 });
+
+Route::post('/deploy', [DeployController::class, 'deploy'])->name('deploy.run');

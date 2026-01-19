@@ -8,14 +8,6 @@ class DeployController extends Controller
 {
     public function deploy(Request $request)
     {
-        $token = $request->header('X-DEPLOY-TOKEN')
-              ?? $request->input('token')
-              ?? $request->query('token');
-
-        if (!$token || $token !== env('DEPLOY_TOKEN')) {
-            abort(401, 'Unauthorized');
-        }
-
         $projectPath = base_path();
 
         // HEAD antes
