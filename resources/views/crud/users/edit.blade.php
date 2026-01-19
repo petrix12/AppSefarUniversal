@@ -329,7 +329,6 @@
                                 .forEach(step => {
 
                                     step.addEventListener("click", function () {
-
                                         modalEl.dataset.titulo = `${this.dataset.nombre}`;
                                         modalEl.dataset.descripcion = this.dataset.descripcion;
 

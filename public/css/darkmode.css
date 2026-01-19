@@ -81,3 +81,7 @@ body.dark-mode .flatpickr-disabled {
     border-bottom: 1px solid #eeeeee !important; /* Color de la línea en dark mode */
   }
 
+body.dark-mode .modal-content {
+    background-color: #0c1823 !important;
+    color: #eeeeee!important;
+}
