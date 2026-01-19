@@ -44,7 +44,7 @@ class CosHelperService
                             'nombre_largo' => $paso->titulo,
                             'nombre_corto' => $paso->nombre_corto,
                             'promesa' => $paso->promesa,
-                            'promesa_pasado' => $paso->promesa_pasado,
+                            'promesa_pasado' => $paso->promesa_pasado ?? $paso->promesa,
 
                             // si no usas main_cta, puedes borrarlo
                             'main_cta' => [

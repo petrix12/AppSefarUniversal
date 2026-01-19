@@ -2040,7 +2040,7 @@ private function handleNoNegocios($user, $servicename): array
         "currentStepName" => $first["nombre_largo"] ?? null,
         "currentStepDetails" => [
             "promesa" => $first["promesa"] ?? "",
-            "promesa_pasado" => $first["promesa_pasado"] ?? "",
+            "promesa_pasado" => $first["promesa_pasado"] ?? $first["promesa"] ?? "",
             "textos_adicionales" => $first["textos_adicionales"] ?? [],
             "ctas" => $first["ctas"] ?? [],
         ],
