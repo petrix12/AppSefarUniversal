@@ -113,9 +113,14 @@
             <div class="progress-step {{ $claseEsfera }}"
                 data-step="{{ $step['paso'] }}"
 
-                @if($isActive)
+                @if($isActive && $claseEsfera != 'warningesfera')
                     data-nombre="{{ $step['nombre_corto'] }}"
                     data-descripcion="{{ $step['promesa_pasado'] ?? $step['promesa'] ?? '' }}"
+                    title="Haz clic para ver resumen de esta fase"
+                    data-bs-toggle="tooltip"
+                @else
+                    data-nombre="{{ $step['nombre_corto'] }}"
+                    data-descripcion="{{ $step['promesa'] ?? $step['promesa'] ?? '' }}"
                     title="Haz clic para ver resumen de esta fase"
                     data-bs-toggle="tooltip"
                 @endif
@@ -169,9 +174,14 @@
             <div class="progress-step {{ $claseEsfera }}"
                 data-step="{{ $step['paso'] }}"
 
-                @if($isActive)
+                @if($isActive && $claseEsfera != 'warningesfera')
                     data-nombre="{{ $step['nombre_corto'] }}"
                     data-descripcion="{{ $step['promesa_pasado'] ?? $step['promesa'] ?? '' }}"
+                    title="Haz clic para ver resumen de esta fase"
+                    data-bs-toggle="tooltip"
+                @else
+                    data-nombre="{{ $step['nombre_corto'] }}"
+                    data-descripcion="{{ $step['promesa'] ?? $step['promesa'] ?? '' }}"
                     title="Haz clic para ver resumen de esta fase"
                     data-bs-toggle="tooltip"
                 @endif
