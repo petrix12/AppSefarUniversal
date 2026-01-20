@@ -358,7 +358,7 @@
                                     </p>
                                 @else
                                     @if (auth()->user()->roles[0]->id == 1)
-                                        <p class="text-sm mb-1">{{ $user->servicio == null ? $user->getRoleNames()[0] ?? 'Cliente' : $user->servicio }}</p>
+                                        <p class="text-sm mb-1">{{ $user->servicio == null ? $user->getRoleNames()[0] ?? 'Sin rol' : $user->servicio }}</p>
                                     @else
                                         <p class="text-sm mb-1">{{ $user->servicio != null ? $user->servicio : "Usuario App" }}</p>
                                     @endif
@@ -476,7 +476,7 @@
                                             <p class="service-item">{{ $user->pay == 2 ? 'Completó información' : 'NO completó información' }}<b>{{ $user->pay == 3 ? ' - Estatus 3' : '' }}</b></p>
                                         @else
                                             @if (auth()->user()->roles[0]->id == 1)
-                                                <p class="service-item">{{ $user->servicio == null ? $user->getRoleNames()[0] ?? 'Cliente' : $user->servicio }}</p>
+                                                <p class="service-item">{{ $user->servicio == null ? $user->getRoleNames()[0] ?? 'Sin rol' : $user->servicio }}</p>
                                             @else
                                                 <p class="service-item">{{ $user->servicio != null ? $user->servicio : "Usuario App" }}</p>
                                             @endif
