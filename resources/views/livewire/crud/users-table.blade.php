@@ -284,9 +284,9 @@
                                 <label for="filterPago" class="block text-xs font-medium text-gray-700 mb-1">Estado de Pago</label>
                                 <select wire:model.live="filterPago" id="filterPago" class="block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                     <option value="">Todos</option>
-                                    <option value="2">Pagó y completó información</option>
-                                    <option value="1">Pagó pero no completó información</option>
-                                    <option value="0">No pagó</option>
+                                    <option value="2">Pagó Registro y completó información</option>
+                                    <option value="1">Pagó Registro pero no completó información</option>
+                                    <option value="0">No pagó Registro</option>
                                 </select>
                             </div>
 
@@ -347,7 +347,7 @@
                                             <p class="text-sm mb-1">
                                                 <span class="font-semibold">{{ $compra['servicio_hs_id'] }}</span>
                                                 <span class="ml-2 px-2 py-1 text-xs rounded {{ $compra->pagado == 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' }}">
-                                                    {{ $compra->pagado == 0 ? 'No pagó' : 'Pagó' }}
+                                                    {{ $compra->pagado == 0 ? 'No pagó Registro' : 'Pagó Registro' }}
                                                 </span>
                                             </p>
                                         @endif
@@ -358,13 +358,13 @@
                                     </p>
                                 @else
                                     @if (auth()->user()->roles[0]->id == 1)
-                                        <p class="text-sm mb-1">{{ $user->servicio == null ? $user->getRoleNames()[0] ?? 'Sin rol' : $user->servicio }}</p>
+                                        <p class="text-sm mb-1">{{ $user->servicio == null ? $user->getRoleNames()[0] ?? 'Cliente' : $user->servicio }}</p>
                                     @else
                                         <p class="text-sm mb-1">{{ $user->servicio != null ? $user->servicio : "Usuario App" }}</p>
                                     @endif
                                     <p class="text-sm">
                                         <span class="px-2 py-1 rounded {{ $user->pay == 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' }}">
-                                            {{ $user->pay == 0 ? 'No pagó' : ($user->pay == 1 ? 'Pagó' : 'Pagó y completó info') }}
+                                            {{ $user->pay == 0 ? 'No pagó Registro' : ($user->pay == 1 ? 'Pagó Registro' : 'Pagó Registro y completó información') }}
                                         </span>
                                         <b>{{ $user->pay == 3 ? ' - Estatus 3' : '' }}</b>
                                     </p>
@@ -468,7 +468,7 @@
                                                     <p class="service-item">
                                                         <b>{{ $compra['servicio_hs_id'] }}</b>
                                                         <span class="{{ $compra->pagado == 0 ? 'badge-unpaid' : 'badge-paid' }}">
-                                                            {{ $compra->pagado == 0 ? 'No pagó' : 'Pagó' }}
+                                                            {{ $compra->pagado == 0 ? 'No pagó Registro' : 'Pagó Registro' }}
                                                         </span>
                                                     </p>
                                                 @endif
@@ -476,13 +476,13 @@
                                             <p class="service-item">{{ $user->pay == 2 ? 'Completó información' : 'NO completó información' }}<b>{{ $user->pay == 3 ? ' - Estatus 3' : '' }}</b></p>
                                         @else
                                             @if (auth()->user()->roles[0]->id == 1)
-                                                <p class="service-item">{{ $user->servicio == null ? $user->getRoleNames()[0] ?? 'Sin rol' : $user->servicio }}</p>
+                                                <p class="service-item">{{ $user->servicio == null ? $user->getRoleNames()[0] ?? 'Cliente' : $user->servicio }}</p>
                                             @else
                                                 <p class="service-item">{{ $user->servicio != null ? $user->servicio : "Usuario App" }}</p>
                                             @endif
                                             <p class="service-item">
                                                 <span class="{{ $user->pay == 0 ? 'badge-unpaid' : 'badge-paid' }}">
-                                                    {{ $user->pay == 0 ? 'No pagó' : ($user->pay == 1 ? 'Pagó' : 'Pagó y completó info') }}
+                                                    {{ $user->pay == 0 ? 'No pagó Registro' : ($user->pay == 1 ? 'Pagó Registro' : 'Pagó Registro y completó información') }}
                                                 </span>
                                                 <b>{{ $user->pay == 3 ? ' - Estatus 3' : '' }}</b>
                                             </p>
