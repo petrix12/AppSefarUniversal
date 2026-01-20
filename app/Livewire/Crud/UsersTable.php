@@ -9,6 +9,7 @@ use Livewire\Component;
 use Illuminate\Support\Facades\Cache;
 use App\Models\Compras;
 use Illuminate\Support\Facades\Auth;
+use Spatie\Permission\Models\Role;
 
 class UsersTable extends Component
 {
@@ -24,14 +25,26 @@ class UsersTable extends Component
     public $filterContrato = '';
     public $filterPago = '';
     public $perPage = 10;
+    public $filterOwner = '';
 
     // Cacheados (se cargan una sola vez)
     public $listaServicios = [];
     public $serviciosPlano = [];
 
+    public $owners = [];
+
+
     public function mount()
     {
         $this->loadServiciosOptimized();
+
+        // Usuarios que pueden ser owner (roles 15 y 17)
+        $this->owners = User::whereHas('roles', function ($q) {
+            $q->whereIn('id', [15, 17]);
+        })
+        ->select('id', 'name', 'email')
+        ->orderBy('name')
+        ->get();
     }
 
     /**
@@ -153,6 +166,11 @@ class UsersTable extends Component
             function ($q) use ($authUser) {
                 return $q->where('owner_id', $authUser->id);
             }
+        );
+
+        $query->when(
+            empty(array_intersect($rolesIds, [15, 17])) && $this->filterOwner !== '',
+            fn ($q) => $q->where('owner_id', $this->filterOwner)
         );
 
         // 🔍 BUSQUEDA MULTI-CAMPO

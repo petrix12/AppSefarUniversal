@@ -249,6 +249,26 @@
                                 </select>
                             </div>
 
+                            @if(!auth()->user()->roles->pluck('id')->intersect([15,17])->count())
+                            <div class="filter-item">
+                                <label class="block text-xs font-medium text-gray-700 mb-1">
+                                    Owner (CRM)
+                                </label>
+                                <select
+                                    wire:model.live="filterOwner"
+                                    class="block w-full border border-gray-300 rounded-md shadow-sm sm:text-sm"
+                                >
+                                    <option value="">Todos</option>
+                                    @foreach($owners as $owner)
+                                        <option value="{{ $owner->id }}">
+                                            {{ $owner->name }} ({{ $owner->email }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @endif
+
+
                             <!-- Filtro 2: Contrato -->
                             <div class="filter-item">
                                 <label for="filterContrato" class="block text-xs font-medium text-gray-700 mb-1">Contrato</label>
