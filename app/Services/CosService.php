@@ -528,19 +528,6 @@ class CosService
             return false;
         }
 
-        // Si ya está concedida, no tiene sentido ofrecer vía judicial
-        if ($this->hasNacionalidadConcedida()) {
-            return false;
-        }
-
-        // Si ya tiene vía judicial activa o solicitada, no repetir CTA
-        $tieneViaJudicial = $this->hasViaJudicialActiva()
-            || isset($this->negocio->fecha_solicitud_viajudicial);
-
-        if ($tieneViaJudicial) {
-            return false;
-        }
-
         // Regla: +3 meses desde la fecha del recurso de alzada
         $fechaRecurso = Carbon::parse($this->negocio->n13__fecha_recurso_alzada);
         $fechaLimite = $fechaRecurso->copy()->addMonths(3);
