@@ -97,6 +97,14 @@ class CosService
                 'warning' => null,
             ],
 
+            [
+                'name' => 'Vía Judicial Elegible',
+                'condition' => fn() => $this->isViaJudicialElegible($hoy),
+                'stepJur' => 7,
+                'stepGen' => $this->getLastGenStep($certificadoDescargado),
+                'warning' => fn() => $this->getViaJudicialWarning(),
+            ],
+
             // 🔄 PASO 6: RECURSO DE ALZADA (+12 MESES) - EVALUAR PRIMERO
             [
                 'name' => 'Recurso de Alzada Elegible',
@@ -160,12 +168,13 @@ class CosService
                 'warning' => null,
             ],
 
+            // PASO 0: FASE 3 PAGADA
             [
-                'name' => 'Esperando Pago Fase 3',
-                'condition' => fn() => $this->hasFase3Preestablecida(),
-                'stepGen' => $this->totalStepsGen - 1 - $certificadoDescargado,
-                'stepJur' => -1,
-                'warning' => "<b>Realiza el pago para la formalización del expediente</b> y aseguremos juntos el siguiente gran paso hacia tu ciudadanía española.",
+                'name' => 'Fase 3 Pagada',
+                'condition' => fn() => $this->hasFase3Pagada(),
+                'stepJur' => 0,
+                'stepGen' => $this->getLastGenStep($certificadoDescargado),
+                'warning' => null,
             ],
 
             [
@@ -511,6 +520,47 @@ class CosService
             ['Demanda', 'Judicial']
         );
     }
+
+    private function isViaJudicialElegible(Carbon $hoy): bool
+    {
+        // Debe existir fecha de recurso de alzada
+        if (!isset($this->negocio->n13__fecha_recurso_alzada)) {
+            return false;
+        }
+
+        // Si ya está concedida, no tiene sentido ofrecer vía judicial
+        if ($this->hasNacionalidadConcedida()) {
+            return false;
+        }
+
+        // Si ya tiene vía judicial activa o solicitada, no repetir CTA
+        $tieneViaJudicial = $this->hasViaJudicialActiva()
+            || isset($this->negocio->fecha_solicitud_viajudicial);
+
+        if ($tieneViaJudicial) {
+            return false;
+        }
+
+        // Regla: +3 meses desde la fecha del recurso de alzada
+        $fechaRecurso = Carbon::parse($this->negocio->n13__fecha_recurso_alzada);
+        $fechaLimite = $fechaRecurso->copy()->addMonths(3);
+
+        return $hoy->greaterThan($fechaLimite);
+    }
+
+    private function getViaJudicialWarning(): ?string
+    {
+        // Si ya la tiene activa o solicitada, no mostrar
+        $tieneViaJudicial = $this->hasViaJudicialActiva()
+            || isset($this->negocio->fecha_solicitud_viajudicial);
+
+        if ($tieneViaJudicial) {
+            return null;
+        }
+
+        return '<b>¡Ya puedes solicitar la Vía Judicial!</b>';
+    }
+
 
     private function isRecursoAlzadaElegible($hoy): bool
     {
