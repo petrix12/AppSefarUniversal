@@ -574,6 +574,8 @@
                                                     <span class="tooltip-text">Ver Árbol Genealógico</span>
                                                 </div>
                                             @endif
+                                        </div>
+                                        <div class="action-buttons">
                                             @if(auth()->user()->roles[0]->id == 1 && $user->estado_vendedor === 'Pendiente')
                                                 <br>
                                                 <button wire:click="approveProveedor({{ $user->id }})"
