@@ -480,6 +480,11 @@
                                 @foreach ($users as $user)
                                 <tr>
                                     <td>
+                                        @if($user->estado_vendedor === 'Pendiente')
+                                            <span class="ml-2 px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800">
+                                                Proveedor Pendiente
+                                            </span>
+                                        @endif
                                         <p class="user-name">{{ Str::limit($user->name, 25) }}</p>
                                         <p class="user-info">{{ $user->email }}</p>
                                         <p class="user-info">{{ $user->passport }}</p>
