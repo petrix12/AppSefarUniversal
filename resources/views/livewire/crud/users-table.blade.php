@@ -575,7 +575,7 @@
                                                 </div>
                                             @endif
                                         </div>
-                                        <div class="action-buttons">
+                                        <div class="action-buttons mt-1">
                                             @if(auth()->user()->roles[0]->id == 1 && $user->estado_vendedor === 'Pendiente')
                                                 <br>
                                                 <button wire:click="approveProveedor({{ $user->id }})"
