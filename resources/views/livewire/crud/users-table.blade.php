@@ -575,6 +575,7 @@
                                                 </div>
                                             @endif
                                             @if(auth()->user()->roles[0]->id == 1 && $user->estado_vendedor === 'Pendiente')
+                                                <br>
                                                 <button wire:click="approveProveedor({{ $user->id }})"
                                                     class="btn btn-success"
                                                     onclick="return confirm('¿Aprobar proveedor? estado_vendedor pasará a NULL')">
