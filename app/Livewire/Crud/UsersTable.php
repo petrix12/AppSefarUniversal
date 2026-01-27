@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Cache;
 use App\Models\Compras;
 use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\DB;
 
 class UsersTable extends Component
 {
@@ -18,6 +19,7 @@ class UsersTable extends Component
     protected $queryString = [
         'search' => ['except' => ''],
         'perPage' => ['except' => '10'],
+        'filterProveedor' => ['except' => ''],
     ];
 
     public $search = '';
@@ -25,6 +27,7 @@ class UsersTable extends Component
     public $filterContrato = '';
     public $filterPago = '';
     public $perPage = 10;
+    public $filterProveedor = '';
     public $filterOwner = '';
 
     // Cacheados (se cargan una sola vez)
@@ -32,6 +35,39 @@ class UsersTable extends Component
     public $serviciosPlano = [];
 
     public $owners = [];
+
+    public function approveProveedor($userId)
+    {
+        $auth = Auth::user();
+        if (($auth->roles[0]->id ?? null) != 1) abort(403);
+
+        $user = User::findOrFail($userId);
+        if ($user->estado_vendedor !== 'Pendiente') return;
+
+        DB::transaction(function () use ($user) {
+            $user->estado_vendedor = null;
+            $user->fecha_activacion_proveedor = now();
+            $user->save();
+        });
+
+        session()->flash('status', 'Proveedor aprobado.');
+    }
+
+    public function rejectProveedor($userId)
+    {
+        $auth = Auth::user();
+        if (($auth->roles[0]->id ?? null) != 1) abort(403);
+
+        $user = User::findOrFail($userId);
+        if ($user->estado_vendedor !== 'Pendiente') return;
+
+        DB::transaction(function () use ($user) {
+            if (method_exists($user, 'forceDelete')) $user->forceDelete();
+            else $user->delete();
+        });
+
+        session()->flash('status', 'Proveedor rechazado y eliminado.');
+    }
 
 
     public function mount()
@@ -150,7 +186,9 @@ class UsersTable extends Component
             ->select([
                 'id', 'name', 'nombres', 'apellidos', 'email',
                 'passport', 'servicio', 'contrato', 'pay', 'created_at',
-                'owner_id' // Asegúrate de incluirlo en el select
+                'owner_id',
+                'estado_vendedor',              // ✅ nuevo
+                'fecha_activacion_proveedor',   // opcional
             ])
             ->with(['compras:id,id_user,servicio_hs_id,pagado']);
 
@@ -194,6 +232,14 @@ class UsersTable extends Component
             });
         });
 
+        $query->when($this->filterProveedor !== '', function ($q) {
+            if ($this->filterProveedor === 'pendiente') {
+                $q->where('estado_vendedor', 'Pendiente');
+            } elseif ($this->filterProveedor === 'aprobado') {
+                $q->whereNull('estado_vendedor'); // ✅ aprobado = NULL
+            }
+        });
+
         // 🔵 FILTROS SIMPLES
         $query->when($this->filterContrato !== '', fn($q) => $q->where('contrato', $this->filterContrato))
               ->when($this->filterPago !== '', fn($q) => $q->where('pay', $this->filterPago));
@@ -228,7 +274,7 @@ class UsersTable extends Component
 
     public function clearFilters()
     {
-        $this->reset(['filterServicio', 'filterContrato', 'filterPago']);
+        $this->reset(['filterServicio', 'filterContrato', 'filterPago', 'filterProveedor', 'filterOwner']);
         $this->resetPage();
     }
 

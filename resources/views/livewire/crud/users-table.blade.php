@@ -290,6 +290,15 @@
                                 </select>
                             </div>
 
+                            <div class="filter-item">
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Pendientes por aprobar</label>
+                                <select wire:model.live="filterProveedor"
+                                        class="block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                    <option value="">Todos</option>
+                                    <option value="pendiente">Pendientes</option>
+                                </select>
+                            </div>
+
                             <!-- Botón limpiar - Segunda fila en desktop -->
                             @if ($filterServicio || $filterContrato !== '' || $filterPago !== '')
                             <div class="filter-button">
@@ -319,6 +328,11 @@
                         @foreach ($users as $user)
                         <div class="bg-white border-b border-gray-200 p-4">
                             <div class="mb-3">
+                                @if($user->estado_vendedor === 'Pendiente')
+                                    <span class="ml-2 px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800">
+                                        Proveedor Pendiente
+                                    </span>
+                                @endif
                                 <h3 class="text-lg font-semibold text-gray-900">{{ Str::limit($user->name, 30) }}</h3>
                                 <p class="text-sm text-gray-600 mt-1">
                                     <i class="fas fa-envelope mr-1"></i> {{ $user->email }}
@@ -375,10 +389,12 @@
                                 </p>
                             </div>
 
-                            <div class="mb-3 flex justify-between text-sm text-gray-500">
-                                <span><i class="fas fa-calendar mr-1"></i> {{ date_format($user->created_at,"Y-m-d") }}</span>
-                                <span><i class="fas fa-id-card mr-1"></i> ID: {{ $user->id }}</span>
-                            </div>
+                            @if(auth()->user()->email == 'sistemasccs@sefarvzla.com')
+                                <div class="mb-3 flex justify-between text-sm text-gray-500">
+                                    <span><i class="fas fa-calendar mr-1"></i> {{ date_format($user->created_at,"Y-m-d") }}</span>
+                                    <span><i class="fas fa-id-card mr-1"></i> ID: {{ $user->id }}</span>
+                                </div>
+                            @endif
 
                             <div class="flex flex-wrap gap-2 justify-center pt-3 border-t border-gray-200">
                                 @can('crud.users.edit')
@@ -427,6 +443,20 @@
                                         <span class="tooltip-text">Ver Árbol Genealógico</span>
                                     </div>
                                 @endif
+
+                                @if(auth()->user()->roles[0]->id == 1 && $user->estado_vendedor === 'Pendiente')
+                                    <button wire:click="approveProveedor({{ $user->id }})"
+                                        class="btn btn-success"
+                                        onclick="return confirm('¿Aprobar proveedor? estado_vendedor pasará a NULL')">
+                                        <i class="fas fa-check fa-fw"></i>
+                                    </button>
+
+                                    <button wire:click="rejectProveedor({{ $user->id }})"
+                                        class="btn btn-danger"
+                                        onclick="return confirm('¿Rechazar y eliminar de la base de datos?')">
+                                        <i class="fas fa-trash fa-fw"></i>
+                                    </button>
+                                @endif
                             </div>
                         </div>
                         @endforeach
@@ -440,7 +470,9 @@
                                     <tr>
                                         <th>Nombre, Correo y Pasaporte</th>
                                         <th>Servicios Solicitados / Pago</th>
+                                        @if(auth()->user()->email == 'sistemasccs@sefarvzla.com')
                                         <th>Fecha Registro / ID</th>
+                                        @endif
                                         <th style="text-align: center;">Opciones</th>
                                     </tr>
                                 </thead>
@@ -493,10 +525,12 @@
                                             <p class="service-item" style="color: #991b1b;">✗ NO firmó contrato</p>
                                         @endif
                                     </td>
+                                    @if(auth()->user()->email == 'sistemasccs@sefarvzla.com')
                                     <td>
                                         <p class="service-item">{{ date_format($user->created_at,"Y-m-d") }}</p>
                                         <p class="user-info">ID: {{ $user->id }}</p>
                                     </td>
+                                    @endif
                                     <td class="actions-cell">
                                         <div class="action-buttons">
                                             @can('crud.users.edit')
@@ -539,6 +573,19 @@
                                                     </a>
                                                     <span class="tooltip-text">Ver Árbol Genealógico</span>
                                                 </div>
+                                            @endif
+                                            @if(auth()->user()->roles[0]->id == 1 && $user->estado_vendedor === 'Pendiente')
+                                                <button wire:click="approveProveedor({{ $user->id }})"
+                                                    class="btn btn-success"
+                                                    onclick="return confirm('¿Aprobar proveedor? estado_vendedor pasará a NULL')">
+                                                    <i class="fas fa-check fa-fw"></i>
+                                                </button>
+
+                                                <button wire:click="rejectProveedor({{ $user->id }})"
+                                                    class="btn btn-danger"
+                                                    onclick="return confirm('¿Rechazar y eliminar de la base de datos?')">
+                                                    <i class="fas fa-trash fa-fw"></i>
+                                                </button>
                                             @endif
                                         </div>
                                     </td>
