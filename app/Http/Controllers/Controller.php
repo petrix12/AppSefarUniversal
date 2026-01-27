@@ -71,6 +71,10 @@ class Controller extends BaseController
             return view('crud.users.index');
         }
 
+        if (Auth::user()->hasRole('Proveedor')) {
+            return redirect()->route('docs.index');
+        }
+
         // Clientes corrientes
         if (Auth::user()->hasRole("Cliente")){
             if(Auth::user()->pay==0){

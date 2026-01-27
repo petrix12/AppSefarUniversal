@@ -300,6 +300,20 @@ return [
             'url'           => 'fixpassport',
             'can'           => 'administrador',
         ],
+        [
+            'text'          => 'Documentos',
+            'icon'          => 'fa-fw fas fa-file',
+            'icon_color'    => 'white',
+            'url'           => 'docs',
+            'can'           => 'docs.view',
+        ],
+        [
+            'text'          => 'Subir Documentos',
+            'icon'          => 'fa-fw fas fa-file',
+            'icon_color'    => 'white',
+            'url'           => 'admin/docs',
+            'can'           => 'docs.upload',
+        ],
         /* *** Visitas a COS *** */
         [
             'text'        => 'Herramientas del COS',

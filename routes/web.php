@@ -50,10 +50,40 @@ use App\Http\Controllers\WhatsappController;
 use App\Http\Controllers\ReportPhoneNumbersController;
 use App\Http\Controllers\CosPasoEditorController;
 use App\Http\Controllers\DeployController;
+use App\Http\Controllers\ProveedorRegisterController;
+use App\Http\Controllers\DocumentController;
 
 Route::get('/registerv2', [RegisterV2Controller::class, 'index'])->name('register.v2.form');
 
 Route::post('/registerv2', [RegisterV2Controller::class, 'store'])->name('register.v2');
+
+Route::get('/registro-proveedor', [ProveedorRegisterController::class, 'create'])->name('proveedor.register');
+Route::post('/registro-proveedor', [ProveedorRegisterController::class, 'store'])->name('proveedor.register.store');
+
+Route::middleware(['auth', 'estado.vendedor'])->group(function () {
+    Route::get('/dashboard', fn () => view('dashboard'))->name('dashboard');
+});
+
+Route::middleware(['auth', 'can:docs.view'])
+    ->get('/docs', [DocumentController::class, 'library'])
+    ->name('docs.index');
+
+Route::middleware(['auth', 'can:docs.view'])
+    ->get('/docs/{id}/download', [DocumentController::class, 'download'])
+    ->name('docs.download');
+
+// Admin (opcional)
+Route::middleware(['auth', 'can:docs.upload'])
+    ->get('/admin/docs', [DocumentController::class, 'admin'])
+    ->name('docs.admin');
+
+Route::middleware(['auth', 'can:docs.upload'])
+    ->post('/admin/docs', [DocumentController::class, 'store'])
+    ->name('docs.store');
+
+Route::middleware(['auth', 'can:docs.delete'])
+    ->delete('/admin/docs/{id}', [DocumentController::class, 'destroy'])
+    ->name('docs.destroy');
 
 // Vista inicio
 Route::get('/', [Controller::class, 'index'])->name('inicio')->middleware(['auth', 'verified']);

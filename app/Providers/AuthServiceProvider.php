@@ -29,6 +29,18 @@ class AuthServiceProvider extends ServiceProvider
             return $user->cosready == 1;
         });
 
+        Gate::define('docs.view', function ($user) {
+            return $user->hasAnyRole(['Coord. Ventas']);
+        });
+
+        Gate::define('docs.upload', function ($user) {
+            return $user->hasRole('Administrador');
+        });
+
+        Gate::define('docs.delete', function ($user) {
+            return $user->hasRole('Administrador');
+        });
+
         //
     }
 }
