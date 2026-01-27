@@ -329,8 +329,8 @@
                         <div class="bg-white border-b border-gray-200 p-4">
                             <div class="mb-3">
                                 @if($user->estado_vendedor === 'Pendiente')
-                                    <span class="ml-2 px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800">
-                                        Proveedor Pendiente
+                                    <span class="badge badge-warning ml-2">
+                                        <i class="fas fa-clock mr-1"></i> Pendiente
                                     </span>
                                 @endif
                                 <h3 class="text-lg font-semibold text-gray-900">{{ Str::limit($user->name, 30) }}</h3>
@@ -481,8 +481,8 @@
                                 <tr>
                                     <td>
                                         @if($user->estado_vendedor === 'Pendiente')
-                                            <span class="ml-2 px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800">
-                                                Proveedor Pendiente
+                                            <span class="badge badge-warning ml-2">
+                                                <i class="fas fa-clock mr-1"></i> Pendiente
                                             </span>
                                         @endif
                                         <p class="user-name">{{ Str::limit($user->name, 25) }}</p>
