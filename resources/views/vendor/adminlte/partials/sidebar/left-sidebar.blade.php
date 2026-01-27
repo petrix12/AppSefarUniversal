@@ -15,6 +15,28 @@
 
     {{-- Sidebar menu --}}
     <div class="sidebar">
+        @php($u = auth()->user())
+        @if($u)
+            <div class="user-panel mt-3 pb-3 mb-2 d-flex align-items-center">
+                <div class="image">
+                    <img
+                        src="{{ method_exists($u,'adminlte_image') ? $u->adminlte_image() : asset('img/default-avatar.png') }}"
+                        class="img-circle elevation-2"
+                        alt="User Image"
+                        style="width:34px;height:34px;object-fit:cover;"
+                    >
+                </div>
+
+                <div class="info" style="line-height:1.1;">
+                    <a href="{{ url('user/profile') }}" class="d-block" style="white-space:normal;">
+                        {{ trim(($u->name ?? '').' '.($u->lastname ?? '')) ?: $u->email }}
+                    </a>
+                    <small class="text-muted" style="display:block;white-space:normal;">
+                        {{ $u->email }}
+                    </small>
+                </div>
+            </div>
+        @endif
         <nav class="pt-2">
             <ul class="nav nav-pills nav-sidebar flex-column {{ config('adminlte.classes_sidebar_nav', '') }}"
                 data-widget="treeview" role="menu"
