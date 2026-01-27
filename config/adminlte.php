@@ -305,7 +305,7 @@ return [
             'icon'          => 'fa-fw fas fa-file',
             'icon_color'    => 'white',
             'url'           => 'docs',
-            'can'           => 'docs.view',
+            'can'           => 'verdocs.index',
         ],
         [
             'text'          => 'Subir Documentos',
