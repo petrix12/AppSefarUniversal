@@ -57,8 +57,8 @@ Route::get('/registerv2', [RegisterV2Controller::class, 'index'])->name('registe
 
 Route::post('/registerv2', [RegisterV2Controller::class, 'store'])->name('register.v2');
 
-Route::get('/registro-proveedor', [ProveedorRegisterController::class, 'create'])->name('proveedor.register');
-Route::post('/registro-proveedor', [ProveedorRegisterController::class, 'store'])->name('proveedor.register.store');
+Route::get('/registro-coordinador', [ProveedorRegisterController::class, 'create'])->name('proveedor.register');
+Route::post('/registro-coordinador', [ProveedorRegisterController::class, 'store'])->name('proveedor.register.store');
 
 Route::middleware(['auth', 'estado.vendedor'])->group(function () {
     Route::get('/dashboard', fn () => view('dashboard'))->name('dashboard');
