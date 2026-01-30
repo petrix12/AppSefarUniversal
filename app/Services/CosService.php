@@ -62,6 +62,8 @@ class CosService
 
         //dd($this->negocio->servicio_solicitado2);
 
+        //dd($certificadoDescargado);
+
         return $this->calculateCOS($certificadoDescargado);
     }
 
@@ -74,9 +76,9 @@ class CosService
     {
         $hoy = Carbon::now();
 
-        $isJuridico = $this->isJuridicoProcess();
-
         $resultadoIA = $this->getIAResults();
+
+        //dd($certificadoDescargado == 1, $this->totalStepsGen, $this->totalStepsGen - 1);
 
         $rules = [
             // PASO 8: NACIONALIDAD CONCEDIDA (FINAL)
@@ -93,7 +95,7 @@ class CosService
                 'name' => 'Vía Judicial',
                 'condition' => fn() => $this->hasViaJudicialActiva(),
                 'stepJur' => 7,
-                'stepGen' => $this->getLastGenStep($certificadoDescargado),
+                'stepGen' => $certificadoDescargado == 1 ? $this->getLastGenStep($certificadoDescargado) : $this->getLastGenStep($certificadoDescargado) - 1,
                 'warning' => null,
             ],
 
@@ -101,7 +103,7 @@ class CosService
                 'name' => 'Vía Judicial Elegible',
                 'condition' => fn() => $this->isViaJudicialElegible($hoy),
                 'stepJur' => 7,
-                'stepGen' => $this->getLastGenStep($certificadoDescargado),
+                'stepGen' => $certificadoDescargado == 1 ? $this->getLastGenStep($certificadoDescargado) : $this->getLastGenStep($certificadoDescargado) - 1,
                 'warning' => fn() => $this->getViaJudicialWarning(),
             ],
 
@@ -110,7 +112,7 @@ class CosService
                 'name' => 'Recurso de Alzada Elegible',
                 'condition' => fn() => $this->isRecursoAlzadaElegible($hoy),
                 'stepJur' => 6,
-                'stepGen' => $this->getLastGenStep($certificadoDescargado),
+                'stepGen' => $certificadoDescargado == 1 ? $this->getLastGenStep($certificadoDescargado) : $this->getLastGenStep($certificadoDescargado) - 1,
                 'warning' => fn() => $this->getRecursoAlzadaWarning(),
             ],
 
@@ -119,7 +121,7 @@ class CosService
                 'name' => 'Resolución Expresa Elegible',
                 'condition' => fn() => $this->isResolucionExpresaElegible($hoy),
                 'stepJur' => 5,
-                'stepGen' => $this->getLastGenStep($certificadoDescargado),
+                'stepGen' => $certificadoDescargado == 1 ? $this->getLastGenStep($certificadoDescargado) : $this->getLastGenStep($certificadoDescargado) - 1,
                 'warning' => fn() => $this->getResolucionExpresaWarning(),
             ],
 
@@ -128,7 +130,7 @@ class CosService
                 'name' => 'Subsanación Elegible',
                 'condition' => fn() => $this->isSubsanacionElegible($hoy),
                 'stepJur' => 4,
-                'stepGen' => $this->getLastGenStep($certificadoDescargado),
+                'stepGen' => $certificadoDescargado == 1 ? $this->getLastGenStep($certificadoDescargado) : $this->getLastGenStep($certificadoDescargado) - 1,
                 'warning' => fn() => $this->getSubsanacionWarning(),
             ],
 
@@ -137,7 +139,7 @@ class CosService
                 'name' => 'Formalizado',
                 'condition' => fn() => $this->isFormalizado(),
                 'stepJur' => 3,
-                'stepGen' => $this->getLastGenStep($certificadoDescargado),
+                'stepGen' => $certificadoDescargado == 1 ? $this->getLastGenStep($certificadoDescargado) : $this->getLastGenStep($certificadoDescargado) - 1,
                 'warning' => null,
             ],
 
@@ -146,7 +148,7 @@ class CosService
                 'name' => 'Tasa Pagada',
                 'condition' => fn() => isset($this->negocio->tasa_pagada),
                 'stepJur' => 2,
-                'stepGen' => $this->getLastGenStep($certificadoDescargado),
+                'stepGen' => $certificadoDescargado == 1 ? $this->getLastGenStep($certificadoDescargado) : $this->getLastGenStep($certificadoDescargado) - 1,
                 'warning' => null,
             ],
 
@@ -155,7 +157,7 @@ class CosService
                 'name' => 'Enviado a Pago de Tasas',
                 'condition' => fn() => isset($this->negocio->enviado_a_pago_de_tasas),
                 'stepJur' => 1,
-                'stepGen' => $this->getLastGenStep($certificadoDescargado),
+                'stepGen' => $certificadoDescargado == 1 ? $this->getLastGenStep($certificadoDescargado) : $this->getLastGenStep($certificadoDescargado) - 1,
                 'warning' => null,
             ],
 
@@ -164,7 +166,7 @@ class CosService
                 'name' => 'Fase 3 Pagada',
                 'condition' => fn() => $this->hasFase3Pagada(),
                 'stepJur' => 0,
-                'stepGen' => $this->getLastGenStep($certificadoDescargado),
+                'stepGen' => $certificadoDescargado == 1 ? $this->getLastGenStep($certificadoDescargado) : $this->getLastGenStep($certificadoDescargado) - 1,
                 'warning' => null,
             ],
 
@@ -173,14 +175,14 @@ class CosService
                 'name' => 'Fase 3 Pagada',
                 'condition' => fn() => $this->hasFase3Pagada(),
                 'stepJur' => 0,
-                'stepGen' => $this->getLastGenStep($certificadoDescargado),
+                'stepGen' => $certificadoDescargado == 1 ? $this->getLastGenStep($certificadoDescargado) : $this->getLastGenStep($certificadoDescargado) - 1,
                 'warning' => null,
             ],
 
             [
                 'name' => 'Esperando Pago Fase 3',
                 'condition' => fn() => $this->hasFase3Preestablecida(),
-                'stepGen' => $this->totalStepsGen - 1 - $certificadoDescargado,
+                'stepGen' => $certificadoDescargado < $this->totalStepsGen ? $certificadoDescargado : $this->totalStepsGen - 1,
                 'stepJur' => -1,
                 'warning' => "<b>Realiza el pago para la formalización del expediente</b> y aseguremos juntos el siguiente gran paso hacia tu ciudadanía española.",
             ],
