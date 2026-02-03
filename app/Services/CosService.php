@@ -526,15 +526,17 @@ class CosService
     private function isViaJudicialElegible(Carbon $hoy): bool
     {
         // Debe existir fecha de recurso de alzada
-        if (!isset($this->negocio->n13__fecha_recurso_alzada)) {
+        if (isset($this->negocio->n13__fecha_recurso_alzada)) {
+            $fechaRecurso = Carbon::parse($this->negocio->n13__fecha_recurso_alzada);
+            $fechaLimite = $fechaRecurso->copy()->addMonths(3);
+            return $hoy->greaterThan($fechaLimite);
+        } else if (isset($this->negocio->formalizacion_r__alzada)) {
+            $fechaRecurso = Carbon::parse($this->negocio->formalizacion_r__alzada);
+            $fechaLimite = $fechaRecurso->copy()->addMonths(3);
+            return $hoy->greaterThan($fechaLimite);
+        } else {
             return false;
         }
-
-        // Regla: +3 meses desde la fecha del recurso de alzada
-        $fechaRecurso = Carbon::parse($this->negocio->n13__fecha_recurso_alzada);
-        $fechaLimite = $fechaRecurso->copy()->addMonths(3);
-
-        return $hoy->greaterThan($fechaLimite);
     }
 
     private function getViaJudicialWarning(): ?string
@@ -556,6 +558,15 @@ class CosService
         // Si ya tiene Recurso de Alzada en progreso (dentro de 3 meses)
         if (isset($this->negocio->n13__fecha_recurso_alzada)) {
             $fechaRecurso = Carbon::parse($this->negocio->n13__fecha_recurso_alzada);
+            $fechaLimite = $fechaRecurso->copy()->addMonths(3);
+
+            if ($fechaLimite->greaterThan($hoy)) {
+                return true; // Ya está en proceso de Recurso
+            }
+        }
+
+        if (isset($this->negocio->formalizacion_r__alzada)) {
+            $fechaRecurso = Carbon::parse($this->negocio->formalizacion_r__alzada);
             $fechaLimite = $fechaRecurso->copy()->addMonths(3);
 
             if ($fechaLimite->greaterThan($hoy)) {
