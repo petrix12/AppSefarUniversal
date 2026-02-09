@@ -314,6 +314,13 @@ return [
             'url'           => 'admin/docs',
             'can'           => 'docs.upload',
         ],
+        [
+            'text'          => 'Cargar Noticias',
+            'icon'          => 'fa-fw fas fa-file',
+            'icon_color'    => 'white',
+            'url'           => 'news/admin',
+            'can'           => 'news.admin',
+        ],
         /* *** Visitas a COS *** */
         [
             'text'        => 'Herramientas del COS',

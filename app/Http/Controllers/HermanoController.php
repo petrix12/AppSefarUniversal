@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\DB;
 
 class HermanoController extends Controller
 {
-    
+
     public function registrarhermanoscliente (Request $request)
     {
         $input = json_decode(json_encode($request->all()),true);
@@ -46,7 +46,7 @@ class HermanoController extends Controller
             if (sizeof($usermail)>0) {
                 return redirect()->back()->withInput()->with('error', 'El correo '.$email.' ya existe.<br><br>Por favor, prueba usar otro correo, o usa tu correo con un alias: <b>tucorreo+alias@correo.com</b>');
             }
-            
+
         } else {
             $agcliente_v = Agcliente::where('IDCliente',trim($passport))->where('IDPersona',1)->count();
             if($agcliente_v == 0){
@@ -68,8 +68,8 @@ class HermanoController extends Controller
 
             $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-            $passwordhash = "sefardi_".generate_string($permitted_chars, 8);
-            
+            $passwordhash = "sefardi_".generate_string_hermano($permitted_chars, 8);
+
             $user = User::create([
                 'name' => $input['nombres'].' '.$input['apellidos'],
                 'email' => $input['email'],
@@ -104,13 +104,13 @@ class HermanoController extends Controller
                 'id_hermano' => $user["id"],
             ]);
 
-            Mail::send('mail.registrohermano', ['user' => $user, 'passwordhash' => $passwordhash], function ($m) use ($user) { 
+            Mail::send('mail.registrohermano', ['user' => $user, 'passwordhash' => $passwordhash], function ($m) use ($user) {
                 $m->to([
                     $user['email']
                 ])->subject('SEFAR UNIVERSAL - Tu hermano te ha registrado en nuestra App Sefar');
             });
 
-            Mail::send('mail.registrohermanosat', ['user' => $user, 'passwordhash' => $passwordhash], function ($m) use ($user) { 
+            Mail::send('mail.registrohermanosat', ['user' => $user, 'passwordhash' => $passwordhash], function ($m) use ($user) {
                 $m->to([
                     auth()->user()->email
                 ])->subject('SEFAR UNIVERSAL - Has registrado a un hermano en nuestra App Sefar');
@@ -125,13 +125,13 @@ class HermanoController extends Controller
 
 }
 
-function generate_string($input, $strength = 16) {
+function generate_string_hermano($input, $strength = 16) {
     $input_length = strlen($input);
     $random_string = '';
     for($i = 0; $i < $strength; $i++) {
         $random_character = $input[mt_rand(0, $input_length - 1)];
         $random_string .= $random_character;
     }
- 
+
     return $random_string;
 }

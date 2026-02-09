@@ -52,6 +52,7 @@ use App\Http\Controllers\CosPasoEditorController;
 use App\Http\Controllers\DeployController;
 use App\Http\Controllers\ProveedorRegisterController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\NewsController;
 
 Route::get('/registerv2', [RegisterV2Controller::class, 'index'])->name('register.v2.form');
 
@@ -62,6 +63,13 @@ Route::post('/registro-coordinador', [ProveedorRegisterController::class, 'store
 
 Route::middleware(['auth', 'estado.vendedor'])->group(function () {
     Route::get('/dashboard', fn () => view('dashboard'))->name('dashboard');
+});
+
+Route::middleware(['auth', 'can:news.admin'])->group(function () {
+    Route::get('news/admin', [NewsController::class, 'admin'])->name('news.admin');
+    Route::post('news', [NewsController::class, 'store'])->name('news.store');
+    Route::put('news/{news}', [NewsController::class, 'update'])->name('news.update');
+    Route::delete('news/{news}', [NewsController::class, 'destroy'])->name('news.destroy');
 });
 
 Route::middleware(['auth', 'can:docs.view'])
