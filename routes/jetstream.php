@@ -6,7 +6,7 @@ use Laravel\Jetstream\Http\Controllers\Livewire\ApiTokenController;
 use Laravel\Jetstream\Http\Controllers\Livewire\PrivacyPolicyController;
 use Laravel\Jetstream\Http\Controllers\Livewire\TeamController;
 use Laravel\Jetstream\Http\Controllers\Livewire\TermsOfServiceController;
-use Laravel\Jetstream\Http\Controllers\Livewire\UserProfileController;
+use Laravel\Jetstream\Http\Controllers\Livewire\ProfileJetController;
 use Laravel\Jetstream\Http\Controllers\TeamInvitationController;
 use Laravel\Jetstream\Jetstream;
 
@@ -18,7 +18,7 @@ Route::group(['middleware' => config('jetstream.middleware', ['web'])], function
 
     Route::group(['middleware' => ['auth', 'verified']], function () {
         // User & Profile...
-        Route::get('/user/profile', [UserProfileController::class, 'show'])
+        Route::get('/user/profile', [ProfileJetController::class, 'show'])
                     ->name('profile.show');
 
         // API...
