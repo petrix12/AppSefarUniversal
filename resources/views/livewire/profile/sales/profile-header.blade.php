@@ -44,9 +44,9 @@
         <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">
           {{ $user->name }}
         </h1>
-        <p class="text-base text-blue-600 font-medium flex items-center gap-2">
-          <i class="fas fa-briefcase text-sm"></i>
-          {{ $roleName }}
+        <p class="text-base font-medium flex items-center gap-2">
+          <i class="fas fa-briefcase text-sm mr-2"></i>
+          {{ $roleName == "Coord. Ventas" ? "Coordinador de Ventas" : $roleName }}
         </p>
       </div>
 
