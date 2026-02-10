@@ -6,6 +6,8 @@ use App\Models\Document;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
 
 class DocumentController extends Controller
 {
@@ -68,13 +70,37 @@ class DocumentController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'title' => ['required','string','max:255'],
-            'description' => ['nullable','string'],
-            'file' => ['required','file','max:51200'], // 50MB
-            'category' => ['nullable','string','max:80'],
-            'visibility' => ['required','in:proveedores,todos,admins'],
-        ]);
+        try {
+            $validated = $request->validate([
+                'title' => ['required','string','max:255'],
+                'description' => ['nullable','string'],
+                'file' => ['required','file'], // 50MB (en KB)
+                'category' => ['nullable','string','max:80'],
+                'visibility' => ['required','in:proveedores,todos,admins'],
+            ]);
+        } catch (ValidationException $e) {
+            Log::warning('Document upload validation failed', [
+                'errors' => $e->errors(),
+                'has_file' => $request->hasFile('file'),
+                'file_error' => $request->file('file')?->getError(),
+                'file_error_message' => $request->file('file')?->getErrorMessage(),
+                'size' => $request->file('file')?->getSize(),
+                'mime' => $request->file('file')?->getMimeType(),
+                'client_mime' => $request->file('file')?->getClientMimeType(),
+                'original' => $request->file('file')?->getClientOriginalName(),
+                'content_length' => $request->server('CONTENT_LENGTH'),
+                'post_max_size' => ini_get('post_max_size'),
+                'upload_max_filesize' => ini_get('upload_max_filesize'),
+            ]);
+
+            // Para verlo “en pantalla” rápido (temporal):
+            dd([
+                'message' => 'VALIDATION_FAILED',
+                'errors' => $e->errors(),
+                'file_error' => $request->file('file')?->getError(),
+                'file_error_message' => $request->file('file')?->getErrorMessage(),
+            ], 422);
+        }
 
         $file = $request->file('file');
 
