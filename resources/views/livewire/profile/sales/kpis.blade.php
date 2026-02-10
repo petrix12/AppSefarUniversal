@@ -2,7 +2,7 @@
 
   <div class="bg-white shadow rounded-xl p-4">
     <div class="text-xs text-gray-500">Clientes asignados</div>
-    <div class="text-3xl font-bold text-indigo-600">{{ $clientes }}</div>
+    <div class="text-3xl font-bold text-slate-700">{{ $clientes }}</div>
     <div class="text-xs text-gray-400 mt-1">Total en la app</div>
   </div>
 
