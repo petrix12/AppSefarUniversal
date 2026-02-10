@@ -1,7 +1,7 @@
 <div class="bg-white shadow rounded-xl p-6">
   <div class="flex items-center justify-between">
     <div>
-      <h3 class="font-bold text-lg">Documentos compartidos</h3>
+      <h3 class="font-bold text-lg">Material de Apoyo para Ventas</h3>
       <span class="text-xs text-gray-400">(últimos 20)</span>
     </div>
 

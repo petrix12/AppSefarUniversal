@@ -39,14 +39,7 @@
                             <textarea name="description" class="form-control" rows="2">{{ old('description') }}</textarea>
                         </div>
 
-                        <div class="col-md-6 mb-2">
-                            <label>Visibilidad</label>
-                            <select name="visibility" class="form-control" required>
-                                <option value="coordventas" @selected(old('visibility')=='coordventas')>Coord. Ventas</option>
-                                <option value="todos" @selected(old('visibility')=='todos')>Todos</option>
-                                <option value="admins" @selected(old('visibility')=='admins')>Solo Admin</option>
-                            </select>
-                        </div>
+                        <input type="hidden" name="visibility" class="form-control" value="todos">
 
                         <div class="col-md-6 mb-2">
                             <label>Archivo</label>
