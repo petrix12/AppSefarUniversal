@@ -4005,15 +4005,21 @@ class ClienteController extends Controller
 
                     $contactHS = $hubspot->crm()->contacts()->searchApi()->doSearch($searchRequest);
 
+                    \Log::info('HubSpot búsqueda contacto - Total: ' . $contactHS['total']); // 👈 LOG 1
+
                     if ($contactHS['total'] != 0) {
                         $idcontact = $contactHS['results'][0]['id'];
+                        \Log::info('HubSpot contacto encontrado ID: ' . $idcontact); // 👈 LOG 2
 
                         DB::table('users')
                             ->where('id', auth()->user()->id)
                             ->update(['hs_id' => $idcontact]);
 
+                        // Obtener el servicio correctamente (como en la función vieja)
+                        $servicioHS = Servicio::where('id_hubspot', auth()->user()->servicio)->first();
+
                         $properties1 = [
-                            'registro_pago' => $monto,
+                            'registro_pago' => $servicioHS ? $servicioHS->precio : $monto, // 👈 IGUAL que la función vieja
                             'registro_cupon' => $cupones,
                             'transaction_id' => $cargos,
                             'hist_pago_registro' => $pago_registro
@@ -4024,38 +4030,59 @@ class ClienteController extends Controller
                         ]);
 
                         $hubspot->crm()->contacts()->basicApi()->update($idcontact, $simplePublicObjectInput);
+                        \Log::info('HubSpot contacto actualizado'); // 👈 LOG 3
 
                         // Crear deals
                         foreach ($compras as $compra) {
+                            \Log::info('Creando deal para compra ID: ' . $compra->id . ' servicio: ' . $compra->servicio_hs_id);
+
                             $dealInput = new \HubSpot\Client\Crm\Deals\Model\SimplePublicObjectInput();
                             $dealInput->setProperties([
-                                'dealname' => auth()->user()->name . ' - ' . $compra->servicio_hs_id,
-                                'pipeline' => "94794",
-                                'dealstage' => "429097",
-                                'servicio_solicitado' => $compra->servicio_hs_id,
+                                'dealname'             => auth()->user()->name . ' - ' . $compra->servicio_hs_id,
+                                'pipeline'             => "94794",
+                                'dealstage'            => "429097",
+                                'servicio_solicitado'  => $compra->servicio_hs_id,
                                 'servicio_solicitado2' => $compra->servicio_hs_id,
                             ]);
 
-                            $dealResponse = $hubspot->crm()->deals()->basicApi()->create($dealInput);
-                            $iddeal = $dealResponse->id;
+                            $dealResponse = json_decode(
+                                json_encode($hubspot->crm()->deals()->basicApi()->create($dealInput)),
+                                true
+                            );
 
-                            $associationSpec1 = new \HubSpot\Client\Crm\Associations\Model\AssociationSpec([
-                                'association_category' => 'HUBSPOT_DEFINED',
-                                'association_type_id' => 3
+                            $iddeal = $dealResponse["id"];
+                            \Log::info('Deal creado con ID: ' . $iddeal);
+
+                            // ✅ Asociación via HTTP directo
+                            $hubspotToken = env('HUBSPOT_KEY');
+                            $associationUrl = "https://api.hubapi.com/crm/v4/objects/deals/{$iddeal}/associations/contacts/{$idcontact}";
+
+                            $associationBody = json_encode([
+                                [
+                                    'associationCategory' => 'HUBSPOT_DEFINED',
+                                    'associationTypeId'   => 3
+                                ]
                             ]);
 
-                            $hubspot->crm()->deals()->associationsApi()->create(
-                                $iddeal,
-                                'contacts',
-                                $idcontact,
-                                [$associationSpec1]
-                            );
+                            $context = stream_context_create([
+                                'http' => [
+                                    'method'  => 'PUT',
+                                    'header'  => "Content-Type: application/json\r\nAuthorization: Bearer " . $hubspotToken,
+                                    'content' => $associationBody
+                                ]
+                            ]);
+
+                            $associationResponse = @file_get_contents($associationUrl, false, $context);
+                            \Log::info('Respuesta asociación HubSpot deal ' . $iddeal . ': ' . $associationResponse);
 
                             sleep(2);
                         }
+                    } else {
+                        \Log::warning('HubSpot: No se encontró contacto con email: ' . auth()->user()->email); // 👈 LOG 7
                     }
                 } catch (\Exception $e) {
                     \Log::error('Error actualizando HubSpot: ' . $e->getMessage());
+                    \Log::error('Stack trace: ' . $e->getTraceAsString()); // 👈 Stack trace completo
                 }
 
                 // Enviar emails

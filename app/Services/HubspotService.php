@@ -16,6 +16,9 @@ use HubSpot\Client\Files\ApiException as FilesApiException;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Promise;
 use GuzzleHttp\Psr7\Response;
+use HubSpot\Client\Crm\Contacts\Model\Filter;
+use HubSpot\Client\Crm\Contacts\Model\FilterGroup;
+use HubSpot\Client\Crm\Contacts\Model\PublicObjectSearchRequest;
 
 use HubSpot\Client\Files\Model\FileUpdateInput;
 
@@ -26,6 +29,58 @@ class HubspotService
     public function __construct()
     {
         $this->hubspot = Factory::createWithAccessToken(env('HUBSPOT_KEY'));
+    }
+
+    public function getAllContactsByOwnerId(
+        string $ownerId,
+        array $properties = ['email', 'firstname', 'lastname', 'hubspot_owner_id'],
+        int $limit = 100
+    ): array {
+        $all = [];
+        $after = null;
+
+        try {
+            do {
+                $filter = new Filter();
+                $filter
+                    ->setOperator('EQ')
+                    ->setPropertyName('hubspot_owner_id')
+                    ->setValue($ownerId);
+
+                $filterGroup = new FilterGroup();
+                $filterGroup->setFilters([$filter]);
+
+                $searchRequest = new PublicObjectSearchRequest();
+                $searchRequest->setFilterGroups([$filterGroup]);
+                $searchRequest->setProperties($properties);
+                $searchRequest->setLimit($limit);
+
+                if (!is_null($after)) {
+                    $searchRequest->setAfter($after);
+                }
+
+                $page = $this->hubspot->crm()->contacts()->searchApi()->doSearch($searchRequest);
+
+                foreach ($page->getResults() as $contact) {
+                    $all[] = [
+                        'id' => $contact->getId(),
+                        'properties' => $contact->getProperties(),
+                    ];
+                }
+
+                // Paginación
+                $paging = $page->getPaging();
+                $after = ($paging && $paging->getNext())
+                    ? $paging->getNext()->getAfter()
+                    : null;
+
+            } while (!is_null($after));
+
+            return $all;
+
+        } catch (\Exception $e) {
+            throw new \Exception("Error al obtener contactos por ownerId en HubSpot: " . $e->getMessage());
+        }
     }
 
     public function check001(string $hsId, int $maxRetries = 100, int $sleepSeconds = 2): ?array
