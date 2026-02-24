@@ -224,22 +224,38 @@ class HubspotSyncAll extends Command
     private function detectOwnerIdConflictsInDb(): void
     {
         $conflicts = DB::table('users')
-            ->select('hubspot_owner_id', DB::raw('COUNT(*) as cnt'), DB::raw('GROUP_CONCAT(id ORDER BY id) as user_ids'))
+            ->select(
+                'hubspot_owner_id',
+                DB::raw('COUNT(*) as num_users'),
+                DB::raw('GROUP_CONCAT(id ORDER BY id SEPARATOR ",") as user_ids')
+            )
             ->whereNotNull('hubspot_owner_id')
+            ->where('hubspot_owner_id', '!=', '')   // ← excluir vacíos
             ->groupBy('hubspot_owner_id')
-            ->having('cnt', '>', 1)
+            ->having('num_users', '>', 1)
             ->get();
 
-        if ($conflicts->isEmpty()) return;
+        if ($conflicts->isEmpty()) {
+            return;
+        }
 
         $this->warn("  ⚠️  CONFLICTOS: hubspot_owner_id asignado a múltiples users en BD:");
+
         $rows = [];
         foreach ($conflicts as $c) {
-            $rows[] = [$c->hubspot_owner_id, $c->cnt, $c->user_ids];
+            $rows[] = [
+                $c->hubspot_owner_id,
+                $c->num_users,
+                // Truncar para no colapsar la tabla en consola
+                strlen($c->user_ids) > 80
+                    ? substr($c->user_ids, 0, 80) . '…'
+                    : $c->user_ids,
+            ];
             $this->report['owner_id_conflicts'][] = (array) $c;
         }
-        $this->table(['hubspot_owner_id', 'num_users', 'user_ids'], $rows);
-        $this->warn("  Estos conflicts DEBEN resolverse manualmente antes de continuar.");
+
+        $this->table(['hubspot_owner_id', 'num_users', 'user_ids (primeros)'], $rows);
+        $this->warn("  Estos conflictos DEBEN resolverse manualmente antes de continuar.");
         $this->warn("  El Paso 2 los saltará para evitar asignaciones incorrectas.");
     }
 
@@ -265,7 +281,8 @@ class HubspotSyncAll extends Command
         // Traer asesores con hubspot_owner_id
         $advisorsQ = User::query()
             ->select(['id', 'email', 'hubspot_owner_id'])
-            ->whereNotNull('hubspot_owner_id');
+            ->whereNotNull('hubspot_owner_id')
+            ->where('hubspot_owner_id', '!=', '');
 
         if ($onlyOwner)  $advisorsQ->where('hubspot_owner_id', (string)$onlyOwner);
         if ($onlyUserId) $advisorsQ->where('id', (int)$onlyUserId);
