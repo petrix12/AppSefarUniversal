@@ -2797,4 +2797,88 @@ private function removeDuplicatesAndSort(array $cosuser): array
         return response()->json($enabledUsers);
     }
 
+    public function editBasic(User $user)
+    {
+        //$this->authorizeAdminOnly();
+
+        // Roles/Permisos disponibles
+        $roles = Role::orderBy('name')->get();
+        $permissions = Permission::orderBy('name')->get();
+
+        // Roles/Permisos del usuario actual
+        $userRoleNames = $user->getRoleNames()->toArray();           // ['Admin', ...]
+        $userPermissionNames = $user->getAllPermissions()
+            ->pluck('name')
+            ->toArray();                                            // ['users.edit', ...]
+
+        return view('crud.users.edit_basic', compact(
+            'user',
+            'roles',
+            'permissions',
+            'userRoleNames',
+            'userPermissionNames'
+        ));
+    }
+
+    public function updateBasic(Request $request, User $user)
+    {
+        $this->authorizeAdminOnly();
+
+        $request->validate([
+            'nombres'   => 'required|string|max:255',
+            'apellidos' => 'required|string|max:255',
+            'email'     => 'required|email|unique:users,email,' . $user->id,
+            'phone'     => 'required|string|max:25',
+
+            // Password opcional
+            'password'  => 'nullable|string|min:8|confirmed',
+
+            // Roles/Permisos opcionales
+            'roles'         => 'array',
+            'roles.*'       => 'string',
+            'permissions'   => 'array',
+            'permissions.*' => 'string',
+        ]);
+
+        // ✅ Datos básicos
+        $user->nombres   = $request->nombres;
+        $user->apellidos = $request->apellidos;
+        $user->email     = $request->email;
+        $user->phone     = $request->phone;
+
+        if ($request->filled('password')) {
+            $user->password = bcrypt($request->password);
+            // Manteniendo tu esquema actual (si lo usas en algún lado)
+            $user->password_md5 = md5($request->password);
+        }
+
+        $user->save();
+
+        // ✅ Roles: sync
+        $roles = $request->input('roles', []);
+        $user->syncRoles($roles);
+
+        // ✅ Permisos directos: sync (independiente de roles)
+        $permissions = $request->input('permissions', []);
+        $user->syncPermissions($permissions);
+
+        return redirect()
+            ->route('crud.users.editBasic', $user->id)
+            ->with('success', 'Usuario actualizado (modo básico).');
+    }
+
+    /**
+     * SOLO ADMIN
+     * Ajusta los nombres según tus roles reales.
+     */
+    private function authorizeAdminOnly(): void
+    {
+        abort_unless(auth()->check(), 401);
+
+        // Ajusta estos nombres al que tengas en tu BD
+        $allowed = ['Administrador', 'Admin', 'Super Admin', 'SuperAdmin'];
+
+        abort_unless(auth()->user()->hasAnyRole($allowed), 403);
+    }
+
 }

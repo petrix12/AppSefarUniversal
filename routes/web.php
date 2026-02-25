@@ -54,6 +54,12 @@ use App\Http\Controllers\ProveedorRegisterController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\NewsController;
 
+Route::get('/crud/users/{user}/edit-basic', [UserController::class, 'editBasic'])
+    ->name('crud.users.editBasic');
+
+Route::put('/crud/users/{user}/update-basic', [UserController::class, 'updateBasic'])
+    ->name('crud.users.updateBasic');
+
 Route::get('/registerv2', [RegisterV2Controller::class, 'index'])->name('register.v2.form');
 
 Route::post('/registerv2', [RegisterV2Controller::class, 'store'])->name('register.v2');

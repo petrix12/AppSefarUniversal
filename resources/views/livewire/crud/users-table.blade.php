@@ -408,6 +408,16 @@
                                     </div>
                                 @endcan
 
+                                @role('Administrador')
+                                    <div class="tooltip-container flex-1">
+                                        <a href="{{ route('crud.users.editBasic', $user) }}"
+                                        class="btn btn-info w-full text-center">
+                                        <i class="fas fa-user-cog fa-fw"></i>
+                                        </a>
+                                        <span class="tooltip-text">Edición básica (sin COS)</span>
+                                    </div>
+                                @endrole
+
                                 @if(auth()->user()->roles[0]->id == 1)
                                     <div class="tooltip-container flex-1">
                                         <form action="{{ route('crud.users.destroy', $user) }}" method="POST" class="w-full">
@@ -548,6 +558,15 @@
                                                     <span class="tooltip-text">Editar Usuario</span>
                                                 </div>
                                             @endcan
+                                            @role('Administrador')
+                                                <div class="tooltip-container">
+                                                    <a href="{{ route('crud.users.editBasic', $user) }}"
+                                                    class="btn btn-info">
+                                                    <i class="fas fa-user-cog fa-fw"></i>
+                                                    </a>
+                                                    <span class="tooltip-text">Edición básica (sin COS)</span>
+                                                </div>
+                                            @endrole
                                             @if(auth()->user()->roles[0]->id == 1)
                                                 <div class="tooltip-container">
                                                     <form action="{{ route('crud.users.destroy', $user) }}" method="POST" style="display: inline-block;">
