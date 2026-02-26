@@ -234,7 +234,6 @@
                   <span class="text-muted small">Sin nota</span>
                 @endif
               </td>
-              @can('lists.manage_members')
               <td class="text-center">
                 <div class="d-flex gap-2 justify-content-center">
                   <form method="POST" action="{{ route('crud.lists.members.contacted', [$lista, $u]) }}">
@@ -245,6 +244,7 @@
                       <i class="fas {{ $u->pivot->contacted ? 'fa-undo' : 'fa-check' }}"></i>
                     </button>
                   </form>
+                  @can('lists.manage_members')
                   <form method="POST"
                         action="{{ route('crud.lists.members.remove', [$lista, $u]) }}"
                         onsubmit="return confirm('¿Quitar a {{ addslashes($u->name) }} de la lista?')">
@@ -253,9 +253,9 @@
                       <i class="fas fa-user-minus"></i>
                     </button>
                   </form>
+                  @endcan
                 </div>
               </td>
-              @endcan
             </tr>
           @empty
             <tr>
