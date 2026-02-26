@@ -1,6 +1,74 @@
 @extends('adminlte::page')
 
 @section('content')
+<script>
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.js-open-contact-modal');
+    if (!btn) return;
+
+    const action = btn.getAttribute('data-action');
+    const user   = btn.getAttribute('data-user') || '';
+
+    const form = document.getElementById('contactModalForm');
+    const name = document.getElementById('contactModalUser');
+    const note = document.getElementById('contact_note');
+
+    form.action = action;
+    name.textContent = user;
+    note.value = '';
+
+    $('#contactModal').modal('show');
+    setTimeout(() => note.focus(), 250);
+  });
+</script>
+
+{{-- Modal: marcar como contactado + nota obligatoria --}}
+<div class="modal fade" id="contactModal" tabindex="-1" role="dialog" aria-labelledby="contactModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <form method="POST" id="contactModalForm">
+      @csrf
+      @method('PATCH')
+      <input type="hidden" name="contacted" value="1">
+
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="contactModalLabel">Marcar como contactado</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="mb-2 text-muted small">
+            Usuario: <strong id="contactModalUser"></strong>
+          </div>
+
+          <label class="form-label text-muted small mb-1">Nota de contacto (obligatoria)</label>
+          <textarea
+            class="form-control"
+            name="contact_note"
+            id="contact_note"
+            rows="4"
+            placeholder="Ej: Llamada realizada, interesado, agendar cita para..."
+            required
+          ></textarea>
+
+          <small class="text-muted d-block mt-2">
+            Se guardará la fecha/hora de contacto automáticamente.
+          </small>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success">
+            <i class="fas fa-check mr-1"></i> Guardar
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
   @if(session('success'))
@@ -234,14 +302,27 @@
               </td>
               <td class="text-center">
                 <div class="d-flex gap-2 justify-content-center">
-                  <form method="POST" action="{{ route('crud.lists.members.contacted', [$lista, $u]) }}">
-                    @csrf @method('PATCH')
-                    <input type="hidden" name="contacted" value="{{ $u->pivot->contacted ? 0 : 1 }}">
-                    <button class="btn btn-sm {{ $u->pivot->contacted ? 'btn-outline-warning' : 'btn-outline-success' }}"
-                            title="{{ $u->pivot->contacted ? 'Marcar como no contactado' : 'Marcar como contactado' }}">
-                      <i class="fas {{ $u->pivot->contacted ? 'fa-undo' : 'fa-check' }}"></i>
+                  {{-- ✅ Si ya está contactado: permitir "desmarcar" directo --}}
+                    @if($u->pivot->contacted)
+                    <form method="POST" action="{{ route('crud.lists.members.contacted', [$lista, $u]) }}">
+                        @csrf @method('PATCH')
+                        <input type="hidden" name="contacted" value="0">
+                        <button class="btn btn-sm btn-outline-warning" title="Marcar como no contactado">
+                        <i class="fas fa-undo"></i>
+                        </button>
+                    </form>
+                    @else
+                    {{-- ✅ Si NO está contactado: abrir modal para obligar nota --}}
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-outline-success js-open-contact-modal"
+                        title="Marcar como contactado"
+                        data-action="{{ route('crud.lists.members.contacted', [$lista, $u]) }}"
+                        data-user="{{ $u->name }}"
+                    >
+                        <i class="fas fa-check"></i>
                     </button>
-                  </form>
+                    @endif
                   @can('lists.manage_members')
                   <form method="POST"
                         action="{{ route('crud.lists.members.remove', [$lista, $u]) }}"

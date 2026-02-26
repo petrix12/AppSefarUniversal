@@ -175,14 +175,16 @@ class ListController extends Controller
         $this->authorizeVentasMember($user);
 
         $data = $request->validate([
-            'contacted' => 'required|boolean',
-            'contact_note' => 'nullable|string',
+            'contacted' => ['required', 'boolean'],
+            // ✅ obligatorio si contacted=1
+            'contact_note' => ['required_if:contacted,1', 'nullable', 'string', 'max:2000'],
         ]);
 
         $lista->users()->updateExistingPivot($user->id, [
-            'contacted' => $data['contacted'],
-            'contacted_at' => $data['contacted'] ? now() : null,
-            'contact_note' => $data['contact_note'] ?? null,
+            'contacted'     => (bool)$data['contacted'],
+            'contacted_at'  => $data['contacted'] ? now() : null,
+            // si desmarcan, puedes limpiar nota o mantenerla (yo la limpio)
+            'contact_note'  => $data['contacted'] ? ($data['contact_note'] ?? null) : null,
         ]);
 
         return back()->with('success', 'Estado de contacto actualizado.');
