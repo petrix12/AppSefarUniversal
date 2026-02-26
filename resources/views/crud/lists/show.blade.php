@@ -184,9 +184,7 @@
               <th class="text-center">Estado</th>
               <th><i class="fas fa-calendar mr-1 text-muted"></i> Fecha contacto</th>
               <th><i class="fas fa-sticky-note mr-1 text-muted"></i> Nota</th>
-              @can('lists.manage_members')
-                <th class="text-center">Acciones</th>
-              @endcan
+              <th class="text-center">Acciones</th>
             </tr>
           </thead>
           <tbody>
