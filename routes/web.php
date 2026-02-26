@@ -53,6 +53,29 @@ use App\Http\Controllers\DeployController;
 use App\Http\Controllers\ProveedorRegisterController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\NewsController;
+use App\Http\Controllers\ListController;
+
+Route::prefix('crud/lists')->name('crud.lists.')->group(function () {
+    Route::get('/', [ListController::class, 'get'])->name('index')->middleware('can:lists.view');
+    Route::get('/create', [ListController::class, 'create'])->name('create')->middleware('can:lists.create');
+    Route::post('/', [ListController::class, 'store'])->name('store')->middleware('can:lists.create');
+
+    Route::get('/{lista}', [ListController::class, 'show'])->name('show')->middleware('can:lists.view');
+    Route::get('/{lista}/edit', [ListController::class, 'edit'])->name('edit')->middleware('can:lists.edit');
+    Route::put('/{lista}', [ListController::class, 'update'])->name('update')->middleware('can:lists.edit');
+    Route::delete('/{lista}', [ListController::class, 'destroy'])->name('destroy')->middleware('can:lists.delete');
+
+    // miembros
+    Route::post('/{lista}/members/add', [ListController::class, 'addMembers'])
+        ->name('members.add')->middleware('can:lists.manage_members');
+
+    Route::delete('/{lista}/members/{user}', [ListController::class, 'removeMember'])
+        ->name('members.remove')->middleware('can:lists.manage_members');
+
+    // marcar contactado
+    Route::patch('/{lista}/members/{user}/contacted', [ListController::class, 'setContacted'])
+        ->name('members.contacted')->middleware('can:lists.manage_members');
+});
 
 Route::get('/crud/users/{user}/edit-basic', [UserController::class, 'editBasic'])
     ->name('crud.users.editBasic');

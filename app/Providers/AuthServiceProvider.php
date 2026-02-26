@@ -41,6 +41,9 @@ class AuthServiceProvider extends ServiceProvider
             return $user->hasRole('Administrador');
         });
 
+        Gate::define('notCliente', function ($user) {
+            return !$user->hasRole('Cliente');
+        });
         //
     }
 }

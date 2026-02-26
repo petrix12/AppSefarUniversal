@@ -102,4 +102,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(User::class, 'owner_id');
     }
+
+    public function listas()
+    {
+        // parent = User -> pivot.fk = user_id, pivot.related = list_id
+        return $this->belongsToMany(\App\Models\Lista::class, 'list_user', 'user_id', 'list_id')
+            ->withPivot(['id', 'contacted', 'contacted_at', 'contact_note'])
+            ->withTimestamps();
+    }
 }

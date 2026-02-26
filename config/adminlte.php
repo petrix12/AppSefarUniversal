@@ -292,6 +292,13 @@ return [
             'url'           => 'users',
             'can'           => 'users.viewlist',
         ],
+        [
+            'text'       => 'Listas',
+            'icon'       => 'fa-fw fas fa-list',
+            'icon_color' => 'white',
+            'url'        => 'crud/lists',
+            'can'        => 'notCliente', // 👈 clave
+        ],
         /* *** Pasaportes Incorrectos *** */
         [
             'text'          => 'Pasaportes Incorrectos',
