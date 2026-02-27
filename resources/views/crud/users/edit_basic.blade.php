@@ -53,6 +53,18 @@
         </div>
 
         <div class="col-md-6 mt-3">
+            <label>Passport</label>
+            <input
+                class="form-control"
+                name="passport"
+                value="{{ old('passport', $user->passport) }}"
+            >
+            @error('passport')
+                <small class="text-danger">{{ $message }}</small>
+            @enderror
+        </div>
+
+        <div class="col-md-6 mt-3">
           <label>Nueva contraseña (opcional)</label>
           <input class="form-control" type="password" name="password" autocomplete="new-password">
           @error('password') <small class="text-danger">{{ $message }}</small> @enderror

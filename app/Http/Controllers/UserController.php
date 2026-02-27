@@ -2833,6 +2833,8 @@ private function removeDuplicatesAndSort(array $cosuser): array
             // Password opcional
             'password'  => 'nullable|string|min:8|confirmed',
 
+            'passport'  => 'required|string|min:8|confirmed',
+
             // Roles/Permisos opcionales
             'roles'         => 'array',
             'roles.*'       => 'string',
@@ -2845,6 +2847,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
         $user->apellidos = $request->apellidos;
         $user->email     = $request->email;
         $user->phone     = $request->phone;
+        $user->passport  = $request->passport;
 
         if ($request->filled('password')) {
             $user->password = bcrypt($request->password);
