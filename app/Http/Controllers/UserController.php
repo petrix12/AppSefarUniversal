@@ -2833,7 +2833,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
             // Password opcional
             'password'  => 'nullable|string|min:8|confirmed',
 
-            'passport'  => 'required|string|min:8|confirmed',
+            'passport'  => 'required|string|min:8|max:20|unique:users,passport,' . $user->id,
 
             // Roles/Permisos opcionales
             'roles'         => 'array',
