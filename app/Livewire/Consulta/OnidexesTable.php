@@ -12,11 +12,11 @@ class OnidexesTable extends Component
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'perPage' => ['except' => '10']
+        'perPage' => ['except' => '100']
     ];
 
     public $search = '';
-    public $perPage = '10';
+    public $perPage = '100';
 
     // Variables de búsqueda avanzada
     public $nombre1;
@@ -73,7 +73,7 @@ class OnidexesTable extends Component
 
     public function clear(){
         $this->search = '';
-        $this->perPage = '10';
+        $this->perPage = '100';
         $this->nombre1 = '';
         $this->nombre2 = '';
         $this->apellido1 = '';
