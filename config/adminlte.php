@@ -293,7 +293,7 @@ return [
             'can'           => 'users.viewlist',
         ],
         [
-            'text'       => 'Listas',
+            'text'       => 'Ventas pendientes',
             'icon'       => 'fa-fw fas fa-list',
             'icon_color' => 'white',
             'url'        => 'crud/lists',
