@@ -14,9 +14,10 @@ class ImportProcesoSefardi extends Command
         {--list="Proceso Sefardi" : Nombre de la lista}
         {--dry-run : No escribe, solo muestra}
         {--only-missing-owner : Solo procesa usuarios sin owner_id}
+        {--only-active-hubspot-owners : Solo usa owners activos de HubSpot (hubspot_owners.active=1)}
     ';
 
-    protected $description = 'Importa pasaportes desde TXT, asigna owner_id equilibrado (least-loaded) si falta, y agrega usuarios a la lista.';
+    protected $description = 'Importa pasaportes desde TXT, asigna owner_id equilibrado (least-loaded) si falta, y agrega usuarios a la lista. Owners vienen de hubspot_owner_user.';
 
     public function handle(): int
     {
@@ -24,6 +25,7 @@ class ImportProcesoSefardi extends Command
         $listName = trim((string)$this->option('list'));
         $dryRun = (bool)$this->option('dry-run');
         $onlyMissingOwner = (bool)$this->option('only-missing-owner');
+        $onlyActiveHubspotOwners = (bool)$this->option('only-active-hubspot-owners');
 
         if ($file === '' || !is_file($file)) {
             $this->error('Debes pasar --file con ruta válida. Ej: --file="' . storage_path('app/passports.txt') . '"');
@@ -46,16 +48,27 @@ class ImportProcesoSefardi extends Command
             $this->warn('DRY-RUN activo: no se escribirá en BD.');
         }
 
-        // 2) Owners elegibles = users con hubspot_owner_id no vacío
-        $ownerIds = User::query()
-            ->whereNotNull('hubspot_owner_id')
-            ->whereRaw("TRIM(hubspot_owner_id) <> ''")
-            ->orderBy('id')
-            ->pluck('id')
+        // 2) Owners elegibles = users que estén mapeados en hubspot_owner_user
+        //    (y opcionalmente solo owners activos en hubspot_owners)
+        $ownerIdsQ = DB::table('hubspot_owner_user as hou')
+            ->join('users as u', 'u.id', '=', 'hou.user_id')
+            ->whereNotNull('hou.hubspot_owner_id')
+            ->whereRaw("TRIM(hou.hubspot_owner_id) <> ''");
+
+        if ($onlyActiveHubspotOwners) {
+            $ownerIdsQ->join('hubspot_owners as ho', 'ho.id', '=', 'hou.hubspot_owner_id')
+                      ->where('ho.active', 1);
+        }
+
+        $ownerIds = $ownerIdsQ
+            ->orderBy('hou.user_id')
+            ->pluck('hou.user_id')
+            ->unique()
+            ->values()
             ->all();
 
         if (empty($ownerIds)) {
-            $this->error('No hay owners disponibles (users con hubspot_owner_id).');
+            $this->error('No hay owners disponibles (no hay registros en hubspot_owner_user).');
             return self::FAILURE;
         }
 
@@ -81,6 +94,7 @@ class ImportProcesoSefardi extends Command
         $this->info("Pasaportes a procesar: " . count($passports));
         $this->info("Owners detectados: " . count($ownerIds));
         if ($onlyMissingOwner) $this->info("Modo: SOLO usuarios sin owner_id (--only-missing-owner)");
+        if ($onlyActiveHubspotOwners) $this->info("Filtro: SOLO owners activos de HubSpot (--only-active-hubspot-owners)");
 
         // 4) Cargar users por passport
         $usersQ = User::query()
@@ -105,7 +119,6 @@ class ImportProcesoSefardi extends Command
         }
 
         // 6) Carga actual por owner (para balanceo global)
-        //    counts[owner_id] = cantidad de users que ya tienen ese owner_id
         $counts = DB::table('users')
             ->select('owner_id', DB::raw('COUNT(*) as c'))
             ->whereIn('owner_id', $ownerIds)
@@ -113,13 +126,11 @@ class ImportProcesoSefardi extends Command
             ->pluck('c', 'owner_id')
             ->all();
 
-        // Inicializar 0 para owners sin registros
         $ownerLoad = [];
         foreach ($ownerIds as $oid) {
             $ownerLoad[$oid] = (int)($counts[$oid] ?? 0);
         }
 
-        // Helper: obtener owner menos cargado (tie-break por id)
         $pickLeastLoadedOwner = function () use (&$ownerLoad): int {
             $bestId = null;
             $bestLoad = null;
@@ -141,7 +152,6 @@ class ImportProcesoSefardi extends Command
         $added = 0;
         $ownersAssigned = 0;
 
-        // Para auditoría (opcional): cuántos asigné por owner en esta corrida
         $assignedThisRun = array_fill_keys($ownerIds, 0);
 
         foreach ($passports as $p) {
@@ -154,12 +164,9 @@ class ImportProcesoSefardi extends Command
 
             $found++;
 
-            // Si ya tiene owner_id, no lo tocamos.
-            // Si no tiene, asignamos al menos cargado.
             $newOwnerId = null;
             if (empty($u->owner_id)) {
                 $newOwnerId = $pickLeastLoadedOwner();
-                // incrementamos carga en memoria para mantener balance durante corrida
                 $ownerLoad[$newOwnerId] = ($ownerLoad[$newOwnerId] ?? 0) + 1;
                 $assignedThisRun[$newOwnerId] = ($assignedThisRun[$newOwnerId] ?? 0) + 1;
             }
@@ -183,7 +190,6 @@ class ImportProcesoSefardi extends Command
                 &$alreadyInList,
                 &$existingUserIdsInList
             ) {
-                // 1) Asignar owner si sigue NULL (seguro contra carreras)
                 if ($newOwnerId) {
                     $affected = User::query()
                         ->where('id', $u->id)
@@ -195,7 +201,6 @@ class ImportProcesoSefardi extends Command
                     }
                 }
 
-                // 2) Insertar pivot sin duplicar
                 if (isset($existingUserIdsInList[$u->id])) {
                     $alreadyInList++;
                     return;
@@ -227,7 +232,6 @@ class ImportProcesoSefardi extends Command
         }
 
         // 9) Resumen de equidad en esta corrida
-        // Mostrar top 15 owners con más asignaciones en esta corrida (para validar balance)
         arsort($assignedThisRun);
         $summaryRows = [];
         $i = 0;
@@ -237,6 +241,7 @@ class ImportProcesoSefardi extends Command
             $i++;
             if ($i >= 15) break;
         }
+
         if (!empty($summaryRows)) {
             $this->info("\nAsignaciones en esta corrida (top 15):");
             $this->table(['owner_id', 'nuevos_asignados'], $summaryRows);
