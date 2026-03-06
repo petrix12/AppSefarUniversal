@@ -4,13 +4,11 @@
 
 @section('content_header')
   <div class="d-flex justify-content-between align-items-center">
-    <div>
-      <h1 class="m-0 text-dark">
-        <i class="fas fa-users-cog mr-2 text-primary"></i>
-        HubSpot Owners
-        <small class="text-muted" style="font-size: 0.55em; vertical-align: middle;">manual</small>
-      </h1>
-    </div>
+    <h1 class="m-0 text-dark" style="font-size:1.4rem;">
+      <i class="fas fa-users-cog mr-2 text-primary"></i>
+      HubSpot Owners
+      <small class="text-muted ml-1" style="font-size:.6em; vertical-align:middle;">manual</small>
+    </h1>
     <a class="btn btn-primary btn-sm px-4" href="{{ route('hubspot-owners.create') }}">
       <i class="fas fa-plus mr-1"></i> Nuevo Owner
     </a>
@@ -23,50 +21,46 @@
   @if(session('status'))
     <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
       <i class="fas fa-check-circle mr-2"></i>{{ session('status') }}
-      <button type="button" class="close" data-dismiss="alert">
-        <span>&times;</span>
-      </button>
+      <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
     </div>
   @endif
 
-  {{-- Stats bar --}}
+  {{-- Stats --}}
   @php
     $totalLinked   = $owners->getCollection()->filter(fn($o) => $o->ownerUserLink?->user)->count();
     $totalUnlinked = $owners->getCollection()->filter(fn($o) => !$o->ownerUserLink?->user)->count();
   @endphp
-  <div class="row mb-3 g-2">
-    <div class="col-auto">
-      <div class="badge badge-pill px-3 py-2" style="background:#d4edda; color:#155724; font-size:.85rem;">
-        <i class="fas fa-link mr-1"></i> Asociados: <strong>{{ $totalLinked }}</strong>
-      </div>
-    </div>
-    <div class="col-auto">
-      <div class="badge badge-pill px-3 py-2" style="background:#f8d7da; color:#721c24; font-size:.85rem;">
-        <i class="fas fa-unlink mr-1"></i> Sin asociar: <strong>{{ $totalUnlinked }}</strong>
-      </div>
-    </div>
+  <div class="d-flex align-items-center gap-2 mb-3" style="gap:.5rem;">
+    <span class="badge px-3 py-2" style="background:#d4edda;color:#155724;font-size:.82rem;border-radius:20px;">
+      <i class="fas fa-link mr-1"></i> Asociados en esta página: <strong>{{ $totalLinked }}</strong>
+    </span>
+    <span class="badge px-3 py-2" style="background:#f8d7da;color:#721c24;font-size:.82rem;border-radius:20px;">
+      <i class="fas fa-unlink mr-1"></i> Sin asociar en esta página: <strong>{{ $totalUnlinked }}</strong>
+    </span>
   </div>
 
   <div class="card shadow-sm border-0">
-    <div class="card-header border-bottom bg-white py-2 px-3">
-      <div class="d-flex align-items-center">
-        <i class="fas fa-table text-muted mr-2"></i>
-        <span class="font-weight-semibold text-muted" style="font-size:.85rem;">
-          {{ $owners->total() }} owners en total — página {{ $owners->currentPage() }} de {{ $owners->lastPage() }}
-        </span>
-      </div>
+
+    {{-- Card header --}}
+    <div class="card-header bg-white border-bottom py-2 px-3">
+      <i class="fas fa-table text-muted mr-1"></i>
+      <small class="text-muted">
+        {{ $owners->total() }} owners en total &mdash;
+        página {{ $owners->currentPage() }} de {{ $owners->lastPage() }}
+      </small>
     </div>
 
+    {{-- Tabla --}}
     <div class="table-responsive">
-      <table class="table table-hover mb-0 align-middle owners-table">
-        <thead>
-          <tr class="bg-light">
-            <th class="text-muted border-0 pl-3" style="width:60px; font-size:.75rem; letter-spacing:.05em;">#ID</th>
-            <th class="border-0" style="font-size:.75rem; letter-spacing:.05em;">NOMBRE</th>
-            <th class="border-0" style="font-size:.75rem; letter-spacing:.05em;">EMAIL</th>
-            <th class="border-0 text-center" style="width:70px; font-size:.75rem; letter-spacing:.05em;">ACTIVO</th>
-            <th class="border-0" style="min-width:340px; font-size:.75rem; letter-spacing:.05em;">USUARIO ASOCIADO</th>
-            <th class="border-0 text-right pr-3" style="width:160px; font-size:.75rem; letter-spacing:.05em;">ACCIONES</th>
+      <table class="table table-hover mb-0 owners-table">
+        <thead class="thead-light">
+          <tr>
+            <th style="width:90px;">#ID</th>
+            <th style="min-width:160px;">Nombre</th>
+            <th style="min-width:200px;">Email</th>
+            <th style="width:75px;" class="text-center">Activo</th>
+            <th style="min-width:320px;">Usuario asociado</th>
+            <th style="width:100px;" class="text-right pr-3">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -74,80 +68,75 @@
             @php
               $linkedUser = $o->ownerUserLink?->user;
               $isLinked   = !!$linkedUser;
+              $initials   = collect(explode(' ', $o->name))
+                              ->filter()->take(2)
+                              ->map(fn($w) => strtoupper($w[0]))
+                              ->implode('');
             @endphp
 
             <tr class="owner-row {{ $isLinked ? 'row-linked' : 'row-unlinked' }}"
                 data-owner-id="{{ $o->id }}">
 
               {{-- ID --}}
-              <td class="pl-3">
-                <span class="text-muted" style="font-size:.8rem; font-family: monospace;">{{ $o->id }}</span>
+              <td class="text-muted align-middle pl-3" style="font-family:monospace;font-size:.8rem;">
+                {{ $o->id }}
               </td>
 
               {{-- Nombre --}}
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="owner-avatar mr-2">
-                    {{ strtoupper(substr($o->name, 0, 1)) }}
-                  </div>
-                  <span class="font-weight-semibold">{{ $o->name }}</span>
+              <td class="align-middle">
+                <div class="d-flex align-items-center" style="flex-wrap:nowrap;">
+                  <div class="owner-avatar mr-2 flex-shrink-0">{{ $initials }}</div>
+                  <span class="font-weight-semibold text-nowrap">{{ $o->name }}</span>
                 </div>
               </td>
 
               {{-- Email --}}
-              <td>
+              <td class="align-middle">
                 @if($o->email)
-                  <span class="text-muted" style="font-size:.875rem;">
-                    <i class="fas fa-envelope mr-1" style="opacity:.45; font-size:.75rem;"></i>{{ $o->email }}
-                  </span>
+                  <span class="text-muted" style="font-size:.85rem;">{{ $o->email }}</span>
                 @else
                   <span class="text-muted">—</span>
                 @endif
               </td>
 
               {{-- Activo --}}
-              <td class="text-center">
+              <td class="align-middle text-center">
                 @if($o->active)
-                  <span class="badge badge-success px-2 py-1" style="font-size:.75rem; border-radius:20px;">Sí</span>
+                  <span class="badge badge-success" style="border-radius:20px;font-size:.75rem;">Sí</span>
                 @else
-                  <span class="badge badge-secondary px-2 py-1" style="font-size:.75rem; border-radius:20px;">No</span>
+                  <span class="badge badge-secondary" style="border-radius:20px;font-size:.75rem;">No</span>
                 @endif
               </td>
 
-              {{-- Select usuario --}}
-              <td>
-                <div class="d-flex align-items-center gap-2">
-                  <div class="flex-grow-1">
-                    <select class="form-control js-user-select"
-                            data-owner-id="{{ $o->id }}"
-                            data-initial-user-id="{{ $linkedUser?->id ?? '' }}"
-                            data-initial-user-text="{{ $linkedUser ? trim(($linkedUser->name ?? '').' — '.($linkedUser->email ?? '')) : '' }}">
-                      @if($linkedUser)
-                        <option value="{{ $linkedUser->id }}" selected>
-                          {{ trim(($linkedUser->name ?? '').' — '.($linkedUser->email ?? '')) }}
-                        </option>
-                      @endif
-                    </select>
-                  </div>
-                  <div class="link-status-icon ml-2">
-                    @if($isLinked)
-                      <i class="fas fa-link text-success" title="Asociado"></i>
-                    @else
-                      <i class="fas fa-unlink text-danger" title="Sin asociar"></i>
-                    @endif
-                  </div>
+              {{-- Usuario asociado --}}
+              <td class="align-middle" style="padding-top:.5rem;padding-bottom:.5rem;">
+                <select class="js-user-select"
+                        data-owner-id="{{ $o->id }}"
+                        data-initial-user-id="{{ $linkedUser?->id ?? '' }}"
+                        data-initial-user-text="{{ $linkedUser ? trim(($linkedUser->name ?? '').' — '.($linkedUser->email ?? '')) : '' }}">
+                  @if($linkedUser)
+                    <option value="{{ $linkedUser->id }}" selected>
+                      {{ trim(($linkedUser->name ?? '').' — '.($linkedUser->email ?? '')) }}
+                    </option>
+                  @endif
+                </select>
+                <div class="d-flex align-items-center mt-1" style="gap:.35rem;">
+                  @if($isLinked)
+                    <i class="fas fa-check-circle text-success js-link-icon" style="font-size:.75rem;"></i>
+                    <small class="text-success js-link-label" style="font-size:.72rem;">Usuario asociado</small>
+                  @else
+                    <i class="fas fa-times-circle text-danger js-link-icon" style="font-size:.75rem;"></i>
+                    <small class="text-danger js-link-label" style="font-size:.72rem;">Sin asociar</small>
+                  @endif
                 </div>
-                <small class="js-link-label text-muted mt-1 d-block" style="font-size:.75rem;">
-                  {{ $isLinked ? '✓ Usuario asociado' : '✗ Sin asociar' }}
-                </small>
               </td>
 
               {{-- Acciones --}}
-              <td class="text-right pr-3">
+              <td class="align-middle text-right pr-3">
                 <a class="btn btn-sm btn-outline-secondary"
                    href="{{ route('hubspot-owners.edit', $o) }}"
                    title="Editar">
-                  <i class="fas fa-pencil-alt"></i>
+                  <i class="fas fa-pencil-alt fa-fw"></i>
                 </a>
                 <form class="d-inline" method="POST"
                       action="{{ route('hubspot-owners.destroy', $o) }}"
@@ -155,7 +144,7 @@
                   @csrf
                   @method('DELETE')
                   <button class="btn btn-sm btn-outline-danger" title="Eliminar">
-                    <i class="fas fa-trash-alt"></i>
+                    <i class="fas fa-trash-alt fa-fw"></i>
                   </button>
                 </form>
               </td>
@@ -165,11 +154,72 @@
       </table>
     </div>
 
-    <div class="card-footer bg-white border-top d-flex justify-content-center py-3">
-      {{ $owners->links() }}
-    </div>
-  </div>
+    {{-- ── Paginación arreglada ── --}}
+    @if($owners->lastPage() > 1)
+    <div class="card-footer bg-white border-top">
+      <div class="d-flex justify-content-between align-items-center flex-wrap" style="gap:.5rem;">
 
+        {{-- Info --}}
+        <small class="text-muted">
+          Mostrando <strong>{{ $owners->firstItem() }}</strong>–<strong>{{ $owners->lastItem() }}</strong>
+          de <strong>{{ $owners->total() }}</strong> resultados
+        </small>
+
+        {{-- Paginador manual Bootstrap 4 --}}
+        <ul class="pagination pagination-sm mb-0">
+
+          {{-- Anterior --}}
+          <li class="page-item {{ $owners->onFirstPage() ? 'disabled' : '' }}">
+            <a class="page-link" href="{{ $owners->previousPageUrl() ?? '#' }}">
+              <i class="fas fa-chevron-left fa-xs"></i>
+            </a>
+          </li>
+
+          {{-- Páginas --}}
+          @php
+            $current = $owners->currentPage();
+            $last    = $owners->lastPage();
+            $start   = max(1, $current - 2);
+            $end     = min($last, $current + 2);
+          @endphp
+
+          @if($start > 1)
+            <li class="page-item">
+              <a class="page-link" href="{{ $owners->url(1) }}">1</a>
+            </li>
+            @if($start > 2)
+              <li class="page-item disabled"><span class="page-link">…</span></li>
+            @endif
+          @endif
+
+          @for($p = $start; $p <= $end; $p++)
+            <li class="page-item {{ $p === $current ? 'active' : '' }}">
+              <a class="page-link" href="{{ $owners->url($p) }}">{{ $p }}</a>
+            </li>
+          @endfor
+
+          @if($end < $last)
+            @if($end < $last - 1)
+              <li class="page-item disabled"><span class="page-link">…</span></li>
+            @endif
+            <li class="page-item">
+              <a class="page-link" href="{{ $owners->url($last) }}">{{ $last }}</a>
+            </li>
+          @endif
+
+          {{-- Siguiente --}}
+          <li class="page-item {{ !$owners->hasMorePages() ? 'disabled' : '' }}">
+            <a class="page-link" href="{{ $owners->nextPageUrl() ?? '#' }}">
+              <i class="fas fa-chevron-right fa-xs"></i>
+            </a>
+          </li>
+
+        </ul>
+      </div>
+    </div>
+    @endif
+
+  </div>{{-- /card --}}
 </div>
 @stop
 
@@ -179,66 +229,69 @@
   <link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
   <style>
     /* ── Filas ── */
+    .owners-table thead th {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: #6c757d;
+      font-weight: 600;
+      border-top: 0;
+    }
     .owners-table tbody tr {
-      transition: background .15s ease, box-shadow .15s ease;
+      transition: box-shadow .12s ease;
     }
     .owners-table tbody tr:hover {
       box-shadow: inset 4px 0 0 #4e73df;
     }
-    .row-linked {
-      background-color: #f0fff4 !important;
-    }
-    .row-unlinked {
-      background-color: #fff5f5 !important;
-    }
+    .row-linked   { background-color: #f4fff6 !important; }
+    .row-unlinked { background-color: #fff8f8 !important; }
 
-    /* ── Avatar inicial ── */
+    /* ── Avatar ── */
     .owner-avatar {
       width: 32px;
       height: 32px;
+      min-width: 32px;
       border-radius: 50%;
-      background: #4e73df;
+      background: linear-gradient(135deg, #4e73df, #224abe);
       color: #fff;
-      font-size: .8rem;
+      font-size: .72rem;
       font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
     }
 
-    /* ── Select2 ajustes ── */
+    /* ── Select2 dentro de tabla ── */
     .select2-container {
       width: 100% !important;
-      max-width: 300px;
+      max-width: 290px;
     }
-    .select2-container--default .select2-selection--single {
-      height: 34px;
-      border-color: #ced4da;
+    .select2-container--bootstrap4 .select2-selection--single {
+      height: 31px !important;
+      font-size: .85rem;
     }
-    .select2-container--default .select2-selection--single .select2-selection__rendered {
-      line-height: 32px !important;
-      font-size: .875rem;
+    .select2-container--bootstrap4 .select2-selection--single
+      .select2-selection__rendered {
+      line-height: 29px !important;
+      padding-right: 24px;
     }
-    .select2-container--default .select2-selection--single .select2-selection__arrow {
-      height: 32px;
-    }
-
-    /* ── Ícono de estado link ── */
-    .link-status-icon i {
-      font-size: 1rem;
+    .select2-container--bootstrap4 .select2-selection--single
+      .select2-selection__arrow {
+      height: 29px !important;
     }
 
-    /* ── Thead ── */
-    .owners-table thead th {
-      text-transform: uppercase;
-      font-weight: 600;
-      color: #6c757d;
+    /* ── Paginación ── */
+    .pagination .page-link {
+      font-size: .82rem;
+      padding: .3rem .6rem;
+      color: #4e73df;
     }
-
-    /* ── Card header ── */
-    .card-header {
-      background: #f8f9fa !important;
+    .pagination .page-item.active .page-link {
+      background-color: #4e73df;
+      border-color: #4e73df;
+    }
+    .pagination .page-item.disabled .page-link {
+      color: #adb5bd;
     }
   </style>
 @stop
@@ -261,15 +314,15 @@ $(function () {
         url: "{{ route('ajax.users.search') }}",
         dataType: 'json',
         delay: 250,
-        data:           params  => ({ q: params.term || '' }),
-        processResults: data    => data,
+        data:           params => ({ q: params.term || '' }),
+        processResults: data   => data,
       }
     });
 
     $select.on('change', function () {
       const userId = $select.val();
       const $row   = $select.closest('tr.owner-row');
-      const $icon  = $row.find('.link-status-icon i');
+      const $icon  = $row.find('.js-link-icon');
       const $label = $row.find('.js-link-label');
 
       $.ajax({
@@ -277,19 +330,23 @@ $(function () {
         method: "POST",
         data:   { _token: "{{ csrf_token() }}", user_id: userId },
 
-        success (res) {
+        success(res) {
           if (res.assigned) {
             $row.removeClass('row-unlinked').addClass('row-linked');
-            $icon.removeClass('fa-unlink text-danger').addClass('fa-link text-success');
-            $label.text('✓ Usuario asociado');
+            $icon.removeClass('fa-times-circle text-danger')
+                 .addClass('fa-check-circle text-success');
+            $label.removeClass('text-danger').addClass('text-success')
+                  .text('Usuario asociado');
           } else {
             $row.removeClass('row-linked').addClass('row-unlinked');
-            $icon.removeClass('fa-link text-success').addClass('fa-unlink text-danger');
-            $label.text('✗ Sin asociar');
+            $icon.removeClass('fa-check-circle text-success')
+                 .addClass('fa-times-circle text-danger');
+            $label.removeClass('text-success').addClass('text-danger')
+                  .text('Sin asociar');
           }
         },
 
-        error (xhr) {
+        error(xhr) {
           console.error(xhr.responseText || xhr);
           alert('No se pudo guardar la asociación.');
         }
