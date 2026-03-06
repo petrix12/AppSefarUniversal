@@ -581,4 +581,4 @@ Route::get('/hubspot/sync-client-owners', function () {
         'output' => Artisan::output(),
     ]);
 
-})->middleware(['auth','can:administrador']);
+})->name('hubspot.sync-client-owners');
