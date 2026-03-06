@@ -571,3 +571,14 @@ Route::get('/cron/followups-registration-payment', function () {
 });
 
 Route::get('/deploy', [DeployController::class, 'deploy'])->name('deploy.run');
+
+Route::get('/hubspot/sync-client-owners', function () {
+
+    Artisan::call('hubspot:sync-client-owners');
+
+    return response()->json([
+        'status' => 'ok',
+        'output' => Artisan::output(),
+    ]);
+
+})->middleware(['auth','can:administrador']);
