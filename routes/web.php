@@ -54,6 +54,18 @@ use App\Http\Controllers\ProveedorRegisterController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ListController;
+use App\Http\Controllers\HubspotOwnerController;
+
+Route::middleware(['auth'])->group(function () {
+    Route::resource('hubspot-owners', HubspotOwnerController::class)
+        ->except(['show']);
+
+    Route::get('/ajax/users', [HubspotOwnerController::class, 'searchUsers'])
+        ->name('ajax.users.search');
+
+    Route::post('/hubspot-owners/{owner}/assign-user', [HubspotOwnerController::class, 'assign'])
+        ->name('hubspot_owners.assign_user');
+});
 
 Route::prefix('crud/lists')->name('crud.lists.')->group(function () {
     Route::get('/', [ListController::class, 'get'])->name('index')->middleware('can:lists.view');

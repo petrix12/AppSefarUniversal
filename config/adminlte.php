@@ -282,7 +282,14 @@ return [
                     'icon_color'    => 'white',
                     'url'           => 'permissions',
                     'can'           => 'crud.permissions.index',
-                ]
+                ],
+                [
+                    'text'       => 'HubSpot Owners',
+                    'icon'       => 'fa-fw fas fa-id-badge',
+                    'icon_color' => 'white',
+                    'url'        => 'hubspot-owners',
+                    'can'        => 'administrador',
+                ],
             ],
         ],
         [

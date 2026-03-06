@@ -110,4 +110,9 @@ class User extends Authenticatable
             ->withPivot(['id', 'contacted', 'contacted_at', 'contact_note'])
             ->withTimestamps();
     }
+
+    public function hubspotOwnerLink()
+    {
+        return $this->hasOne(\App\Models\HubspotOwnerUser::class);
+    }
 }
