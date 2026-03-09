@@ -293,6 +293,21 @@ return [
             ],
         ],
         [
+            'text'       => 'Gestión de Propuestas',
+            'icon'       => 'fa-fw fas fa-lightbulb',
+            'icon_color' => 'white',
+            'url'        => 'strategic-suggestions',
+            'can'        => 'administrador',
+        ],
+
+        [
+            'text'       => 'Canal Estratégico',
+            'icon'       => 'fa-fw fas fa-comments',
+            'icon_color' => 'white',
+            'url'        => 'strategic-suggestions',
+            'can'        => 'coordventas',
+        ],
+        [
             'text'          => 'Clientes (COS)',
             'icon'          => 'fa-fw fas fa-users',
             'icon_color'    => 'white',

@@ -55,6 +55,34 @@ use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ListController;
 use App\Http\Controllers\HubspotOwnerController;
+use App\Http\Controllers\StrategicSuggestionAttachmentController;
+use App\Http\Controllers\StrategicSuggestionController;
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/strategic-suggestions', [StrategicSuggestionController::class, 'main'])
+        ->name('strategic-suggestions.index');
+
+    Route::get('/strategic-suggestions/create', [StrategicSuggestionController::class, 'create'])
+        ->name('strategic-suggestions.create');
+
+    Route::post('/strategic-suggestions', [StrategicSuggestionController::class, 'store'])
+        ->name('strategic-suggestions.store');
+
+    Route::get('/strategic-suggestions/{strategic_suggestion}', [StrategicSuggestionController::class, 'show'])
+        ->name('strategic-suggestions.show');
+
+    Route::put('/strategic-suggestions/{strategic_suggestion}', [StrategicSuggestionController::class, 'update'])
+        ->name('strategic-suggestions.update');
+
+    Route::delete('/strategic-suggestions/{strategic_suggestion}', [StrategicSuggestionController::class, 'destroy'])
+        ->name('strategic-suggestions.destroy');
+
+    Route::post('/strategic-suggestions/{suggestion}/reply', [StrategicSuggestionController::class, 'reply'])
+        ->name('strategic-suggestions.reply');
+
+    Route::get('/strategic-suggestion-attachments/{attachment}/download', [StrategicSuggestionAttachmentController::class, 'download'])
+        ->name('strategic-suggestions.attachments.download');
+});
 
 Route::middleware(['auth'])->group(function () {
     Route::resource('hubspot-owners', HubspotOwnerController::class)

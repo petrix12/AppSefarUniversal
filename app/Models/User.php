@@ -115,4 +115,14 @@ class User extends Authenticatable
     {
         return $this->hasOne(\App\Models\HubspotOwnerUser::class);
     }
+
+    public function strategicSuggestions()
+    {
+        return $this->hasMany(\App\Models\StrategicSuggestion::class, 'user_id');
+    }
+
+    public function strategicSuggestionReplies()
+    {
+        return $this->hasMany(\App\Models\StrategicSuggestionReply::class, 'user_id');
+    }
 }
