@@ -247,8 +247,8 @@
           <thead>
             <tr class="bg-light">
               <th class="pl-3"><i class="fas fa-user mr-1 text-muted"></i> Usuario</th>
-              <th><i class="fas fa-envelope mr-1 text-muted"></i> Correo</th>
-              <th><i class="fas fa-passport mr-1 text-muted"></i> Pasaporte</th>
+              <th><i class="fas fa-envelope mr-1 text-muted"></i> Contacto</th>
+              <th><i class="fas fa-passport mr-1 text-muted"></i> Servicio(s) Solicitado(s)</th>
               <th class="text-center">Estado</th>
               <th><i class="fas fa-calendar mr-1 text-muted"></i> Fecha contacto</th>
               <th><i class="fas fa-sticky-note mr-1 text-muted"></i> Nota</th>
@@ -261,15 +261,35 @@
               <td class="pl-3">
                 <div class="d-flex align-items-center gap-2">
                   <div class="member-avatar">{{ strtoupper(substr($u->name, 0, 1)) }}</div>
-                  <span class="font-weight-semibold text-dark">{{ $u->name }}</span>
+                  <span class="font-weight-semibold text-dark">{{ $u->name }}<br>
+                    @if($u->passport)
+                    <code class="small">{{ $u->passport }}</code>
+                    @else
+                    <span class="text-muted">—</span>
+                    @endif
+                  </span>
                 </div>
               </td>
-              <td class="text-muted">{{ $u->email }}</td>
-              <td>
-                @if($u->passport)
-                  <code class="small">{{ $u->passport }}</code>
+              <td class="text-muted">{{ $u->email }}<br>{{ $u->phone ?? '—' }}</td>
+              <td style="min-width: 240px;">
+                @php
+                    $serviciosCompra = $u->compras
+                        ->pluck('servicio_hs_id')
+                        ->filter()
+                        ->unique()
+                        ->values();
+                @endphp
+
+                @if($serviciosCompra->isNotEmpty())
+                    @foreach($serviciosCompra as $servicio)
+                    <div class="small text-dark font-weight-semibold mb-1">
+                        {{ $servicio }}
+                    </div>
+                    @endforeach
                 @else
-                  <span class="text-muted">—</span>
+                    <div class="small text-dark font-weight-semibold">
+                    {{ $u->servicio ?: 'Sin servicio registrado' }}
+                    </div>
                 @endif
               </td>
               <td class="text-center">

@@ -75,16 +75,16 @@ class ListController extends Controller
 
     public function show(Request $request, Lista $lista)
     {
-        $filter = $request->get('filter'); // all | contacted | not_contacted
+        $filter = $request->get('filter');
         $q = trim((string)$request->get('q'));
 
         $members = $lista->users()
-
-            // ✅ si es Ventas/Coord.Ventas: solo ver contactos asignados a él
+            ->with([
+                'compras:id,id_user,servicio_hs_id',
+            ])
             ->when($this->isVentasUser(), function ($qq) {
                 $qq->where('users.owner_id', auth()->id());
             })
-
             ->when($q !== '', function ($qq) use ($q) {
                 $qq->where(function ($s) use ($q) {
                     $s->where('name', 'like', "%{$q}%")
