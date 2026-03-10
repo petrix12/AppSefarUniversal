@@ -559,29 +559,46 @@ class CosService
         if (isset($this->negocio->n13__fecha_recurso_alzada)) {
             $fechaRecurso = Carbon::parse($this->negocio->n13__fecha_recurso_alzada);
             $fechaLimite = $fechaRecurso->copy()->addMonths(3);
-
             if ($fechaLimite->greaterThan($hoy)) {
-                return true; // Ya está en proceso de Recurso
+                return true;
             }
         }
 
         if (isset($this->negocio->formalizacion_r__alzada)) {
             $fechaRecurso = Carbon::parse($this->negocio->formalizacion_r__alzada);
             $fechaLimite = $fechaRecurso->copy()->addMonths(3);
-
             if ($fechaLimite->greaterThan($hoy)) {
-                return true; // Ya está en proceso de Recurso
+                return true;
             }
         }
 
-        // Si pasaron +12 meses desde formalización → Elegible para Recurso
+        // Si pasaron +12 meses desde formalización
         $fechaFormalizacion = $this->getFechaFormalizacion();
         if (!$fechaFormalizacion) {
             return false;
         }
 
         $fechaLimite = $fechaFormalizacion->copy()->addMonths(12);
-        return $hoy->greaterThan($fechaLimite);
+        if (!$hoy->greaterThan($fechaLimite)) {
+            return false;
+        }
+
+        // ✅ NUEVO: Solo es elegible para Recurso de Alzada si ya tiene
+        // Resolución Expresa contratada/solicitada, o si ya tiene negocio activo de Alzada
+        $tieneResolucionExpresa = $this->verificarNegocioActivo(
+            $this->negocios,
+            'SOLICITUD DE DOCUMENTO DE RESOLUCIÓN EXPRESA',
+            ['Resolución', 'Expresa']
+        ) || isset($this->negocio->fecha_solicitud_resolucionexpresa);
+
+        $tieneRecursoAlzada = $this->verificarNegocioActivo(
+            $this->negocios,
+            'Recurso de Alzada',
+            ['Recurso', 'Alzada']
+        ) || isset($this->negocio->fecha_solicitud_recursoalzada);
+
+        // Si tiene cualquiera de los dos → ya cumplió el requisito
+        return $tieneResolucionExpresa || $tieneRecursoAlzada;
     }
 
     private function getRecursoAlzadaWarning(): ?string
