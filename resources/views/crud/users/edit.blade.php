@@ -142,6 +142,177 @@
                     @if(sizeof($cosuser)>0)
                         @foreach ($cosuser as $index => $proceso)
                             @if(array_key_exists($proceso['servicio'], $cos))
+                                @if(auth()->user()->roles[0]->id == 1)
+                                    @php
+                                        // Encontrar el negocio que corresponde a este proceso
+                                        $negocioDebug = null;
+                                        foreach ($negocios as $neg) {
+                                            $negServ = is_object($neg)
+                                                ? ($neg->servicio_solicitado2 ?? $neg->servicio_solicitado ?? '')
+                                                : ($neg['servicio_solicitado2'] ?? $neg['servicio_solicitado'] ?? '');
+
+                                            if ($negServ == ($proceso['servicio'] ?? '')) {
+                                                $negocioDebug = $neg;
+                                                break;
+                                            }
+                                        }
+
+                                        // Campos que el CosService evalúa para calcular el estado
+                                        $camposCos = [
+                                            // ── Jurídicos ──────────────────────────────────────────
+                                            'nacionalidad_concedida'            => 'Nacionalidad Concedida',
+                                            'n7__fecha_de_resolucion'           => 'Fecha de Resolución',
+                                            'n13__fecha_recurso_alzada'         => 'Fecha Recurso de Alzada',
+                                            'formalizacion_r__alzada'           => 'Formalización R. Alzada',
+                                            'n5__fecha_de_formalizacion'        => 'Fecha de Formalización',
+                                            'codigo_de_proceso'                 => 'Código de Proceso',
+                                            'tasa_pagada'                       => 'Tasa Pagada',
+                                            'enviado_a_pago_de_tasas'           => 'Enviado a Pago de Tasas',
+                                            'fase_3_pagado'                     => 'Fase 3 Pagada',
+                                            'fase_3_pagado__teamleader_'        => 'Fase 3 Pagada (TL)',
+                                            'fase_3_preestab'                   => 'Fase 3 Preestablecida',
+                                            'fecha_solicitud_viajudicial'       => 'Fecha Solicitud Vía Judicial',
+                                            'fecha_solicitud_recursoalzada'     => 'Fecha Solicitud Recurso Alzada',
+                                            'fecha_solicitud_recurso_urgencia'  => 'Fecha Solicitud Recurso Urgencia',
+                                            'fecha_solicitud_resolucionexpresa' => 'Fecha Solicitud Resolución Expresa',
+                                            // ── Genealógicos ───────────────────────────────────────
+                                            'n7__enviado_al_dto_juridico'       => 'Enviado al Dto. Jurídico',
+                                            'n4__certificado_descargado'        => 'Certificado Descargado',
+                                            'n3__informe_cargado'               => 'Informe Cargado',
+                                            'fase_2_preestab'                   => 'Fase 2 Preestablecida',
+                                            'fase_2_pagado'                     => 'Fase 2 Pagada',
+                                            'fase_2_pagado__teamleader_'        => 'Fase 2 Pagada (TL)',
+                                            'fase_1_pagado'                     => 'Fase 1 Pagada',
+                                            'fase_1_pagado__teamleader_'        => 'Fase 1 Pagada (TL)',
+                                            'fase_1_preestab'                   => 'Fase 1 Preestablecida',
+                                            // ── Identificación ─────────────────────────────────────
+                                            'hubspot_id'                        => 'HubSpot ID',
+                                            'servicio_solicitado'               => 'Servicio Solicitado',
+                                            'servicio_solicitado2'              => 'Servicio Solicitado 2',
+                                        ];
+
+                                        // Leer valores del negocio
+                                        $valoresCos = [];
+                                        if ($negocioDebug) {
+                                            foreach ($camposCos as $campo => $etiqueta) {
+                                                $valor = is_object($negocioDebug)
+                                                    ? $negocioDebug->getAttribute($campo)
+                                                    : ($negocioDebug[$campo] ?? null);
+
+                                                $valoresCos[$campo] = [
+                                                    'label'  => $etiqueta,
+                                                    'valor'  => $valor,
+                                                    'isset'  => !is_null($valor) && $valor !== '',
+                                                ];
+                                            }
+                                        }
+                                    @endphp
+
+                                    <div class="accordion mb-2" id="debugAccordion{{ $index }}">
+                                        <div class="accordion-item" style="border: 2px dashed #f0ad4e;">
+                                            <h2 class="accordion-header">
+                                                <button
+                                                    class="accordion-button collapsed py-2 px-3"
+                                                    type="button"
+                                                    data-bs-toggle="collapse"
+                                                    data-bs-target="#debugCollapse{{ $index }}"
+                                                    style="background:#fff8e1; color:#5a3e00; font-size:0.82rem; font-weight:600;"
+                                                >
+                                                    🛠️ DEBUG &nbsp;·&nbsp;
+                                                    <span class="mx-2">{{ $proceso['servicio'] ?? '—' }}</span>
+                                                    &nbsp;·&nbsp;
+                                                    Regla: <code class="mx-1" style="font-size:0.8rem;">{{ $proceso['description'] ?? 'N/A' }}</code>
+                                                    &nbsp;·&nbsp;
+                                                    Gen: <code class="mx-1">{{ $proceso['currentStepGen'] ?? 'N/A' }}</code>
+                                                    Jur: <code class="mx-1">{{ $proceso['currentStepJur'] ?? 'N/A' }}</code>
+                                                    Cert: <code class="mx-1">{{ $proceso['certificadoDescargado'] ?? 'N/A' }}</code>
+                                                </button>
+                                            </h2>
+
+                                            <div id="debugCollapse{{ $index }}" class="accordion-collapse collapse">
+                                                <div class="accordion-body p-3" style="background:#fffdf5; font-size:0.82rem;">
+
+                                                    {{-- ── SECCIÓN 1: Resultado COS ── --}}
+                                                    <h6 class="fw-bold text-warning-emphasis border-bottom pb-1 mb-2">
+                                                        📊 Resultado COS
+                                                    </h6>
+                                                    <div class="row row-cols-2 row-cols-md-4 g-2 mb-3">
+                                                        @php
+                                                            $resumenCos = [
+                                                                'Regla activa'        => $proceso['description'] ?? null,
+                                                                'Nombre del paso'     => $proceso['currentStepName'] ?? null,
+                                                                'Step Gen (índice)'   => $proceso['currentStepGen'] ?? null,
+                                                                'Step Jur (índice)'   => $proceso['currentStepJur'] ?? null,
+                                                                'Cert. Descargado'    => $proceso['certificadoDescargado'] ?? null,
+                                                                'Subproceso'          => $proceso['subproceso'] ?? null,
+                                                                '% Gen'               => ($proceso['progressPercentageGen'] ?? null) !== null ? $proceso['progressPercentageGen'].'%' : null,
+                                                                '% Jur'               => ($proceso['progressPercentageJur'] ?? null) !== null ? $proceso['progressPercentageJur'].'%' : null,
+                                                            ];
+                                                        @endphp
+                                                        @foreach ($resumenCos as $label => $val)
+                                                        <div class="col">
+                                                            <div class="p-2 rounded border bg-white h-100">
+                                                                <div class="text-muted" style="font-size:0.72rem;">{{ $label }}</div>
+                                                                <div class="fw-semibold">
+                                                                    @if(is_null($val))
+                                                                        <span class="text-muted fst-italic">null</span>
+                                                                    @else
+                                                                        {{ $val }}
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        @endforeach
+                                                    </div>
+
+                                                    {{-- ── SECCIÓN 2: Warning ── --}}
+                                                    @if(!empty($proceso['warning']))
+                                                    <h6 class="fw-bold text-danger border-bottom pb-1 mb-2">⚠️ Warning</h6>
+                                                    <div class="p-2 border rounded bg-white mb-3">
+                                                        {!! $proceso['warning'] !!}
+                                                    </div>
+                                                    @endif
+
+                                                    {{-- ── SECCIÓN 3: Campos del negocio evaluados por CosService ── --}}
+                                                    <h6 class="fw-bold text-success border-bottom pb-1 mb-2">
+                                                        🗄️ Campos del negocio evaluados por CosService
+                                                    </h6>
+                                                    @if($negocioDebug)
+                                                    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-2">
+                                                        @foreach ($valoresCos as $campo => $info)
+                                                        <div class="col">
+                                                            <div class="p-2 rounded border h-100"
+                                                                style="background: {{ $info['isset'] ? '#f0fff4' : '#fff5f5' }}; border-color: {{ $info['isset'] ? '#b2dfdb' : '#ffcdd2' }} !important;">
+                                                                <div class="text-muted text-truncate" style="font-size:0.70rem;" title="{{ $campo }}">
+                                                                    {{ $campo }}
+                                                                </div>
+                                                                <div style="font-size:0.75rem; font-weight:500; word-break:break-all;">
+                                                                    @if($info['isset'])
+                                                                        <span class="text-success">
+                                                                            {{ strlen((string)$info['valor']) > 40 ? Str::limit((string)$info['valor'], 40) : $info['valor'] }}
+                                                                        </span>
+                                                                    @else
+                                                                        <span class="text-danger fst-italic">— no definido</span>
+                                                                    @endif
+                                                                </div>
+                                                                <div style="font-size:0.68rem; margin-top:2px;" class="text-muted">
+                                                                    {{ $info['label'] }}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        @endforeach
+                                                    </div>
+                                                    @else
+                                                        <div class="alert alert-warning py-2 mb-0">
+                                                            No se encontró el negocio para el servicio <code>{{ $proceso['servicio'] }}</code>
+                                                        </div>
+                                                    @endif
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
                                 <div class="card mb-4 shadow-sm">
                                     {{-- Header con título y estatus --}}
                                     <div class="card-header text-center bg-white">
