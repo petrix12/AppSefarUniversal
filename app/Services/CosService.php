@@ -876,9 +876,14 @@ class CosService
     {
         // Carta de Naturaleza: sin certificado en genealógica
         if ($this->isCartaNaturaleza()) {
-            // Si ya empezó jurídica pero NO tiene n7__enviado_al_dto_juridico
-            if ($this->isJuridicoProcess() && !isset($this->negocio->n7__enviado_al_dto_juridico)) {
-                return 1; // Restar 1 a genealógica
+            // Si ya tiene n7__enviado_al_dto_juridico, el paso gen está COMPLETO
+            // Retornar 1 para que la lógica stepGen no reste -1
+            if (isset($this->negocio->n7__enviado_al_dto_juridico)) {
+                return 1; // ← CAMBIO: era 0 cuando tiene enviado_al_dto_juridico
+            }
+            // Si está en jurídico por otras razones (fase_3_pagado, etc.) pero sin n7
+            if ($this->isJuridicoProcess()) {
+                return 1;
             }
             return 0;
         }
