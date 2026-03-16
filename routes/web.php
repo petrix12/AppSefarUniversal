@@ -59,15 +59,17 @@ use App\Http\Controllers\StrategicSuggestionAttachmentController;
 use App\Http\Controllers\StrategicSuggestionController;
 use App\Http\Controllers\Teamleader\TlProjectController;
 use App\Http\Controllers\TlContactController;
+use App\Http\Controllers\TlInvoiceController;
 
 Route::middleware(['auth'])->prefix('teamleader')->name('teamleader.')->group(function () {
     Route::get('contacts',        [TlContactController::class, 'table'])->name('contacts.index');
     Route::get('contacts/{id}',   [TlContactController::class, 'show'])->name('contacts.show');
-});
 
-Route::middleware(['auth'])->prefix('teamleader')->name('teamleader.')->group(function () {
     Route::get('/projects',      [TlProjectController::class, 'table'])->name('projects.index');
     Route::get('/projects/{id}', [TlProjectController::class, 'show'])->name('projects.show');
+
+    Route::get('/invoices',      [TlInvoiceController::class, 'table'])->name('invoices.index');
+    Route::get('/invoices/{id}', [TlInvoiceController::class, 'show'])->name('invoices.show');
 });
 
 Route::middleware(['auth'])->group(function () {

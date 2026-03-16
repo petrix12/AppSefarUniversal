@@ -112,42 +112,49 @@ class TlInvoice extends Model
 
     // ─── Helper ───────────────────────────────────
 
+    // En app/Models/TlInvoice.php — reemplaza fromTeamleader()
+
     public static function fromTeamleader(array $data): static
     {
-        $customer    = $data['invoicee']['customer']     ?? null;
-        $totalExcl   = $data['total']['tax_exclusive']   ?? null;
-        $totalIncl   = $data['total']['tax_inclusive']   ?? null;
+        $customer  = $data['invoicee']['customer'] ?? null;
+        $totalExcl = $data['total']['tax_exclusive'] ?? null;
+        $totalIncl = $data['total']['tax_inclusive'] ?? null;
 
-        // Buscar deal y proyecto relacionados
-        $dealId    = null;
-        $projectId = null;
-        foreach ($data['related_to'] ?? [] as $related) {
-            if (($related['type'] ?? null) === 'deal')    $dealId    = $related['id'];
-            if (($related['type'] ?? null) === 'project') $projectId = $related['id'];
+        // deal y project vienen directos, NO en related_to
+        $dealId    = $data['deal']['id']    ?? null;
+        $projectId = $data['project']['id'] ?? null;
+
+        // Líneas aplanadas desde grouped_lines
+        $invoiceLines = [];
+        foreach ($data['grouped_lines'] ?? [] as $group) {
+            $section = $group['section']['title'] ?? null;
+            foreach ($group['line_items'] ?? [] as $line) {
+                $invoiceLines[] = array_merge($line, ['_section' => $section]);
+            }
         }
 
         return static::updateOrCreate(
             ['id' => $data['id']],
             [
-                'invoice_number'        => $data['invoice_number']   ?? null,
-                'status'                => $data['status']           ?? null,
-                'customer_id'           => $customer['id']           ?? null,
-                'customer_type'         => $customer['type']         ?? null,
-                'customer_name'         => $data['invoicee']['name'] ?? null,
-                'total_price_excl_tax'  => $totalExcl['amount']      ?? null,
-                'total_price_incl_tax'  => $totalIncl['amount']      ?? null,
-                'currency'              => $totalExcl['currency']    ?? null,
-                'invoice_date'          => $data['invoice_date']     ?? null,
-                'expiry_date'           => $data['expiry_date']      ?? null,
-                'paid_date'             => $data['paid_date']        ?? null,
-                'deal_id'               => $dealId,
-                'project_id'            => $projectId,
-                'invoice_lines'         => $data['invoice_lines']    ?? [],
-                'payment_terms'         => $data['payment_term']     ?? null,
-                'custom_fields'         => $data['custom_fields']    ?? [],
-                'raw_data'              => $data,
-                'tl_created_at'         => $data['created_at']       ?? null,
-                'tl_updated_at'         => $data['updated_at']       ?? null,
+                'invoice_number'       => $data['invoice_number']   ?? null,
+                'status'               => $data['status']           ?? null,
+                'customer_id'          => $customer['id']           ?? null,
+                'customer_type'        => $customer['type']         ?? null,
+                'customer_name'        => $data['invoicee']['name'] ?? null,
+                'total_price_excl_tax' => $totalExcl['amount']      ?? null,
+                'total_price_incl_tax' => $totalIncl['amount']      ?? null,
+                'currency'             => $data['currency']         ?? $totalExcl['currency'] ?? null,
+                'invoice_date'         => $data['invoice_date']     ?? null,
+                'expiry_date'          => $data['due_on']           ?? null, // ← due_on, no expiry_date
+                'paid_date'            => $data['paid_at']          ?? null,
+                'deal_id'              => $dealId,
+                'project_id'           => $projectId,
+                'invoice_lines'        => $invoiceLines,
+                'payment_terms'        => $data['payment_term']     ?? null,
+                'custom_fields'        => $data['custom_fields']    ?? [],
+                'raw_data'             => $data,
+                'tl_created_at'        => $data['created_at']       ?? null,
+                'tl_updated_at'        => $data['updated_at']       ?? null,
             ]
         );
     }
