@@ -203,19 +203,73 @@
         @endif
 
         {{-- Custom fields --}}
+        {{-- Reemplaza la sección "Custom fields" en resources/views/tl/invoices/show.blade.php --}}
+
         @php
-            $cfs = collect($invoice->custom_fields ?? [])->filter(fn($cf) => !empty(trim((string)($cf['value'] ?? ''))));
+            // Mapa ID → label legible (desde BD, cargado una vez)
+            $cfDefinitions = \App\Models\TlCustomFieldDefinition::where('context', 'invoice')
+                ->pluck('label', 'id');
+
+            // Iconos por campo
+            $cfIcons = [
+                '37a4bad0-ecff-046c-ac53-9323f1832201' => 'user-tie',        // Captador
+                '6bb5d3b6-a87f-0a8e-a95f-78a76cc8bf81' => 'envelope',        // Enviar correo
+                'ac264e9c-92b0-0bd9-ae5f-c4105cc85847' => 'users',           // Equipo de Ventas
+                '99a4177a-6720-0f5b-b258-f1d0b8f31fe7' => 'credit-card',     // Forma de pago
+                '2ce66504-5340-0b41-9651-c16c8608a50b' => 'passport',        // Nº Pasaporte
+                '665d8b9b-7e75-091d-a750-8d8c9483c740' => 'university',      // No. Dep. Cliente
+                'ae06a385-7e17-0504-a758-892b1c83aec2' => 'hashtag',         // No. Dep. Sefar
+                '6f8b1851-3eaf-06df-bc5c-0bcc5423201d' => 'hand-holding-usd',// Pagado por
+                '1fb454ae-1bcd-04fd-a95f-257fa6e5e717' => 'box-open',        // Producto/Servicio
+            ];
+
+            // Filtrar solo los que tienen valor real
+            $cfs = collect($invoice->custom_fields ?? [])
+                ->filter(function ($cf) {
+                    $val = $cf['value'] ?? null;
+                    return $val !== null && trim((string) $val) !== '';
+                });
         @endphp
+
         @if($cfs->isNotEmpty())
         <div class="card card-outline card-secondary">
-            <div class="card-header"><h6 class="mb-0"><i class="fas fa-list mr-1"></i> Campos personalizados</h6></div>
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-sliders-h mr-1"></i> Campos personalizados
+                </h6>
+            </div>
             <div class="card-body p-0">
-                <table class="table table-sm mb-0">
+                <table class="table table-sm table-hover mb-0">
                     <tbody>
                         @foreach($cfs as $cf)
+                        @php
+                            $defId  = $cf['definition']['id'];
+                            $label  = $cfDefinitions->get($defId, 'Campo desconocido');
+                            $value  = $cf['value'];
+                            $icon   = $cfIcons[$defId] ?? 'tag';
+                        @endphp
                         <tr>
-                            <td><code style="font-size:.75rem">{{ $cf['definition']['id'] }}</code></td>
-                            <td>{{ is_array($cf['value']) ? json_encode($cf['value']) : $cf['value'] }}</td>
+                            <td style="width:35%" class="text-muted">
+                                <i class="fas fa-{{ $icon }} fa-fw mr-1"></i>
+                                {{ $label }}
+                            </td>
+                            <td>
+                                @if($defId === '99a4177a-6720-0f5b-b258-f1d0b8f31fe7')
+                                    {{-- Forma de pago: badge --}}
+                                    <span class="badge badge-info px-2 py-1">{{ $value }}</span>
+
+                                @elseif($defId === '1fb454ae-1bcd-04fd-a95f-257fa6e5e717')
+                                    {{-- Producto/Servicio: badge primary --}}
+                                    <span class="badge badge-primary px-2 py-1">{{ $value }}</span>
+
+                                @elseif(str_starts_with($value, 'cus_') || str_starts_with($value, 'ch_'))
+                                    {{-- IDs de Stripe: monospace --}}
+                                    <code class="text-info" style="font-size:.85rem">{{ $value }}</code>
+
+                                @else
+                                    <strong>{{ $value }}</strong>
+                                @endif
+                            </td>
                         </tr>
                         @endforeach
                     </tbody>
