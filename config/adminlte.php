@@ -310,7 +310,14 @@ return [
                     'icon'          => 'fa-fw fas fa-user-tag',
                     'icon_color'    => 'white',
                     'url'           => 'teamleader/projects',
-                    'can'           => 'crud.roles.index',
+                    'can'           => 'administrador',
+                ],
+                [
+                    'text'          => 'Facturas',
+                    'icon'          => 'fa-fw fas fa-user-tag',
+                    'icon_color'    => 'white',
+                    'url'           => 'teamleader/invoices',
+                    'can'           => 'administrador',
                 ]
             ],
         ],
