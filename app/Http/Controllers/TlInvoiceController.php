@@ -46,7 +46,7 @@ class TlInvoiceController extends Controller
 
         $totalAmount = TlInvoice::sum('total_price_incl_tax');
 
-        return view('tl.invoices.index', compact('invoices', 'lastSync', 'totals', 'totalAmount'));
+        return view('teamleader.invoices.index', compact('invoices', 'lastSync', 'totals', 'totalAmount'));
     }
 
     public function show(string $id)
@@ -64,7 +64,7 @@ class TlInvoiceController extends Controller
         $creditNotes = $invoice->creditNotes()->get();
         $project     = $invoice->project;
 
-        return view('tl.invoices.show', compact(
+        return view('teamleader.invoices.show', compact(
             'invoice', 'contact', 'company', 'creditNotes', 'project'
         ));
     }

@@ -45,7 +45,7 @@
 
 <div class="card card-outline card-primary">
     <div class="card-header">
-        <form method="GET" action="{{ route('tl.invoices.index') }}" class="form-inline flex-wrap" style="gap:.5rem">
+        <form method="GET" action="{{ route('teamleader.invoices.index') }}" class="form-inline flex-wrap" style="gap:.5rem">
             <input
                 type="text"
                 name="search"
@@ -69,7 +69,7 @@
             <button type="submit" class="btn btn-sm btn-primary">
                 <i class="fas fa-search"></i> Filtrar
             </button>
-            <a href="{{ route('tl.invoices.index') }}" class="btn btn-sm btn-secondary">
+            <a href="{{ route('teamleader.invoices.index') }}" class="btn btn-sm btn-secondary">
                 <i class="fas fa-times"></i>
             </a>
         </form>
@@ -114,7 +114,7 @@
                     @endphp
                     <tr>
                         <td>
-                            <a href="{{ route('tl.invoices.show', $invoice->id) }}" class="font-weight-bold">
+                            <a href="{{ route('teamleader.invoices.show', $invoice->id) }}" class="font-weight-bold">
                                 {{ $invoice->invoice_number ?? '(Sin número)' }}
                             </a>
                         </td>
@@ -143,7 +143,7 @@
                         </td>
                         <td><span class="badge badge-{{ $badgeColor }}">{{ $badgeLabel }}</span></td>
                         <td>
-                            <a href="{{ route('tl.invoices.show', $invoice->id) }}"
+                            <a href="{{ route('teamleader.invoices.show', $invoice->id) }}"
                                class="btn btn-xs btn-outline-primary">
                                 <i class="fas fa-eye"></i>
                             </a>

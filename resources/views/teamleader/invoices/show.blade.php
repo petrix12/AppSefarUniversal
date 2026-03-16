@@ -6,7 +6,7 @@
 @section('content_header')
     <div class="d-flex justify-content-between align-items-center">
         <h1>
-            <a href="{{ route('tl.invoices.index') }}" class="btn btn-sm btn-secondary mr-2">
+            <a href="{{ route('teamleader.invoices.index') }}" class="btn btn-sm btn-secondary mr-2">
                 <i class="fas fa-arrow-left"></i>
             </a>
             Factura {{ $invoice->invoice_number ?? '(Borrador)' }}
@@ -84,7 +84,7 @@
                 <strong>{{ $invoice->customer_name ?? '—' }}</strong><br>
                 @if($contact)
                     <small class="text-muted">
-                        <a href="{{ route('tl.contacts.show', $contact->id) }}">
+                        <a href="{{ route('teamleader.contacts.show', $contact->id) }}">
                             <i class="fas fa-link mr-1"></i> Ver contacto
                         </a>
                     </small><br>
