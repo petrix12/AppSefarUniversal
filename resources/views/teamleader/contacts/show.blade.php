@@ -185,7 +185,7 @@
                 {{-- Proyectos --}}
                 <div class="tab-pane active" id="tab-projects">
                     @forelse($projects as $project)
-                    <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                    <a href="{{ route('teamleader.projects.show', $project) }}" class="d-flex justify-content-between align-items-center border-bottom py-2">
                         <div>
                             <strong>{{ $project->title ?? '(Sin título)' }}</strong><br>
                             <small class="text-muted">
@@ -209,7 +209,7 @@
                                 <br><small>{{ number_format($project->budget_amount, 2) }} {{ $project->budget_currency }}</small>
                             @endif
                         </div>
-                    </div>
+                    </a>
                     @empty
                         <p class="text-muted text-center py-3">Sin proyectos registrados</p>
                     @endforelse
