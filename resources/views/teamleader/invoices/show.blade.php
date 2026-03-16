@@ -227,3 +227,9 @@
     </div>
 </div>
 @endsection
+@section('css')
+    <link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
+@stop
+
+@section('js')
+@stop
