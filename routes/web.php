@@ -57,6 +57,18 @@ use App\Http\Controllers\ListController;
 use App\Http\Controllers\HubspotOwnerController;
 use App\Http\Controllers\StrategicSuggestionAttachmentController;
 use App\Http\Controllers\StrategicSuggestionController;
+use App\Http\Controllers\Teamleader\TlProjectController;
+use App\Http\Controllers\TlContactController;
+
+Route::middleware(['auth'])->prefix('teamleader')->name('teamleader.')->group(function () {
+    Route::get('contacts',        [TlContactController::class, 'table'])->name('contacts.index');
+    Route::get('contacts/{id}',   [TlContactController::class, 'show'])->name('contacts.show');
+});
+
+Route::middleware(['auth'])->prefix('teamleader')->name('teamleader.')->group(function () {
+    Route::get('/projects',      [TlProjectController::class, 'table'])->name('projects.index');
+    Route::get('/projects/{id}', [TlProjectController::class, 'show'])->name('projects.show');
+});
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/strategic-suggestions', [StrategicSuggestionController::class, 'main'])
@@ -284,7 +296,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/teamleader/callback', [TeamleaderController::class, 'handleProviderCallback'])->name('teamleader.callback');
 });
 Route::get('/teamleader/success', [TeamleaderController::class, 'success'])->name('teamleader.success');
-Route::get('/teamleader/contacts', [TeamleaderController::class, 'getContacts'])->name('teamleader.contacts');
+//Route::get('/teamleader/contacts', [TeamleaderController::class, 'getContacts'])->name('teamleader.contacts');
 
 //checkRegMondayTest
 Route::get('/checkMondayTest', [ClienteController::class, 'checkMondayTest'])->name('checkMondayTest');

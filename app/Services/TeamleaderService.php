@@ -14,6 +14,214 @@ class TeamleaderService
 
     private $customFieldId = '624a9810-53dc-0770-965b-65891c631673';
 
+    private ?string $cachedToken = null;
+
+    // ─────────────────────────────────────────────
+    // EMPRESAS
+    // ─────────────────────────────────────────────
+
+    /**
+     * Info de una empresa por ID
+     */
+    public function getCompanyById(string $id): array
+    {
+        $response = Http::withToken($this->getAccessToken())
+            ->post('https://api.focus.teamleader.eu/companies.info', [
+                'id' => $id,
+            ]);
+
+        if (!$response->successful()) {
+            throw new \Exception('Error obteniendo empresa: ' . $response->body());
+        }
+
+        return $response->json()['data'];
+    }
+
+    // ─────────────────────────────────────────────
+    // DEALS
+    // ─────────────────────────────────────────────
+
+    /**
+     * Info de un deal por ID (público)
+     */
+    public function getDealById(string $id): array
+    {
+        $response = Http::withToken($this->getAccessToken())
+            ->post('https://api.focus.teamleader.eu/deals.info', [
+                'id' => $id,
+            ]);
+
+        if (!$response->successful()) {
+            throw new \Exception('Error obteniendo deal: ' . $response->body());
+        }
+
+        return $response->json()['data'];
+    }
+
+    // ─────────────────────────────────────────────
+    // ARCHIVOS
+    // ─────────────────────────────────────────────
+
+    /**
+     * Info de un archivo por ID (metadata)
+     */
+    public function getFileInfo(string $fileId): array
+    {
+        $response = Http::withToken($this->getAccessToken())
+            ->post('https://api.focus.teamleader.eu/files.info', [
+                'id' => $fileId,
+            ]);
+
+        if (!$response->successful()) {
+            throw new \Exception("Error obteniendo info del archivo {$fileId}: " . $response->body());
+        }
+
+        return $response->json()['data'];
+    }
+
+    // ✅ listContacts — agregar page.number
+    public function listContacts(int $page = 1, int $size = 100): array
+    {
+        $response = Http::withToken($this->getAccessToken())
+            ->post('https://api.focus.teamleader.eu/contacts.list', [
+                'page' => [
+                    'size'   => $size,
+                    'number' => $page,   // ← faltaba esto
+                ],
+            ]);
+
+        if (!$response->successful()) {
+            throw new \Exception('Error listando contactos: ' . $response->body());
+        }
+
+        return $response->json();
+    }
+
+    // ✅ listProjects — igual
+    public function listProjects(int $page = 1, int $size = 100): array
+    {
+        $response = Http::withToken($this->getAccessToken())
+            ->post('https://api.focus.teamleader.eu/projects.list', [
+                'page' => [
+                    'size'   => $size,
+                    'number' => $page,   // ← faltaba esto
+                ],
+            ]);
+
+        if (!$response->successful()) {
+            throw new \Exception('Error listando proyectos: ' . $response->body());
+        }
+
+        return $response->json();
+    }
+
+    /**
+     * Listar empresas paginado
+     */
+    public function listCompanies(int $page = 1, int $size = 100): array
+    {
+        $response = Http::withToken($this->getAccessToken())
+            ->post('https://api.focus.teamleader.eu/companies.list', [
+                'page' => ['size' => $size, 'number' => $page],
+            ]);
+
+        if (!$response->successful()) {
+            throw new \Exception('Error listando empresas: ' . $response->body());
+        }
+
+        return $response->json();
+    }
+
+    /**
+     * Listar deals paginado
+     */
+    public function listDeals(int $page = 1, int $size = 100): array
+    {
+        $response = Http::withToken($this->getAccessToken())
+            ->post('https://api.focus.teamleader.eu/deals.list', [
+                'page' => ['size' => $size, 'number' => $page],
+            ]);
+
+        if (!$response->successful()) {
+            throw new \Exception('Error listando deals: ' . $response->body());
+        }
+
+        return $response->json();
+    }
+
+    /**
+     * Obtener documentos de una entidad
+     * $type puede ser: 'contact', 'company', 'deal', 'project'
+     */
+    public function listFiles(string $entityType, string $entityId, int $page = 1, int $size = 100): array
+    {
+        $response = Http::withToken($this->getAccessToken())
+            ->post('https://api.focus.teamleader.eu/files.list', [
+                'filter' => [
+                    'linked_to' => [
+                        'type' => $entityType,
+                        'id'   => $entityId,
+                    ],
+                ],
+                'page' => ['size' => $size, 'number' => $page],
+            ]);
+
+        if (!$response->successful()) {
+            throw new \Exception("Error listando archivos de {$entityType} {$entityId}: " . $response->body());
+        }
+
+        return $response->json();
+    }
+
+    /**
+     * Descargar un archivo por su ID
+     * Retorna el contenido binario del archivo
+     */
+    public function downloadFile(string $fileId): string
+    {
+        $response = Http::withToken($this->getAccessToken())
+            ->post('https://api.focus.teamleader.eu/files.download', [
+                'id' => $fileId,
+            ]);
+
+        if (!$response->successful()) {
+            throw new \Exception("Error descargando archivo {$fileId}: " . $response->body());
+        }
+
+        // La API retorna el contenido binario directamente
+        return $response->body();
+    }
+
+    /**
+     * Helper: iterar TODAS las páginas de cualquier endpoint
+     */
+    public function fetchAllPages(callable $fetcher): array
+    {
+        $allItems = [];
+        $page = 1;
+
+        do {
+            $response = $fetcher($page);
+            $items    = $response['data'] ?? [];
+            $meta     = $response['meta']['page'] ?? [];
+
+            $allItems = array_merge($allItems, $items);
+
+            $total    = $meta['total'] ?? 0;
+            $size     = $meta['size'] ?? 100;
+            $hasMore  = ($page * $size) < $total;
+            $page++;
+
+            // Rate limit: respetar límites de Teamleader
+            if ($hasMore) {
+                usleep(200000); // 200ms entre páginas
+            }
+
+        } while ($hasMore);
+
+        return $allItems;
+    }
+
     public function __construct()
     {
         $this->provider = new TeamleaderFocusProvider([
@@ -105,36 +313,30 @@ class TeamleaderService
     /**
      * Obtener un token de acceso válido.
      */
-    public function getAccessToken()
+    // ✅ Corrección
+    public function getAccessToken(): string
     {
         $tokenRecord = TeamleaderToken::find(1);
 
         if (!$tokenRecord) {
-            throw new \Exception('No se encontraron tokens. Por favor, autentica primero con Teamleader.');
+            throw new \Exception('No se encontraron tokens. Autentica primero con Teamleader.');
         }
 
-        // Verificar si el token ha expirado
-        if (time() >= $tokenRecord->expires) {
-            // El token ha expirado, renovar usando el refresh_token
+        // ✅ Refrescar si expira en menos de 5 minutos (no solo cuando ya expiró)
+        $expiresIn = $tokenRecord->expires - time();
+
+        if ($expiresIn < 300) { // menos de 5 minutos → refrescar
             $refreshToken = Crypt::decryptString($tokenRecord->refresh_token);
 
-            try {
-                $newAccessToken = $this->provider->getAccessToken('refresh_token', [
-                    'refresh_token' => $refreshToken,
-                ]);
+            $newAccessToken = $this->provider->getAccessToken('refresh_token', [
+                'refresh_token' => $refreshToken,
+            ]);
 
-                // Almacenar los nuevos tokens
-                $this->storeTokens($newAccessToken);
-
-                return $newAccessToken->getToken();
-
-            } catch (\Exception $e) {
-                throw new \Exception('No se pudo renovar el token de acceso: ' . $e->getMessage());
-            }
-        } else {
-            // El token es válido, devolverlo
-            return Crypt::decryptString($tokenRecord->access_token);
+            $this->storeTokens($newAccessToken);
+            return $newAccessToken->getToken();
         }
+
+        return Crypt::decryptString($tokenRecord->access_token);
     }
 
     /**
@@ -786,16 +988,12 @@ class TeamleaderService
                     $data = $response->json();
                     $customFields = $data['data'] ?? [];
 
-                    dd($data);
-
                     // Buscar el campo con el label exacto
                     foreach ($customFields as $field) {
                         if (strtolower($field['label']) === strtolower($label)) {
                             return $field['id'];
                         }
                     }
-
-                    dd($customFields);
 
                     // Verificar si hay más páginas
                     $hasMorePages = !empty($data['meta']['page']['next']) || ($data['meta']['page']['total'] > ($pageNumber * $pageSize));
@@ -855,10 +1053,9 @@ class TeamleaderService
                     $projects = $data['data'] ?? [];
                     $allProjects = array_merge($allProjects, $projects);
 
-                    dd($data['meta']['page']);
-
                     // Verificar si hay más páginas
-                    $hasMorePages = false;
+                    $total        = $data['meta']['page']['total'] ?? 0;
+                    $hasMorePages = ($pageNumber * $pageSize) < $total;
                     $pageNumber++;
                 } else {
                     $error = $response->json();
@@ -977,5 +1174,111 @@ class TeamleaderService
         }
     }
 
+// Agregar estos métodos a TeamleaderService.php
 
+// ─────────────────────────────────────────────
+// FACTURAS
+// ─────────────────────────────────────────────
+
+/**
+ * Listar facturas paginado
+ */
+public function listInvoices(int $page = 1, int $size = 100): array
+{
+    $response = Http::withToken($this->getAccessToken())
+        ->post('https://api.focus.teamleader.eu/invoices.list', [
+            'page' => ['size' => $size, 'number' => $page],
+        ]);
+
+    if (!$response->successful()) {
+        throw new \Exception('Error listando facturas: ' . $response->body());
+    }
+
+    return $response->json();
+}
+
+/**
+ * Detalle de una factura por ID
+ */
+public function getInvoiceById(string $id): array
+{
+    $response = Http::withToken($this->getAccessToken())
+        ->post('https://api.focus.teamleader.eu/invoices.info', [
+            'id' => $id,
+        ]);
+
+    if (!$response->successful()) {
+        throw new \Exception('Error obteniendo factura: ' . $response->body());
+    }
+
+    return $response->json()['data'];
+}
+
+/**
+ * Descargar PDF de una factura
+ * Retorna ['url' => '...'] para descargar desde S3/CDN
+ */
+public function downloadInvoicePdf(string $invoiceId): string
+{
+    // Paso 1: obtener URL de descarga
+    $response = Http::withToken($this->getAccessToken())
+        ->post('https://api.focus.teamleader.eu/invoices.download', [
+            'id'     => $invoiceId,
+            'format' => 'pdf',
+        ]);
+
+    if (!$response->successful()) {
+        throw new \Exception("Error obteniendo URL de factura {$invoiceId}: " . $response->body());
+    }
+
+    $location = $response->json()['data']['location'] ?? null;
+
+    if (!$location) {
+        throw new \Exception("No se recibió URL de descarga para factura {$invoiceId}");
+    }
+
+    // Paso 2: descargar el PDF real
+    $pdf = Http::withOptions(['allow_redirects' => true])
+        ->get($location);
+
+    if (!$pdf->successful()) {
+        throw new \Exception("Error descargando PDF de factura {$invoiceId}");
+    }
+
+    return $pdf->body();
+}
+
+/**
+ * Listar notas de crédito paginado
+ */
+public function listCreditNotes(int $page = 1, int $size = 100): array
+{
+    $response = Http::withToken($this->getAccessToken())
+        ->post('https://api.focus.teamleader.eu/creditNotes.list', [
+            'page' => ['size' => $size, 'number' => $page],
+        ]);
+
+    if (!$response->successful()) {
+        throw new \Exception('Error listando notas de crédito: ' . $response->body());
+    }
+
+    return $response->json();
+}
+
+/**
+ * Detalle de una nota de crédito
+ */
+public function getCreditNoteById(string $id): array
+{
+    $response = Http::withToken($this->getAccessToken())
+        ->post('https://api.focus.teamleader.eu/creditNotes.info', [
+            'id' => $id,
+        ]);
+
+    if (!$response->successful()) {
+        throw new \Exception('Error obteniendo nota de crédito: ' . $response->body());
+    }
+
+    return $response->json()['data'];
+}
 }
