@@ -235,12 +235,15 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 // ── Líneas existentes desde PHP ───────────────────────────────────────
-var initialLines = @json($invoice->lines->map(fn($l) => [
-    'description' => $l->description,
-    'quantity'    => (float) $l->quantity,
-    'unit_price'  => (float) $l->unit_price,
-    'tax_rate'    => (float) $l->tax_rate,
-]));
+var initialLines = {!! json_encode($invoice->lines->map(function($l) {
+    return [
+        'description' => $l->description,
+        'quantity'    => (float) $l->quantity,
+        'unit_price'  => (float) $l->unit_price,
+        'tax_rate'    => (float) $l->tax_rate,
+    ];
+})) !!};
+
 
 // ── Gestión de líneas ─────────────────────────────────────────────────
 var lineIndex = 0;
