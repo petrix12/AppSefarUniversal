@@ -3,24 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+@page {
+    margin: 20px;
+}
 
-    @page {
-        margin: 28px;
-    }
+html, body {
+    margin: 0;
+    padding: 0;
+}
 
-    body {
-        font-family: 'DejaVu Sans', sans-serif;
-        font-size: 12px;
-        color: #222;
-        background: #fff;
-    }
+body {
+    font-family: 'DejaVu Sans', sans-serif;
+    font-size: 12px;
+    color: #222;
+    background: #fff;
+}
 
-    .page-frame {
-        border: 2px solid #1a3a5c;
-        padding: 18px;
-        min-height: 100%;
-    }
+.page-frame {
+    border: 2px solid #1a3a5c;
+    padding: 16px;
+}
 
     /* ── SELLO PAGADO ── */
     .stamp-paid {
@@ -53,8 +55,7 @@
     }
 
     .logo {
-        width: 190px;
-        max-height: 70px;
+        max-height: 100px;
         object-fit: contain;
     }
 
