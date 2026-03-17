@@ -322,6 +322,13 @@ return [
             ],
         ],
         [
+            'text'       => 'Facturas',
+            'icon'       => 'fa-fw fas fa-file',
+            'icon_color' => 'white',
+            'url'        => 'invoices',
+            'can'        => 'administrador',
+        ],
+        [
             'text'       => 'Gestión de Propuestas',
             'icon'       => 'fa-fw fas fa-lightbulb',
             'icon_color' => 'white',
