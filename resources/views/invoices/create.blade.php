@@ -8,7 +8,7 @@
 @stop
 
 @section('content')
-    <form method="POST" action="{{ route('invoices.store') }}" x-data="invoiceForm()">
+    <form method="POST" action="{{ route('invoices.store') }}" x-data="invoiceForm">
         @csrf
 
         {{-- Número --}}
@@ -250,28 +250,35 @@
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-    // ── Alpine: cálculo de líneas ──────────────────────────────────────
-    function invoiceForm() {
-        return {
+    // ── Alpine: registrar antes de que inicialice ─────────────────────
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('invoiceForm', () => ({
             lines: [{ description: '', quantity: 1, unit_price: 0, tax_rate: 0, total: 0 }],
+
             addLine() {
                 this.lines.push({ description: '', quantity: 1, unit_price: 0, tax_rate: 0, total: 0 });
             },
-            removeLine(index) { this.lines.splice(index, 1); },
+            removeLine(index) {
+                this.lines.splice(index, 1);
+            },
             calcLine(index) {
                 const l = this.lines[index];
                 l.total = parseFloat(l.quantity || 0) * parseFloat(l.unit_price || 0);
             },
-            subtotal() { return this.lines.reduce((s, l) => s + parseFloat(l.total || 0), 0); },
+            subtotal() {
+                return this.lines.reduce((s, l) => s + parseFloat(l.total || 0), 0);
+            },
             totalTax() {
                 return this.lines.reduce((s, l) =>
                     s + (parseFloat(l.total || 0) * (parseFloat(l.tax_rate || 0) / 100)), 0);
             },
-            totalIncl() { return this.subtotal() + this.totalTax(); }
-        }
-    }
+            totalIncl() {
+                return this.subtotal() + this.totalTax();
+            }
+        }));
+    });
 
-    // ── Select2: búsqueda de usuarios ─────────────────────────────────
+    // ── Select2 ──────────────────────────────────────────────────────
     $(document).ready(function () {
 
         $('#user-selector').select2({
@@ -289,28 +296,28 @@
             }
         });
 
-        // Al seleccionar un usuario → llamar al endpoint y rellenar campos
         $('#user-selector').on('select2:select', function (e) {
             const userId = e.params.data.id;
+
             $.getJSON('{{ url('invoices-user-data') }}/' + userId, function (data) {
                 $('#customer_name').val(data.customer_name);
                 $('#customer_email').val(data.customer_email);
                 $('#customer_vat').val(data.customer_vat);
                 $('#customer_address').val(data.customer_address);
                 $('#customer_country').val(data.customer_country);
+
+                $('#vat-missing').toggleClass('d-none',     !data.missing.passport);
                 $('#address-missing').toggleClass('d-none', !data.missing.address);
                 $('#country-missing').toggleClass('d-none', !data.missing.pais_de_residencia);
-                $('#vat-missing').toggleClass('d-none', !data.missing.passport);  // ← AÑADIR
+
             }).fail(function () {
                 toastr.error('No se pudo obtener los datos del cliente.');
             });
         });
 
-        // Al limpiar el selector → limpiar campos
         $('#user-selector').on('select2:clear', function () {
-            $('#customer_name, #customer_email, #customer_vat, #customer_address, #customer_country')
-                .val('');
-            $('#address-missing, #country-missing, #vat-missing').addClass('d-none');
+            $('#customer_name, #customer_email, #customer_vat, #customer_address, #customer_country').val('');
+            $('#vat-missing, #address-missing, #country-missing').addClass('d-none');
         });
 
     });
