@@ -8,14 +8,7 @@
 @stop
 
 @section('content')
-    <form method="POST" action="{{ route('invoices.update', $invoice) }}"
-          x-data="invoiceForm({{ json_encode($invoice->lines->map(fn($l) => [
-              'description' => $l->description,
-              'quantity'    => (float)$l->quantity,
-              'unit_price'  => (float)$l->unit_price,
-              'tax_rate'    => (float)$l->tax_rate,
-              'total'       => (float)$l->total,
-          ])) }})">
+    <form method="POST" action="{{ route('invoices.update', $invoice) }}" id="invoice-form">
         @csrf
         @method('PUT')
 
@@ -25,7 +18,7 @@
 
         <div class="row">
 
-            {{-- ── CLIENTE ─────────────────────────────────────────────── --}}
+            {{-- Cliente --}}
             <div class="col-md-6">
                 <div class="card card-warning card-outline">
                     <div class="card-header">
@@ -33,11 +26,9 @@
                     </div>
                     <div class="card-body">
 
-                        {{-- ID del cliente (oculto, lo gestiona Select2) --}}
                         <input type="hidden" name="customer_user_id" id="customer_user_id"
                                value="{{ $invoice->customer_user_id }}">
 
-                        {{-- Selector --}}
                         <div class="form-group">
                             <label>Buscar usuario existente</label>
                             <select id="user-selector" style="width:100%" class="form-control"></select>
@@ -50,9 +41,7 @@
 
                         <div class="form-group">
                             <label>Nombre *</label>
-                            <input type="text"
-                                   name="customer_name"
-                                   id="customer_name"
+                            <input type="text" name="customer_name" id="customer_name"
                                    value="{{ old('customer_name', $invoice->customer_name) }}"
                                    class="form-control @error('customer_name') is-invalid @enderror">
                             @error('customer_name')
@@ -62,18 +51,14 @@
 
                         <div class="form-group">
                             <label>Email</label>
-                            <input type="email"
-                                   name="customer_email"
-                                   id="customer_email"
+                            <input type="email" name="customer_email" id="customer_email"
                                    value="{{ old('customer_email', $invoice->customer_email) }}"
                                    class="form-control">
                         </div>
 
                         <div class="form-group">
                             <label>NIF / Pasaporte</label>
-                            <input type="text"
-                                   name="customer_vat"
-                                   id="customer_vat"
+                            <input type="text" name="customer_vat" id="customer_vat"
                                    value="{{ old('customer_vat', $invoice->customer_vat) }}"
                                    class="form-control">
                             <small id="vat-missing" class="text-warning d-none">
@@ -84,9 +69,7 @@
 
                         <div class="form-group">
                             <label>Dirección</label>
-                            <input type="text"
-                                   name="customer_address"
-                                   id="customer_address"
+                            <input type="text" name="customer_address" id="customer_address"
                                    value="{{ old('customer_address', $invoice->customer_address) }}"
                                    class="form-control">
                             <small id="address-missing" class="text-warning d-none">
@@ -97,9 +80,7 @@
 
                         <div class="form-group">
                             <label>País</label>
-                            <input type="text"
-                                   name="customer_country"
-                                   id="customer_country"
+                            <input type="text" name="customer_country" id="customer_country"
                                    value="{{ old('customer_country', $invoice->customer_country) }}"
                                    class="form-control">
                             <small id="country-missing" class="text-warning d-none">
@@ -112,7 +93,7 @@
                 </div>
             </div>
 
-            {{-- ── DETALLES ─────────────────────────────────────────────── --}}
+            {{-- Detalles --}}
             <div class="col-md-6">
                 <div class="card card-warning card-outline">
                     <div class="card-header">
@@ -122,8 +103,7 @@
 
                         <div class="form-group">
                             <label>Fecha de factura *</label>
-                            <input type="date"
-                                   name="invoice_date"
+                            <input type="date" name="invoice_date"
                                    value="{{ old('invoice_date', $invoice->invoice_date->format('Y-m-d')) }}"
                                    class="form-control @error('invoice_date') is-invalid @enderror">
                             @error('invoice_date')
@@ -133,15 +113,14 @@
 
                         <div class="form-group">
                             <label>Fecha de vencimiento</label>
-                            <input type="date"
-                                   name="expiry_date"
+                            <input type="date" name="expiry_date"
                                    value="{{ old('expiry_date', $invoice->expiry_date?->format('Y-m-d')) }}"
                                    class="form-control">
                         </div>
 
                         <div class="form-group">
                             <label>Moneda *</label>
-                            <select name="currency" class="form-control">
+                            <select name="currency" id="currency" class="form-control">
                                 <option value="EUR" {{ old('currency', $invoice->currency) === 'EUR' ? 'selected' : '' }}>EUR €</option>
                                 <option value="USD" {{ old('currency', $invoice->currency) === 'USD' ? 'selected' : '' }}>USD $</option>
                             </select>
@@ -162,7 +141,6 @@
                                       placeholder="Notas opcionales...">{{ old('notes', $invoice->notes) }}</textarea>
                         </div>
 
-                        {{-- Info de auditoría --}}
                         <div class="text-muted small mt-3">
                             <i class="fas fa-user mr-1"></i>
                             Creada por <strong>{{ $invoice->user->name ?? '—' }}</strong>
@@ -173,7 +151,7 @@
                 </div>
             </div>
 
-            {{-- ── LÍNEAS ────────────────────────────────────────────────── --}}
+            {{-- Líneas --}}
             <div class="col-12">
                 <div class="card card-warning card-outline">
                     <div class="card-header">
@@ -191,83 +169,29 @@
                                     <th style="width:6%"></th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <template x-for="(line, index) in lines" :key="index">
-                                    <tr>
-                                        <td>
-                                            <input type="text"
-                                                   :name="`lines[${index}][description]`"
-                                                   x-model="line.description"
-                                                   placeholder="Descripción"
-                                                   class="form-control form-control-sm">
-                                        </td>
-                                        <td>
-                                            <input type="number"
-                                                   :name="`lines[${index}][quantity]`"
-                                                   x-model="line.quantity"
-                                                   @input="calcLine(index)"
-                                                   step="0.01" min="0"
-                                                   class="form-control form-control-sm">
-                                        </td>
-                                        <td>
-                                            <input type="number"
-                                                   :name="`lines[${index}][unit_price]`"
-                                                   x-model="line.unit_price"
-                                                   @input="calcLine(index)"
-                                                   step="0.01" min="0"
-                                                   class="form-control form-control-sm">
-                                        </td>
-                                        <td>
-                                            <div class="input-group input-group-sm">
-                                                <input type="number"
-                                                       :name="`lines[${index}][tax_rate]`"
-                                                       x-model="line.tax_rate"
-                                                       @input="calcLine(index)"
-                                                       step="0.01" min="0" max="100"
-                                                       class="form-control form-control-sm">
-                                                <div class="input-group-append">
-                                                    <span class="input-group-text">%</span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <input type="text" readonly
-                                                   :value="line.total.toFixed(2)"
-                                                   class="form-control form-control-sm bg-light font-weight-bold">
-                                        </td>
-                                        <td class="text-center">
-                                            <button type="button"
-                                                    @click="removeLine(index)"
-                                                    x-show="lines.length > 1"
-                                                    class="btn btn-xs btn-danger">
-                                                <i class="fas fa-times"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </template>
+                            <tbody id="lines-body">
+                                {{-- JS inserta filas aquí --}}
                             </tbody>
                         </table>
                     </div>
                     <div class="card-footer d-flex justify-content-between align-items-center">
-                        <button type="button" @click="addLine()" class="btn btn-sm btn-outline-warning">
+                        <button type="button" id="add-line" class="btn btn-sm btn-outline-warning">
                             <i class="fas fa-plus mr-1"></i> Agregar línea
                         </button>
                         <div class="text-right">
                             <table class="table table-sm table-borderless mb-0" style="width:280px">
                                 <tr>
                                     <td class="text-muted">Subtotal</td>
-                                    <td class="text-right font-weight-bold"
-                                        x-text="subtotal().toFixed(2) + ' €'"></td>
+                                    <td class="text-right font-weight-bold" id="summary-subtotal">0.00 €</td>
                                 </tr>
                                 <tr>
                                     <td class="text-muted">IVA</td>
-                                    <td class="text-right font-weight-bold"
-                                        x-text="totalTax().toFixed(2) + ' €'"></td>
+                                    <td class="text-right font-weight-bold" id="summary-tax">0.00 €</td>
                                 </tr>
                                 <tr class="border-top">
                                     <td><strong>Total</strong></td>
                                     <td class="text-right">
-                                        <strong x-text="totalIncl().toFixed(2) + ' €'"></strong>
+                                        <strong id="summary-total">0.00 €</strong>
                                     </td>
                                 </tr>
                             </table>
@@ -278,12 +202,9 @@
 
         </div>{{-- /row --}}
 
-        {{-- ── ACCIONES ──────────────────────────────────────────────────── --}}
+        {{-- Acciones --}}
         <div class="d-flex justify-content-between align-items-center mb-4">
-
-            {{-- Eliminar (form separado para el DELETE) --}}
-            <form method="POST"
-                  action="{{ route('invoices.destroy', $invoice) }}"
+            <form method="POST" action="{{ route('invoices.destroy', $invoice) }}"
                   onsubmit="return confirm('¿Seguro que deseas eliminar esta factura? Esta acción no se puede deshacer.')">
                 @csrf
                 @method('DELETE')
@@ -291,16 +212,14 @@
                     <i class="fas fa-trash mr-1"></i> Eliminar factura
                 </button>
             </form>
-
             <div>
                 <a href="{{ route('invoices.show', $invoice) }}" class="btn btn-secondary mr-2">
                     <i class="fas fa-times mr-1"></i> Cancelar
                 </a>
-                <button type="submit" class="btn btn-warning">
+                <button type="submit" form="invoice-form" class="btn btn-warning">
                     <i class="fas fa-save mr-1"></i> Guardar cambios
                 </button>
             </div>
-
         </div>
 
     </form>
@@ -315,100 +234,190 @@
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-    // ── Alpine: cálculo de líneas ────────────────────────────────────
-    function invoiceForm(initialLines) {
-        return {
-            lines: initialLines && initialLines.length
-                ? initialLines.map(l => ({
-                    ...l,
-                    total: parseFloat(l.quantity) * parseFloat(l.unit_price)
-                  }))
-                : [{ description: '', quantity: 1, unit_price: 0, tax_rate: 0, total: 0 }],
+// ── Líneas existentes desde PHP ───────────────────────────────────────
+var initialLines = @json($invoice->lines->map(fn($l) => [
+    'description' => $l->description,
+    'quantity'    => (float) $l->quantity,
+    'unit_price'  => (float) $l->unit_price,
+    'tax_rate'    => (float) $l->tax_rate,
+]));
 
-            addLine() {
-                this.lines.push({ description: '', quantity: 1, unit_price: 0, tax_rate: 0, total: 0 });
-            },
-            removeLine(i) {
-                this.lines.splice(i, 1);
-            },
-            calcLine(i) {
-                const l = this.lines[i];
-                l.total = parseFloat(l.quantity || 0) * parseFloat(l.unit_price || 0);
-            },
-            subtotal() {
-                return this.lines.reduce((s, l) => s + parseFloat(l.total || 0), 0);
-            },
-            totalTax() {
-                return this.lines.reduce((s, l) =>
-                    s + parseFloat(l.total || 0) * (parseFloat(l.tax_rate || 0) / 100), 0);
-            },
-            totalIncl() {
-                return this.subtotal() + this.totalTax();
-            }
-        }
-    }
+// ── Gestión de líneas ─────────────────────────────────────────────────
+var lineIndex = 0;
 
-    // ── Select2 ─────────────────────────────────────────────────────
-    $(document).ready(function () {
+function addLine(data) {
+    data = data || { description: '', quantity: 1, unit_price: 0, tax_rate: 0 };
+    var i     = lineIndex++;
+    var total = parseFloat(data.quantity || 0) * parseFloat(data.unit_price || 0);
 
-        $('#user-selector').select2({
-            theme: 'bootstrap4',
-            placeholder: '— Buscar por nombre, email o pasaporte —',
-            allowClear: true,
-            minimumInputLength: 2,
-            ajax: {
-                url: '{{ route('invoices.user-search') }}',
-                dataType: 'json',
-                delay: 300,
-                data: params => ({ q: params.term }),
-                processResults: data => ({ results: data.results }),
-                cache: true,
-            }
-        });
+    var tr    = document.createElement('tr');
+    tr.id     = 'line-' + i;
+    tr.innerHTML =
+        '<td>' +
+            '<input type="text" name="lines[' + i + '][description]" ' +
+                   'value="' + escHtml(data.description) + '" ' +
+                   'placeholder="Descripción" class="form-control form-control-sm">' +
+        '</td>' +
+        '<td>' +
+            '<input type="number" name="lines[' + i + '][quantity]" ' +
+                   'value="' + data.quantity + '" ' +
+                   'step="0.01" min="0" class="form-control form-control-sm line-qty">' +
+        '</td>' +
+        '<td>' +
+            '<input type="number" name="lines[' + i + '][unit_price]" ' +
+                   'value="' + data.unit_price + '" ' +
+                   'step="0.01" min="0" class="form-control form-control-sm line-price">' +
+        '</td>' +
+        '<td>' +
+            '<div class="input-group input-group-sm">' +
+                '<input type="number" name="lines[' + i + '][tax_rate]" ' +
+                       'value="' + data.tax_rate + '" ' +
+                       'step="0.01" min="0" max="100" class="form-control form-control-sm line-tax">' +
+                '<div class="input-group-append">' +
+                    '<span class="input-group-text">%</span>' +
+                '</div>' +
+            '</div>' +
+        '</td>' +
+        '<td>' +
+            '<input type="text" readonly value="' + total.toFixed(2) + '" ' +
+                   'class="form-control form-control-sm bg-light font-weight-bold line-total">' +
+        '</td>' +
+        '<td class="text-center">' +
+            '<button type="button" class="btn btn-xs btn-danger btn-remove-line">' +
+                '<i class="fas fa-times"></i>' +
+            '</button>' +
+        '</td>';
 
-        // ── Preseleccionar cliente existente ─────────────────────────
-        @if($selectedCustomer)
-            $('#user-selector')
-                .append(new Option(
-                    @json($selectedCustomer['text']),
-                    @json($selectedCustomer['id']),
-                    true,
-                    true
-                ))
-                .trigger('change');
-        @endif
+    document.getElementById('lines-body').appendChild(tr);
+    updateRemoveButtons();
+    recalculate();
+}
 
-        // ── Al seleccionar → rellenar campos ─────────────────────────
-        $('#user-selector').on('select2:select', function (e) {
-            const userId = e.params.data.id;
+function escHtml(str) {
+    return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
 
-            // Sincronizar el hidden
-            $('#customer_user_id').val(userId);
+function recalcTr(tr) {
+    var qty   = parseFloat(tr.querySelector('.line-qty').value   || 0);
+    var price = parseFloat(tr.querySelector('.line-price').value || 0);
+    tr.querySelector('.line-total').value = (qty * price).toFixed(2);
+}
 
-            $.getJSON('{{ url('invoices-user-data') }}/' + userId, function (data) {
-                $('#customer_name').val(data.customer_name);
-                $('#customer_email').val(data.customer_email);
-                $('#customer_vat').val(data.customer_vat);
-                $('#customer_address').val(data.customer_address);
-                $('#customer_country').val(data.customer_country);
+function recalculate() {
+    var rows     = document.querySelectorAll('#lines-body tr');
+    var subtotal = 0;
+    var tax      = 0;
 
-                // Avisos de campos faltantes en el perfil
-                $('#vat-missing').toggleClass('d-none',     !data.missing.passport);
-                $('#address-missing').toggleClass('d-none', !data.missing.address);
-                $('#country-missing').toggleClass('d-none', !data.missing.pais_de_residencia);
-
-            }).fail(function () {
-                toastr.error('No se pudo obtener los datos del cliente.');
-            });
-        });
-
-        // ── Al limpiar → vaciar campos ───────────────────────────────
-        $('#user-selector').on('select2:clear', function () {
-            $('#customer_user_id').val('');
-            $('#customer_name, #customer_email, #customer_vat, #customer_address, #customer_country').val('');
-            $('#vat-missing, #address-missing, #country-missing').addClass('d-none');
-        });
-
+    rows.forEach(function (tr) {
+        var total   = parseFloat(tr.querySelector('.line-total').value || 0);
+        var taxRate = parseFloat(tr.querySelector('.line-tax').value   || 0);
+        subtotal += total;
+        tax      += total * (taxRate / 100);
     });
+
+    var currency = document.getElementById('currency').value === 'USD' ? ' $' : ' €';
+    document.getElementById('summary-subtotal').textContent = subtotal.toFixed(2) + currency;
+    document.getElementById('summary-tax').textContent      = tax.toFixed(2)      + currency;
+    document.getElementById('summary-total').textContent    = (subtotal + tax).toFixed(2) + currency;
+}
+
+function updateRemoveButtons() {
+    var btns = document.querySelectorAll('.btn-remove-line');
+    btns.forEach(function (btn) {
+        btn.style.display = btns.length > 1 ? 'inline-block' : 'none';
+    });
+}
+
+// ── Eventos de líneas ─────────────────────────────────────────────────
+document.getElementById('add-line').addEventListener('click', function () {
+    addLine();
+});
+
+document.getElementById('lines-body').addEventListener('input', function (e) {
+    var tr = e.target.closest('tr');
+    if (!tr) return;
+    recalcTr(tr);
+    recalculate();
+});
+
+document.getElementById('lines-body').addEventListener('click', function (e) {
+    var btn = e.target.closest('.btn-remove-line');
+    if (!btn) return;
+    var rows = document.querySelectorAll('#lines-body tr');
+    if (rows.length <= 1) return;
+    btn.closest('tr').remove();
+    updateRemoveButtons();
+    recalculate();
+});
+
+document.getElementById('currency').addEventListener('change', recalculate);
+
+// ── Cargar líneas existentes ──────────────────────────────────────────
+initialLines.forEach(function (line) {
+    addLine(line);
+});
+
+// ── Select2 ──────────────────────────────────────────────────────────
+$(document).ready(function () {
+
+    $('#user-selector').select2({
+        theme: 'bootstrap4',
+        placeholder: '— Buscar por nombre, email o pasaporte —',
+        allowClear: true,
+        minimumInputLength: 2,
+        ajax: {
+            url: '{{ route('invoices.user-search') }}',
+            dataType: 'json',
+            delay: 300,
+            data: function (params) { return { q: params.term }; },
+            processResults: function (data) { return { results: data.results }; },
+            cache: true
+        }
+    });
+
+    // ── Preseleccionar cliente existente ──────────────────────────────
+    @if($selectedCustomer)
+        $('#user-selector')
+            .append(new Option(
+                @json($selectedCustomer['text']),
+                @json($selectedCustomer['id']),
+                true,
+                true
+            ))
+            .trigger('change');
+    @endif
+
+    $('#user-selector').on('select2:select', function (e) {
+        var userId = e.params.data.id;
+
+        $('#customer_user_id').val(userId);
+
+        $.getJSON('{{ url('invoices-user-data') }}/' + userId, function (data) {
+            $('#customer_name').val(data.customer_name);
+            $('#customer_email').val(data.customer_email);
+            $('#customer_vat').val(data.customer_vat);
+            $('#customer_address').val(data.customer_address);
+            $('#customer_country').val(data.customer_country);
+
+            $('#vat-missing').toggleClass('d-none',     !data.missing.passport);
+            $('#address-missing').toggleClass('d-none', !data.missing.address);
+            $('#country-missing').toggleClass('d-none', !data.missing.pais_de_residencia);
+
+        }).fail(function () {
+            toastr.error('No se pudo obtener los datos del cliente.');
+        });
+    });
+
+    $('#user-selector').on('select2:clear', function () {
+        $('#customer_user_id').val('');
+        $('#customer_name, #customer_email, #customer_vat, #customer_address, #customer_country').val('');
+        $('#vat-missing, #address-missing, #country-missing').addClass('d-none');
+    });
+
+});
 </script>
 @stop
