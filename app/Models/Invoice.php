@@ -5,12 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\TlInvoice;
 
 class Invoice extends Model
 {
     protected $fillable = [
         'invoice_number',
-        'user_id',
+        'user_id',           // quien crea
+        'customer_user_id',  // cliente asociado
         'customer_name',
         'customer_email',
         'customer_vat',
@@ -33,9 +35,16 @@ class Invoice extends Model
         'paid_date'    => 'date',
     ];
 
+    // Quien creó la factura (admin/empleado)
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    // El cliente al que va dirigida
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'customer_user_id');
     }
 
     public function lines(): HasMany
@@ -58,15 +67,18 @@ class Invoice extends Model
     public static function nextNumber(): string
     {
         $year = date('Y');
+
         $last = static::where('invoice_number', 'like', "$year / %")
             ->get()
-            ->map(fn($i) => (int) trim(explode('/', $i->invoice_number)[1]))
+            ->map(fn($i) => (int) trim(explode('/', $i->invoice_number)[1] ?? 0))
             ->max();
 
-        // También tomar en cuenta TlInvoices
         $lastTl = TlInvoice::all()
-            ->filter(fn($i) => str_starts_with(trim($i->invoice_number), $year))
-            ->map(fn($i) => (int) trim(explode('/', $i->invoice_number)[1]))
+            ->filter(fn($i) => str_starts_with(trim($i->invoice_number ?? ''), $year))
+            ->map(function ($i) {
+                $parts = explode('/', $i->invoice_number ?? '');
+                return isset($parts[1]) ? (int) trim($parts[1]) : 0;
+            })
             ->max();
 
         $next = max($last ?? 0, $lastTl ?? 0) + 1;
@@ -77,10 +89,10 @@ class Invoice extends Model
     public function getStatusColorAttribute(): string
     {
         return match($this->status) {
-            'draft'  => 'gray',
-            'sent'   => 'blue',
-            'paid'   => 'green',
-            default  => 'gray',
+            'draft'  => 'secondary',
+            'sent'   => 'info',
+            'paid'   => 'success',
+            default  => 'secondary',
         };
     }
 }

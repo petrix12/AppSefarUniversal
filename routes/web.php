@@ -71,6 +71,9 @@ Route::resource('invoices', InvoiceController::class);
 Route::get('tl/invoices/{id}/pdf', TlInvoicePdfController::class)
     ->name('tl.invoices.pdf');
 
+Route::get('invoices-user-data/{user}', [InvoiceController::class, 'getUserData'])->name('invoices.user-data');
+Route::get('invoices-user-search', [InvoiceController::class, 'searchUsers'])->name('invoices.user-search');
+
 Route::middleware(['auth'])->prefix('teamleader')->name('teamleader.')->group(function () {
     Route::get('contacts',        [TlContactController::class, 'table'])->name('contacts.index');
     Route::get('contacts/{id}',   [TlContactController::class, 'show'])->name('contacts.show');

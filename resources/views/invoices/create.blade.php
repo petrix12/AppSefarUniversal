@@ -25,34 +25,71 @@
                         <h3 class="card-title">Datos del cliente</h3>
                     </div>
                     <div class="card-body">
+
+                        {{-- Selector de usuario --}}
+                        <div class="form-group">
+                            <label>Buscar usuario existente</label>
+                            <select id="user-selector"
+                                    name="customer_user_id"
+                                    class="form-control"
+                                    style="width:100%">
+                                <option value="">— Seleccionar cliente —</option>
+                            </select>
+                            <small class="text-muted">
+                                Al seleccionar, se rellenan los campos automáticamente.
+                            </small>
+                        </div>
+
+                        <hr>
+
                         <div class="form-group">
                             <label>Nombre *</label>
-                            <input type="text" name="customer_name" value="{{ old('customer_name') }}"
-                                   class="form-control @error('customer_name') is-invalid @enderror">
+                            <input type="text" name="customer_name" id="customer_name"
+                                value="{{ old('customer_name') }}"
+                                class="form-control @error('customer_name') is-invalid @enderror">
                             @error('customer_name')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="form-group">
                             <label>Email</label>
-                            <input type="email" name="customer_email" value="{{ old('customer_email') }}"
-                                   class="form-control">
+                            <input type="email" name="customer_email" id="customer_email"
+                                value="{{ old('customer_email') }}"
+                                class="form-control">
                         </div>
                         <div class="form-group">
-                            <label>NIF / VAT</label>
-                            <input type="text" name="customer_vat" value="{{ old('customer_vat') }}"
-                                   class="form-control">
+                            <label>NIF / Pasaporte</label>
+                            <input type="text" name="customer_vat" id="customer_vat"
+                                value="{{ old('customer_vat') }}"
+                                class="form-control">
+                            {{-- AÑADIR ESTO --}}
+                            <small id="vat-missing" class="text-warning d-none">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                El cliente no tiene pasaporte registrado. Se guardará al crear la factura.
+                            </small>
                         </div>
                         <div class="form-group">
                             <label>Dirección</label>
-                            <input type="text" name="customer_address" value="{{ old('customer_address') }}"
-                                   class="form-control">
+                            <input type="text" name="customer_address" id="customer_address"
+                                value="{{ old('customer_address') }}"
+                                class="form-control">
+                            {{-- Aviso si el campo estaba vacío en el User --}}
+                            <small id="address-missing" class="text-warning d-none">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Este campo no estaba en el perfil del cliente. Se guardará al crear la factura.
+                            </small>
                         </div>
                         <div class="form-group">
                             <label>País</label>
-                            <input type="text" name="customer_country" value="{{ old('customer_country') }}"
-                                   class="form-control">
+                            <input type="text" name="customer_country" id="customer_country"
+                                value="{{ old('customer_country') }}"
+                                class="form-control">
+                            <small id="country-missing" class="text-warning d-none">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Este campo no estaba en el perfil del cliente. Se guardará al crear la factura.
+                            </small>
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -206,33 +243,76 @@
 
 @section('css')
     <link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap4-theme@1.0.0/dist/select2-bootstrap4.min.css">
 @stop
 
 @section('js')
-    <script>
-        function invoiceForm() {
-            return {
-                lines: [{ description: '', quantity: 1, unit_price: 0, tax_rate: 0, total: 0 }],
-                addLine() {
-                    this.lines.push({ description: '', quantity: 1, unit_price: 0, tax_rate: 0, total: 0 });
-                },
-                removeLine(index) {
-                    this.lines.splice(index, 1);
-                },
-                calcLine(index) {
-                    const l = this.lines[index];
-                    l.total = parseFloat(l.quantity || 0) * parseFloat(l.unit_price || 0);
-                },
-                subtotal() {
-                    return this.lines.reduce((s, l) => s + parseFloat(l.total || 0), 0);
-                },
-                totalTax() {
-                    return this.lines.reduce((s, l) => s + (parseFloat(l.total || 0) * (parseFloat(l.tax_rate || 0) / 100)), 0);
-                },
-                totalIncl() {
-                    return this.subtotal() + this.totalTax();
-                }
-            }
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    // ── Alpine: cálculo de líneas ──────────────────────────────────────
+    function invoiceForm() {
+        return {
+            lines: [{ description: '', quantity: 1, unit_price: 0, tax_rate: 0, total: 0 }],
+            addLine() {
+                this.lines.push({ description: '', quantity: 1, unit_price: 0, tax_rate: 0, total: 0 });
+            },
+            removeLine(index) { this.lines.splice(index, 1); },
+            calcLine(index) {
+                const l = this.lines[index];
+                l.total = parseFloat(l.quantity || 0) * parseFloat(l.unit_price || 0);
+            },
+            subtotal() { return this.lines.reduce((s, l) => s + parseFloat(l.total || 0), 0); },
+            totalTax() {
+                return this.lines.reduce((s, l) =>
+                    s + (parseFloat(l.total || 0) * (parseFloat(l.tax_rate || 0) / 100)), 0);
+            },
+            totalIncl() { return this.subtotal() + this.totalTax(); }
         }
-    </script>
+    }
+
+    // ── Select2: búsqueda de usuarios ─────────────────────────────────
+    $(document).ready(function () {
+
+        $('#user-selector').select2({
+            theme: 'bootstrap4',
+            placeholder: '— Buscar por nombre, email o pasaporte —',
+            allowClear: true,
+            minimumInputLength: 2,
+            ajax: {
+                url: '{{ route('invoices.user-search') }}',
+                dataType: 'json',
+                delay: 300,
+                data: params => ({ q: params.term }),
+                processResults: data => ({ results: data.results }),
+                cache: true
+            }
+        });
+
+        // Al seleccionar un usuario → llamar al endpoint y rellenar campos
+        $('#user-selector').on('select2:select', function (e) {
+            const userId = e.params.data.id;
+            $.getJSON('{{ url('invoices-user-data') }}/' + userId, function (data) {
+                $('#customer_name').val(data.customer_name);
+                $('#customer_email').val(data.customer_email);
+                $('#customer_vat').val(data.customer_vat);
+                $('#customer_address').val(data.customer_address);
+                $('#customer_country').val(data.customer_country);
+                $('#address-missing').toggleClass('d-none', !data.missing.address);
+                $('#country-missing').toggleClass('d-none', !data.missing.pais_de_residencia);
+                $('#vat-missing').toggleClass('d-none', !data.missing.passport);  // ← AÑADIR
+            }).fail(function () {
+                toastr.error('No se pudo obtener los datos del cliente.');
+            });
+        });
+
+        // Al limpiar el selector → limpiar campos
+        $('#user-selector').on('select2:clear', function () {
+            $('#customer_name, #customer_email, #customer_vat, #customer_address, #customer_country')
+                .val('');
+            $('#address-missing, #country-missing, #vat-missing').addClass('d-none');
+        });
+
+    });
+</script>
 @stop
