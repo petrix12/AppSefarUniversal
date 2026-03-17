@@ -150,8 +150,8 @@
                             @if($invoice->status === 'matched')
                                 <a href="{{ route('tl.invoices.pdf', $invoice->id) }}"
                                 target="_blank"
-                                class="btn btn-danger btn-sm">
-                                    <i class="fas fa-file mr-1"></i> Descargar PDF
+                                class="btn btn-xs btn-outline-danger">
+                                    <i class="fas fa-file mr-1"></i>
                                 </a>
                             @endif
                         </td>

@@ -27,7 +27,11 @@ class InvoicePdfController extends Controller
                 'dpi'            => 150,
             ]);
 
-        $filename = 'Factura_' . str_replace(' ', '_', $invoice->invoice_number) . '.pdf';
+        $safeInvoiceNumber = preg_replace('/[\\\\\\/:"*?<>|]+/', '-', $invoice->invoice_number ?? 'factura');
+        $safeInvoiceNumber = preg_replace('/\s+/', '_', $safeInvoiceNumber);
+        $safeInvoiceNumber = trim($safeInvoiceNumber, '-_');
+
+        $filename = 'Factura_' . ($safeInvoiceNumber ?: 'factura') . '.pdf';
 
         return $pdf->download($filename);
     }
