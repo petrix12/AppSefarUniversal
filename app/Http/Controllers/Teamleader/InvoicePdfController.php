@@ -13,18 +13,22 @@ class InvoicePdfController extends Controller
     {
         $invoice = TlInvoice::findOrFail($id);
 
-        // Solo facturas pagadas/completadas
         abort_if($invoice->status !== 'matched', 403, 'Factura no disponible para PDF.');
 
         $data = $this->prepareData($invoice);
 
+        $logoPath = public_path('img/logo2.png');
+        $data['logoBase64'] = file_exists($logoPath)
+            ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath))
+            : null;
+
         $pdf = Pdf::loadView('tl.invoices.pdf', $data)
             ->setPaper('a4', 'portrait')
             ->setOptions([
-                'defaultFont'    => 'DejaVu Sans',
-                'isRemoteEnabled'=> true,
+                'defaultFont' => 'DejaVu Sans',
+                'isRemoteEnabled' => true,
                 'isHtml5ParserEnabled' => true,
-                'dpi'            => 150,
+                'dpi' => 150,
             ]);
 
         $safeInvoiceNumber = preg_replace('/[\\\\\\/:"*?<>|]+/', '-', $invoice->invoice_number ?? 'factura');
