@@ -64,26 +64,40 @@ use App\Http\Controllers\Teamleader\InvoicePdfController as TlInvoicePdfControll
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoicePdfController;
 
-Route::get('invoices/{invoice}/pdf', InvoicePdfController::class)->name('invoices.pdf');
+// ── Facturas propias (auth + admin) ──────────────────────────────────
+Route::middleware(['auth', 'can:administrador'])->group(function () {
 
-Route::resource('invoices', InvoiceController::class);
+    Route::resource('invoices', InvoiceController::class);
 
-Route::get('tl/invoices/{id}/pdf', TlInvoicePdfController::class)
-    ->name('tl.invoices.pdf');
+    Route::get('invoices/{invoice}/pdf', InvoicePdfController::class)
+        ->name('invoices.pdf');
 
-Route::get('invoices-user-data/{user}', [InvoiceController::class, 'getUserData'])->name('invoices.user-data');
-Route::get('invoices-user-search', [InvoiceController::class, 'searchUsers'])->name('invoices.user-search');
+    // AJAX
+    Route::get('invoices-user-data/{user}', [InvoiceController::class, 'getUserData'])
+        ->name('invoices.user-data');
+    Route::get('invoices-user-search', [InvoiceController::class, 'searchUsers'])
+        ->name('invoices.user-search');
 
-Route::middleware(['auth'])->prefix('teamleader')->name('teamleader.')->group(function () {
-    Route::get('contacts',        [TlContactController::class, 'table'])->name('contacts.index');
-    Route::get('contacts/{id}',   [TlContactController::class, 'show'])->name('contacts.show');
-
-    Route::get('/projects',      [TlProjectController::class, 'table'])->name('projects.index');
-    Route::get('/projects/{id}', [TlProjectController::class, 'show'])->name('projects.show');
-
-    Route::get('/invoices',      [TlInvoiceController::class, 'table'])->name('invoices.index');
-    Route::get('/invoices/{id}', [TlInvoiceController::class, 'show'])->name('invoices.show');
 });
+
+// ── Teamleader (auth + admin) ─────────────────────────────────────────
+Route::middleware(['auth', 'can:administrador'])
+    ->prefix('teamleader')
+    ->name('teamleader.')
+    ->group(function () {
+
+        Route::get('contacts',        [TlContactController::class, 'table'])->name('contacts.index');
+        Route::get('contacts/{id}',   [TlContactController::class, 'show'])->name('contacts.show');
+
+        Route::get('projects',        [TlProjectController::class, 'table'])->name('projects.index');
+        Route::get('projects/{id}',   [TlProjectController::class, 'show'])->name('projects.show');
+
+        Route::get('invoices',        [TlInvoiceController::class, 'table'])->name('invoices.index');
+        Route::get('invoices/{id}',   [TlInvoiceController::class, 'show'])->name('invoices.show');
+
+        Route::get('invoices/{id}/pdf', TlInvoicePdfController::class)->name('invoices.pdf');
+
+    });
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/strategic-suggestions', [StrategicSuggestionController::class, 'main'])
