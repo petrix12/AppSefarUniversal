@@ -27,6 +27,17 @@ class Invoice extends Model
         'total_tax',
         'total_incl_tax',
         'paid_date',
+        'aa',
+        'payment_terms',
+        'captador_id',
+        'send_email',
+        'sales_team',
+        'payment_method',
+        'deposit_number_client',
+        'deposit_number_sefar',
+        'paid_by',
+        'product_service',
+        'bank_account',
     ];
 
     protected $casts = [
@@ -94,5 +105,10 @@ class Invoice extends Model
             'paid'   => 'success',
             default  => 'secondary',
         };
+    }
+
+    public function captador()
+    {
+        return $this->belongsTo(User::class, 'captador_id');
     }
 }
