@@ -60,6 +60,10 @@ use App\Http\Controllers\StrategicSuggestionController;
 use App\Http\Controllers\Teamleader\TlProjectController;
 use App\Http\Controllers\TlContactController;
 use App\Http\Controllers\TlInvoiceController;
+use App\Http\Controllers\Teamleader\InvoicePdfController;
+
+Route::get('tl/invoices/{id}/pdf', InvoicePdfController::class)
+    ->name('tl.invoices.pdf');
 
 Route::middleware(['auth'])->prefix('teamleader')->name('teamleader.')->group(function () {
     Route::get('contacts',        [TlContactController::class, 'table'])->name('contacts.index');

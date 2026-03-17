@@ -11,9 +11,20 @@
             </a>
             Factura {{ $invoice->invoice_number ?? '(Borrador)' }}
         </h1>
-        <a href="{{ $invoice->raw_data['web_url'] ?? '#' }}" target="_blank" class="btn btn-sm btn-outline-info">
-            <i class="fas fa-external-link-alt mr-1"></i> Ver en Teamleader
-        </a>
+
+        <div class="d-flex align-items-center" style="gap: .5rem;">
+            @if($invoice->status === 'matched')
+                <a href="{{ route('tl.invoices.pdf', $invoice->id) }}"
+                target="_blank"
+                class="btn btn-danger btn-sm">
+                    <i class="fas fa-file mr-1"></i> Descargar PDF
+                </a>
+            @endif
+
+            <a href="{{ $invoice->raw_data['web_url'] ?? '#' }}" target="_blank" class="btn btn-sm btn-outline-info">
+                <i class="fas fa-external-link-alt mr-1"></i> Ver en Teamleader
+            </a>
+        </div>
     </div>
 @endsection
 

@@ -147,6 +147,13 @@
                                class="btn btn-xs btn-outline-primary">
                                 <i class="fas fa-eye"></i>
                             </a>
+                            @if($invoice->status === 'matched')
+                                <a href="{{ route('tl.invoices.pdf', $invoice->id) }}"
+                                target="_blank"
+                                class="btn btn-danger btn-sm">
+                                    <i class="fas fa-file mr-1"></i> Descargar PDF
+                                </a>
+                            @endif
                         </td>
                     </tr>
                     @empty
