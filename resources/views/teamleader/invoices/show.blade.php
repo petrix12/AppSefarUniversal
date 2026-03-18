@@ -14,7 +14,7 @@
 
         <div class="d-flex align-items-center" style="gap: .5rem;">
             @if($invoice->status === 'matched')
-                <a href="{{ route('tl.invoices.pdf', $invoice->id) }}"
+                <a href="{{ route('teamleader.invoices.pdf', $invoice->id) }}"
                 target="_blank"
                 class="btn btn-danger btn-sm">
                     <i class="fas fa-file mr-1"></i> Descargar PDF
