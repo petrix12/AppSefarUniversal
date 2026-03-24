@@ -572,19 +572,19 @@ class CosService
             }
         }
 
-        // Si pasaron +12 meses desde formalización
+        // ✅ NUEVA REGLA:
+        // Si pasó 1 año desde la formalización, ya puede solicitar recurso de alzada
         $fechaFormalizacion = $this->getFechaFormalizacion();
-        if (!$fechaFormalizacion) {
-            return false;
+        if ($fechaFormalizacion) {
+            $fechaLimite = $fechaFormalizacion->copy()->addYear();
+
+            if ($hoy->greaterThanOrEqualTo($fechaLimite)) {
+                return true;
+            }
         }
 
-        $fechaLimite = $fechaFormalizacion->copy()->addMonths(12);
-        if (!$hoy->greaterThan($fechaLimite)) {
-            return false;
-        }
-
-        // ✅ NUEVO: Solo es elegible para Recurso de Alzada si ya tiene
-        // Resolución Expresa contratada/solicitada, o si ya tiene negocio activo de Alzada
+        // Regla anterior opcional: si quieres conservar que también sea elegible
+        // por tener resolución expresa o solicitud previa, lo dejas como respaldo
         $tieneResolucionExpresa = $this->verificarNegocioActivo(
             $this->negocios,
             'SOLICITUD DE DOCUMENTO DE RESOLUCIÓN EXPRESA',
@@ -597,7 +597,6 @@ class CosService
             ['Recurso', 'Alzada']
         ) || isset($this->negocio->fecha_solicitud_recursoalzada);
 
-        // Si tiene cualquiera de los dos → ya cumplió el requisito
         return $tieneResolucionExpresa || $tieneRecursoAlzada;
     }
 
