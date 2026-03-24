@@ -322,6 +322,29 @@ return [
             ],
         ],
         [
+            'text'    => 'Tareas',
+            'icon'    => 'fas fa-fw fa-tasks',
+            'submenu' => [
+                [
+                    'text' => 'Mis tareas',
+                    'url'  => 'tasks',
+                    'icon' => 'fas fa-fw fa-clipboard-list',
+                ],
+                [
+                    'text'       => 'Panel admin',
+                    'url'        => 'tasks/admin',
+                    'icon'       => 'fas fa-fw fa-cogs',
+                    'can'        => 'administrador',   // ← solo admins lo ven
+                ],
+                [
+                    'text'       => 'Resumen',
+                    'url'        => 'tasks/admin/summary',
+                    'icon'       => 'fas fa-fw fa-chart-bar',
+                    'can'        => 'administrador',
+                ],
+            ],
+        ],
+        [
             'text'       => 'Facturas',
             'icon'       => 'fa-fw fas fa-file',
             'icon_color' => 'white',

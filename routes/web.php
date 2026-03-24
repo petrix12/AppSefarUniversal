@@ -63,6 +63,29 @@ use App\Http\Controllers\TlInvoiceController;
 use App\Http\Controllers\Teamleader\InvoicePdfController as TlInvoicePdfController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoicePdfController;
+use App\Http\Controllers\TaskController;
+use App\Http\Controllers\AdminTaskController;
+
+// ─── TAREAS ───────────────────────────────────────────────
+Route::middleware(['auth'])->prefix('tasks')->name('tasks.')->group(function () {
+
+    // ── Asesor ──────────────────────────────────────────
+    Route::get('/',                     [TaskController::class, 'table'])->name('index');
+    Route::get('/{task}',               [TaskController::class, 'show'])->name('show');
+    Route::post('/{task}/flow',         [TaskController::class, 'submitFlow'])->name('flow');   // flujo llamada
+
+    // ── Admin ────────────────────────────────────────────
+    Route::middleware('can:administrador')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/',                          [AdminTaskController::class, 'table'])->name('index');
+        Route::get('/create',                    [AdminTaskController::class, 'create'])->name('create');
+        Route::post('/',                         [AdminTaskController::class, 'store'])->name('store');
+        Route::get('/{task}/edit',               [AdminTaskController::class, 'edit'])->name('edit');
+        Route::put('/{task}',                    [AdminTaskController::class, 'update'])->name('update');
+        Route::delete('/{task}',                 [AdminTaskController::class, 'destroy'])->name('destroy');
+        Route::get('/summary',                   [AdminTaskController::class, 'summary'])->name('summary');
+        Route::post('/generate-daily',           [AdminTaskController::class, 'generateDaily'])->name('generate-daily');
+    });
+});
 
 // ── Facturas propias (auth + admin) ──────────────────────────────────
 Route::middleware(['auth', 'can:administrador'])->group(function () {
