@@ -37,7 +37,7 @@ class AdminTaskController extends Controller
         }
 
         $tasks    = $query->orderBy('user_id')->paginate(30)->withQueryString();
-        $advisors = User::role('Asesor')->pluck('name', 'id');
+        $advisors = User::role('Coord. Ventas')->pluck('name', 'id');
         $stats    = $this->getDayStats($date);
         $chartData = $this->buildChartData($date);
 
@@ -47,7 +47,7 @@ class AdminTaskController extends Controller
     // ── Crear manual ─────────────────────────────────────────
     public function create()
     {
-        $advisors = User::role('Asesor')->pluck('name', 'id');
+        $advisors = User::role('Coord. Ventas')->pluck('name', 'id');
         $contacts = User::role('Cliente')->pluck('name', 'id');
 
         return view('tasks.admin.create', compact('advisors', 'contacts'));
@@ -76,7 +76,7 @@ class AdminTaskController extends Controller
     // ── Editar ────────────────────────────────────────────────
     public function edit(Task $task)
     {
-        $advisors = User::role('Asesor')->pluck('name', 'id');
+        $advisors = User::role('Coord. Ventas')->pluck('name', 'id');
         $contacts = User::role('Cliente')->pluck('name', 'id');
 
         return view('tasks.admin.edit', compact('task', 'advisors', 'contacts'));
@@ -120,7 +120,7 @@ class AdminTaskController extends Controller
             ->get()
             ->groupBy('user_id');
 
-        $advisors  = User::role('Asesor')->pluck('name', 'id');
+        $advisors  = User::role('Coord. Ventas')->pluck('name', 'id');
         $chartData = $this->buildChartData($date);
 
         return view('tasks.admin.summary', compact('rows', 'advisors', 'date', 'chartData'));
@@ -148,7 +148,7 @@ class AdminTaskController extends Controller
             ->get()
             ->groupBy('user_id');
 
-        $advisors = User::role('Asesor')->pluck('name', 'id');
+        $advisors = User::role('Coord. Ventas')->pluck('name', 'id');
 
         $labels   = [];
         $pending  = [];
