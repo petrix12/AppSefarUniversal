@@ -108,7 +108,7 @@ Route::middleware(['auth', 'can:administrador'])->group(function () {
 });
 
 // ── Teamleader (auth + admin) ─────────────────────────────────────────
-Route::middleware(['auth', 'can:administrador'])
+Route::middleware(['auth', 'can:tl.view'])
     ->prefix('teamleader')
     ->name('teamleader.')
     ->group(function () {
