@@ -15,6 +15,10 @@
         {{-- KPIs en toda la fila --}}
         @livewire('profile.sales.kpis')
 
+        <div class="mb-6">
+            @livewire('profile.sales.pending-tasks')
+        </div>
+
         {{-- CONTENEDOR FLEX: 2 columnas --}}
         <div class="two-col w-100">
             <div class="col-left">
