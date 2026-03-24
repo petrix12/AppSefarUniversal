@@ -14,7 +14,7 @@ class AdminTaskController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('can:admin-tasks');
+        $this->middleware('can:administrador');
     }
 
     // ── Listado admin ────────────────────────────────────────
