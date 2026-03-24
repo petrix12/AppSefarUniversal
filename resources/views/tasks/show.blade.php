@@ -6,30 +6,31 @@
 @push('css')
 <link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
 <style>
-    .step-card { transition: all .2s ease; }
+    .step-card { transition: transform .2s ease; }
     .step-card:hover { transform: translateY(-1px); }
 
     .radio-option {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         gap: .75rem;
         padding: .875rem 1rem;
         border: 2px solid #e5e7eb;
         border-radius: .75rem;
         cursor: pointer;
-        transition: all .15s ease;
+        transition: border-color .15s ease, background .15s ease;
         background: #fff;
+        margin-bottom: 0;  /* override Bootstrap label margin */
     }
     .radio-option:hover { border-color: #93c5fd; background: #eff6ff; }
-    .radio-option:has(input:checked) {
-        border-color: #3b82f6;
-        background: #eff6ff;
+    .radio-option input[type="radio"] {
+        margin-top: 2px;
+        accent-color: #3b82f6;
+        width: 1rem;
+        height: 1rem;
+        flex-shrink: 0;
     }
-    .radio-option.danger:has(input:checked) {
-        border-color: #ef4444;
-        background: #fef2f2;
-    }
-    .radio-option input[type="radio"] { accent-color: #3b82f6; width: 1.1rem; height: 1.1rem; }
+    .radio-option.is-checked-blue  { border-color: #3b82f6; background: #eff6ff; }
+    .radio-option.is-checked-red   { border-color: #ef4444; background: #fef2f2; }
 
     .field-reveal {
         overflow: hidden;
@@ -42,73 +43,133 @@
         opacity: 1;
     }
 
-    .step-indicator {
+    .step-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        font-size: .7rem;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        margin-bottom: .4rem;
+    }
+    .step-badge .step-num {
+        width: 1.4rem; height: 1.4rem;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .65rem;
+        font-weight: 800;
+    }
+
+    /* Tarjeta base */
+    .detail-card {
+        background: #fff;
+        border: 1px solid #f0f0f0;
+        border-radius: 1rem;
+        box-shadow: 0 1px 4px rgba(0,0,0,.05);
+    }
+
+    /* Separador sutil en la dl */
+    .progress-row {
         display: flex;
         align-items: center;
+        justify-content: space-between;
+        padding: .55rem 0;
+        border-bottom: 1px solid #f9fafb;
+        font-size: .85rem;
+    }
+    .progress-row:last-child { border-bottom: none; }
+    .progress-row dt { color: #9ca3af; }
+    .progress-row dd { font-weight: 600; color: #1f2937; margin: 0; }
+
+    /* Input estilo moderno */
+    .modern-input {
+        width: 100%;
+        border: 1px solid #e5e7eb;
+        border-radius: .75rem;
+        padding: .6rem 1rem;
+        font-size: .875rem;
+        background: #f9fafb;
+        transition: background .15s, border-color .15s, box-shadow .15s;
+        color: #111827;
+    }
+    .modern-input:focus {
+        outline: none;
+        background: #fff;
+        border-color: #93c5fd;
+        box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+    }
+    .modern-input::placeholder { color: #d1d5db; }
+
+    /* Botones */
+    .btn-flow {
+        width: 100%;
+        padding: .75rem 1rem;
+        border-radius: .75rem;
+        font-size: .875rem;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         gap: .5rem;
-        font-size: .75rem;
-        font-weight: 600;
-        letter-spacing: .05em;
-        text-transform: uppercase;
-        margin-bottom: .35rem;
+        transition: filter .15s, transform .1s;
     }
-    .step-dot {
-        width: 1.5rem; height: 1.5rem;
-        border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        font-size: .7rem; font-weight: 700;
+    .btn-flow:hover  { filter: brightness(1.08); }
+    .btn-flow:active { transform: scale(.98); }
+    .btn-blue  { background: #2563eb; color: #fff; box-shadow: 0 2px 8px rgba(37,99,235,.25); }
+    .btn-violet{ background: #7c3aed; color: #fff; box-shadow: 0 2px 8px rgba(124,58,237,.25); }
+    .btn-green { background: #059669; color: #fff; box-shadow: 0 2px 8px rgba(5,150,105,.25); }
+
+    /* Alerta */
+    .alert-banner {
+        display: flex;
+        align-items: flex-start;
+        gap: .75rem;
+        padding: .875rem 1rem;
+        border-radius: .75rem;
+        font-size: .875rem;
+        font-weight: 500;
     }
+    .alert-banner i { margin-top: 1px; font-size: 1rem; }
 </style>
 @endpush
 
 @section('content')
-<div class="min-h-screen bg-gray-50 py-8 px-4">
-<div class="max-w-xl mx-auto space-y-5">
+<div style="background:#f8fafc; min-height:100vh; padding: 2rem 1rem;">
+<div style="max-width: 560px; margin: 0 auto;">
 
     {{-- ══ CABECERA ══════════════════════════════════════════════ --}}
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+    <div class="detail-card p-4 mb-4">
 
         {{-- Breadcrumb --}}
         <a href="{{ route('tasks.index') }}"
-           class="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-blue-600
-                  transition mb-4 group">
-            <svg class="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform"
-                 fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
-            </svg>
+           style="display:inline-flex; align-items:center; gap:.4rem;
+                  font-size:.78rem; color:#9ca3af; text-decoration:none;
+                  margin-bottom:1rem; transition:color .15s;"
+           onmouseover="this.style.color='#2563eb'"
+           onmouseout="this.style.color='#9ca3af'">
+            <i class="fas fa-chevron-left" style="font-size:.7rem;"></i>
             Mis tareas
         </a>
 
-        <div class="flex items-start justify-between gap-4">
-            <div class="min-w-0">
-                <h1 class="text-xl font-bold text-gray-900 leading-tight truncate">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem;">
+            <div style="min-width:0;">
+                <h1 style="font-size:1.15rem; font-weight:800; color:#111827;
+                            margin:0 0 .5rem; line-height:1.3;">
                     {{ $task->title }}
                 </h1>
-                <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
-                    {{-- Contacto --}}
-                    <span class="inline-flex items-center gap-1.5 text-sm text-gray-500">
-                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor"
-                             stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                  d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z
-                                     M4.501 20.118a7.5 7.5 0 0114.998 0"/>
-                        </svg>
-                        <span class="font-medium text-gray-700">
-                            {{ $task->contact->name ?? '—' }}
-                        </span>
+                <div style="display:flex; flex-wrap:wrap; gap:.5rem .75rem; font-size:.8rem; color:#6b7280;">
+                    <span>
+                        <i class="fas fa-user" style="color:#d1d5db; margin-right:.3rem;"></i>
+                        <strong style="color:#374151;">{{ $task->contact->name ?? '—' }}</strong>
                     </span>
-                    <span class="text-gray-300 hidden sm:inline">·</span>
-                    {{-- Fecha --}}
-                    <span class="inline-flex items-center gap-1.5 text-sm text-gray-500">
-                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor"
-                             stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                  d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25
-                                     0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18
-                                     0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021
-                                     18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25
-                                     2.25 0 0121 9v7.5"/>
-                        </svg>
+                    <span style="color:#e5e7eb;">|</span>
+                    <span>
+                        <i class="fas fa-calendar-alt" style="color:#d1d5db; margin-right:.3rem;"></i>
                         Vence {{ $task->due_date->format('d/m/Y') }}
                     </span>
                 </div>
@@ -116,12 +177,12 @@
 
             {{-- Badge estado --}}
             @php
-                [$badgeBg, $badgeText, $badgeDot] = match($task->status) {
-                    'pending'     => ['bg-amber-50',  'text-amber-700',  'bg-amber-400'],
-                    'in_progress' => ['bg-blue-50',   'text-blue-700',   'bg-blue-400'],
-                    'completed'   => ['bg-emerald-50','text-emerald-700','bg-emerald-400'],
-                    'canceled'    => ['bg-red-50',    'text-red-700',    'bg-red-400'],
-                    default       => ['bg-gray-50',   'text-gray-600',   'bg-gray-400'],
+                [$badgeBg, $badgeColor, $dotColor] = match($task->status) {
+                    'pending'     => ['#fffbeb', '#b45309', '#f59e0b'],
+                    'in_progress' => ['#eff6ff', '#1d4ed8', '#3b82f6'],
+                    'completed'   => ['#ecfdf5', '#065f46', '#10b981'],
+                    'canceled'    => ['#fef2f2', '#b91c1c', '#ef4444'],
+                    default       => ['#f9fafb', '#6b7280', '#9ca3af'],
                 };
                 $badgeLabel = match($task->status) {
                     'pending'     => 'Pendiente',
@@ -131,10 +192,12 @@
                     default       => $task->status,
                 };
             @endphp
-            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
-                         text-xs font-semibold whitespace-nowrap shrink-0
-                         {{ $badgeBg }} {{ $badgeText }}">
-                <span class="w-1.5 h-1.5 rounded-full {{ $badgeDot }}"></span>
+            <span style="display:inline-flex; align-items:center; gap:.4rem;
+                         padding:.35rem .85rem; border-radius:999px; white-space:nowrap;
+                         font-size:.75rem; font-weight:700; flex-shrink:0;
+                         background:{{ $badgeBg }}; color:{{ $badgeColor }};">
+                <span style="width:.5rem; height:.5rem; border-radius:50%;
+                              background:{{ $dotColor }}; display:inline-block;"></span>
                 {{ $badgeLabel }}
             </span>
         </div>
@@ -142,20 +205,21 @@
 
     {{-- ══ ALERTAS ════════════════════════════════════════════════ --}}
     @if(session('success'))
-    <div class="flex items-start gap-3 p-4 rounded-xl bg-emerald-50 border border-emerald-200">
-        <span class="text-emerald-500 text-lg leading-none mt-0.5">✓</span>
-        <p class="text-sm text-emerald-700 font-medium">{{ session('success') }}</p>
+    <div class="alert-banner mb-4"
+         style="background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46;">
+        <i class="fas fa-check-circle" style="color:#10b981;"></i>
+        <span>{{ session('success') }}</span>
     </div>
     @endif
     @if(session('error'))
-    <div class="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200">
-        <span class="text-red-500 text-lg leading-none mt-0.5">!</span>
-        <p class="text-sm text-red-700 font-medium">{{ session('error') }}</p>
+    <div class="alert-banner mb-4"
+         style="background:#fef2f2; border:1px solid #fecaca; color:#b91c1c;">
+        <i class="fas fa-exclamation-circle" style="color:#ef4444;"></i>
+        <span>{{ session('error') }}</span>
     </div>
     @endif
 
     {{-- ══ PROGRESO REGISTRADO ════════════════════════════════════ --}}
-    @if(! $task->isClosed() || $task->call_effective !== null)
     @php
         $hasProgress = $task->call_effective !== null
                     || $task->reason_no_effective
@@ -165,75 +229,58 @@
                     || $task->follow_up_date;
     @endphp
     @if($hasProgress)
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-        <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
+    <div class="detail-card p-4 mb-4">
+        <p style="font-size:.7rem; font-weight:700; letter-spacing:.08em;
+                  text-transform:uppercase; color:#9ca3af; margin-bottom:.75rem;">
             Progreso registrado
-        </h2>
-        <dl class="space-y-3">
-
+        </p>
+        <dl style="margin:0;">
             @if($task->call_effective !== null)
-            <div class="flex items-center justify-between py-2 border-b border-gray-50">
-                <dt class="text-sm text-gray-500 flex items-center gap-2">
-                    <span>📞</span> Llamada efectiva
-                </dt>
-                <dd class="text-sm font-semibold
-                    {{ $task->call_effective ? 'text-emerald-600' : 'text-red-500' }}">
+            <div class="progress-row">
+                <dt><i class="fas fa-phone-alt mr-1"></i> Llamada efectiva</dt>
+                <dd style="color:{{ $task->call_effective ? '#059669' : '#dc2626' }};">
                     {{ $task->call_effective ? 'Sí' : 'No' }}
                 </dd>
             </div>
             @endif
-
             @if($task->reason_no_effective)
-            <div class="flex items-start justify-between gap-4 py-2 border-b border-gray-50">
-                <dt class="text-sm text-gray-500 shrink-0">↳ Motivo</dt>
-                <dd class="text-sm text-gray-700 text-right">{{ $task->reason_no_effective }}</dd>
+            <div class="progress-row">
+                <dt style="padding-left:.75rem;">↳ Motivo</dt>
+                <dd style="font-weight:400; color:#374151; text-align:right; max-width:60%;">
+                    {{ $task->reason_no_effective }}
+                </dd>
             </div>
             @endif
-
             @if($task->interest_level !== null)
-            <div class="flex items-center justify-between py-2 border-b border-gray-50">
-                <dt class="text-sm text-gray-500 flex items-center gap-2">
-                    <span>💬</span> Mostró interés
-                </dt>
-                <dd class="text-sm font-semibold
-                    {{ $task->interest_level ? 'text-emerald-600' : 'text-red-500' }}">
+            <div class="progress-row">
+                <dt><i class="fas fa-comment-dots mr-1"></i> Mostró interés</dt>
+                <dd style="color:{{ $task->interest_level ? '#059669' : '#dc2626' }};">
                     {{ $task->interest_level ? 'Sí' : 'No' }}
                 </dd>
             </div>
             @endif
-
             @if($task->reason_no_interest)
-            <div class="flex items-start justify-between gap-4 py-2 border-b border-gray-50">
-                <dt class="text-sm text-gray-500 shrink-0">↳ Motivo</dt>
-                <dd class="text-sm text-gray-700 text-right">{{ $task->reason_no_interest }}</dd>
+            <div class="progress-row">
+                <dt style="padding-left:.75rem;">↳ Motivo</dt>
+                <dd style="font-weight:400; color:#374151; text-align:right; max-width:60%;">
+                    {{ $task->reason_no_interest }}
+                </dd>
             </div>
             @endif
-
             @if($task->product_of_interest)
-            <div class="flex items-center justify-between py-2 border-b border-gray-50">
-                <dt class="text-sm text-gray-500 flex items-center gap-2">
-                    <span>🛍️</span> Producto
-                </dt>
-                <dd class="text-sm font-semibold text-gray-800">
-                    {{ $task->product_of_interest }}
-                </dd>
+            <div class="progress-row">
+                <dt><i class="fas fa-box mr-1"></i> Producto</dt>
+                <dd>{{ $task->product_of_interest }}</dd>
             </div>
             @endif
-
             @if($task->follow_up_date)
-            <div class="flex items-center justify-between py-2">
-                <dt class="text-sm text-gray-500 flex items-center gap-2">
-                    <span>📅</span> Seguimiento
-                </dt>
-                <dd class="text-sm font-semibold text-blue-600">
-                    {{ $task->follow_up_date->format('d/m/Y') }}
-                </dd>
+            <div class="progress-row">
+                <dt><i class="fas fa-calendar-check mr-1"></i> Seguimiento</dt>
+                <dd style="color:#2563eb;">{{ $task->follow_up_date->format('d/m/Y') }}</dd>
             </div>
             @endif
-
         </dl>
     </div>
-    @endif
     @endif
 
     {{-- ══ FLUJO DE PASOS ════════════════════════════════════════ --}}
@@ -241,13 +288,12 @@
 
         {{-- ── PASO 1 ──────────────────────────────────────────── --}}
         @if($task->call_effective === null)
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 step-card">
-
-            <div class="step-indicator text-blue-500">
-                <span class="step-dot bg-blue-100 text-blue-600">1</span>
+        <div class="detail-card p-4 step-card">
+            <div class="step-badge" style="color:#2563eb;">
+                <span class="step-num" style="background:#dbeafe; color:#1d4ed8;">1</span>
                 Resultado de llamada
             </div>
-            <h2 class="text-base font-bold text-gray-800 mb-5">
+            <h2 style="font-size:1rem; font-weight:700; color:#111827; margin:0 0 1.25rem;">
                 ¿La llamada fue efectiva?
             </h2>
 
@@ -255,74 +301,71 @@
                 @csrf
                 <input type="hidden" name="step" value="call_result">
 
-                <div class="space-y-2.5 mb-5">
-                    <label class="radio-option">
+                <div style="display:flex; flex-direction:column; gap:.6rem; margin-bottom:1.25rem;">
+                    <label class="radio-option" id="opt-yes-call">
                         <input type="radio" name="call_effective" value="1"
                                {{ old('call_effective') === '1' ? 'checked' : '' }}>
                         <div>
-                            <p class="text-sm font-medium text-gray-800">Sí, fue efectiva</p>
-                            <p class="text-xs text-gray-400 mt-0.5">El contacto respondió y conversamos</p>
+                            <p style="font-size:.875rem; font-weight:600; color:#111827; margin:0;">
+                                Sí, fue efectiva
+                            </p>
+                            <p style="font-size:.75rem; color:#9ca3af; margin:.15rem 0 0;">
+                                El contacto respondió y conversamos
+                            </p>
                         </div>
                     </label>
-                    <label class="radio-option danger">
+                    <label class="radio-option" id="opt-no-call">
                         <input type="radio" name="call_effective" value="0"
-                               id="notEffective"
                                {{ old('call_effective') === '0' ? 'checked' : '' }}>
                         <div>
-                            <p class="text-sm font-medium text-gray-800">No fue efectiva</p>
-                            <p class="text-xs text-gray-400 mt-0.5">No contestó, número incorrecto, etc.</p>
+                            <p style="font-size:.875rem; font-weight:600; color:#111827; margin:0;">
+                                No fue efectiva
+                            </p>
+                            <p style="font-size:.75rem; color:#9ca3af; margin:.15rem 0 0;">
+                                No contestó, número incorrecto, etc.
+                            </p>
                         </div>
                     </label>
                 </div>
 
                 <div id="reasonBox"
-                     class="field-reveal {{ old('call_effective') === '0' ? 'visible' : '' }} mb-4">
-                    <label class="block text-xs font-semibold text-gray-500 uppercase
-                                  tracking-wide mb-1.5">
-                        Motivo <span class="text-red-400">*</span>
+                     class="field-reveal {{ old('call_effective') === '0' ? 'visible' : '' }}"
+                     style="margin-bottom:1rem;">
+                    <label style="display:block; font-size:.75rem; font-weight:700;
+                                  letter-spacing:.06em; text-transform:uppercase;
+                                  color:#6b7280; margin-bottom:.4rem;">
+                        Motivo <span style="color:#ef4444;">*</span>
                     </label>
                     <input type="text"
                            name="reason_no_effective"
                            value="{{ old('reason_no_effective') }}"
                            maxlength="255"
                            placeholder="Ej: No contestó, número equivocado…"
-                           class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm
-                                  bg-gray-50 focus:bg-white focus:outline-none
-                                  focus:ring-2 focus:ring-blue-400 focus:border-transparent
-                                  transition placeholder-gray-300">
+                           class="modern-input">
                     @error('reason_no_effective')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        <p style="color:#ef4444; font-size:.75rem; margin-top:.25rem;">{{ $message }}</p>
                     @enderror
                 </div>
 
                 @error('call_effective')
-                    <p class="text-red-500 text-xs mb-3">{{ $message }}</p>
+                    <p style="color:#ef4444; font-size:.75rem; margin-bottom:.5rem;">{{ $message }}</p>
                 @enderror
 
-                <button type="submit"
-                        class="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800
-                               text-white text-sm font-semibold py-3 rounded-xl
-                               transition flex items-center justify-center gap-2 shadow-sm
-                               shadow-blue-200">
+                <button type="submit" class="btn-flow btn-blue">
+                    <i class="fas fa-arrow-right"></i>
                     Guardar y continuar
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                         stroke-width="2.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
-                    </svg>
                 </button>
             </form>
         </div>
 
         {{-- ── PASO 2 ──────────────────────────────────────────── --}}
         @elseif($task->call_effective && $task->interest_level === null)
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 step-card">
-
-            <div class="step-indicator text-violet-500">
-                <span class="step-dot bg-violet-100 text-violet-600">2</span>
+        <div class="detail-card p-4 step-card">
+            <div class="step-badge" style="color:#7c3aed;">
+                <span class="step-num" style="background:#ede9fe; color:#6d28d9;">2</span>
                 Nivel de interés
             </div>
-            <h2 class="text-base font-bold text-gray-800 mb-5">
+            <h2 style="font-size:1rem; font-weight:700; color:#111827; margin:0 0 1.25rem;">
                 ¿El contacto mostró interés?
             </h2>
 
@@ -330,74 +373,71 @@
                 @csrf
                 <input type="hidden" name="step" value="interest">
 
-                <div class="space-y-2.5 mb-5">
-                    <label class="radio-option">
+                <div style="display:flex; flex-direction:column; gap:.6rem; margin-bottom:1.25rem;">
+                    <label class="radio-option" id="opt-yes-int">
                         <input type="radio" name="interest_level" value="1"
                                {{ old('interest_level') === '1' ? 'checked' : '' }}>
                         <div>
-                            <p class="text-sm font-medium text-gray-800">Sí, mostró interés</p>
-                            <p class="text-xs text-gray-400 mt-0.5">Quiere saber más o evaluar la oferta</p>
+                            <p style="font-size:.875rem; font-weight:600; color:#111827; margin:0;">
+                                Sí, mostró interés
+                            </p>
+                            <p style="font-size:.75rem; color:#9ca3af; margin:.15rem 0 0;">
+                                Quiere saber más o evaluar la oferta
+                            </p>
                         </div>
                     </label>
-                    <label class="radio-option danger">
+                    <label class="radio-option" id="opt-no-int">
                         <input type="radio" name="interest_level" value="0"
-                               id="noInterest"
                                {{ old('interest_level') === '0' ? 'checked' : '' }}>
                         <div>
-                            <p class="text-sm font-medium text-gray-800">No mostró interés</p>
-                            <p class="text-xs text-gray-400 mt-0.5">Rechazó la oferta o no quiso continuar</p>
+                            <p style="font-size:.875rem; font-weight:600; color:#111827; margin:0;">
+                                No mostró interés
+                            </p>
+                            <p style="font-size:.75rem; color:#9ca3af; margin:.15rem 0 0;">
+                                Rechazó la oferta o no quiso continuar
+                            </p>
                         </div>
                     </label>
                 </div>
 
                 <div id="reasonNoInterestBox"
-                     class="field-reveal {{ old('interest_level') === '0' ? 'visible' : '' }} mb-4">
-                    <label class="block text-xs font-semibold text-gray-500 uppercase
-                                  tracking-wide mb-1.5">
-                        Motivo <span class="text-red-400">*</span>
+                     class="field-reveal {{ old('interest_level') === '0' ? 'visible' : '' }}"
+                     style="margin-bottom:1rem;">
+                    <label style="display:block; font-size:.75rem; font-weight:700;
+                                  letter-spacing:.06em; text-transform:uppercase;
+                                  color:#6b7280; margin-bottom:.4rem;">
+                        Motivo <span style="color:#ef4444;">*</span>
                     </label>
                     <input type="text"
                            name="reason_no_interest"
                            value="{{ old('reason_no_interest') }}"
                            maxlength="255"
                            placeholder="Ej: Ya tiene el producto, no le interesa ahora…"
-                           class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm
-                                  bg-gray-50 focus:bg-white focus:outline-none
-                                  focus:ring-2 focus:ring-violet-400 focus:border-transparent
-                                  transition placeholder-gray-300">
+                           class="modern-input">
                     @error('reason_no_interest')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        <p style="color:#ef4444; font-size:.75rem; margin-top:.25rem;">{{ $message }}</p>
                     @enderror
                 </div>
 
                 @error('interest_level')
-                    <p class="text-red-500 text-xs mb-3">{{ $message }}</p>
+                    <p style="color:#ef4444; font-size:.75rem; margin-bottom:.5rem;">{{ $message }}</p>
                 @enderror
 
-                <button type="submit"
-                        class="w-full bg-violet-600 hover:bg-violet-700 active:bg-violet-800
-                               text-white text-sm font-semibold py-3 rounded-xl
-                               transition flex items-center justify-center gap-2 shadow-sm
-                               shadow-violet-200">
+                <button type="submit" class="btn-flow btn-violet">
+                    <i class="fas fa-arrow-right"></i>
                     Guardar y continuar
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                         stroke-width="2.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
-                    </svg>
                 </button>
             </form>
         </div>
 
         {{-- ── PASO 3 ──────────────────────────────────────────── --}}
         @elseif($task->call_effective && $task->interest_level)
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 step-card">
-
-            <div class="step-indicator text-emerald-500">
-                <span class="step-dot bg-emerald-100 text-emerald-600">3</span>
+        <div class="detail-card p-4 step-card">
+            <div class="step-badge" style="color:#059669;">
+                <span class="step-num" style="background:#d1fae5; color:#065f46;">3</span>
                 Producto y seguimiento
             </div>
-            <h2 class="text-base font-bold text-gray-800 mb-5">
+            <h2 style="font-size:1rem; font-weight:700; color:#111827; margin:0 0 1.25rem;">
                 ¿Qué producto le interesa?
             </h2>
 
@@ -405,64 +445,49 @@
                 @csrf
                 <input type="hidden" name="step" value="product_followup">
 
-                <div class="mb-4">
-                    <label class="block text-xs font-semibold text-gray-500 uppercase
-                                  tracking-wide mb-1.5">
-                        Producto de interés <span class="text-red-400">*</span>
+                <div style="margin-bottom:1rem;">
+                    <label style="display:block; font-size:.75rem; font-weight:700;
+                                  letter-spacing:.06em; text-transform:uppercase;
+                                  color:#6b7280; margin-bottom:.4rem;">
+                        Producto de interés <span style="color:#ef4444;">*</span>
                     </label>
                     <input type="text"
                            name="product_of_interest"
                            value="{{ old('product_of_interest') }}"
                            maxlength="255"
                            placeholder="Ej: Seguro de vida, Crédito hipotecario…"
-                           class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm
-                                  bg-gray-50 focus:bg-white focus:outline-none
-                                  focus:ring-2 focus:ring-emerald-400 focus:border-transparent
-                                  transition placeholder-gray-300">
+                           class="modern-input">
                     @error('product_of_interest')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        <p style="color:#ef4444; font-size:.75rem; margin-top:.25rem;">{{ $message }}</p>
                     @enderror
                 </div>
 
-                <div class="mb-6">
-                    <label class="block text-xs font-semibold text-gray-500 uppercase
-                                  tracking-wide mb-1.5">
+                <div style="margin-bottom:1.5rem;">
+                    <label style="display:block; font-size:.75rem; font-weight:700;
+                                  letter-spacing:.06em; text-transform:uppercase;
+                                  color:#6b7280; margin-bottom:.4rem;">
                         Fecha de seguimiento
-                        <span class="normal-case font-normal text-gray-400 ml-1">(opcional)</span>
+                        <span style="font-weight:400; font-size:.72rem;
+                                     text-transform:none; color:#9ca3af; margin-left:.25rem;">
+                            (opcional)
+                        </span>
                     </label>
                     <input type="date"
                            name="follow_up_date"
                            value="{{ old('follow_up_date') }}"
                            min="{{ today()->addDay()->toDateString() }}"
-                           class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm
-                                  bg-gray-50 focus:bg-white focus:outline-none
-                                  focus:ring-2 focus:ring-emerald-400 focus:border-transparent
-                                  transition text-gray-600">
-                    <p class="text-xs text-gray-400 mt-1.5 flex items-center gap-1">
-                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor"
-                             stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                  d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708
-                                     2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9
-                                     0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/>
-                        </svg>
+                           class="modern-input">
+                    <p style="font-size:.72rem; color:#9ca3af; margin-top:.35rem;">
+                        <i class="fas fa-info-circle mr-1"></i>
                         Si indicas una fecha se creará una tarea de seguimiento automáticamente.
                     </p>
                     @error('follow_up_date')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        <p style="color:#ef4444; font-size:.75rem; margin-top:.25rem;">{{ $message }}</p>
                     @enderror
                 </div>
 
-                <button type="submit"
-                        class="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800
-                               text-white text-sm font-semibold py-3 rounded-xl
-                               transition flex items-center justify-center gap-2 shadow-sm
-                               shadow-emerald-200">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                         stroke-width="2.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M4.5 12.75l6 6 9-13.5"/>
-                    </svg>
+                <button type="submit" class="btn-flow btn-green">
+                    <i class="fas fa-check"></i>
                     Completar tarea
                 </button>
             </form>
@@ -471,15 +496,18 @@
 
     {{-- ══ TAREA CERRADA ══════════════════════════════════════════ --}}
     @else
-    <div class="bg-white rounded-2xl border border-gray-100 p-8 text-center">
-        <div class="w-14 h-14 rounded-full {{ $badgeBg }} flex items-center justify-center
-                    mx-auto mb-4 text-2xl">
-            {{ $task->status === 'completed' ? '✓' : '✕' }}
-        </div>
-        <p class="text-sm font-semibold text-gray-700">
+    <div class="detail-card p-5" style="text-align:center;">
+        <span style="display:inline-flex; align-items:center; justify-content:center;
+                     width:3rem; height:3rem; border-radius:50%; font-size:1.25rem;
+                     background:{{ $badgeBg }}; color:{{ $badgeColor }}; margin-bottom:.75rem;">
+            <i class="fas {{ $task->status === 'completed' ? 'fa-check' : 'fa-times' }}"></i>
+        </span>
+        <p style="font-size:.9rem; font-weight:700; color:#374151; margin:0;">
             Tarea {{ strtolower($badgeLabel) }}
         </p>
-        <p class="text-xs text-gray-400 mt-1">Esta tarea ya no admite más cambios.</p>
+        <p style="font-size:.8rem; color:#9ca3af; margin:.25rem 0 0;">
+            Esta tarea ya no admite más cambios.
+        </p>
     </div>
     @endif
 
@@ -489,7 +517,40 @@
 
 @push('scripts')
 <script>
-    // ── Toggle animado con CSS transition ──────────────────────────
+(function () {
+    // ── Highlight de tarjeta radio seleccionada ─────────────────
+    function bindRadioHighlight(radioName, yesId, noId) {
+        document.querySelectorAll(`input[name="${radioName}"]`).forEach(radio => {
+            // Aplicar estado inicial
+            applyHighlight(radioName, yesId, noId);
+
+            radio.addEventListener('change', () => {
+                applyHighlight(radioName, yesId, noId);
+            });
+        });
+    }
+
+    function applyHighlight(radioName, yesId, noId) {
+        const radios = document.querySelectorAll(`input[name="${radioName}"]`);
+        const yesEl = document.getElementById(yesId);
+        const noEl  = document.getElementById(noId);
+        if (!yesEl || !noEl) return;
+
+        // Limpiar
+        [yesEl, noEl].forEach(el => {
+            el.style.borderColor = '#e5e7eb';
+            el.style.background  = '#fff';
+        });
+
+        radios.forEach(r => {
+            if (!r.checked) return;
+            const target = r.value === '1' ? yesEl : noEl;
+            target.style.borderColor = r.value === '1' ? '#3b82f6' : '#ef4444';
+            target.style.background  = r.value === '1' ? '#eff6ff' : '#fef2f2';
+        });
+    }
+
+    // ── Reveal de campo condicional ─────────────────────────────
     function bindReveal(radioName, boxId) {
         document.querySelectorAll(`input[name="${radioName}"]`).forEach(radio => {
             radio.addEventListener('change', () => {
@@ -497,13 +558,15 @@
                 if (!box) return;
                 const show = radio.value === '0';
                 box.classList.toggle('visible', show);
-                // Enfocar el input cuando se revela
                 if (show) setTimeout(() => box.querySelector('input')?.focus(), 320);
             });
         });
     }
 
+    bindRadioHighlight('call_effective',  'opt-yes-call', 'opt-no-call');
+    bindRadioHighlight('interest_level',  'opt-yes-int',  'opt-no-int');
     bindReveal('call_effective', 'reasonBox');
     bindReveal('interest_level', 'reasonNoInterestBox');
+})();
 </script>
 @endpush
