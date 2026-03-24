@@ -296,28 +296,28 @@ return [
             'text'        => 'Migración Teamleader',
             'icon'        => 'fa-fw fas fa-database',
             'icon_color'  => 'white',
-            'can'  => 'administrador',
+            'can'  => 'tl.view',
             'submenu' => [
                 [
                     'text'          => 'Contactos',
                     'icon'          => 'fa-fw fas fa-users',
                     'icon_color'    => 'white',
                     'url'           => 'teamleader/contacts',
-                    'can'           => 'administrador',
+                    'can'           => 'tl.view',
                 ],
                 [
                     'text'          => 'Proyectos',
                     'icon'          => 'fa-fw fas fa-user-tag',
                     'icon_color'    => 'white',
                     'url'           => 'teamleader/projects',
-                    'can'           => 'administrador',
+                    'can'           => 'tl.view',
                 ],
                 [
                     'text'          => 'Facturas',
                     'icon'          => 'fa-fw fas fa-user-tag',
                     'icon_color'    => 'white',
                     'url'           => 'teamleader/invoices',
-                    'can'           => 'administrador',
+                    'can'           => 'tl.view',
                 ]
             ],
         ],
