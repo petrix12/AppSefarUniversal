@@ -88,7 +88,7 @@ Route::middleware(['auth'])->prefix('tasks')->name('tasks.')->group(function () 
     // ── Asesor DESPUÉS ────────────────────────────
     Route::get('/',             [TaskController::class, 'table'])->name('index');
     Route::get('/{task}',       [TaskController::class, 'show'])->name('show');
-    Route::post('/{task}/flow', [TaskController::class, 'submitFlow'])->name('flow');
+    Route::post('/{task}/flow', [TaskController::class, 'submitFlow'])->name('submitFlow');
 });
 
 // ── Facturas propias (auth + admin) ──────────────────────────────────
