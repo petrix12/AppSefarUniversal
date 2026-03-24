@@ -1,5 +1,5 @@
 {{-- resources/views/tasks/show.blade.php --}}
-@extends('layouts.app')
+@extends('adminlte::page')
 
 @section('title', 'Detalle de tarea')
 
