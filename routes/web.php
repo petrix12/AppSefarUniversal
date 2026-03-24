@@ -69,22 +69,28 @@ use App\Http\Controllers\AdminTaskController;
 // ─── TAREAS ───────────────────────────────────────────────
 Route::middleware(['auth'])->prefix('tasks')->name('tasks.')->group(function () {
 
-    // ── Asesor ──────────────────────────────────────────
-    Route::get('/',                     [TaskController::class, 'table'])->name('index');
-    Route::get('/{task}',               [TaskController::class, 'show'])->name('show');
-    Route::post('/{task}/flow',         [TaskController::class, 'submitFlow'])->name('flow');   // flujo llamada
+    // ── Asesor ──────────────────────────────────────────────
+    Route::get('/',             [TaskController::class, 'table'])->name('index');
+    Route::get('/{task}',       [TaskController::class, 'show'])->name('show');
+    Route::post('/{task}/flow', [TaskController::class, 'submitFlow'])->name('flow');
 
-    // ── Admin ────────────────────────────────────────────
-    Route::middleware('can:administrador')->prefix('admin')->name('admin.')->group(function () {
-        Route::get('/',                          [AdminTaskController::class, 'table'])->name('index');
-        Route::get('/create',                    [AdminTaskController::class, 'create'])->name('create');
-        Route::post('/',                         [AdminTaskController::class, 'store'])->name('store');
-        Route::get('/{task}/edit',               [AdminTaskController::class, 'edit'])->name('edit');
-        Route::put('/{task}',                    [AdminTaskController::class, 'update'])->name('update');
-        Route::delete('/{task}',                 [AdminTaskController::class, 'destroy'])->name('destroy');
-        Route::get('/summary',                   [AdminTaskController::class, 'summary'])->name('summary');
-        Route::post('/generate-daily',           [AdminTaskController::class, 'generateDaily'])->name('generate-daily');
-    });
+    // ── Admin ────────────────────────────────────────────────
+    Route::middleware('can:administrador')
+         ->prefix('admin')
+         ->name('admin.')
+         ->group(function () {
+             // ⚠️ Rutas estáticas SIEMPRE antes de /{task}
+             Route::get('/',                [AdminTaskController::class, 'table'])->name('index');
+             Route::get('/create',          [AdminTaskController::class, 'create'])->name('create');
+             Route::get('/summary',         [AdminTaskController::class, 'summary'])->name('summary');         // ← subió
+             Route::post('/generate-daily', [AdminTaskController::class, 'generateDaily'])->name('generate-daily'); // ← subió
+             Route::post('/',               [AdminTaskController::class, 'store'])->name('store');
+
+             // Rutas con parámetro {task} al final
+             Route::get('/{task}/edit',     [AdminTaskController::class, 'edit'])->name('edit');
+             Route::put('/{task}',          [AdminTaskController::class, 'update'])->name('update');
+             Route::delete('/{task}',       [AdminTaskController::class, 'destroy'])->name('destroy');
+         });
 });
 
 // ── Facturas propias (auth + admin) ──────────────────────────────────
