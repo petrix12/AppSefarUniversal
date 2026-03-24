@@ -288,7 +288,7 @@
 
     {{-- ── Volver ───────────────────────────────────────── --}}
     <div class="mt-6 text-center">
-        <a href="{{ route('tasks.table') }}"
+        <a href="{{ route('tasks.index') }}"
            class="text-sm text-blue-600 hover:underline">
             ← Volver a mis tareas
         </a>
