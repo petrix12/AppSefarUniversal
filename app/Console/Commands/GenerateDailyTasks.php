@@ -17,13 +17,13 @@ class GenerateDailyTasks extends Command
         {--dry-run    : Solo muestra, no escribe}
     ';
 
-    protected $description = 'Genera N tareas diarias por asesor descontando los follow-ups ya programados.';
+    protected $description = 'Genera N tareas diarias por asesor descontando los follow-ups ya programados, evitando repetidos semanales y omitiendo desinteresados.';
 
     public function handle(): int
     {
-        $date    = $this->option('date') ? Carbon::parse($this->option('date')) : today();
-        $base    = (int) ($this->option('per') ?? 10);
-        $dryRun  = (bool) $this->option('dry-run');
+        $date   = $this->option('date') ? Carbon::parse($this->option('date')) : today();
+        $base   = (int) ($this->option('per') ?? 10);
+        $dryRun = (bool) $this->option('dry-run');
 
         $this->info("📅 Fecha: {$date->toDateString()} | Base: {$base} tareas | " . ($dryRun ? 'DRY-RUN' : 'REAL'));
 
@@ -31,12 +31,11 @@ class GenerateDailyTasks extends Command
         $advisors = User::role('Coord. Ventas')->get(['id', 'name']);
 
         if ($advisors->isEmpty()) {
-            $this->error('No hay usuarios con rol Asesor.');
+            $this->error('No hay usuarios con rol Coord. Ventas.');
             return self::FAILURE;
         }
 
         // 2) Contactos disponibles (en list_user, no contactados)
-        //    Agrupados por owner_id para matchear con el asesor
         $contacts = DB::table('list_user as lu')
             ->join('users as u', 'u.id', '=', 'lu.user_id')
             ->select('u.id as contact_id', 'u.name as contact_name', 'u.owner_id')
@@ -52,11 +51,11 @@ class GenerateDailyTasks extends Command
         $totalCreated = 0;
 
         foreach ($advisors as $advisor) {
-            // Follow-ups ya programados para ese día (descuentan del cupo)
+            // 3) Follow-ups ya programados para ese día
             $followUpCount = Task::query()
                 ->where('user_id', $advisor->id)
                 ->whereDate('due_date', $date)
-                ->whereNotNull('follow_up_date') // son follow-ups si tenían follow_up_date al crearse
+                ->whereNotNull('follow_up_date')
                 ->count();
 
             $toCreate = max(0, $base - $followUpCount);
@@ -68,16 +67,50 @@ class GenerateDailyTasks extends Command
                 continue;
             }
 
-            // Contactos de este asesor que NO tengan ya tarea hoy
-            $alreadyTasked = Task::query()
+            // 4) Contactos que ya tienen tarea HOY para este asesor
+            $alreadyTaskedToday = Task::query()
                 ->where('user_id', $advisor->id)
                 ->whereDate('due_date', $date)
                 ->pluck('contact_id')
+                ->filter()
                 ->toArray();
 
+            // 5) Contactos que ya tuvieron tarea en los ÚLTIMOS 7 DÍAS para este asesor
+            $weekStart = $date->copy()->subDays(6)->startOfDay(); // hoy incluido = ventana de 7 días
+            $weekEnd   = $date->copy()->endOfDay();
+
+            $recentlyTasked = Task::query()
+                ->where('user_id', $advisor->id)
+                ->whereBetween('due_date', [$weekStart, $weekEnd])
+                ->pluck('contact_id')
+                ->filter()
+                ->unique()
+                ->toArray();
+
+            // 6) Contactos con desinterés: excluirlos COMPLETAMENTE
+            // Ajusta este filtro según cómo guardes el desinterés:
+            // a) status = 'no_interest' / 'desinterest'
+            // b) interest_level = 0
+            // c) reason_no_interest no null
+            $disinterestedContacts = Task::query()
+                ->where(function ($q) {
+                    $q->whereIn('status', ['desinteres', 'no_interest', 'not_interested'])
+                      ->orWhereNotNull('reason_no_interest')
+                      ->orWhere('interest_level', 0);
+                })
+                ->pluck('contact_id')
+                ->filter()
+                ->unique()
+                ->toArray();
+
+            // 7) Armar candidatos limpios
             $candidates = $contacts
                 ->where('owner_id', $advisor->id)
-                ->whereNotIn('contact_id', $alreadyTasked)
+                ->reject(function ($contact) use ($alreadyTaskedToday, $recentlyTasked, $disinterestedContacts) {
+                    return in_array($contact->contact_id, $alreadyTaskedToday)
+                        || in_array($contact->contact_id, $recentlyTasked)
+                        || in_array($contact->contact_id, $disinterestedContacts);
+                })
                 ->values()
                 ->shuffle()
                 ->take($toCreate);
@@ -92,13 +125,13 @@ class GenerateDailyTasks extends Command
 
                 if (! $dryRun) {
                     Task::create([
-                        'user_id'             => $advisor->id,
-                        'contact_id'          => $contact->contact_id,
-                        'title'               => "Comunicarse con el cliente {$contact->contact_name}",
-                        'description'         => null,
-                        'due_date'            => $date->toDateString(),
-                        'status'              => 'pending',
-                        'created_by_user_id'  => null, // sistema
+                        'user_id'            => $advisor->id,
+                        'contact_id'         => $contact->contact_id,
+                        'title'              => "Comunicarse con el cliente {$contact->contact_name}",
+                        'description'        => null,
+                        'due_date'           => $date->toDateString(),
+                        'status'             => Task::STATUS_PENDING,
+                        'created_by_user_id' => null, // sistema
                     ]);
                 }
 
