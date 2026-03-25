@@ -6,10 +6,8 @@
 @stop
 
 @section('content')
-<x-app-layout>
     <div class="w-full max-w-full px-6 py-6 space-y-6">
 
-        @livewire('profile.update-profile-information-form')
         {{-- HEADER tipo LinkedIn --}}
         @livewire('profile.sales.profile-header')
 
@@ -100,11 +98,11 @@
 
         </div>
     </div>
-</x-app-layout>
 @stop
 
 @section('css')
-<link rel="stylesheet" href="/css/admin_custom.css">
+<link rel="stylesheet" href="/css/sefar.css">
+<link rel="stylesheet" href="/css/app.css">
 <style>
     .btn { border-radius: .6rem; }
 
