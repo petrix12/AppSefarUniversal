@@ -19,7 +19,7 @@ class Kpis extends Component
         // Ajusta roles/visibilidad a tu lógica real:
         $docsQuery = Document::query();
 
-        if ($user->hasRole('Coord. Ventas')) {
+        if ($user->hasRole('Coord. de Nacionalidad y Genealogía')) {
             $docsQuery->whereIn('visibility', ['coordventas', 'todos']);
         } elseif ($user->hasRole('Proveedor')) {
             $docsQuery->whereIn('visibility', ['proveedores', 'todos']);

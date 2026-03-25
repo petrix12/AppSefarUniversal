@@ -23,7 +23,7 @@ class ProfileJetController extends Controller
         ]);
         /*
         // 🔥 Spatie roles
-        if ($user->hasAnyRole(['Coord. Ventas', 'Ventas'])) {
+        if ($user->hasAnyRole(['Coord. de Nacionalidad y Genealogía', 'Ventas'])) {
             return view('profile.show-ventas', [
                 'request' => $request,
                 'user' => $user,

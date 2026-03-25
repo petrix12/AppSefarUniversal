@@ -20,7 +20,7 @@
         <img
           src="{{ $user->profile_photo_url }}"
           class="sm:w-28 sm:h-28 rounded-2xl ring-4 ring-white object-cover shadow-xl"
-          style="width: 70px!important; border-radius:1000px;"
+          style="width: 70px!important; height: 70px!important; border-radius: 1000px;"
           alt="Foto de perfil"
         >
       </div>
@@ -47,7 +47,7 @@
         </h1>
         <p class="text-base font-medium flex items-center gap-2">
           <i class="fas fa-briefcase text-sm mr-2"></i>
-          {{ $roleName == "Coord. Ventas" ? "Coordinador de Ventas" : $roleName }}
+          {{ $roleName == "Coord. de Nacionalidad y Genealogía" ? "Coordinador de Ventas" : $roleName }}
         </p>
       </div>
 

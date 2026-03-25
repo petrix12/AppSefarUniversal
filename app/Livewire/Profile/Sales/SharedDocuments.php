@@ -14,8 +14,8 @@ class SharedDocuments extends Component
         $q = Document::query();
 
         // Ajusta esta lógica a tus roles/visibilidad reales:
-        // - Si "Coord. Ventas" ve coordventas + todos
-        if ($user->hasRole('Coord. Ventas')) {
+        // - Si "Coord. de Nacionalidad y Genealogía" ve coordventas + todos
+        if ($user->hasRole('Coord. de Nacionalidad y Genealogía')) {
             $q->whereIn('visibility', ['coordventas', 'todos']);
         }
 
@@ -25,7 +25,7 @@ class SharedDocuments extends Component
         }
 
         // - Si no es ninguno, por defecto "todos" (ajústalo si quieres)
-        if (! $user->hasRole('Coord. Ventas') && ! $user->hasRole('Proveedor')) {
+        if (! $user->hasRole('Coord. de Nacionalidad y Genealogía') && ! $user->hasRole('Proveedor')) {
             $q->where('visibility', 'todos');
         }
 

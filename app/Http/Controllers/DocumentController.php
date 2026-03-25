@@ -19,7 +19,7 @@ class DocumentController extends Controller
         $q = Document::query();
 
         // Proveedor ve proveedores/todos
-        if ($user->hasRole('Coord. Ventas')) {
+        if ($user->hasRole('Coord. de Nacionalidad y Genealogía')) {
             $q->whereIn('visibility', ['coordventas', 'todos']);
         }
 

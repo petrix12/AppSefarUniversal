@@ -12,7 +12,7 @@ class ListController extends Controller
     private function isVentasUser(): bool
     {
         $u = auth()->user();
-        return $u && $u->hasAnyRole(['Coord. Ventas', 'Ventas']);
+        return $u && $u->hasAnyRole(['Coord. de Nacionalidad y Genealogía', 'Ventas']);
     }
 
     public function get(Request $request)

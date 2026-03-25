@@ -2,7 +2,7 @@
 
 @php
     $isAdmin = auth()->user()->hasAnyRole(['Administrador']);
-    $isCoordVentas = auth()->user()->hasRole('Coord. Ventas');
+    $isCoordVentas = auth()->user()->hasRole('Coord. de Nacionalidad y Genealogía');
 @endphp
 
 @section('title', $isAdmin ? 'Registrar propuesta estratégica' : 'Nueva propuesta estratégica')

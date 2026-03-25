@@ -2,7 +2,7 @@
 
 @php
     $isAdmin = auth()->user()->hasAnyRole(['Administrador', 'Admin']);
-    $isCoordVentas = auth()->user()->hasRole('Coord. Ventas');
+    $isCoordVentas = auth()->user()->hasRole('Coord. de Nacionalidad y Genealogía');
 @endphp
 
 @section('title', $isAdmin ? 'Gestión de propuesta estratégica' : 'Mi propuesta estratégica')
@@ -72,7 +72,7 @@
 
         <div class="card-body">
             @if($isAdmin)
-                <p><strong>Coord. Ventas:</strong> {{ $suggestion->user->name ?? 'N/A' }}</p>
+                <p><strong>Coord. de Nacionalidad y Genealogía:</strong> {{ $suggestion->user->name ?? 'N/A' }}</p>
                 <p><strong>Correo:</strong> {{ $suggestion->user->email ?? 'N/A' }}</p>
             @endif
 
@@ -153,7 +153,7 @@
                             @if($reply->is_admin_reply)
                                 <span class="badge badge-primary ml-1">Equipo interno</span>
                             @else
-                                <span class="badge badge-secondary ml-1">Coord. Ventas</span>
+                                <span class="badge badge-secondary ml-1">Coord. de Nacionalidad y Genealogía</span>
                             @endif
                         </div>
 
@@ -208,7 +208,7 @@
 
                 @if($isAdmin)
                     <div class="alert alert-light border">
-                        Tu respuesta quedará visible únicamente para este Coord. Ventas dentro de este hilo privado.
+                        Tu respuesta quedará visible únicamente para este Coord. de Nacionalidad y Genealogía dentro de este hilo privado.
                     </div>
                 @endif
 

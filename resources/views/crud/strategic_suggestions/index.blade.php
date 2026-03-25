@@ -2,7 +2,7 @@
 
 @php
     $isAdmin = auth()->user()->hasAnyRole(['Administrador', 'Admin']);
-    $isCoordVentas = auth()->user()->hasRole('Coord. Ventas');
+    $isCoordVentas = auth()->user()->hasRole('Coord. de Nacionalidad y Genealogía');
 @endphp
 
 @section('title', $isAdmin ? 'Gestión de Propuestas Estratégicas' : 'Canal Privado de Propuestas Estratégicas')
@@ -126,7 +126,7 @@
                         <th>Asunto</th>
 
                         @if($isAdmin)
-                            <th>Coord. Ventas</th>
+                            <th>Coord. de Nacionalidad y Genealogía</th>
                         @endif
 
                         <th>Estado</th>

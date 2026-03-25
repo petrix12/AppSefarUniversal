@@ -30,7 +30,7 @@ class AuthServiceProvider extends ServiceProvider
         });
 
         Gate::define('docs.view', function ($user) {
-            return $user->hasAnyRole(['Coord. Ventas']);
+            return $user->hasAnyRole(['Coord. de Nacionalidad y Genealogía']);
         });
 
         Gate::define('docs.upload', function ($user) {

@@ -71,8 +71,8 @@ class ProveedorRegisterController extends Controller
 
         // Asignar rol Coordinador (por nombre o por id)
         // Recomendado:
-        if (Role::where('name', 'Coord. Ventas')->exists()) {
-            $user->assignRole('Coord. Ventas');
+        if (Role::where('name', 'Coord. de Nacionalidad y Genealogía')->exists()) {
+            $user->assignRole('Coord. de Nacionalidad y Genealogía');
         } else {
             $role = Role::find(17);
             if ($role) $user->assignRole($role);

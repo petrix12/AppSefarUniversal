@@ -13,7 +13,7 @@ class StrategicSuggestionController extends Controller
     private function isCoordVentasUser(): bool
     {
         $u = auth()->user();
-        return $u && $u->hasRole('Coord. Ventas');
+        return $u && $u->hasRole('Coord. de Nacionalidad y Genealogía');
     }
 
     private function isAdminUser(): bool
