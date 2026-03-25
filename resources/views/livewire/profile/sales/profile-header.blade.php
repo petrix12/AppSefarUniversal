@@ -18,7 +18,7 @@
       {{-- Avatar --}}
       <div class="flex-shrink-0">
         <img
-          src="{{ asset('storage/' . $user->profile_photo_path) }}"
+          src="{{ $user->profile_photo_url }}"
           class="sm:w-28 sm:h-28 rounded-2xl ring-4 ring-white object-cover shadow-xl"
           style="width: 70px!important; border-radius:1000px;"
           alt="Foto de perfil"
