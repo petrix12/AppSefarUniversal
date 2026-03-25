@@ -9,6 +9,7 @@
 <x-app-layout>
     <div class="w-full max-w-full px-6 py-6 space-y-6">
 
+        @livewire('profile.update-profile-information-form')
         {{-- HEADER tipo LinkedIn --}}
         @livewire('profile.sales.profile-header')
 
