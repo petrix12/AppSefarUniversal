@@ -324,11 +324,13 @@ return [
         [
             'text'    => 'Tareas',
             'icon'    => 'fas fa-fw fa-tasks',
+            'can'     => 'tasks.view',
             'submenu' => [
                 [
                     'text' => 'Mis tareas',
                     'url'  => 'tasks',
                     'icon' => 'fas fa-fw fa-clipboard-list',
+                    'can'     => 'tasks.view',
                 ],
                 [
                     'text'       => 'Panel admin',
