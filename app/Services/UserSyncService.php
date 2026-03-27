@@ -44,21 +44,45 @@ class UserSyncService
      * Sincroniza datos del usuario con Teamleader
      * Usa cache de 5 minutos
      */
-    public function syncWithTeamleader(User $user): array
-    {
-        $cacheKey = "teamleader_data_{$user->tl_id}";
+public function syncWithTeamleader(User $user): array
+{
+    $cacheKey = "teamleader_data_{$user->id}";
 
-        return Cache::remember($cacheKey, 300, function () use ($user) {
-            if (is_null($user->tl_id)) {
+    return Cache::remember($cacheKey, 300, function () use ($user) {
+        try {
+            if (empty($user->tl_id)) {
                 $this->ensureTeamleaderContact($user);
             }
 
+            // Si sigue vacío o inválido, no frenar el sistema
+            if (empty($user->tl_id)) {
+                return [
+                    'contact' => null,
+                    'deals' => [],
+                ];
+            }
+
+            $contact = $this->teamleaderService->getContactById($user->tl_id);
+            $deals = $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id);
+
             return [
-                'contact' => $this->teamleaderService->getContactById($user->tl_id),
-                'deals' => $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id),
+                'contact' => $contact,
+                'deals' => $deals,
             ];
-        });
-    }
+        } catch (\Throwable $e) {
+            Log::error("Error al sincronizar datos con Teamleader", [
+                'user_id' => $user->id,
+                'tl_id' => $user->tl_id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'contact' => null,
+                'deals' => [],
+            ];
+        }
+    });
+}
 
     /**
      * Asegura que el usuario tenga un contacto en HubSpot
@@ -122,33 +146,50 @@ class UserSyncService
     /**
      * Asegura que el usuario tenga un contacto en Teamleader
      */
-    private function ensureTeamleaderContact(User $user): void
-    {
-        if (is_null($user->tl_id)) {
-            try {
-                $TLcontact = $this->teamleaderService->searchContactByEmail($user->email);
+private function ensureTeamleaderContact(User $user): void
+{
+    try {
+        // Si ya tiene un tl_id válido y el contacto existe, no hacer nada
+        if (!empty($user->tl_id)) {
+            $existing = $this->teamleaderService->getContactById($user->tl_id);
 
-                if (!is_null($TLcontact)) {
-                    $user->tl_id = $TLcontact['id'];
-                } else {
-                    $newContact = $this->teamleaderService->createContact($user);
-                    $user->tl_id = $newContact['id'];
-                }
-
-                $user->save();
-
-                Log::info("Teamleader: Contacto sincronizado", [
-                    'user_id' => $user->id,
-                    'tl_id' => $user->tl_id
-                ]);
-            } catch (\Exception $e) {
-                Log::error("Error al sincronizar con Teamleader", [
-                    'user_id' => $user->id,
-                    'error' => $e->getMessage()
-                ]);
+            if ($existing) {
+                return;
             }
+
+            // Si el tl_id guardado está roto, lo limpiamos
+            Log::warning("Teamleader: tl_id inválido o inexistente, se limpiará", [
+                'user_id' => $user->id,
+                'tl_id' => $user->tl_id,
+            ]);
+
+            $user->tl_id = null;
+            $user->save();
         }
+
+        $TLcontact = $this->teamleaderService->searchContactByEmail($user->email);
+
+        if (!is_null($TLcontact)) {
+            $user->tl_id = $TLcontact['id'];
+        } else {
+            $newContact = $this->teamleaderService->createContact($user);
+            $user->tl_id = $newContact['id'] ?? null;
+        }
+
+        $user->save();
+
+        Log::info("Teamleader: Contacto sincronizado", [
+            'user_id' => $user->id,
+            'tl_id' => $user->tl_id
+        ]);
+    } catch (\Throwable $e) {
+        Log::error("Error al sincronizar con Teamleader", [
+            'user_id' => $user->id,
+            'tl_id' => $user->tl_id,
+            'error' => $e->getMessage()
+        ]);
     }
+}
 
     /**
      * Prepara los datos del usuario para crear contacto en HubSpot

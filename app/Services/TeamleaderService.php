@@ -23,6 +23,19 @@ class TeamleaderService
     /**
      * Info de una empresa por ID
      */
+
+    private function isValidUuid(?string $value): bool
+    {
+        if (empty($value) || !is_string($value)) {
+            return false;
+        }
+
+        return (bool) preg_match(
+            '/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/',
+            $value
+        );
+    }
+
     public function getCompanyById(string $id): array
     {
         $response = Http::withToken($this->getAccessToken())
@@ -396,30 +409,48 @@ class TeamleaderService
         }
     }
 
-    public function getContactById($id)
-    {
-        try {
-            $accessToken = $this->getAccessToken();
-
-            $response = Http::withToken($accessToken)
-                ->post('https://api.focus.teamleader.eu/contacts.info', [
-                    'id' => $id,
-                ]);
-
-            if ($response->successful()) {
-                $contactData = $response->json();
-                return $contactData['data'];
-            } else {
-                // Manejar errores de la API
-                $error = $response->json();
-                $errorMessage = isset($error['errors'][0]['title']) ? $error['errors'][0]['title'] : 'Error desconocido';
-                throw new \Exception('Error al obtener el contacto: ' . $errorMessage);
-            }
-        } catch (\Exception $e) {
-            // Manejar excepciones generales
-            throw new \Exception('Error: ' . $e->getMessage());
+public function getContactById($id)
+{
+    try {
+        if (!$this->isValidUuid($id)) {
+            \Log::warning('Teamleader: tl_id inválido al obtener contacto', [
+                'tl_id' => $id,
+            ]);
+            return null;
         }
+
+        $accessToken = $this->getAccessToken();
+
+        $response = Http::withToken($accessToken)
+            ->post('https://api.focus.teamleader.eu/contacts.info', [
+                'id' => $id,
+            ]);
+
+        if ($response->successful()) {
+            $contactData = $response->json();
+            return $contactData['data'] ?? null;
+        }
+
+        $error = $response->json();
+        $errorMessage = $error['errors'][0]['title'] ?? 'Error desconocido';
+
+        \Log::warning('Teamleader: error al obtener contacto', [
+            'tl_id' => $id,
+            'status' => $response->status(),
+            'error' => $errorMessage,
+            'body' => $response->body(),
+        ]);
+
+        return null;
+    } catch (\Throwable $e) {
+        \Log::error('Teamleader: excepción al obtener contacto', [
+            'tl_id' => $id,
+            'error' => $e->getMessage(),
+        ]);
+
+        return null;
     }
+}
 
     public function createContact($user)
     {
@@ -457,46 +488,62 @@ class TeamleaderService
         }
     }
 
-    public function listProjectsByCustomerId(string $customerId)
-    {
-        try {
-            $accessToken = $this->getAccessToken();
-
-            // Payload de la solicitud
-            $payload = [
-                'filter' => [
-                    'customer' => [
-                        'type' => 'contact', // Cambia a 'company' si es una empresa
-                        'id' => $customerId
-                    ],
-                ],
-                'page' => [
-                    'size' => 100, // Tamaño máximo por página
-                    'number' => 1,
-                ],// Datos adicionales si los necesitas
-            ];
-
-            // Realizar la solicitud
-            $response = Http::withToken($accessToken)
-                ->withHeaders([
-                    'Content-Type' => 'application/json',
-                ])
-                ->post('https://api.focus.teamleader.eu/projects.list', $payload);
-
-            // Validar la respuesta
-            if ($response->successful()) {
-                $data = $response->json();
-                return $data['data'] ?? []; // Retorna los proyectos listados
-            } else {
-                // Manejo de errores
-                $error = $response->json();
-                $errorMessage = $error['errors'][0]['title'] ?? 'Error desconocido';
-                throw new \Exception('Error al listar proyectos: ' . $errorMessage);
-            }
-        } catch (\Exception $e) {
-            throw new \Exception('Error: ' . $e->getMessage());
+public function listProjectsByCustomerId(string $customerId)
+{
+    try {
+        if (!$this->isValidUuid($customerId)) {
+            \Log::warning('Teamleader: customerId inválido al listar proyectos', [
+                'customer_id' => $customerId,
+            ]);
+            return [];
         }
+
+        $accessToken = $this->getAccessToken();
+
+        $payload = [
+            'filter' => [
+                'customer' => [
+                    'type' => 'contact',
+                    'id' => $customerId,
+                ],
+            ],
+            'page' => [
+                'size' => 100,
+                'number' => 1,
+            ],
+        ];
+
+        $response = Http::withToken($accessToken)
+            ->withHeaders([
+                'Content-Type' => 'application/json',
+            ])
+            ->post('https://api.focus.teamleader.eu/projects.list', $payload);
+
+        if ($response->successful()) {
+            $data = $response->json();
+            return $data['data'] ?? [];
+        }
+
+        $error = $response->json();
+        $errorMessage = $error['errors'][0]['title'] ?? 'Error desconocido';
+
+        \Log::warning('Teamleader: error al listar proyectos', [
+            'customer_id' => $customerId,
+            'status' => $response->status(),
+            'error' => $errorMessage,
+            'body' => $response->body(),
+        ]);
+
+        return [];
+    } catch (\Throwable $e) {
+        \Log::error('Teamleader: excepción al listar proyectos', [
+            'customer_id' => $customerId,
+            'error' => $e->getMessage(),
+        ]);
+
+        return [];
     }
+}
 
     private $customFieldDefinitionsCache = [];
 
@@ -734,24 +781,44 @@ class TeamleaderService
     }
 
 
-    public function getProjectsWithDetailsByCustomerId(string $customerId)
-    {
-        try {
-            // Listar proyectos del cliente
-            $projects = $this->listProjectsByCustomerId($customerId);
-
-            // Obtener detalles de cada proyecto
-            $detailedProjects = [];
-            foreach ($projects as $project) {
-                $details = $this->getProjectDetails($project['id']);
-                $detailedProjects[] = array_merge($project, $details); // Combina datos básicos y detalles
-            }
-
-            return $detailedProjects;
-        } catch (\Exception $e) {
-            throw new \Exception('Error: ' . $e->getMessage());
+public function getProjectsWithDetailsByCustomerId(string $customerId)
+{
+    try {
+        if (!$this->isValidUuid($customerId)) {
+            \Log::warning('Teamleader: customerId inválido al obtener proyectos con detalle', [
+                'customer_id' => $customerId,
+            ]);
+            return [];
         }
+
+        $projects = $this->listProjectsByCustomerId($customerId);
+
+        $detailedProjects = [];
+        foreach ($projects as $project) {
+            try {
+                $details = $this->getProjectDetails($project['id']);
+                $detailedProjects[] = array_merge($project, $details);
+            } catch (\Throwable $e) {
+                \Log::warning('Teamleader: no se pudieron obtener detalles de proyecto', [
+                    'project_id' => $project['id'] ?? null,
+                    'customer_id' => $customerId,
+                    'error' => $e->getMessage(),
+                ]);
+
+                $detailedProjects[] = $project;
+            }
+        }
+
+        return $detailedProjects;
+    } catch (\Throwable $e) {
+        \Log::error('Teamleader: excepción en getProjectsWithDetailsByCustomerId', [
+            'customer_id' => $customerId,
+            'error' => $e->getMessage(),
+        ]);
+
+        return [];
     }
+}
 
 
     /**
