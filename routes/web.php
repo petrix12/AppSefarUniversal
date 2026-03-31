@@ -71,8 +71,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/contrato-coordinador', [ContratoCoordinadorController::class, 'form'])
         ->name('contrato.coordinador.form');
 
-    Route::post('/contrato-coordinador', [ContratoCoordinadorController::class, 'store'])
-        ->name('contrato.coordinador.store');
+    Route::get('/contrato-coordinador/confirmar', [ContratoCoordinadorController::class, 'confirm'])
+        ->name('contrato.coordinador.confirm');
 });
 
 // ─── TAREAS ───────────────────────────────────────────────
