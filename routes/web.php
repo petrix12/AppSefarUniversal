@@ -65,6 +65,15 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoicePdfController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\AdminTaskController;
+use App\Http\Controllers\ContratoCoordinadorController;
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/contrato-coordinador', [ContratoCoordinadorController::class, 'form'])
+        ->name('contrato.coordinador.form');
+
+    Route::post('/contrato-coordinador', [ContratoCoordinadorController::class, 'store'])
+        ->name('contrato.coordinador.store');
+});
 
 // ─── TAREAS ───────────────────────────────────────────────
 Route::middleware(['auth'])->prefix('tasks')->name('tasks.')->group(function () {
