@@ -156,6 +156,32 @@
 @stop
 
 @section('js')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+@if(session('success'))
+<script>
+    Swal.fire({
+        icon: 'success',
+        title: 'Contrato firmado',
+        text: '{{ session('success') }}',
+        confirmButtonText: 'Continuar',
+        confirmButtonColor: '#3085d6'
+    });
+</script>
+@endif
+
+@if(session('error'))
+<script>
+    Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: '{{ session('error') }}',
+        confirmButtonText: 'Cerrar',
+        confirmButtonColor: '#d33'
+    });
+</script>
+@endif
+
 <script>
     function openEditProfile() {
         const modal = document.getElementById('editProfileModal');
