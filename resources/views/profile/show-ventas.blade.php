@@ -158,15 +158,160 @@
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+
 @if(session('success'))
+
+<div id="welcomeModal" style="
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 9999;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+">
+
+    <div style="
+        background:white;
+        max-width:700px;
+        width:100%;
+        border-radius:12px;
+        overflow:hidden;
+        box-shadow:0 20px 60px rgba(0,0,0,0.3);
+        font-family: 'Arial', sans-serif;
+    ">
+
+        {{-- HEADER --}}
+        <div style="padding:20px; border-bottom:1px solid #eee; text-align:center;">
+            <h2 style="margin:0; font-size:22px; font-weight:700;">
+                Bienvenido/a a Sefar Universal, {{ auth()->user()->name }}!
+            </h2>
+        </div>
+
+        {{-- BODY --}}
+        <div
+            id="cartaScroll"
+            style="padding:25px; max-height:70vh; overflow-y:auto; font-size:14px; line-height:1.6; color:#333;"
+        >
+            <p style="font-size:12px; color:#777; text-align:center; margin-bottom:18px;">
+                Desplázate hasta el final para habilitar el botón de continuar
+            </p>
+
+            <p><b>Querida/o coordinador/a de Migración y Nacionalidad:</b></p>
+            <br>
+
+            <p>
+                Es un honor darte la bienvenida a <b>Sefar Universal</b>. Mi nombre es <b>Crisanto Bello</b>, fundador
+                y presidente de esta firma y abogado genealogista. Cuando inicié la defensa de las
+                nacionalidades por linaje, lo hice como un ejercicio profesional aislado: asesoraba a
+                familias para que reconocieran sus raíces, reconstruía expedientes y litigaba ante
+                consulados y tribunales y ministerios europeos. La necesidad de crecer con ese trabajo y
+                de proteger a más personas me llevó a convertir la práctica en una firma global. Hoy
+                contamos con un equipo extendido en América, Europa, Asia, África y Oceanía y oficinas
+                en <b>Estados Unidos, México, Colombia, Venezuela, España, Portugal, Italia y otros
+                países.</b> Esta transformación jamás habría sido posible sin la entrega de nuestros
+                coordinadores, genealogistas y abogados, sin vuestra pasión por cada historia y sin el
+                método <b>Intuitu Personae</b> y la disciplina del <b>Derecho Genealogista</b>, que nos distingue.
+            </p>
+
+            <br>
+
+            <p>
+                Cada coordinador es socio estratégico. Te unirás a un equipo de <b>cientos</b> de abogados,
+                genealogistas, historiadores, paleógrafos, archivólogos y bibliotecólogos que evalúan
+                cada caso aplicando derecho comparado y genealogía para orientar a nuestros
+                representados en la ruta hacia su libertad. Nuestra reputación está respaldada por más de
+                <b>11 mil nacionalidades europeas aprobadas</b> y por un <b>historial del 100 % de casos de
+                éxito</b>. No negociamos con promesas, sino con derechos reales: tus antepasados te
+                quieren libre y nosotros convertimos esa genealogía en un derecho.
+            </p>
+
+            <br>
+
+            <p>
+                Hoy te invito a sumergirte en esta historia. Cada llamada que hagas, cada familia que
+                escuches y cada expediente que lleves a buen puerto será parte de un legado. Serás testigo
+                de cómo una familia colombiana descubre su linaje sefardí, como un joven venezolano
+                consigue su pasaporte italiano por vía judicial o como una abuela colombiana recupera su
+                identidad portuguesa perdida. Nuestro trabajo trasciende las fronteras y tú eres la pieza
+                clave que hace posible esa transición.
+            </p>
+
+            <br>
+
+            <p>
+                Trabajemos juntos con disciplina y alegría. Pon tu talento al servicio de las personas y la
+                libertad vendrá por añadidura. Bienvenido/a a tu casa.
+            </p>
+
+            <br>
+
+            <p><b>Bendiciones,</b></p>
+            <p>
+                <b>Dr. Crisanto Bello</b><br>
+                Presidente de Sefar Universal
+            </p>
+        </div>
+
+        {{-- FOOTER --}}
+        <div style="padding:15px; border-top:1px solid #eee; text-align:right;">
+            <button
+                id="btnContinuar"
+                type="button"
+                disabled
+                onclick="cerrarCartaBienvenida()"
+                style="
+                    background:#ccc;
+                    color:white;
+                    border:none;
+                    padding:10px 20px;
+                    border-radius:6px;
+                    cursor:not-allowed;
+                    opacity:0.8;
+                "
+            >
+                Continuar
+            </button>
+        </div>
+
+    </div>
+</div>
+
 <script>
-    Swal.fire({
-        icon: 'success',
-        title: 'Contrato firmado',
-        text: '{{ session('success') }}',
-        confirmButtonText: 'Continuar',
-        confirmButtonColor: '#3085d6'
-    });
+    (function () {
+        const scrollBox = document.getElementById('cartaScroll');
+        const btn = document.getElementById('btnContinuar');
+
+        if (!scrollBox || !btn) return;
+
+        function habilitarBotonSiLlegoAlFinal() {
+            const llegoAlFinal =
+                scrollBox.scrollTop + scrollBox.clientHeight >= scrollBox.scrollHeight - 10;
+
+            if (llegoAlFinal) {
+                btn.disabled = false;
+                btn.style.background = '#3085d6';
+                btn.style.cursor = 'pointer';
+                btn.style.opacity = '1';
+            }
+        }
+
+        scrollBox.addEventListener('scroll', habilitarBotonSiLlegoAlFinal);
+
+        // Por si el contenido no llega a tener scroll en pantallas muy grandes
+        habilitarBotonSiLlegoAlFinal();
+    })();
+
+    function cerrarCartaBienvenida() {
+        const btn = document.getElementById('btnContinuar');
+        if (btn && btn.disabled) return;
+
+        const modal = document.getElementById('welcomeModal');
+        if (modal) {
+            modal.remove();
+        }
+    }
 </script>
 @endif
 

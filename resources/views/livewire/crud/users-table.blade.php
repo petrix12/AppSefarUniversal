@@ -525,24 +525,39 @@
                                 @endphp
 
                                 <div class="bg-white border-b border-gray-200 p-4">
-                                    <div class="mb-3">
-                                        @if($user->estado_vendedor === 'Pendiente')
-                                            <span class="badge badge-warning ml-2">
-                                                <i class="fas fa-clock mr-1"></i> Pendiente
-                                            </span>
-                                        @endif
+                                    <div class="mb-3 flex items-center gap-3">
 
-                                        <h3 class="text-lg font-semibold text-gray-900">{{ \Illuminate\Support\Str::limit($user->name, 30) }}</h3>
+                                        {{-- FOTO --}}
+                                        <div>
+                                            <img
+                                                src="{{ $user->profile_photo_url ?? 'https://ui-avatars.com/api/?name='.urlencode($user->name) }}"
+                                                class="h-12 w-12 rounded-full object-cover"
+                                            >
+                                        </div>
 
-                                        <p class="text-sm text-gray-600 mt-1">
-                                            <i class="fas fa-envelope mr-1"></i> {{ $user->email }}
-                                        </p>
+                                        {{-- INFO --}}
+                                        <div class="flex-1">
+                                            @if($user->estado_vendedor === 'Pendiente')
+                                                <span class="badge badge-warning ml-2">
+                                                    <i class="fas fa-clock mr-1"></i> Pendiente
+                                                </span>
+                                            @endif
 
-                                        @if($user->passport)
-                                            <p class="text-sm text-gray-600">
-                                                <i class="fas fa-passport mr-1"></i> {{ $user->passport }}
+                                            <h3 class="text-lg font-semibold text-gray-900">
+                                                {{ \Illuminate\Support\Str::limit($user->name, 30) }}
+                                            </h3>
+
+                                            <p class="text-sm text-gray-600 mt-1">
+                                                <i class="fas fa-envelope mr-1"></i> {{ $user->email }}
                                             </p>
-                                        @endif
+
+                                            @if($user->passport)
+                                                <p class="text-sm text-gray-600">
+                                                    <i class="fas fa-passport mr-1"></i> {{ $user->passport }}
+                                                </p>
+                                            @endif
+                                        </div>
+
                                     </div>
 
                                     <div class="mb-3 p-3 bg-gray-50 rounded-md">
@@ -728,6 +743,7 @@
                                 <table class="users-table">
                                     <thead>
                                     <tr>
+                                        <th></th>
                                         <th>Nombre, Correo y Pasaporte</th>
                                         <th>Servicios Solicitados / Pago</th>
                                         @if(auth()->user()->email == 'sistemasccs@sefarvzla.com')
@@ -744,7 +760,15 @@
                                         @endphp
 
                                         <tr>
-                                            <td>
+                                            <td style="width:100px; padding: 0!important;vertical-align:middle;">
+                                                <img
+                                                    src="{{ $user->profile_photo_url }}"
+                                                    alt="Foto"
+                                                    style="width: 50px!important;height:50px!important; margin:auto;"
+                                                    class="rounded-full object-cover"
+                                                >
+                                            </td>
+                                            <td style="vertical-align:middle;">
                                                 @if($user->estado_vendedor === 'Pendiente')
                                                     <span class="badge badge-warning ml-2">
                                                         <i class="fas fa-clock mr-1"></i> Pendiente
@@ -756,7 +780,7 @@
                                                 <p class="user-info">{{ $user->passport }}</p>
                                             </td>
 
-                                            <td>
+                                            <td style="vertical-align:middle;">
                                                 @php
                                                     $helperc = 0;
                                                     foreach ($user->compras as $compra) {
@@ -806,13 +830,13 @@
                                             </td>
 
                                             @if(auth()->user()->email == 'sistemasccs@sefarvzla.com')
-                                                <td>
+                                                <td style="vertical-align:middle;">
                                                     <p class="service-item">{{ date_format($user->created_at,"Y-m-d") }}</p>
                                                     <p class="user-info">ID: {{ $user->id }}</p>
                                                 </td>
                                             @endif
 
-                                            <td class="actions-cell">
+                                            <td class="actions-cell" style="vertical-align:middle;">
                                                 <div class="action-buttons">
 
                                                     {{-- NO cliente: solo editBasic + eliminar --}}

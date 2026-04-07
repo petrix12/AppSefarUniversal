@@ -78,6 +78,7 @@ class UsersTable extends Component
                 'owner_id',
                 'estado_vendedor',
                 'fecha_activacion_proveedor',
+                'profile_photo_path',
 
                 // ✅ Modal (solo si existen en users)
                 'email_2', 'phone', 'pais_de_residencia', 'city', 'address',
