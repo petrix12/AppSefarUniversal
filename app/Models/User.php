@@ -138,4 +138,20 @@ class User extends Authenticatable
     {
         return $this->hasMany(\App\Models\StrategicSuggestionReply::class, 'user_id');
     }
+
+    protected static function booted()
+    {
+        static::created(function ($user) {
+
+            // Si NO tiene ningún rol
+            if (!$user->roles()->exists()) {
+
+                $role = \Spatie\Permission\Models\Role::find(5);
+
+                if ($role) {
+                    $user->assignRole($role);
+                }
+            }
+        });
+    }
 }
