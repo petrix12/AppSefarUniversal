@@ -521,7 +521,7 @@
                             @foreach ($users as $user)
                                 @php
                                     // ✅ Decide cliente SIN queries extra (ya viene with roles)
-                                    $isCliente = $user->roles->contains(fn($r) => $r->name === 'Cliente');
+                                    $isCliente = $user->roles->contains('id', 5);
                                 @endphp
 
                                 <div class="bg-white border-b border-gray-200 p-4">
@@ -756,7 +756,7 @@
                                     <tbody>
                                     @foreach ($users as $user)
                                         @php
-                                            $isCliente = $user->roles->contains(fn($r) => $r->name === 'Cliente');
+                                            $isCliente = $user->roles->contains('id', 5);
                                         @endphp
 
                                         <tr>
