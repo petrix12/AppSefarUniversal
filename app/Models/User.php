@@ -139,6 +139,11 @@ class User extends Authenticatable
         return $this->hasMany(\App\Models\StrategicSuggestionReply::class, 'user_id');
     }
 
+    public function isCliente(): bool
+    {
+        return $this->hasRole('Cliente');
+    }
+
     protected static function booted()
     {
         static::created(function ($user) {
