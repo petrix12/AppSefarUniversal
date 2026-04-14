@@ -173,6 +173,29 @@
                         Vence {{ $task->due_date->format('d/m/Y') }}
                     </span>
                 </div>
+                <div style="margin-top:.5rem;">
+                    <a href="{{ url('/users/' . $task->contact->id . '/edit') }}"
+                    target="_blank"
+                    style="
+                            display:inline-flex;
+                            align-items:center;
+                            gap:.4rem;
+                            font-size:.75rem;
+                            font-weight:600;
+                            color:#2563eb;
+                            text-decoration:none;
+                            padding:.25rem .5rem;
+                            border-radius:.4rem;
+                            background:#eff6ff;
+                            border:1px solid #dbeafe;
+                    "
+                    onmouseover="this.style.background='#dbeafe'"
+                    onmouseout="this.style.background='#eff6ff'"
+                    >
+                        <i class="fas fa-external-link-alt" style="font-size:.7rem;"></i>
+                        Ir al COS del Cliente
+                    </a>
+                </div>
             </div>
 
             {{-- Badge estado --}}

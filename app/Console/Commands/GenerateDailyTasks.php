@@ -36,9 +36,16 @@ class GenerateDailyTasks extends Command
         }
 
         // 2) Contactos disponibles (en list_user, no contactados)
-        $contacts = DB::table('list_user as lu')
+       $contacts = DB::table('list_user as lu')
             ->join('users as u', 'u.id', '=', 'lu.user_id')
-            ->select('u.id as contact_id', 'u.name as contact_name', 'u.owner_id')
+            ->join('lists as l', 'l.id', '=', 'lu.list_id')
+            ->select(
+                'u.id as contact_id',
+                'u.name as contact_name',
+                'u.owner_id',
+                'l.id as list_id',
+                'l.name as list_name'
+            )
             ->where('lu.contacted', 0)
             ->whereNotNull('u.owner_id')
             ->get();
@@ -121,17 +128,17 @@ class GenerateDailyTasks extends Command
             }
 
             foreach ($candidates as $contact) {
-                $this->line("   + Tarea → {$contact->contact_name} (contact_id={$contact->contact_id})");
+                $this->line("   + Tarea → {$contact->contact_name} | Lista: {$contact->list_name} (contact_id={$contact->contact_id})");
 
                 if (! $dryRun) {
                     Task::create([
                         'user_id'            => $advisor->id,
                         'contact_id'         => $contact->contact_id,
-                        'title'              => "Comunicarse con el cliente {$contact->contact_name}",
-                        'description'        => null,
+                        'title'              => "Comunicarse con el cliente {$contact->contact_name} [Lista: {$contact->list_name}]",
+                        'description' => "Lista origen: {$contact->list_name}",
                         'due_date'           => $date->toDateString(),
                         'status'             => Task::STATUS_PENDING,
-                        'created_by_user_id' => null, // sistema
+                        'created_by_user_id' => null,
                     ]);
                 }
 
