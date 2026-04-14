@@ -68,7 +68,7 @@ use App\Http\Controllers\AdminTaskController;
 use App\Http\Controllers\ContratoCoordinadorController;
 use App\Http\Controllers\RequestAuditController;
 
-Route::get('/request-audits', [RequestAuditController::class, 'index'])
+Route::get('/request-audits', [RequestAuditController::class, 'view'])
     ->name('request-audits.index');
 
 Route::middleware(['auth'])->group(function () {

@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class RequestAuditController extends Controller
 {
-    public function index(Request $request)
+    public function view(Request $request)
     {
         $filtro = $request->get('filtro', 'semana');
 
