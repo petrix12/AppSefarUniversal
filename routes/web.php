@@ -66,6 +66,10 @@ use App\Http\Controllers\InvoicePdfController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\AdminTaskController;
 use App\Http\Controllers\ContratoCoordinadorController;
+use App\Http\Controllers\RequestAuditController;
+
+Route::get('/request-audits', [RequestAuditController::class, 'index'])
+    ->name('request-audits.index');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/contrato-coordinador', [ContratoCoordinadorController::class, 'form'])

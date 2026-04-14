@@ -290,6 +290,13 @@ return [
                     'url'        => 'hubspot-owners',
                     'can'        => 'administrador',
                 ],
+                [
+                    'text'       => 'Auditoría de accesos',
+                    'icon'       => 'fa-fw fas fa-chart-line',
+                    'icon_color' => 'white',
+                    'url'        => 'request-audits',
+                    'can'        => 'administrador',
+                ],
             ],
         ],
         [
