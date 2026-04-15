@@ -162,18 +162,27 @@
                             margin:0 0 .5rem; line-height:1.3;">
                     {{ $task->title }}
                 </h1>
+                <div>
+                    <p style="font-size:.875rem; color:#374151; margin:0;">
+                        {{ $task->description ?? 'Sin descripción' }}
+                    </p>
+                </div>
                 <div style="display:flex; flex-wrap:wrap; gap:.5rem .75rem; font-size:.8rem; color:#6b7280;">
+                    @if ( $task->contact)
                     <span>
                         <i class="fas fa-user" style="color:#d1d5db; margin-right:.3rem;"></i>
                         <strong style="color:#374151;">{{ $task->contact?->name ?? '—' }}</strong>
                     </span>
+                    @endif
                     <span style="color:#e5e7eb;">|</span>
                     <span>
                         <i class="fas fa-calendar-alt" style="color:#d1d5db; margin-right:.3rem;"></i>
                         Vence {{ $task->due_date->format('d/m/Y') }}
                     </span>
                 </div>
+                @if ( $task->contact)
                 <div style="margin-top:.5rem;">
+
                     <a href="{{ url('/users/' . $task->contact?->id . '/edit') }}"
                     target="_blank"
                     style="
@@ -195,7 +204,9 @@
                         <i class="fas fa-external-link-alt" style="font-size:.7rem;"></i>
                         Ir al COS del Cliente
                     </a>
+
                 </div>
+                @endif
             </div>
 
             {{-- Badge estado --}}

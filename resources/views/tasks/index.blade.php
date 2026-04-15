@@ -116,7 +116,7 @@
                                 <a href="{{ route('tasks.show', $task) }}"
                                    class="btn btn-sm btn-{{ $task->isClosed() ? 'outline-secondary' : 'primary' }}">
                                     <i class="fas fa-{{ $task->isClosed() ? 'eye' : 'phone' }} mr-1"></i>
-                                    {{ $task->isClosed() ? 'Ver' : 'Llamar' }}
+                                    {{ $task->isClosed() ? 'Ver' : 'Cumplir' }}
                                 </a>
                             </td>
                         </tr>
