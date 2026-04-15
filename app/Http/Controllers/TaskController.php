@@ -138,10 +138,12 @@ class TaskController extends Controller
             return; // Ya tiene 10 o más tareas ese día
         }
 
+        $name = $original->contact?->name ?? 'Lead / General';
+
         Task::create([
             'user_id'            => $original->user_id,
-            'contact_id'         => $original->contact_id,
-            'title'              => "Seguimiento: {$original->contact->name}",
+            'contact_id'         => $original->contact_id ?? null,
+            'title'              => "Seguimiento: {$name}",
             'description'        => "Seguimiento generado desde tarea #{$original->id}",
             'due_date'           => $followDate->toDateString(),
             'status'             => 'pending',

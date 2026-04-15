@@ -165,7 +165,7 @@
                 <div style="display:flex; flex-wrap:wrap; gap:.5rem .75rem; font-size:.8rem; color:#6b7280;">
                     <span>
                         <i class="fas fa-user" style="color:#d1d5db; margin-right:.3rem;"></i>
-                        <strong style="color:#374151;">{{ $task->contact->name ?? '—' }}</strong>
+                        <strong style="color:#374151;">{{ $task->contact?->name ?? '—' }}</strong>
                     </span>
                     <span style="color:#e5e7eb;">|</span>
                     <span>
@@ -174,7 +174,7 @@
                     </span>
                 </div>
                 <div style="margin-top:.5rem;">
-                    <a href="{{ url('/users/' . $task->contact->id . '/edit') }}"
+                    <a href="{{ url('/users/' . $task->contact?->id . '/edit') }}"
                     target="_blank"
                     style="
                             display:inline-flex;

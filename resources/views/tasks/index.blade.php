@@ -99,9 +99,9 @@
                         <tr class="{{ $task->isClosed() ? 'text-muted' : '' }}">
                             <td>{{ $task->id }}</td>
                             <td>
-                                <strong>{{ $task->contact->name ?? '—' }}</strong>
-                                @if($task->contact->passport ?? false)
-                                    <br><small class="text-muted">{{ $task->contact->passport }}</small>
+                                <strong>{{ $task->contact?->name ?? '—' }}</strong>
+                                @if($task->contact?->passport ?? false)
+                                    <br><small class="text-muted">{{ $task->contact?->passport }}</small>
                                 @endif
                             </td>
                             <td>{{ $task->title }}</td>

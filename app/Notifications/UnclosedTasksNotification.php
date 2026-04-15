@@ -40,7 +40,7 @@ class UnclosedTasksNotification extends Notification implements ShouldQueue
                  ->line("**{$advisorName}** — {$tasks->count()} tarea(s):");
 
             foreach ($tasks as $task) {
-                $contactName = $task->contact->name ?? '?';
+                $contactName = $task->contact?->name ?? '?';
                 $mail->line("• {$task->title} (Contacto: {$contactName})");
             }
         }

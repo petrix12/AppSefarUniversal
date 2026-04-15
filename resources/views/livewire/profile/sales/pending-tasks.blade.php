@@ -30,7 +30,7 @@
 
                     @if($task->contact)
                         <p class="text-sm text-slate-500">
-                            Cliente: {{ $task->contact->name }}
+                            Cliente: {{ $task->contact?->name }}
                         </p>
                     @endif
 

@@ -12,7 +12,7 @@
     <tbody>
         @foreach ($tasks as $task)
             <tr>
-                <td>{{ $task->contact->name ?? 'N/A' }}</td>
+                <td>{{ $task->contact?->name ?? 'N/A' }}</td>
                 <td>{{ $task->title }}</td>
                 <td>{{ $task->status_label }}</td>
                 <td>{{ $task->due_date }}</td>

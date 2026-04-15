@@ -57,7 +57,7 @@ class AdminTaskController extends Controller
     {
         $data = $request->validate([
             'user_id'    => 'required|exists:users,id',
-            'contact_id' => 'required|exists:users,id',
+            'contact_id' => 'nullable|exists:users,id',
             'title'      => 'required|string|max:255',
             'description'=> 'nullable|string',
             'due_date'   => 'required|date',

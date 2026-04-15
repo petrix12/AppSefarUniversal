@@ -35,10 +35,10 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Contacto <span class="text-danger">*</span></label>
+                        <label>Contacto</label>
                         <select name="contact_id"
                                 class="form-control @error('contact_id') is-invalid @enderror">
-                            <option value="">— Seleccione contacto —</option>
+                            <option value="">— Sin contacto (tarea general / HubSpot / lead) —</option>
                             @foreach($contacts as $id => $name)
                                 <option value="{{ $id }}" {{ old('contact_id') == $id ? 'selected' : '' }}>
                                     {{ $name }}

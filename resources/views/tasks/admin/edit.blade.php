@@ -65,6 +65,7 @@
                         </label>
                         <select name="contact_id"
                                 class="form-control @error('contact_id') is-invalid @enderror">
+                            <option value="">— Sin contacto —</option>
                             @foreach($contacts as $id => $name)
                                 <option value="{{ $id }}"
                                     {{ (old('contact_id', $task->contact_id) == $id) ? 'selected' : '' }}>

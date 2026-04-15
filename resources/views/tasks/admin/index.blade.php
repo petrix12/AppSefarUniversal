@@ -125,8 +125,8 @@
                         @endphp
                         <tr>
                             <td>{{ $task->id }}</td>
-                            <td>{{ $task->assignee->name ?? '—' }}</td>
-                            <td>{{ $task->contact->name ?? '—' }}</td>
+                            <td>{{ $task->assignee?->name ?? '—' }}</td>
+                            <td>{{ $task->contact?->name ?? '—' }}</td>
                             <td>{{ Str::limit($task->title, 45) }}</td>
                             <td>
                                 <span class="badge badge-{{ $colorMap[$task->status] ?? 'secondary' }}">
