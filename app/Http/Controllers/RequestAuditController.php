@@ -13,7 +13,8 @@ class RequestAuditController extends Controller
     {
         $filtro = $request->get('filtro', 'semana');
 
-        $query = RequestAudit::query();
+        $query = RequestAudit::query()
+    ->whereNotNull('user_id');
 
         switch ($filtro) {
             case 'semana':
