@@ -76,6 +76,7 @@
                         <th style="width:60px">#</th>
                         <th>Contacto</th>
                         <th>Título</th>
+                        <th>Descripción</th>
                         <th>Estado</th>
                         <th style="width:120px">Acción</th>
                     </tr>
@@ -105,6 +106,7 @@
                                 @endif
                             </td>
                             <td>{{ $task->title }}</td>
+                            <td>{{ Str::limit($task->description, 50) }}</td>
                             <td>
                                 <span class="badge badge-{{ $badgeMap[$task->status] ?? 'secondary' }}">
                                     {{ $labelMap[$task->status] ?? $task->status }}
