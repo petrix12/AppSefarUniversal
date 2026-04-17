@@ -137,12 +137,153 @@
             </style>
             <div class="tab-content mt-4" id="formTabsContent">
                 <!-- Primer Formulario -->
+                @php $rolId = auth()->user()->roles[0]->id; @endphp
 
                 <div class="tab-pane fade show active" id="mystatus" role="tabpanel" aria-labelledby="mystatus-tab">
+                    {{-- ══ BOTÓN DE SINCRONIZACIÓN ══ --}}
+                    @if($rolId !== 5)
+                    <div style="
+                        display: flex;
+                        justify-content: flex-end;
+                        margin-bottom: 1rem;
+                    ">
+                        <form
+                            method="POST"
+                            action="{{ route('users.sync-deals', $user) }}"
+                            id="formSync"
+                            onsubmit="onSyncSubmit(event)"
+                        >
+                            @csrf
+                            <button
+                                type="submit"
+                                id="btnSync"
+                                style="
+                                    display: inline-flex;
+                                    align-items: center;
+                                    gap: .45rem;
+                                    background: #4f46e5;
+                                    color: #fff;
+                                    border: none;
+                                    border-radius: .5rem;
+                                    padding: .45rem 1rem;
+                                    font-size: .83rem;
+                                    font-weight: 600;
+                                    cursor: pointer;
+                                    transition: background .2s;
+                                "
+                                onmouseover="this.style.background='#4338ca'"
+                                onmouseout="this.style.background='#4f46e5'"
+                            >
+                                <i class="fas fa-sync-alt" id="iconSync"></i>
+                                <span id="labelSync">¿Crees que hay un error con el COS del cliente? Click aquí</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    {{-- Flash de éxito --}}
+                    @if(session('sync_success'))
+                    <div
+                        id="alertSync"
+                        style="
+                            background: #f0fdf4;
+                            border: 1px solid #bbf7d0;
+                            border-radius: .5rem;
+                            padding: .6rem 1rem;
+                            font-size: .83rem;
+                            color: #15803d;
+                            font-weight: 600;
+                            margin-bottom: 1rem;
+                            display: flex;
+                            align-items: center;
+                            gap: .5rem;
+                        "
+                    >
+                        <i class="fas fa-check-circle"></i>
+                        {{ session('sync_success') }}
+                    </div>
+                    @endif
+
+                    <script>
+                    function onSyncSubmit(e) {
+                        const btn   = document.getElementById('btnSync');
+                        const icon  = document.getElementById('iconSync');
+                        const label = document.getElementById('labelSync');
+
+                        // Bloquear botón y mostrar spinner
+                        btn.disabled = true;
+                        btn.style.background = '#6366f1';
+                        btn.style.cursor = 'not-allowed';
+                        icon.classList.add('fa-spin');
+                        label.textContent = 'Sincronizando... Puede tardar un tiempo dependiendo de la cantidad de datos del cliente.';
+                    }
+                    </script>
+                    @endif
+
+                    @if($rolId !== 5)
+                    <div style="
+                        background: #f8fafc;
+                        border: 1px solid #e2e8f0;
+                        border-radius: .6rem;
+                        padding: 1rem 1.25rem;
+                        margin-bottom: 1.25rem;
+                        display: flex;
+                        flex-wrap: wrap;
+                        align-items: center;
+                        gap: .5rem 1.25rem;
+                        font-size: .85rem;
+                        color: #374151;
+                    ">
+                        {{-- Nombre --}}
+                        <span style="font-weight:700; font-size:.95rem; color:#111827; flex-basis:100%;">
+                            <i class="fas fa-user" style="color:#94a3b8; margin-right:.4rem;"></i>
+                            {{ $user->name }}
+                        </span>
+
+                        {{-- Email --}}
+                        @if($user->email)
+                            <span>
+                                <i class="fas fa-envelope" style="color:#94a3b8; margin-right:.35rem;"></i>
+                                <a href="mailto:{{ $user->email }}"
+                                style="color:#2563eb; text-decoration:none;"
+                                onmouseover="this.style.textDecoration='underline'"
+                                onmouseout="this.style.textDecoration='none'">
+                                    {{ $user->email }}
+                                </a>
+                            </span>
+                        @else
+                            <span style="color:#dc2626; font-weight:600;">
+                                <i class="fas fa-envelope" style="opacity:.4; margin-right:.35rem;"></i>
+                                Sin email registrado
+                            </span>
+                        @endif
+
+                        <span style="color:#cbd5e1;">|</span>
+
+                        {{-- Teléfono --}}
+                        @if($user->phone)
+                            <span>
+                                <i class="fas fa-phone" style="color:#94a3b8; margin-right:.35rem;"></i>
+                                <a href="tel:{{ $user->phone }}"
+                                style="color:#374151; text-decoration:none;"
+                                onmouseover="this.style.color='#2563eb'"
+                                onmouseout="this.style.color='#374151'">
+                                    {{ $user->phone }}
+                                </a>
+                            </span>
+                        @else
+                            <span style="color:#dc2626; font-weight:600;">
+                                <i class="fas fa-phone" style="opacity:.4; margin-right:.35rem;"></i>
+                                Sin teléfono registrado
+                            </span>
+                        @endif
+
+                    </div>
+                    @endif
+
                     @if(sizeof($cosuser)>0)
                         @foreach ($cosuser as $index => $proceso)
                             @if(array_key_exists($proceso['servicio'], $cos))
-                                @if(auth()->user()->roles[0]->id == 1)
+                                <div class="card mb-4 shadow-sm">
                                     @php
                                         // Encontrar el negocio que corresponde a este proceso
                                         $negocioDebug = null;
@@ -157,7 +298,6 @@
                                             }
                                         }
 
-                                        // Campos que el CosService evalúa para calcular el estado
                                         $camposCos = [
                                             // ── Jurídicos ──────────────────────────────────────────
                                             'nacionalidad_concedida'            => 'Nacionalidad Concedida',
@@ -191,7 +331,7 @@
                                             'servicio_solicitado2'              => 'Servicio Solicitado 2',
                                         ];
 
-                                        // Leer valores del negocio
+                                        // Leer valores del negocio (disponibles para todos)
                                         $valoresCos = [];
                                         if ($negocioDebug) {
                                             foreach ($camposCos as $campo => $etiqueta) {
@@ -200,14 +340,70 @@
                                                     : ($negocioDebug[$campo] ?? null);
 
                                                 $valoresCos[$campo] = [
-                                                    'label'  => $etiqueta,
-                                                    'valor'  => $valor,
-                                                    'isset'  => !is_null($valor) && $valor !== '',
+                                                    'label' => $etiqueta,
+                                                    'valor' => $valor,
+                                                    'isset' => !is_null($valor) && $valor !== '',
                                                 ];
                                             }
                                         }
+
+                                        // Separar campos con y sin valor (para el panel vendedor)
+                                        $camposConValor    = array_filter($valoresCos, fn($c) => $c['isset']);
+                                        $camposSinValor    = array_filter($valoresCos, fn($c) => !$c['isset']);
+
+                                        // Agrupar por categoría para el panel vendedor
+                                        $gruposVendedor = [
+                                            '💶 Pagos' => [
+                                                'fase_1_pagado', 'fase_1_pagado__teamleader_', 'fase_1_preestab',
+                                                'fase_2_pagado', 'fase_2_pagado__teamleader_', 'fase_2_preestab',
+                                                'fase_3_pagado', 'fase_3_pagado__teamleader_', 'fase_3_preestab',
+                                                'tasa_pagada',   'enviado_a_pago_de_tasas',
+                                            ],
+                                            '⚖️ Jurídico' => [
+                                                'nacionalidad_concedida',
+                                                'n7__fecha_de_resolucion',
+                                                'n13__fecha_recurso_alzada',
+                                                'formalizacion_r__alzada',
+                                                'n5__fecha_de_formalizacion',
+                                                'codigo_de_proceso',
+                                                'fecha_solicitud_viajudicial',
+                                                'fecha_solicitud_recursoalzada',
+                                                'fecha_solicitud_recurso_urgencia',
+                                                'fecha_solicitud_resolucionexpresa',
+                                            ],
+                                            '🌳 Genealógico' => [
+                                                'n7__enviado_al_dto_juridico',
+                                                'n4__certificado_descargado',
+                                                'n3__informe_cargado',
+                                            ],
+                                            '🪪 Identificación' => [
+                                                'hubspot_id',
+                                                'servicio_solicitado',
+                                                'servicio_solicitado2',
+                                            ],
+                                        ];
                                     @endphp
 
+                                    {{-- Header con título y estatus --}}
+                                    <div class="card-header text-center bg-white">
+                                        <h1 class="card-title mt-4 mb-2" style="font-size:1.8rem;">
+                                            Proceso: {!! $proceso['servicio'] !!}
+                                        </h1>
+
+                                        <p class="pb-4" style="font-size:1.4rem;">
+                                            Estatus actual: <b>{{ $proceso['currentStepName'] ?? 'No iniciado' }}</b>
+                                        </p>
+
+                                        @if(isset($proceso['warning']))
+                                            <div class="alert alert-warning fade show py-2 d-flex justify-content-center align-items-center gap-2" role="alert">
+                                                <i class="fas fa-exclamation-triangle" style="font-size: 20px"></i>
+                                                <div style="font-size:1rem;">{!! $proceso['warning'] !!}</div>
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    {{-- ══ DEBUG (solo rol 1) ══ --}}
+                                    @if($rolId == 1)
                                     <div class="accordion mb-2" id="debugAccordion{{ $index }}">
                                         <div class="accordion-item" style="border: 2px dashed #f0ad4e;">
                                             <h2 class="accordion-header">
@@ -228,25 +424,21 @@
                                                     Cert: <code class="mx-1">{{ $proceso['certificadoDescargado'] ?? 'N/A' }}</code>
                                                 </button>
                                             </h2>
-
                                             <div id="debugCollapse{{ $index }}" class="accordion-collapse collapse">
                                                 <div class="accordion-body p-3" style="background:#fffdf5; font-size:0.82rem;">
 
-                                                    {{-- ── SECCIÓN 1: Resultado COS ── --}}
-                                                    <h6 class="fw-bold text-warning-emphasis border-bottom pb-1 mb-2">
-                                                        📊 Resultado COS
-                                                    </h6>
+                                                    <h6 class="fw-bold text-warning-emphasis border-bottom pb-1 mb-2">📊 Resultado COS</h6>
                                                     <div class="row row-cols-2 row-cols-md-4 g-2 mb-3">
                                                         @php
                                                             $resumenCos = [
-                                                                'Regla activa'        => $proceso['description'] ?? null,
-                                                                'Nombre del paso'     => $proceso['currentStepName'] ?? null,
-                                                                'Step Gen (índice)'   => $proceso['currentStepGen'] ?? null,
-                                                                'Step Jur (índice)'   => $proceso['currentStepJur'] ?? null,
-                                                                'Cert. Descargado'    => $proceso['certificadoDescargado'] ?? null,
-                                                                'Subproceso'          => $proceso['subproceso'] ?? null,
-                                                                '% Gen'               => ($proceso['progressPercentageGen'] ?? null) !== null ? $proceso['progressPercentageGen'].'%' : null,
-                                                                '% Jur'               => ($proceso['progressPercentageJur'] ?? null) !== null ? $proceso['progressPercentageJur'].'%' : null,
+                                                                'Regla activa'      => $proceso['description'] ?? null,
+                                                                'Nombre del paso'   => $proceso['currentStepName'] ?? null,
+                                                                'Step Gen (índice)' => $proceso['currentStepGen'] ?? null,
+                                                                'Step Jur (índice)' => $proceso['currentStepJur'] ?? null,
+                                                                'Cert. Descargado'  => $proceso['certificadoDescargado'] ?? null,
+                                                                'Subproceso'        => $proceso['subproceso'] ?? null,
+                                                                '% Gen'             => isset($proceso['progressPercentageGen']) ? $proceso['progressPercentageGen'].'%' : null,
+                                                                '% Jur'             => isset($proceso['progressPercentageJur']) ? $proceso['progressPercentageJur'].'%' : null,
                                                             ];
                                                         @endphp
                                                         @foreach ($resumenCos as $label => $val)
@@ -254,57 +446,41 @@
                                                             <div class="p-2 rounded border bg-white h-100">
                                                                 <div class="text-muted" style="font-size:0.72rem;">{{ $label }}</div>
                                                                 <div class="fw-semibold">
-                                                                    @if(is_null($val))
-                                                                        <span class="text-muted fst-italic">null</span>
-                                                                    @else
-                                                                        {{ $val }}
-                                                                    @endif
+                                                                    {{ is_null($val) ? '—' : $val }}
                                                                 </div>
                                                             </div>
                                                         </div>
                                                         @endforeach
                                                     </div>
 
-                                                    {{-- ── SECCIÓN 2: Warning ── --}}
                                                     @if(!empty($proceso['warning']))
                                                     <h6 class="fw-bold text-danger border-bottom pb-1 mb-2">⚠️ Warning</h6>
-                                                    <div class="p-2 border rounded bg-white mb-3">
-                                                        {!! $proceso['warning'] !!}
-                                                    </div>
+                                                    <div class="p-2 border rounded bg-white mb-3">{!! $proceso['warning'] !!}</div>
                                                     @endif
 
-                                                    {{-- ── SECCIÓN 3: Campos del negocio evaluados por CosService ── --}}
-                                                    <h6 class="fw-bold text-success border-bottom pb-1 mb-2">
-                                                        🗄️ Campos del negocio evaluados por CosService
-                                                    </h6>
+                                                    <h6 class="fw-bold text-success border-bottom pb-1 mb-2">🗄️ Campos del negocio</h6>
                                                     @if($negocioDebug)
                                                     <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-2">
                                                         @foreach ($valoresCos as $campo => $info)
                                                         <div class="col">
                                                             <div class="p-2 rounded border h-100"
-                                                                style="background: {{ $info['isset'] ? '#f0fff4' : '#fff5f5' }}; border-color: {{ $info['isset'] ? '#b2dfdb' : '#ffcdd2' }} !important;">
-                                                                <div class="text-muted text-truncate" style="font-size:0.70rem;" title="{{ $campo }}">
-                                                                    {{ $campo }}
-                                                                </div>
+                                                                style="background:{{ $info['isset'] ? '#f0fff4' : '#fff5f5' }}; border-color:{{ $info['isset'] ? '#b2dfdb' : '#ffcdd2' }} !important;">
+                                                                <div class="text-muted text-truncate" style="font-size:0.70rem;" title="{{ $campo }}">{{ $campo }}</div>
                                                                 <div style="font-size:0.75rem; font-weight:500; word-break:break-all;">
                                                                     @if($info['isset'])
-                                                                        <span class="text-success">
-                                                                            {{ strlen((string)$info['valor']) > 40 ? Str::limit((string)$info['valor'], 40) : $info['valor'] }}
-                                                                        </span>
+                                                                        <span class="text-success">{{ Str::limit((string)$info['valor'], 40) }}</span>
                                                                     @else
                                                                         <span class="text-danger fst-italic">— no definido</span>
                                                                     @endif
                                                                 </div>
-                                                                <div style="font-size:0.68rem; margin-top:2px;" class="text-muted">
-                                                                    {{ $info['label'] }}
-                                                                </div>
+                                                                <div style="font-size:0.68rem; margin-top:2px;" class="text-muted">{{ $info['label'] }}</div>
                                                             </div>
                                                         </div>
                                                         @endforeach
                                                     </div>
                                                     @else
                                                         <div class="alert alert-warning py-2 mb-0">
-                                                            No se encontró el negocio para el servicio <code>{{ $proceso['servicio'] }}</code>
+                                                            No se encontró el negocio para <code>{{ $proceso['servicio'] }}</code>
                                                         </div>
                                                     @endif
 
@@ -312,25 +488,136 @@
                                             </div>
                                         </div>
                                     </div>
-                                @endif
-                                <div class="card mb-4 shadow-sm">
-                                    {{-- Header con título y estatus --}}
-                                    <div class="card-header text-center bg-white">
-                                        <h1 class="card-title mt-4 mb-2" style="font-size:1.8rem;">
-                                            Proceso: {!! $proceso['servicio'] !!}
-                                        </h1>
+                                    @endif
 
-                                        <p class="pb-4" style="font-size:1.4rem;">
-                                            Estatus actual: <b>{{ $proceso['currentStepName'] ?? 'No iniciado' }}</b>
-                                        </p>
+                                    {{-- ══ PANEL VENDEDOR (roles 2,3,4 — NO 1 ni 5) ══ --}}
+                                    @if($rolId !== 1 && $rolId !== 5)
+                                    <div class="accordion mb-3" id="vendedorAccordion{{ $index }}">
+                                        <div class="accordion-item" style="border:1px solid #e2e8f0; border-radius:.6rem; overflow:hidden;">
 
-                                        @if(isset($proceso['warning']))
-                                            <div class="alert alert-warning fade show py-2 d-flex justify-content-center align-items-center gap-2" role="alert">
-                                                <i class="fas fa-exclamation-triangle" style="font-size: 20px"></i>
-                                                <div style="font-size:1rem;">{!! $proceso['warning'] !!}</div>
+                                            <h2 class="accordion-header">
+                                                <button
+                                                    class="accordion-button collapsed py-2 px-3"
+                                                    type="button"
+                                                    data-bs-toggle="collapse"
+                                                    data-bs-target="#vendedorCollapse{{ $index }}"
+                                                    style="background:#f8fafc; color:#1e293b; font-size:0.85rem; font-weight:600;"
+                                                >
+                                                    <i class="fas fa-folder-open" style="color:#6366f1; margin-right:.5rem;"></i>
+                                                    Datos del negocio &nbsp;·&nbsp;
+                                                    <span style="color:#6366f1;">{{ $proceso['servicio'] }}</span>
+                                                    &nbsp;·&nbsp;
+                                                    <span style="
+                                                        font-size:.72rem; font-weight:600;
+                                                        background:#ede9fe; color:#5b21b6;
+                                                        border-radius:999px; padding:.15rem .55rem;
+                                                    ">{{ $proceso['currentStepName'] ?? 'Sin estado' }}</span>
+
+                                                    {{-- Badge: cuántos campos tienen valor --}}
+                                                    @if(count($camposConValor) > 0)
+                                                    <span style="
+                                                        font-size:.68rem; font-weight:700;
+                                                        background:#dcfce7; color:#15803d;
+                                                        border-radius:999px; padding:.15rem .55rem;
+                                                        margin-left:.5rem;
+                                                    ">{{ count($camposConValor) }} datos</span>
+                                                    @endif
+                                                </button>
+                                            </h2>
+
+                                            <div id="vendedorCollapse{{ $index }}" class="accordion-collapse collapse">
+                                                <div class="accordion-body p-3" style="background:#ffffff; font-size:.83rem;">
+
+                                                    {{-- ── Resumen COS ── --}}
+                                                    <p style="font-size:.72rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.5rem;">
+                                                        Resumen del estado
+                                                    </p>
+                                                    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); gap:.5rem; margin-bottom:1rem;">
+                                                        @php
+                                                            $resumenVendedor = [
+                                                                ['icon'=>'fa-flag',      'label'=>'Paso Gen',     'value'=> $proceso['currentStepGen'] ?? null],
+                                                                ['icon'=>'fa-gavel',     'label'=>'Paso Jur',     'value'=> $proceso['currentStepJur'] ?? null],
+                                                                ['icon'=>'fa-certificate','label'=>'Certificado', 'value'=> $proceso['certificadoDescargado'] ?? null],
+                                                                ['icon'=>'fa-code-branch','label'=>'Subproceso',  'value'=> $proceso['subproceso'] ?? null],
+                                                                ['icon'=>'fa-chart-bar', 'label'=>'% Gen',        'value'=> isset($proceso['progressPercentageGen']) ? $proceso['progressPercentageGen'].'%' : null],
+                                                                ['icon'=>'fa-chart-bar', 'label'=>'% Jur',        'value'=> isset($proceso['progressPercentageJur']) ? $proceso['progressPercentageJur'].'%' : null],
+                                                                ['icon'=>'fa-tag',       'label'=>'Regla activa', 'value'=> $proceso['description'] ?? null],
+                                                            ];
+                                                        @endphp
+                                                        @foreach($resumenVendedor as $item)
+                                                        <div style="
+                                                            background:{{ is_null($item['value']) ? '#fafafa' : '#f0fdf4' }};
+                                                            border:1px solid {{ is_null($item['value']) ? '#e2e8f0' : '#bbf7d0' }};
+                                                            border-radius:.45rem; padding:.5rem .65rem;
+                                                        ">
+                                                            <div style="font-size:.68rem; color:#94a3b8; margin-bottom:.2rem;">
+                                                                <i class="fas {{ $item['icon'] }}" style="margin-right:.25rem;"></i>{{ $item['label'] }}
+                                                            </div>
+                                                            <div style="font-weight:600; font-size:.82rem; color:{{ is_null($item['value']) ? '#cbd5e1' : '#15803d' }};">
+                                                                {{ $item['value'] ?? '—' }}
+                                                            </div>
+                                                        </div>
+                                                        @endforeach
+                                                    </div>
+
+                                                    {{-- ── Campos del negocio agrupados ── --}}
+                                                    @if($negocioDebug)
+                                                        @foreach($gruposVendedor as $grupoNombre => $grupoKeys)
+                                                            @php
+                                                                $camposDelGrupo = array_filter(
+                                                                    $valoresCos,
+                                                                    fn($k) => in_array($k, $grupoKeys),
+                                                                    ARRAY_FILTER_USE_KEY
+                                                                );
+                                                                $hayValoresEnGrupo = count(array_filter($camposDelGrupo, fn($c) => $c['isset'])) > 0;
+                                                            @endphp
+
+                                                            <p style="font-size:.72rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.5rem; margin-top:.75rem;">
+                                                                {{ $grupoNombre }}
+                                                            </p>
+
+                                                            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:.5rem; margin-bottom:.5rem;">
+                                                                @foreach($camposDelGrupo as $campo => $info)
+                                                                <div style="
+                                                                    background:{{ $info['isset'] ? '#f0fdf4' : '#fafafa' }};
+                                                                    border:1px solid {{ $info['isset'] ? '#bbf7d0' : '#e2e8f0' }};
+                                                                    border-radius:.45rem; padding:.5rem .65rem;
+                                                                    opacity:{{ $info['isset'] ? '1' : '0.5' }};
+                                                                ">
+                                                                    <div style="font-size:.68rem; color:#94a3b8; margin-bottom:.2rem;">
+                                                                        {{ $info['label'] }}
+                                                                    </div>
+                                                                    <div style="font-weight:600; font-size:.82rem; color:{{ $info['isset'] ? '#15803d' : '#cbd5e1' }}; word-break:break-all;">
+                                                                        {{ $info['isset'] ? Str::limit((string)$info['valor'], 50) : '—' }}
+                                                                    </div>
+                                                                </div>
+                                                                @endforeach
+                                                            </div>
+                                                        @endforeach
+                                                    @else
+                                                        <div class="alert alert-warning py-2 mb-0" style="font-size:.8rem;">
+                                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                                            No se encontró el negocio para <code>{{ $proceso['servicio'] }}</code>
+                                                        </div>
+                                                    @endif
+
+                                                    {{-- ── Warning ── --}}
+                                                    @if(!empty($proceso['warning']))
+                                                    <div style="
+                                                        background:#fff7ed; border:1px solid #fed7aa;
+                                                        border-radius:.4rem; padding:.5rem .75rem;
+                                                        font-size:.78rem; color:#9a3412; margin-top:.75rem;
+                                                    ">
+                                                        <i class="fas fa-exclamation-triangle" style="margin-right:.35rem;"></i>
+                                                        {!! $proceso['warning'] !!}
+                                                    </div>
+                                                    @endif
+
+                                                </div>
                                             </div>
-                                        @endif
+                                        </div>
                                     </div>
+                                    @endif
 
                                     {{-- Barras de progreso --}}
                                     <div class="card-body text-center" style="background: rgba(0,0,0,0.05);">
@@ -481,9 +768,32 @@
                             </div>
                         </div>
                         <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            @php
+                                $fechaNacimiento = '';
+                                if ($user->date_of_birth) {
+                                    try {
+                                        // Intenta primero el formato europeo
+                                        $fechaNacimiento = \Carbon\Carbon::createFromFormat('d/m/Y', $user->date_of_birth)->format('Y-m-d');
+                                    } catch (\Exception $e) {
+                                        try {
+                                            // Si falla, intenta parseo genérico (Y-m-d, etc.)
+                                            $fechaNacimiento = \Carbon\Carbon::parse($user->date_of_birth)->format('Y-m-d');
+                                        } catch (\Exception $e2) {
+                                            $fechaNacimiento = '';
+                                        }
+                                    }
+                                }
+                            @endphp
                             <div style="flex: 1;" class="mb-3">
                                 <label for="date_of_birth" class="block text-sm font-medium text-gray-700">Fecha de Nacimiento</label>
-                                <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="date_of_birth" name="date_of_birth" value="{{ old('date_of_birth', \Carbon\Carbon::parse($user->date_of_birth)->format('Y-m-d')) }}" placeholder="Ingrese fecha de nacimiento">
+                                <input
+                                    type="date"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    id="date_of_birth"
+                                    name="date_of_birth"
+                                    value="{{ old('date_of_birth', $fechaNacimiento) }}"
+                                    placeholder="Ingrese fecha de nacimiento"
+                                >
                             </div>
                             <div style="flex: 1;" class="mb-3">
                                 <label for="genero" class="block text-sm font-medium text-gray-700">Genero</label>

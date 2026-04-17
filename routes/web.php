@@ -67,6 +67,16 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\AdminTaskController;
 use App\Http\Controllers\ContratoCoordinadorController;
 use App\Http\Controllers\RequestAuditController;
+use App\Http\Controllers\UserSyncController;
+
+Route::post('/users/{user}/sync-deals', [UserSyncController::class, 'sync'])
+    ->name('users.sync-deals')
+    ->middleware(['auth']);
+
+Route::get('/api/contacts/search', [App\Http\Controllers\Api\ContactSearchController::class, 'search'])
+    ->name('api.contacts.search')
+    ->middleware('auth');
+
 
 Route::get('/request-audits', [RequestAuditController::class, 'view'])
     ->name('request-audits.index');
@@ -102,6 +112,7 @@ Route::middleware(['auth'])->prefix('tasks')->name('tasks.')->group(function () 
     Route::get('/',             [TaskController::class, 'table'])->name('index');
     Route::get('/{task}',       [TaskController::class, 'show'])->name('show');
     Route::post('/{task}/flow', [TaskController::class, 'submitFlow'])->name('submitFlow');
+    Route::post('/{task}/sync-contact', [TaskController::class, 'syncContact'])->name('syncContact');
 });
 
 // ── Facturas propias (auth + admin) ──────────────────────────────────

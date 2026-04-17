@@ -120,6 +120,77 @@ class TaskController extends Controller
                          ->with('success', 'Progreso guardado correctamente.');
     }
 
+    // En TaskController.php
+    public function syncContact(Task $task, \App\Services\HubspotService $hubspot)
+    {
+        if (! $task->contact) {
+            return back()->with('error', 'Esta tarea no tiene contacto asociado.');
+        }
+
+        try {
+            $data  = null;
+            $props = [];
+
+            // ── Intento 1: buscar por hs_id ──────────────────────────
+            if ($task->contact->hs_id) {
+                try {
+                    $data = $hubspot->getContactById($task->contact->hs_id);
+                } catch (\Exception $e) {
+                    $data = null;
+                }
+            }
+
+            // ── Intento 2: buscar por email ───────────────────────────
+            if (! $data && $task->contact->email) {
+                $data = $hubspot->searchContactByEmail($task->contact->email);
+            }
+
+            // ── Sin resultados ────────────────────────────────────────
+            if (! $data) {
+                return back()->with('error', 'No se encontró el contacto en HubSpot ni por ID ni por email.');
+            }
+
+            $props = $data['properties'] ?? [];
+
+            $update = [];
+
+            if (!empty($props['email']))       $update['email'] = $props['email'];
+            if (!empty($props['phone']))       $update['phone'] = $props['phone'];
+            if (!empty($props['mobilephone'])) $update['phone'] = $props['mobilephone']; // fallback móvil
+
+            if (!empty($update)) {
+                $task->contact->update($update);
+            }
+
+            // ── Armar mensaje de resultado ────────────────────────────
+            $tieneEmail    = ! empty($update['email']);
+            $tieneTelefono = ! empty($update['phone']);
+
+            if ($tieneEmail && $tieneTelefono) {
+                $mensaje = '✅ Sincronizado correctamente. Se encontró email y teléfono.';
+                return back()->with('success', $mensaje);
+            }
+
+            // Faltan datos: construir mensaje descriptivo
+            $encontrados = [];
+            $faltantes   = [];
+
+            $tieneEmail    ? $encontrados[] = 'email'    : $faltantes[] = 'email';
+            $tieneTelefono ? $encontrados[] = 'teléfono' : $faltantes[] = 'teléfono';
+
+            $parteExito  = ! empty($encontrados)
+                ? 'Se encontró: ' . implode(' y ', $encontrados) . '. '
+                : '';
+
+            $parteAviso  = 'HubSpot no tiene registrado: ' . implode(' y ', $faltantes) . '.';
+
+            return back()->with('error', $parteExito . $parteAviso);
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'No se pudo sincronizar con HubSpot: ' . $e->getMessage());
+        }
+    }
+
     // ── Crear tarea de seguimiento ────────────────────────────
     private function createFollowUp(Task $original): void
     {

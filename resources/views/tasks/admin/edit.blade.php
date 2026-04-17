@@ -15,7 +15,7 @@
 
 <div class="row justify-content-center">
     <div class="col-md-7">
-        <div class="card card-outline card-warning">
+        <div class="card card-outline card-warning shadow-sm">
             <div class="card-header">
                 <h3 class="card-title">Modificar datos de la tarea</h3>
                 <div class="card-tools">
@@ -41,45 +41,71 @@
                         </div>
                     @endif
 
+                    {{-- ───── Asesor (Select2 local) ───── --}}
                     <div class="form-group">
                         <label class="font-weight-bold">
+                            <i class="fas fa-user-tie text-muted mr-1"></i>
                             Asesor asignado <span class="text-danger">*</span>
                         </label>
-                        <select name="user_id"
-                                class="form-control @error('user_id') is-invalid @enderror">
-                            @foreach($advisors as $id => $name)
-                                <option value="{{ $id }}"
-                                    {{ (old('user_id', $task->user_id) == $id) ? 'selected' : '' }}>
-                                    {{ $name }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <div class="select2-wrapper @error('user_id') has-error @enderror">
+                            <span class="select2-prefix-icon">
+                                <i class="fas fa-user"></i>
+                            </span>
+                            <select name="user_id"
+                                    id="select-advisor"
+                                    class="form-control @error('user_id') is-invalid @enderror"
+                                    style="width:100%;">
+                                <option value="">— Seleccione asesor —</option>
+                                @foreach($advisors as $id => $name)
+                                    <option value="{{ $id }}"
+                                        {{ (old('user_id', $task->user_id) == $id) ? 'selected' : '' }}>
+                                        {{ $name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
                         @error('user_id')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                     </div>
 
+                    {{-- ───── Contacto (Select2 AJAX) ───── --}}
                     <div class="form-group">
                         <label class="font-weight-bold">
-                            Contacto <span class="text-danger">*</span>
+                            <i class="fas fa-address-book text-muted mr-1"></i>
+                            Contacto
                         </label>
-                        <select name="contact_id"
-                                class="form-control @error('contact_id') is-invalid @enderror">
-                            <option value="">— Sin contacto —</option>
-                            @foreach($contacts as $id => $name)
-                                <option value="{{ $id }}"
-                                    {{ (old('contact_id', $task->contact_id) == $id) ? 'selected' : '' }}>
-                                    {{ $name }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <div class="select2-wrapper @error('contact_id') has-error @enderror">
+                            <span class="select2-prefix-icon">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <select name="contact_id"
+                                    id="select-contact"
+                                    class="form-control @error('contact_id') is-invalid @enderror"
+                                    style="width:100%;">
+                                <option value="">— Sin contacto —</option>
+                                @php
+                                    $currentContactId   = old('contact_id', $task->contact_id);
+                                    $currentContactName = $task->contact
+                                        ? $task->contact->name . ' — ' . $task->contact->email
+                                        : null;
+                                @endphp
+                                @if($currentContactId && $currentContactName)
+                                    <option value="{{ $currentContactId }}" selected>
+                                        {{ $currentContactName }}
+                                    </option>
+                                @endif
+                            </select>
+                        </div>
                         @error('contact_id')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                     </div>
 
+                    {{-- ───── Título ───── --}}
                     <div class="form-group">
                         <label class="font-weight-bold">
+                            <i class="fas fa-heading text-muted mr-1"></i>
                             Título <span class="text-danger">*</span>
                         </label>
                         <input type="text" name="title"
@@ -90,16 +116,22 @@
                         @enderror
                     </div>
 
+                    {{-- ───── Descripción ───── --}}
                     <div class="form-group">
-                        <label class="font-weight-bold">Descripción</label>
+                        <label class="font-weight-bold">
+                            <i class="fas fa-align-left text-muted mr-1"></i>
+                            Descripción
+                        </label>
                         <textarea name="description" rows="3"
                                   class="form-control @error('description') is-invalid @enderror">{{ old('description', $task->description) }}</textarea>
                     </div>
 
                     <div class="row">
+                        {{-- ───── Fecha límite ───── --}}
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="font-weight-bold">
+                                    <i class="fas fa-calendar-alt text-muted mr-1"></i>
                                     Fecha límite <span class="text-danger">*</span>
                                 </label>
                                 <input type="date" name="due_date"
@@ -110,31 +142,51 @@
                                 @enderror
                             </div>
                         </div>
+
+                        {{-- ───── Estado ───── --}}
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label class="font-weight-bold">Estado</label>
-                                <select name="status"
-                                        class="form-control @error('status') is-invalid @enderror">
-                                    @foreach([
-                                        'pending'     => 'Pendiente',
-                                        'in_progress' => 'En curso',
-                                        'completed'   => 'Completada',
-                                        'canceled'    => 'Cancelada',
-                                    ] as $val => $label)
-                                        <option value="{{ $val }}"
-                                            {{ old('status', $task->status) === $val ? 'selected' : '' }}>
-                                            {{ $label }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                <label class="font-weight-bold">
+                                    <i class="fas fa-flag text-muted mr-1"></i>
+                                    Estado
+                                </label>
+                                <div class="select2-wrapper @error('status') has-error @enderror">
+                                    <span class="select2-prefix-icon">
+                                        <i class="fas fa-circle status-dot
+                                            {{ match(old('status', $task->status)) {
+                                                'pending'     => 'text-secondary',
+                                                'in_progress' => 'text-primary',
+                                                'completed'   => 'text-success',
+                                                'canceled'    => 'text-danger',
+                                                default       => 'text-muted'
+                                            } }}">
+                                        </i>
+                                    </span>
+                                    <select name="status"
+                                            id="select-status"
+                                            class="form-control @error('status') is-invalid @enderror"
+                                            style="width:100%;">
+                                        @foreach([
+                                            'pending'     => ['label' => 'Pendiente',  'icon' => '⏳'],
+                                            'in_progress' => ['label' => 'En curso',   'icon' => '🔄'],
+                                            'completed'   => ['label' => 'Completada', 'icon' => '✅'],
+                                            'canceled'    => ['label' => 'Cancelada',  'icon' => '❌'],
+                                        ] as $val => $meta)
+                                            <option value="{{ $val }}"
+                                                {{ old('status', $task->status) === $val ? 'selected' : '' }}>
+                                                {{ $meta['icon'] }} {{ $meta['label'] }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
                                 @error('status')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
                     </div>
 
-                    {{-- Info de resultado (solo lectura si ya fue gestionada) --}}
+                    {{-- ───── Info de resultado (solo lectura) ───── --}}
                     @if(!is_null($task->call_effective))
                         <div class="alert alert-light border mt-2">
                             <strong><i class="fas fa-info-circle mr-1"></i>Resultado registrado por el asesor:</strong>
@@ -162,8 +214,7 @@
                 </div>
 
                 <div class="card-footer d-flex justify-content-between">
-                    <a href="{{ route('tasks.admin.index') }}"
-                       class="btn btn-outline-secondary">
+                    <a href="{{ route('tasks.admin.index') }}" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left mr-1"></i>Cancelar
                     </a>
                     <button type="submit" class="btn btn-warning">
@@ -179,4 +230,55 @@
 
 @section('css')
     <link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-4-theme@1.0.0/dist/select2-bootstrap-4.min.css">
+    @include('tasks.admin._select2_styles')
+@stop
+
+@section('js')
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/es.js"></script>
+
+    <script>
+        $(document).ready(function () {
+
+            // ─── Asesor: Select2 local ───
+            $('#select-advisor').select2({
+                theme: 'bootstrap-4',
+                language: 'es',
+                placeholder: 'Buscar asesor...',
+                allowClear: true,
+            });
+
+            // ─── Estado: Select2 local ───
+            $('#select-status').select2({
+                theme: 'bootstrap-4',
+                language: 'es',
+                minimumResultsForSearch: Infinity, // sin buscador (pocas opciones)
+                allowClear: false,
+            });
+
+            // ─── Contacto: Select2 AJAX ───
+            $('#select-contact').select2({
+                theme: 'bootstrap-4',
+                language: 'es',
+                placeholder: 'Escriba para buscar contacto...',
+                allowClear: true,
+                minimumInputLength: 2,
+                ajax: {
+                    url: '{{ route("api.contacts.search") }}',
+                    dataType: 'json',
+                    delay: 300,
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    data: params => ({ q: params.term, page: params.page || 1 }),
+                    processResults: (data, params) => {
+                        params.page = params.page || 1;
+                        return { results: data.results, pagination: { more: data.pagination.more } };
+                    },
+                    cache: true
+                },
+            });
+
+        });
+    </script>
 @stop

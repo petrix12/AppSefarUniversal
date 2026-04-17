@@ -167,18 +167,81 @@
                         {{ $task->description ?? 'Sin descripción' }}
                     </p>
                 </div>
-                <div style="display:flex; flex-wrap:wrap; gap:.5rem .75rem; font-size:.8rem; color:#6b7280;">
-                    @if ( $task->contact)
-                    <span>
-                        <i class="fas fa-user" style="color:#d1d5db; margin-right:.3rem;"></i>
-                        <strong style="color:#374151;">{{ $task->contact?->name ?? '—' }}</strong>
-                    </span>
+                <div style="display:flex; flex-wrap:wrap; align-items:center; gap:.5rem .75rem; font-size:.8rem; color:#6b7280; margin-top:.4rem;">
+
+                    @if($task->contact)
+
+                        {{-- Nombre --}}
+                        <span>
+                            <i class="fas fa-user" style="color:#d1d5db; margin-right:.3rem;"></i>
+                            <strong style="color:#374151;">{{ $task->contact->name }}</strong>
+                        </span>
+
+                        <span style="color:#e5e7eb;">|</span>
+
+                        {{-- Email --}}
+                        <span>
+                            <i class="fas fa-envelope" style="color:#d1d5db; margin-right:.3rem;"></i>
+                            <a href="mailto:{{ $task->contact->email }}"
+                            style="color:#2563eb; text-decoration:none;"
+                            onmouseover="this.style.textDecoration='underline'"
+                            onmouseout="this.style.textDecoration='none'">
+                                {{ $task->contact->email }}
+                            </a>
+                        </span>
+
+                        {{-- Teléfono (opcional) --}}
+                        @if($task->contact->phone)
+                            <span style="color:#e5e7eb;">|</span>
+                            <span>
+                                <i class="fas fa-phone" style="color:#d1d5db; margin-right:.3rem;"></i>
+                                <a href="tel:{{ $task->contact->phone }}"
+                                style="color:#374151; text-decoration:none;"
+                                onmouseover="this.style.color='#2563eb'"
+                                onmouseout="this.style.color='#374151'">
+                                    {{ $task->contact->phone }}
+                                </a>
+                            </span>
+                        @endif
+
+                        <span style="color:#e5e7eb;">|</span>
+
                     @endif
-                    <span style="color:#e5e7eb;">|</span>
+
+                    @if($task->contact && (!$task->contact->email || !$task->contact->phone))
+                    <div style="margin-top:.6rem;">
+                        <form method="POST" action="{{ route('tasks.syncContact', $task) }}">
+                            @csrf
+                            <button type="submit"
+                                    style="
+                                        display: inline-flex;
+                                        align-items: center;
+                                        gap: .4rem;
+                                        font-size: .75rem;
+                                        font-weight: 600;
+                                        color: #92400e;
+                                        background: #fffbeb;
+                                        border: 1px dashed #f59e0b;
+                                        border-radius: .4rem;
+                                        padding: .3rem .65rem;
+                                        cursor: pointer;
+                                        transition: background .15s;
+                                    "
+                                    onmouseover="this.style.background='#fef3c7'"
+                                    onmouseout="this.style.background='#fffbeb'">
+                                <i class="fas fa-sync-alt" style="font-size:.7rem;"></i>
+                                ¿No ves el email o teléfono? Sincronízalo haciendo click aquí
+                            </button>
+                        </form>
+                    </div>
+                    @endif
+
+                    {{-- Fecha límite --}}
                     <span>
                         <i class="fas fa-calendar-alt" style="color:#d1d5db; margin-right:.3rem;"></i>
                         Vence {{ $task->due_date->format('d/m/Y') }}
                     </span>
+
                 </div>
                 @if ( $task->contact)
                 <div style="margin-top:.5rem;">
