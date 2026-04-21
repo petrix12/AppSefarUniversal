@@ -11,7 +11,7 @@ class ImportProcesoSefardi extends Command
 {
     protected $signature = 'lists:import-proceso-sefardi
         {--file= : Ruta absoluta del TXT (1 pasaporte por línea)}
-        {--list="Proceso Sefardi" : Nombre de la lista}
+        {--list="Proceso Sefardi Nueva" : Nombre de la lista}
         {--dry-run : No escribe, solo muestra}
         {--only-missing-owner : Solo procesa usuarios sin owner_id}
         {--only-active-hubspot-owners : Solo usa owners activos de HubSpot (hubspot_owners.active=1)}

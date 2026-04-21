@@ -43,11 +43,14 @@ class Kernel extends ConsoleKernel
                  ->appendOutputTo(storage_path('logs/tasks-generate.log'));
 
         // Notifica tareas sin cerrar a las 6 PM y las marca como canceled
+
+        /*
         $schedule->command('tasks:notify-unclosed')
                  ->weekdays()
                  ->at('18:00')
                  ->withoutOverlapping()
                  ->appendOutputTo(storage_path('logs/tasks-notify.log'));
+        */
     }
 
     /**
