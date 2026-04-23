@@ -4,12 +4,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Task;
+use App\Services\MarkContactedService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class TaskController extends Controller
 {
+    public function __construct(
+        private readonly MarkContactedService $markContacted
+    ) {}
+
     // ── Mis tareas ───────────────────────────────────────────
     public function table(Request $request)
     {
@@ -52,25 +57,26 @@ class TaskController extends Controller
             return back()->with('error', 'Esta tarea ya fue cerrada.');
         }
 
-        $step = $request->input('step');
+        $step             = $request->input('step');
+        $taskWasCompleted = false;
 
-        DB::transaction(function () use ($request, $task, $step) {
+        DB::transaction(function () use ($request, $task, $step, &$taskWasCompleted) {
 
             // ── PASO 1: ¿Llamada efectiva? ───────────────────
             if ($step === 'call_result') {
                 $request->validate([
-                    'call_effective'       => 'required|in:0,1',
-                    'reason_no_effective'  => 'required_if:call_effective,0|nullable|string|max:255',
+                    'call_effective'      => 'required|in:0,1',
+                    'reason_no_effective' => 'required_if:call_effective,0|nullable|string|max:255',
                 ]);
 
-                $effective = (bool) $request->call_effective;
-
+                $effective            = (bool) $request->call_effective;
                 $task->status         = 'in_progress';
                 $task->call_effective = $effective;
 
                 if (! $effective) {
                     $task->reason_no_effective = $request->reason_no_effective;
-                    $task->status              = 'completed'; // cerrada sin interés
+                    $task->status              = 'completed';
+                    $taskWasCompleted          = true;
                 }
 
                 $task->save();
@@ -80,17 +86,17 @@ class TaskController extends Controller
             // ── PASO 2: ¿Hubo interés? ───────────────────────
             if ($step === 'interest') {
                 $request->validate([
-                    'interest_level'    => 'required|in:0,1',
-                    'reason_no_interest'=> 'required_if:interest_level,0|nullable|string|max:255',
+                    'interest_level'     => 'required|in:0,1',
+                    'reason_no_interest' => 'required_if:interest_level,0|nullable|string|max:255',
                 ]);
 
-                $interest = (bool) $request->interest_level;
-
+                $interest             = (bool) $request->interest_level;
                 $task->interest_level = $interest;
 
                 if (! $interest) {
                     $task->reason_no_interest = $request->reason_no_interest;
                     $task->status             = 'completed';
+                    $taskWasCompleted         = true;
                 }
 
                 $task->save();
@@ -107,20 +113,25 @@ class TaskController extends Controller
                 $task->product_of_interest = $request->product_of_interest;
                 $task->follow_up_date      = $request->follow_up_date;
                 $task->status              = 'completed';
+                $taskWasCompleted          = true;
                 $task->save();
 
-                // Crear tarea de seguimiento si se indicó fecha
                 if ($request->filled('follow_up_date')) {
                     $this->createFollowUp($task);
                 }
             }
         });
 
+        // ── Marcar contactado FUERA de la transacción ────────
+        if ($taskWasCompleted) {
+            $this->markContacted->markFromTask($task);
+        }
+
         return redirect()->route('tasks.show', $task)
                          ->with('success', 'Progreso guardado correctamente.');
     }
 
-    // En TaskController.php
+    // ── Sincronizar con HubSpot ──────────────────────────────
     public function syncContact(Task $task, \App\Services\HubspotService $hubspot)
     {
         if (! $task->contact) {
@@ -131,7 +142,6 @@ class TaskController extends Controller
             $data  = null;
             $props = [];
 
-            // ── Intento 1: buscar por hs_id ──────────────────────────
             if ($task->contact->hs_id) {
                 try {
                     $data = $hubspot->getContactById($task->contact->hs_id);
@@ -140,49 +150,43 @@ class TaskController extends Controller
                 }
             }
 
-            // ── Intento 2: buscar por email ───────────────────────────
             if (! $data && $task->contact->email) {
                 $data = $hubspot->searchContactByEmail($task->contact->email);
             }
 
-            // ── Sin resultados ────────────────────────────────────────
             if (! $data) {
                 return back()->with('error', 'No se encontró el contacto en HubSpot ni por ID ni por email.');
             }
 
-            $props = $data['properties'] ?? [];
-
+            $props  = $data['properties'] ?? [];
             $update = [];
 
-            if (!empty($props['email']))       $update['email'] = $props['email'];
-            if (!empty($props['phone']))       $update['phone'] = $props['phone'];
-            if (!empty($props['mobilephone'])) $update['phone'] = $props['mobilephone']; // fallback móvil
+            if (! empty($props['email']))       $update['email'] = $props['email'];
+            if (! empty($props['phone']))       $update['phone'] = $props['phone'];
+            if (! empty($props['mobilephone'])) $update['phone'] = $props['mobilephone'];
 
-            if (!empty($update)) {
+            if (! empty($update)) {
                 $task->contact->update($update);
             }
 
-            // ── Armar mensaje de resultado ────────────────────────────
             $tieneEmail    = ! empty($update['email']);
             $tieneTelefono = ! empty($update['phone']);
 
             if ($tieneEmail && $tieneTelefono) {
-                $mensaje = '✅ Sincronizado correctamente. Se encontró email y teléfono.';
-                return back()->with('success', $mensaje);
+                return back()->with('success', '✅ Sincronizado correctamente. Se encontró email y teléfono.');
             }
 
-            // Faltan datos: construir mensaje descriptivo
             $encontrados = [];
             $faltantes   = [];
 
             $tieneEmail    ? $encontrados[] = 'email'    : $faltantes[] = 'email';
             $tieneTelefono ? $encontrados[] = 'teléfono' : $faltantes[] = 'teléfono';
 
-            $parteExito  = ! empty($encontrados)
+            $parteExito = ! empty($encontrados)
                 ? 'Se encontró: ' . implode(' y ', $encontrados) . '. '
                 : '';
 
-            $parteAviso  = 'HubSpot no tiene registrado: ' . implode(' y ', $faltantes) . '.';
+            $parteAviso = 'HubSpot no tiene registrado: ' . implode(' y ', $faltantes) . '.';
 
             return back()->with('error', $parteExito . $parteAviso);
 
@@ -194,19 +198,14 @@ class TaskController extends Controller
     // ── Crear tarea de seguimiento ────────────────────────────
     private function createFollowUp(Task $original): void
     {
-        $followDate = Carbon::parse($original->follow_up_date);
-
-        // Cuántas tareas ya tiene ese día
+        $followDate    = Carbon::parse($original->follow_up_date);
         $existingCount = Task::query()
             ->where('user_id', $original->user_id)
             ->forDate($followDate)
             ->count();
 
-        $base     = 10;
-        $canAdd   = max(0, $base - $existingCount);
-
-        if ($canAdd <= 0) {
-            return; // Ya tiene 10 o más tareas ese día
+        if (max(0, 10 - $existingCount) <= 0) {
+            return;
         }
 
         $name = $original->contact?->name ?? 'Lead / General';

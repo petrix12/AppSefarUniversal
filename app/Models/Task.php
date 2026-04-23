@@ -5,6 +5,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo; // ← importar
 
 class Task extends Model
 {
@@ -34,23 +35,23 @@ class Task extends Model
     ];
 
     // ── Constantes de estado ────────────────────────────────
-    const STATUS_PENDING      = 'pending';
-    const STATUS_IN_PROGRESS  = 'in_progress';
-    const STATUS_COMPLETED    = 'completed';
-    const STATUS_CANCELED     = 'canceled';
+    const STATUS_PENDING     = 'pending';
+    const STATUS_IN_PROGRESS = 'in_progress';
+    const STATUS_COMPLETED   = 'completed';
+    const STATUS_CANCELED    = 'canceled';
 
     // ── Relaciones ──────────────────────────────────────────
-    public function assignee()
+    public function assignee(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function contact()
+    public function contact(): BelongsTo
     {
         return $this->belongsTo(User::class, 'contact_id');
     }
 
-    public function creator()
+    public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by_user_id');
     }

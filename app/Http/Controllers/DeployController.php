@@ -143,7 +143,8 @@ PROMPT;
             'jladera@sefarvzla.com',
             'crisantoantonio@gmail.com',
             'automatizacion@sefarvzla.com',
-            'sistemascol@sefarvzla.com'
+            'sistemascol@sefarvzla.com',
+            'sistemasccs@sefarvzla.com'
         ];
 
         Mail::raw($summary, function ($message) use ($recipients) {
