@@ -187,6 +187,14 @@ class CosService
                 'warning' => "<b>Realiza el pago para la formalización del expediente</b> y aseguremos juntos el siguiente gran paso hacia tu ciudadanía española.",
             ],
 
+            [
+                'name'      => 'Certificado Descargado',
+                'condition' => fn() => isset($this->negocio->n4__certificado_descargado),
+                'stepGen'   => $this->totalStepsGen - 1,   // ← TODA la línea gen completa
+                'stepJur'   => -1,
+                'warning'   => null,
+            ],
+
             // PASO 17: INFORME CARGADO (< 1 MES)
             [
                 'name' => 'Informe Cargado Recientemente',
@@ -970,6 +978,20 @@ class CosService
         return null;
     }
 
+    private function hasEtiquetaAceptada(): bool
+    {
+        $etiquetas = $this->mondayData['etiquetas'] ?? '';
+
+        if (empty($etiquetas)) {
+            return false;
+        }
+
+        $etiquetasLower = mb_strtolower($etiquetas, 'UTF-8');
+
+        return str_contains($etiquetasLower, 'aceptado')
+            || str_contains($etiquetasLower, 'aceptada');
+    }
+
     private function getIAResults(): array
     {
         // Si ya pasó la fase genealógica, no analizar IA
@@ -984,6 +1006,27 @@ class CosService
                 'investigacionProfunda', 'investigacionInSitu', 'analisisYCorreccion',
                 'investigacionIntuituPersonae', 'inicioInvestigacion'
             ], false);
+        }
+
+        // ✅ NUEVA REGLA: Si las etiquetas contienen "Aceptado" o "Aceptada",
+        // saltar la IA completamente → genealogía aprobada directamente
+        if ($this->hasEtiquetaAceptada()) {
+            Log::info("COS IA: Etiqueta 'Aceptado/Aceptada' detectada, saltando IA", [
+                'negocio_id' => $this->negocio->hubspot_id ?? 'unknown',
+                'etiquetas'  => $this->mondayData['etiquetas'] ?? ''
+            ]);
+
+            return [
+                'otrosProcesos'              => false,
+                'pericial'                   => false,
+                'genealogiaAprobada'         => true,   // ← CLAVE
+                'genealogia'                 => true,
+                'inicioInvestigacion'        => false,
+                'investigacionProfunda'      => false,
+                'investigacionInSitu'        => false,
+                'analisisYCorreccion'        => false,
+                'investigacionIntuituPersonae' => false,
+            ];
         }
 
         return $this->analizarEtiquetasYDevolverJSON($this->mondayData);

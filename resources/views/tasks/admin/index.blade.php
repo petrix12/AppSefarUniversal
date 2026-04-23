@@ -53,10 +53,12 @@
 
     {{-- Filtros + Acciones --}}
     <div class="card card-outline card-secondary mb-3">
-        <div class="card-body py-2">
-            <form method="GET" class="form-inline flex-wrap gap-2">
+        <div class="card-body py-2 d-flex flex-wrap align-items-center gap-2">
+
+            {{-- ✅ FORM GET: filtros de fecha, asesor, estado --}}
+            <form method="GET" class="form-inline flex-wrap gap-2 mr-2">
                 <input type="date" name="date" class="form-control form-control-sm mr-2"
-                       value="{{ $date->toDateString() }}">
+                    value="{{ $date->toDateString() }}">
 
                 <select name="user_id" class="form-control form-control-sm mr-2">
                     <option value="">— Todos los asesores —</option>
@@ -75,24 +77,26 @@
                     <option value="canceled"    {{ request('status') === 'canceled'    ? 'selected' : '' }}>Cancelada</option>
                 </select>
 
-                <button class="btn btn-sm btn-primary mr-2">
+                <button type="submit" class="btn btn-sm btn-primary mr-2">
                     <i class="fas fa-search mr-1"></i>Filtrar
                 </button>
-
-                <a href="{{ route('tasks.admin.create') }}" class="btn btn-sm btn-success mr-2">
-                    <i class="fas fa-plus mr-1"></i>Nueva tarea
-                </a>
-
-                {{-- Generar tareas del día --}}
-                <form method="POST" action="{{ route('tasks.admin.generate-daily') }}" class="d-inline">
-                    @csrf
-                    <input type="hidden" name="date" value="{{ $date->toDateString() }}">
-                    <button class="btn btn-sm btn-warning"
-                            onclick="return confirm('¿Generar tareas para {{ $date->toDateString() }}?')">
-                        <i class="fas fa-magic mr-1"></i>Generar tareas diarias
-                    </button>
-                </form>
             </form>
+            {{-- ✅ FORM GET cierra ANTES del siguiente form --}}
+
+            <a href="{{ route('tasks.admin.create') }}" class="btn btn-sm btn-success mr-2">
+                <i class="fas fa-plus mr-1"></i>Nueva tarea
+            </a>
+
+            {{-- ✅ FORM POST: completamente independiente, fuera del GET --}}
+            <form method="POST" action="{{ route('tasks.admin.generate-daily') }}" class="d-inline">
+                @csrf
+                <input type="hidden" name="date" value="{{ $date->toDateString() }}">
+                <button type="submit" class="btn btn-sm btn-warning"
+                        onclick="return confirm('¿Generar tareas para {{ $date->toDateString() }}?')">
+                    <i class="fas fa-magic mr-1"></i>Generar tareas diarias
+                </button>
+            </form>
+
         </div>
     </div>
 
