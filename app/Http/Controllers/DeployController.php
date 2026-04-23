@@ -42,7 +42,7 @@ class DeployController extends Controller
 
             shell_exec("cd " . escapeshellarg($projectPath) . " && php artisan optimize:clear 2>&1");
 
-            $changes = $this->getSimpleChanges($projectPath, $beforeHead, $afterHead);
+            $changes = $this->getCodeChangesSummary($projectPath, $beforeHead, $afterHead);
 
             try {
                 [$summary, $modelUsed] = $this->callOpenRouterSummary($changes);
@@ -71,31 +71,136 @@ class DeployController extends Controller
     }
 
     // ── Solo commits, sin ruido ───────────────────────────────
-    private function getSimpleChanges(string $projectPath, string $beforeHead, string $afterHead): string
+    private function getCodeChangesSummary(string $projectPath, string $beforeHead, string $afterHead): string
     {
-        $cmd = "cd " . escapeshellarg($projectPath)
-            . " && git log --oneline --no-merges "
-            . escapeshellarg($beforeHead . '..' . $afterHead)
-            . " 2>&1";
+        $range = escapeshellarg($beforeHead . '..' . $afterHead);
 
-        return trim(shell_exec($cmd)) ?: 'Sin detalles de commits';
+        // Lista de archivos con estado: A, M, D
+        $nameStatusCmd = "cd " . escapeshellarg($projectPath)
+            . " && git diff --name-status {$range} 2>&1";
+
+        $nameStatusOutput = trim(shell_exec($nameStatusCmd)) ?: '';
+
+        // Diff sin contexto:
+        // -U0 => 0 líneas de contexto
+        // --no-color => limpio
+        // --no-ext-diff => evita herramientas externas
+        $diffCmd = "cd " . escapeshellarg($projectPath)
+            . " && git diff --unified=0 --no-color --no-ext-diff {$range} 2>&1";
+
+        $diffOutput = trim(shell_exec($diffCmd)) ?: '';
+
+        if ($nameStatusOutput === '' && $diffOutput === '') {
+            return 'Sin cambios detectables entre commits.';
+        }
+
+        $files = [];
+        foreach (preg_split('/\r\n|\r|\n/', $nameStatusOutput) as $line) {
+            $line = trim($line);
+            if ($line === '') {
+                continue;
+            }
+
+            [$status, $file] = array_pad(preg_split('/\s+/', $line, 2), 2, null);
+
+            if (!$status || !$file) {
+                continue;
+            }
+
+            $label = match (true) {
+                str_starts_with($status, 'A') => 'CREADO',
+                str_starts_with($status, 'M') => 'EDITADO',
+                str_starts_with($status, 'D') => 'ELIMINADO',
+                str_starts_with($status, 'R') => 'RENOMBRADO',
+                default => $status,
+            };
+
+            $files[] = "[{$label}] {$file}";
+        }
+
+        $filteredDiffLines = [];
+        $currentFile = null;
+
+        foreach (preg_split('/\r\n|\r|\n/', $diffOutput) as $line) {
+            if (str_starts_with($line, 'diff --git ')) {
+                $currentFile = null;
+                continue;
+            }
+
+            if (str_starts_with($line, 'index ')) {
+                continue;
+            }
+
+            if (str_starts_with($line, '--- ')) {
+                continue;
+            }
+
+            if (str_starts_with($line, '+++ ')) {
+                $filePath = preg_replace('#^\+\+\+ b/#', '', $line);
+                $filePath = preg_replace('#^\+\+\+ /dev/null#', '/dev/null', $filePath);
+                $currentFile = $filePath;
+                $filteredDiffLines[] = "";
+                $filteredDiffLines[] = "Archivo: {$currentFile}";
+                continue;
+            }
+
+            if (str_starts_with($line, '@@')) {
+                continue;
+            }
+
+            // Solo líneas reales agregadas/eliminadas
+            if (
+                str_starts_with($line, '+') &&
+                !str_starts_with($line, '+++')
+            ) {
+                $filteredDiffLines[] = $line;
+                continue;
+            }
+
+            if (
+                str_starts_with($line, '-') &&
+                !str_starts_with($line, '---')
+            ) {
+                $filteredDiffLines[] = $line;
+                continue;
+            }
+        }
+
+        $result = "ARCHIVOS CAMBIADOS:\n"
+            . (!empty($files) ? implode("\n", $files) : 'Sin archivos listados.')
+            . "\n\nCAMBIOS DE CÓDIGO:\n"
+            . (!empty($filteredDiffLines) ? implode("\n", $filteredDiffLines) : 'Sin líneas agregadas o eliminadas.');
+
+        return trim($result);
     }
 
     // ── Prompt orientado a código ─────────────────────────────
     private function buildPrompt(string $changes): string
     {
         return <<<PROMPT
-Eres un experto en desarrollo de software. Estos son los últimos commits de una aplicación Laravel:
+    Eres un experto en desarrollo de software. A continuación recibes un resumen real de despliegue de una aplicación Laravel.
 
-{$changes}
+    El contenido incluye:
+    - nombres de archivos creados, editados o eliminados
+    - líneas de código agregadas
+    - líneas de código eliminadas
 
-Genera un resumen claro y breve en español con este formato:
-- Qué funcionalidades se agregaron o modificaron
-- Qué bugs o errores se corrigieron (si aplica)
-- Impacto general del despliegue
+    NO estás viendo mensajes de commit.
+    NO inventes funcionalidades.
+    Describe únicamente lo que se pueda inferir del código.
 
-Sé directo. No inventes nada que no esté en los commits.
-PROMPT;
+    Contenido analizado:
+
+    {$changes}
+
+    Genera un resumen claro, breve y técnico en español con este formato:
+    - Archivos o módulos afectados
+    - Qué cambios funcionales se observan
+    - Qué correcciones o ajustes se detectan
+    - Impacto general del despliegue
+
+    Sé directo y preciso.
+    PROMPT;
     }
 
     // ── OpenRouter con fallback entre modelos ─────────────────
