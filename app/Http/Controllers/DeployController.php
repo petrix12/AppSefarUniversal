@@ -9,50 +9,50 @@ use Illuminate\Support\Facades\Log;
 
 class DeployController extends Controller
 {
+    // Modelos en orden de prioridad
+    private const MODELS = [
+        'anthropic/claude-sonnet-4-5',  // Principal — excelente en código
+        'google/gemini-2.5-pro',        // Fallback
+    ];
+
     public function deploy(Request $request)
     {
         $projectPath = base_path();
 
-        // HEAD antes
         $beforeHead = trim(shell_exec(
             "cd " . escapeshellarg($projectPath) . " && git rev-parse HEAD 2>&1"
         ));
 
-        // git pull
         $gitOut = trim(shell_exec(
             "cd " . escapeshellarg($projectPath) . " && git pull 2>&1"
         ));
 
-        // HEAD después
         $afterHead = trim(shell_exec(
             "cd " . escapeshellarg($projectPath) . " && git rev-parse HEAD 2>&1"
         ));
 
         $pulledNewChanges = ($beforeHead && $afterHead && $beforeHead !== $afterHead);
 
-        $summary = null;
-        $mailSent = false;
+        $summary   = null;
+        $mailSent  = false;
         $mailError = null;
+        $modelUsed = null;
 
         if ($pulledNewChanges) {
 
-            // limpiar cache
             shell_exec("cd " . escapeshellarg($projectPath) . " && php artisan optimize:clear 2>&1");
 
-            // 👇 obtener commits recientes
             $changes = $this->getSimpleChanges($projectPath, $beforeHead, $afterHead);
 
-            // 👇 generar resumen IA
             try {
-                $summary = $this->callOpenRouterSummary($changes);
+                [$summary, $modelUsed] = $this->callOpenRouterSummary($changes);
             } catch (\Throwable $e) {
                 Log::error('Error IA', ['msg' => $e->getMessage()]);
                 $summary = "Se desplegaron cambios, pero no se pudo generar el resumen automático.\n\n" . $changes;
             }
 
-            // 👇 enviar correo
             try {
-                $this->sendSummaryMail($summary);
+                $this->sendSummaryMail($summary, $modelUsed);
                 $mailSent = true;
             } catch (\Throwable $e) {
                 $mailError = $e->getMessage();
@@ -61,15 +61,16 @@ class DeployController extends Controller
         }
 
         return response()->json([
-            'ok' => true,
+            'ok'               => true,
             'changes_detected' => $pulledNewChanges,
-            'summary' => $summary,
-            'mail_sent' => $mailSent,
-            'mail_error' => $mailError,
+            'model_used'       => $modelUsed,
+            'summary'          => $summary,
+            'mail_sent'        => $mailSent,
+            'mail_error'       => $mailError,
         ]);
     }
 
-    // 🔹 SOLO commits (sin ruido)
+    // ── Solo commits, sin ruido ───────────────────────────────
     private function getSimpleChanges(string $projectPath, string $beforeHead, string $afterHead): string
     {
         $cmd = "cd " . escapeshellarg($projectPath)
@@ -80,76 +81,104 @@ class DeployController extends Controller
         return trim(shell_exec($cmd)) ?: 'Sin detalles de commits';
     }
 
-    // 🔹 PROMPT IA
+    // ── Prompt orientado a código ─────────────────────────────
     private function buildPrompt(string $changes): string
     {
         return <<<PROMPT
-Estos son los últimos commits de una aplicación:
+Eres un experto en desarrollo de software. Estos son los últimos commits de una aplicación Laravel:
 
 {$changes}
 
-Genera un resumen MUY breve en español.
+Genera un resumen claro y breve en español con este formato:
+- Qué funcionalidades se agregaron o modificaron
+- Qué bugs o errores se corrigieron (si aplica)
+- Impacto general del despliegue
 
-Formato:
-- 1 o 2 frases de resumen general
-- 3 a 5 bullets con cambios importantes
-
-Máximo 6 líneas.
-No inventes nada.
+Sé directo. No inventes nada que no esté en los commits.
 PROMPT;
     }
 
-    // 🔹 OpenRouter
-    private function callOpenRouterSummary(string $changes): string
+    // ── OpenRouter con fallback entre modelos ─────────────────
+    private function callOpenRouterSummary(string $changes): array
     {
-        $apiKey = env('OPENROUTER_API_KEY');
+        $apiKey = config('services.openrouter.key') ?? env('OPENROUTER_API_KEY');
 
-        if (!$apiKey) {
+        if (! $apiKey) {
             throw new \Exception("Falta OPENROUTER_API_KEY");
         }
 
-        $response = Http::timeout(20)
-            ->withHeaders([
-                'Authorization' => "Bearer {$apiKey}",
-                'Content-Type' => 'application/json',
-            ])
-            ->post("https://openrouter.ai/api/v1/chat/completions", [
-                'model' => 'openai/gpt-4o-mini',
-                'messages' => [
-                    [
-                        "role" => "system",
-                        "content" => "Eres un asistente que resume cambios de software de forma clara y breve."
-                    ],
-                    [
-                        "role" => "user",
-                        "content" => $this->buildPrompt($changes)
-                    ]
-                ],
-                'temperature' => 0.2,
-                'max_tokens' => 200,
-            ]);
+        $lastException = null;
 
-        if (!$response->successful()) {
-            throw new \Exception("Error OpenRouter: " . $response->body());
+        foreach (self::MODELS as $model) {
+            try {
+                $response = Http::timeout(30)
+                    ->withHeaders([
+                        'Authorization' => "Bearer {$apiKey}",
+                        'Content-Type'  => 'application/json',
+                        'HTTP-Referer'  => config('app.url'),
+                        'X-Title'       => config('app.name'),
+                    ])
+                    ->post('https://openrouter.ai/api/v1/chat/completions', [
+                        'model'       => $model,
+                        'messages'    => [
+                            [
+                                'role'    => 'system',
+                                'content' => 'Eres un experto en desarrollo de software que resume cambios de código de forma clara, precisa y breve en español.',
+                            ],
+                            [
+                                'role'    => 'user',
+                                'content' => $this->buildPrompt($changes),
+                            ],
+                        ],
+                        'temperature' => 0.1,  // Muy determinista para resúmenes técnicos
+                        'max_tokens'  => 350,
+                    ]);
+
+                if (! $response->successful()) {
+                    throw new \Exception("Error con modelo {$model}: " . $response->body());
+                }
+
+                $content = trim($response->json()['choices'][0]['message']['content'] ?? '');
+
+                if (empty($content)) {
+                    throw new \Exception("Respuesta vacía del modelo {$model}");
+                }
+
+                Log::info('Deploy IA OK', ['model' => $model]);
+
+                // Retorna [resumen, modelo_usado]
+                return [$content, $model];
+
+            } catch (\Throwable $e) {
+                Log::warning("Falló modelo {$model}, intentando siguiente...", [
+                    'error' => $e->getMessage(),
+                ]);
+                $lastException = $e;
+            }
         }
 
-        return trim($response->json()['choices'][0]['message']['content'] ?? 'Sin respuesta IA');
+        throw new \Exception(
+            "Todos los modelos fallaron. Último error: " . $lastException?->getMessage()
+        );
     }
 
-    // 🔹 MAIL SIMPLE
-    private function sendSummaryMail(string $summary): void
+    // ── Mail con info del modelo usado ────────────────────────
+    private function sendSummaryMail(string $summary, ?string $modelUsed): void
     {
         $recipients = [
             'jladera@sefarvzla.com',
             'crisantoantonio@gmail.com',
             'automatizacion@sefarvzla.com',
             'sistemascol@sefarvzla.com',
-            'sistemasccs@sefarvzla.com'
+            'sistemasccs@sefarvzla.com',
         ];
 
-        Mail::raw($summary, function ($message) use ($recipients) {
+        $modelLabel = $modelUsed ? "\n\n[Resumen generado por: {$modelUsed}]" : '';
+        $body       = $summary . $modelLabel;
+
+        Mail::raw($body, function ($message) use ($recipients) {
             $message->to($recipients)
-                ->subject('🚀 Nuevo despliegue - resumen de cambios');
+                    ->subject('🚀 Nuevo despliegue - resumen de cambios');
         });
     }
 }
