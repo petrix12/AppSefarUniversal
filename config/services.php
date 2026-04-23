@@ -36,4 +36,8 @@ return [
         'redirect' => env('TEAMLEADER_REDIRECT_URI'),
     ],
 
+    'n8n' => [
+        'webhook_token' => env('N8N_WEBHOOK_TOKEN'),
+    ],
+
 ];

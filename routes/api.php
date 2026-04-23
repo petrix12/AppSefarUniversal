@@ -8,6 +8,7 @@ use App\Http\Controllers\AlertController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AssistantController;
 use App\Http\Controllers\WhatsappController;
+use App\Http\Controllers\Api\N8nTaskWebhookController;
 
 /*
 |--------------------------------------------------------------------------
