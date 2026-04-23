@@ -287,6 +287,15 @@ class CosService
 
             // PASOS 2-6: BASADOS EN IA
             [
+                'name' => 'Genealogía Aprobada',
+                'condition' => fn() => $resultadoIA['genealogiaAprobada'] ?? false,
+                'stepGen' => 6,
+                'stepJur' => -1,
+                'warning' => null,
+            ],
+
+            // PASOS 2-6: BASADOS EN IA
+            [
                 'name' => 'Genealogía en Proceso',
                 'condition' => fn() => $resultadoIA['genealogia'] ?? false,
                 'stepGen' => 5,
@@ -978,18 +987,65 @@ class CosService
         return null;
     }
 
+    /**
+     * Detecta si las etiquetas de Monday contienen "Aceptado" o "Aceptada"
+     * Soporta etiquetas como string, array de strings, o array de objetos
+     */
     private function hasEtiquetaAceptada(): bool
     {
-        $etiquetas = $this->mondayData['etiquetas'] ?? '';
+        $etiquetas = $this->mondayData['etiquetas'] ?? null;
 
         if (empty($etiquetas)) {
             return false;
         }
 
-        $etiquetasLower = mb_strtolower($etiquetas, 'UTF-8');
+        // ── Caso 1: es un string plano ──────────────────────────────
+        if (is_string($etiquetas)) {
+            return $this->stringContieneAceptado($etiquetas);
+        }
 
-        return str_contains($etiquetasLower, 'aceptado')
-            || str_contains($etiquetasLower, 'aceptada');
+        // ── Caso 2: es un array ─────────────────────────────────────
+        if (is_array($etiquetas)) {
+            foreach ($etiquetas as $etiqueta) {
+
+                // Array de strings: ["Genealogía Colombia", "Aceptado Sefardi..."]
+                if (is_string($etiqueta)) {
+                    if ($this->stringContieneAceptado($etiqueta)) {
+                        return true;
+                    }
+                }
+
+                // Array de objetos/arrays: [["name" => "Aceptado Sefardi..."], ...]
+                if (is_array($etiqueta)) {
+                    foreach (['name', 'label', 'text', 'value', 'title'] as $field) {
+                        if (isset($etiqueta[$field]) && $this->stringContieneAceptado((string) $etiqueta[$field])) {
+                            return true;
+                        }
+                    }
+                }
+
+                // Objeto stdClass
+                if (is_object($etiqueta)) {
+                    foreach (['name', 'label', 'text', 'value', 'title'] as $field) {
+                        if (isset($etiqueta->$field) && $this->stringContieneAceptado((string) $etiqueta->$field)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Verifica si un string contiene "aceptado" o "aceptada" (case-insensitive)
+     */
+    private function stringContieneAceptado(string $texto): bool
+    {
+        $textoLower = mb_strtolower($texto, 'UTF-8');
+        return str_contains($textoLower, 'aceptado')
+            || str_contains($textoLower, 'aceptada');
     }
 
     private function getIAResults(): array
@@ -1008,23 +1064,28 @@ class CosService
             ], false);
         }
 
-        // ✅ NUEVA REGLA: Si las etiquetas contienen "Aceptado" o "Aceptada",
-        // saltar la IA completamente → genealogía aprobada directamente
+        // 🪲 LOG TEMPORAL — eliminar tras confirmar
+        Log::debug("COS IA: Estructura de mondayData['etiquetas']", [
+            'type'     => gettype($this->mondayData['etiquetas'] ?? null),
+            'value'    => $this->mondayData['etiquetas'] ?? 'NULL',
+            'raw_dump' => json_encode($this->mondayData['etiquetas'] ?? null),
+        ]);
+
+        // ✅ Cortocircuito por etiqueta Aceptado/Aceptada
         if ($this->hasEtiquetaAceptada()) {
-            Log::info("COS IA: Etiqueta 'Aceptado/Aceptada' detectada, saltando IA", [
+            Log::info("COS IA: ✅ Etiqueta 'Aceptado/Aceptada' detectada, saltando IA", [
                 'negocio_id' => $this->negocio->hubspot_id ?? 'unknown',
-                'etiquetas'  => $this->mondayData['etiquetas'] ?? ''
             ]);
 
             return [
-                'otrosProcesos'              => false,
-                'pericial'                   => false,
-                'genealogiaAprobada'         => true,   // ← CLAVE
-                'genealogia'                 => true,
-                'inicioInvestigacion'        => false,
-                'investigacionProfunda'      => false,
-                'investigacionInSitu'        => false,
-                'analisisYCorreccion'        => false,
+                'otrosProcesos'                => false,
+                'pericial'                     => false,
+                'genealogiaAprobada'           => true,
+                'genealogia'                   => true,
+                'inicioInvestigacion'          => false,
+                'investigacionProfunda'        => false,
+                'investigacionInSitu'          => false,
+                'analisisYCorreccion'          => false,
                 'investigacionIntuituPersonae' => false,
             ];
         }
