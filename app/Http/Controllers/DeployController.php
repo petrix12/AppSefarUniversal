@@ -171,6 +171,12 @@ class DeployController extends Controller
             . "\n\nCAMBIOS DE CÓDIGO:\n"
             . (!empty($filteredDiffLines) ? implode("\n", $filteredDiffLines) : 'Sin líneas agregadas o eliminadas.');
 
+        $maxChars = 18000;
+
+        if (mb_strlen($result) > $maxChars) {
+            $result = mb_substr($result, 0, $maxChars) . "\n\n...[truncado por longitud]";
+        }
+
         return trim($result);
     }
 
