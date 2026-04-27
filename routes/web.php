@@ -694,7 +694,7 @@ Route::get('/deploy', [DeployController::class, 'deploy'])->name('deploy.run');
 
 Route::get('/hubspot/sync-client-owners', function () {
 
-    Artisan::call('hubspot:sync-client-owners');
+    Artisan::call('hubspot:sync-client-owners --match=email');
 
     return response()->json([
         'status' => 'ok',
