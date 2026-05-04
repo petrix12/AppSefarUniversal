@@ -36,21 +36,17 @@ class Kernel extends ConsoleKernel
         ->dailyAt('09:00')
         ->withoutOverlapping();
         // Ejecutar a las 8 AM todos los días
+        $schedule->command('tasks:notify-unclosed')
+                 ->weekdays()
+                 ->at('6:00')
+                 ->withoutOverlapping()
+                 ->appendOutputTo(storage_path('logs/tasks-notify.log'));
+
         $schedule->command('tasks:generate-daily')
                  ->weekdays()
                  ->at('07:00')
                  ->withoutOverlapping()
                  ->appendOutputTo(storage_path('logs/tasks-generate.log'));
-
-        // Notifica tareas sin cerrar a las 6 PM y las marca como canceled
-
-        /*
-        $schedule->command('tasks:notify-unclosed')
-                 ->weekdays()
-                 ->at('18:00')
-                 ->withoutOverlapping()
-                 ->appendOutputTo(storage_path('logs/tasks-notify.log'));
-        */
     }
 
     /**

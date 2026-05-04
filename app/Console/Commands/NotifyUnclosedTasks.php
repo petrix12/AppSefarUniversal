@@ -1,61 +1,182 @@
 <?php
-// app/Console/Commands/NotifyUnclosedTasks.php
 
 namespace App\Console\Commands;
 
 use App\Models\Task;
 use App\Models\User;
 use App\Notifications\UnclosedTasksNotification;
+use App\Services\HubspotService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class NotifyUnclosedTasks extends Command
 {
-    protected $signature  = 'tasks:notify-unclosed {--date=}';
-    protected $description = 'Marca como canceled las tareas sin cerrar del día y notifica a los admins.';
+    protected $signature = 'tasks:notify-unclosed
+        {--date= : Fecha base opcional YYYY-MM-DD}
+        {--dry-run : Solo muestra cambios, no actualiza nada}';
 
-    public function handle(): int
+    protected $description = 'Cancela tareas abiertas con más de 3 días y reasigna aleatoriamente el cliente en BD y HubSpot.';
+
+    public function handle(HubspotService $hubspotService): int
     {
         $date = $this->option('date')
-            ? Carbon::parse($this->option('date'))
+            ? Carbon::parse($this->option('date'))->startOfDay()
             : today();
 
-        $this->info("🔔 Revisando tareas sin cerrar para: {$date->toDateString()}");
+        $dryRun = (bool) $this->option('dry-run');
 
-        // 1) Marcar como canceled las que siguen abiertas
-        $affected = Task::query()
-            ->whereDate('due_date', $date)
+        $limitDate = $date->copy()->subDays(3)->endOfDay();
+
+        $this->info("🔔 Revisando tareas abiertas creadas hasta: {$limitDate->toDateTimeString()}");
+
+        $tasks = Task::query()
+            ->with([
+                'assignee:id,name,email',
+                'contact:id,name,email,owner_id',
+            ])
             ->whereIn('status', ['pending', 'in_progress'])
-            ->update(['status' => 'canceled']);
+            ->where('created_at', '<=', $limitDate)
+            ->whereNotNull('contact_id')
+            ->get();
 
-        $this->info("   Marcadas como canceled: {$affected}");
-
-        // 2) Obtener las canceladas agrupadas por asesor
-        $unclosed = Task::query()
-            ->with(['assignee:id,name,email', 'contact:id,name'])
-            ->where('status', 'canceled')
-            ->whereDate('due_date', $date)
-            ->get()
-            ->groupBy('user_id');
-
-        if ($unclosed->isEmpty()) {
-            $this->info('✅ Todas las tareas estaban cerradas.');
+        if ($tasks->isEmpty()) {
+            $this->info('✅ No hay tareas vencidas.');
             return self::SUCCESS;
         }
 
-        // 3) Notificar a los admins
+        $this->info("Tareas vencidas encontradas: {$tasks->count()}");
+
+        $processedTasks = collect();
+        $reassignedClients = 0;
+        $hubspotUpdated = 0;
+        $hubspotNotFound = 0;
+
+        DB::beginTransaction();
+
+        try {
+            foreach ($tasks as $task) {
+                $contact = $task->contact;
+
+                if (!$contact) {
+                    $this->warn("La tarea {$task->id} no tiene cliente válido.");
+                    continue;
+                }
+
+                $advisor = $this->getRandomAdvisorExcluding($contact->owner_id);
+
+                if (!$advisor) {
+                    $this->warn('No hay asesores disponibles con hubspot_owner_id.');
+                    continue;
+                }
+
+                $this->line(
+                    "Tarea {$task->id} | Cliente {$contact->id} {$contact->name} → Nuevo owner: {$advisor->name}"
+                );
+
+                if (!$dryRun) {
+                    // 1. Cancelar tarea
+                    $task->update([
+                        'status' => 'canceled',
+                    ]);
+
+                    // 2. Actualizar propietario local del cliente
+                    $contact->update([
+                        'owner_id' => $advisor->id,
+                    ]);
+
+                    $reassignedClients++;
+
+                    // 3. Actualizar propietario en HubSpot
+                    if (!empty($contact->email)) {
+                        try {
+                            $hsContact = $hubspotService->searchContactByEmail($contact->email);
+
+                            if ($hsContact && !empty($hsContact['id'])) {
+                                $hubspotService->updateContact($hsContact['id'], [
+                                    'hubspot_owner_id' => (string) $advisor->hubspot_owner_id,
+                                ]);
+
+                                $hubspotUpdated++;
+                            } else {
+                                $hubspotNotFound++;
+
+                                Log::warning('Contacto no encontrado en HubSpot al reasignar owner', [
+                                    'client_id' => $contact->id,
+                                    'email' => $contact->email,
+                                    'new_owner_user_id' => $advisor->id,
+                                    'new_hubspot_owner_id' => $advisor->hubspot_owner_id,
+                                ]);
+                            }
+                        } catch (\Throwable $e) {
+                            Log::error('Error actualizando owner en HubSpot', [
+                                'client_id' => $contact->id,
+                                'email' => $contact->email,
+                                'new_owner_user_id' => $advisor->id,
+                                'new_hubspot_owner_id' => $advisor->hubspot_owner_id,
+                                'error' => $e->getMessage(),
+                            ]);
+                        }
+                    }
+                }
+
+                $processedTasks->push($task);
+            }
+
+            DB::commit();
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            Log::error('Error cancelando tareas vencidas y reasignando clientes', [
+                'error' => $e->getMessage(),
+            ]);
+
+            $this->error($e->getMessage());
+            return self::FAILURE;
+        }
+
+        if ($processedTasks->isEmpty()) {
+            $this->info('No se procesó ninguna tarea.');
+            return self::SUCCESS;
+        }
+
+        // Notificar admins
         $admins = User::role('Administrador')->get();
 
         if ($admins->isEmpty()) {
             $this->warn('No hay administradores para notificar.');
-            return self::SUCCESS;
+        } else {
+            $grouped = $processedTasks->groupBy('user_id');
+
+            foreach ($admins as $admin) {
+                if (!$dryRun) {
+                    $admin->notify(new UnclosedTasksNotification($grouped, $date));
+                }
+            }
+
+            $this->info("📧 Notificación enviada a {$admins->count()} admin(s).");
         }
 
-        foreach ($admins as $admin) {
-            $admin->notify(new UnclosedTasksNotification($unclosed, $date));
-        }
+        $this->info($dryRun ? '🧪 Dry-run completado. No se actualizó nada.' : '✅ Proceso completado.');
+        $this->info("Clientes reasignados en BD: {$reassignedClients}");
+        $this->info("Contactos actualizados en HubSpot: {$hubspotUpdated}");
+        $this->info("Contactos no encontrados en HubSpot: {$hubspotNotFound}");
 
-        $this->info("📧 Notificación enviada a {$admins->count()} admin(s).");
         return self::SUCCESS;
+    }
+
+    private function getRandomAdvisorExcluding(?int $currentOwnerId = null): ?User
+    {
+        return User::query()
+            ->join('hubspot_owner_user as hou', 'hou.user_id', '=', 'users.id')
+            ->whereNotNull('hou.hubspot_owner_id')
+            ->when($currentOwnerId, function ($query) use ($currentOwnerId) {
+                $query->where('users.id', '!=', $currentOwnerId);
+            })
+            ->inRandomOrder()
+            ->select('users.*', 'hou.hubspot_owner_id')
+            ->first();
     }
 }
