@@ -100,8 +100,10 @@ class NotifyUnclosedTasks extends Command
                             ]);
 
                             $hubspotUpdated++;
+                            $this->line("   HubSpot actualizado: contact_id={$contact->id}, hs_id={$hsContactId}, owner={$advisor->hs_owner_id}");
                         } else {
                             $hubspotNotFound++;
+                            $this->warn("   HubSpot no encontrado: contact_id={$contact->id}, email={$contact->email}, hs_id={$contact->hs_id}");
 
                             Log::warning('Contacto no encontrado en HubSpot al reasignar owner', [
                                 'client_id' => $contact->id,
@@ -113,6 +115,7 @@ class NotifyUnclosedTasks extends Command
                         }
                     } catch (\Throwable $e) {
                         $hubspotFailed++;
+                        $this->warn("   HubSpot falló: contact_id={$contact->id}, owner={$advisor->hs_owner_id}, error={$e->getMessage()}");
 
                         Log::error('Error actualizando owner en HubSpot', [
                             'client_id' => $contact->id,
