@@ -29,7 +29,7 @@ class SharedDocuments extends Component
             $q->where('visibility', 'todos');
         }
 
-        $docs = $q->latest('id')->take(20)->get();
+        $docs = $q->orderedForLibrary()->take(20)->get();
 
         return view('livewire.profile.sales.shared-documents', compact('docs'));
     }

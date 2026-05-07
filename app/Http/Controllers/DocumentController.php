@@ -31,7 +31,7 @@ class DocumentController extends Controller
             $q->where('category', $cat);
         }
 
-        $docs = $this->applyDocumentOrder($q)->paginate(20);
+        $docs = $q->orderedForLibrary()->paginate(20);
 
         $categories = Document::query()
             ->select('category')
@@ -56,7 +56,7 @@ class DocumentController extends Controller
             $q->where('category', $cat);
         }
 
-        $docs = $this->applyDocumentOrder($q)->paginate(20);
+        $docs = $q->orderedForLibrary()->paginate(20);
 
         $categories = Document::query()
             ->select('category')
@@ -190,12 +190,4 @@ class DocumentController extends Controller
         return back()->with('status', 'Documento eliminado.');
     }
 
-    private function applyDocumentOrder($query)
-    {
-        return $query
-            ->orderByRaw("CASE WHEN title REGEXP '^[0-9]+' THEN 0 ELSE 1 END")
-            ->orderByRaw("CAST(title AS UNSIGNED)")
-            ->orderBy('title')
-            ->orderByDesc('id');
-    }
 }
