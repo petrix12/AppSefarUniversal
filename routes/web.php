@@ -250,6 +250,10 @@ Route::middleware(['auth', 'can:docs.upload'])
     ->post('/admin/docs', [DocumentController::class, 'store'])
     ->name('docs.store');
 
+Route::middleware(['auth', 'can:docs.upload'])
+    ->put('/admin/docs/{id}', [DocumentController::class, 'update'])
+    ->name('docs.update');
+
 Route::middleware(['auth', 'can:docs.delete'])
     ->delete('/admin/docs/{id}', [DocumentController::class, 'destroy'])
     ->name('docs.destroy');

@@ -14,6 +14,10 @@
         <div class="alert alert-success">{{ session('status') }}</div>
     @endif
 
+    @if($errors->any())
+        <div class="alert alert-danger">{{ $errors->first() }}</div>
+    @endif
+
     @can('docs.upload')
         <div class="card mb-3">
             <div class="card-header">
@@ -98,7 +102,7 @@
                         <th>Categoría</th>
                         <th>Visibilidad</th>
                         <th>Subido</th>
-                        <th class="text-right"></th>
+                        <th class="text-right">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -116,6 +120,12 @@
                                 <i class="fas fa-eye"></i>
                             </a>
 
+                            @can('docs.upload')
+                                <button type="button" class="btn btn-sm btn-outline-info" data-toggle="modal" data-target="#editDocument{{ $doc->id }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            @endcan
+
                             @can('docs.delete')
                                 <form method="POST" action="{{ route('docs.destroy', $doc->id) }}" style="display:inline-block"
                                       onsubmit="return confirm('¿Eliminar este documento?');">
@@ -126,6 +136,7 @@
                                     </button>
                                 </form>
                             @endcan
+
                         </td>
                     </tr>
                 @empty
@@ -143,6 +154,12 @@
             </div>
         @endif
     </div>
+
+    @can('docs.upload')
+        @foreach ($docs as $doc)
+            @include('docs._edit_modal', ['doc' => $doc])
+        @endforeach
+    @endcan
 
 @stop
 

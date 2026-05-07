@@ -31,7 +31,7 @@ class DocumentController extends Controller
             $q->where('category', $cat);
         }
 
-        $docs = $q->orderByDesc('id')->paginate(20);
+        $docs = $this->applyDocumentOrder($q)->paginate(20);
 
         $categories = Document::query()
             ->select('category')
@@ -56,7 +56,7 @@ class DocumentController extends Controller
             $q->where('category', $cat);
         }
 
-        $docs = $q->orderByDesc('id')->paginate(20);
+        $docs = $this->applyDocumentOrder($q)->paginate(20);
 
         $categories = Document::query()
             ->select('category')
@@ -151,6 +151,29 @@ class DocumentController extends Controller
         return redirect($url);
     }
 
+    public function update(Request $request, $id)
+    {
+        $doc = Document::findOrFail($id);
+
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'category' => ['nullable', 'string', 'max:80'],
+            'visibility' => ['required', 'in:proveedores,todos,admins,coordventas'],
+        ]);
+
+        $category = trim((string) ($validated['category'] ?? ''));
+
+        $doc->update([
+            'title' => $validated['title'],
+            'description' => $validated['description'] ?? null,
+            'category' => $category !== '' ? Str::slug($category) : null,
+            'visibility' => $validated['visibility'],
+        ]);
+
+        return back()->with('status', 'Documento actualizado correctamente.');
+    }
+
     public function destroy($id)
     {
         $doc = Document::findOrFail($id);
@@ -165,5 +188,14 @@ class DocumentController extends Controller
         $doc->delete();
 
         return back()->with('status', 'Documento eliminado.');
+    }
+
+    private function applyDocumentOrder($query)
+    {
+        return $query
+            ->orderByRaw("CASE WHEN title REGEXP '^[0-9]+' THEN 0 ELSE 1 END")
+            ->orderByRaw("CAST(title AS UNSIGNED)")
+            ->orderBy('title')
+            ->orderByDesc('id');
     }
 }

@@ -20,6 +20,10 @@
         <div class="alert alert-success">{{ session('status') }}</div>
     @endif
 
+    @if($errors->any())
+        <div class="alert alert-danger">{{ $errors->first() }}</div>
+    @endif
+
     <div class="card p-4">
         <form method="GET" action="{{ route('docs.index') }}" class="mb-3">
             <div class="row">
@@ -80,7 +84,7 @@
                             <th>Categoría</th>
                             <th>Tamaño</th>
                             <th>Fecha</th>
-                            <th class="text-right"></th>
+                            <th class="text-right">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -98,6 +102,12 @@
                                 <a href="{{ route('docs.download', $doc->id) }}" class="btn btn-sm btn-outline-primary">
                                     <i class="fas fa-download"></i>
                                 </a>
+
+                                @can('docs.upload')
+                                    <button type="button" class="btn btn-sm btn-outline-info" data-toggle="modal" data-target="#editDocument{{ $doc->id }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                @endcan
                             </td>
                         </tr>
                     @empty
@@ -118,6 +128,12 @@
             @endif
         </div>
     </div>
+
+    @can('docs.upload')
+        @foreach ($docs as $doc)
+            @include('docs._edit_modal', ['doc' => $doc])
+        @endforeach
+    @endcan
 @stop
 
 @section('css')
