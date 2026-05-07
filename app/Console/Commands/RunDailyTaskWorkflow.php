@@ -161,6 +161,7 @@ class RunDailyTaskWorkflow extends Command
             ->join('tasks', 'tasks.contact_id', '=', 'users.id')
             ->where('tasks.status', Task::STATUS_COMPLETED)
             ->where('tasks.call_effective', 0)
+            ->whereColumn('tasks.user_id', 'users.owner_id')
             ->whereNotNull('users.owner_id')
             ->groupBy('users.id', 'users.name', 'users.email', 'users.hs_id', 'users.owner_id');
 

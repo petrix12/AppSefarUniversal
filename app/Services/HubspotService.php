@@ -12,6 +12,7 @@ use HubSpot\Client\Crm\Properties\ApiException as PropertiesApiException;
 use HubSpot\Client\Crm\Deals\Model\BatchReadInputSimplePublicObjectId;
 use App\Models\AssocTlHs;
 use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\ClientInterface;
 use HubSpot\Client\Files\ApiException as FilesApiException;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Promise;
@@ -28,7 +29,53 @@ class HubspotService
 
     public function __construct()
     {
-        $this->hubspot = Factory::createWithAccessToken(env('HUBSPOT_KEY'));
+        $this->hubspot = $this->makeHubspotClient();
+    }
+
+    private function makeHubspotClient()
+    {
+        return Factory::createWithAccessToken(
+            env('HUBSPOT_KEY'),
+            $this->makeHttpClient()
+        );
+    }
+
+    private function makeHttpClient(array $options = []): ClientInterface
+    {
+        return new GuzzleClient(array_merge([
+            'verify' => $this->hubspotCaBundle(),
+            'force_ip_resolve' => $this->hubspotIpResolve(),
+            'connect_timeout' => 10,
+            'timeout' => 30,
+        ], $options));
+    }
+
+    private function hubspotIpResolve(): string
+    {
+        $mode = strtolower((string) env('HUBSPOT_FORCE_IP_RESOLVE', 'v4'));
+
+        return in_array($mode, ['v4', 'v6'], true) ? $mode : 'v4';
+    }
+
+    private function hubspotCaBundle()
+    {
+        $paths = array_filter([
+            env('HUBSPOT_CA_BUNDLE'),
+            ini_get('curl.cainfo') ?: null,
+            ini_get('openssl.cafile') ?: null,
+            base_path('storage/certs/cacert.pem'),
+            'C:\\xampp\\php\\extras\\ssl\\cacert.pem',
+            'C:\\xampp\\phpMyAdmin\\vendor\\composer\\ca-bundle\\res\\cacert.pem',
+            'C:\\xampp\\perl\\vendor\\lib\\Mozilla\\CA\\cacert.pem',
+        ]);
+
+        foreach ($paths as $path) {
+            if (is_string($path) && file_exists($path)) {
+                return $path;
+            }
+        }
+
+        return true;
     }
 
     public function getAllContactsByOwnerId(
@@ -507,13 +554,13 @@ class HubspotService
             }
 
             // 2. Cliente Legacy (v1) con Guzzle para leer los engagements
-            $legacyClient = new GuzzleClient([
+            $legacyClient = $this->makeHttpClient([
                 'base_uri' => 'https://api.hubapi.com',
             ]);
             $token = env('HUBSPOT_KEY');
 
             // 3. Cliente v3 de archivos (File Manager)
-            $filesClient = Factory::createWithAccessToken($token);
+            $filesClient = $this->makeHubspotClient();
 
             // Array para almacenar todas las URLs (v3)
             $fileUrls = [];
@@ -656,8 +703,7 @@ class HubspotService
     {
         try {
             // 1. Preparar el token y el cliente de HubSpot (o bien reusar $this->hubspot)
-            $token    = env('HUBSPOT_KEY');
-            $hubspot  = Factory::createWithAccessToken($token);
+            $hubspot  = $this->makeHubspotClient();
 
             // 2. Obtener el contacto con las propiedades que nos interesan
             //    - Si tienes propiedades: ['mi_archivo_cv', 'foto_del_contacto', ...]
