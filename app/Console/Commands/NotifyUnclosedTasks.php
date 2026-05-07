@@ -34,7 +34,7 @@ class NotifyUnclosedTasks extends Command
         $tasks = Task::query()
             ->with([
                 'assignee:id,name,email',
-                'contact:id,name,email,owner_id',
+                'contact:id,name,email,hs_id,owner_id',
             ])
             ->whereIn('status', ['pending', 'in_progress'])
             ->where('created_at', '<=', $limitDate)
@@ -52,6 +52,7 @@ class NotifyUnclosedTasks extends Command
         $reassignedClients = 0;
         $hubspotUpdated = 0;
         $hubspotNotFound = 0;
+        $hubspotFailed = 0;
 
         DB::beginTransaction();
 
@@ -67,7 +68,7 @@ class NotifyUnclosedTasks extends Command
                 $advisor = $this->getRandomAdvisorExcluding($contact->owner_id);
 
                 if (!$advisor) {
-                    $this->warn('No hay asesores disponibles con hubspot_owner_id.');
+                    $this->warn('No hay asesores disponibles con owner real de HubSpot mapeado.');
                     continue;
                 }
 
@@ -89,35 +90,37 @@ class NotifyUnclosedTasks extends Command
                     $reassignedClients++;
 
                     // 3. Actualizar propietario en HubSpot
-                    if (!empty($contact->email)) {
-                        try {
-                            $hsContact = $hubspotService->searchContactByEmail($contact->email);
+                    try {
+                        $hsContactId = $this->resolveHubspotContactId($hubspotService, $contact);
 
-                            if ($hsContact && !empty($hsContact['id'])) {
-                                $hubspotService->updateContact($hsContact['id'], [
-                                    'hubspot_owner_id' => (string) $advisor->hubspot_owner_id,
-                                ]);
+                        if ($hsContactId) {
+                            $hubspotService->updateContact($hsContactId, [
+                                'hubspot_owner_id' => (string) $advisor->hs_owner_id,
+                            ]);
 
-                                $hubspotUpdated++;
-                            } else {
-                                $hubspotNotFound++;
+                            $hubspotUpdated++;
+                        } else {
+                            $hubspotNotFound++;
 
-                                Log::warning('Contacto no encontrado en HubSpot al reasignar owner', [
-                                    'client_id' => $contact->id,
-                                    'email' => $contact->email,
-                                    'new_owner_user_id' => $advisor->id,
-                                    'new_hubspot_owner_id' => $advisor->hubspot_owner_id,
-                                ]);
-                            }
-                        } catch (\Throwable $e) {
-                            Log::error('Error actualizando owner en HubSpot', [
+                            Log::warning('Contacto no encontrado en HubSpot al reasignar owner', [
                                 'client_id' => $contact->id,
                                 'email' => $contact->email,
+                                'hs_id' => $contact->hs_id,
                                 'new_owner_user_id' => $advisor->id,
-                                'new_hubspot_owner_id' => $advisor->hubspot_owner_id,
-                                'error' => $e->getMessage(),
+                                'new_hubspot_owner_id' => $advisor->hs_owner_id,
                             ]);
                         }
+                    } catch (\Throwable $e) {
+                        $hubspotFailed++;
+
+                        Log::error('Error actualizando owner en HubSpot', [
+                            'client_id' => $contact->id,
+                            'email' => $contact->email,
+                            'hs_id' => $contact->hs_id,
+                            'new_owner_user_id' => $advisor->id,
+                            'new_hubspot_owner_id' => $advisor->hs_owner_id,
+                            'error' => $e->getMessage(),
+                        ]);
                     }
                 }
 
@@ -163,8 +166,24 @@ class NotifyUnclosedTasks extends Command
         $this->info("Clientes reasignados en BD: {$reassignedClients}");
         $this->info("Contactos actualizados en HubSpot: {$hubspotUpdated}");
         $this->info("Contactos no encontrados en HubSpot: {$hubspotNotFound}");
+        $this->info("Actualizaciones fallidas en HubSpot: {$hubspotFailed}");
 
         return self::SUCCESS;
+    }
+
+    private function resolveHubspotContactId(HubspotService $hubspotService, User $contact): ?string
+    {
+        if (!empty($contact->hs_id)) {
+            return (string) $contact->hs_id;
+        }
+
+        if (empty($contact->email)) {
+            return null;
+        }
+
+        $hsContact = $hubspotService->searchContactByEmail($contact->email);
+
+        return $hsContact['id'] ?? null;
     }
 
     private function getRandomAdvisorExcluding(?int $currentOwnerId = null): ?User
@@ -172,11 +191,12 @@ class NotifyUnclosedTasks extends Command
         return User::query()
             ->join('hubspot_owner_user as hou', 'hou.user_id', '=', 'users.id')
             ->whereNotNull('hou.hubspot_owner_id')
+            ->whereRaw("TRIM(hou.hubspot_owner_id) <> ''")
             ->when($currentOwnerId, function ($query) use ($currentOwnerId) {
                 $query->where('users.id', '!=', $currentOwnerId);
             })
             ->inRandomOrder()
-            ->select('users.*', 'hou.hubspot_owner_id')
+            ->select('users.*', 'hou.hubspot_owner_id as hs_owner_id')
             ->first();
     }
 }

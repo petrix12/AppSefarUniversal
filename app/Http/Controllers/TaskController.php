@@ -4,10 +4,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Task;
+use App\Models\User;
+use App\Services\HubspotService;
 use App\Services\MarkContactedService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class TaskController extends Controller
 {
@@ -49,7 +52,7 @@ class TaskController extends Controller
     }
 
     // ── Flujo de llamada (multi-paso) ────────────────────────
-    public function submitFlow(Request $request, Task $task)
+    public function submitFlow(Request $request, Task $task, HubspotService $hubspot)
     {
         $this->authorizeAccess($task);
 
@@ -59,8 +62,10 @@ class TaskController extends Controller
 
         $step             = $request->input('step');
         $taskWasCompleted = false;
+        $shouldMarkContacted = false;
+        $shouldReassignIneffectiveContact = false;
 
-        DB::transaction(function () use ($request, $task, $step, &$taskWasCompleted) {
+        DB::transaction(function () use ($request, $task, $step, &$taskWasCompleted, &$shouldMarkContacted, &$shouldReassignIneffectiveContact) {
 
             // ── PASO 1: ¿Llamada efectiva? ───────────────────
             if ($step === 'call_result') {
@@ -77,6 +82,7 @@ class TaskController extends Controller
                     $task->reason_no_effective = $request->reason_no_effective;
                     $task->status              = 'completed';
                     $taskWasCompleted          = true;
+                    $shouldReassignIneffectiveContact = true;
                 }
 
                 $task->save();
@@ -97,6 +103,7 @@ class TaskController extends Controller
                     $task->reason_no_interest = $request->reason_no_interest;
                     $task->status             = 'completed';
                     $taskWasCompleted         = true;
+                    $shouldMarkContacted      = true;
                 }
 
                 $task->save();
@@ -114,6 +121,7 @@ class TaskController extends Controller
                 $task->follow_up_date      = $request->follow_up_date;
                 $task->status              = 'completed';
                 $taskWasCompleted          = true;
+                $shouldMarkContacted       = true;
                 $task->save();
 
                 if ($request->filled('follow_up_date')) {
@@ -122,13 +130,19 @@ class TaskController extends Controller
             }
         });
 
-        // ── Marcar contactado FUERA de la transacción ────────
-        if ($taskWasCompleted) {
+        $message = 'Progreso guardado correctamente.';
+
+        if ($shouldReassignIneffectiveContact) {
+            $message = $this->reassignIneffectiveContact($task, $hubspot);
+        }
+
+        // Marcar contactado solo si hubo comunicacion efectiva.
+        if ($taskWasCompleted && $shouldMarkContacted) {
             $this->markContacted->markFromTask($task);
         }
 
         return redirect()->route('tasks.show', $task)
-                         ->with('success', 'Progreso guardado correctamente.');
+                         ->with('success', $message);
     }
 
     // ── Sincronizar con HubSpot ──────────────────────────────
@@ -219,6 +233,96 @@ class TaskController extends Controller
             'status'             => 'pending',
             'created_by_user_id' => auth()->id(),
         ]);
+    }
+
+    private function reassignIneffectiveContact(Task $task, HubspotService $hubspot): string
+    {
+        $task->loadMissing('contact:id,name,email,hs_id,owner_id');
+        $contact = $task->contact;
+
+        if (! $contact) {
+            return 'Progreso guardado. No se pudo reasignar porque la tarea no tiene contacto asociado.';
+        }
+
+        $advisor = $this->getRandomAdvisorExcluding($contact->owner_id);
+
+        if (! $advisor) {
+            Log::warning('No hay asesor disponible para reasignar contacto con comunicacion no efectiva.', [
+                'task_id' => $task->id,
+                'client_id' => $contact->id,
+                'current_owner_id' => $contact->owner_id,
+            ]);
+
+            return 'Progreso guardado. No se reasigno el contacto porque no hay asesores disponibles.';
+        }
+
+        $contact->update([
+            'owner_id' => $advisor->id,
+        ]);
+
+        try {
+            $hsContactId = $this->resolveHubspotContactId($hubspot, $contact);
+
+            if ($hsContactId) {
+                $hubspot->updateContact($hsContactId, [
+                    'hubspot_owner_id' => (string) $advisor->hs_owner_id,
+                ]);
+            } else {
+                Log::warning('Contacto no encontrado en HubSpot al reasignar por llamada no efectiva.', [
+                    'task_id' => $task->id,
+                    'client_id' => $contact->id,
+                    'email' => $contact->email,
+                    'hs_id' => $contact->hs_id,
+                    'new_owner_user_id' => $advisor->id,
+                    'new_hubspot_owner_id' => $advisor->hs_owner_id,
+                ]);
+
+                return "Progreso guardado. Contacto reasignado a {$advisor->name} en la app, pero no se encontro en HubSpot.";
+            }
+        } catch (\Throwable $e) {
+            Log::error('Error actualizando owner en HubSpot por llamada no efectiva.', [
+                'task_id' => $task->id,
+                'client_id' => $contact->id,
+                'email' => $contact->email,
+                'hs_id' => $contact->hs_id,
+                'new_owner_user_id' => $advisor->id,
+                'new_hubspot_owner_id' => $advisor->hs_owner_id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return "Progreso guardado. Contacto reasignado a {$advisor->name} en la app, pero HubSpot no se pudo actualizar.";
+        }
+
+        return "Progreso guardado. Contacto reasignado a {$advisor->name}.";
+    }
+
+    private function resolveHubspotContactId(HubspotService $hubspot, User $contact): ?string
+    {
+        if (!empty($contact->hs_id)) {
+            return (string) $contact->hs_id;
+        }
+
+        if (empty($contact->email)) {
+            return null;
+        }
+
+        $hsContact = $hubspot->searchContactByEmail($contact->email);
+
+        return $hsContact['id'] ?? null;
+    }
+
+    private function getRandomAdvisorExcluding(?int $currentOwnerId = null): ?User
+    {
+        return User::query()
+            ->join('hubspot_owner_user as hou', 'hou.user_id', '=', 'users.id')
+            ->whereNotNull('hou.hubspot_owner_id')
+            ->whereRaw("TRIM(hou.hubspot_owner_id) <> ''")
+            ->when($currentOwnerId, function ($query) use ($currentOwnerId) {
+                $query->where('users.id', '!=', $currentOwnerId);
+            })
+            ->inRandomOrder()
+            ->select('users.*', 'hou.hubspot_owner_id as hs_owner_id')
+            ->first();
     }
 
     // ── Guard de acceso ───────────────────────────────────────

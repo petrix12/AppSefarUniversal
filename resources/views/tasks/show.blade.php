@@ -419,7 +419,7 @@
                                 No fue efectiva
                             </p>
                             <p style="font-size:.75rem; color:#9ca3af; margin:.15rem 0 0;">
-                                No contestó, número incorrecto, etc.
+                                No contestó, número incorrecto, etc. El contacto será reasignado.
                             </p>
                         </div>
                     </label>

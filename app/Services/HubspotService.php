@@ -255,15 +255,23 @@ class HubspotService
     public function updateContact($hsId, $properties)
     {
         try {
-            $this->hubspot->crm()->contacts()->basicApi()->update($hsId, [
-                'properties' => $properties
+            $input = new SimplePublicObjectInput([
+                'properties' => $properties,
             ]);
+
+            return $this->hubspot->crm()->contacts()->basicApi()->update($hsId, $input);
         } catch (ContactException $e) {
-            // Aquí puedes ver el código de estado (por ejemplo, 400) y la respuesta completa
             $statusCode   = $e->getCode();
             $responseBody = $e->getResponseBody();
 
-            // Muestra (o loguea) la respuesta completa para ver el error sin truncar
+            \Log::error('Error actualizando contacto en HubSpot', [
+                'hs_id' => $hsId,
+                'status_code' => $statusCode,
+                'response' => $responseBody,
+                'properties' => $properties,
+            ]);
+
+            throw new \Exception("Error actualizando contacto {$hsId} en HubSpot ({$statusCode}): {$responseBody}", 0, $e);
         }
     }
 

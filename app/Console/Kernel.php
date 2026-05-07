@@ -35,18 +35,12 @@ class Kernel extends ConsoleKernel
         $schedule->command('followups:registration-payment')
         ->dailyAt('09:00')
         ->withoutOverlapping();
-        // Ejecutar a las 8 AM todos los días
-        $schedule->command('tasks:notify-unclosed')
+        // Ejecutar flujo diario de tareas en secuencia: primero reasignaciones, luego nuevas tareas.
+        $schedule->command('tasks:daily-workflow')
                  ->weekdays()
                  ->at('6:00')
                  ->withoutOverlapping()
-                 ->appendOutputTo(storage_path('logs/tasks-notify.log'));
-
-        $schedule->command('tasks:generate-daily')
-                 ->weekdays()
-                 ->at('07:00')
-                 ->withoutOverlapping()
-                 ->appendOutputTo(storage_path('logs/tasks-generate.log'));
+                 ->appendOutputTo(storage_path('logs/tasks-daily-workflow.log'));
     }
 
     /**
