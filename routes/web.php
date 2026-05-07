@@ -68,6 +68,10 @@ use App\Http\Controllers\AdminTaskController;
 use App\Http\Controllers\ContratoCoordinadorController;
 use App\Http\Controllers\RequestAuditController;
 use App\Http\Controllers\UserSyncController;
+use App\Http\Controllers\InternalTaskWorkflowController;
+
+Route::get('/internal/tasks/daily-workflow', InternalTaskWorkflowController::class)
+    ->name('internal.tasks.daily-workflow');
 
 Route::post('/users/{user}/sync-deals', [UserSyncController::class, 'sync'])
     ->name('users.sync-deals')
