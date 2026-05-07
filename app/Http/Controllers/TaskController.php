@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Task;
 use App\Models\User;
+use App\Models\Setting;
 use App\Services\HubspotService;
 use App\Services\MarkContactedService;
 use Carbon\Carbon;
@@ -244,7 +245,7 @@ class TaskController extends Controller
             return 'Progreso guardado. No se pudo reasignar porque la tarea no tiene contacto asociado.';
         }
 
-        $advisor = $this->getRandomAdvisorExcluding($contact->owner_id);
+        $advisor = $this->getNextAdvisorRoundRobin($contact->owner_id);
 
         if (! $advisor) {
             Log::warning('No hay asesor disponible para reasignar contacto con comunicacion no efectiva.', [
@@ -311,18 +312,29 @@ class TaskController extends Controller
         return $hsContact['id'] ?? null;
     }
 
-    private function getRandomAdvisorExcluding(?int $currentOwnerId = null): ?User
+    private function getNextAdvisorRoundRobin(?int $currentOwnerId = null): ?User
     {
-        return User::query()
+        $advisors = User::query()
             ->join('hubspot_owner_user as hou', 'hou.user_id', '=', 'users.id')
             ->whereNotNull('hou.hubspot_owner_id')
             ->whereRaw("TRIM(hou.hubspot_owner_id) <> ''")
             ->when($currentOwnerId, function ($query) use ($currentOwnerId) {
                 $query->where('users.id', '!=', $currentOwnerId);
             })
-            ->inRandomOrder()
+            ->orderBy('users.id')
             ->select('users.*', 'hou.hubspot_owner_id as hs_owner_id')
-            ->first();
+            ->get();
+
+        if ($advisors->isEmpty()) {
+            return null;
+        }
+
+        $lastAdvisorId = (int) Setting::get('tasks.reassignment_round_robin_last_user_id', 0);
+        $nextAdvisor = $advisors->firstWhere('id', '>', $lastAdvisorId) ?? $advisors->first();
+
+        Setting::set('tasks.reassignment_round_robin_last_user_id', (string) $nextAdvisor->id);
+
+        return $nextAdvisor;
     }
 
     // ── Guard de acceso ───────────────────────────────────────

@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Task;
 use App\Models\User;
+use App\Models\Setting;
 use App\Notifications\UnclosedTasksNotification;
 use App\Services\HubspotService;
 use Carbon\Carbon;
@@ -65,7 +66,7 @@ class NotifyUnclosedTasks extends Command
                     continue;
                 }
 
-                $advisor = $this->getRandomAdvisorExcluding($contact->owner_id);
+                $advisor = $this->getNextAdvisorRoundRobin($contact->owner_id);
 
                 if (!$advisor) {
                     $this->warn('No hay asesores disponibles con owner real de HubSpot mapeado.');
@@ -186,17 +187,28 @@ class NotifyUnclosedTasks extends Command
         return $hsContact['id'] ?? null;
     }
 
-    private function getRandomAdvisorExcluding(?int $currentOwnerId = null): ?User
+    private function getNextAdvisorRoundRobin(?int $currentOwnerId = null): ?User
     {
-        return User::query()
+        $advisors = User::query()
             ->join('hubspot_owner_user as hou', 'hou.user_id', '=', 'users.id')
             ->whereNotNull('hou.hubspot_owner_id')
             ->whereRaw("TRIM(hou.hubspot_owner_id) <> ''")
             ->when($currentOwnerId, function ($query) use ($currentOwnerId) {
                 $query->where('users.id', '!=', $currentOwnerId);
             })
-            ->inRandomOrder()
+            ->orderBy('users.id')
             ->select('users.*', 'hou.hubspot_owner_id as hs_owner_id')
-            ->first();
+            ->get();
+
+        if ($advisors->isEmpty()) {
+            return null;
+        }
+
+        $lastAdvisorId = (int) Setting::get('tasks.reassignment_round_robin_last_user_id', 0);
+        $nextAdvisor = $advisors->firstWhere('id', '>', $lastAdvisorId) ?? $advisors->first();
+
+        Setting::set('tasks.reassignment_round_robin_last_user_id', (string) $nextAdvisor->id);
+
+        return $nextAdvisor;
     }
 }
