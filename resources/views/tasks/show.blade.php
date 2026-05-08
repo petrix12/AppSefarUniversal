@@ -6,85 +6,29 @@
 @push('css')
 <link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
 <style>
-    .step-card { transition: transform .2s ease; }
-    .step-card:hover { transform: translateY(-1px); }
-
-    .radio-option {
-        display: flex;
-        align-items: flex-start;
-        gap: .75rem;
-        padding: .875rem 1rem;
-        border: 2px solid #e5e7eb;
-        border-radius: .75rem;
-        cursor: pointer;
-        transition: border-color .15s ease, background .15s ease;
-        background: #fff;
-        margin-bottom: 0;  /* override Bootstrap label margin */
+    .task-shell {
+        background: #f8fafc;
+        min-height: 100vh;
+        padding: 2rem 1rem;
     }
-    .radio-option:hover { border-color: #93c5fd; background: #eff6ff; }
-    .radio-option input[type="radio"] {
-        margin-top: 2px;
-        accent-color: #3b82f6;
-        width: 1rem;
-        height: 1rem;
-        flex-shrink: 0;
+    .task-wrap {
+        max-width: 620px;
+        margin: 0 auto;
     }
-    .radio-option.is-checked-blue  { border-color: #3b82f6; background: #eff6ff; }
-    .radio-option.is-checked-red   { border-color: #ef4444; background: #fef2f2; }
-
-    .field-reveal {
-        overflow: hidden;
-        transition: max-height .3s ease, opacity .3s ease;
-        max-height: 0;
-        opacity: 0;
-    }
-    .field-reveal.visible {
-        max-height: 120px;
-        opacity: 1;
-    }
-
-    .step-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: .4rem;
-        font-size: .7rem;
-        font-weight: 700;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-        margin-bottom: .4rem;
-    }
-    .step-badge .step-num {
-        width: 1.4rem; height: 1.4rem;
-        border-radius: 50%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: .65rem;
-        font-weight: 800;
-    }
-
-    /* Tarjeta base */
     .detail-card {
         background: #fff;
         border: 1px solid #f0f0f0;
         border-radius: 1rem;
         box-shadow: 0 1px 4px rgba(0,0,0,.05);
     }
-
-    /* Separador sutil en la dl */
-    .progress-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: .55rem 0;
-        border-bottom: 1px solid #f9fafb;
-        font-size: .85rem;
+    .section-label {
+        font-size: .7rem;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: #9ca3af;
+        margin-bottom: .75rem;
     }
-    .progress-row:last-child { border-bottom: none; }
-    .progress-row dt { color: #9ca3af; }
-    .progress-row dd { font-weight: 600; color: #1f2937; margin: 0; }
-
-    /* Input estilo moderno */
     .modern-input {
         width: 100%;
         border: 1px solid #e5e7eb;
@@ -101,9 +45,78 @@
         border-color: #93c5fd;
         box-shadow: 0 0 0 3px rgba(59,130,246,.15);
     }
-    .modern-input::placeholder { color: #d1d5db; }
-
-    /* Botones */
+    .choice-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+    }
+    .choice-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        min-height: 2.45rem;
+        padding: .55rem .75rem;
+        border: 1px solid #e5e7eb;
+        border-radius: .75rem;
+        background: #fff;
+        color: #374151;
+        font-size: .82rem;
+        font-weight: 700;
+        cursor: pointer;
+    }
+    .choice-pill input {
+        margin: 0;
+        accent-color: #2563eb;
+    }
+    .field-label {
+        display: block;
+        font-size: .75rem;
+        font-weight: 700;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: #6b7280;
+        margin-bottom: .4rem;
+    }
+    .hint-box {
+        display: flex;
+        align-items: flex-start;
+        gap: .6rem;
+        border: 1px solid #bfdbfe;
+        border-radius: .75rem;
+        background: #eff6ff;
+        color: #1e40af;
+        font-size: .8rem;
+        line-height: 1.45;
+        padding: .75rem .85rem;
+        margin-bottom: 1rem;
+    }
+    .alert-banner {
+        display: flex;
+        align-items: flex-start;
+        gap: .75rem;
+        padding: .875rem 1rem;
+        border-radius: .75rem;
+        font-size: .875rem;
+        font-weight: 500;
+    }
+    .progress-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .6rem 0;
+        border-bottom: 1px solid #f9fafb;
+        font-size: .85rem;
+    }
+    .progress-row:last-child { border-bottom: none; }
+    .progress-row dt { color: #9ca3af; }
+    .progress-row dd {
+        margin: 0;
+        color: #1f2937;
+        font-weight: 600;
+        text-align: right;
+        max-width: 65%;
+    }
     .btn-flow {
         width: 100%;
         padding: .75rem 1rem;
@@ -118,552 +131,349 @@
         gap: .5rem;
         transition: filter .15s, transform .1s;
     }
-    .btn-flow:hover  { filter: brightness(1.08); }
+    .btn-flow:hover { filter: brightness(1.08); }
     .btn-flow:active { transform: scale(.98); }
-    .btn-blue  { background: #2563eb; color: #fff; box-shadow: 0 2px 8px rgba(37,99,235,.25); }
-    .btn-violet{ background: #7c3aed; color: #fff; box-shadow: 0 2px 8px rgba(124,58,237,.25); }
-    .btn-green { background: #059669; color: #fff; box-shadow: 0 2px 8px rgba(5,150,105,.25); }
-
-    /* Alerta */
-    .alert-banner {
-        display: flex;
-        align-items: flex-start;
-        gap: .75rem;
-        padding: .875rem 1rem;
-        border-radius: .75rem;
-        font-size: .875rem;
-        font-weight: 500;
+    .btn-green {
+        background: #059669;
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(5,150,105,.25);
     }
-    .alert-banner i { margin-top: 1px; font-size: 1rem; }
 </style>
 @endpush
 
 @section('content')
-<div style="background:#f8fafc; min-height:100vh; padding: 2rem 1rem;">
-<div style="max-width: 560px; margin: 0 auto;">
+@php
+    $saleStatusOptions = \App\Models\Task::saleStatusOptions();
+    $salesTagOptions = \App\Models\Task::salesTagOptions();
+    $contactMethodOptions = \App\Models\Task::contactMethodOptions();
+    $selectedContactMethods = old('contact_methods', $task->contact_methods ?: ($task->call_effective !== null ? [\App\Models\Task::CONTACT_METHOD_CALL] : []));
+    $selectedSalesTags = old('sales_tags', $task->sales_tags ?? []);
+    $respondedValue = old('customer_responded', is_null($task->customer_responded) ? null : ($task->customer_responded ? '1' : '0'));
+    $interestValue = old('interest_level', is_null($task->interest_level) ? null : ($task->interest_level ? '1' : '0'));
+    $hasProgress = !empty($task->contact_methods)
+        || $task->customer_responded !== null
+        || $task->call_effective !== null
+        || $task->reason_no_effective
+        || $task->interest_level !== null
+        || $task->sale_status
+        || !empty($task->sales_tags)
+        || $task->reason_no_interest
+        || $task->product_of_interest
+        || $task->follow_up_date;
+@endphp
 
-    {{-- ══ CABECERA ══════════════════════════════════════════════ --}}
+<div class="task-shell">
+<div class="task-wrap">
     <div class="detail-card p-4 mb-4">
-
-        {{-- Breadcrumb --}}
         <a href="{{ route('tasks.index') }}"
-           style="display:inline-flex; align-items:center; gap:.4rem;
-                  font-size:.78rem; color:#9ca3af; text-decoration:none;
-                  margin-bottom:1rem; transition:color .15s;"
-           onmouseover="this.style.color='#2563eb'"
-           onmouseout="this.style.color='#9ca3af'">
+           style="display:inline-flex; align-items:center; gap:.4rem; font-size:.78rem; color:#9ca3af; text-decoration:none; margin-bottom:1rem;">
             <i class="fas fa-chevron-left" style="font-size:.7rem;"></i>
             Mis tareas
         </a>
 
         <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem;">
             <div style="min-width:0;">
-                <h1 style="font-size:1.15rem; font-weight:800; color:#111827;
-                            margin:0 0 .5rem; line-height:1.3;">
+                <h1 style="font-size:1.15rem; font-weight:800; color:#111827; margin:0 0 .5rem; line-height:1.3;">
                     {{ $task->title }}
                 </h1>
-                <div>
-                    <p style="font-size:.875rem; color:#374151; margin:0;">
-                        {{ $task->description ?? 'Sin descripción' }}
-                    </p>
-                </div>
-                <div style="display:flex; flex-wrap:wrap; align-items:center; gap:.5rem .75rem; font-size:.8rem; color:#6b7280; margin-top:.4rem;">
+                <p style="font-size:.875rem; color:#374151; margin:0;">
+                    {{ $task->description ?? 'Sin descripcion' }}
+                </p>
 
+                <div style="display:flex; flex-wrap:wrap; align-items:center; gap:.5rem .75rem; font-size:.8rem; color:#6b7280; margin-top:.5rem;">
                     @if($task->contact)
-
-                        {{-- Nombre --}}
                         <span>
                             <i class="fas fa-user" style="color:#d1d5db; margin-right:.3rem;"></i>
                             <strong style="color:#374151;">{{ $task->contact->name }}</strong>
                         </span>
-
-                        <span style="color:#e5e7eb;">|</span>
-
-                        {{-- Email --}}
-                        <span>
-                            <i class="fas fa-envelope" style="color:#d1d5db; margin-right:.3rem;"></i>
-                            <a href="mailto:{{ $task->contact->email }}"
-                            style="color:#2563eb; text-decoration:none;"
-                            onmouseover="this.style.textDecoration='underline'"
-                            onmouseout="this.style.textDecoration='none'">
-                                {{ $task->contact->email }}
-                            </a>
-                        </span>
-
-                        {{-- Teléfono (opcional) --}}
+                        @if($task->contact->email)
+                            <span>
+                                <i class="fas fa-envelope" style="color:#d1d5db; margin-right:.3rem;"></i>
+                                <a href="mailto:{{ $task->contact->email }}" style="color:#2563eb; text-decoration:none;">
+                                    {{ $task->contact->email }}
+                                </a>
+                            </span>
+                        @endif
                         @if($task->contact->phone)
-                            <span style="color:#e5e7eb;">|</span>
                             <span>
                                 <i class="fas fa-phone" style="color:#d1d5db; margin-right:.3rem;"></i>
-                                <a href="tel:{{ $task->contact->phone }}"
-                                style="color:#374151; text-decoration:none;"
-                                onmouseover="this.style.color='#2563eb'"
-                                onmouseout="this.style.color='#374151'">
+                                <a href="tel:{{ $task->contact->phone }}" style="color:#374151; text-decoration:none;">
                                     {{ $task->contact->phone }}
                                 </a>
                             </span>
                         @endif
-
-                        <span style="color:#e5e7eb;">|</span>
-
                     @endif
-
-                    @if($task->contact && (!$task->contact->email || !$task->contact->phone))
-                    <div style="margin-top:.6rem;">
-                        <form method="POST" action="{{ route('tasks.syncContact', $task) }}">
-                            @csrf
-                            <button type="submit"
-                                    style="
-                                        display: inline-flex;
-                                        align-items: center;
-                                        gap: .4rem;
-                                        font-size: .75rem;
-                                        font-weight: 600;
-                                        color: #92400e;
-                                        background: #fffbeb;
-                                        border: 1px dashed #f59e0b;
-                                        border-radius: .4rem;
-                                        padding: .3rem .65rem;
-                                        cursor: pointer;
-                                        transition: background .15s;
-                                    "
-                                    onmouseover="this.style.background='#fef3c7'"
-                                    onmouseout="this.style.background='#fffbeb'">
-                                <i class="fas fa-sync-alt" style="font-size:.7rem;"></i>
-                                ¿No ves el email o teléfono? Sincronízalo haciendo click aquí
-                            </button>
-                        </form>
-                    </div>
-                    @endif
-
-                    {{-- Fecha límite --}}
                     <span>
                         <i class="fas fa-calendar-alt" style="color:#d1d5db; margin-right:.3rem;"></i>
                         Vence {{ $task->due_date->format('d/m/Y') }}
                     </span>
-
                 </div>
-                @if ( $task->contact)
-                <div style="margin-top:.5rem;">
 
-                    <a href="{{ url('/users/' . $task->contact?->id . '/edit') }}"
-                    target="_blank"
-                    style="
-                            display:inline-flex;
-                            align-items:center;
-                            gap:.4rem;
-                            font-size:.75rem;
-                            font-weight:600;
-                            color:#2563eb;
-                            text-decoration:none;
-                            padding:.25rem .5rem;
-                            border-radius:.4rem;
-                            background:#eff6ff;
-                            border:1px solid #dbeafe;
-                    "
-                    onmouseover="this.style.background='#dbeafe'"
-                    onmouseout="this.style.background='#eff6ff'"
-                    >
-                        <i class="fas fa-external-link-alt" style="font-size:.7rem;"></i>
-                        Ir al COS del Cliente
-                    </a>
-
-                </div>
+                @if($task->contact)
+                    <div style="margin-top:.6rem;">
+                        <a href="{{ url('/users/' . $task->contact->id . '/edit') }}"
+                           target="_blank"
+                           style="display:inline-flex; align-items:center; gap:.4rem; font-size:.75rem; font-weight:600; color:#2563eb; text-decoration:none; padding:.25rem .5rem; border-radius:.4rem; background:#eff6ff; border:1px solid #dbeafe;">
+                            <i class="fas fa-external-link-alt" style="font-size:.7rem;"></i>
+                            Ir al COS del Cliente
+                        </a>
+                    </div>
                 @endif
             </div>
 
-            {{-- Badge estado --}}
             @php
                 [$badgeBg, $badgeColor, $dotColor] = match($task->status) {
-                    'pending'     => ['#fffbeb', '#b45309', '#f59e0b'],
+                    'pending' => ['#fffbeb', '#b45309', '#f59e0b'],
                     'in_progress' => ['#eff6ff', '#1d4ed8', '#3b82f6'],
-                    'completed'   => ['#ecfdf5', '#065f46', '#10b981'],
-                    'canceled'    => ['#fef2f2', '#b91c1c', '#ef4444'],
-                    default       => ['#f9fafb', '#6b7280', '#9ca3af'],
+                    'completed' => ['#ecfdf5', '#065f46', '#10b981'],
+                    'canceled' => ['#fef2f2', '#b91c1c', '#ef4444'],
+                    default => ['#f9fafb', '#6b7280', '#9ca3af'],
                 };
                 $badgeLabel = match($task->status) {
-                    'pending'     => 'Pendiente',
+                    'pending' => 'Pendiente',
                     'in_progress' => 'En progreso',
-                    'completed'   => 'Completada',
-                    'canceled'    => 'Cancelada',
-                    default       => $task->status,
+                    'completed' => 'Completada',
+                    'canceled' => 'Cancelada',
+                    default => $task->status,
                 };
             @endphp
-            <span style="display:inline-flex; align-items:center; gap:.4rem;
-                         padding:.35rem .85rem; border-radius:999px; white-space:nowrap;
-                         font-size:.75rem; font-weight:700; flex-shrink:0;
-                         background:{{ $badgeBg }}; color:{{ $badgeColor }};">
-                <span style="width:.5rem; height:.5rem; border-radius:50%;
-                              background:{{ $dotColor }}; display:inline-block;"></span>
+            <span style="display:inline-flex; align-items:center; gap:.4rem; padding:.35rem .85rem; border-radius:999px; white-space:nowrap; font-size:.75rem; font-weight:700; flex-shrink:0; background:{{ $badgeBg }}; color:{{ $badgeColor }};">
+                <span style="width:.5rem; height:.5rem; border-radius:50%; background:{{ $dotColor }}; display:inline-block;"></span>
                 {{ $badgeLabel }}
             </span>
         </div>
     </div>
 
-    {{-- ══ ALERTAS ════════════════════════════════════════════════ --}}
     @if(session('success'))
-    <div class="alert-banner mb-4"
-         style="background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46;">
-        <i class="fas fa-check-circle" style="color:#10b981;"></i>
-        <span>{{ session('success') }}</span>
-    </div>
+        <div class="alert-banner mb-4" style="background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46;">
+            <i class="fas fa-check-circle" style="color:#10b981;"></i>
+            <span>{{ session('success') }}</span>
+        </div>
     @endif
+
     @if(session('error'))
-    <div class="alert-banner mb-4"
-         style="background:#fef2f2; border:1px solid #fecaca; color:#b91c1c;">
-        <i class="fas fa-exclamation-circle" style="color:#ef4444;"></i>
-        <span>{{ session('error') }}</span>
-    </div>
+        <div class="alert-banner mb-4" style="background:#fef2f2; border:1px solid #fecaca; color:#b91c1c;">
+            <i class="fas fa-exclamation-circle" style="color:#ef4444;"></i>
+            <span>{{ session('error') }}</span>
+        </div>
     @endif
 
-    {{-- ══ PROGRESO REGISTRADO ════════════════════════════════════ --}}
-    @php
-        $hasProgress = $task->call_effective !== null
-                    || $task->reason_no_effective
-                    || $task->interest_level !== null
-                    || $task->reason_no_interest
-                    || $task->product_of_interest
-                    || $task->follow_up_date;
-    @endphp
-    @if($hasProgress)
     <div class="detail-card p-4 mb-4">
-        <p style="font-size:.7rem; font-weight:700; letter-spacing:.08em;
-                  text-transform:uppercase; color:#9ca3af; margin-bottom:.75rem;">
-            Progreso registrado
-        </p>
-        <dl style="margin:0;">
-            @if($task->call_effective !== null)
-            <div class="progress-row">
-                <dt><i class="fas fa-phone-alt mr-1"></i> Llamada efectiva</dt>
-                <dd style="color:{{ $task->call_effective ? '#059669' : '#dc2626' }};">
-                    {{ $task->call_effective ? 'Sí' : 'No' }}
-                </dd>
-            </div>
-            @endif
-            @if($task->reason_no_effective)
-            <div class="progress-row">
-                <dt style="padding-left:.75rem;">↳ Motivo</dt>
-                <dd style="font-weight:400; color:#374151; text-align:right; max-width:60%;">
-                    {{ $task->reason_no_effective }}
-                </dd>
-            </div>
-            @endif
-            @if($task->interest_level !== null)
-            <div class="progress-row">
-                <dt><i class="fas fa-comment-dots mr-1"></i> Mostró interés</dt>
-                <dd style="color:{{ $task->interest_level ? '#059669' : '#dc2626' }};">
-                    {{ $task->interest_level ? 'Sí' : 'No' }}
-                </dd>
-            </div>
-            @endif
-            @if($task->reason_no_interest)
-            <div class="progress-row">
-                <dt style="padding-left:.75rem;">↳ Motivo</dt>
-                <dd style="font-weight:400; color:#374151; text-align:right; max-width:60%;">
-                    {{ $task->reason_no_interest }}
-                </dd>
-            </div>
-            @endif
-            @if($task->product_of_interest)
-            <div class="progress-row">
-                <dt><i class="fas fa-box mr-1"></i> Producto</dt>
-                <dd>{{ $task->product_of_interest }}</dd>
-            </div>
-            @endif
-            @if($task->follow_up_date)
-            <div class="progress-row">
-                <dt><i class="fas fa-calendar-check mr-1"></i> Seguimiento</dt>
-                <dd style="color:#2563eb;">{{ $task->follow_up_date->format('d/m/Y') }}</dd>
-            </div>
-            @endif
-        </dl>
-    </div>
-    @endif
+        <p class="section-label">Gestion comercial</p>
 
-    {{-- ══ FLUJO DE PASOS ════════════════════════════════════════ --}}
-    @if(! $task->isClosed())
-
-        {{-- ── PASO 1 ──────────────────────────────────────────── --}}
-        @if($task->call_effective === null)
-        <div class="detail-card p-4 step-card">
-            <div class="step-badge" style="color:#2563eb;">
-                <span class="step-num" style="background:#dbeafe; color:#1d4ed8;">1</span>
-                Resultado de llamada
-            </div>
-            <h2 style="font-size:1rem; font-weight:700; color:#111827; margin:0 0 1.25rem;">
-                ¿La llamada fue efectiva?
-            </h2>
-
-            <form method="POST" action="{{ route('tasks.submitFlow', $task) }}">
-                @csrf
-                <input type="hidden" name="step" value="call_result">
-
-                <div style="display:flex; flex-direction:column; gap:.6rem; margin-bottom:1.25rem;">
-                    <label class="radio-option" id="opt-yes-call">
-                        <input type="radio" name="call_effective" value="1"
-                               {{ old('call_effective') === '1' ? 'checked' : '' }}>
-                        <div>
-                            <p style="font-size:.875rem; font-weight:600; color:#111827; margin:0;">
-                                Sí, fue efectiva
-                            </p>
-                            <p style="font-size:.75rem; color:#9ca3af; margin:.15rem 0 0;">
-                                El contacto respondió y conversamos
-                            </p>
-                        </div>
-                    </label>
-                    <label class="radio-option" id="opt-no-call">
-                        <input type="radio" name="call_effective" value="0"
-                               {{ old('call_effective') === '0' ? 'checked' : '' }}>
-                        <div>
-                            <p style="font-size:.875rem; font-weight:600; color:#111827; margin:0;">
-                                No fue efectiva
-                            </p>
-                            <p style="font-size:.75rem; color:#9ca3af; margin:.15rem 0 0;">
-                                No contestó, número incorrecto, etc. El contacto será reasignado.
-                            </p>
-                        </div>
-                    </label>
-                </div>
-
-                <div id="reasonBox"
-                     class="field-reveal {{ old('call_effective') === '0' ? 'visible' : '' }}"
-                     style="margin-bottom:1rem;">
-                    <label style="display:block; font-size:.75rem; font-weight:700;
-                                  letter-spacing:.06em; text-transform:uppercase;
-                                  color:#6b7280; margin-bottom:.4rem;">
-                        Motivo <span style="color:#ef4444;">*</span>
-                    </label>
-                    <input type="text"
-                           name="reason_no_effective"
-                           value="{{ old('reason_no_effective') }}"
-                           maxlength="255"
-                           placeholder="Ej: No contestó, número equivocado…"
-                           class="modern-input">
-                    @error('reason_no_effective')
-                        <p style="color:#ef4444; font-size:.75rem; margin-top:.25rem;">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                @error('call_effective')
-                    <p style="color:#ef4444; font-size:.75rem; margin-bottom:.5rem;">{{ $message }}</p>
-                @enderror
-
-                <button type="submit" class="btn-flow btn-blue">
-                    <i class="fas fa-arrow-right"></i>
-                    Guardar y continuar
-                </button>
-            </form>
+        <div class="hint-box">
+            <i class="fas fa-info-circle" style="margin-top:.15rem;"></i>
+            <span>
+                Si contactaste al cliente por WhatsApp o email/correo, la tarea cuenta como efectiva aunque aun estes esperando respuesta. Solo una gestion hecha unicamente por llamada y sin respuesta puede quedar como no efectiva y pasar a reasignacion.
+            </span>
         </div>
 
-        {{-- ── PASO 2 ──────────────────────────────────────────── --}}
-        @elseif($task->call_effective && $task->interest_level === null)
-        <div class="detail-card p-4 step-card">
-            <div class="step-badge" style="color:#7c3aed;">
-                <span class="step-num" style="background:#ede9fe; color:#6d28d9;">2</span>
-                Nivel de interés
+        <form method="POST" action="{{ route('tasks.updateSalesTracking', $task) }}">
+            @csrf
+            @method('PUT')
+
+            <div style="margin-bottom:1rem;">
+                <label class="field-label">Por donde lo contactaste? <span style="color:#ef4444;">*</span></label>
+                <div class="choice-row">
+                    @foreach($contactMethodOptions as $value => $meta)
+                        <label class="choice-pill">
+                            <input type="checkbox" name="contact_methods[]" value="{{ $value }}" {{ in_array($value, $selectedContactMethods ?? [], true) ? 'checked' : '' }}>
+                            <i class="fas fa-{{ $meta['icon'] }}"></i>
+                            <span>{{ $meta['label'] }}</span>
+                        </label>
+                    @endforeach
+                </div>
+                @error('contact_methods')
+                    <p style="color:#ef4444; font-size:.75rem; margin-top:.25rem;">{{ $message }}</p>
+                @enderror
             </div>
-            <h2 style="font-size:1rem; font-weight:700; color:#111827; margin:0 0 1.25rem;">
-                ¿El contacto mostró interés?
-            </h2>
 
-            <form method="POST" action="{{ route('tasks.submitFlow', $task) }}">
-                @csrf
-                <input type="hidden" name="step" value="interest">
-
-                <div style="display:flex; flex-direction:column; gap:.6rem; margin-bottom:1.25rem;">
-                    <label class="radio-option" id="opt-yes-int">
-                        <input type="radio" name="interest_level" value="1"
-                               {{ old('interest_level') === '1' ? 'checked' : '' }}>
-                        <div>
-                            <p style="font-size:.875rem; font-weight:600; color:#111827; margin:0;">
-                                Sí, mostró interés
-                            </p>
-                            <p style="font-size:.75rem; color:#9ca3af; margin:.15rem 0 0;">
-                                Quiere saber más o evaluar la oferta
-                            </p>
-                        </div>
+            <div style="margin-bottom:1rem;">
+                <label class="field-label">Te respondio? <span style="color:#ef4444;">*</span></label>
+                <div class="choice-row">
+                    <label class="choice-pill">
+                        <input type="radio" name="customer_responded" value="1" {{ $respondedValue === '1' ? 'checked' : '' }}>
+                        <span>Si respondio</span>
                     </label>
-                    <label class="radio-option" id="opt-no-int">
-                        <input type="radio" name="interest_level" value="0"
-                               {{ old('interest_level') === '0' ? 'checked' : '' }}>
-                        <div>
-                            <p style="font-size:.875rem; font-weight:600; color:#111827; margin:0;">
-                                No mostró interés
-                            </p>
-                            <p style="font-size:.75rem; color:#9ca3af; margin:.15rem 0 0;">
-                                Rechazó la oferta o no quiso continuar
-                            </p>
-                        </div>
+                    <label class="choice-pill">
+                        <input type="radio" name="customer_responded" value="0" {{ $respondedValue === '0' ? 'checked' : '' }}>
+                        <span>No, esperando respuesta</span>
                     </label>
                 </div>
+                @error('customer_responded')
+                    <p style="color:#ef4444; font-size:.75rem; margin-top:.25rem;">{{ $message }}</p>
+                @enderror
+            </div>
 
-                <div id="reasonNoInterestBox"
-                     class="field-reveal {{ old('interest_level') === '0' ? 'visible' : '' }}"
-                     style="margin-bottom:1rem;">
-                    <label style="display:block; font-size:.75rem; font-weight:700;
-                                  letter-spacing:.06em; text-transform:uppercase;
-                                  color:#6b7280; margin-bottom:.4rem;">
-                        Motivo <span style="color:#ef4444;">*</span>
-                    </label>
-                    <input type="text"
-                           name="reason_no_interest"
-                           value="{{ old('reason_no_interest') }}"
-                           maxlength="255"
-                           placeholder="Ej: Ya tiene el producto, no le interesa ahora…"
-                           class="modern-input">
-                    @error('reason_no_interest')
-                        <p style="color:#ef4444; font-size:.75rem; margin-top:.25rem;">{{ $message }}</p>
-                    @enderror
+            <div style="margin-bottom:1rem;">
+                <label class="field-label">Estatus de la venta</label>
+                <select name="sale_status" class="modern-input">
+                    <option value="">Sin estatus</option>
+                    @foreach($saleStatusOptions as $value => $label)
+                        <option value="{{ $value }}" {{ old('sale_status', $task->sale_status) === $value ? 'selected' : '' }}>
+                            {{ $label }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('sale_status')
+                    <p style="color:#ef4444; font-size:.75rem; margin-top:.25rem;">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div style="margin-bottom:1rem;">
+                <label class="field-label">Etiquetas</label>
+                <div class="choice-row">
+                    @foreach($salesTagOptions as $value => $meta)
+                        <label class="choice-pill">
+                            <input type="checkbox" name="sales_tags[]" value="{{ $value }}" {{ in_array($value, $selectedSalesTags ?? [], true) ? 'checked' : '' }}>
+                            <span>{{ $meta['label'] }}</span>
+                        </label>
+                    @endforeach
                 </div>
+                @error('sales_tags')
+                    <p style="color:#ef4444; font-size:.75rem; margin-top:.25rem;">{{ $message }}</p>
+                @enderror
+            </div>
 
+            <div style="margin-bottom:1rem;">
+                <label class="field-label">Mostro interes?</label>
+                <div class="choice-row">
+                    <label class="choice-pill">
+                        <input type="radio" name="interest_level" value="1" {{ $interestValue === '1' ? 'checked' : '' }}>
+                        <span>Si</span>
+                    </label>
+                    <label class="choice-pill">
+                        <input type="radio" name="interest_level" value="0" {{ $interestValue === '0' ? 'checked' : '' }}>
+                        <span>No</span>
+                    </label>
+                </div>
                 @error('interest_level')
-                    <p style="color:#ef4444; font-size:.75rem; margin-bottom:.5rem;">{{ $message }}</p>
+                    <p style="color:#ef4444; font-size:.75rem; margin-top:.25rem;">{{ $message }}</p>
                 @enderror
-
-                <button type="submit" class="btn-flow btn-violet">
-                    <i class="fas fa-arrow-right"></i>
-                    Guardar y continuar
-                </button>
-            </form>
-        </div>
-
-        {{-- ── PASO 3 ──────────────────────────────────────────── --}}
-        @elseif($task->call_effective && $task->interest_level)
-        <div class="detail-card p-4 step-card">
-            <div class="step-badge" style="color:#059669;">
-                <span class="step-num" style="background:#d1fae5; color:#065f46;">3</span>
-                Producto y seguimiento
             </div>
-            <h2 style="font-size:1rem; font-weight:700; color:#111827; margin:0 0 1.25rem;">
-                ¿Qué producto le interesa?
-            </h2>
 
-            <form method="POST" action="{{ route('tasks.submitFlow', $task) }}">
-                @csrf
-                <input type="hidden" name="step" value="product_followup">
+            <div style="margin-bottom:1rem;">
+                <label class="field-label">Producto de interes</label>
+                <input type="text" name="product_of_interest" value="{{ old('product_of_interest', $task->product_of_interest) }}" maxlength="255" placeholder="Ej: Sefardi Portugal" class="modern-input">
+                @error('product_of_interest')
+                    <p style="color:#ef4444; font-size:.75rem; margin-top:.25rem;">{{ $message }}</p>
+                @enderror
+            </div>
 
-                <div style="margin-bottom:1rem;">
-                    <label style="display:block; font-size:.75rem; font-weight:700;
-                                  letter-spacing:.06em; text-transform:uppercase;
-                                  color:#6b7280; margin-bottom:.4rem;">
-                        Producto de interés <span style="color:#ef4444;">*</span>
-                    </label>
-                    <input type="text"
-                           name="product_of_interest"
-                           value="{{ old('product_of_interest') }}"
-                           maxlength="255"
-                           placeholder="Ej: Seguro de vida, Crédito hipotecario…"
-                           class="modern-input">
-                    @error('product_of_interest')
-                        <p style="color:#ef4444; font-size:.75rem; margin-top:.25rem;">{{ $message }}</p>
-                    @enderror
-                </div>
+            <div style="margin-bottom:1rem;">
+                <label class="field-label">Motivo / observacion si no respondio</label>
+                <input type="text" name="reason_no_effective" value="{{ old('reason_no_effective', $task->reason_no_effective) }}" maxlength="255" placeholder="Ej: llamada sin respuesta, se envio WhatsApp y correo" class="modern-input">
+                @error('reason_no_effective')
+                    <p style="color:#ef4444; font-size:.75rem; margin-top:.25rem;">{{ $message }}</p>
+                @enderror
+            </div>
 
-                <div style="margin-bottom:1.5rem;">
-                    <label style="display:block; font-size:.75rem; font-weight:700;
-                                  letter-spacing:.06em; text-transform:uppercase;
-                                  color:#6b7280; margin-bottom:.4rem;">
-                        Fecha de seguimiento
-                        <span style="font-weight:400; font-size:.72rem;
-                                     text-transform:none; color:#9ca3af; margin-left:.25rem;">
-                            (opcional)
-                        </span>
-                    </label>
-                    <input type="date"
-                           name="follow_up_date"
-                           value="{{ old('follow_up_date') }}"
-                           min="{{ today()->addDay()->toDateString() }}"
-                           class="modern-input">
-                    <p style="font-size:.72rem; color:#9ca3af; margin-top:.35rem;">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        Si indicas una fecha se creará una tarea de seguimiento automáticamente.
-                    </p>
-                    @error('follow_up_date')
-                        <p style="color:#ef4444; font-size:.75rem; margin-top:.25rem;">{{ $message }}</p>
-                    @enderror
-                </div>
+            <div style="margin-bottom:1rem;">
+                <label class="field-label">Motivo si no hay interes</label>
+                <input type="text" name="reason_no_interest" value="{{ old('reason_no_interest', $task->reason_no_interest) }}" maxlength="255" placeholder="Ej: no desea continuar ahora" class="modern-input">
+                @error('reason_no_interest')
+                    <p style="color:#ef4444; font-size:.75rem; margin-top:.25rem;">{{ $message }}</p>
+                @enderror
+            </div>
 
-                <button type="submit" class="btn-flow btn-green">
-                    <i class="fas fa-check"></i>
-                    Completar tarea
-                </button>
-            </form>
-        </div>
-        @endif
+            <div style="margin-bottom:1.5rem;">
+                <label class="field-label">Fecha de seguimiento</label>
+                <input type="date" name="follow_up_date" value="{{ old('follow_up_date', optional($task->follow_up_date)->toDateString()) }}" min="{{ today()->addDay()->toDateString() }}" class="modern-input">
+                <p style="font-size:.72rem; color:#9ca3af; margin-top:.35rem;">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Si indicas una fecha se creara una tarea de seguimiento automaticamente.
+                </p>
+                @error('follow_up_date')
+                    <p style="color:#ef4444; font-size:.75rem; margin-top:.25rem;">{{ $message }}</p>
+                @enderror
+            </div>
 
-    {{-- ══ TAREA CERRADA ══════════════════════════════════════════ --}}
-    @else
-    <div class="detail-card p-5" style="text-align:center;">
-        <span style="display:inline-flex; align-items:center; justify-content:center;
-                     width:3rem; height:3rem; border-radius:50%; font-size:1.25rem;
-                     background:{{ $badgeBg }}; color:{{ $badgeColor }}; margin-bottom:.75rem;">
-            <i class="fas {{ $task->status === 'completed' ? 'fa-check' : 'fa-times' }}"></i>
-        </span>
-        <p style="font-size:.9rem; font-weight:700; color:#374151; margin:0;">
-            Tarea {{ strtolower($badgeLabel) }}
-        </p>
-        <p style="font-size:.8rem; color:#9ca3af; margin:.25rem 0 0;">
-            Esta tarea ya no admite más cambios.
-        </p>
+            <button type="submit" class="btn-flow btn-green">
+                <i class="fas fa-check"></i>
+                {{ $task->isClosed() ? 'Actualizar gestion' : 'Guardar gestion y completar tarea' }}
+            </button>
+        </form>
     </div>
-    @endif
 
+    @if($hasProgress)
+        <div class="detail-card p-4 mb-4">
+            <p class="section-label">Progreso registrado</p>
+            <dl style="margin:0;">
+                <div class="progress-row">
+                    <dt><i class="fas fa-share-alt mr-1"></i> Vias usadas</dt>
+                    <dd>{{ implode(', ', $task->contactMethodLabels()) ?: 'Sin registrar' }}</dd>
+                </div>
+                @if($task->customer_responded !== null)
+                    <div class="progress-row">
+                        <dt><i class="fas fa-reply mr-1"></i> Respondio</dt>
+                        <dd style="color:{{ $task->customer_responded ? '#059669' : '#b45309' }};">
+                            {{ $task->customer_responded ? 'Si' : 'Esperando respuesta' }}
+                        </dd>
+                    </div>
+                @endif
+                @if($task->call_effective !== null)
+                    <div class="progress-row">
+                        <dt><i class="fas fa-check-circle mr-1"></i> Resultado de gestion</dt>
+                        <dd style="color:{{ $task->call_effective ? '#059669' : '#dc2626' }};">
+                            {{ $task->call_effective ? 'Efectiva' : 'No efectiva' }}
+                        </dd>
+                    </div>
+                @endif
+                @if($task->reason_no_effective)
+                    <div class="progress-row">
+                        <dt><i class="fas fa-comment-alt mr-1"></i> Observacion</dt>
+                        <dd>{{ $task->reason_no_effective }}</dd>
+                    </div>
+                @endif
+                @if($task->interest_level !== null)
+                    <div class="progress-row">
+                        <dt><i class="fas fa-comment-dots mr-1"></i> Mostro interes</dt>
+                        <dd style="color:{{ $task->interest_level ? '#059669' : '#dc2626' }};">
+                            {{ $task->interest_level ? 'Si' : 'No' }}
+                        </dd>
+                    </div>
+                @endif
+                @if($task->sale_status)
+                    <div class="progress-row">
+                        <dt><i class="fas fa-chart-line mr-1"></i> Estatus venta</dt>
+                        <dd>{{ $task->saleStatusLabel() }}</dd>
+                    </div>
+                @endif
+                @if(!empty($task->sales_tags))
+                    <div class="progress-row">
+                        <dt><i class="fas fa-tags mr-1"></i> Etiquetas</dt>
+                        <dd>
+                            @foreach($task->sales_tags as $tag)
+                                @if(isset($salesTagOptions[$tag]))
+                                    <span class="badge badge-{{ $salesTagOptions[$tag]['class'] }} mb-1">
+                                        {{ $salesTagOptions[$tag]['label'] }}
+                                    </span>
+                                @endif
+                            @endforeach
+                        </dd>
+                    </div>
+                @endif
+                @if($task->reason_no_interest)
+                    <div class="progress-row">
+                        <dt><i class="fas fa-comment-slash mr-1"></i> Motivo sin interes</dt>
+                        <dd>{{ $task->reason_no_interest }}</dd>
+                    </div>
+                @endif
+                @if($task->product_of_interest)
+                    <div class="progress-row">
+                        <dt><i class="fas fa-box mr-1"></i> Producto</dt>
+                        <dd>{{ $task->product_of_interest }}</dd>
+                    </div>
+                @endif
+                @if($task->follow_up_date)
+                    <div class="progress-row">
+                        <dt><i class="fas fa-calendar-check mr-1"></i> Seguimiento</dt>
+                        <dd style="color:#2563eb;">{{ $task->follow_up_date->format('d/m/Y') }}</dd>
+                    </div>
+                @endif
+            </dl>
+        </div>
+    @endif
 </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-(function () {
-    // ── Highlight de tarjeta radio seleccionada ─────────────────
-    function bindRadioHighlight(radioName, yesId, noId) {
-        document.querySelectorAll(`input[name="${radioName}"]`).forEach(radio => {
-            // Aplicar estado inicial
-            applyHighlight(radioName, yesId, noId);
-
-            radio.addEventListener('change', () => {
-                applyHighlight(radioName, yesId, noId);
-            });
-        });
-    }
-
-    function applyHighlight(radioName, yesId, noId) {
-        const radios = document.querySelectorAll(`input[name="${radioName}"]`);
-        const yesEl = document.getElementById(yesId);
-        const noEl  = document.getElementById(noId);
-        if (!yesEl || !noEl) return;
-
-        // Limpiar
-        [yesEl, noEl].forEach(el => {
-            el.style.borderColor = '#e5e7eb';
-            el.style.background  = '#fff';
-        });
-
-        radios.forEach(r => {
-            if (!r.checked) return;
-            const target = r.value === '1' ? yesEl : noEl;
-            target.style.borderColor = r.value === '1' ? '#3b82f6' : '#ef4444';
-            target.style.background  = r.value === '1' ? '#eff6ff' : '#fef2f2';
-        });
-    }
-
-    // ── Reveal de campo condicional ─────────────────────────────
-    function bindReveal(radioName, boxId) {
-        document.querySelectorAll(`input[name="${radioName}"]`).forEach(radio => {
-            radio.addEventListener('change', () => {
-                const box = document.getElementById(boxId);
-                if (!box) return;
-                const show = radio.value === '0';
-                box.classList.toggle('visible', show);
-                if (show) setTimeout(() => box.querySelector('input')?.focus(), 320);
-            });
-        });
-    }
-
-    bindRadioHighlight('call_effective',  'opt-yes-call', 'opt-no-call');
-    bindRadioHighlight('interest_level',  'opt-yes-int',  'opt-no-int');
-    bindReveal('call_effective', 'reasonBox');
-    bindReveal('interest_level', 'reasonNoInterestBox');
-})();
-</script>
-@endpush

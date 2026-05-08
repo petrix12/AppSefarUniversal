@@ -187,11 +187,86 @@
                     </div>
 
                     {{-- ───── Info de resultado (solo lectura) ───── --}}
+                    <div class="card card-outline card-info mt-3">
+                        <div class="card-header py-2">
+                            <h3 class="card-title">
+                                <i class="fas fa-chart-line mr-1"></i>Seguimiento de venta
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="font-weight-bold d-block">Vias de contacto</label>
+                                @php($selectedMethods = old('contact_methods', $task->contact_methods ?? []))
+                                @foreach(\App\Models\Task::contactMethodOptions() as $value => $meta)
+                                    <div class="custom-control custom-checkbox custom-control-inline mb-2">
+                                        <input type="checkbox"
+                                               name="contact_methods[]"
+                                               value="{{ $value }}"
+                                               id="method-{{ $value }}"
+                                               class="custom-control-input"
+                                               {{ in_array($value, $selectedMethods ?? [], true) ? 'checked' : '' }}>
+                                        <label class="custom-control-label" for="method-{{ $value }}">
+                                            <i class="fas fa-{{ $meta['icon'] }} mr-1"></i>{{ $meta['label'] }}
+                                        </label>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            <div class="form-group">
+                                <label class="font-weight-bold d-block">Cliente respondio</label>
+                                @php($respondedValue = old('customer_responded', is_null($task->customer_responded) ? null : ($task->customer_responded ? '1' : '0')))
+                                <div class="custom-control custom-radio custom-control-inline">
+                                    <input type="radio" id="customer-responded-yes" name="customer_responded" value="1" class="custom-control-input" {{ $respondedValue === '1' ? 'checked' : '' }}>
+                                    <label class="custom-control-label" for="customer-responded-yes">Si</label>
+                                </div>
+                                <div class="custom-control custom-radio custom-control-inline">
+                                    <input type="radio" id="customer-responded-no" name="customer_responded" value="0" class="custom-control-input" {{ $respondedValue === '0' ? 'checked' : '' }}>
+                                    <label class="custom-control-label" for="customer-responded-no">No / esperando respuesta</label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="font-weight-bold">Estatus de la venta</label>
+                                <select name="sale_status" class="form-control @error('sale_status') is-invalid @enderror">
+                                    <option value="">Sin estatus</option>
+                                    @foreach(\App\Models\Task::saleStatusOptions() as $value => $label)
+                                        <option value="{{ $value }}" {{ old('sale_status', $task->sale_status) === $value ? 'selected' : '' }}>
+                                            {{ $label }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('sale_status')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="form-group mb-0">
+                                <label class="font-weight-bold d-block">Etiquetas</label>
+                                @php($selectedTags = old('sales_tags', $task->sales_tags ?? []))
+                                @foreach(\App\Models\Task::salesTagOptions() as $value => $meta)
+                                    <div class="custom-control custom-checkbox custom-control-inline mb-2">
+                                        <input type="checkbox"
+                                               name="sales_tags[]"
+                                               value="{{ $value }}"
+                                               id="tag-{{ $value }}"
+                                               class="custom-control-input"
+                                               {{ in_array($value, $selectedTags ?? [], true) ? 'checked' : '' }}>
+                                        <label class="custom-control-label" for="tag-{{ $value }}">
+                                            <span class="badge badge-{{ $meta['class'] }}">{{ $meta['label'] }}</span>
+                                        </label>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+
                     @if(!is_null($task->call_effective))
                         <div class="alert alert-light border mt-2">
                             <strong><i class="fas fa-info-circle mr-1"></i>Resultado registrado por el asesor:</strong>
                             <ul class="mb-0 mt-1 small">
-                                <li>Llamada efectiva: {{ $task->call_effective ? '✅ Sí' : '❌ No' }}</li>
+                                <li>Vias de contacto: {{ implode(', ', $task->contactMethodLabels()) ?: '-' }}</li>
+                                <li>Cliente respondio: {{ is_null($task->customer_responded) ? 'Sin registrar' : ($task->customer_responded ? 'Si' : 'No / esperando respuesta') }}</li>
+                                <li>Gestion efectiva: {{ $task->call_effective ? 'Si' : 'No' }}</li>
                                 @if($task->reason_no_effective)
                                     <li>Motivo no efectiva: {{ $task->reason_no_effective }}</li>
                                 @endif

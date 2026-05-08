@@ -68,10 +68,19 @@ class AdminTaskController extends Controller
             'description'=> 'nullable|string',
             'due_date'   => 'required|date',
             'status'     => 'sometimes|in:pending,in_progress,completed,canceled',
+            'contact_methods' => 'nullable|array',
+            'contact_methods.*' => 'in:' . implode(',', array_keys(Task::contactMethodOptions())),
+            'customer_responded' => 'nullable|in:0,1',
+            'sale_status' => 'nullable|in:' . implode(',', array_keys(Task::saleStatusOptions())),
+            'sales_tags' => 'nullable|array',
+            'sales_tags.*' => 'in:' . implode(',', array_keys(Task::salesTagOptions())),
         ]);
 
         $data['created_by_user_id'] = auth()->id();
         $data['status']             = $data['status'] ?? 'pending';
+        $data['contact_methods']    = array_values($data['contact_methods'] ?? []);
+        $data['customer_responded'] = isset($data['customer_responded']) ? $data['customer_responded'] === '1' : null;
+        $data['sales_tags']         = array_values($data['sales_tags'] ?? []);
 
         Task::create($data);
 
@@ -95,11 +104,22 @@ class AdminTaskController extends Controller
     {
         $data = $request->validate([
             'user_id'    => 'sometimes|exists:users,id',
+            'contact_id' => 'nullable|exists:users,id',
             'title'      => 'sometimes|string|max:255',
             'description'=> 'nullable|string',
             'due_date'   => 'sometimes|date',
             'status'     => 'sometimes|in:pending,in_progress,completed,canceled',
+            'contact_methods' => 'nullable|array',
+            'contact_methods.*' => 'in:' . implode(',', array_keys(Task::contactMethodOptions())),
+            'customer_responded' => 'nullable|in:0,1',
+            'sale_status' => 'nullable|in:' . implode(',', array_keys(Task::saleStatusOptions())),
+            'sales_tags' => 'nullable|array',
+            'sales_tags.*' => 'in:' . implode(',', array_keys(Task::salesTagOptions())),
         ]);
+
+        $data['contact_methods'] = array_values($data['contact_methods'] ?? []);
+        $data['customer_responded'] = isset($data['customer_responded']) ? $data['customer_responded'] === '1' : null;
+        $data['sales_tags'] = array_values($data['sales_tags'] ?? []);
 
         $task->update($data);
 

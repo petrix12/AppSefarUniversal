@@ -52,6 +52,67 @@ class TaskController extends Controller
         return view('tasks.show', compact('task'));
     }
 
+    public function updateSalesTracking(Request $request, Task $task, HubspotService $hubspot)
+    {
+        $this->authorizeAccess($task);
+
+        $data = $request->validate([
+            'contact_methods' => 'required|array|min:1',
+            'contact_methods.*' => 'in:' . implode(',', array_keys(Task::contactMethodOptions())),
+            'customer_responded' => 'required|in:0,1',
+            'sale_status' => 'nullable|in:' . implode(',', array_keys(Task::saleStatusOptions())),
+            'sales_tags' => 'nullable|array',
+            'sales_tags.*' => 'in:' . implode(',', array_keys(Task::salesTagOptions())),
+            'interest_level' => 'nullable|in:0,1',
+            'reason_no_interest' => 'nullable|string|max:255',
+            'reason_no_effective' => 'nullable|string|max:255',
+            'product_of_interest' => 'nullable|string|max:255',
+            'follow_up_date' => 'nullable|date|after:today',
+        ]);
+
+        $oldFollowUpDate = optional($task->follow_up_date)->toDateString();
+        $methods = array_values(array_unique($data['contact_methods']));
+        $customerResponded = $data['customer_responded'] === '1';
+        $onlyUnansweredCall = ! $customerResponded
+            && count($methods) === 1
+            && in_array(Task::CONTACT_METHOD_CALL, $methods, true);
+
+        $interest = array_key_exists('interest_level', $data) && $data['interest_level'] !== null
+            ? $data['interest_level'] === '1'
+            : null;
+
+        $task->contact_methods = $methods;
+        $task->customer_responded = $customerResponded;
+        $task->call_effective = ! $onlyUnansweredCall;
+        $task->reason_no_effective = $onlyUnansweredCall
+            ? ($request->filled('reason_no_effective') ? $data['reason_no_effective'] : 'Solo llamada sin respuesta')
+            : ($data['reason_no_effective'] ?? null);
+        $task->interest_level = $interest;
+        $task->reason_no_interest = $interest === false
+            ? ($data['reason_no_interest'] ?? null)
+            : null;
+        $task->sale_status = $data['sale_status'] ?? null;
+        $task->sales_tags = array_values($data['sales_tags'] ?? []);
+        $task->product_of_interest = $data['product_of_interest'] ?? null;
+        $task->follow_up_date = $data['follow_up_date'] ?? null;
+        $task->status = Task::STATUS_COMPLETED;
+        $task->save();
+
+        if ($task->follow_up_date && $task->follow_up_date->toDateString() !== $oldFollowUpDate) {
+            $this->createFollowUp($task);
+        }
+
+        $message = 'Gestion comercial guardada. El cliente queda en tu seguimiento.';
+
+        if ($onlyUnansweredCall) {
+            $message = $this->reassignIneffectiveContact($task, $hubspot);
+        } else {
+            $this->markContacted->markFromTask($task);
+        }
+
+        return redirect()->route('tasks.show', $task)->with('success', $message);
+    }
+
     // ── Flujo de llamada (multi-paso) ────────────────────────
     public function submitFlow(Request $request, Task $task, HubspotService $hubspot)
     {
@@ -83,7 +144,7 @@ class TaskController extends Controller
                     $task->reason_no_effective = $request->reason_no_effective;
                     $task->status              = 'completed';
                     $taskWasCompleted          = true;
-                    $shouldReassignIneffectiveContact = true;
+                    $shouldReassignIneffectiveContact = ! $task->hasActiveSalesProgress();
                 }
 
                 $task->save();
@@ -232,6 +293,10 @@ class TaskController extends Controller
             'description'        => "Seguimiento generado desde tarea #{$original->id}",
             'due_date'           => $followDate->toDateString(),
             'status'             => 'pending',
+            'contact_methods'    => $original->contact_methods,
+            'customer_responded' => $original->customer_responded,
+            'sale_status'        => $original->sale_status,
+            'sales_tags'         => $original->sales_tags,
             'created_by_user_id' => auth()->id(),
         ]);
     }

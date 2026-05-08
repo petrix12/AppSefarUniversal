@@ -115,6 +115,7 @@ Route::middleware(['auth'])->prefix('tasks')->name('tasks.')->group(function () 
     // ── Asesor DESPUÉS ────────────────────────────
     Route::get('/',             [TaskController::class, 'table'])->name('index');
     Route::get('/{task}',       [TaskController::class, 'show'])->name('show');
+    Route::put('/{task}/sales-tracking', [TaskController::class, 'updateSalesTracking'])->name('updateSalesTracking');
     Route::post('/{task}/flow', [TaskController::class, 'submitFlow'])->name('submitFlow');
     Route::post('/{task}/sync-contact', [TaskController::class, 'syncContact'])->name('syncContact');
 });

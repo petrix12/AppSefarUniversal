@@ -78,6 +78,9 @@
                         <th>Título</th>
                         <th>Descripción</th>
                         <th>Estado</th>
+                        <th>Via</th>
+                        <th>Venta</th>
+                        <th>Etiquetas</th>
                         <th style="width:120px">Acción</th>
                     </tr>
                 </thead>
@@ -112,6 +115,16 @@
                                     {{ $labelMap[$task->status] ?? $task->status }}
                                 </span>
                             </td>
+                            <td>{{ implode(', ', $task->contactMethodLabels()) ?: '-' }}</td>
+                            <td>{{ $task->saleStatusLabel() ?? '—' }}</td>
+                            <td>
+                                @foreach($task->sales_tags ?? [] as $tag)
+                                    @php($tagMeta = \App\Models\Task::salesTagOptions()[$tag] ?? null)
+                                    @if($tagMeta)
+                                        <span class="badge badge-{{ $tagMeta['class'] }}">{{ $tagMeta['label'] }}</span>
+                                    @endif
+                                @endforeach
+                            </td>
                             <td>
                                 <a href="{{ route('tasks.show', $task) }}"
                                    class="btn btn-sm btn-{{ $task->isClosed() ? 'outline-secondary' : 'primary' }}">
@@ -122,7 +135,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center py-5 text-muted">
+                            <td colspan="9" class="text-center py-5 text-muted">
                                 <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
                                 No hay tareas asignadas para esta fecha.
                             </td>

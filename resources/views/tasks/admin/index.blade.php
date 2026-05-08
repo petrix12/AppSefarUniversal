@@ -10,6 +10,9 @@
 @stop
 
 @section('content')
+    @php
+        $salesTagOptions = \App\Models\Task::salesTagOptions();
+    @endphp
 
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show">
@@ -111,6 +114,8 @@
                         <th>Contacto</th>
                         <th>Título</th>
                         <th>Estado</th>
+                        <th>Via</th>
+                        <th>Venta</th>
                         <th>Fecha</th>
                         <th>Acciones</th>
                     </tr>
@@ -137,8 +142,17 @@
                                     {{ $labelMap[$task->status] ?? $task->status }}
                                 </span>
                             </td>
+                            <td>{{ implode(', ', $task->contactMethodLabels()) ?: '-' }}</td>
+                            <td>{{ $task->saleStatusLabel() ?? '-' }}</td>
                             <td>{{ $task->due_date->format('d/m/Y') }}</td>
                             <td>
+                                <button type="button"
+                                        class="btn btn-xs btn-secondary"
+                                        data-toggle="modal"
+                                        data-target="#task-detail-{{ $task->id }}"
+                                        title="Ver datos de la tarea">
+                                    <i class="fas fa-eye"></i>
+                                </button>
                                 <a href="{{ route('tasks.admin.edit', $task) }}"
                                    class="btn btn-xs btn-info">
                                     <i class="fas fa-edit"></i>
@@ -155,13 +169,212 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center py-4 text-muted">
+                            <td colspan="9" class="text-center py-4 text-muted">
                                 Sin tareas para los filtros aplicados.
                             </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
+
+            @foreach($tasks as $task)
+                @php
+                    $detailColorMap = [
+                        'pending' => 'warning',
+                        'in_progress' => 'primary',
+                        'completed' => 'success',
+                        'canceled' => 'danger',
+                    ];
+                    $detailLabelMap = [
+                        'pending' => 'Pendiente',
+                        'in_progress' => 'En curso',
+                        'completed' => 'Completada',
+                        'canceled' => 'Cancelada',
+                    ];
+                @endphp
+                <div class="modal fade" id="task-detail-{{ $task->id }}" tabindex="-1" role="dialog" aria-labelledby="task-detail-title-{{ $task->id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header bg-dark">
+                                <div>
+                                    <h5 class="modal-title" id="task-detail-title-{{ $task->id }}">
+                                        <i class="fas fa-clipboard-list mr-1"></i>
+                                        Tarea #{{ $task->id }} - {{ $task->title }}
+                                    </h5>
+                                    <small class="text-light">
+                                        {{ $task->assignee?->name ?? 'Sin asesor' }} · {{ $task->due_date->format('d/m/Y') }}
+                                    </small>
+                                </div>
+                                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="card card-outline card-primary mb-3">
+                                    <div class="card-header py-2">
+                                        <h3 class="card-title">
+                                            <i class="fas fa-user-check mr-1"></i>Registro del vendedor
+                                        </h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <span class="text-muted small d-block">Vias de contacto</span>
+                                                <span>{{ implode(', ', $task->contactMethodLabels()) ?: '-' }}</span>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <span class="text-muted small d-block">Respondio</span>
+                                                @if(is_null($task->customer_responded))
+                                                    <span class="badge badge-secondary">Sin registrar</span>
+                                                @else
+                                                    <span class="badge badge-{{ $task->customer_responded ? 'success' : 'warning' }}">
+                                                        {{ $task->customer_responded ? 'Si' : 'Esperando respuesta' }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <span class="text-muted small d-block">Gestion efectiva</span>
+                                                @if(is_null($task->call_effective))
+                                                    <span class="badge badge-secondary">Sin registrar</span>
+                                                @else
+                                                    <span class="badge badge-{{ $task->call_effective ? 'success' : 'danger' }}">
+                                                        {{ $task->call_effective ? 'Efectiva' : 'No efectiva' }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                            <div class="col-md-8 mb-3">
+                                                <span class="text-muted small d-block">Observacion / motivo sin respuesta</span>
+                                                <span>{{ $task->reason_no_effective ?: '-' }}</span>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <span class="text-muted small d-block">Mostro interes</span>
+                                                @if(is_null($task->interest_level))
+                                                    <span class="badge badge-secondary">Sin registrar</span>
+                                                @else
+                                                    <span class="badge badge-{{ $task->interest_level ? 'success' : 'danger' }}">
+                                                        {{ $task->interest_level ? 'Si' : 'No' }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                            <div class="col-md-8 mb-3">
+                                                <span class="text-muted small d-block">Motivo sin interes</span>
+                                                <span>{{ $task->reason_no_interest ?: '—' }}</span>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <span class="text-muted small d-block">Estatus de venta</span>
+                                                <span class="font-weight-bold">{{ $task->saleStatusLabel() ?? 'Sin estatus' }}</span>
+                                            </div>
+                                            <div class="col-md-8 mb-3">
+                                                <span class="text-muted small d-block">Etiquetas</span>
+                                                @forelse($task->sales_tags ?? [] as $tag)
+                                                    @if(isset($salesTagOptions[$tag]))
+                                                        <span class="badge badge-{{ $salesTagOptions[$tag]['class'] }} mr-1">
+                                                            {{ $salesTagOptions[$tag]['label'] }}
+                                                        </span>
+                                                    @endif
+                                                @empty
+                                                    <span>—</span>
+                                                @endforelse
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <span class="text-muted small d-block">Producto de interes</span>
+                                                <span>{{ $task->product_of_interest ?: '—' }}</span>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <span class="text-muted small d-block">Seguimiento programado</span>
+                                                <span>{{ $task->follow_up_date ? $task->follow_up_date->format('d/m/Y') : '—' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="card card-outline card-secondary h-100">
+                                            <div class="card-header py-2">
+                                                <h3 class="card-title">
+                                                    <i class="fas fa-info-circle mr-1"></i>Datos de la tarea
+                                                </h3>
+                                            </div>
+                                            <div class="card-body">
+                                                <dl class="row mb-0">
+                                                    <dt class="col-sm-4">Estado</dt>
+                                                    <dd class="col-sm-8">
+                                                        <span class="badge badge-{{ $detailColorMap[$task->status] ?? 'secondary' }}">
+                                                            {{ $detailLabelMap[$task->status] ?? $task->status }}
+                                                        </span>
+                                                    </dd>
+                                                    <dt class="col-sm-4">Titulo</dt>
+                                                    <dd class="col-sm-8">{{ $task->title }}</dd>
+                                                    <dt class="col-sm-4">Descripcion</dt>
+                                                    <dd class="col-sm-8">{{ $task->description ?: '—' }}</dd>
+                                                    <dt class="col-sm-4">Fecha limite</dt>
+                                                    <dd class="col-sm-8">{{ $task->due_date->format('d/m/Y') }}</dd>
+                                                    <dt class="col-sm-4">Creada</dt>
+                                                    <dd class="col-sm-8">{{ $task->created_at?->format('d/m/Y H:i') ?? '—' }}</dd>
+                                                    <dt class="col-sm-4">Actualizada</dt>
+                                                    <dd class="col-sm-8">{{ $task->updated_at?->format('d/m/Y H:i') ?? '—' }}</dd>
+                                                </dl>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card card-outline card-secondary h-100">
+                                            <div class="card-header py-2">
+                                                <h3 class="card-title">
+                                                    <i class="fas fa-address-book mr-1"></i>Contacto y asignacion
+                                                </h3>
+                                            </div>
+                                            <div class="card-body">
+                                                <dl class="row mb-0">
+                                                    <dt class="col-sm-4">Asesor</dt>
+                                                    <dd class="col-sm-8">{{ $task->assignee?->name ?? '—' }}</dd>
+                                                    <dt class="col-sm-4">Contacto</dt>
+                                                    <dd class="col-sm-8">{{ $task->contact?->name ?? '—' }}</dd>
+                                                    <dt class="col-sm-4">Email</dt>
+                                                    <dd class="col-sm-8">
+                                                        @if($task->contact?->email)
+                                                            <a href="mailto:{{ $task->contact->email }}">{{ $task->contact->email }}</a>
+                                                        @else
+                                                            —
+                                                        @endif
+                                                    </dd>
+                                                    <dt class="col-sm-4">Telefono</dt>
+                                                    <dd class="col-sm-8">
+                                                        @if($task->contact?->phone)
+                                                            <a href="tel:{{ $task->contact->phone }}">{{ $task->contact->phone }}</a>
+                                                        @else
+                                                            —
+                                                        @endif
+                                                    </dd>
+                                                    <dt class="col-sm-4">Pasaporte</dt>
+                                                    <dd class="col-sm-8">{{ $task->contact?->passport ?? '—' }}</dd>
+                                                    <dt class="col-sm-4">COS</dt>
+                                                    <dd class="col-sm-8">
+                                                        @if($task->contact)
+                                                            <a href="{{ url('/users/' . $task->contact->id . '/edit') }}" target="_blank">
+                                                                Abrir ficha del cliente
+                                                            </a>
+                                                        @else
+                                                            —
+                                                        @endif
+                                                    </dd>
+                                                </dl>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <a href="{{ route('tasks.admin.edit', $task) }}" class="btn btn-info">
+                                    <i class="fas fa-edit mr-1"></i>Editar tarea
+                                </a>
+                                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cerrar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
         </div>
         <div class="card-footer">
             {{ $tasks->links() }}
