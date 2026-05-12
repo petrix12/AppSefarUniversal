@@ -3,6 +3,7 @@
 
 namespace App\Jobs\Teamleader;
 
+use App\Exceptions\TeamleaderRateLimitException;
 use App\Models\TlInvoice;
 use App\Models\TlSyncLog;
 use App\Services\TeamleaderService;
@@ -35,7 +36,7 @@ class ProcessInvoiceChunkJob implements ShouldQueue
     {
         Log::info("[TL] Facturas — Chunk {$this->chunkNumber}/{$this->totalChunks} — procesando " . count($this->invoiceIds) . " facturas");
 
-        foreach ($this->invoiceIds as $id) {
+        foreach ($this->invoiceIds as $offset => $id) {
             try {
                 $existing = TlInvoice::find($id);
                 $detail = $service->getInvoiceById($id);
@@ -48,15 +49,20 @@ class ProcessInvoiceChunkJob implements ShouldQueue
 
                 $invoice = TlInvoice::fromTeamleader($detail);
 
-                if ($this->downloadPdfs && $this->invoiceNeedsPdfDownload($existing, $detail)) {
+                if ($this->downloadPdfs() && $this->invoiceNeedsPdfDownload($existing, $detail)) {
                     try {
                         $this->downloadPdf($invoice, $service);
+                    } catch (TeamleaderRateLimitException $e) {
+                        throw $e;
                     } catch (\Throwable $pdfError) {
                         Log::error("[TL] Error PDF factura {$id}: " . $pdfError->getMessage());
                     }
                 }
 
                 TlSyncLog::find($this->syncLogId)?->incrementCounter('processed');
+            } catch (TeamleaderRateLimitException $e) {
+                $this->releaseRemaining($offset, $e);
+                return;
             } catch (\Throwable $e) {
                 Log::error("[TL] Error factura {$id}: " . $e->getMessage());
                 TlSyncLog::find($this->syncLogId)?->incrementCounter('failed');
@@ -67,6 +73,28 @@ class ProcessInvoiceChunkJob implements ShouldQueue
 
         Log::info("[TL] Facturas — Chunk {$this->chunkNumber}/{$this->totalChunks} — completado");
         $this->checkIfCompleted();
+    }
+
+    private function releaseRemaining(int $offset, TeamleaderRateLimitException $e): void
+    {
+        $remaining = array_slice($this->invoiceIds, $offset);
+
+        Log::warning("[TL] Facturas — rate limit en chunk {$this->chunkNumber}. Reintentando " . count($remaining) . " facturas luego.");
+
+        self::dispatch(
+            $remaining,
+            $this->chunkNumber,
+            $this->totalChunks,
+            $this->syncLogId,
+            $this->downloadPdfs()
+        )
+            ->onQueue('teamleader-sync')
+            ->delay(now()->addSeconds($e->retryAfterSeconds()));
+    }
+
+    private function downloadPdfs(): bool
+    {
+        return isset($this->downloadPdfs) ? $this->downloadPdfs : true;
     }
 
     private function invoiceNeedsPdfDownload(?TlInvoice $existing, array $detail): bool

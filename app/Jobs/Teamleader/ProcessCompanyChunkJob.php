@@ -3,6 +3,7 @@
 
 namespace App\Jobs\Teamleader;
 
+use App\Exceptions\TeamleaderRateLimitException;
 use App\Models\TlCompany;
 use App\Models\TlSyncLog;
 use App\Services\TeamleaderService;
@@ -33,7 +34,7 @@ class ProcessCompanyChunkJob implements ShouldQueue
     {
         Log::info("[TL] Empresas — Chunk {$this->chunkNumber}/{$this->totalChunks} — procesando " . count($this->companyIds) . " empresas");
 
-        foreach ($this->companyIds as $id) {
+        foreach ($this->companyIds as $offset => $id) {
             try {
                 $detail = $service->getCompanyById($id);
 
@@ -45,11 +46,14 @@ class ProcessCompanyChunkJob implements ShouldQueue
 
                 TlCompany::fromTeamleader($detail);
 
-                if ($this->syncDocuments) {
+                if ($this->syncDocuments()) {
                     SyncDocumentsJob::dispatch('company', $id)->onQueue('teamleader-documents');
                 }
 
                 TlSyncLog::find($this->syncLogId)?->incrementCounter('processed');
+            } catch (TeamleaderRateLimitException $e) {
+                $this->releaseRemaining($offset, $e);
+                return;
             } catch (\Throwable $e) {
                 Log::error("[TL] Error empresa {$id}: " . $e->getMessage());
                 TlSyncLog::find($this->syncLogId)?->incrementCounter('failed');
@@ -60,6 +64,28 @@ class ProcessCompanyChunkJob implements ShouldQueue
 
         Log::info("[TL] Empresas — Chunk {$this->chunkNumber}/{$this->totalChunks} — completado");
         $this->checkIfCompleted();
+    }
+
+    private function releaseRemaining(int $offset, TeamleaderRateLimitException $e): void
+    {
+        $remaining = array_slice($this->companyIds, $offset);
+
+        Log::warning("[TL] Empresas — rate limit en chunk {$this->chunkNumber}. Reintentando " . count($remaining) . " empresas luego.");
+
+        self::dispatch(
+            $remaining,
+            $this->chunkNumber,
+            $this->totalChunks,
+            $this->syncLogId,
+            $this->syncDocuments()
+        )
+            ->onQueue('teamleader-sync')
+            ->delay(now()->addSeconds($e->retryAfterSeconds()));
+    }
+
+    private function syncDocuments(): bool
+    {
+        return isset($this->syncDocuments) ? $this->syncDocuments : true;
     }
 
     private function checkIfCompleted(): void

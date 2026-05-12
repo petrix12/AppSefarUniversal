@@ -1,8 +1,8 @@
 <?php
-// app/Jobs/Teamleader/SyncCompaniesJob.php
 
 namespace App\Jobs\Teamleader;
 
+use App\Exceptions\TeamleaderRateLimitException;
 use App\Models\TlSyncLog;
 use App\Services\TeamleaderService;
 use Illuminate\Bus\Queueable;
@@ -16,55 +16,91 @@ class SyncCompaniesJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $timeout = 600;
-    public int $tries   = 3;
-    public int $backoff = 30;
+    public int $timeout = 300;
+    public int $tries = 3;
+    public int $backoff = 90;
 
     public function __construct(
         public readonly ?int $syncLogId = null,
         public readonly bool $syncDocuments = true,
+        public readonly int $page = 1,
     ) {}
 
     public function handle(TeamleaderService $service): void
     {
-        Log::info("[TL] Empresas — recolectando todos los IDs...");
-
-        $allIds  = [];
-        $page    = 1;
         $perPage = 100;
+        $pagesPerJob = max(1, (int) config('services.teamleader.sync_pages_per_job', 2));
+        $page = isset($this->page) ? $this->page : 1;
+        $allIds = [];
+        $lastCount = 0;
 
-        do {
-            $response = $service->listCompanies($page, $perPage);
-            $items    = $response['data'] ?? [];
+        Log::info("[TL] Empresas - recolectando IDs desde pagina {$page}...");
 
-            foreach ($items as $item) {
-                $allIds[] = $item['id'];
+        for ($i = 0; $i < $pagesPerJob; $i++) {
+            try {
+                $response = $service->listCompanies($page, $perPage);
+            } catch (TeamleaderRateLimitException $e) {
+                Log::warning("[TL] Empresas - rate limit en pagina {$page}. Reintentando luego.");
+                $this->release($e->retryAfterSeconds());
+                return;
             }
 
-            Log::info("[TL] Empresas — página {$page}: " . count($items) . " IDs");
+            $items = $response['data'] ?? [];
+            $lastCount = count($items);
+
+            foreach ($items as $item) {
+                if (!empty($item['id'])) {
+                    $allIds[] = $item['id'];
+                }
+            }
+
+            Log::info("[TL] Empresas - pagina {$page}: {$lastCount} IDs");
 
             $page++;
-            usleep(150000);
 
-        } while (count($items) === $perPage);
+            if ($lastCount < $perPage) {
+                break;
+            }
+        }
 
-        $total = count($allIds);
-        Log::info("[TL] Empresas — {$total} IDs recolectados. Creando chunks...");
+        $this->dispatchNextPageIfNeeded($lastCount === $perPage, $page);
+        $this->dispatchChunks($allIds);
 
-        TlSyncLog::find($this->syncLogId)?->update(['total' => $total]);
-
-        if ($total === 0) {
+        if (!$allIds && $lastCount < $perPage) {
             TlSyncLog::find($this->syncLogId)?->update([
-                'status'      => 'completed',
+                'status' => 'completed',
                 'finished_at' => now(),
             ]);
+        }
+    }
+
+    private function dispatchNextPageIfNeeded(bool $hasMore, int $nextPage): void
+    {
+        if (!$hasMore) {
             return;
         }
 
-        $chunks      = array_chunk($allIds, 20);
+        self::dispatch($this->syncLogId, $this->syncDocuments(), $nextPage)
+            ->onQueue('teamleader-sync')
+            ->delay(now()->addSeconds(1));
+    }
+
+    private function dispatchChunks(array $ids): void
+    {
+        $total = count($ids);
+
+        if ($total === 0) {
+            return;
+        }
+
+        TlSyncLog::find($this->syncLogId)?->incrementCounter('total', $total);
+
+        $chunkSize = max(1, (int) config('services.teamleader.sync_chunk_size', 5));
+        $chunkDelay = max(1, (int) config('services.teamleader.sync_chunk_delay_seconds', 12));
+        $chunks = array_chunk($ids, $chunkSize);
         $totalChunks = count($chunks);
 
-        Log::info("[TL] Empresas — {$totalChunks} chunks de 20. Despachando...");
+        Log::info("[TL] Empresas - {$totalChunks} chunks de {$chunkSize}. Despachando...");
 
         foreach ($chunks as $index => $chunk) {
             ProcessCompanyChunkJob::dispatch(
@@ -72,18 +108,21 @@ class SyncCompaniesJob implements ShouldQueue
                 $index + 1,
                 $totalChunks,
                 $this->syncLogId,
-                $this->syncDocuments
+                $this->syncDocuments()
             )
-            ->onQueue('teamleader-sync')
-            ->delay(now()->addSeconds($index * 2));
+                ->onQueue('teamleader-sync')
+                ->delay(now()->addSeconds($index * $chunkDelay));
         }
+    }
 
-        Log::info("[TL] Empresas — {$totalChunks} chunks despachados.");
+    private function syncDocuments(): bool
+    {
+        return isset($this->syncDocuments) ? $this->syncDocuments : true;
     }
 
     public function failed(\Throwable $e): void
     {
-        Log::error("[TL] SyncCompaniesJob falló: " . $e->getMessage());
+        Log::error("[TL] SyncCompaniesJob fallo: " . $e->getMessage());
         TlSyncLog::find($this->syncLogId)?->fail($e->getMessage());
     }
 }

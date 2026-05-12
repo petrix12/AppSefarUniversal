@@ -2,8 +2,11 @@
 
 namespace App\Services;
 
+use App\Exceptions\TeamleaderRateLimitException;
 use App\Models\TeamleaderToken;
 use App\Services\Teamleader\TeamleaderFocusProvider;
+use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use GuzzleHttp\Promise;
@@ -15,6 +18,60 @@ class TeamleaderService
     private $customFieldId = '624a9810-53dc-0770-965b-65891c631673';
 
     private ?string $cachedToken = null;
+
+    private function teamleaderPost(string $endpoint, array $payload = [], array $headers = []): Response
+    {
+        $this->waitForTeamleaderSlot();
+
+        $request = Http::withToken($this->getAccessToken());
+
+        if ($headers) {
+            $request = $request->withHeaders($headers);
+        }
+
+        $response = $request->post("https://api.focus.teamleader.eu/{$endpoint}", $payload);
+
+        $this->throwIfRateLimited($response);
+
+        return $response;
+    }
+
+    private function waitForTeamleaderSlot(): void
+    {
+        $gapMs = max(0, (int) config('services.teamleader.min_request_gap_ms', 800));
+
+        if ($gapMs <= 0) {
+            return;
+        }
+
+        $lock = Cache::lock('teamleader:api-rate-lock', 10);
+
+        $lock->block(5, function () use ($gapMs) {
+            $nextAt = (float) Cache::get('teamleader:api-next-at', 0);
+            $now = microtime(true);
+
+            if ($nextAt > $now) {
+                usleep((int) (($nextAt - $now) * 1_000_000));
+            }
+
+            Cache::put(
+                'teamleader:api-next-at',
+                microtime(true) + ($gapMs / 1000),
+                now()->addMinutes(10)
+            );
+        });
+    }
+
+    private function throwIfRateLimited(Response $response): void
+    {
+        if ($response->status() !== 429) {
+            return;
+        }
+
+        $retryAfter = (int) ($response->header('Retry-After') ?: 90);
+
+        throw new TeamleaderRateLimitException('Teamleader API rate limit exceeded.', $retryAfter);
+    }
 
     // ─────────────────────────────────────────────
     // EMPRESAS
@@ -38,10 +95,7 @@ class TeamleaderService
 
     public function getCompanyById(string $id): array
     {
-        $response = Http::withToken($this->getAccessToken())
-            ->post('https://api.focus.teamleader.eu/companies.info', [
-                'id' => $id,
-            ]);
+        $response = $this->teamleaderPost('companies.info', ['id' => $id]);
 
         if (!$response->successful()) {
             throw new \Exception('Error obteniendo empresa: ' . $response->body());
@@ -59,10 +113,7 @@ class TeamleaderService
      */
     public function getDealById(string $id): array
     {
-        $response = Http::withToken($this->getAccessToken())
-            ->post('https://api.focus.teamleader.eu/deals.info', [
-                'id' => $id,
-            ]);
+        $response = $this->teamleaderPost('deals.info', ['id' => $id]);
 
         if (!$response->successful()) {
             throw new \Exception('Error obteniendo deal: ' . $response->body());
@@ -80,10 +131,7 @@ class TeamleaderService
      */
     public function getFileInfo(string $fileId): array
     {
-        $response = Http::withToken($this->getAccessToken())
-            ->post('https://api.focus.teamleader.eu/files.info', [
-                'id' => $fileId,
-            ]);
+        $response = $this->teamleaderPost('files.info', ['id' => $fileId]);
 
         if (!$response->successful()) {
             throw new \Exception("Error obteniendo info del archivo {$fileId}: " . $response->body());
@@ -95,8 +143,7 @@ class TeamleaderService
     // ✅ listContacts — agregar page.number
     public function listContacts(int $page = 1, int $size = 100): array
     {
-        $response = Http::withToken($this->getAccessToken())
-            ->post('https://api.focus.teamleader.eu/contacts.list', [
+        $response = $this->teamleaderPost('contacts.list', [
                 'page' => [
                     'size'   => $size,
                     'number' => $page,   // ← faltaba esto
@@ -113,8 +160,7 @@ class TeamleaderService
     // ✅ listProjects — igual
     public function listProjects(int $page = 1, int $size = 100): array
     {
-        $response = Http::withToken($this->getAccessToken())
-            ->post('https://api.focus.teamleader.eu/projects.list', [
+        $response = $this->teamleaderPost('projects.list', [
                 'page' => [
                     'size'   => $size,
                     'number' => $page,   // ← faltaba esto
@@ -133,8 +179,7 @@ class TeamleaderService
      */
     public function listCompanies(int $page = 1, int $size = 100): array
     {
-        $response = Http::withToken($this->getAccessToken())
-            ->post('https://api.focus.teamleader.eu/companies.list', [
+        $response = $this->teamleaderPost('companies.list', [
                 'page' => ['size' => $size, 'number' => $page],
             ]);
 
@@ -150,8 +195,7 @@ class TeamleaderService
      */
     public function listDeals(int $page = 1, int $size = 100): array
     {
-        $response = Http::withToken($this->getAccessToken())
-            ->post('https://api.focus.teamleader.eu/deals.list', [
+        $response = $this->teamleaderPost('deals.list', [
                 'page' => ['size' => $size, 'number' => $page],
             ]);
 
@@ -168,8 +212,7 @@ class TeamleaderService
      */
     public function listFiles(string $entityType, string $entityId, int $page = 1, int $size = 100): array
     {
-        $response = Http::withToken($this->getAccessToken())
-            ->post('https://api.focus.teamleader.eu/files.list', [
+        $response = $this->teamleaderPost('files.list', [
                 'filter' => [
                     'linked_to' => [
                         'type' => $entityType,
@@ -192,10 +235,7 @@ class TeamleaderService
      */
     public function downloadFile(string $fileId): string
     {
-        $response = Http::withToken($this->getAccessToken())
-            ->post('https://api.focus.teamleader.eu/files.download', [
-                'id' => $fileId,
-            ]);
+        $response = $this->teamleaderPost('files.download', ['id' => $fileId]);
 
         if (!$response->successful()) {
             throw new \Exception("Error descargando archivo {$fileId}: " . $response->body());
@@ -419,12 +459,7 @@ public function getContactById($id)
             return null;
         }
 
-        $accessToken = $this->getAccessToken();
-
-        $response = Http::withToken($accessToken)
-            ->post('https://api.focus.teamleader.eu/contacts.info', [
-                'id' => $id,
-            ]);
+        $response = $this->teamleaderPost('contacts.info', ['id' => $id]);
 
         if ($response->successful()) {
             $contactData = $response->json();
@@ -442,6 +477,8 @@ public function getContactById($id)
         ]);
 
         return null;
+    } catch (TeamleaderRateLimitException $e) {
+        throw $e;
     } catch (\Throwable $e) {
         \Log::error('Teamleader: excepción al obtener contacto', [
             'tl_id' => $id,
@@ -483,6 +520,8 @@ public function getContactById($id)
                 $errorMessage = isset($error['errors'][0]['title']) ? $error['errors'][0]['title'] : 'Error desconocido';
                 throw new \Exception('Error al crear el contacto: ' . $errorMessage);
             }
+        } catch (TeamleaderRateLimitException $e) {
+            throw $e;
         } catch (\Exception $e) {
             throw new \Exception('Error: ' . $e->getMessage());
         }
@@ -610,12 +649,9 @@ public function listProjectsByCustomerId(string $customerId)
     public function getProjectDetails(string $projectId)
     {
         try {
-            $accessToken = $this->getAccessToken();
-
-            $response = Http::withToken($accessToken)
-                ->post('https://api.focus.teamleader.eu/projects.info', [
-                    'id' => $projectId, // Incluye datos adicionales si los necesitas
-                ]);
+            $response = $this->teamleaderPost('projects.info', [
+                'id' => $projectId,
+            ]);
 
             if ($response->successful()) {
                 $data = $response->json();
@@ -1252,8 +1288,7 @@ public function getProjectsWithDetailsByCustomerId(string $customerId)
  */
 public function listInvoices(int $page = 1, int $size = 100): array
 {
-    $response = Http::withToken($this->getAccessToken())
-        ->post('https://api.focus.teamleader.eu/invoices.list', [
+    $response = $this->teamleaderPost('invoices.list', [
             'page' => ['size' => $size, 'number' => $page],
         ]);
 
@@ -1269,10 +1304,7 @@ public function listInvoices(int $page = 1, int $size = 100): array
  */
 public function getInvoiceById(string $id): array
 {
-    $response = Http::withToken($this->getAccessToken())
-        ->post('https://api.focus.teamleader.eu/invoices.info', [
-            'id' => $id,
-        ]);
+    $response = $this->teamleaderPost('invoices.info', ['id' => $id]);
 
     if (!$response->successful()) {
         throw new \Exception('Error obteniendo factura: ' . $response->body());
@@ -1288,8 +1320,7 @@ public function getInvoiceById(string $id): array
 public function downloadInvoicePdf(string $invoiceId): string
 {
     // Paso 1: obtener URL de descarga
-    $response = Http::withToken($this->getAccessToken())
-        ->post('https://api.focus.teamleader.eu/invoices.download', [
+    $response = $this->teamleaderPost('invoices.download', [
             'id'     => $invoiceId,
             'format' => 'pdf',
         ]);
@@ -1320,8 +1351,7 @@ public function downloadInvoicePdf(string $invoiceId): string
  */
 public function listCreditNotes(int $page = 1, int $size = 100): array
 {
-    $response = Http::withToken($this->getAccessToken())
-        ->post('https://api.focus.teamleader.eu/creditNotes.list', [
+    $response = $this->teamleaderPost('creditNotes.list', [
             'page' => ['size' => $size, 'number' => $page],
         ]);
 
@@ -1337,10 +1367,7 @@ public function listCreditNotes(int $page = 1, int $size = 100): array
  */
 public function getCreditNoteById(string $id): array
 {
-    $response = Http::withToken($this->getAccessToken())
-        ->post('https://api.focus.teamleader.eu/creditNotes.info', [
-            'id' => $id,
-        ]);
+    $response = $this->teamleaderPost('creditNotes.info', ['id' => $id]);
 
     if (!$response->successful()) {
         throw new \Exception('Error obteniendo nota de crédito: ' . $response->body());

@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Teamleader;
 
+use App\Exceptions\TeamleaderRateLimitException;
 use App\Models\TlContact;
 use App\Models\TlDocument;
 use App\Models\TlDocumentUserLink;
@@ -48,14 +49,23 @@ class SyncDocumentsJob implements ShouldQueue
 
     public function handle(TeamleaderService $service): void
     {
-        Log::info("[TL Docs] {$this->entityType}/{$this->entityId} page {$this->page}");
+        $page = isset($this->page) ? $this->page : 1;
+        $pageSize = isset($this->pageSize) ? $this->pageSize : 100;
 
-        $response = $service->listFiles(
-            $this->entityType,
-            $this->entityId,
-            $this->page,
-            $this->pageSize
-        );
+        Log::info("[TL Docs] {$this->entityType}/{$this->entityId} page {$page}");
+
+        try {
+            $response = $service->listFiles(
+                $this->entityType,
+                $this->entityId,
+                $page,
+                $pageSize
+            );
+        } catch (TeamleaderRateLimitException $e) {
+            Log::warning("[TL Docs] rate limit listando {$this->entityType}/{$this->entityId}. Reintentando luego.");
+            $this->release($e->retryAfterSeconds());
+            return;
+        }
 
         $files = $response['data'] ?? [];
         $received = count($files);
@@ -63,6 +73,10 @@ class SyncDocumentsJob implements ShouldQueue
         foreach ($files as $fileData) {
             try {
                 $this->processFile($fileData, $service);
+            } catch (TeamleaderRateLimitException $e) {
+                Log::warning("[TL Docs] rate limit migrando {$this->entityType}/{$this->entityId}. Reintentando luego.");
+                $this->release($e->retryAfterSeconds());
+                return;
             } catch (\Throwable $e) {
                 Log::error('[TL Docs] Error migrando archivo', [
                     'entity_type' => $this->entityType,
@@ -75,15 +89,15 @@ class SyncDocumentsJob implements ShouldQueue
             usleep(300000);
         }
 
-        if ($received === $this->pageSize) {
-            if ($this->runInline) {
+        if ($received === $pageSize) {
+            if ($this->runInline()) {
                 (new self(
                     $this->entityType,
                     $this->entityId,
-                    $this->page + 1,
+                    $page + 1,
                     $this->syncLogId,
-                    $this->pageSize,
-                    $this->linkToUsers,
+                    $pageSize,
+                    $this->linkToUsers(),
                     true
                 ))->handle($service);
 
@@ -93,11 +107,11 @@ class SyncDocumentsJob implements ShouldQueue
             self::dispatch(
                 $this->entityType,
                 $this->entityId,
-                $this->page + 1,
+                $page + 1,
                 $this->syncLogId,
-                $this->pageSize,
-                $this->linkToUsers,
-                $this->runInline
+                $pageSize,
+                $this->linkToUsers(),
+                $this->runInline()
             )
                 ->onQueue('teamleader-documents')
                 ->delay(now()->addSeconds(3));
@@ -166,7 +180,7 @@ class SyncDocumentsJob implements ShouldQueue
 
     private function linkDocumentToAppUser(TlDocument $document): void
     {
-        if (!$this->linkToUsers) {
+        if (!$this->linkToUsers()) {
             return;
         }
 
@@ -273,6 +287,16 @@ class SyncDocumentsJob implements ShouldQueue
         return str_starts_with($safeName, "{$fileId}_")
             ? $safeName
             : "{$fileId}_{$safeName}";
+    }
+
+    private function linkToUsers(): bool
+    {
+        return isset($this->linkToUsers) ? $this->linkToUsers : true;
+    }
+
+    private function runInline(): bool
+    {
+        return isset($this->runInline) ? $this->runInline : false;
     }
 
     private function markEntityCompleted(): void

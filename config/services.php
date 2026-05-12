@@ -35,6 +35,10 @@ return [
         'client_secret' => env('TEAMLEADER_CLIENT_SECRET'),
         'redirect' => env('TEAMLEADER_REDIRECT_URI'),
         'cron_token' => env('TEAMLEADER_CRON_TOKEN'),
+        'min_request_gap_ms' => env('TEAMLEADER_MIN_REQUEST_GAP_MS', 800),
+        'sync_pages_per_job' => env('TEAMLEADER_SYNC_PAGES_PER_JOB', 2),
+        'sync_chunk_size' => env('TEAMLEADER_SYNC_CHUNK_SIZE', 5),
+        'sync_chunk_delay_seconds' => env('TEAMLEADER_SYNC_CHUNK_DELAY_SECONDS', 12),
     ],
 
     'n8n' => [

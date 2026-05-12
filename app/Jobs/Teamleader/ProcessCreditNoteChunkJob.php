@@ -3,6 +3,7 @@
 
 namespace App\Jobs\Teamleader;
 
+use App\Exceptions\TeamleaderRateLimitException;
 use App\Models\TlCreditNote;
 use App\Models\TlSyncLog;
 use App\Services\TeamleaderService;
@@ -32,7 +33,7 @@ class ProcessCreditNoteChunkJob implements ShouldQueue
     {
         Log::info("[TL] CreditNotes — Chunk {$this->chunkNumber}/{$this->totalChunks} — procesando " . count($this->creditNoteIds) . " notas de crédito");
 
-        foreach ($this->creditNoteIds as $id) {
+        foreach ($this->creditNoteIds as $offset => $id) {
             try {
                 $detail = $service->getCreditNoteById($id);
 
@@ -44,6 +45,9 @@ class ProcessCreditNoteChunkJob implements ShouldQueue
 
                 TlCreditNote::fromTeamleader($detail);
                 TlSyncLog::find($this->syncLogId)?->incrementCounter('processed');
+            } catch (TeamleaderRateLimitException $e) {
+                $this->releaseRemaining($offset, $e);
+                return;
             } catch (\Throwable $e) {
                 Log::error("[TL] Error creditNote {$id}: " . $e->getMessage());
                 TlSyncLog::find($this->syncLogId)?->incrementCounter('failed');
@@ -54,6 +58,22 @@ class ProcessCreditNoteChunkJob implements ShouldQueue
 
         Log::info("[TL] CreditNotes — Chunk {$this->chunkNumber}/{$this->totalChunks} — completado");
         $this->checkIfCompleted();
+    }
+
+    private function releaseRemaining(int $offset, TeamleaderRateLimitException $e): void
+    {
+        $remaining = array_slice($this->creditNoteIds, $offset);
+
+        Log::warning("[TL] CreditNotes — rate limit en chunk {$this->chunkNumber}. Reintentando " . count($remaining) . " notas luego.");
+
+        self::dispatch(
+            $remaining,
+            $this->chunkNumber,
+            $this->totalChunks,
+            $this->syncLogId
+        )
+            ->onQueue('teamleader-sync')
+            ->delay(now()->addSeconds($e->retryAfterSeconds()));
     }
 
     private function checkIfCompleted(): void
