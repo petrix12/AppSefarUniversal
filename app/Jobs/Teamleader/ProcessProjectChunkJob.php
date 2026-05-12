@@ -36,6 +36,13 @@ class ProcessProjectChunkJob implements ShouldQueue
         foreach ($this->projectIds as $id) {
             try {
                 $detail  = $service->getProjectDetails($id);
+
+                if (!is_array($detail)) {
+                    Log::warning("[TL] Proyecto {$id}: Teamleader no devolvio detalle.");
+                    TlSyncLog::find($this->syncLogId)?->incrementCounter('failed');
+                    continue;
+                }
+
                 TlProject::fromTeamleader($detail);
 
                 if ($this->syncDocuments) {

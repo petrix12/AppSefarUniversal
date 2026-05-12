@@ -39,6 +39,13 @@ class ProcessInvoiceChunkJob implements ShouldQueue
             try {
                 $existing = TlInvoice::find($id);
                 $detail = $service->getInvoiceById($id);
+
+                if (!is_array($detail)) {
+                    Log::warning("[TL] Factura {$id}: Teamleader no devolvio detalle.");
+                    TlSyncLog::find($this->syncLogId)?->incrementCounter('failed');
+                    continue;
+                }
+
                 $invoice = TlInvoice::fromTeamleader($detail);
 
                 if ($this->downloadPdfs && $this->invoiceNeedsPdfDownload($existing, $detail)) {

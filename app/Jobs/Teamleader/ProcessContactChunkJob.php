@@ -36,6 +36,13 @@ class ProcessContactChunkJob implements ShouldQueue
         foreach ($this->contactIds as $id) {
             try {
                 $detail = $service->getContactById($id);
+
+                if (!is_array($detail)) {
+                    Log::warning("[TL] Contacto {$id}: Teamleader no devolvio detalle.");
+                    TlSyncLog::find($this->syncLogId)?->incrementCounter('failed');
+                    continue;
+                }
+
                 TlContact::fromTeamleader($detail);
 
                 if ($this->syncDocuments) {

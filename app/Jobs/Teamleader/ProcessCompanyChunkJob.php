@@ -36,6 +36,13 @@ class ProcessCompanyChunkJob implements ShouldQueue
         foreach ($this->companyIds as $id) {
             try {
                 $detail = $service->getCompanyById($id);
+
+                if (!is_array($detail)) {
+                    Log::warning("[TL] Empresa {$id}: Teamleader no devolvio detalle.");
+                    TlSyncLog::find($this->syncLogId)?->incrementCounter('failed');
+                    continue;
+                }
+
                 TlCompany::fromTeamleader($detail);
 
                 if ($this->syncDocuments) {

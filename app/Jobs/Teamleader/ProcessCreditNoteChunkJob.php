@@ -35,6 +35,13 @@ class ProcessCreditNoteChunkJob implements ShouldQueue
         foreach ($this->creditNoteIds as $id) {
             try {
                 $detail = $service->getCreditNoteById($id);
+
+                if (!is_array($detail)) {
+                    Log::warning("[TL] Nota de credito {$id}: Teamleader no devolvio detalle.");
+                    TlSyncLog::find($this->syncLogId)?->incrementCounter('failed');
+                    continue;
+                }
+
                 TlCreditNote::fromTeamleader($detail);
                 TlSyncLog::find($this->syncLogId)?->incrementCounter('processed');
             } catch (\Throwable $e) {
