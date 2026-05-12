@@ -88,6 +88,63 @@ class UserController extends Controller
         ]);
     }
 
+    public function requestCosReviewTask(Request $request, User $user)
+    {
+        if (auth()->user()?->hasRole('Cliente')) {
+            abort(403, 'No tienes acceso para solicitar revision interna del COS.');
+        }
+
+        $supportUser = User::query()
+            ->where('id', 13515)
+            ->orWhere('email', 'sistemasccs@sefarvzla.com')
+            ->first();
+
+        if (!$supportUser) {
+            return response()->json([
+                'message' => 'No se encontro el usuario de Sistemas para asignar la tarea.',
+            ], 422);
+        }
+
+        $existingTask = Task::query()
+            ->where('user_id', $supportUser->id)
+            ->where('contact_id', $user->id)
+            ->whereIn('status', [Task::STATUS_PENDING, Task::STATUS_IN_PROGRESS])
+            ->where('title', 'like', 'Revisar COS del cliente:%')
+            ->latest()
+            ->first();
+
+        if ($existingTask) {
+            return response()->json([
+                'message' => 'Ya existe una tarea abierta para revisar el COS de este cliente.',
+                'task_id' => $existingTask->id,
+                'created' => false,
+            ]);
+        }
+
+        $task = Task::create([
+            'user_id' => $supportUser->id,
+            'contact_id' => $user->id,
+            'title' => 'Revisar COS del cliente: ' . ($user->name ?: "Cliente #{$user->id}"),
+            'description' => implode("\n", array_filter([
+                'Solicitud interna para revisar un problema visualizando el COS o datos inusuales del cliente.',
+                'Solicitado por: ' . (auth()->user()?->name ?? 'Usuario desconocido') . ' (ID ' . auth()->id() . ')',
+                'Cliente: ' . ($user->name ?: '-') . " (ID {$user->id})",
+                'Email cliente: ' . ($user->email ?: '-'),
+                'Pasaporte cliente: ' . ($user->passport ?: '-'),
+                'URL: ' . $request->headers->get('referer', route('crud.users.edit', $user)),
+            ])),
+            'due_date' => today(),
+            'status' => Task::STATUS_PENDING,
+            'created_by_user_id' => auth()->id(),
+        ]);
+
+        return response()->json([
+            'message' => 'Listo. Se creo una tarea para Sistemas revisar este COS.',
+            'task_id' => $task->id,
+            'created' => true,
+        ], 201);
+    }
+
     /**
      * Show the form for creating a new resource.
      *
@@ -1746,7 +1803,7 @@ class UserController extends Controller
         ->get();
 
     $clientChatMessages = ClientChatMessage::query()
-        ->with('author:id,name')
+        ->with(['author:id,name', 'attachments'])
         ->where('client_id', $user->id)
         ->orderBy('id')
         ->limit(100)

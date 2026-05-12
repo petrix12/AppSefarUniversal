@@ -122,6 +122,11 @@
                             <small>{{ $contact->tl_updated_at?->format('d/m/Y') ?? '—' }}</small>
                         </td>
                         <td>
+                            <a href="{{ route('client-import.index', ['source' => 'teamleader', 'search_by' => 'id', 'search' => $contact->id]) }}"
+                               class="btn btn-xs btn-outline-success"
+                               title="Migrar a la App">
+                                <i class="fas fa-file-import"></i>
+                            </a>
                             <a href="{{ route('teamleader.contacts.show', $contact->id) }}"
                                class="btn btn-xs btn-outline-primary">
                                 <i class="fas fa-eye"></i>

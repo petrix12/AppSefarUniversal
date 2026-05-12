@@ -70,6 +70,7 @@ use App\Http\Controllers\RequestAuditController;
 use App\Http\Controllers\UserSyncController;
 use App\Http\Controllers\InternalTaskWorkflowController;
 use App\Http\Controllers\ClientChatController;
+use App\Http\Controllers\ExternalClientImportController;
 
 Route::get('/internal/tasks/daily-workflow', InternalTaskWorkflowController::class)
     ->name('internal.tasks.daily-workflow');
@@ -85,6 +86,14 @@ Route::get('/api/contacts/search', [App\Http\Controllers\Api\ContactSearchContro
 
 Route::get('/request-audits', [RequestAuditController::class, 'view'])
     ->name('request-audits.index');
+
+Route::middleware(['auth', 'can:administrador'])
+    ->prefix('client-import')
+    ->name('client-import.')
+    ->group(function () {
+        Route::get('/', [ExternalClientImportController::class, 'showImportForm'])->name('index');
+        Route::post('/', [ExternalClientImportController::class, 'importClient'])->name('store');
+    });
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/contrato-coordinador', [ContratoCoordinadorController::class, 'form'])
@@ -283,11 +292,17 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
 			->middleware('can:crud.roles.index');
     Route::resource('users', UserController::class)->names('users')
 			->middleware('can:crud.users.index');
+    Route::post('users/{user}/cos-review-task', [UserController::class, 'requestCosReviewTask'])
+            ->name('users.cos-review-task')
+            ->middleware('can:crud.users.index');
     Route::get('users/{user}/internal-chat', [ClientChatController::class, 'messages'])
             ->name('users.internal-chat.index')
             ->middleware('can:crud.users.index');
     Route::post('users/{user}/internal-chat', [ClientChatController::class, 'storeMessage'])
             ->name('users.internal-chat.store')
+            ->middleware('can:crud.users.index');
+    Route::get('users/{user}/internal-chat/attachments/{attachment}', [ClientChatController::class, 'downloadChatAttachment'])
+            ->name('users.internal-chat.attachments.download')
             ->middleware('can:crud.users.index');
     Route::resource('countries', CountryController::class)->names('countries')
             ->middleware('can:crud.countries.index');

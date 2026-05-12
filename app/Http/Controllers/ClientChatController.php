@@ -3,9 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\ClientChatMessage;
+use App\Models\ClientChatAttachment;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Throwable;
 
 class ClientChatController extends Controller
 {
@@ -16,7 +20,7 @@ class ClientChatController extends Controller
         $afterId = (int) $request->query('after_id', 0);
 
         $messages = ClientChatMessage::query()
-            ->with('author:id,name')
+            ->with(['author:id,name', 'attachments'])
             ->where('client_id', $user->id)
             ->when($afterId > 0, fn ($query) => $query->where('id', '>', $afterId))
             ->orderBy('id')
@@ -34,18 +38,85 @@ class ClientChatController extends Controller
         $this->authorizeChatAccess();
 
         $data = $request->validate([
-            'message' => 'required|string|max:2000',
+            'message' => 'nullable|string|max:2000',
+            'attachments' => 'nullable|array|max:5',
+            'attachments.*' => 'file|max:20480',
+        ], [
+            'attachments.max' => 'Puedes subir hasta 5 archivos por mensaje.',
+            'attachments.*.file' => 'Uno de los adjuntos no es un archivo valido.',
+            'attachments.*.max' => 'Cada archivo debe pesar maximo 20 MB.',
         ]);
+
+        $messageText = trim((string) ($data['message'] ?? ''));
+        $files = $request->file('attachments', []);
+        $files = is_array($files) ? array_values(array_filter($files)) : [$files];
+
+        if ($messageText === '' && count($files) === 0) {
+            return response()->json([
+                'message' => 'Escribe un mensaje o adjunta al menos un archivo.',
+            ], 422);
+        }
 
         $message = ClientChatMessage::create([
             'client_id' => $user->id,
             'user_id' => auth()->id(),
-            'message' => trim($data['message']),
-        ])->load('author:id,name');
+            'message' => $messageText,
+        ]);
+
+        $uploadedPaths = [];
+
+        try {
+            foreach ($files as $file) {
+                $extension = $file->getClientOriginalExtension();
+                $filename = Str::uuid()->toString() . ($extension ? ".{$extension}" : '');
+                $path = Storage::disk('s3')->putFileAs(
+                    "client-chat/{$user->id}/{$message->id}",
+                    $file,
+                    $filename,
+                    'public'
+                );
+
+                abort_unless($path, 500, 'No se pudo subir el archivo al almacenamiento S3.');
+                $uploadedPaths[] = $path;
+
+                $message->attachments()->create([
+                    'disk' => 's3',
+                    'path' => $path,
+                    'original_name' => $file->getClientOriginalName(),
+                    'mime_type' => $file->getClientMimeType(),
+                    'size' => $file->getSize() ?: 0,
+                ]);
+            }
+        } catch (Throwable $exception) {
+            foreach ($uploadedPaths as $uploadedPath) {
+                Storage::disk('s3')->delete($uploadedPath);
+            }
+
+            $message->delete();
+
+            throw $exception;
+        }
+
+        $message->load(['author:id,name', 'attachments']);
 
         return response()->json([
             'message' => $this->formatMessage($message),
         ], 201);
+    }
+
+    public function downloadChatAttachment(User $user, ClientChatAttachment $attachment)
+    {
+        $this->authorizeChatAccess();
+
+        $attachment->loadMissing('message');
+
+        abort_unless($attachment->message && (int) $attachment->message->client_id === (int) $user->id, 404);
+        abort_unless(Storage::disk($attachment->disk)->exists($attachment->path), 404);
+
+        return Storage::disk($attachment->disk)->download(
+            $attachment->path,
+            $attachment->original_name
+        );
     }
 
     private function authorizeChatAccess(): void
@@ -63,6 +134,27 @@ class ClientChatController extends Controller
             'author' => $message->author?->name ?? 'Usuario eliminado',
             'is_mine' => $message->user_id === auth()->id(),
             'created_at' => optional($message->created_at)->format('d/m/Y H:i'),
+            'attachments' => $message->attachments->map(fn (ClientChatAttachment $attachment) => [
+                'id' => $attachment->id,
+                'name' => $attachment->original_name,
+                'mime_type' => $attachment->mime_type,
+                'size' => $attachment->size,
+                'size_label' => $this->formatBytes((int) $attachment->size),
+                'download_url' => route('crud.users.internal-chat.attachments.download', [$message->client_id, $attachment]),
+            ])->values(),
         ];
+    }
+
+    private function formatBytes(int $bytes): string
+    {
+        if ($bytes >= 1048576) {
+            return round($bytes / 1048576, 1) . ' MB';
+        }
+
+        if ($bytes >= 1024) {
+            return round($bytes / 1024, 1) . ' KB';
+        }
+
+        return $bytes . ' B';
     }
 }

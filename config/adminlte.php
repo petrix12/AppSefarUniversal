@@ -270,6 +270,13 @@ return [
                     'can'           => 'crud.users.index',
                 ],
                 [
+                    'text'          => 'Migrar clientes',
+                    'icon'          => 'fa-fw fas fa-file-import',
+                    'icon_color'    => 'white',
+                    'url'           => 'client-import',
+                    'can'           => 'administrador',
+                ],
+                [
                     'text'          => 'Roles',
                     'icon'          => 'fa-fw fas fa-user-tag',
                     'icon_color'    => 'white',

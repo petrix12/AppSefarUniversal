@@ -135,6 +135,7 @@
                 <li class="nav-item" role="presentation">
                     <button style="color:black" class="nav-link" id="client-chat-tab" data-bs-toggle="tab" data-bs-target="#client-chat" type="button" role="tab" aria-controls="client-chat" aria-selected="false">
                         Chat interno
+                        <span id="clientInternalChatBadge" class="badge bg-danger ms-1 d-none">0</span>
                     </button>
                 </li>
                 @endif
@@ -157,6 +158,8 @@
                     <div style="
                         display: flex;
                         justify-content: flex-end;
+                        gap: .5rem;
+                        flex-wrap: wrap;
                         margin-bottom: 1rem;
                     ">
                         <form
@@ -187,9 +190,32 @@
                                 onmouseout="this.style.background='#4f46e5'"
                             >
                                 <i class="fas fa-sync-alt" id="iconSync"></i>
-                                <span id="labelSync">¿Crees que hay un error con el COS del cliente? Click aquí</span>
+                                <span id="labelSync">Sincronizar COS del cliente</span>
                             </button>
                         </form>
+                        <button
+                            type="button"
+                            id="btnCosReviewTask"
+                            style="
+                                display: inline-flex;
+                                align-items: center;
+                                gap: .45rem;
+                                background: #0f766e;
+                                color: #fff;
+                                border: none;
+                                border-radius: .5rem;
+                                padding: .45rem 1rem;
+                                font-size: .83rem;
+                                font-weight: 600;
+                                cursor: pointer;
+                                transition: background .2s;
+                            "
+                            onmouseover="this.style.background='#115e59'"
+                            onmouseout="this.style.background='#0f766e'"
+                        >
+                            <i class="fas fa-clipboard-check" id="iconCosReviewTask"></i>
+                            <span id="labelCosReviewTask">Solicitar revision del COS a Sistemas</span>
+                        </button>
                     </div>
 
                     {{-- Flash de éxito --}}
@@ -1929,9 +1955,21 @@
                                         <b>{{ $message->author?->name ?? 'Usuario eliminado' }}</b>
                                         <span>{{ optional($message->created_at)->format('d/m/Y H:i') }}</span>
                                     </div>
-                                    <div class="p-2 rounded" style="background:{{ $message->user_id === auth()->id() ? '#e0f2fe' : '#f8fafc' }};">
-                                        {{ $message->message }}
-                                    </div>
+                                    @if($message->message !== '')
+                                        <div class="p-2 rounded" style="background:{{ $message->user_id === auth()->id() ? '#e0f2fe' : '#f8fafc' }};">
+                                            {{ $message->message }}
+                                        </div>
+                                    @endif
+                                    @if($message->attachments->isNotEmpty())
+                                        <div class="mt-2 d-flex flex-wrap gap-2">
+                                            @foreach($message->attachments as $attachment)
+                                                <a href="{{ route('crud.users.internal-chat.attachments.download', [$user, $attachment]) }}" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener">
+                                                    <i class="fas fa-paperclip me-1"></i>{{ $attachment->original_name }}
+                                                    <small class="text-muted">({{ $attachment->size >= 1048576 ? round($attachment->size / 1048576, 1) . ' MB' : round($attachment->size / 1024, 1) . ' KB' }})</small>
+                                                </a>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </div>
                             @empty
                                 <div id="clientInternalChatEmpty" class="text-muted text-center py-5">No hay mensajes internos para este cliente.</div>
@@ -1942,6 +1980,9 @@
                             @csrf
                             <label class="form-label fw-bold">Nuevo mensaje interno</label>
                             <textarea id="clientInternalChatInput" class="form-control" rows="3" maxlength="2000" placeholder="Escribe una nota interna sobre este cliente..."></textarea>
+                            <label class="form-label fw-bold mt-2">Adjuntos</label>
+                            <input id="clientInternalChatFiles" type="file" class="form-control" multiple>
+                            <small class="text-muted">Puedes subir hasta 5 archivos por mensaje. Maximo 20 MB por archivo.</small>
                             <div class="d-flex justify-content-end mt-2">
                                 <button type="submit" class="btn btn-primary">
                                     <i class="fas fa-paper-plane me-1"></i>Enviar
@@ -2812,13 +2853,75 @@
             });
         }
 
+        $('#btnCosReviewTask').on('click', function () {
+            const button = $(this);
+            const icon = $('#iconCosReviewTask');
+            const label = $('#labelCosReviewTask');
+            const originalLabel = label.text();
+
+            $.ajax({
+                url: '{{ route("crud.users.cos-review-task", $user) }}',
+                type: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                beforeSend: function () {
+                    button.prop('disabled', true).css('opacity', '.75');
+                    icon.addClass('fa-spin');
+                    label.text('Creando tarea...');
+                },
+                success: function (response) {
+                    Swal.fire({
+                        icon: response.created ? 'success' : 'info',
+                        title: response.created ? 'Tarea creada' : 'Tarea ya abierta',
+                        text: response.message
+                    });
+                },
+                error: function (xhr) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: xhr.responseJSON?.message || 'No se pudo solicitar la revision del COS.'
+                    });
+                },
+                complete: function () {
+                    button.prop('disabled', false).css('opacity', '1');
+                    icon.removeClass('fa-spin');
+                    label.text(originalLabel);
+                }
+            });
+        });
+
         const chatBox = $('#clientInternalChatMessages');
         const chatForm = $('#clientInternalChatForm');
         const chatInput = $('#clientInternalChatInput');
+        const chatFiles = $('#clientInternalChatFiles');
+        const chatTab = $('#client-chat-tab');
+        const chatBadge = $('#clientInternalChatBadge');
+        const originalDocumentTitle = document.title;
         let lastClientChatId = 0;
+        let unreadClientChatMessages = 0;
+        let clientChatLoading = false;
 
         function escapeHtml(value) {
             return $('<div>').text(value || '').html();
+        }
+
+        function isClientChatActive() {
+            return chatTab.hasClass('active') || $('#client-chat').hasClass('active');
+        }
+
+        function setClientChatUnread(count) {
+            unreadClientChatMessages = Math.max(0, count);
+
+            if (!chatBadge.length) return;
+
+            if (unreadClientChatMessages > 0) {
+                chatBadge.removeClass('d-none').text(unreadClientChatMessages);
+                document.title = `(${unreadClientChatMessages}) ${originalDocumentTitle}`;
+                return;
+            }
+
+            chatBadge.addClass('d-none').text('0');
+            document.title = originalDocumentTitle;
         }
 
         function scrollClientChat() {
@@ -2826,36 +2929,85 @@
             chatBox.scrollTop(chatBox[0].scrollHeight);
         }
 
-        function appendClientChatMessage(message) {
+        function notifyClientChatMessage(message) {
+            if (isClientChatActive()) return;
+
+            setClientChatUnread(unreadClientChatMessages + 1);
+
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'info',
+                title: 'Nuevo mensaje interno',
+                text: message.author,
+                showConfirmButton: false,
+                timer: 3500,
+                timerProgressBar: true
+            });
+        }
+
+        function appendClientChatMessage(message, options = {}) {
             if (!message || !message.id || chatBox.find(`[data-message-id="${message.id}"]`).length) {
-                return;
+                return false;
             }
 
             $('#clientInternalChatEmpty').remove();
 
             const bg = message.is_mine ? '#e0f2fe' : '#f8fafc';
+            const messageBody = message.message
+                ? `<div class="p-2 rounded" style="background:${bg};">${escapeHtml(message.message)}</div>`
+                : '';
+            const attachments = (message.attachments || []).map(function (attachment) {
+                return `
+                    <a href="${escapeHtml(attachment.download_url)}" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener">
+                        <i class="fas fa-paperclip me-1"></i>${escapeHtml(attachment.name)}
+                        <small class="text-muted">(${escapeHtml(attachment.size_label)})</small>
+                    </a>
+                `;
+            }).join('');
+            const attachmentsBlock = attachments
+                ? `<div class="mt-2 d-flex flex-wrap gap-2">${attachments}</div>`
+                : '';
+
             chatBox.append(`
                 <div class="client-chat-message mb-3" data-message-id="${message.id}">
                     <div class="small text-muted">
                         <b>${escapeHtml(message.author)}</b>
                         <span>${escapeHtml(message.created_at)}</span>
                     </div>
-                    <div class="p-2 rounded" style="background:${bg};">
-                        ${escapeHtml(message.message)}
-                    </div>
+                    ${messageBody}
+                    ${attachmentsBlock}
                 </div>
             `);
 
             lastClientChatId = Math.max(lastClientChatId, message.id);
             scrollClientChat();
+
+            if (options.notify && !message.is_mine) {
+                notifyClientChatMessage(message);
+            }
+
+            return true;
         }
 
-        function loadClientChatMessages() {
-            if (!chatBox.length) return;
+        function loadClientChatMessages(options = {}) {
+            if (!chatBox.length || clientChatLoading) return;
 
-            $.get('{{ route("crud.users.internal-chat.index", $user) }}', { after_id: lastClientChatId })
+            clientChatLoading = true;
+
+            $.ajax({
+                url: '{{ route("crud.users.internal-chat.index", $user) }}',
+                type: 'GET',
+                data: { after_id: lastClientChatId },
+                cache: false
+            })
                 .done(function (response) {
-                    (response.messages || []).forEach(appendClientChatMessage);
+                    (response.messages || []).forEach(function (message) {
+                        appendClientChatMessage(message, { notify: options.notify === true });
+                    });
+                })
+                .always(function () {
+                    clientChatLoading = false;
                 });
         }
 
@@ -2865,30 +3017,74 @@
             });
 
             scrollClientChat();
-            setInterval(loadClientChatMessages, 8000);
+            setInterval(function () {
+                loadClientChatMessages({ notify: true });
+            }, 3000);
+
+            chatTab.on('shown.bs.tab click', function () {
+                setClientChatUnread(0);
+                loadClientChatMessages({ notify: false });
+                scrollClientChat();
+            });
+
+            $(window).on('focus', function () {
+                loadClientChatMessages({ notify: true });
+            });
+
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) {
+                    loadClientChatMessages({ notify: true });
+                }
+            });
         }
 
         chatForm.on('submit', function (e) {
             e.preventDefault();
 
             const message = $.trim(chatInput.val());
-            if (!message) return;
+            const selectedFiles = chatFiles.length ? Array.from(chatFiles[0].files) : [];
+            if (!message && selectedFiles.length === 0) return;
+
+            if (selectedFiles.length > 5) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Demasiados archivos',
+                    text: 'Puedes subir hasta 5 archivos por mensaje.'
+                });
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('message', message);
+            selectedFiles.forEach(function (file) {
+                formData.append('attachments[]', file);
+            });
 
             $.ajax({
                 url: '{{ route("crud.users.internal-chat.store", $user) }}',
                 type: 'POST',
-                data: { message },
+                data: formData,
                 headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                processData: false,
+                contentType: false,
+                beforeSend: function () {
+                    chatForm.find('button[type="submit"]').prop('disabled', true);
+                },
                 success: function (response) {
                     chatInput.val('');
-                    appendClientChatMessage(response.message);
+                    chatFiles.val('');
+                    appendClientChatMessage(response.message, { notify: false });
                 },
-                error: function () {
+                error: function (xhr) {
+                    const message = xhr.responseJSON?.message || 'No se pudo enviar el mensaje interno.';
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: 'No se pudo enviar el mensaje interno.'
+                        text: message
                     });
+                },
+                complete: function () {
+                    chatForm.find('button[type="submit"]').prop('disabled', false);
                 }
             });
         });
