@@ -26,6 +26,7 @@ class ProcessContactChunkJob implements ShouldQueue
         public readonly int   $chunkNumber,
         public readonly int   $totalChunks,
         public readonly ?int  $syncLogId = null,
+        public readonly bool  $syncDocuments = true,
     ) {}
 
     public function handle(TeamleaderService $service): void
@@ -36,8 +37,13 @@ class ProcessContactChunkJob implements ShouldQueue
             try {
                 $detail = $service->getContactById($id);
                 TlContact::fromTeamleader($detail);
+
+                if ($this->syncDocuments) {
+                    SyncDocumentsJob::dispatch('contact', $id)->onQueue('teamleader-documents');
+                }
+
                 TlSyncLog::find($this->syncLogId)?->incrementCounter('processed');
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 Log::error("[TL] Error contacto {$id}: " . $e->getMessage());
                 TlSyncLog::find($this->syncLogId)?->incrementCounter('failed');
             }

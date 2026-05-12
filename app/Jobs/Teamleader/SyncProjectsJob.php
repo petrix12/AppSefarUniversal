@@ -22,6 +22,7 @@ class SyncProjectsJob implements ShouldQueue
 
     public function __construct(
         public readonly ?int $syncLogId = null,
+        public readonly bool $syncDocuments = true,
     ) {}
 
     public function handle(TeamleaderService $service): void
@@ -74,7 +75,8 @@ class SyncProjectsJob implements ShouldQueue
                 $chunk,
                 $index + 1,      // chunkNumber (para logs)
                 $totalChunks,    // totalChunks (para saber cuándo terminar)
-                $this->syncLogId
+                $this->syncLogId,
+                $this->syncDocuments
             )
             ->onQueue('teamleader-sync')
             ->delay(now()->addSeconds($index * 2)); // escalonado 2s entre chunks

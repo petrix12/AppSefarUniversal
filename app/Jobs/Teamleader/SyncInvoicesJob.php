@@ -22,6 +22,7 @@ class SyncInvoicesJob implements ShouldQueue
 
     public function __construct(
         public readonly ?int $syncLogId = null,
+        public readonly bool $downloadPdfs = true,
     ) {}
 
     public function handle(TeamleaderService $service): void
@@ -70,7 +71,8 @@ class SyncInvoicesJob implements ShouldQueue
                 $chunk,
                 $index + 1,
                 $totalChunks,
-                $this->syncLogId
+                $this->syncLogId,
+                $this->downloadPdfs
             )
             ->onQueue('teamleader-sync')
             ->delay(now()->addSeconds($index * 2));

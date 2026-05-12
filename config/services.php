@@ -34,6 +34,7 @@ return [
         'client_id' => env('TEAMLEADER_CLIENT_ID'),
         'client_secret' => env('TEAMLEADER_CLIENT_SECRET'),
         'redirect' => env('TEAMLEADER_REDIRECT_URI'),
+        'cron_token' => env('TEAMLEADER_CRON_TOKEN'),
     ],
 
     'n8n' => [

@@ -11,7 +11,9 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class ProcessInvoiceChunkJob implements ShouldQueue
 {
@@ -26,6 +28,7 @@ class ProcessInvoiceChunkJob implements ShouldQueue
         public readonly int   $chunkNumber,
         public readonly int   $totalChunks,
         public readonly ?int  $syncLogId = null,
+        public readonly bool  $downloadPdfs = true,
     ) {}
 
     public function handle(TeamleaderService $service): void
@@ -34,10 +37,20 @@ class ProcessInvoiceChunkJob implements ShouldQueue
 
         foreach ($this->invoiceIds as $id) {
             try {
+                $existing = TlInvoice::find($id);
                 $detail = $service->getInvoiceById($id);
-                TlInvoice::fromTeamleader($detail);
+                $invoice = TlInvoice::fromTeamleader($detail);
+
+                if ($this->downloadPdfs && $this->invoiceNeedsPdfDownload($existing, $detail)) {
+                    try {
+                        $this->downloadPdf($invoice, $service);
+                    } catch (\Throwable $pdfError) {
+                        Log::error("[TL] Error PDF factura {$id}: " . $pdfError->getMessage());
+                    }
+                }
+
                 TlSyncLog::find($this->syncLogId)?->incrementCounter('processed');
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 Log::error("[TL] Error factura {$id}: " . $e->getMessage());
                 TlSyncLog::find($this->syncLogId)?->incrementCounter('failed');
             }
@@ -47,6 +60,42 @@ class ProcessInvoiceChunkJob implements ShouldQueue
 
         Log::info("[TL] Facturas — Chunk {$this->chunkNumber}/{$this->totalChunks} — completado");
         $this->checkIfCompleted();
+    }
+
+    private function invoiceNeedsPdfDownload(?TlInvoice $existing, array $detail): bool
+    {
+        if (!$existing || !$existing->pdf_downloaded || blank($existing->pdf_s3_path)) {
+            return true;
+        }
+
+        $teamleaderUpdatedAt = $detail['updated_at'] ?? null;
+
+        if (!$teamleaderUpdatedAt || !$existing->tl_updated_at) {
+            return false;
+        }
+
+        try {
+            return Carbon::parse($teamleaderUpdatedAt)->gt($existing->tl_updated_at);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    private function downloadPdf(TlInvoice $invoice, TeamleaderService $service): void
+    {
+        $pdf = $service->downloadInvoicePdf($invoice->id);
+        $name = $invoice->invoice_number ?: $invoice->id;
+        $safeName = preg_replace('/[^a-zA-Z0-9._-]/', '_', $name) ?: $invoice->id;
+        $path = "teamleader/invoices/{$invoice->id}/{$safeName}.pdf";
+
+        Storage::disk('s3')->put($path, $pdf, 'private');
+
+        $invoice->update([
+            'pdf_s3_path' => $path,
+            'pdf_s3_disk' => 's3',
+            'pdf_downloaded' => true,
+            'pdf_downloaded_at' => now(),
+        ]);
     }
 
     private function checkIfCompleted(): void

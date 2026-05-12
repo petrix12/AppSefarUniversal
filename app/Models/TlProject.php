@@ -72,42 +72,34 @@ class TlProject extends Model
 
     public static function fromTeamleader(array $data): static
     {
-        $primaryEmail = collect($data['emails'] ?? [])
-            ->firstWhere('type', 'primary')['email'] ?? null;
+        $customer = $data['customer'] ?? $data['lead']['customer'] ?? null;
+        $budget = $data['budget'] ?? $data['estimated_budget'] ?? [];
+        $responsibleUser = $data['responsible_user'] ?? [];
 
-        $primaryPhone = collect($data['telephones'] ?? [])
-            ->first()['number'] ?? null;
-
-        // Custom fields conocidos
-        $customFieldMap = [
-            'passport'   => '624a9810-53dc-0770-965b-65891c631673',
-        ];
-
-        $passport = null;
-        foreach ($data['custom_fields'] ?? [] as $cf) {
-            $cfId = $cf['definition']['id'] ?? null;
-            if ($cfId === $customFieldMap['passport']) {
-                $passport = $cf['value'] ?? null;
-            }
-        }
+        $customer = is_array($customer) ? $customer : [];
+        $budget = is_array($budget) ? $budget : [];
+        $responsibleUser = is_array($responsibleUser) ? $responsibleUser : [];
 
         return static::updateOrCreate(
             ['id' => $data['id']],
             [
-                'first_name'    => isset($data['first_name']) ? trim($data['first_name']) : null,
-                'last_name'     => isset($data['last_name'])  ? trim($data['last_name'])  : null,
-                'email'         => $primaryEmail,
-                'phone'         => $primaryPhone,
-                'passport'      => $passport,
-                'status'        => $data['status']       ?? null,
-                'emails'        => $data['emails']       ?? [],
-                'telephones'    => $data['telephones']   ?? [],
-                'addresses'     => $data['addresses']    ?? [],
-                'custom_fields' => $data['custom_fields'] ?? [],
-                'tags'          => $data['tags']         ?? [],
-                'raw_data'      => $data,
-                'tl_added_at'   => $data['added_at']     ?? null,
-                'tl_updated_at' => $data['updated_at']   ?? null,
+                'title'               => $data['title'] ?? null,
+                'status'              => $data['status'] ?? null,
+                'customer_id'         => $customer['id'] ?? null,
+                'customer_type'       => $customer['type'] ?? null,
+                'responsible_user_id' => $responsibleUser['id'] ?? null,
+                'budget_amount'       => $budget['amount'] ?? null,
+                'budget_currency'     => $budget['currency'] ?? null,
+                'starts_on'           => $data['starts_on'] ?? null,
+                'due_on'              => $data['due_on'] ?? null,
+                'description'         => $data['description'] ?? null,
+                'participants'        => $data['participants'] ?? [],
+                'milestones'          => $data['milestones'] ?? [],
+                'custom_fields'       => $data['custom_fields'] ?? [],
+                'tags'                => $data['tags'] ?? [],
+                'raw_data'            => $data,
+                'tl_created_at'       => $data['created_at'] ?? null,
+                'tl_updated_at'       => $data['updated_at'] ?? null,
             ]
         );
     }

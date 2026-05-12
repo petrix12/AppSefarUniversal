@@ -37,7 +37,7 @@ class ProcessCreditNoteChunkJob implements ShouldQueue
                 $detail = $service->getCreditNoteById($id);
                 TlCreditNote::fromTeamleader($detail);
                 TlSyncLog::find($this->syncLogId)?->incrementCounter('processed');
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 Log::error("[TL] Error creditNote {$id}: " . $e->getMessage());
                 TlSyncLog::find($this->syncLogId)?->incrementCounter('failed');
             }

@@ -71,9 +71,20 @@ use App\Http\Controllers\UserSyncController;
 use App\Http\Controllers\InternalTaskWorkflowController;
 use App\Http\Controllers\ClientChatController;
 use App\Http\Controllers\ExternalClientImportController;
+use App\Http\Controllers\TeamleaderCronController;
 
 Route::get('/internal/tasks/daily-workflow', InternalTaskWorkflowController::class)
     ->name('internal.tasks.daily-workflow');
+
+Route::prefix('cron/teamleader')
+    ->name('cron.teamleader.')
+    ->group(function () {
+        Route::get('/sync', [TeamleaderCronController::class, 'sync'])
+            ->name('sync');
+
+        Route::get('/work', [TeamleaderCronController::class, 'work'])
+            ->name('work');
+    });
 
 Route::post('/users/{user}/sync-deals', [UserSyncController::class, 'sync'])
     ->name('users.sync-deals')
