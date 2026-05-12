@@ -105,7 +105,7 @@ class TaskController extends Controller
         $message = 'Gestion comercial guardada. El cliente queda en tu seguimiento.';
 
         if ($onlyUnansweredCall) {
-            $message = $this->reassignIneffectiveContact($task, $hubspot);
+            $message = 'Gestion guardada como llamada sin respuesta. El contacto no fue reasignado desde este cierre.';
         } else {
             $this->markContacted->markFromTask($task);
         }
@@ -144,7 +144,7 @@ class TaskController extends Controller
                     $task->reason_no_effective = $request->reason_no_effective;
                     $task->status              = 'completed';
                     $taskWasCompleted          = true;
-                    $shouldReassignIneffectiveContact = ! $task->hasActiveSalesProgress();
+                    $shouldReassignIneffectiveContact = false;
                 }
 
                 $task->save();

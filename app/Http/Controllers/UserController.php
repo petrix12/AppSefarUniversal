@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\ClientChatMessage;
+use App\Models\Task;
 use App\Models\Servicio;
 use App\Models\HsReferido;
 use App\Models\Compras;
@@ -1736,6 +1738,20 @@ class UserController extends Controller
         ->where('id_cliente', $user->id)
         ->get();
 
+    $clientTasks = Task::query()
+        ->with(['assignee:id,name', 'creator:id,name'])
+        ->where('contact_id', $user->id)
+        ->orderByDesc('due_date')
+        ->orderByDesc('id')
+        ->get();
+
+    $clientChatMessages = ClientChatMessage::query()
+        ->with('author:id,name')
+        ->where('client_id', $user->id)
+        ->orderBy('id')
+        ->limit(100)
+        ->get();
+
     // ==========================================
     // PREPARAR DATOS PARA VISTA
     // ==========================================
@@ -1854,6 +1870,8 @@ class UserController extends Controller
         'roles',
         'permissions',
         'facturas',
+        'clientTasks',
+        'clientChatMessages',
         'servicios',
         'columnasparatabla'
     ))->render();

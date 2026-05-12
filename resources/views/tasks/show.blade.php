@@ -264,7 +264,7 @@
         <div class="hint-box">
             <i class="fas fa-info-circle" style="margin-top:.15rem;"></i>
             <span>
-                Si contactaste al cliente por WhatsApp o email/correo, la tarea cuenta como efectiva aunque aun estes esperando respuesta. Solo una gestion hecha unicamente por llamada y sin respuesta puede quedar como no efectiva y pasar a reasignacion.
+                Si contactaste al cliente por WhatsApp o email/correo, la tarea cuenta como efectiva aunque aun estes esperando respuesta. Si solo llamaste y no respondio, quedara como llamada sin respuesta, pero cerrar esta tarea no reasigna el cliente automaticamente.
             </span>
         </div>
 

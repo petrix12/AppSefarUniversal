@@ -69,6 +69,7 @@ use App\Http\Controllers\ContratoCoordinadorController;
 use App\Http\Controllers\RequestAuditController;
 use App\Http\Controllers\UserSyncController;
 use App\Http\Controllers\InternalTaskWorkflowController;
+use App\Http\Controllers\ClientChatController;
 
 Route::get('/internal/tasks/daily-workflow', InternalTaskWorkflowController::class)
     ->name('internal.tasks.daily-workflow');
@@ -282,6 +283,12 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
 			->middleware('can:crud.roles.index');
     Route::resource('users', UserController::class)->names('users')
 			->middleware('can:crud.users.index');
+    Route::get('users/{user}/internal-chat', [ClientChatController::class, 'messages'])
+            ->name('users.internal-chat.index')
+            ->middleware('can:crud.users.index');
+    Route::post('users/{user}/internal-chat', [ClientChatController::class, 'storeMessage'])
+            ->name('users.internal-chat.store')
+            ->middleware('can:crud.users.index');
     Route::resource('countries', CountryController::class)->names('countries')
             ->middleware('can:crud.countries.index');
     Route::resource('agclientes', AgclienteController::class)

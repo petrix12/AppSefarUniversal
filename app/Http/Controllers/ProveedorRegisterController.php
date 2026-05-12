@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Spatie\Permission\Models\Role;
 
 class ProveedorRegisterController extends Controller
@@ -78,11 +80,46 @@ class ProveedorRegisterController extends Controller
             if ($role) $user->assignRole($role);
         }
 
+        $this->notifyNewCoordinator($user);
+
         // Opcional: loguear o NO loguear
         // Si quieres que entre a dashboard:
         // Auth::login($user);
 
         return redirect()->route('login')
             ->with('status', 'Tu registro fue recibido. Un administrador validará tu cuenta.');
+    }
+    private function notifyNewCoordinator(User $user): void
+    {
+        $recipients = [
+            'automatizacion@sefarvzla.com',
+            'sistemasccs@sefarvzla.com',
+            'sistemascol@sefarvzla.com',
+        ];
+
+        try {
+            Mail::raw(
+                "Nuevo registro de coordinador pendiente de validacion:\n\n" .
+                "Nombre: {$user->name}\n" .
+                "Email: {$user->email}\n" .
+                "Telefono: {$user->phone}\n" .
+                "Pais: {$user->pais_de_residencia}\n" .
+                "Ciudad: {$user->city}\n" .
+                "Metodo de pago preferido: {$user->metodo_pago_preferido}\n" .
+                "Motivo: {$user->motivo_coordinador}\n" .
+                "Tiene contactos en redes: " . ($user->tiene_contactos_sociales ? 'Si' : 'No') . "\n\n" .
+                "Revisar en App Sefar Universal.",
+                function ($message) use ($recipients) {
+                    $message->to($recipients)
+                        ->subject('Nuevo registro de coordinador');
+                }
+            );
+        } catch (\Throwable $e) {
+            Log::error('No se pudo enviar correo de nuevo coordinador.', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

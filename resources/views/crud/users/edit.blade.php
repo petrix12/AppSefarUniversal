@@ -126,6 +126,18 @@
                     </button>
                 </li>
                 @endif
+                @if(auth()->user()->roles[0]->id != 5)
+                <li class="nav-item" role="presentation">
+                    <button style="color:black" class="nav-link" id="client-tasks-tab" data-bs-toggle="tab" data-bs-target="#client-tasks" type="button" role="tab" aria-controls="client-tasks" aria-selected="false">
+                        Tareas
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button style="color:black" class="nav-link" id="client-chat-tab" data-bs-toggle="tab" data-bs-target="#client-chat" type="button" role="tab" aria-controls="client-chat" aria-selected="false">
+                        Chat interno
+                    </button>
+                </li>
+                @endif
             </ul>
             <style>
                 /* Título de la tarjeta */
@@ -1824,6 +1836,122 @@
                     </table>
                 </div>
 
+                @if($rolId !== 5)
+                <div class="tab-pane fade" id="client-tasks" role="tabpanel" aria-labelledby="client-tasks-tab">
+                    <div class="mb-3">
+                        <h3 class="text-xl font-bold text-gray-900 mb-1">Tareas del cliente</h3>
+                        <p class="text-sm text-gray-500 mb-0">Historial completo de tareas asociadas a este cliente.</p>
+                    </div>
+
+                    <table id="clientTasksTable" class="table table-striped table-hover w-100">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Fecha</th>
+                                <th>Asesor</th>
+                                <th>Estado</th>
+                                <th>Via</th>
+                                <th>Venta</th>
+                                <th>Detalle</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($clientTasks as $clientTask)
+                                @php
+                                    $taskStatusLabel = [
+                                        'pending' => 'Pendiente',
+                                        'in_progress' => 'En curso',
+                                        'completed' => 'Completada',
+                                        'canceled' => 'Cancelada',
+                                    ][$clientTask->status] ?? $clientTask->status;
+                                    $taskStatusClass = [
+                                        'pending' => 'warning',
+                                        'in_progress' => 'primary',
+                                        'completed' => 'success',
+                                        'canceled' => 'danger',
+                                    ][$clientTask->status] ?? 'secondary';
+                                @endphp
+                                <tr>
+                                    <td>{{ $clientTask->id }}</td>
+                                    <td>{{ optional($clientTask->due_date)->format('d/m/Y') }}</td>
+                                    <td>{{ $clientTask->assignee?->name ?? '-' }}</td>
+                                    <td><span class="badge bg-{{ $taskStatusClass }}">{{ $taskStatusLabel }}</span></td>
+                                    <td>{{ implode(', ', $clientTask->contactMethodLabels()) ?: '-' }}</td>
+                                    <td>{{ $clientTask->saleStatusLabel() ?? '-' }}</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#client-task-detail-{{ $clientTask->id }}">
+                                            Ver
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="collapse" id="client-task-detail-{{ $clientTask->id }}">
+                                    <td colspan="7">
+                                        <div class="p-3 bg-light border rounded">
+                                            <div class="row g-3">
+                                                <div class="col-md-4"><b>Titulo:</b><br>{{ $clientTask->title }}</div>
+                                                <div class="col-md-4"><b>Respondio:</b><br>{{ is_null($clientTask->customer_responded) ? 'Sin registrar' : ($clientTask->customer_responded ? 'Si' : 'No / esperando respuesta') }}</div>
+                                                <div class="col-md-4"><b>Gestion efectiva:</b><br>{{ is_null($clientTask->call_effective) ? 'Sin registrar' : ($clientTask->call_effective ? 'Si' : 'No') }}</div>
+                                                <div class="col-md-4"><b>Interes:</b><br>{{ is_null($clientTask->interest_level) ? 'Sin registrar' : ($clientTask->interest_level ? 'Si' : 'No') }}</div>
+                                                <div class="col-md-4"><b>Producto:</b><br>{{ $clientTask->product_of_interest ?: '-' }}</div>
+                                                <div class="col-md-4"><b>Seguimiento:</b><br>{{ $clientTask->follow_up_date ? $clientTask->follow_up_date->format('d/m/Y') : '-' }}</div>
+                                                <div class="col-md-6"><b>Etiquetas:</b><br>
+                                                    @forelse($clientTask->sales_tags ?? [] as $tag)
+                                                        @php($tagMeta = \App\Models\Task::salesTagOptions()[$tag] ?? null)
+                                                        @if($tagMeta)
+                                                            <span class="badge bg-secondary">{{ $tagMeta['label'] }}</span>
+                                                        @endif
+                                                    @empty
+                                                        -
+                                                    @endforelse
+                                                </div>
+                                                <div class="col-md-6"><b>Observaciones:</b><br>{{ $clientTask->reason_no_effective ?: ($clientTask->reason_no_interest ?: '-') }}</div>
+                                                <div class="col-md-12"><b>Descripcion:</b><br>{{ $clientTask->description ?: '-' }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="tab-pane fade" id="client-chat" role="tabpanel" aria-labelledby="client-chat-tab">
+                    <div class="mb-3">
+                        <h3 class="text-xl font-bold text-gray-900 mb-1">Chat interno</h3>
+                        <p class="text-sm text-gray-500 mb-0">Notas internas entre coordinadores y administradores sobre este cliente. El cliente no ve este chat.</p>
+                    </div>
+
+                    <div class="border rounded bg-light p-3">
+                        <div id="clientInternalChatMessages" style="height:360px; overflow-y:auto; background:#fff; border:1px solid #e5e7eb; border-radius:.5rem; padding:1rem;">
+                            @forelse($clientChatMessages as $message)
+                                <div class="client-chat-message mb-3" data-message-id="{{ $message->id }}">
+                                    <div class="small text-muted">
+                                        <b>{{ $message->author?->name ?? 'Usuario eliminado' }}</b>
+                                        <span>{{ optional($message->created_at)->format('d/m/Y H:i') }}</span>
+                                    </div>
+                                    <div class="p-2 rounded" style="background:{{ $message->user_id === auth()->id() ? '#e0f2fe' : '#f8fafc' }};">
+                                        {{ $message->message }}
+                                    </div>
+                                </div>
+                            @empty
+                                <div id="clientInternalChatEmpty" class="text-muted text-center py-5">No hay mensajes internos para este cliente.</div>
+                            @endforelse
+                        </div>
+
+                        <form id="clientInternalChatForm" class="mt-3">
+                            @csrf
+                            <label class="form-label fw-bold">Nuevo mensaje interno</label>
+                            <textarea id="clientInternalChatInput" class="form-control" rows="3" maxlength="2000" placeholder="Escribe una nota interna sobre este cliente..."></textarea>
+                            <div class="d-flex justify-content-end mt-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane me-1"></i>Enviar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                @endif
+
                 <div class="tab-pane fade" id="admin-req" role="tabpanel" aria-labelledby="admin-req-tab">
                     <div class="d-flex justify-content-end mb-3">
                         <button class="cfrSefar inline-flex items-center justify-center px-3 py-2 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700" data-bs-toggle="modal" data-bs-target="#crearSolicitudModal">
@@ -2671,6 +2799,98 @@
                 "info": "Página _PAGE_ de _PAGES_",
                 "infoEmpty": "No hay resultados"
             }
+        });
+        if ($('#clientTasksTable').length) {
+            $('#clientTasksTable').DataTable({
+                "language": {
+                    "lengthMenu": "Mostrar _MENU_ resultados por pagina",
+                    "zeroRecords": "No hay tareas",
+                    "info": "Pagina _PAGE_ de _PAGES_",
+                    "infoEmpty": "No hay tareas"
+                },
+                "order": [[0, "desc"]]
+            });
+        }
+
+        const chatBox = $('#clientInternalChatMessages');
+        const chatForm = $('#clientInternalChatForm');
+        const chatInput = $('#clientInternalChatInput');
+        let lastClientChatId = 0;
+
+        function escapeHtml(value) {
+            return $('<div>').text(value || '').html();
+        }
+
+        function scrollClientChat() {
+            if (!chatBox.length) return;
+            chatBox.scrollTop(chatBox[0].scrollHeight);
+        }
+
+        function appendClientChatMessage(message) {
+            if (!message || !message.id || chatBox.find(`[data-message-id="${message.id}"]`).length) {
+                return;
+            }
+
+            $('#clientInternalChatEmpty').remove();
+
+            const bg = message.is_mine ? '#e0f2fe' : '#f8fafc';
+            chatBox.append(`
+                <div class="client-chat-message mb-3" data-message-id="${message.id}">
+                    <div class="small text-muted">
+                        <b>${escapeHtml(message.author)}</b>
+                        <span>${escapeHtml(message.created_at)}</span>
+                    </div>
+                    <div class="p-2 rounded" style="background:${bg};">
+                        ${escapeHtml(message.message)}
+                    </div>
+                </div>
+            `);
+
+            lastClientChatId = Math.max(lastClientChatId, message.id);
+            scrollClientChat();
+        }
+
+        function loadClientChatMessages() {
+            if (!chatBox.length) return;
+
+            $.get('{{ route("crud.users.internal-chat.index", $user) }}', { after_id: lastClientChatId })
+                .done(function (response) {
+                    (response.messages || []).forEach(appendClientChatMessage);
+                });
+        }
+
+        if (chatBox.length) {
+            chatBox.find('.client-chat-message').each(function () {
+                lastClientChatId = Math.max(lastClientChatId, parseInt($(this).data('message-id'), 10) || 0);
+            });
+
+            scrollClientChat();
+            setInterval(loadClientChatMessages, 8000);
+        }
+
+        chatForm.on('submit', function (e) {
+            e.preventDefault();
+
+            const message = $.trim(chatInput.val());
+            if (!message) return;
+
+            $.ajax({
+                url: '{{ route("crud.users.internal-chat.store", $user) }}',
+                type: 'POST',
+                data: { message },
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                success: function (response) {
+                    chatInput.val('');
+                    appendClientChatMessage(response.message);
+                },
+                error: function () {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'No se pudo enviar el mensaje interno.'
+                    });
+                }
+            });
         });
     });
 </script>
