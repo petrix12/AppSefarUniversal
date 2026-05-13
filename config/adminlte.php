@@ -310,8 +310,15 @@ return [
             'text'        => 'Migración Teamleader',
             'icon'        => 'fa-fw fas fa-database',
             'icon_color'  => 'white',
-            'can'  => 'tl.view',
+            'can'  => ['tl.view', 'administrador'],
             'submenu' => [
+                [
+                    'text'          => 'Jobs',
+                    'icon'          => 'fa-fw fas fa-tasks',
+                    'icon_color'    => 'white',
+                    'url'           => 'teamleader/jobs',
+                    'can'           => 'administrador',
+                ],
                 [
                     'text'          => 'Contactos',
                     'icon'          => 'fa-fw fas fa-users',

@@ -72,6 +72,7 @@ use App\Http\Controllers\InternalTaskWorkflowController;
 use App\Http\Controllers\ClientChatController;
 use App\Http\Controllers\ExternalClientImportController;
 use App\Http\Controllers\TeamleaderCronController;
+use App\Http\Controllers\TeamleaderJobController;
 
 Route::get('/internal/tasks/daily-workflow', InternalTaskWorkflowController::class)
     ->name('internal.tasks.daily-workflow');
@@ -158,6 +159,10 @@ Route::middleware(['auth', 'can:administrador'])->group(function () {
 });
 
 // ── Teamleader (auth + admin) ─────────────────────────────────────────
+Route::get('teamleader/jobs', [TeamleaderJobController::class, 'index'])
+    ->middleware(['auth', 'can:administrador'])
+    ->name('teamleader.jobs.index');
+
 Route::middleware(['auth', 'can:tl.view'])
     ->prefix('teamleader')
     ->name('teamleader.')
