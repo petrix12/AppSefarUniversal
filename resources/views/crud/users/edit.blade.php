@@ -1904,15 +1904,12 @@
                                     <td><span class="badge bg-{{ $taskStatusClass }}">{{ $taskStatusLabel }}</span></td>
                                     <td>{{ implode(', ', $clientTask->contactMethodLabels()) ?: '-' }}</td>
                                     <td>{{ $clientTask->saleStatusLabel() ?? '-' }}</td>
-                                    <td>
+                                    <td style="min-width: 320px;">
                                         <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#client-task-detail-{{ $clientTask->id }}">
                                             Ver
                                         </button>
-                                    </td>
-                                </tr>
-                                <tr class="collapse" id="client-task-detail-{{ $clientTask->id }}">
-                                    <td colspan="7">
-                                        <div class="p-3 bg-light border rounded">
+
+                                        <div class="collapse mt-2 p-3 bg-light border rounded" id="client-task-detail-{{ $clientTask->id }}">
                                             <div class="row g-3">
                                                 <div class="col-md-4"><b>Titulo:</b><br>{{ $clientTask->title }}</div>
                                                 <div class="col-md-4"><b>Respondio:</b><br>{{ is_null($clientTask->customer_responded) ? 'Sin registrar' : ($clientTask->customer_responded ? 'Si' : 'No / esperando respuesta') }}</div>

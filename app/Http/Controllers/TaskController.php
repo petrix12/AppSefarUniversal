@@ -7,6 +7,7 @@ use App\Models\Task;
 use App\Models\User;
 use App\Models\Setting;
 use App\Services\HubspotService;
+use App\Services\HubspotDealOwnerSyncService;
 use App\Services\MarkContactedService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -114,7 +115,7 @@ class TaskController extends Controller
     }
 
     // ── Flujo de llamada (multi-paso) ────────────────────────
-    public function submitFlow(Request $request, Task $task, HubspotService $hubspot)
+    public function submitFlow(Request $request, Task $task, HubspotService $hubspot, HubspotDealOwnerSyncService $dealOwnerSync)
     {
         $this->authorizeAccess($task);
 
@@ -195,7 +196,7 @@ class TaskController extends Controller
         $message = 'Progreso guardado correctamente.';
 
         if ($shouldReassignIneffectiveContact) {
-            $message = $this->reassignIneffectiveContact($task, $hubspot);
+            $message = $this->reassignIneffectiveContact($task, $hubspot, $dealOwnerSync);
         }
 
         // Marcar contactado solo si hubo comunicacion efectiva.
@@ -301,7 +302,7 @@ class TaskController extends Controller
         ]);
     }
 
-    private function reassignIneffectiveContact(Task $task, HubspotService $hubspot): string
+    private function reassignIneffectiveContact(Task $task, HubspotService $hubspot, HubspotDealOwnerSyncService $dealOwnerSync): string
     {
         $task->loadMissing('contact:id,name,email,hs_id,owner_id');
         $contact = $task->contact;
@@ -328,11 +329,19 @@ class TaskController extends Controller
 
         try {
             $hsContactId = $this->resolveHubspotContactId($hubspot, $contact);
+            $updatedDeals = 0;
 
             if ($hsContactId) {
                 $hubspot->updateContact($hsContactId, [
                     'hubspot_owner_id' => (string) $advisor->hs_owner_id,
                 ]);
+
+                $updatedDeals = $dealOwnerSync->syncForContact(
+                    $hubspot,
+                    $hsContactId,
+                    (string) $advisor->hs_owner_id,
+                    (int) $contact->id
+                );
             } else {
                 Log::warning('Contacto no encontrado en HubSpot al reasignar por llamada no efectiva.', [
                     'task_id' => $task->id,
@@ -359,7 +368,7 @@ class TaskController extends Controller
             return "Progreso guardado. Contacto reasignado a {$advisor->name} en la app, pero HubSpot no se pudo actualizar.";
         }
 
-        return "Progreso guardado. Contacto reasignado a {$advisor->name}.";
+        return "Progreso guardado. Contacto reasignado a {$advisor->name}. Negocios asociados actualizados: {$updatedDeals}.";
     }
 
     private function resolveHubspotContactId(HubspotService $hubspot, User $contact): ?string

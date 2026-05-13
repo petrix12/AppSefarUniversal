@@ -440,6 +440,45 @@ class HubspotService
         }
     }
 
+    public function getDealIdsByContactId(string $contactId): array
+    {
+        try {
+            $associations = $this->hubspot->crm()->associations()->batchApi()->read(
+                'contacts',
+                'deals',
+                new BatchInputPublicObjectId([
+                    'inputs' => [
+                        ['id' => $contactId],
+                    ],
+                ])
+            );
+
+            $dealIds = [];
+            foreach ($associations->getResults() as $association) {
+                foreach ($association->getTo() as $toItem) {
+                    $dealIds[] = (string) $toItem->getId();
+                }
+            }
+
+            return array_values(array_unique($dealIds));
+        } catch (\Exception $e) {
+            throw new \Exception('Error al obtener IDs de negocios asociados al contacto: ' . $e->getMessage());
+        }
+    }
+
+    public function updateDealOwnersByContactId(string $contactId, string $hubspotOwnerId): int
+    {
+        $dealIds = $this->getDealIdsByContactId($contactId);
+
+        foreach ($dealIds as $dealId) {
+            $this->updateDeals($dealId, [
+                'hubspot_owner_id' => $hubspotOwnerId,
+            ]);
+        }
+
+        return count($dealIds);
+    }
+
     public function getDealsByContactId(string $contactId): array
     {
         try {

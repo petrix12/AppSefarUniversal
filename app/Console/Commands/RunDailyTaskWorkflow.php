@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Setting;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\HubspotDealOwnerSyncService;
 use App\Services\HubspotService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -21,7 +22,7 @@ class RunDailyTaskWorkflow extends Command
 
     protected $description = 'Ejecuta secuencialmente el cierre/reasignacion de tareas vencidas y la generacion de tareas diarias.';
 
-    public function handle(HubspotService $hubspot): int
+    public function handle(HubspotService $hubspot, HubspotDealOwnerSyncService $dealOwnerSync): int
     {
         $date = $this->option('date');
         $per = (int) ($this->option('per') ?? 10);
@@ -34,7 +35,7 @@ class RunDailyTaskWorkflow extends Command
         if ($forceReassign) {
             $this->line('');
             $this->info('Paso 0/3: forzar reasignacion previa.');
-            $this->forceReassignContacts($hubspot, $dryRun, $forceLimit);
+            $this->forceReassignContacts($hubspot, $dealOwnerSync, $dryRun, $forceLimit);
         }
 
         $notifyOptions = [];
@@ -83,7 +84,7 @@ class RunDailyTaskWorkflow extends Command
         return self::SUCCESS;
     }
 
-    private function forceReassignContacts(HubspotService $hubspot, bool $dryRun, int $limit): void
+    private function forceReassignContacts(HubspotService $hubspot, HubspotDealOwnerSyncService $dealOwnerSync, bool $dryRun, int $limit): void
     {
         $contacts = $this->forceReassignCandidates($limit);
 
@@ -96,6 +97,7 @@ class RunDailyTaskWorkflow extends Command
 
         $updatedLocal = 0;
         $hubspotUpdated = 0;
+        $hubspotDealsUpdated = 0;
         $hubspotNotFound = 0;
         $hubspotFailed = 0;
 
@@ -125,8 +127,16 @@ class RunDailyTaskWorkflow extends Command
                         'hubspot_owner_id' => (string) $advisor->hs_owner_id,
                     ]);
 
+                    $updatedDeals = $dealOwnerSync->syncForContact(
+                        $hubspot,
+                        $hsContactId,
+                        (string) $advisor->hs_owner_id,
+                        (int) $contact->id
+                    );
+                    $hubspotDealsUpdated += $updatedDeals;
+
                     $hubspotUpdated++;
-                    $this->line("      HubSpot actualizado: hs_id={$hsContactId}, owner={$advisor->hs_owner_id}");
+                    $this->line("      HubSpot actualizado: hs_id={$hsContactId}, owner={$advisor->hs_owner_id}, deals={$updatedDeals}");
                 } else {
                     $hubspotNotFound++;
                     $this->warn("      HubSpot no encontrado: email={$contact->email}, hs_id={$contact->hs_id}");
@@ -149,6 +159,7 @@ class RunDailyTaskWorkflow extends Command
         $this->info($dryRun ? 'Dry-run de reasignacion forzada completado.' : 'Reasignacion forzada completada.');
         $this->info("Reasignados en app: {$updatedLocal}");
         $this->info("Actualizados en HubSpot: {$hubspotUpdated}");
+        $this->info("Negocios actualizados en HubSpot: {$hubspotDealsUpdated}");
         $this->info("No encontrados en HubSpot: {$hubspotNotFound}");
         $this->info("Fallidos en HubSpot: {$hubspotFailed}");
     }

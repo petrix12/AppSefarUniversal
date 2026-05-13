@@ -6,6 +6,7 @@ use App\Models\Task;
 use App\Models\User;
 use App\Models\Setting;
 use App\Notifications\UnclosedTasksNotification;
+use App\Services\HubspotDealOwnerSyncService;
 use App\Services\HubspotService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -20,7 +21,7 @@ class NotifyUnclosedTasks extends Command
 
     protected $description = 'Cancela tareas abiertas con más de 3 días y reasigna aleatoriamente el cliente en BD y HubSpot.';
 
-    public function handle(HubspotService $hubspotService): int
+    public function handle(HubspotService $hubspotService, HubspotDealOwnerSyncService $dealOwnerSync): int
     {
         $date = $this->option('date')
             ? Carbon::parse($this->option('date'))->startOfDay()
@@ -52,6 +53,7 @@ class NotifyUnclosedTasks extends Command
         $processedTasks = collect();
         $reassignedClients = 0;
         $hubspotUpdated = 0;
+        $hubspotDealsUpdated = 0;
         $hubspotNotFound = 0;
         $hubspotFailed = 0;
 
@@ -99,8 +101,16 @@ class NotifyUnclosedTasks extends Command
                                 'hubspot_owner_id' => (string) $advisor->hs_owner_id,
                             ]);
 
+                            $updatedDeals = $dealOwnerSync->syncForContact(
+                                $hubspotService,
+                                $hsContactId,
+                                (string) $advisor->hs_owner_id,
+                                (int) $contact->id
+                            );
+                            $hubspotDealsUpdated += $updatedDeals;
+
                             $hubspotUpdated++;
-                            $this->line("   HubSpot actualizado: contact_id={$contact->id}, hs_id={$hsContactId}, owner={$advisor->hs_owner_id}");
+                            $this->line("   HubSpot actualizado: contact_id={$contact->id}, hs_id={$hsContactId}, owner={$advisor->hs_owner_id}, deals={$updatedDeals}");
                         } else {
                             $hubspotNotFound++;
                             $this->warn("   HubSpot no encontrado: contact_id={$contact->id}, email={$contact->email}, hs_id={$contact->hs_id}");
@@ -169,6 +179,7 @@ class NotifyUnclosedTasks extends Command
         $this->info($dryRun ? '🧪 Dry-run completado. No se actualizó nada.' : '✅ Proceso completado.');
         $this->info("Clientes reasignados en BD: {$reassignedClients}");
         $this->info("Contactos actualizados en HubSpot: {$hubspotUpdated}");
+        $this->info("Negocios actualizados en HubSpot: {$hubspotDealsUpdated}");
         $this->info("Contactos no encontrados en HubSpot: {$hubspotNotFound}");
         $this->info("Actualizaciones fallidas en HubSpot: {$hubspotFailed}");
 
