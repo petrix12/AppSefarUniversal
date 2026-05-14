@@ -20,7 +20,7 @@ class SyncInvoicesCommand extends Command
             'started_at' => now(),
         ]);
 
-        SyncInvoicesJob::dispatch($log->id)
+        SyncInvoicesJob::dispatch($log->id, false)
             ->onQueue('teamleader-sync');
 
         $this->info("[TL] SyncInvoicesJob despachado — Log ID: {$log->id}");

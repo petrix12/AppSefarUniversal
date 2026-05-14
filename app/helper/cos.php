@@ -284,8 +284,8 @@ if (!function_exists("array_cos")) {
                     ],
                     [
                         "paso" => 12,
-                        "nombre_largo" => "Apto para otros procesos",
-                        "nombre_corto" => "Apto para otros procesos",
+                        "nombre_largo" => "Posibilidad de otras opciones de visado",
+                        "nombre_corto" => "Posibilidad de otras opciones de visado",
                         "promesa" =>
                         "Nuestros expertos en Derecho Genealogista siguen buscando una conexión genealógica directa para ti que logre probar, como en miles de ocasiones lo hemos hecho, tu conexión sefardí. En Sefar Universal te abrimos nuevas puertas. Mientras nuestro equipo continúa explorando tu linaje, te ofrecemos <b>vías legales alternativas para vivir, trabajar o estudiar en Europa.</b>",
                         "textos_adicionales" => [],
@@ -1053,8 +1053,8 @@ if (!function_exists("array_cos")) {
                     ],
                     [
                         "paso" => 12,
-                        "nombre_largo" => "Apto para otros procesos",
-                        "nombre_corto" => "Apto para otros procesos",
+                        "nombre_largo" => "Posibilidad de otras opciones de visado",
+                        "nombre_corto" => "Posibilidad de otras opciones de visado",
                         "promesa" =>
                         "Nuestros expertos en Derecho Genealogista siguen buscando una conexión genealógica directa para ti que logre probar, como en miles de ocasiones lo hemos hecho, tu conexión sefardí. En Sefar Universal te abrimos nuevas puertas. Mientras nuestro equipo continúa explorando tu linaje, te ofrecemos <b>vías legales alternativas para vivir, trabajar o estudiar en Europa.</b>",
                         "textos_adicionales" => [],
@@ -1849,8 +1849,8 @@ if (!function_exists("array_cos")) {
                     ],
                     [
                         "paso" => 12,
-                        "nombre_largo" => "Apto para otros procesos",
-                        "nombre_corto" => "Apto para otros procesos",
+                        "nombre_largo" => "Posibilidad de otras opciones de visado",
+                        "nombre_corto" => "Posibilidad de otras opciones de visado",
                         "promesa" =>
                         "Nuestros expertos en Derecho Genealogista siguen buscando una conexión genealógica directa para ti que logre probar, como en miles de ocasiones lo hemos hecho, tu conexión sefardí. En Sefar Universal te abrimos nuevas puertas. Mientras nuestro equipo continúa explorando tu linaje, te ofrecemos <b>vías legales alternativas para vivir, trabajar o estudiar en Europa.</b>",
                         "textos_adicionales" => [],
@@ -2622,8 +2622,8 @@ if (!function_exists("array_cos")) {
                     ],
                     [
                         "paso" => 12,
-                        "nombre_largo" => "Apto para otros procesos",
-                        "nombre_corto" => "Apto para otros procesos",
+                        "nombre_largo" => "Posibilidad de otras opciones de visado",
+                        "nombre_corto" => "Posibilidad de otras opciones de visado",
                         "promesa" =>
                         "Nuestros expertos en Derecho Genealogista siguen buscando una conexión genealógica directa para ti que logre probar, como en miles de ocasiones lo hemos hecho, tu conexión sefardí. En Sefar Universal te abrimos nuevas puertas. Mientras nuestro equipo continúa explorando tu linaje, te ofrecemos <b>vías legales alternativas para vivir, trabajar o estudiar en Europa.</b>",
                         "textos_adicionales" => [],
@@ -3309,8 +3309,8 @@ if (!function_exists("array_cos")) {
                     ],
                     [
                         "paso" => 12,
-                        "nombre_largo" => "Apto para otros procesos",
-                        "nombre_corto" => "Apto para otros procesos",
+                        "nombre_largo" => "Posibilidad de otras opciones de visado",
+                        "nombre_corto" => "Posibilidad de otras opciones de visado",
                         "promesa" =>
                         "Nuestros expertos en Derecho Genealogista siguen buscando una conexión genealógica directa para ti que logre probar, como en miles de ocasiones lo hemos hecho, tu conexión sefardí. En Sefar Universal te abrimos nuevas puertas. Mientras nuestro equipo continúa explorando tu linaje, te ofrecemos <b>vías legales alternativas para vivir, trabajar o estudiar en Europa.</b>",
                         "textos_adicionales" => [],

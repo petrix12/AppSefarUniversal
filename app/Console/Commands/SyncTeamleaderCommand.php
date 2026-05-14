@@ -16,6 +16,7 @@ class SyncTeamleaderCommand extends Command
     protected $signature = 'teamleader:sync
                             {--entity=all : contacts|companies|deals|projects|invoices|credit_notes|all}
                             {--no-pdfs : No descargar PDFs de facturas}
+                            {--with-pdfs : Descargar PDFs de facturas}
                             {--no-docs : No revisar/descargar documentos vinculados a entidades}
                             {--force : Despachar aunque exista un sync activo reciente}';
 
@@ -33,7 +34,7 @@ class SyncTeamleaderCommand extends Command
     public function handle(): int
     {
         $entity = (string) $this->option('entity');
-        $noPdfs = (bool) $this->option('no-pdfs');
+        $downloadPdfs = (bool) $this->option('with-pdfs') && ! (bool) $this->option('no-pdfs');
         $noDocs = (bool) $this->option('no-docs');
         $force = (bool) $this->option('force');
 
@@ -61,7 +62,7 @@ class SyncTeamleaderCommand extends Command
             }
 
             $log = TlSyncLog::start($e);
-            $job = $this->makeJob($e, $log->id, $noPdfs, $noDocs);
+            $job = $this->makeJob($e, $log->id, $downloadPdfs, $noDocs);
 
             dispatch($job)->onQueue('teamleader-sync');
             $dispatched++;
@@ -84,14 +85,14 @@ class SyncTeamleaderCommand extends Command
         return self::SUCCESS;
     }
 
-    private function makeJob(string $entity, int $syncLogId, bool $noPdfs, bool $noDocs): object
+    private function makeJob(string $entity, int $syncLogId, bool $downloadPdfs, bool $noDocs): object
     {
         return match ($entity) {
             'contacts' => new SyncContactsJob($syncLogId, !$noDocs),
             'companies' => new SyncCompaniesJob($syncLogId, !$noDocs),
             'deals' => new SyncDealsJob($syncLogId, !$noDocs),
             'projects' => new SyncProjectsJob($syncLogId, !$noDocs),
-            'invoices' => new SyncInvoicesJob($syncLogId, !$noPdfs),
+            'invoices' => new SyncInvoicesJob($syncLogId, $downloadPdfs),
             'credit_notes' => new SyncCreditNotesJob($syncLogId),
         };
     }

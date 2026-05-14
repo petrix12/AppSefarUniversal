@@ -16,7 +16,7 @@ class TeamleaderCronController extends Controller
             '--entity' => 'all',
             '--force' => $request->boolean('force'),
             '--no-docs' => false,
-            '--no-pdfs' => false,
+            '--no-pdfs' => true,
             '--no-interaction' => true,
         ]);
 

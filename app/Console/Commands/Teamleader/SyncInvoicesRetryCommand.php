@@ -25,7 +25,7 @@ class SyncInvoicesRetryCommand extends Command
             'started_at' => now(),
         ]);
 
-        ProcessInvoiceChunkJob::dispatch($ids, 1, 1, $log->id)
+        ProcessInvoiceChunkJob::dispatch($ids, 1, 1, $log->id, false)
             ->onQueue('teamleader-sync');
 
         $this->info("[TL] Despachado — Log ID: {$log->id}");

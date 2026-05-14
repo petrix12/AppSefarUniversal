@@ -22,7 +22,7 @@ class SyncInvoicesJob implements ShouldQueue
 
     public function __construct(
         public readonly ?int $syncLogId = null,
-        public readonly bool $downloadPdfs = true,
+        public readonly bool $downloadPdfs = false,
         public readonly int $page = 1,
     ) {}
 
@@ -117,7 +117,8 @@ class SyncInvoicesJob implements ShouldQueue
 
     private function downloadPdfs(): bool
     {
-        return isset($this->downloadPdfs) ? $this->downloadPdfs : true;
+        return (bool) config('services.teamleader.download_invoice_pdfs', false)
+            && (isset($this->downloadPdfs) ? $this->downloadPdfs : false);
     }
 
     public function failed(\Throwable $e): void

@@ -29,7 +29,7 @@ class ProcessInvoiceChunkJob implements ShouldQueue
         public readonly int   $chunkNumber,
         public readonly int   $totalChunks,
         public readonly ?int  $syncLogId = null,
-        public readonly bool  $downloadPdfs = true,
+        public readonly bool  $downloadPdfs = false,
     ) {}
 
     public function handle(TeamleaderService $service): void
@@ -94,7 +94,8 @@ class ProcessInvoiceChunkJob implements ShouldQueue
 
     private function downloadPdfs(): bool
     {
-        return isset($this->downloadPdfs) ? $this->downloadPdfs : true;
+        return (bool) config('services.teamleader.download_invoice_pdfs', false)
+            && (isset($this->downloadPdfs) ? $this->downloadPdfs : false);
     }
 
     private function invoiceNeedsPdfDownload(?TlInvoice $existing, array $detail): bool
