@@ -146,6 +146,7 @@
     $saleStatusOptions = \App\Models\Task::saleStatusOptions();
     $salesTagOptions = \App\Models\Task::salesTagOptions();
     $contactMethodOptions = \App\Models\Task::contactMethodOptions();
+    $isSystemsTask = $task->isAssignedToSystems();
     $selectedContactMethods = old('contact_methods', $task->contact_methods ?: ($task->call_effective !== null ? [\App\Models\Task::CONTACT_METHOD_CALL] : []));
     $selectedSalesTags = old('sales_tags', $task->sales_tags ?? []);
     $respondedValue = old('customer_responded', is_null($task->customer_responded) ? null : ($task->customer_responded ? '1' : '0'));
@@ -258,6 +259,35 @@
         </div>
     @endif
 
+    @if($isSystemsTask)
+        <div class="detail-card p-4 mb-4">
+            <p class="section-label">Gestion interna de Sistemas</p>
+
+            <div class="hint-box">
+                <i class="fas fa-info-circle" style="margin-top:.15rem;"></i>
+                <span>
+                    Esta tarea es interna. Al completarla no se cambia el propietario del cliente, no se reasigna ningun negocio y no entra al flujo comercial de ventas.
+                </span>
+            </div>
+
+            @if(! $task->isClosed())
+                <form method="POST" action="{{ route('tasks.completeInternal', $task) }}">
+                    @csrf
+                    @method('PUT')
+
+                    <button type="submit" class="btn-flow btn-green">
+                        <i class="fas fa-check"></i>
+                        Completar tarea interna
+                    </button>
+                </form>
+            @else
+                <div class="alert-banner" style="background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46;">
+                    <i class="fas fa-check-circle" style="color:#10b981;"></i>
+                    <span>Tarea interna completada.</span>
+                </div>
+            @endif
+        </div>
+    @else
     <div class="detail-card p-4 mb-4">
         <p class="section-label">Gestion comercial</p>
 
@@ -394,6 +424,7 @@
             </button>
         </form>
     </div>
+    @endif
 
     @if($hasProgress)
         <div class="detail-card p-4 mb-4">

@@ -87,6 +87,7 @@
                 <tbody>
                     @forelse($tasks as $task)
                         @php
+                            $isSystemsTask = $task->isAssignedToSystems();
                             $badgeMap = [
                                 'pending'     => 'warning',
                                 'in_progress' => 'primary',
@@ -128,8 +129,8 @@
                             <td>
                                 <a href="{{ route('tasks.show', $task) }}"
                                    class="btn btn-sm btn-{{ $task->isClosed() ? 'outline-secondary' : 'primary' }}">
-                                    <i class="fas fa-{{ $task->isClosed() ? 'eye' : 'phone' }} mr-1"></i>
-                                    {{ $task->isClosed() ? 'Ver' : 'Cumplir' }}
+                                    <i class="fas fa-{{ $task->isClosed() ? 'eye' : ($isSystemsTask ? 'check' : 'phone') }} mr-1"></i>
+                                    {{ $task->isClosed() ? 'Ver' : ($isSystemsTask ? 'Resolver' : 'Cumplir') }}
                                 </a>
                             </td>
                         </tr>

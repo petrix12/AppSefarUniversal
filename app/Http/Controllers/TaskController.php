@@ -57,6 +57,10 @@ class TaskController extends Controller
     {
         $this->authorizeAccess($task);
 
+        if ($task->isAssignedToSystems()) {
+            return $this->completeInternalTask($task);
+        }
+
         $data = $request->validate([
             'contact_methods' => 'required|array|min:1',
             'contact_methods.*' => 'in:' . implode(',', array_keys(Task::contactMethodOptions())),
@@ -118,6 +122,10 @@ class TaskController extends Controller
     public function submitFlow(Request $request, Task $task, HubspotService $hubspot, HubspotDealOwnerSyncService $dealOwnerSync)
     {
         $this->authorizeAccess($task);
+
+        if ($task->isAssignedToSystems()) {
+            return back()->with('error', 'Esta es una tarea interna de Sistemas. Se completa desde su gestion interna, sin reasignar clientes.');
+        }
 
         if ($task->isClosed()) {
             return back()->with('error', 'Esta tarea ya fue cerrada.');
@@ -272,9 +280,24 @@ class TaskController extends Controller
         }
     }
 
+    public function completeInternal(Task $task)
+    {
+        $this->authorizeAccess($task);
+
+        if (! $task->isAssignedToSystems()) {
+            abort(404);
+        }
+
+        return $this->completeInternalTask($task);
+    }
+
     // ── Crear tarea de seguimiento ────────────────────────────
     private function createFollowUp(Task $original): void
     {
+        if ($original->isAssignedToSystems()) {
+            return;
+        }
+
         $followDate    = Carbon::parse($original->follow_up_date);
         $existingCount = Task::query()
             ->where('user_id', $original->user_id)
@@ -304,6 +327,10 @@ class TaskController extends Controller
 
     private function reassignIneffectiveContact(Task $task, HubspotService $hubspot, HubspotDealOwnerSyncService $dealOwnerSync): string
     {
+        if ($task->isAssignedToSystems()) {
+            return 'Tarea interna de Sistemas completada. No se reasigno ningun cliente.';
+        }
+
         $task->loadMissing('contact:id,name,email,hs_id,owner_id');
         $contact = $task->contact;
 
@@ -384,6 +411,20 @@ class TaskController extends Controller
         $hsContact = $hubspot->searchContactByEmail($contact->email);
 
         return $hsContact['id'] ?? null;
+    }
+
+    private function completeInternalTask(Task $task)
+    {
+        if ($task->isClosed()) {
+            return back()->with('error', 'Esta tarea ya fue cerrada.');
+        }
+
+        $task->update([
+            'status' => Task::STATUS_COMPLETED,
+        ]);
+
+        return redirect()->route('tasks.show', $task)
+            ->with('success', 'Tarea interna de Sistemas completada. No se reasigno ningun cliente.');
     }
 
     private function getNextAdvisorRoundRobin(?int $currentOwnerId = null): ?User

@@ -123,6 +123,7 @@
                 <tbody>
                     @forelse($tasks as $task)
                         @php
+                            $isSystemsTask = $task->isAssignedToSystems();
                             $colorMap = [
                                 'pending'=>'warning','in_progress'=>'primary',
                                 'completed'=>'success','canceled'=>'danger'
@@ -136,7 +137,12 @@
                             <td>{{ $task->id }}</td>
                             <td>{{ $task->assignee?->name ?? '—' }}</td>
                             <td>{{ $task->contact?->name ?? '—' }}</td>
-                            <td>{{ Str::limit($task->title, 45) }}</td>
+                            <td>
+                                {{ Str::limit($task->title, 45) }}
+                                @if($isSystemsTask)
+                                    <span class="badge badge-dark ml-1">Sistemas</span>
+                                @endif
+                            </td>
                             <td>
                                 <span class="badge badge-{{ $colorMap[$task->status] ?? 'secondary' }}">
                                     {{ $labelMap[$task->status] ?? $task->status }}
@@ -213,7 +219,8 @@
                                 <div class="card card-outline card-primary mb-3">
                                     <div class="card-header py-2">
                                         <h3 class="card-title">
-                                            <i class="fas fa-user-check mr-1"></i>Registro del vendedor
+                                            <i class="fas fa-user-check mr-1"></i>
+                                            {{ $task->isAssignedToSystems() ? 'Gestion interna' : 'Registro del vendedor' }}
                                         </h3>
                                     </div>
                                     <div class="card-body">

@@ -11,6 +11,11 @@ class Task extends Model
 {
     use HasFactory;
 
+    const SYSTEMS_USER_ID = 13515;
+    const SYSTEMS_EMAILS = [
+        'sistemasccs@sefarvzla.com',
+    ];
+
     protected $fillable = [
         'user_id',
         'contact_id',
@@ -160,6 +165,15 @@ class Task extends Model
         return $query->whereIn('status', [self::STATUS_PENDING, self::STATUS_IN_PROGRESS]);
     }
 
+    public function scopeNotAssignedToSystems($query)
+    {
+        $systemsUserIds = self::systemsUserIds();
+
+        return empty($systemsUserIds)
+            ? $query
+            : $query->whereNotIn('user_id', $systemsUserIds);
+    }
+
     // ── Helpers ─────────────────────────────────────────────
     public function isClosed(): bool
     {
@@ -169,6 +183,34 @@ class Task extends Model
     public function isOwnedBy(int $userId): bool
     {
         return $this->user_id === $userId;
+    }
+
+    public function isAssignedToSystems(): bool
+    {
+        if ((int) $this->user_id === self::SYSTEMS_USER_ID) {
+            return true;
+        }
+
+        if ($this->relationLoaded('assignee') && $this->assignee) {
+            return in_array(strtolower((string) $this->assignee->email), self::SYSTEMS_EMAILS, true);
+        }
+
+        return User::query()
+            ->whereKey($this->user_id)
+            ->whereIn('email', self::SYSTEMS_EMAILS)
+            ->exists();
+    }
+
+    public static function systemsUserIds(): array
+    {
+        return User::query()
+            ->where('id', self::SYSTEMS_USER_ID)
+            ->orWhereIn('email', self::SYSTEMS_EMAILS)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
     }
 
     public function saleStatusLabel(): ?string

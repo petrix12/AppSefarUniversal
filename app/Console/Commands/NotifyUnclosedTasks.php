@@ -19,7 +19,7 @@ class NotifyUnclosedTasks extends Command
         {--date= : Fecha base opcional YYYY-MM-DD}
         {--dry-run : Solo muestra cambios, no actualiza nada}';
 
-    protected $description = 'Cancela tareas abiertas con más de 3 días y reasigna aleatoriamente el cliente en BD y HubSpot.';
+    protected $description = 'Cancela tareas comerciales abiertas con mas de 3 dias y reasigna aleatoriamente el cliente en BD y HubSpot.';
 
     public function handle(HubspotService $hubspotService, HubspotDealOwnerSyncService $dealOwnerSync): int
     {
@@ -39,6 +39,7 @@ class NotifyUnclosedTasks extends Command
                 'contact:id,name,email,hs_id,owner_id',
             ])
             ->whereIn('status', ['pending', 'in_progress'])
+            ->notAssignedToSystems()
             ->where('created_at', '<=', $limitDate)
             ->whereNotNull('contact_id')
             ->get();

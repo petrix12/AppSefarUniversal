@@ -9,10 +9,10 @@ use Illuminate\Support\Facades\Log;
 
 class DeployController extends Controller
 {
-    // Modelos en orden de prioridad
+    // Modelos baratos en orden de prioridad
     private const MODELS = [
-        'anthropic/claude-sonnet-4-5',  // Principal — excelente en código
-        'google/gemini-2.5-pro',        // Fallback
+        'google/gemini-2.0-flash-lite-001',
+        'google/gemini-2.5-flash-lite',
     ];
 
     public function deploy(Request $request)
@@ -171,12 +171,6 @@ class DeployController extends Controller
             . "\n\nCAMBIOS DE CÓDIGO:\n"
             . (!empty($filteredDiffLines) ? implode("\n", $filteredDiffLines) : 'Sin líneas agregadas o eliminadas.');
 
-        $maxChars = 18000;
-
-        if (mb_strlen($result) > $maxChars) {
-            $result = mb_substr($result, 0, $maxChars) . "\n\n...[truncado por longitud]";
-        }
-
         return trim($result);
     }
 
@@ -189,10 +183,11 @@ class DeployController extends Controller
     Reglas estrictas:
     - Responde solo en texto plano.
     - No uses markdown, tablas, negritas, titulos con #, bloques de codigo ni enlaces.
-    - No menciones hashes, commits, diffs, archivos truncados ni el modelo.
+    - No menciones hashes, commits, diffs ni el modelo.
     - No inventes funcionalidades.
-    - Maximo 3 lineas de cambios.
-    - Cada linea debe ser corta y facil de leer.
+    - No recortes ni reemplaces informacion con puntos suspensivos.
+    - Incluye todos los cambios relevantes que puedas identificar.
+    - Cada linea debe ser clara y facil de leer.
 
     Usa exactamente este formato:
 
@@ -201,7 +196,7 @@ class DeployController extends Controller
     - Se actualizo ..., que arregla el problema ...
     - Se agrego ..., que sirve para ...
 
-    Si hay menos cambios, usa solo 1 o 2 lineas.
+    Usa tantas lineas como sean necesarias.
 
     Cambios analizados:
 
@@ -242,7 +237,6 @@ class DeployController extends Controller
                             ],
                         ],
                         'temperature' => 0.1,  // Muy determinista para resumenes tecnicos
-                        'max_tokens'  => 180,
                     ]);
 
                 if (! $response->successful()) {
@@ -303,11 +297,7 @@ class DeployController extends Controller
                 $line = 'Se actualizo ' . lcfirst($line);
             }
 
-            $items[] = $this->limitPlainLine($line);
-
-            if (count($items) >= 3) {
-                break;
-            }
+            $items[] = $line;
         }
 
         if (empty($items)) {
@@ -337,25 +327,13 @@ class DeployController extends Controller
                 default => "Se actualizo {$file}, que incluye ajustes recientes del despliegue.",
             };
 
-            if (count($items) >= 3) {
-                break;
-            }
         }
 
         if (empty($items)) {
             $items[] = 'Se actualizaron cambios del despliegue, que dejan la aplicacion al dia.';
         }
 
-        return "Cambios implementados\n- " . implode("\n- ", array_map([$this, 'limitPlainLine'], $items));
-    }
-
-    private function limitPlainLine(string $line): string
-    {
-        $line = preg_replace('/\s+/', ' ', trim($line)) ?? trim($line);
-
-        return mb_strlen($line) > 160
-            ? rtrim(mb_substr($line, 0, 157)) . '...'
-            : $line;
+        return "Cambios implementados\n- " . implode("\n- ", $items);
     }
 
     // ── Mail con info del modelo usado ────────────────────────

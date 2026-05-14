@@ -166,12 +166,17 @@ class RunDailyTaskWorkflow extends Command
 
     private function forceReassignCandidates(int $limit)
     {
+        $systemsUserIds = Task::systemsUserIds();
+
         $ineffective = User::query()
             ->select('users.id', 'users.name', 'users.email', 'users.hs_id', 'users.owner_id')
             ->selectRaw("'tarea completada no efectiva' as force_reason")
             ->join('tasks', 'tasks.contact_id', '=', 'users.id')
             ->where('tasks.status', Task::STATUS_COMPLETED)
             ->where('tasks.call_effective', 0)
+            ->when(! empty($systemsUserIds), function ($query) use ($systemsUserIds) {
+                $query->whereNotIn('tasks.user_id', $systemsUserIds);
+            })
             ->whereColumn('tasks.user_id', 'users.owner_id')
             ->whereNotNull('users.owner_id')
             ->groupBy('users.id', 'users.name', 'users.email', 'users.hs_id', 'users.owner_id');
@@ -182,10 +187,13 @@ class RunDailyTaskWorkflow extends Command
             ->join('list_user as lu', 'lu.user_id', '=', 'users.id')
             ->where('lu.contacted', 0)
             ->whereNotNull('users.owner_id')
-            ->whereNotExists(function ($query) {
+            ->whereNotExists(function ($query) use ($systemsUserIds) {
                 $query->select(DB::raw(1))
                     ->from('tasks')
-                    ->whereColumn('tasks.contact_id', 'users.id');
+                    ->whereColumn('tasks.contact_id', 'users.id')
+                    ->when(! empty($systemsUserIds), function ($taskQuery) use ($systemsUserIds) {
+                        $taskQuery->whereNotIn('tasks.user_id', $systemsUserIds);
+                    });
             })
             ->groupBy('users.id', 'users.name', 'users.email', 'users.hs_id', 'users.owner_id');
 
