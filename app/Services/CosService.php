@@ -1048,6 +1048,74 @@ class CosService
             || str_contains($textoLower, 'aceptada');
     }
 
+    private function hasEtiquetaCartaNaturalezaSefardi(): bool
+    {
+        return $this->etiquetasContienen(fn (string $texto) => $this->stringContieneCartaNaturalezaSefardi($texto));
+    }
+
+    private function etiquetasContienen(callable $matcher): bool
+    {
+        $etiquetas = $this->mondayData['etiquetas'] ?? null;
+
+        if (empty($etiquetas)) {
+            return false;
+        }
+
+        if (is_string($etiquetas)) {
+            return $matcher($etiquetas);
+        }
+
+        if (is_array($etiquetas)) {
+            foreach ($etiquetas as $etiqueta) {
+                if (is_string($etiqueta) && $matcher($etiqueta)) {
+                    return true;
+                }
+
+                if (is_array($etiqueta)) {
+                    foreach (['name', 'label', 'text', 'value', 'title'] as $field) {
+                        if (isset($etiqueta[$field]) && $matcher((string) $etiqueta[$field])) {
+                            return true;
+                        }
+                    }
+                }
+
+                if (is_object($etiqueta)) {
+                    foreach (['name', 'label', 'text', 'value', 'title'] as $field) {
+                        if (isset($etiqueta->$field) && $matcher((string) $etiqueta->$field)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function stringContieneCartaNaturalezaSefardi(string $texto): bool
+    {
+        $normalized = $this->normalizeSearchText($texto);
+
+        return str_contains($normalized, 'carta de naturaleza')
+            && str_contains($normalized, 'sefardi')
+            && (bool) preg_match('/\b[pm]\b/', $normalized);
+    }
+
+    private function normalizeSearchText(string $texto): string
+    {
+        $texto = mb_strtolower($texto, 'UTF-8');
+
+        return strtr($texto, [
+            'á' => 'a',
+            'é' => 'e',
+            'í' => 'i',
+            'ó' => 'o',
+            'ú' => 'u',
+            'ü' => 'u',
+            'ñ' => 'n',
+        ]);
+    }
+
     private function getIAResults(): array
     {
         // Si ya pasó la fase genealógica, no analizar IA
@@ -1071,9 +1139,9 @@ class CosService
             'raw_dump' => json_encode($this->mondayData['etiquetas'] ?? null),
         ]);
 
-        // ✅ Cortocircuito por etiqueta Aceptado/Aceptada
-        if ($this->hasEtiquetaAceptada()) {
-            Log::info("COS IA: ✅ Etiqueta 'Aceptado/Aceptada' detectada, saltando IA", [
+        // Cortocircuito por etiquetas que ya aprueban genealogia sefardi.
+        if ($this->hasEtiquetaAceptada() || $this->hasEtiquetaCartaNaturalezaSefardi()) {
+            Log::info("COS IA: etiqueta aprobatoria detectada, saltando IA", [
                 'negocio_id' => $this->negocio->hubspot_id ?? 'unknown',
             ]);
 
@@ -1224,6 +1292,7 @@ class CosService
     private function generateAICacheKey($mondaydataforAI): string
     {
         $keyData = [
+            'rules_version' => 'carta_naturaleza_sefardi_v1',
             'tablero' => $mondaydataforAI['tablero'] ?? '',
             'etiquetas' => $mondaydataforAI['etiquetas'] ?? '',
             'info_gen' => $mondaydataforAI['información_genealogia'] ?? '',
@@ -1302,11 +1371,13 @@ Analiza los datos y devuelve un JSON con las siguientes claves booleanas:
 
 **REGLAS:**
 
-1. **otrosProcesos**: `true` si las etiquetas incluyen 'no apto', 'apto para otros procesos', 'italiana', 'portuguesa', 'carta de naturaleza', 'MemDem', 'ley de nietos', o similares.
+1. **otrosProcesos**: `true` si las etiquetas incluyen 'no apto', 'apto para otros procesos', 'italiana', 'portuguesa', 'carta de naturaleza' general, 'MemDem', 'ley de nietos', o similares.
+
+   Excepcion importante: si la etiqueta contiene 'CARTA DE NATURALEZA SEFARDI P', 'CARTA DE NATURALEZA SEFARDI M', 'Carta de Naturaleza Sefardi P' o 'Carta de Naturaleza Sefardi M', NO es otrosProcesos. En ese caso es aprobado sefardi.
 
 2. **pericial**: `true` si alguna etiqueta contiene 'Informe Pericial', 'Defensa Jurídica', 'peritaje', o similares.
 
-3. **genealogiaAprobada**: `true` si alguna etiqueta contiene 'aprobado', 'aceptado', 'genealogía aprobada', o indica aprobación explícita de genealogía.
+3. **genealogiaAprobada**: `true` si alguna etiqueta contiene 'aprobado', 'aceptado', 'genealogía aprobada', 'CARTA DE NATURALEZA SEFARDI P', 'CARTA DE NATURALEZA SEFARDI M', o indica aprobación explícita de genealogía sefardi.
 
 4. **genealogia**: `true` si `genealogiaAprobada` es `true` o si hay evidencia de proceso genealógico activo.
 
@@ -1406,6 +1477,7 @@ Analiza los datos y devuelve un JSON con las siguientes claves booleanas:
         $tablero = mb_strtolower($mondaydataforAI['tablero'] ?? '');
         $etiquetas = mb_strtolower($mondaydataforAI['etiquetas'] ?? '');
         $combinedText = $tablero . ' ' . $etiquetas;
+        $hasCartaNaturalezaSefardi = $this->stringContieneCartaNaturalezaSefardi($combinedText);
 
         if (stripos($tablero, 'analisis preliminar') !== false || stripos($tablero, 'preanálisis') !== false) {
             $resultado['analisisYCorreccion'] = true;
@@ -1422,7 +1494,7 @@ Analiza los datos y devuelve un JSON con las siguientes claves booleanas:
             || stripos($combinedText, 'otros procesos') !== false
             || stripos($combinedText, 'italiana') !== false
             || stripos($combinedText, 'portuguesa') !== false
-            || stripos($combinedText, 'carta de naturaleza') !== false) {
+            || (!$hasCartaNaturalezaSefardi && stripos($combinedText, 'carta de naturaleza') !== false)) {
             $resultado['otrosProcesos'] = true;
         }
 
@@ -1433,6 +1505,11 @@ Analiza los datos y devuelve un JSON con las siguientes claves booleanas:
 
         if (stripos($combinedText, 'aprobado') !== false
             || stripos($combinedText, 'genealogía aprobada') !== false) {
+            $resultado['genealogiaAprobada'] = true;
+            $resultado['genealogia'] = true;
+        }
+
+        if ($hasCartaNaturalezaSefardi) {
             $resultado['genealogiaAprobada'] = true;
             $resultado['genealogia'] = true;
         }
