@@ -48,7 +48,7 @@ class DeployController extends Controller
                 [$summary, $modelUsed] = $this->callOpenRouterSummary($changes);
             } catch (\Throwable $e) {
                 Log::error('Error IA', ['msg' => $e->getMessage()]);
-                $summary = "Se desplegaron cambios, pero no se pudo generar el resumen automático.\n\n" . $changes;
+                $summary = $this->buildFallbackSummary($changes);
             }
 
             try {
@@ -184,28 +184,28 @@ class DeployController extends Controller
     private function buildPrompt(string $changes): string
     {
         return <<<PROMPT
-    Eres un experto en desarrollo de software. A continuación recibes un resumen real de despliegue de una aplicación Laravel.
+    Eres un experto en desarrollo de software. Recibes cambios reales de una aplicacion Laravel.
 
-    El contenido incluye:
-    - nombres de archivos creados, editados o eliminados
-    - líneas de código agregadas
-    - líneas de código eliminadas
+    Reglas estrictas:
+    - Responde solo en texto plano.
+    - No uses markdown, tablas, negritas, titulos con #, bloques de codigo ni enlaces.
+    - No menciones hashes, commits, diffs, archivos truncados ni el modelo.
+    - No inventes funcionalidades.
+    - Maximo 3 lineas de cambios.
+    - Cada linea debe ser corta y facil de leer.
 
-    NO estás viendo mensajes de commit.
-    NO inventes funcionalidades.
-    Describe únicamente lo que se pueda inferir del código.
+    Usa exactamente este formato:
 
-    Contenido analizado:
+    Cambios implementados
+    - Se actualizo ..., que resuelve ...
+    - Se actualizo ..., que arregla el problema ...
+    - Se agrego ..., que sirve para ...
+
+    Si hay menos cambios, usa solo 1 o 2 lineas.
+
+    Cambios analizados:
 
     {$changes}
-
-    Genera un resumen claro, breve y técnico en español con este formato:
-    - Archivos o módulos afectados
-    - Qué cambios funcionales se observan
-    - Qué correcciones o ajustes se detectan
-    - Impacto general del despliegue
-
-    Sé directo y preciso.
     PROMPT;
     }
 
@@ -234,22 +234,24 @@ class DeployController extends Controller
                         'messages'    => [
                             [
                                 'role'    => 'system',
-                                'content' => 'Eres un experto en desarrollo de software que resume cambios de código de forma clara, precisa y breve en español.',
+                                'content' => 'Resume cambios de codigo en espanol usando solo texto plano y el formato indicado. No uses markdown.',
                             ],
                             [
                                 'role'    => 'user',
                                 'content' => $this->buildPrompt($changes),
                             ],
                         ],
-                        'temperature' => 0.1,  // Muy determinista para resúmenes técnicos
-                        'max_tokens'  => 350,
+                        'temperature' => 0.1,  // Muy determinista para resumenes tecnicos
+                        'max_tokens'  => 180,
                     ]);
 
                 if (! $response->successful()) {
                     throw new \Exception("Error con modelo {$model}: " . $response->body());
                 }
 
-                $content = trim($response->json()['choices'][0]['message']['content'] ?? '');
+                $content = $this->normalizeSummary(
+                    trim($response->json()['choices'][0]['message']['content'] ?? '')
+                );
 
                 if (empty($content)) {
                     throw new \Exception("Respuesta vacía del modelo {$model}");
@@ -273,6 +275,89 @@ class DeployController extends Controller
         );
     }
 
+    private function normalizeSummary(string $summary): string
+    {
+        $summary = str_replace(["\r\n", "\r"], "\n", trim($summary));
+        $summary = preg_replace('/```.*?```/s', '', $summary) ?? $summary;
+        $summary = preg_replace('/\[([^\]]+)\]\([^)]+\)/', '$1', $summary) ?? $summary;
+        $summary = str_replace(['**', '__', '`'], '', $summary);
+
+        $lines = preg_split('/\n+/', $summary) ?: [];
+        $items = [];
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+
+            if ($line === '' || strcasecmp($line, 'Cambios implementados') === 0) {
+                continue;
+            }
+
+            $line = preg_replace('/^\s*(#{1,6}|\*|\x{2022}|\d+[.)]|-)\s*/u', '', $line) ?? $line;
+            $line = trim($line);
+
+            if ($line === '') {
+                continue;
+            }
+
+            if (!preg_match('/^Se\s+/i', $line)) {
+                $line = 'Se actualizo ' . lcfirst($line);
+            }
+
+            $items[] = $this->limitPlainLine($line);
+
+            if (count($items) >= 3) {
+                break;
+            }
+        }
+
+        if (empty($items)) {
+            $items[] = 'Se actualizaron cambios del despliegue, que dejan la aplicacion al dia.';
+        }
+
+        return "Cambios implementados\n- " . implode("\n- ", $items);
+    }
+
+    private function buildFallbackSummary(string $changes): string
+    {
+        $items = [];
+
+        foreach (preg_split('/\r\n|\r|\n/', $changes) ?: [] as $line) {
+            $line = trim($line);
+
+            if (!preg_match('/^\[(CREADO|EDITADO|ELIMINADO|RENOMBRADO)\]\s+(.+)$/', $line, $matches)) {
+                continue;
+            }
+
+            $status = $matches[1];
+            $file = $matches[2];
+
+            $items[] = match ($status) {
+                'CREADO' => "Se agrego {$file}, que sirve para incorporar cambios nuevos al sistema.",
+                'ELIMINADO' => "Se elimino {$file}, que retira codigo que ya no se usa.",
+                default => "Se actualizo {$file}, que incluye ajustes recientes del despliegue.",
+            };
+
+            if (count($items) >= 3) {
+                break;
+            }
+        }
+
+        if (empty($items)) {
+            $items[] = 'Se actualizaron cambios del despliegue, que dejan la aplicacion al dia.';
+        }
+
+        return "Cambios implementados\n- " . implode("\n- ", array_map([$this, 'limitPlainLine'], $items));
+    }
+
+    private function limitPlainLine(string $line): string
+    {
+        $line = preg_replace('/\s+/', ' ', trim($line)) ?? trim($line);
+
+        return mb_strlen($line) > 160
+            ? rtrim(mb_substr($line, 0, 157)) . '...'
+            : $line;
+    }
+
     // ── Mail con info del modelo usado ────────────────────────
     private function sendSummaryMail(string $summary, ?string $modelUsed): void
     {
@@ -284,8 +369,7 @@ class DeployController extends Controller
             'sistemasccs@sefarvzla.com',
         ];
 
-        $modelLabel = $modelUsed ? "\n\n[Resumen generado por: {$modelUsed}]" : '';
-        $body       = $summary . $modelLabel;
+        $body = $summary;
 
         Mail::raw($body, function ($message) use ($recipients) {
             $message->to($recipients)
