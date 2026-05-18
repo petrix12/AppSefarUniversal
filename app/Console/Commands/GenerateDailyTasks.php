@@ -28,7 +28,9 @@ class GenerateDailyTasks extends Command
         $this->info("📅 Fecha: {$date->toDateString()} | Base: {$base} tareas | " . ($dryRun ? 'DRY-RUN' : 'REAL'));
 
         // 1) Asesores activos
-        $advisors = User::role('Coord. de Nacionalidad y Genealogía')->get(['id', 'name']);
+        $advisors = User::role('Coord. de Nacionalidad y Genealogía')
+            ->where('exclude_from_task_assignment', false)
+            ->get(['id', 'name']);
 
         if ($advisors->isEmpty()) {
             $this->error('No hay usuarios con rol Coord. de Nacionalidad y Genealogía.');

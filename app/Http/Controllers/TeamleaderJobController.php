@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\TlSyncLog;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -41,6 +44,89 @@ class TeamleaderJobController extends Controller
             'jobsTableExists' => Schema::hasTable('jobs'),
             'failedJobsTableExists' => Schema::hasTable('failed_jobs'),
         ]);
+    }
+
+    public function retryFailed(Request $request): RedirectResponse
+    {
+        return $this->retryFailedJobs();
+    }
+
+    public function retryFailedJob(int $failedJob): RedirectResponse
+    {
+        return $this->retryFailedJobs($failedJob);
+    }
+
+    public function clearFailed(Request $request): RedirectResponse
+    {
+        return $this->clearFailedJobs();
+    }
+
+    public function clearFailedJob(int $failedJob): RedirectResponse
+    {
+        return $this->clearFailedJobs($failedJob);
+    }
+
+    public function work(Request $request): RedirectResponse
+    {
+        $jobs = min(200, max(1, (int) $request->input('jobs', 20)));
+        $timeout = min(60, max(10, (int) $request->input('timeout', 45)));
+
+        $exitCode = Artisan::call('queue:work', [
+            '--queue' => implode(',', $this->queues),
+            '--stop-when-empty' => true,
+            '--tries' => 3,
+            '--timeout' => $timeout,
+            '--max-jobs' => $jobs,
+            '--no-interaction' => true,
+        ]);
+
+        $output = trim(Artisan::output());
+
+        if ($exitCode !== 0) {
+            return back()->with('error', "El worker termino con error. {$output}");
+        }
+
+        return back()->with('status', "Worker ejecutado. Jobs maximos: {$jobs}. " . ($output ?: 'Sin salida adicional.'));
+    }
+
+    private function retryFailedJobs(?int $failedJobId = null): RedirectResponse
+    {
+        if (! Schema::hasTable('failed_jobs')) {
+            return back()->with('error', 'No existe la tabla failed_jobs.');
+        }
+
+        $jobs = $this->failedJobsQuery()
+            ->when($failedJobId, fn ($query) => $query->where('id', $failedJobId))
+            ->get(['id', 'uuid']);
+
+        if ($jobs->isEmpty()) {
+            return back()->with('status', 'No hay jobs fallidos para reintentar.');
+        }
+
+        foreach ($jobs as $job) {
+            Artisan::call('queue:retry', [
+                'id' => [$job->uuid ?: (string) $job->id],
+                '--no-interaction' => true,
+            ]);
+        }
+
+        return back()->with(
+            'status',
+            "Se reintentaron {$jobs->count()} job(s). Laravel los retiro de failed_jobs y los puso nuevamente en cola."
+        );
+    }
+
+    private function clearFailedJobs(?int $failedJobId = null): RedirectResponse
+    {
+        if (! Schema::hasTable('failed_jobs')) {
+            return back()->with('error', 'No existe la tabla failed_jobs.');
+        }
+
+        $count = $this->failedJobsQuery()
+            ->when($failedJobId, fn ($query) => $query->where('id', $failedJobId))
+            ->delete();
+
+        return back()->with('status', "Se limpiaron {$count} error(es) de jobs fallidos.");
     }
 
     private function queueStats(string $queue, int $now): array
@@ -114,6 +200,11 @@ class TeamleaderJobController extends Controller
                     'failed_at' => $job->failed_at,
                 ];
             });
+    }
+
+    private function failedJobsQuery()
+    {
+        return DB::table('failed_jobs')->whereIn('queue', $this->queues);
     }
 
     private function failedJobsCount(): int

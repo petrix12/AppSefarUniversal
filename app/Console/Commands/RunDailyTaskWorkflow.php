@@ -225,6 +225,7 @@ class RunDailyTaskWorkflow extends Command
             ->join('hubspot_owner_user as hou', 'hou.user_id', '=', 'users.id')
             ->whereNotNull('hou.hubspot_owner_id')
             ->whereRaw("TRIM(hou.hubspot_owner_id) <> ''")
+            ->where('users.exclude_from_task_assignment', false)
             ->when($currentOwnerId, function ($query) use ($currentOwnerId) {
                 $query->where('users.id', '!=', $currentOwnerId);
             })

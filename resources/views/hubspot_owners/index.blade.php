@@ -60,6 +60,7 @@
             <th style="min-width:200px;">Email</th>
             <th style="width:75px;" class="text-center">Activo</th>
             <th style="min-width:320px;">Usuario asociado</th>
+            <th style="min-width:180px;">Asignacion de tareas</th>
             <th style="width:100px;" class="text-right pr-3">Acciones</th>
           </tr>
         </thead>
@@ -129,6 +130,27 @@
                     <small class="text-danger js-link-label" style="font-size:.72rem;">Sin asociar</small>
                   @endif
                 </div>
+              </td>
+
+              {{-- Flag de tareas --}}
+              <td class="align-middle">
+                @if($linkedUser)
+                  <div class="custom-control custom-switch">
+                    <input type="checkbox"
+                           class="custom-control-input js-task-assignment-toggle"
+                           id="taskAssignment{{ $o->id }}"
+                           data-user-id="{{ $linkedUser->id }}"
+                           {{ $linkedUser->exclude_from_task_assignment ? 'checked' : '' }}>
+                    <label class="custom-control-label" for="taskAssignment{{ $o->id }}">
+                      No asignar tareas
+                    </label>
+                  </div>
+                  <small class="js-task-assignment-label {{ $linkedUser->exclude_from_task_assignment ? 'text-danger' : 'text-success' }}">
+                    {{ $linkedUser->exclude_from_task_assignment ? 'Excluido de asignaciones automaticas' : 'Recibe tareas automaticas' }}
+                  </small>
+                @else
+                  <span class="text-muted">—</span>
+                @endif
               </td>
 
               {{-- Acciones --}}
@@ -344,6 +366,8 @@ $(function () {
             $label.removeClass('text-success').addClass('text-danger')
                   .text('Sin asociar');
           }
+
+          window.location.reload();
         },
 
         error(xhr) {
@@ -351,6 +375,40 @@ $(function () {
           alert('No se pudo guardar la asociación.');
         }
       });
+    });
+  });
+
+  $(document).on('change', '.js-task-assignment-toggle', function () {
+    const $toggle = $(this);
+    const userId = $toggle.data('user-id');
+    const excluded = $toggle.is(':checked') ? 1 : 0;
+    const $label = $toggle.closest('td').find('.js-task-assignment-label');
+
+    $toggle.prop('disabled', true);
+
+    $.ajax({
+      url: "{{ url('/hubspot-owners/users') }}/" + encodeURIComponent(userId) + "/task-assignment",
+      method: "PATCH",
+      data: {
+        _token: "{{ csrf_token() }}",
+        exclude_from_task_assignment: excluded
+      },
+      success(res) {
+        const isExcluded = !!res.exclude_from_task_assignment;
+
+        $label
+          .toggleClass('text-danger', isExcluded)
+          .toggleClass('text-success', !isExcluded)
+          .text(isExcluded ? 'Excluido de asignaciones automaticas' : 'Recibe tareas automaticas');
+      },
+      error(xhr) {
+        console.error(xhr.responseText || xhr);
+        $toggle.prop('checked', !excluded);
+        alert('No se pudo actualizar el flag de tareas.');
+      },
+      complete() {
+        $toggle.prop('disabled', false);
+      }
     });
   });
 

@@ -37,6 +37,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'arraycos' => 'array',
         'arraycos_expire' => 'datetime',
+        'exclude_from_task_assignment' => 'boolean',
     ];
 
     protected $appends = [

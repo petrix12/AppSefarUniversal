@@ -160,9 +160,17 @@ Route::middleware(['auth', 'can:administrador'])->group(function () {
 });
 
 // ── Teamleader (auth + admin) ─────────────────────────────────────────
-Route::get('teamleader/jobs', [TeamleaderJobController::class, 'index'])
-    ->middleware(['auth', 'can:administrador'])
-    ->name('teamleader.jobs.index');
+Route::middleware(['auth', 'can:administrador'])
+    ->prefix('teamleader/jobs')
+    ->name('teamleader.jobs.')
+    ->group(function () {
+        Route::get('/', [TeamleaderJobController::class, 'index'])->name('index');
+        Route::post('/work', [TeamleaderJobController::class, 'work'])->name('work');
+        Route::post('/failed/retry', [TeamleaderJobController::class, 'retryFailed'])->name('failed.retry');
+        Route::post('/failed/{failedJob}/retry', [TeamleaderJobController::class, 'retryFailedJob'])->name('failed.retry-one');
+        Route::delete('/failed', [TeamleaderJobController::class, 'clearFailed'])->name('failed.clear');
+        Route::delete('/failed/{failedJob}', [TeamleaderJobController::class, 'clearFailedJob'])->name('failed.clear-one');
+    });
 
 Route::middleware(['auth', 'can:tl.view'])
     ->prefix('teamleader')
@@ -217,6 +225,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/hubspot-owners/{owner}/assign-user', [HubspotOwnerController::class, 'assign'])
         ->name('hubspot_owners.assign_user');
+
+    Route::patch('/hubspot-owners/users/{user}/task-assignment', [HubspotOwnerController::class, 'toggleTaskAssignment'])
+        ->name('hubspot_owners.task_assignment');
 });
 
 Route::prefix('crud/lists')->name('crud.lists.')->group(function () {

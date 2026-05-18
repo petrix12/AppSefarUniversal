@@ -8,13 +8,49 @@
             <i class="fas fa-tasks mr-2"></i>Jobs Teamleader
         </h1>
 
-        <a href="{{ route('teamleader.jobs.index') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="fas fa-sync-alt mr-1"></i> Actualizar
-        </a>
+        <div class="d-flex flex-wrap" style="gap:.4rem">
+            <form method="POST" action="{{ route('teamleader.jobs.work') }}" class="d-inline">
+                @csrf
+                <input type="hidden" name="jobs" value="20">
+                <button type="submit" class="btn btn-sm btn-primary">
+                    <i class="fas fa-play mr-1"></i> Procesar cola
+                </button>
+            </form>
+
+            <form method="POST" action="{{ route('teamleader.jobs.failed.retry') }}" class="d-inline"
+                  onsubmit="return confirm('¿Reintentar todos los jobs fallidos de Teamleader? Laravel los retirara de errores y los pondra en cola.');">
+                @csrf
+                <button type="submit" class="btn btn-sm btn-warning" {{ $totals['failed'] ? '' : 'disabled' }}>
+                    <i class="fas fa-redo mr-1"></i> Reintentar fallidos
+                </button>
+            </form>
+
+            <form method="POST" action="{{ route('teamleader.jobs.failed.clear') }}" class="d-inline"
+                  onsubmit="return confirm('¿Limpiar todos los errores fallidos de Teamleader?');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-sm btn-outline-danger" {{ $totals['failed'] ? '' : 'disabled' }}>
+                    <i class="fas fa-broom mr-1"></i> Limpiar errores
+                </button>
+            </form>
+
+            <a href="{{ route('teamleader.jobs.index') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-sync-alt mr-1"></i> Actualizar
+            </a>
+        </div>
     </div>
 @endsection
 
 @section('content')
+    @foreach(['status' => 'success', 'error' => 'danger'] as $key => $class)
+        @if(session($key))
+            <div class="alert alert-{{ $class }} alert-dismissible fade show">
+                {!! session($key) !!}
+                <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+            </div>
+        @endif
+    @endforeach
+
     @unless($jobsTableExists)
         <div class="alert alert-warning">
             No existe la tabla <code>jobs</code>. Esta vista necesita la cola database de Laravel para listar jobs pendientes.
@@ -213,6 +249,7 @@
                                         <th>Job</th>
                                         <th>Error</th>
                                         <th>Fecha</th>
+                                        <th class="text-right">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -226,10 +263,26 @@
                                             </td>
                                             <td><small>{{ $job->error }}</small></td>
                                             <td>{{ $job->failed_at }}</td>
+                                            <td class="text-right text-nowrap">
+                                                <form method="POST" action="{{ route('teamleader.jobs.failed.retry-one', $job->id) }}" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-xs btn-warning" title="Reintentar job">
+                                                        <i class="fas fa-redo"></i>
+                                                    </button>
+                                                </form>
+                                                <form method="POST" action="{{ route('teamleader.jobs.failed.clear-one', $job->id) }}" class="d-inline"
+                                                      onsubmit="return confirm('¿Limpiar este error?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-xs btn-outline-danger" title="Limpiar error">
+                                                        <i class="fas fa-broom"></i>
+                                                    </button>
+                                                </form>
+                                            </td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="5" class="text-center text-muted py-4">
+                                            <td colspan="6" class="text-center text-muted py-4">
                                                 No hay jobs fallidos de Teamleader.
                                             </td>
                                         </tr>

@@ -128,4 +128,20 @@ class HubspotOwnerController extends Controller
             ],
         ]);
     }
+
+    public function toggleTaskAssignment(Request $request, User $user)
+    {
+        $data = $request->validate([
+            'exclude_from_task_assignment' => ['required', 'boolean'],
+        ]);
+
+        $user->forceFill([
+            'exclude_from_task_assignment' => (bool) $data['exclude_from_task_assignment'],
+        ])->save();
+
+        return response()->json([
+            'ok' => true,
+            'exclude_from_task_assignment' => (bool) $user->exclude_from_task_assignment,
+        ]);
+    }
 }
