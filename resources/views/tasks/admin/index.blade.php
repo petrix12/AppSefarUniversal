@@ -50,7 +50,9 @@
             <h3 class="card-title"><i class="fas fa-chart-bar mr-1"></i>Tareas por asesor</h3>
         </div>
         <div class="card-body">
-            <canvas id="taskChart" height="100"></canvas>
+            <div class="tasks-chart-wrap">
+                <canvas id="taskChart"></canvas>
+            </div>
         </div>
     </div>
 
@@ -392,6 +394,30 @@
 
 @section('css')
     <link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
+    <style>
+        .tasks-chart-wrap {
+            position: relative;
+            width: 100%;
+            height: 320px;
+            min-height: 320px;
+            max-height: 320px;
+            overflow: hidden;
+        }
+
+        .tasks-chart-wrap canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        @media (max-width: 767.98px) {
+            .tasks-chart-wrap {
+                height: 280px;
+                min-height: 280px;
+                max-height: 280px;
+            }
+        }
+    </style>
 @stop
 
 @section('js')
@@ -428,6 +454,8 @@
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
+            resizeDelay: 200,
             plugins: { legend: { position: 'top' } },
             scales: {
                 x: { stacked: true },
