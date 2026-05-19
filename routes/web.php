@@ -417,6 +417,7 @@ Route::post('/incluidofase1cilfcje', [NegocioController::class, 'incluidofase1ci
 Route::post('etiquetasgenealogiamonday', [EtiquetaGenealogiaController::class, 'update'])->name('etiquetasgenealogiamonday');
 
 Route::get('diarioindex',[ReportController::class, 'diarioindex'])->name('diarioindex')->middleware('can:reportes.index');
+Route::get('reportes/dashboard',[ReportController::class, 'dashboard'])->name('reportes.dashboard')->middleware('can:reportes.index');
 Route::get('mensualindex',[ReportController::class, 'mensualindex'])->name('mensualindex')->middleware('can:reportes.index');
 Route::get('anualindex',[ReportController::class, 'anualindex'])->name('anualindex')->middleware('can:reportes.index');
 Route::get('semanalindex',[ReportController::class, 'semanalindex'])->name('semanalindex')->middleware('can:reportes.index');

@@ -580,6 +580,13 @@ return [
             'can'  => 'reportes.index',
             'submenu' => [
                 [
+                    'text'          => 'Panel Estadistico',
+                    'icon'          => 'fa-fw fa fa-chart-line',
+                    'icon_color'    => 'white',
+                    'url'           => 'reportes/dashboard',
+                    'can'           => 'reportes.index',
+                ],
+                [
                     'text'          => 'Reportes Diarios',
                     'icon'          => 'fa-fw fa fa-file',
                     'icon_color'    => 'white',

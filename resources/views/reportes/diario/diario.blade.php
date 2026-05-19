@@ -22,6 +22,9 @@
                             <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
                                 <span class="ctvSefar block text-indigo-600">Reportes Diarios</span>
                             </h2>
+                            <a href="{{ route('reportes.dashboard') }}" class="cfrSefar text-white font-bold py-2 px-4 rounded">
+                                Ver panel estadistico
+                            </a>
                         </div>
                     </div>
                     {{-- Fin --}}

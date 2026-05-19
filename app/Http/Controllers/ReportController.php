@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Report;
 use App\Models\User;
 use App\Models\Factura;
+use App\Models\Task;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -16,6 +17,129 @@ use Carbon\Carbon;
 
 class ReportController extends Controller
 {
+    public function dashboard(Request $request)
+    {
+        $month = (string) $request->input('month', now()->format('Y-m'));
+
+        try {
+            $start = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+        } catch (\Throwable $e) {
+            $start = today()->startOfMonth();
+            $month = $start->format('Y-m');
+        }
+
+        $end = $start->copy()->endOfMonth();
+        $chartEnd = $start->isSameMonth(today()) ? today() : $end;
+
+        $labels = [];
+        $dateKeys = [];
+        $cursor = $start->copy();
+
+        while ($cursor <= $chartEnd) {
+            $dateKeys[] = $cursor->toDateString();
+            $labels[] = $cursor->format('d/m');
+            $cursor->addDay();
+        }
+
+        $registrationsByDay = $this->dailyRegistrations($start, $chartEnd);
+        $registrationPaymentsByDay = $this->dailyRegistrationPayments($start, $chartEnd);
+
+        $registrationsSeries = [];
+        $paidSeries = [];
+        $conversionPerTenSeries = [];
+        $cumulativeRegistrations = [];
+        $cumulativePaid = [];
+        $runningRegistrations = 0;
+        $runningPaid = 0;
+
+        foreach ($dateKeys as $day) {
+            $registrations = (int) ($registrationsByDay[$day] ?? 0);
+            $paid = (int) ($registrationPaymentsByDay[$day] ?? 0);
+
+            $registrationsSeries[] = $registrations;
+            $paidSeries[] = $paid;
+            $conversionPerTenSeries[] = $registrations > 0 ? round(($paid / $registrations) * 10, 2) : 0;
+
+            $runningRegistrations += $registrations;
+            $runningPaid += $paid;
+            $cumulativeRegistrations[] = $runningRegistrations;
+            $cumulativePaid[] = $runningPaid;
+        }
+
+        $registrationPayments = $this->registrationPaymentsSummary($start, $end);
+        $registeredThisMonth = $this->externalUsersQuery()
+            ->whereBetween('created_at', [$start, $end])
+            ->count();
+
+        $conversionPerTen = $registeredThisMonth > 0
+            ? round(((int) $registrationPayments->paid_clients / $registeredThisMonth) * 10, 2)
+            : 0;
+
+        $paymentMethods = $this->registrationPaymentsByMethod($start, $end);
+        $serviceRevenue = $this->registrationPaymentsByService($start, $end);
+        $taskMetrics = $this->taskMetrics($start, $end);
+        $sellerOpenTasks = $this->sellerOpenTasks();
+        $salesPipeline = $this->salesPipeline($start, $end);
+        $cosMetrics = $this->cosMetrics();
+
+        $kpis = [
+            'registered_month' => $registeredThisMonth,
+            'paid_registration_month' => (int) $registrationPayments->paid_clients,
+            'registration_payment_amount' => (float) $registrationPayments->amount,
+            'conversion_per_ten' => $conversionPerTen,
+            'open_tasks' => $taskMetrics['open'],
+            'overdue_tasks' => $taskMetrics['overdue'],
+            'cos_ready' => $cosMetrics['ready'],
+            'cos_with_data' => $cosMetrics['with_data'],
+        ];
+
+        $charts = [
+            'labels' => $labels,
+            'registrations' => $registrationsSeries,
+            'paid' => $paidSeries,
+            'conversion_per_ten' => $conversionPerTenSeries,
+            'cumulative_registrations' => $cumulativeRegistrations,
+            'cumulative_paid' => $cumulativePaid,
+            'payment_methods' => [
+                'labels' => $paymentMethods->pluck('method')->values(),
+                'data' => $paymentMethods->pluck('total')->values(),
+            ],
+            'service_revenue' => [
+                'labels' => $serviceRevenue->pluck('service')->values(),
+                'data' => $serviceRevenue->pluck('amount')->values(),
+            ],
+            'seller_open_tasks' => [
+                'labels' => $sellerOpenTasks->pluck('name')->values(),
+                'data' => $sellerOpenTasks->pluck('total')->values(),
+            ],
+            'sales_pipeline' => [
+                'labels' => $salesPipeline->pluck('label')->values(),
+                'data' => $salesPipeline->pluck('total')->values(),
+            ],
+            'cos_stages' => [
+                'labels' => $cosMetrics['stages']->pluck('stage')->values(),
+                'data' => $cosMetrics['stages']->pluck('total')->values(),
+            ],
+            'cos_services' => [
+                'labels' => $cosMetrics['services']->pluck('service')->values(),
+                'data' => $cosMetrics['services']->pluck('total')->values(),
+            ],
+        ];
+
+        return view('reportes.dashboard', compact(
+            'month',
+            'start',
+            'end',
+            'kpis',
+            'charts',
+            'taskMetrics',
+            'cosMetrics',
+            'serviceRevenue',
+            'sellerOpenTasks',
+            'salesPipeline'
+        ));
+    }
+
     public function diarioindex()
     {
         return view('reportes.diario.diario');
@@ -1633,6 +1757,234 @@ class ReportController extends Controller
 
             sendTelegram($datainsert['instrucciones'], "Reporte Semanal - ".$yesterday);
         }
+    }
+
+    private function externalUsersQuery()
+    {
+        return $this->applyExternalUserFilters(User::query());
+    }
+
+    private function applyExternalUserFilters($query, string $prefix = '')
+    {
+        return $query
+            ->where($prefix . 'email', 'not like', '%sefarvzla%')
+            ->where($prefix . 'email', 'not like', '%sefaruniversal%')
+            ->where($prefix . 'name', 'not like', '%prueba%');
+    }
+
+    private function registrationPaymentsQuery()
+    {
+        $query = DB::table('compras')
+            ->join('facturas', 'facturas.hash_factura', '=', 'compras.hash_factura')
+            ->join('users', 'users.id', '=', 'compras.id_user')
+            ->where('compras.pagado', 1)
+            ->whereNull('compras.deal_id');
+
+        return $this->applyExternalUserFilters($query, 'users.');
+    }
+
+    private function dailyRegistrations(Carbon $start, Carbon $end)
+    {
+        return $this->externalUsersQuery()
+            ->whereBetween('created_at', [$start->copy()->startOfDay(), $end->copy()->endOfDay()])
+            ->selectRaw('DATE(created_at) as day, COUNT(*) as total')
+            ->groupBy('day')
+            ->pluck('total', 'day');
+    }
+
+    private function dailyRegistrationPayments(Carbon $start, Carbon $end)
+    {
+        return $this->registrationPaymentsQuery()
+            ->whereBetween('facturas.created_at', [$start->copy()->startOfDay(), $end->copy()->endOfDay()])
+            ->selectRaw('DATE(facturas.created_at) as day, COUNT(DISTINCT compras.id_user) as total')
+            ->groupBy('day')
+            ->pluck('total', 'day');
+    }
+
+    private function registrationPaymentsSummary(Carbon $start, Carbon $end): object
+    {
+        return $this->registrationPaymentsQuery()
+            ->whereBetween('facturas.created_at', [$start->copy()->startOfDay(), $end->copy()->endOfDay()])
+            ->selectRaw('COUNT(DISTINCT compras.id_user) as paid_clients')
+            ->selectRaw('COUNT(*) as purchases')
+            ->selectRaw('COALESCE(SUM(compras.monto), 0) as amount')
+            ->first() ?? (object) [
+                'paid_clients' => 0,
+                'purchases' => 0,
+                'amount' => 0,
+            ];
+    }
+
+    private function registrationPaymentsByMethod(Carbon $start, Carbon $end)
+    {
+        return $this->registrationPaymentsQuery()
+            ->whereBetween('facturas.created_at', [$start->copy()->startOfDay(), $end->copy()->endOfDay()])
+            ->selectRaw("COALESCE(NULLIF(facturas.met, ''), 'Sin metodo') as method")
+            ->selectRaw('COUNT(DISTINCT compras.id_user) as total')
+            ->groupBy('facturas.met')
+            ->orderByDesc('total')
+            ->limit(6)
+            ->get();
+    }
+
+    private function registrationPaymentsByService(Carbon $start, Carbon $end)
+    {
+        return $this->registrationPaymentsQuery()
+            ->whereBetween('facturas.created_at', [$start->copy()->startOfDay(), $end->copy()->endOfDay()])
+            ->selectRaw("COALESCE(NULLIF(compras.servicio_hs_id, ''), 'Sin servicio') as service")
+            ->selectRaw('COALESCE(SUM(compras.monto), 0) as amount')
+            ->groupBy('compras.servicio_hs_id')
+            ->orderByDesc('amount')
+            ->limit(8)
+            ->get();
+    }
+
+    private function taskMetrics(Carbon $start, Carbon $end): array
+    {
+        $systemsUserIds = Task::systemsUserIds();
+
+        $openQuery = Task::query()
+            ->whereIn('status', [Task::STATUS_PENDING, Task::STATUS_IN_PROGRESS])
+            ->when(! empty($systemsUserIds), function ($query) use ($systemsUserIds) {
+                $query->whereNotIn('user_id', $systemsUserIds);
+            });
+
+        return [
+            'open' => (clone $openQuery)->count(),
+            'overdue' => (clone $openQuery)
+                ->whereNotNull('due_date')
+                ->whereDate('due_date', '<', today())
+                ->count(),
+            'completed_month' => Task::query()
+                ->when(! empty($systemsUserIds), function ($query) use ($systemsUserIds) {
+                    $query->whereNotIn('user_id', $systemsUserIds);
+                })
+                ->where('status', Task::STATUS_COMPLETED)
+                ->whereBetween('updated_at', [$start->copy()->startOfDay(), $end->copy()->endOfDay()])
+                ->count(),
+            'responded_month' => Task::query()
+                ->when(! empty($systemsUserIds), function ($query) use ($systemsUserIds) {
+                    $query->whereNotIn('user_id', $systemsUserIds);
+                })
+                ->where('customer_responded', true)
+                ->whereBetween('updated_at', [$start->copy()->startOfDay(), $end->copy()->endOfDay()])
+                ->count(),
+            'effective_month' => Task::query()
+                ->when(! empty($systemsUserIds), function ($query) use ($systemsUserIds) {
+                    $query->whereNotIn('user_id', $systemsUserIds);
+                })
+                ->where('call_effective', true)
+                ->whereBetween('updated_at', [$start->copy()->startOfDay(), $end->copy()->endOfDay()])
+                ->count(),
+        ];
+    }
+
+    private function sellerOpenTasks()
+    {
+        $systemsUserIds = Task::systemsUserIds();
+
+        return Task::query()
+            ->join('users as advisors', 'advisors.id', '=', 'tasks.user_id')
+            ->whereIn('tasks.status', [Task::STATUS_PENDING, Task::STATUS_IN_PROGRESS])
+            ->when(! empty($systemsUserIds), function ($query) use ($systemsUserIds) {
+                $query->whereNotIn('tasks.user_id', $systemsUserIds);
+            })
+            ->selectRaw('advisors.name as name, COUNT(*) as total')
+            ->groupBy('advisors.id', 'advisors.name')
+            ->orderByDesc('total')
+            ->limit(8)
+            ->get();
+    }
+
+    private function salesPipeline(Carbon $start, Carbon $end)
+    {
+        $counts = Task::query()
+            ->whereNotNull('sale_status')
+            ->whereBetween('updated_at', [$start->copy()->startOfDay(), $end->copy()->endOfDay()])
+            ->selectRaw('sale_status, COUNT(*) as total')
+            ->groupBy('sale_status')
+            ->pluck('total', 'sale_status');
+
+        return collect(Task::saleStatusOptions())
+            ->map(fn ($label, $key) => [
+                'key' => $key,
+                'label' => $label,
+                'total' => (int) ($counts[$key] ?? 0),
+            ])
+            ->values();
+    }
+
+    private function cosMetrics(): array
+    {
+        $withDataQuery = $this->externalUsersQuery()->whereNotNull('arraycos');
+        $withData = (clone $withDataQuery)->count();
+
+        $cosUsers = (clone $withDataQuery)
+            ->select('id', 'name', 'email', 'arraycos', 'arraycos_expire', 'cosready')
+            ->orderByDesc('arraycos_expire')
+            ->limit(3000)
+            ->get();
+
+        $stageCounts = [];
+        $serviceCounts = [];
+        $recent = collect();
+        $warnings = 0;
+
+        foreach ($cosUsers as $user) {
+            foreach (($user->arraycos ?? []) as $process) {
+                if (! is_array($process)) {
+                    continue;
+                }
+
+                $stage = trim((string) ($process['currentStepName'] ?? $process['description'] ?? 'Sin etapa'));
+                $service = trim((string) ($process['servicio'] ?? 'Sin servicio'));
+
+                $stage = $stage !== '' ? $stage : 'Sin etapa';
+                $service = $service !== '' ? $service : 'Sin servicio';
+
+                $stageCounts[$stage] = ($stageCounts[$stage] ?? 0) + 1;
+                $serviceCounts[$service] = ($serviceCounts[$service] ?? 0) + 1;
+
+                if (! empty(strip_tags((string) ($process['warning'] ?? '')))) {
+                    $warnings++;
+                }
+
+                if ($recent->count() < 8) {
+                    $recent->push([
+                        'user_id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'service' => $service,
+                        'stage' => $stage,
+                        'expires_at' => $user->arraycos_expire,
+                        'ready' => (bool) $user->cosready,
+                    ]);
+                }
+            }
+        }
+
+        $stages = collect($stageCounts)
+            ->map(fn ($total, $stage) => ['stage' => $stage, 'total' => $total])
+            ->sortByDesc('total')
+            ->values()
+            ->take(8);
+
+        $services = collect($serviceCounts)
+            ->map(fn ($total, $service) => ['service' => $service, 'total' => $total])
+            ->sortByDesc('total')
+            ->values()
+            ->take(8);
+
+        return [
+            'with_data' => $withData,
+            'ready' => $this->externalUsersQuery()->where('cosready', 1)->count(),
+            'fresh' => (clone $withDataQuery)->where('arraycos_expire', '>=', now())->count(),
+            'expired' => (clone $withDataQuery)->where('arraycos_expire', '<', now())->count(),
+            'warnings' => $warnings,
+            'stages' => $stages,
+            'services' => $services,
+            'recent' => $recent,
+        ];
     }
 }
 
