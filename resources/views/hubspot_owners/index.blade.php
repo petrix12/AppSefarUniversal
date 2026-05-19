@@ -388,7 +388,7 @@ $(function () {
 
     $.ajax({
       url: "{{ url('/hubspot-owners/users') }}/" + encodeURIComponent(userId) + "/task-assignment",
-      method: "PATCH",
+      method: "POST",
       data: {
         _token: "{{ csrf_token() }}",
         exclude_from_task_assignment: excluded

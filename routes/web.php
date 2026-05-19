@@ -226,7 +226,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/hubspot-owners/{owner}/assign-user', [HubspotOwnerController::class, 'assign'])
         ->name('hubspot_owners.assign_user');
 
-    Route::patch('/hubspot-owners/users/{user}/task-assignment', [HubspotOwnerController::class, 'toggleTaskAssignment'])
+    Route::post('/hubspot-owners/users/{user}/task-assignment', [HubspotOwnerController::class, 'toggleTaskAssignment'])
         ->name('hubspot_owners.task_assignment');
 });
 
