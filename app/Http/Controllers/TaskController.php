@@ -23,26 +23,70 @@ class TaskController extends Controller
     // ── Mis tareas ───────────────────────────────────────────
     public function table(Request $request)
     {
+        $status = $request->input('status', 'open');
+        $allowedStatuses = ['open', 'pending', 'in_progress', 'completed', 'canceled', 'all'];
+
+        if (! in_array($status, $allowedStatuses, true)) {
+            $status = 'open';
+        }
+
         $date = $request->filled('date')
             ? Carbon::parse($request->input('date'))
-            : today();
+            : null;
 
-        $tasks = Task::query()
+        $search = trim((string) $request->input('q', ''));
+
+        $baseQuery = Task::query()
             ->with('contact')
-            ->where('user_id', auth()->id())
-            ->forDate($date)
+            ->where('user_id', auth()->id());
+
+        if ($date) {
+            $baseQuery->whereDate('due_date', $date);
+        }
+
+        if ($search !== '') {
+            $baseQuery->where(function ($query) use ($search) {
+                $query->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('contact', function ($contactQuery) use ($search) {
+                        $contactQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%")
+                            ->orWhere('passport', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $tasksQuery = (clone $baseQuery);
+
+        match ($status) {
+            'open' => $tasksQuery->whereIn('status', [Task::STATUS_PENDING, Task::STATUS_IN_PROGRESS]),
+            'all' => null,
+            default => $tasksQuery->where('status', $status),
+        };
+
+        $tasks = $tasksQuery
             ->orderByRaw("FIELD(status, 'pending','in_progress','completed','canceled')")
+            ->orderByRaw('due_date IS NULL')
+            ->orderBy('due_date')
+            ->orderByDesc('id')
             ->get();
 
         $stats = [
             'total'       => $tasks->count(),
-            'pending'     => $tasks->where('status', 'pending')->count(),
-            'in_progress' => $tasks->where('status', 'in_progress')->count(),
-            'completed'   => $tasks->where('status', 'completed')->count(),
-            'canceled'    => $tasks->where('status', 'canceled')->count(),
+            'open'        => $tasks->whereIn('status', [Task::STATUS_PENDING, Task::STATUS_IN_PROGRESS])->count(),
+            'pending'     => $tasks->where('status', Task::STATUS_PENDING)->count(),
+            'in_progress' => $tasks->where('status', Task::STATUS_IN_PROGRESS)->count(),
+            'completed'   => $tasks->where('status', Task::STATUS_COMPLETED)->count(),
+            'canceled'    => $tasks->where('status', Task::STATUS_CANCELED)->count(),
         ];
 
-        return view('tasks.index', compact('tasks', 'stats', 'date'));
+        $filters = [
+            'status' => $status,
+            'date' => $date?->toDateString(),
+            'q' => $search,
+        ];
+
+        return view('tasks.index', compact('tasks', 'stats', 'date', 'filters'));
     }
 
     // ── Ver detalle / flujo ──────────────────────────────────

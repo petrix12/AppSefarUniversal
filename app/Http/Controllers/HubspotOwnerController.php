@@ -131,17 +131,34 @@ class HubspotOwnerController extends Controller
 
     public function toggleTaskAssignment(Request $request, User $user)
     {
+        if ($request->has('task_assignment_daily_limit') && ! $request->filled('task_assignment_daily_limit')) {
+            $request->merge([
+                'task_assignment_daily_limit' => null,
+            ]);
+        }
+
         $data = $request->validate([
-            'exclude_from_task_assignment' => ['required', 'boolean'],
+            'exclude_from_task_assignment' => ['sometimes', 'required', 'boolean'],
+            'task_assignment_daily_limit' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:100'],
         ]);
 
-        $user->forceFill([
-            'exclude_from_task_assignment' => (bool) $data['exclude_from_task_assignment'],
-        ])->save();
+        $updates = [];
+
+        if (array_key_exists('exclude_from_task_assignment', $data)) {
+            $updates['exclude_from_task_assignment'] = (bool) $data['exclude_from_task_assignment'];
+        }
+
+        if (array_key_exists('task_assignment_daily_limit', $data)) {
+            $updates['task_assignment_daily_limit'] = $data['task_assignment_daily_limit'];
+        }
+
+        $user->forceFill($updates)->save();
+        $user->refresh();
 
         return response()->json([
             'ok' => true,
             'exclude_from_task_assignment' => (bool) $user->exclude_from_task_assignment,
+            'task_assignment_daily_limit' => $user->task_assignment_daily_limit,
         ]);
     }
 }

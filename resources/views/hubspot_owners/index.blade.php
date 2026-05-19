@@ -148,6 +148,18 @@
                   <small class="js-task-assignment-label {{ $linkedUser->exclude_from_task_assignment ? 'text-danger' : 'text-success' }}">
                     {{ $linkedUser->exclude_from_task_assignment ? 'Excluido de asignaciones automaticas' : 'Recibe tareas automaticas' }}
                   </small>
+                  <div class="mt-2">
+                    <label class="mb-1 text-muted" style="font-size:.72rem;">Cupo diario</label>
+                    <input type="number"
+                           min="0"
+                           max="100"
+                           step="1"
+                           class="form-control form-control-sm js-task-daily-limit"
+                           data-user-id="{{ $linkedUser->id }}"
+                           value="{{ $linkedUser->task_assignment_daily_limit }}"
+                           placeholder="Default">
+                    <small class="text-muted">Vacio usa el cupo general. 0 no crea tareas.</small>
+                  </div>
                 @else
                   <span class="text-muted">—</span>
                 @endif
@@ -408,6 +420,33 @@ $(function () {
       },
       complete() {
         $toggle.prop('disabled', false);
+      }
+    });
+  });
+
+  $(document).on('change', '.js-task-daily-limit', function () {
+    const $input = $(this);
+    const userId = $input.data('user-id');
+    const value = $input.val();
+
+    $input.prop('disabled', true);
+
+    $.ajax({
+      url: "{{ url('/hubspot-owners/users') }}/" + encodeURIComponent(userId) + "/task-assignment",
+      method: "POST",
+      data: {
+        _token: "{{ csrf_token() }}",
+        task_assignment_daily_limit: value
+      },
+      success(res) {
+        $input.val(res.task_assignment_daily_limit ?? '');
+      },
+      error(xhr) {
+        console.error(xhr.responseText || xhr);
+        alert('No se pudo actualizar el cupo diario.');
+      },
+      complete() {
+        $input.prop('disabled', false);
       }
     });
   });

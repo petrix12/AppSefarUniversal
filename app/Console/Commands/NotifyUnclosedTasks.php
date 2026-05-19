@@ -15,11 +15,13 @@ use Illuminate\Support\Facades\Log;
 
 class NotifyUnclosedTasks extends Command
 {
+    private const TASK_RESPONSE_DAYS = 1;
+
     protected $signature = 'tasks:notify-unclosed
         {--date= : Fecha base opcional YYYY-MM-DD}
         {--dry-run : Solo muestra cambios, no actualiza nada}';
 
-    protected $description = 'Cancela tareas comerciales abiertas con mas de 3 dias y reasigna aleatoriamente el cliente en BD y HubSpot.';
+    protected $description = 'Cancela tareas comerciales abiertas vencidas por 1 dia y reasigna el cliente en BD y HubSpot.';
 
     public function handle(HubspotService $hubspotService, HubspotDealOwnerSyncService $dealOwnerSync): int
     {
@@ -29,9 +31,9 @@ class NotifyUnclosedTasks extends Command
 
         $dryRun = (bool) $this->option('dry-run');
 
-        $limitDate = $date->copy()->subDays(3)->endOfDay();
+        $limitDate = $date->copy()->subDays(self::TASK_RESPONSE_DAYS)->endOfDay();
 
-        $this->info("🔔 Revisando tareas abiertas creadas hasta: {$limitDate->toDateTimeString()}");
+        $this->info("🔔 Revisando tareas abiertas con vencimiento hasta: {$limitDate->toDateString()}");
 
         $tasks = Task::query()
             ->with([
@@ -40,7 +42,8 @@ class NotifyUnclosedTasks extends Command
             ])
             ->whereIn('status', ['pending', 'in_progress'])
             ->notAssignedToSystems()
-            ->where('created_at', '<=', $limitDate)
+            ->whereNotNull('due_date')
+            ->whereDate('due_date', '<=', $limitDate->toDateString())
             ->whereNotNull('contact_id')
             ->get();
 
