@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 use RealRashid\SweetAlert\Facades\Alert;
 use App\Mail\CargaSefar;
+use App\Services\GenealogyService;
 use Illuminate\Support\Facades\Mail as Mail2;
 
 class AgClienteNewController extends Controller
@@ -122,6 +123,7 @@ class AgClienteNewController extends Controller
         }
 
         $update->save();
+        app(GenealogyService::class)->forgetProcessedTree(trim($request->IDCliente));
 
         $people = json_decode(json_encode(Agcliente::where("IDCliente",trim($request->IDCliente))->get()),true);
 
@@ -135,7 +137,11 @@ class AgClienteNewController extends Controller
         }
 
         $cambio = true;
-        while ($cambio) {
+        $guard = 0;
+        $maxIterations = count($arreglo) + 1;
+
+        while ($cambio && $guard < $maxIterations) {
+            $guard++;
             $cambio = false;
             foreach ($arreglo as $id => $persona) {
                 $generacionPadre = isset($generaciones[$persona['idPadreNew']]) ? $generaciones[$persona['idPadreNew']] : 0;
@@ -149,7 +155,7 @@ class AgClienteNewController extends Controller
             }
         }
 
-        $maxGeneraciones = max($generaciones);
+        $maxGeneraciones = min(max($generaciones), 5);
         $maxGeneraciones++;
 
         $columnasparatabla = array();
@@ -425,6 +431,8 @@ class AgClienteNewController extends Controller
             'Nombres' => trim($request->Nombres),
             'Apellidos' => trim($request->Apellidos),
         ]);
+
+        app(GenealogyService::class)->forgetProcessedTree($agcliente->IDCliente);
 
         return redirect()->back()->withInput()->with('refresh', true);
     }

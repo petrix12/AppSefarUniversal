@@ -36,6 +36,13 @@
     </script>
 
     <button id="back-to-top"><i class="fa-solid fa-arrow-up"></i></button>
+    <div id="treeLoadingOverlay" class="tree-loading-overlay" aria-live="polite" aria-hidden="true">
+        <div class="tree-loading-modal">
+            <div class="tree-loading-spinner"></div>
+            <div class="tree-loading-title">Cargando arbol</div>
+            <div class="tree-loading-text">Preparando nodos familiares...</div>
+        </div>
+    </div>
         @if (session('refresh'))
         <script>
             window.location.reload();
@@ -128,35 +135,7 @@
                                             @foreach ($columna as $key2 => $persona)
                                                 @if ($persona["showbtn"]==2)
                                                 <option value="{{ $persona['id'] }}">{{$persona["Nombres"] . ' ' . $persona["Apellidos"]}}
-                                                    @if($checkBtn == "si")
-                                                        @if ($key1+$generacionBase == 1)
-                                                            @if ($key2 == 0)
-                                                                (Padre)
-                                                            @else
-                                                                (Madre)
-                                                            @endif
-                                                        @else
-                                                            ({{$parentescos[$key1-2+$generacionBase][$persona['PersonaIDNew']]}})
-                                                        @endif
-                                                    @else
-                                                        @if ($key1 == 0)
-                                                            (Cliente)
-                                                        @elseif ($key1 == 1)
-                                                            @if ($key2 == 0)
-                                                                (Padre)
-                                                            @else
-                                                                (Madre)
-                                                            @endif
-                                                        @else
-                                                            @if(isset($parentescos[$key1 - 2 + $generacionBase][$persona['PersonaIDNew']]))
-                                                                ({{ $parentescos[$key1 - 2 + $generacionBase][$persona['PersonaIDNew']] }})
-                                                            @else
-                                                                <script>
-                                                                    window.location.reload();
-                                                                </script>
-                                                            @endif
-                                                        @endif
-                                                    @endif
+                                                    ({{ $persona['parentesco'] ?? 'Sin parentesco' }})
                                                 </option>
                                                 @endif
                                             @endforeach
@@ -199,30 +178,38 @@
                     $nodeHeight = 130;
                     $columnWidth = 300;
                     $initialOffset = 20;
+                    $topPadding = 40;
+                    $rowHeight = $nodeHeight + 24;
+                    $maxTreeRow = 0;
+                    foreach ($columnasparatabla as $columna) {
+                        foreach ($columna as $persona) {
+                            $maxTreeRow = max($maxTreeRow, $persona['tree_row'] ?? 0);
+                        }
+                    }
+                    $totalTreeHeight = max(720, (($maxTreeRow + 1) * $rowHeight) + ($topPadding * 2));
+                    $totalTreeWidth = max(900, (count($columnasparatabla) * $columnWidth) + $initialOffset + 100);
 
-                    // Altura total fija para el árbol
-                    $totalTreeHeight = 2000; // Ajusta según necesites
                 @endphp
 
                 <div style="width: 100%; height: 80vh; overflow: auto;" id="containertree">
-                    <div class="treecont_minimized" id="zoomableContent" style="position:relative;">
-                        <div id="mylines" class="mylines"></div>
-                        <div class="arbolflex" style="height: {{$totalTreeHeight}}px;">
+                    <div class="treecont_minimized" id="zoomableContent" style="position:relative; width: {{$totalTreeWidth}}px; height: {{$totalTreeHeight}}px;">
+                        <svg id="mylines" class="mylines" width="{{$totalTreeWidth}}" height="{{$totalTreeHeight}}" viewBox="0 0 {{$totalTreeWidth}} {{$totalTreeHeight}}" aria-hidden="true"></svg>
+                        <div class="arbolflex" style="height: {{$totalTreeHeight}}px; width: {{$totalTreeWidth}}px;">
 
                             @foreach ($columnasparatabla as $key1 => $columna)
                                 @php
                                     $posX = ($key1 * $columnWidth) + $initialOffset;
-                                    $nodesInThisColumn = count($columna);
-
-                                    // Altura de cada contenedor en esta columna
-                                    $containerHeight = $nodesInThisColumn > 0 ? ($totalTreeHeight / $nodesInThisColumn) : $totalTreeHeight;
+                                    $containerHeight = $nodeHeight;
                                 @endphp
 
                                 <div class="cliente" style="left: {{$posX}}px; top: 0; width: {{$columnWidth}}px; height: 100%;" data-column="{{$key1}}">
                                     @foreach ($columna as $key2 => $persona)
                                         @php
                                             // Posición Y del contenedor
-                                            $containerY = $key2 * $containerHeight;
+                                            $treeRow = $persona['tree_row'] ?? $key2;
+                                            $containerY = $topPadding + ($treeRow * $rowHeight);
+                                            $nodeKey = $persona['tree_node_key'] ?? ('node_' . $key1 . '_' . $key2);
+                                            $isCompactNode = $key1 >= 4;
                                         @endphp
 
                                         @if ($persona["showbtn"]==2)
@@ -240,46 +227,39 @@
                                                 data-container-y="{{$containerY}}"
                                                 data-container-height="{{$containerHeight}}">
 
-                                                <div class="cajapernew_min min_persona_id_{{ $persona['id'] }} min_padre_id_{{ $persona['idPadreNew'] ?? 'no' }} min_madre_id_{{ $persona['idMadreNew'] ?? 'no' }}"
-                                                    id="min_{{ $persona['id'] }}_{{ $persona['idPadreNew'] ?? 'no' }}_{{ $persona['idMadreNew'] ?? 'no' }}"
+                                                <div class="cajapernew_min tree-person-node {{ $isCompactNode ? 'tree-node-compact' : '' }} min_persona_id_{{ $persona['id'] }} min_padre_id_{{ $persona['idPadreNew'] ?? 'no' }} min_madre_id_{{ $persona['idMadreNew'] ?? 'no' }}"
+                                                    id="tree_node_{{ $nodeKey }}"
                                                     data-person-id="{{ $persona['id'] }}"
+                                                    data-node-key="{{ $nodeKey }}"
+                                                    data-padre-key="{{ $persona['tree_padre_key'] ?? '' }}"
+                                                    data-madre-key="{{ $persona['tree_madre_key'] ?? '' }}"
+                                                    data-tree-generation="{{ $persona['tree_generation'] ?? ($key1 + $generacionBase) }}"
+                                                    data-persona-slot="{{ $persona['PersonaIDNew'] ?? $key2 }}"
+                                                    data-inherited-color="{{ $persona['tree_inherited_color'] ?? '#B08A43' }}"
+                                                    data-padre-color="{{ $persona['tree_color_padre'] ?? '#B08A43' }}"
+                                                    data-madre-color="{{ $persona['tree_color_madre'] ?? '#B08A43' }}"
                                                     data-column="{{$key1}}"
                                                     data-row="{{$key2}}"
+                                                    data-node-x="{{$posX + ($columnWidth / 2)}}"
+                                                    data-node-y="{{$containerY + ($containerHeight / 2)}}"
                                                     data-container-y="{{$containerY}}"
                                                     data-container-height="{{$containerHeight}}">
 
                                                     <div class="encabezadonew_min">
                                                         {{$persona["Nombres"] . ' ' . $persona["Apellidos"]}}<br>
-                                                        @if($checkBtn == "si")
-                                                            @if ($key1+$generacionBase == 1)
-                                                                @if ($key2 == 0)
-                                                                    (Padre)
-                                                                @else
-                                                                    (Madre)
-                                                                @endif
-                                                            @else
-                                                                ({{$parentescos[$key1-2+$generacionBase][$persona['PersonaIDNew']]}})
-                                                            @endif
-                                                        @else
-                                                            @if ($key1 == 0)
-                                                                (Cliente)
-                                                            @elseif ($key1 == 1)
-                                                                @if ($key2 == 0)
-                                                                    (Padre)
-                                                                @else
-                                                                    (Madre)
-                                                                @endif
-                                                            @else
-                                                                @if(isset($parentescos[$key1 - 2 + $generacionBase][$persona['PersonaIDNew']]))
-                                                                    ({{ $parentescos[$key1 - 2 + $generacionBase][$persona['PersonaIDNew']] }})
-                                                                @else
-                                                                    <script>window.location.reload();</script>
-                                                                @endif
-                                                            @endif
+                                                        ({{ $persona['parentesco'] ?? 'Sin parentesco' }})
+                                                        @if(($persona['tree_has_more'] ?? false) && auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
+                                                            <button
+                                                                type="button"
+                                                                class="tree-more-indicator"
+                                                                title="Hay mas familiares registrados"
+                                                                onclick="event.stopPropagation(); loadTreeBranch('{{$persona["id"]}}', '{{$persona["tree_generation"] ?? ($key1+$generacionBase)}}', '{{$persona["PersonaIDNew"] ?? $key2}}')">
+                                                                <i class="fa-solid fa-arrow-right"></i> Mas familiares
+                                                            </button>
                                                         @endif
                                                     </div>
 
-                                                    <div id="datacopy_{{ $persona['id'] }}" style="display: none;">
+                                                    <div id="datacopy_{{ $nodeKey }}" style="display: none;">
                                                         @if (!empty($persona['Nombres']))
                                                             <p>{{ $persona['Nombres'] }}{{!empty($persona['Apellidos']) ? " ".$persona['Apellidos'] : "" }}|</p>
                                                         @endif
@@ -297,7 +277,7 @@
                                                         @endif
                                                     </div>
 
-                                                    <div class="continfo">
+                                                    <div class="continfo tree-node-info">
                                                         @if (!empty($persona['AnhoNac']))
                                                             <p><strong>○ </strong>{{ !empty($persona['DiaNac']) ? $persona['DiaNac'] : '' }}{{ !empty($persona['DiaNac']) ? '/' : '' }}{{ !empty($persona['MesNac']) ? $persona['MesNac'] : '' }}{{ !empty($persona['MesNac']) ? '/' : '' }}{{ $persona['AnhoNac'] }} {{!empty($persona['LugarNac']) ? '(' . $persona['LugarNac'] . ')' : '' }}</p>
                                                         @endif
@@ -308,12 +288,40 @@
                                                         @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
                                                             <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : json_encode($persona['Observaciones'])}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar</button>
                                                             <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Archivos</button>
-                                                            <button class="copydata" onclick="copydata('datacopy_{{ $persona['id'] }}')">Copiar</button>
-                                                            <button class="copydata" onclick="window.location.href='/tree/{{$persona["IDCliente"]}}/{{$persona["id"]}}/{{$key1+$generacionBase}}/{{$key2}}'">Extender</button>
+                                                            <button class="copydata" onclick="copydata('datacopy_{{ $nodeKey }}')">Copiar</button>
+                                                            <button class="copydata" onclick="event.stopPropagation(); loadTreeBranch('{{$persona["id"]}}', '{{$persona["tree_generation"] ?? ($key1+$generacionBase)}}', '{{$persona["PersonaIDNew"] ?? $key2}}')">Extender</button>
                                                         @elseif(auth()->user() && auth()->user()->hasRole(['Cliente']))
                                                             <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : json_encode($persona['Observaciones'])}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar</button>
                                                             <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Archivos</button>
                                                         @endif
+                                                    </div>
+                                                    <div class="tree-lineage-strip">
+                                                        <label class="tree-lineage-color"
+                                                            style="background: {{ $persona['tree_color_padre'] ?? '#B08A43' }};"
+                                                            title="Linea paterna">
+                                                            @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
+                                                                <input type="color"
+                                                                    value="{{ $persona['tree_color_padre'] ?? '#B08A43' }}"
+                                                                    data-tree-color-side="padre"
+                                                                    data-person-id="{{ $persona['id'] }}"
+                                                                    data-tree-generation="{{ $persona['tree_generation'] ?? ($key1+$generacionBase) }}"
+                                                                    data-persona-slot="{{ $persona['PersonaIDNew'] ?? $key2 }}"
+                                                                    data-inherited-color="{{ $persona['tree_inherited_color'] ?? '#B08A43' }}">
+                                                            @endif
+                                                        </label>
+                                                        <label class="tree-lineage-color"
+                                                            style="background: {{ $persona['tree_color_madre'] ?? '#B08A43' }};"
+                                                            title="Linea materna">
+                                                            @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
+                                                                <input type="color"
+                                                                    value="{{ $persona['tree_color_madre'] ?? '#B08A43' }}"
+                                                                    data-tree-color-side="madre"
+                                                                    data-person-id="{{ $persona['id'] }}"
+                                                                    data-tree-generation="{{ $persona['tree_generation'] ?? ($key1+$generacionBase) }}"
+                                                                    data-persona-slot="{{ $persona['PersonaIDNew'] ?? $key2 }}"
+                                                                    data-inherited-color="{{ $persona['tree_inherited_color'] ?? '#B08A43' }}">
+                                                            @endif
+                                                        </label>
                                                     </div>
                                                 </div>
                                             </div>
@@ -333,10 +341,14 @@
                                                 data-container-y="{{$containerY}}"
                                                 data-container-height="{{$containerHeight}}">
 
-                                                <div class="cajapernew_min cajabtn_add addbtn {{ $persona["showbtnsex"] == "m" ? "M" : "F" }}_{{$persona["id_hijo"]}}"
+                                                <div class="cajapernew_min cajabtn_add addbtn tree-add-node {{ $persona["showbtnsex"] == "m" ? "M" : "F" }}_{{$persona["id_hijo"]}}"
                                                     id="{{ $persona["showbtnsex"] == "m" ? "M" : "F" }}_{{$persona["id_hijo"]}}_{{$columnasparatabla[0][0]["IDCliente"]}}"
+                                                    data-node-key="{{ $nodeKey }}"
+                                                    data-child-key="{{ $persona['tree_child_key'] ?? '' }}"
                                                     data-column="{{$key1}}"
                                                     data-row="{{$key2}}"
+                                                    data-node-x="{{$posX + ($columnWidth / 2)}}"
+                                                    data-node-y="{{$containerY + ($containerHeight / 2)}}"
                                                     data-container-y="{{$containerY}}"
                                                     data-container-height="{{$containerHeight}}">
                                                     <div class="encabezadonew_min">
@@ -1591,10 +1603,10 @@
 
 #mylines {
     position: absolute;
-    top: 30px;
+    top: 0;
     left: 0;
-    width: 100vw;
-    height: 2000px;
+    width: 100%;
+    height: 100%;
     z-index: 0;
     pointer-events: none;
 }
@@ -1650,10 +1662,8 @@
 }
 
 .treecont_minimized {
-    padding: 30px 20px;
+    padding: 0;
     margin-bottom: 20px;
-    width: 100%;
-    height: 100%;
     position: relative;
 }
 
@@ -1855,6 +1865,97 @@
     transition: all 0.3s ease;
 }
 
+.tree-person-node {
+    cursor: pointer;
+}
+
+.tree-node-compact:not(.tree-node-expanded) {
+    max-height: 52px;
+}
+
+.tree-node-compact:not(.tree-node-expanded) .tree-node-info {
+    display: none;
+}
+
+.tree-node-compact.tree-node-expanded {
+    max-height: 220px;
+    overflow: visible;
+    z-index: 20;
+    box-shadow: 0 8px 20px rgba(9, 49, 67, 0.18);
+}
+
+.tree-more-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #b08a43;
+    color: white;
+    font-size: 0.62rem;
+    line-height: 1rem;
+    border: 0;
+    cursor: pointer;
+}
+
+.tree-more-indicator:hover {
+    background: #06c2cc;
+    color: #093143;
+}
+
+.tree-loading-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(9, 49, 67, 0.38);
+    backdrop-filter: blur(2px);
+}
+
+.tree-loading-overlay.is-visible {
+    display: flex;
+}
+
+.tree-loading-modal {
+    width: min(320px, calc(100vw - 40px));
+    border-radius: 8px;
+    background: #093143;
+    color: white;
+    padding: 28px 24px;
+    text-align: center;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.24);
+}
+
+.tree-loading-spinner {
+    width: 44px;
+    height: 44px;
+    margin: 0 auto 16px;
+    border: 4px solid rgba(255, 255, 255, 0.22);
+    border-top-color: #b08a43;
+    border-radius: 50%;
+    animation: tree-loading-spin 0.8s linear infinite;
+}
+
+.tree-loading-title {
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.tree-loading-text {
+    margin-top: 6px;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.82rem;
+}
+
+@keyframes tree-loading-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 .mr1 {
     margin-right: 5px;
 }
@@ -1950,7 +2051,26 @@ dialog::backdrop {
     const zoomableContent = document.getElementById('zoomableContent');
 
     const containerTree = document.getElementById('containertree');
+    const treeLoadingOverlay = document.getElementById('treeLoadingOverlay');
     let zoomLevel = 1;
+    let visibleTreePeople = {};
+    let treeBranchLoading = false;
+
+    const treeLayout = {
+        nodeHeight: 130,
+        columnWidth: 300,
+        initialOffset: 20,
+        topPadding: 40,
+        rowHeight: 154,
+        compactFromColumn: 4,
+        minHeight: 720,
+        minWidth: 900,
+    };
+    const treeBranchBaseUrl = @json(url('/tree/' . $IDCliente . '/branch'));
+    const treeColorBaseUrl = @json(url('/tree/' . $IDCliente . '/line-color'));
+    const csrfToken = @json(csrf_token());
+    const canManageTree = @json(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']));
+    const canEditClientTree = @json(auth()->user() && auth()->user()->hasRole(['Cliente']));
 
     let isDragging = false;
     let startX, startY, scrollLeft, scrollTop;
@@ -2001,6 +2121,366 @@ dialog::backdrop {
         }, 100);
     }
 
+    function centerInitialTree() {
+        const rootNode = document.querySelector('.tree-person-node[data-column="0"]');
+        if (!rootNode || !containerTree) {
+            return;
+        }
+
+        containerTree.scrollTop = Math.max(
+            0,
+            rootNode.offsetTop - ((containerTree.clientHeight - rootNode.offsetHeight) / 2)
+        );
+        containerTree.scrollLeft = 0;
+    }
+
+    function treeBranchUrl(personId, generation, slot) {
+        return [
+            treeBranchBaseUrl,
+            encodeURIComponent(personId),
+            encodeURIComponent(generation || 0),
+            encodeURIComponent(slot || 0),
+        ].join('/');
+    }
+
+    function showTreeLoading() {
+        if (!treeLoadingOverlay) {
+            return;
+        }
+
+        treeLoadingOverlay.classList.add('is-visible');
+        treeLoadingOverlay.setAttribute('aria-hidden', 'false');
+    }
+
+    function hideTreeLoading() {
+        if (!treeLoadingOverlay) {
+            return;
+        }
+
+        treeLoadingOverlay.classList.remove('is-visible');
+        treeLoadingOverlay.setAttribute('aria-hidden', 'true');
+    }
+
+    async function loadTreeBranch(personId, generation, slot) {
+        if (!personId || treeBranchLoading) {
+            return;
+        }
+
+        treeBranchLoading = true;
+        showTreeLoading();
+
+        try {
+            const response = await fetch(treeBranchUrl(personId, generation, slot), {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('No se pudo cargar la rama');
+            }
+
+            const data = await response.json();
+            renderTreeWindow(data.columnasparatabla || []);
+            refreshVisiblePersonOptions(data.columnasparatabla || []);
+
+            zoomLevel = 1;
+            zoomableContent.style.zoom = zoomLevel;
+            document.getElementById('zoomOut').disabled = false;
+
+            reloadlines();
+            centerInitialTree();
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: 'No se pudo extender esta rama sin recargar.',
+            });
+        } finally {
+            treeBranchLoading = false;
+            hideTreeLoading();
+        }
+    }
+
+    function renderTreeWindow(columns) {
+        visibleTreePeople = {};
+        let maxTreeRow = 0;
+
+        columns.forEach((column) => {
+            column.forEach((person) => {
+                maxTreeRow = Math.max(maxTreeRow, Number(person.tree_row || 0));
+                if (Number(person.showbtn) === 2) {
+                    visibleTreePeople[String(person.id)] = person;
+                }
+            });
+        });
+
+        const totalTreeHeight = Math.max(
+            treeLayout.minHeight,
+            ((maxTreeRow + 1) * treeLayout.rowHeight) + (treeLayout.topPadding * 2)
+        );
+        const totalTreeWidth = Math.max(
+            treeLayout.minWidth,
+            (columns.length * treeLayout.columnWidth) + treeLayout.initialOffset + 100
+        );
+
+        zoomableContent.style.width = `${totalTreeWidth}px`;
+        zoomableContent.style.height = `${totalTreeHeight}px`;
+
+        const svg = `
+            <svg id="mylines" class="mylines" width="${totalTreeWidth}" height="${totalTreeHeight}" viewBox="0 0 ${totalTreeWidth} ${totalTreeHeight}" aria-hidden="true"></svg>
+        `;
+        const content = columns.map((column, columnIndex) => renderTreeColumn(column, columnIndex, totalTreeHeight)).join('');
+
+        zoomableContent.innerHTML = `${svg}<div class="arbolflex" style="height: ${totalTreeHeight}px; width: ${totalTreeWidth}px;">${content}</div>`;
+    }
+
+    function renderTreeColumn(column, columnIndex, totalTreeHeight) {
+        const posX = (columnIndex * treeLayout.columnWidth) + treeLayout.initialOffset;
+        const nodes = column.map((person, rowIndex) => renderTreeNode(person, columnIndex, rowIndex, posX)).join('');
+
+        return `
+            <div class="cliente" style="left: ${posX}px; top: 0; width: ${treeLayout.columnWidth}px; height: 100%;" data-column="${columnIndex}">
+                ${nodes}
+            </div>
+        `;
+    }
+
+    function renderTreeNode(person, columnIndex, rowIndex, posX) {
+        const treeRow = Number(person.tree_row ?? rowIndex);
+        const containerY = treeLayout.topPadding + (treeRow * treeLayout.rowHeight);
+        const nodeKey = person.tree_node_key || `node_${columnIndex}_${rowIndex}`;
+        const wrapper = (inner) => `
+            <div class="contnodo-wrapper"
+                style="position:absolute; top:${containerY}px; left:0; width:100%; height:${treeLayout.nodeHeight}px; display:flex; align-items:center; justify-content:center;"
+                data-column="${columnIndex}"
+                data-row="${rowIndex}"
+                data-container-y="${containerY}"
+                data-container-height="${treeLayout.nodeHeight}">
+                ${inner}
+            </div>
+        `;
+
+        if (Number(person.showbtn) === 2) {
+            return wrapper(renderPersonCard(person, columnIndex, rowIndex, posX, containerY, nodeKey));
+        }
+
+        if (Number(person.showbtn) === 1) {
+            return wrapper(renderAddNode(person, columnIndex, rowIndex, posX, containerY, nodeKey));
+        }
+
+        return wrapper('');
+    }
+
+    function renderPersonCard(person, columnIndex, rowIndex, posX, containerY, nodeKey) {
+        const compactClass = columnIndex >= treeLayout.compactFromColumn ? 'tree-node-compact' : '';
+        const fullName = [person.Nombres, person.Apellidos].filter(Boolean).join(' ');
+        const copyId = `datacopy_${safeId(nodeKey)}`;
+
+        return `
+            <div class="cajapernew_min tree-person-node ${compactClass} min_persona_id_${escapeAttr(person.id)} min_padre_id_${escapeAttr(person.idPadreNew || 'no')} min_madre_id_${escapeAttr(person.idMadreNew || 'no')}"
+                id="tree_node_${escapeAttr(nodeKey)}"
+                data-person-id="${escapeAttr(person.id)}"
+                data-node-key="${escapeAttr(nodeKey)}"
+                data-padre-key="${escapeAttr(person.tree_padre_key || '')}"
+                data-madre-key="${escapeAttr(person.tree_madre_key || '')}"
+                data-tree-generation="${escapeAttr(person.tree_generation || 0)}"
+                data-persona-slot="${escapeAttr(person.PersonaIDNew || 0)}"
+                data-column="${columnIndex}"
+                data-row="${rowIndex}"
+                data-node-x="${posX + (treeLayout.columnWidth / 2)}"
+                data-node-y="${containerY + (treeLayout.nodeHeight / 2)}"
+                data-container-y="${containerY}"
+                data-container-height="${treeLayout.nodeHeight}">
+                <div class="encabezadonew_min">
+                    ${escapeHtml(fullName)}<br>
+                    (${escapeHtml(person.parentesco || 'Sin parentesco')})
+                    ${renderMoreIndicator(person)}
+                </div>
+                <div id="${copyId}" style="display:none;">${renderCopyData(person)}</div>
+                <div class="continfo tree-node-info">
+                    ${renderLifeEvents(person)}
+                    <div style="width:100%; height:0.5rem; border-bottom:#093143 1px solid; margin-bottom:0.5rem;"></div>
+                    ${renderPersonActions(person)}
+                </div>
+            </div>
+        `;
+    }
+
+    function renderMoreIndicator(person) {
+        if (!canManageTree || !person.tree_has_more) {
+            return '';
+        }
+
+        return `
+            <button
+                type="button"
+                class="tree-more-indicator"
+                title="Hay mas familiares registrados"
+                data-tree-action="branch"
+                data-person-id="${escapeAttr(person.id)}"
+                data-tree-generation="${escapeAttr(person.tree_generation || 0)}"
+                data-persona-slot="${escapeAttr(person.PersonaIDNew || 0)}">
+                <i class="fa-solid fa-arrow-right"></i> Mas familiares
+            </button>
+        `;
+    }
+
+    function renderAddNode(person, columnIndex, rowIndex, posX, containerY, nodeKey) {
+        const sex = person.showbtnsex === 'm' ? 'M' : 'F';
+        const label = person.showbtnsex === 'm' ? 'Padre' : 'Madre';
+        const clientId = person.IDCliente || @json($IDCliente);
+
+        return `
+            <div class="cajapernew_min cajabtn_add addbtn tree-add-node ${sex}_${escapeAttr(person.id_hijo)}"
+                id="${sex}_${escapeAttr(person.id_hijo)}_${escapeAttr(clientId)}"
+                data-node-key="${escapeAttr(nodeKey)}"
+                data-child-key="${escapeAttr(person.tree_child_key || '')}"
+                data-column="${columnIndex}"
+                data-row="${rowIndex}"
+                data-node-x="${posX + (treeLayout.columnWidth / 2)}"
+                data-node-y="${containerY + (treeLayout.nodeHeight / 2)}"
+                data-container-y="${containerY}"
+                data-container-height="${treeLayout.nodeHeight}">
+                <div class="encabezadonew_min">
+                    <button data-column="${columnIndex}" data-row="${rowIndex}" data-container-y="${containerY}" data-container-height="${treeLayout.nodeHeight}">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                    Agregar ${label}
+                </div>
+            </div>
+        `;
+    }
+
+    function renderPersonActions(person) {
+        if (canManageTree) {
+            return `
+                <button class="editperson" data-tree-action="edit" data-person-id="${escapeAttr(person.id)}">Editar</button>
+                <button class="editperson" data-tree-action="files" data-person-id="${escapeAttr(person.id)}" data-client-id="${escapeAttr(person.IDCliente)}">Archivos</button>
+                <button class="copydata" data-tree-action="copy" data-copy-target="datacopy_${safeId(person.tree_node_key || person.id)}">Copiar</button>
+                <button class="copydata" data-tree-action="branch" data-person-id="${escapeAttr(person.id)}" data-tree-generation="${escapeAttr(person.tree_generation || 0)}" data-persona-slot="${escapeAttr(person.PersonaIDNew || 0)}">Extender</button>
+            `;
+        }
+
+        if (canEditClientTree) {
+            return `
+                <button class="editperson" data-tree-action="edit" data-person-id="${escapeAttr(person.id)}">Editar</button>
+                <button class="editperson" data-tree-action="files" data-person-id="${escapeAttr(person.id)}" data-client-id="${escapeAttr(person.IDCliente)}">Archivos</button>
+            `;
+        }
+
+        return '';
+    }
+
+    function renderLifeEvents(person) {
+        const birth = person.AnhoNac ? `<p><strong>○ </strong>${formatDatePlace(person, 'Nac')}</p>` : '';
+        const death = person.AnhoDef ? `<p><strong>✟ </strong>${formatDatePlace(person, 'Def')}</p>` : '';
+        return birth + death;
+    }
+
+    function renderCopyData(person) {
+        const lines = [];
+        const fullName = [person.Nombres, person.Apellidos].filter(Boolean).join(' ');
+
+        if (fullName) {
+            lines.push(`<p>${escapeHtml(fullName)}|</p>`);
+        }
+
+        ['Nac', 'Btzo', 'Matr', 'Def'].forEach((type) => {
+            const year = person[`Anho${type}`];
+            if (!year) {
+                return;
+            }
+
+            const prefix = {Nac: 'n', Btzo: 'b', Matr: 'm', Def: 'f'}[type];
+            lines.push(`<p><strong>${prefix} </strong>${formatDatePlace(person, type)}|</p>`);
+        });
+
+        return lines.join('');
+    }
+
+    function formatDatePlace(person, type) {
+        const day = person[`Dia${type}`] || '';
+        const month = person[`Mes${type}`] || '';
+        const year = person[`Anho${type}`] || '';
+        const place = person[`Lugar${type}`] ? ` (${person[`Lugar${type}`]})` : '';
+        const date = [day, month, year].filter(Boolean).join('/');
+        return escapeHtml(`${date}${place}`);
+    }
+
+    function refreshVisiblePersonOptions(columns) {
+        const select = document.getElementById('change_person');
+        if (!select) {
+            return;
+        }
+
+        select.innerHTML = '<option value="" selected disabled>Selecciona una persona</option>';
+
+        columns.forEach((column) => {
+            column.forEach((person) => {
+                if (Number(person.showbtn) !== 2) {
+                    return;
+                }
+
+                const option = document.createElement('option');
+                option.value = person.id;
+                option.textContent = `${[person.Nombres, person.Apellidos].filter(Boolean).join(' ')} (${person.parentesco || 'Sin parentesco'})`;
+                select.appendChild(option);
+            });
+        });
+    }
+
+    function openEditFromPerson(person) {
+        callEdit(
+            person.Nombres || '',
+            person.Apellidos || '',
+            person.AnhoNac || '',
+            person.MesNac || '',
+            person.DiaNac || '',
+            person.LugarNac || '',
+            person.PaisNac || '',
+            person.AnhoBtzo || '',
+            person.MesBtzo || '',
+            person.DiaBtzo || '',
+            person.LugarBtzo || '',
+            person.PaisBtzo || '',
+            person.AnhoMatr || '',
+            person.MesMatr || '',
+            person.DiaMatr || '',
+            person.LugarMatr || '',
+            person.PaisMatr || '',
+            person.AnhoDef || '',
+            person.MesDef || '',
+            person.DiaDef || '',
+            person.LugarDef || '',
+            person.PaisDef || '',
+            person.Observaciones || '',
+            person.id || '',
+            person.NPasaporte || '',
+            person.PaisPasaporte || '',
+            person.NDocIdent || '',
+            person.PaisDocIdent || ''
+        );
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function escapeAttr(value) {
+        return escapeHtml(value);
+    }
+
+    function safeId(value) {
+        return String(value ?? '').replace(/[^A-Za-z0-9_-]/g, '_');
+    }
+
     document.getElementById('zoomIn').addEventListener('click', function() {
         zoomLevel += 0.1;
         adjustZoom();
@@ -2015,6 +2495,7 @@ dialog::backdrop {
 
     $(document).ready(function() {
         reloadlines();
+        centerInitialTree();
 
         $(window).scroll(function() {
             if ($(this).scrollTop() > 10) { // Mostrar si el scroll es mayor a 100px
@@ -2128,6 +2609,52 @@ dialog::backdrop {
         gotofamiliar(this.value);
     });
 
+    $(document).on("click", ".tree-person-node.tree-node-compact", function(e) {
+        if (e.target.closest('button')) {
+            return;
+        }
+
+        this.classList.toggle("tree-node-expanded");
+        reloadlines();
+    });
+
+    $(document).on("dblclick", ".tree-person-node", function(e) {
+        if (!canManageTree) {
+            return;
+        }
+
+        if (e.target.closest('button')) {
+            return;
+        }
+
+        e.preventDefault();
+        loadTreeBranch(this.dataset.personId, this.dataset.treeGeneration, this.dataset.personaSlot);
+    });
+
+    $(document).on("click", "[data-tree-action]", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const action = this.dataset.treeAction;
+        const person = visibleTreePeople[String(this.dataset.personId)] || null;
+
+        if (action === "edit" && person) {
+            openEditFromPerson(person);
+        }
+
+        if (action === "files") {
+            callFiles(this.dataset.clientId, this.dataset.personId);
+        }
+
+        if (action === "copy") {
+            copydata(this.dataset.copyTarget);
+        }
+
+        if (action === "branch") {
+            loadTreeBranch(this.dataset.personId, this.dataset.treeGeneration, this.dataset.personaSlot);
+        }
+    });
+
     $(".cerrarmodal").click(function(){
         $(".modaladdfamiliar").hide();
         $(".modaleditfamiliar").hide();
@@ -2187,7 +2714,7 @@ dialog::backdrop {
         }
     });
 
-    $(".addbtn").click(function(){
+    $(document).on("click", ".addbtn", function(){
         $('input[type="text"], input[type="number"], textarea').val('');
         $('select').prop('selectedIndex', 0);
         $(".modaladdfamiliar").show();
@@ -2359,7 +2886,7 @@ dialog::backdrop {
         });
     }
 
-function reloadlines(){
+function reloadlinesLegacy(){
     $("#mylines").html("");
 
     // Esperar a que el DOM esté completamente renderizado
@@ -2466,6 +2993,45 @@ function dibujarLineaSVG($caja1, $caja2) {
                 </svg>`;
 
     $('#mylines').append(svg);
+}
+
+function reloadlines(){
+    window.requestAnimationFrame(() => {
+        const svg = document.getElementById('mylines');
+        if (!svg) {
+            return;
+        }
+
+        const nodes = new Map();
+        document.querySelectorAll('[data-node-key]').forEach((element) => {
+            nodes.set(element.dataset.nodeKey, element);
+        });
+
+        const fragment = document.createDocumentFragment();
+
+        document.querySelectorAll('.tree-person-node').forEach((element) => {
+            ['padreKey', 'madreKey'].forEach((field) => {
+                const targetKey = element.dataset[field];
+                if (targetKey && nodes.has(targetKey)) {
+                    fragment.appendChild(crearLineaSVG(element, nodes.get(targetKey)));
+                }
+            });
+        });
+
+        svg.replaceChildren(fragment);
+    });
+}
+
+function crearLineaSVG(elementA, elementB) {
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', elementA.dataset.nodeX || 0);
+    line.setAttribute('y1', elementA.dataset.nodeY || 0);
+    line.setAttribute('x2', elementB.dataset.nodeX || 0);
+    line.setAttribute('y2', elementB.dataset.nodeY || 0);
+    line.setAttribute('stroke', '#093143');
+    line.setAttribute('stroke-width', '2');
+    line.setAttribute('vector-effect', 'non-scaling-stroke');
+    return line;
 }
 
     $('#modeview').on('change', function(){

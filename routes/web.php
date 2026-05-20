@@ -568,6 +568,10 @@ Route::group(['middleware' => ['auth'], 'as' => 'arboles.'], function(){
         ->middleware('can:genealogista');
     Route::get('tree/{IDCliente}', [TreeController::class, 'tree'])->name('tree.index')
         ->middleware('can:genealogista');
+    Route::get('tree/{IDCliente}/branch/{id}/{gen}/{parent}', [TreeController::class, 'branch'])->name('tree.branch')
+        ->middleware('can:genealogista');
+    Route::post('tree/{IDCliente}/line-color/{id}', [TreeController::class, 'updateLineColor'])->name('tree.line-color')
+        ->middleware('can:genealogista');
     Route::get('tree/{IDCliente}/{id}/{gen}/{parent}', [TreeController::class, 'treepart'])->name('tree.treepart')
         ->middleware('can:genealogista');
     Route::get('olivo/{IDCliente}', [OlivoController::class, 'olivo'])->name('olivo.index')

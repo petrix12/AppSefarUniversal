@@ -39,35 +39,7 @@
                     <!-- Contenido del nodo igual que antes -->
                     <div class="encabezadonew_min">
                         {{$persona["Nombres"] . ' ' . $persona["Apellidos"]}}<br>
-                        @if($checkBtn == "si")
-                            @if ($key1+$generacionBase == 1)
-                                @if ($key2 == 0)
-                                    (Padre)
-                                @else
-                                    (Madre)
-                                @endif
-                            @else
-                                ({{$parentescos[$key1-2+$generacionBase][$persona['PersonaIDNew']]}})
-                            @endif
-                        @else
-                            @if ($key1 == 0)
-                                (Cliente)
-                            @elseif ($key1 == 1)
-                                @if ($key2 == 0)
-                                    (Padre)
-                                @else
-                                    (Madre)
-                                @endif
-                            @else
-                                @if(isset($parentescos[$key1 - 2 + $generacionBase][$persona['PersonaIDNew']]))
-                                    ({{ $parentescos[$key1 - 2 + $generacionBase][$persona['PersonaIDNew']] }})
-                                @else
-                                    <script>
-                                        window.location.reload();
-                                    </script>
-                                @endif
-                            @endif
-                        @endif
+                        ({{ $persona['parentesco'] ?? 'Sin parentesco' }})
                     </div>
                     <div id="datacopy_{{ $persona['id'] }}" style="display: none;">
                             @if (!empty($persona['Nombres']))
@@ -155,7 +127,7 @@
                         <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Archivos</button>
 
                         <button class="copydata" onclick="copydata('datacopy_{{ $persona['id'] }}')">Copiar</button>
-                        <button class="copydata" onclick="window.location.href='/tree/{{$persona["IDCliente"]}}/{{$persona["id"]}}/{{$key1+$generacionBase}}/{{$key2}}'">Extender</button>
+                        <button class="copydata" onclick="window.location.href='/tree/{{$persona["IDCliente"]}}/{{$persona["id"]}}/{{$persona["tree_generation"] ?? ($key1+$generacionBase)}}/{{$persona["PersonaIDNew"] ?? $key2}}'">Extender</button>
                         @elseif(auth()->user() && auth()->user()->hasRole(['Cliente']))
                             <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : json_encode($persona['Observaciones'])}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar</button>
                             <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Archivos</button>

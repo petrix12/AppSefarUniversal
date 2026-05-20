@@ -1241,10 +1241,43 @@ class ClienteController extends Controller
             }
         }
         $IDCliente = Auth::user()->passport;
-
         $user = Auth::user();
+        $cliente[0] = $user;
 
-        $cliente[0] = Auth::user();
+        $genealogyService = app(GenealogyService::class);
+        $treeData = $genealogyService->buildTree($IDCliente, null, 5, 0, 0, true);
+
+        if (empty($treeData['columnasparatabla'])) {
+            return redirect()->route('clientes.getinfo')
+                ->with('info', 'No se pudo generar el arbol genealogico.');
+        }
+
+        $columnasparatabla = $treeData['columnasparatabla'];
+        $people = $treeData['people'];
+        $parentescos = $treeData['parentescos'];
+        $treeWarnings = $treeData['warnings'];
+        $treeStats = $treeData['stats'];
+        $tipoarchivos = TFile::all();
+        $checkBtn = "no";
+        $generacionBase = 0;
+        $parentnumber = 0;
+        $htmlGenerado = '';
+
+        return view('arboles.tree', compact(
+            'generacionBase',
+            'user',
+            'IDCliente',
+            'people',
+            'columnasparatabla',
+            'cliente',
+            'tipoarchivos',
+            'parentescos',
+            'htmlGenerado',
+            'checkBtn',
+            'parentnumber',
+            'treeWarnings',
+            'treeStats'
+        ));
 
         //revisar padres
 
@@ -1345,7 +1378,11 @@ class ClienteController extends Controller
         }
 
         $cambio = true;
-        while ($cambio) {
+        $guard = 0;
+        $maxIterations = count($arreglo) + 1;
+
+        while ($cambio && $guard < $maxIterations) {
+            $guard++;
             $cambio = false;
             foreach ($arreglo as $id => $persona) {
                 $generacionPadre = isset($generaciones[$persona['idPadreNew']]) ? $generaciones[$persona['idPadreNew']] : 0;
@@ -1359,8 +1396,7 @@ class ClienteController extends Controller
             }
         }
 
-        $maxGeneraciones = max($generaciones);
-        echo "El árbol genealógico tiene " . $maxGeneraciones . " generaciones.";
+        $maxGeneraciones = min(max($generaciones), 5);
         $maxGeneraciones++;
 
         $columnasparatabla = array();
