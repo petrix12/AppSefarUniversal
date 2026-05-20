@@ -102,6 +102,10 @@ class GenealogyService
 
     private function processParent(&$columna, $personaAnterior, $parentField, $gender, $peopleMap): void
     {
+        if (($personaAnterior['showbtn'] ?? 2) === 0) {
+            return;
+        }
+
         if (isset($personaAnterior[$parentField]) && isset($peopleMap[$personaAnterior[$parentField]])) {
             $parent = $peopleMap[$personaAnterior[$parentField]];
             $parent['showbtn'] = 1;

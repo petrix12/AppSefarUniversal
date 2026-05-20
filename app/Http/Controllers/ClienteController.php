@@ -1375,6 +1375,9 @@ class ClienteController extends Controller
                 $columnasparatabla[$i][0]["showbtn"] = 2;  //2 es persona, 1 es boton de añadir, 0 es nada
             } else {
                 foreach ($columnasparatabla[$i-1] as $key2 => $persona2){
+                    if (($persona2["showbtn"] ?? 2) != 2) {
+                        continue;
+                    }
 
                     if(!isset($columnasparatabla[$i])){
                         $columnasparatabla[$i] = [];

@@ -200,14 +200,23 @@
                     $columnWidth = 300;
                     $initialOffset = 20;
 
-                    // Altura total fija para el árbol
-                    $totalTreeHeight = 2000; // Ajusta según necesites
+                    // Altura dinamica para evitar solapamientos en arboles profundos.
+                    $nodeVerticalStep = 150;
+                    $maxNodesInColumn = collect($columnasparatabla)->map(fn ($columna) => count($columna))->max() ?? 1;
+                    $totalTreeHeight = max(900, $maxNodesInColumn * $nodeVerticalStep);
+                    $totalTreeWidth = max(900, (count($columnasparatabla) * $columnWidth) + ($initialOffset * 2));
+                    $rootPersonId = $columnasparatabla[0][0]["id"] ?? null;
+                    $canInspectTreePerson = auth()->user()?->hasRole('Administrador') ?? false;
                 @endphp
 
-                <div style="width: 100%; height: 80vh; overflow: auto;" id="containertree">
+                <div class="tree-scroll-shell"
+                     id="containertree"
+                     data-root-person-id="{{ $rootPersonId }}"
+                     data-column-width="{{ $columnWidth }}"
+                     data-initial-offset="{{ $initialOffset }}">
                     <div class="treecont_minimized" id="zoomableContent" style="position:relative;">
                         <div id="mylines" class="mylines"></div>
-                        <div class="arbolflex" style="height: {{$totalTreeHeight}}px;">
+                        <div class="arbolflex" style="height: {{$totalTreeHeight}}px; min-width: {{$totalTreeWidth}}px;">
 
                             @foreach ($columnasparatabla as $key1 => $columna)
                                 @php
@@ -371,6 +380,29 @@
                         </div>
                     </div>
                 </div>
+
+                @if($canInspectTreePerson)
+                    <aside id="tree-person-inspector" class="tree-person-inspector" aria-live="polite">
+                        <div class="tree-person-inspector__header">
+                            <div>
+                                <span class="tree-person-inspector__eyebrow">Detalle familiar</span>
+                                <h3 id="tree-person-inspector-title">Selecciona una persona</h3>
+                            </div>
+                            <button type="button" id="tree-person-inspector-close" class="tree-person-inspector__close" aria-label="Cerrar detalle">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        <div id="tree-person-inspector-body" class="tree-person-inspector__body">
+                            Haz click en un familiar del arbol para ver sus datos y documentos.
+                        </div>
+                        <div class="tree-person-inspector__files">
+                            <h4>Documentos</h4>
+                            <div id="tree-person-inspector-files" class="tree-person-inspector__files-list">
+                                Sin persona seleccionada.
+                            </div>
+                        </div>
+                    </aside>
+                @endif
             </div>
         </div>
     </div>
@@ -1657,6 +1689,195 @@
     position: relative;
 }
 
+.tree-scroll-shell {
+    width: 100%;
+    height: 80vh;
+    min-height: 520px;
+    overflow: auto;
+    cursor: grab;
+    background: #f8fafc;
+    border: 1px solid rgba(9, 49, 67, 0.12);
+    border-radius: 12px;
+}
+
+.tree-person-inspector {
+    display: none;
+    position: sticky;
+    bottom: 1rem;
+    z-index: 20;
+    width: min(100%, 980px);
+    max-height: 44vh;
+    margin: 1rem auto;
+    overflow: auto;
+    background: #ffffff;
+    border: 1px solid rgba(9, 49, 67, 0.16);
+    border-radius: 12px;
+    box-shadow: 0 16px 40px rgba(9, 49, 67, 0.18);
+}
+
+.tree-person-inspector.is-visible {
+    display: block;
+}
+
+.tree-person-inspector__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.1rem;
+    color: #ffffff;
+    background: #093143;
+}
+
+.tree-person-inspector__header h3 {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.3;
+}
+
+.tree-person-inspector__eyebrow {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.tree-person-inspector__close {
+    width: 2rem;
+    height: 2rem;
+    border: 0;
+    border-radius: 999px;
+    color: #093143;
+    background: #ffffff;
+}
+
+.tree-person-inspector__body,
+.tree-person-inspector__files {
+    padding: 1rem 1.1rem;
+}
+
+.tree-person-inspector__files {
+    border-top: 1px solid rgba(9, 49, 67, 0.1);
+}
+
+.tree-person-inspector__files h4 {
+    margin: 0 0 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.tree-person-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+}
+
+.tree-person-field {
+    padding: 0.7rem;
+    border: 1px solid rgba(9, 49, 67, 0.1);
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+.tree-person-field span {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: #6b7280;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.tree-person-field strong {
+    display: block;
+    color: #111827;
+    font-size: 0.88rem;
+    overflow-wrap: anywhere;
+}
+
+.tree-person-file {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid rgba(9, 49, 67, 0.08);
+}
+
+.tree-person-file:last-child {
+    border-bottom: 0;
+}
+
+.tree-person-file__meta {
+    min-width: 0;
+}
+
+.tree-person-file__name,
+.tree-person-file__type {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+.tree-person-file__type {
+    color: #6b7280;
+    font-size: 0.78rem;
+}
+
+body.dark-mode .tree-scroll-shell {
+    background: #111827;
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+body.dark-mode .tree-person-inspector {
+    background: #1f2937;
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+body.dark-mode .tree-person-field {
+    background: #111827;
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+body.dark-mode .tree-person-field strong,
+body.dark-mode .tree-person-inspector__files h4 {
+    color: #f9fafb;
+}
+
+body.dark-mode .tree-person-field span,
+body.dark-mode .tree-person-file__type {
+    color: #cbd5e1;
+}
+
+@media (min-width: 1200px) {
+    .tree-person-inspector {
+        position: fixed;
+        right: 1rem;
+        bottom: 1rem;
+        width: 420px;
+        margin: 0;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .tree-scroll-shell {
+        height: 68vh;
+        min-height: 420px;
+    }
+
+    .tree-person-inspector {
+        max-height: 52vh;
+        border-radius: 10px;
+    }
+
+    .tree-person-file {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}
+
 .tooltip {
     visibility: hidden;
     width: 200px;
@@ -1950,6 +2171,13 @@ dialog::backdrop {
     const zoomableContent = document.getElementById('zoomableContent');
 
     const containerTree = document.getElementById('containertree');
+    const treeConfig = {
+        rootPersonId: containerTree?.dataset.rootPersonId || null,
+        columnWidth: Number(containerTree?.dataset.columnWidth || 300),
+        initialOffset: Number(containerTree?.dataset.initialOffset || 20),
+    };
+    const treePersonInspectorEnabled = @json($canInspectTreePerson ?? false);
+    const treePeople = @json(($canInspectTreePerson ?? false) ? collect($people)->keyBy('id') : []);
     let zoomLevel = 1;
 
     let isDragging = false;
@@ -2001,6 +2229,208 @@ dialog::backdrop {
         }, 100);
     }
 
+    function centerTreeOnPerson(id, highlight = false) {
+        if (!id || !container || !zoomableContent) {
+            return;
+        }
+
+        const element = document.querySelector(".min_persona_id_" + id);
+
+        if (!element) {
+            return;
+        }
+
+        const wrapper = element.closest('.contnodo-wrapper');
+        const column = Number(element.dataset.column || 0);
+        const containerY = Number(wrapper?.dataset.containerY || 0);
+        const containerHeight = Number(wrapper?.dataset.containerHeight || element.offsetHeight || 0);
+        const targetTop = ((containerY + (containerHeight / 2)) * zoomLevel) - (container.clientHeight / 2);
+        const targetLeft = (((column * treeConfig.columnWidth) + treeConfig.initialOffset + (treeConfig.columnWidth / 2)) * zoomLevel) - (container.clientWidth / 3);
+
+        container.scrollTo({
+            top: Math.max(targetTop, 0),
+            left: Math.max(targetLeft, 0),
+            behavior: highlight ? 'smooth' : 'auto',
+        });
+
+        if (highlight) {
+            element.classList.add("glow-effect");
+            setTimeout(function() {
+                element.classList.remove("glow-effect");
+            }, 3000);
+        }
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function labelForTreeField(key) {
+        const labels = {
+            id: 'ID interno',
+            IDCliente: 'ID cliente',
+            IDPersona: 'ID persona',
+            Nombres: 'Nombres',
+            Apellidos: 'Apellidos',
+            Sexo: 'Sexo',
+            NPasaporte: 'Pasaporte',
+            PaisPasaporte: 'Pais pasaporte',
+            NDocIdent: 'Documento identidad',
+            PaisDocIdent: 'Pais documento',
+            AnhoNac: 'Ano nacimiento',
+            MesNac: 'Mes nacimiento',
+            DiaNac: 'Dia nacimiento',
+            LugarNac: 'Lugar nacimiento',
+            PaisNac: 'Pais nacimiento',
+            AnhoBtzo: 'Ano bautizo',
+            MesBtzo: 'Mes bautizo',
+            DiaBtzo: 'Dia bautizo',
+            LugarBtzo: 'Lugar bautizo',
+            PaisBtzo: 'Pais bautizo',
+            AnhoMatr: 'Ano matrimonio',
+            MesMatr: 'Mes matrimonio',
+            DiaMatr: 'Dia matrimonio',
+            LugarMatr: 'Lugar matrimonio',
+            PaisMatr: 'Pais matrimonio',
+            AnhoDef: 'Ano defuncion',
+            MesDef: 'Mes defuncion',
+            DiaDef: 'Dia defuncion',
+            LugarDef: 'Lugar defuncion',
+            PaisDef: 'Pais defuncion',
+            Vive: 'Vive',
+            Observaciones: 'Observaciones',
+            referido: 'Referido',
+            Usuario: 'Usuario',
+        };
+
+        return labels[key] || key;
+    }
+
+    function renderTreePersonFields(person) {
+        const hiddenFields = new Set([
+            'created_at',
+            'updated_at',
+            'deleted_at',
+            'idPadreNew',
+            'idMadreNew',
+            'PersonaIDNew',
+            'migradoNuevoID',
+        ]);
+
+        const rows = Object.entries(person)
+            .filter(([key, value]) => !hiddenFields.has(key) && value !== null && value !== '')
+            .map(([key, value]) => `<div class="tree-person-field"><span>${escapeHtml(labelForTreeField(key))}</span><strong>${escapeHtml(value)}</strong></div>`);
+
+        return rows.length
+            ? `<div class="tree-person-grid">${rows.join('')}</div>`
+            : '<p class="text-muted mb-0">Esta persona no tiene datos registrados.</p>';
+    }
+
+    function renderTreePersonFiles(files) {
+        const filesContainer = document.getElementById('tree-person-inspector-files');
+
+        if (!filesContainer) {
+            return;
+        }
+
+        if (!files.length) {
+            filesContainer.innerHTML = '<p class="text-muted mb-0">No hay documentos registrados para esta persona.</p>';
+            return;
+        }
+
+        filesContainer.innerHTML = files.map((file) => {
+            const path = `${file.location || ''}/${file.file || ''}`;
+            return `
+                <div class="tree-person-file">
+                    <div class="tree-person-file__meta">
+                        <strong class="tree-person-file__name">${escapeHtml(file.file || 'Archivo')}</strong>
+                        <span class="tree-person-file__type">${escapeHtml(file.tipo || 'Sin tipo')}</span>
+                    </div>
+                    <button type="button" class="filebtn tree-person-file__open" data-file-path="${escapeHtml(path)}">Ver archivo</button>
+                </div>
+            `;
+        }).join('');
+
+        filesContainer.querySelectorAll('.tree-person-file__open').forEach((button) => {
+            button.addEventListener('click', function () {
+                verArchivo(this.dataset.filePath);
+            });
+        });
+    }
+
+    function loadTreePersonFiles(person) {
+        const filesContainer = document.getElementById('tree-person-inspector-files');
+
+        if (!filesContainer || !person?.id || !person?.IDCliente) {
+            return;
+        }
+
+        filesContainer.innerHTML = '<p class="text-muted mb-0">Cargando documentos...</p>';
+
+        $.ajax({
+            url: "{{ route('getclientfiles') }}",
+            method: "POST",
+            data: {
+                clienteid: person.IDCliente,
+                familiarid: person.id,
+            },
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+            },
+            success: function(response) {
+                renderTreePersonFiles(response.archivos || []);
+            },
+            error: function() {
+                filesContainer.innerHTML = '<p class="text-danger mb-0">No se pudieron cargar los documentos.</p>';
+            }
+        });
+    }
+
+    function showTreePersonInspector(personId) {
+        if (!treePersonInspectorEnabled) {
+            return;
+        }
+
+        const person = treePeople[personId];
+        const inspector = document.getElementById('tree-person-inspector');
+        const title = document.getElementById('tree-person-inspector-title');
+        const body = document.getElementById('tree-person-inspector-body');
+
+        if (!person || !inspector || !title || !body) {
+            return;
+        }
+
+        title.textContent = `${person.Nombres || ''} ${person.Apellidos || ''}`.trim() || 'Persona sin nombre';
+        body.innerHTML = renderTreePersonFields(person);
+        inspector.classList.add('is-visible');
+        loadTreePersonFiles(person);
+    }
+
+    function setupTreePersonInspector() {
+        if (!treePersonInspectorEnabled) {
+            return;
+        }
+
+        document.querySelectorAll('.cajapernew_min[data-person-id]').forEach((node) => {
+            node.addEventListener('click', function(event) {
+                if (event.target.closest('button, a, input, select, textarea')) {
+                    return;
+                }
+
+                showTreePersonInspector(this.dataset.personId);
+            });
+        });
+
+        document.getElementById('tree-person-inspector-close')?.addEventListener('click', function () {
+            document.getElementById('tree-person-inspector')?.classList.remove('is-visible');
+        });
+    }
+
     document.getElementById('zoomIn').addEventListener('click', function() {
         zoomLevel += 0.1;
         adjustZoom();
@@ -2015,6 +2445,8 @@ dialog::backdrop {
 
     $(document).ready(function() {
         reloadlines();
+        centerTreeOnPerson(treeConfig.rootPersonId);
+        setupTreePersonInspector();
 
         $(window).scroll(function() {
             if ($(this).scrollTop() > 10) { // Mostrar si el scroll es mayor a 100px
@@ -2101,26 +2533,7 @@ dialog::backdrop {
         zoomLevel = 1;
         zoomableContent.style.zoom = zoomLevel;
         document.getElementById('zoomOut').disabled = false;
-
-        var classid = ".min_persona_id_" + id;
-        var element = document.querySelector(classid);
-
-        if (element) {
-            // Añadir el efecto de "glow"
-            element.classList.add("glow-effect");
-
-            // Centrar el elemento en la vista
-            element.scrollIntoView({
-                behavior: "smooth", // Desplazamiento suave
-                block: "center",    // Centrar el elemento verticalmente en la vista
-                inline: "center"    // Centrar el elemento horizontalmente en la vista (opcional)
-            });
-
-            // Remover el "glow" después de un tiempo (opcional)
-            setTimeout(function() {
-                element.classList.remove("glow-effect");
-            }, 3000); // Elimina el glow después de 2 segundos (puedes ajustar el tiempo)
-        }
+        centerTreeOnPerson(id, true);
     }
 
 

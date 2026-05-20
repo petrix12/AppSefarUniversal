@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 
 class TreeController extends Controller
 {
+    private const CLIENT_TREE_GENERATION_LIMIT = 5;
+
     // ════════════════════════════════════════════════════════════════════════
     // HELPER: Encuentra la raíz visual del árbol
     // El nodo raíz es el que NO aparece como idPadreNew ni idMadreNew
@@ -248,6 +250,10 @@ class TreeController extends Controller
 
         for ($i = 1; $i < $maxGeneraciones; $i++) {
             foreach ($columnasparatabla[$i - 1] as $persona2) {
+                if (($persona2['showbtn'] ?? 2) !== 2) {
+                    continue;
+                }
+
                 if (!isset($columnasparatabla[$i])) {
                     $columnasparatabla[$i] = [];
                 }
@@ -302,7 +308,7 @@ class TreeController extends Controller
             }
         }
 
-        return $columnasparatabla;
+        return array_values(array_filter($columnasparatabla, fn ($columna) => count($columna) > 0));
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -366,6 +372,15 @@ class TreeController extends Controller
         return $text;
     }
 
+    private function limitarColumnasPorRol(array $columnasparatabla): array
+    {
+        if (auth()->user()?->hasRole('Cliente')) {
+            return array_slice($columnasparatabla, 0, self::CLIENT_TREE_GENERATION_LIMIT);
+        }
+
+        return $columnasparatabla;
+    }
+
     // ════════════════════════════════════════════════════════════════════════
     // tree() — Vista principal del árbol desde el cliente
     // ════════════════════════════════════════════════════════════════════════
@@ -422,14 +437,7 @@ class TreeController extends Controller
 
         $parentescos = $this->generarParentescos($columnasparatabla);
 
-        // ── Recortar a 5 generaciones para la vista ───────────────────────
-        $temparr = [];
-        foreach ($columnasparatabla as $key => $columna) {
-            if ($key < 5) {
-                $temparr[] = $columna;
-            }
-        }
-        $columnasparatabla = $temparr;
+        $columnasparatabla = $this->limitarColumnasPorRol($columnasparatabla);
 
         $tipoarchivos  = TFile::all();
         $cliente       = json_decode(json_encode(User::where('passport', $IDCliente)->get()), true);
@@ -495,14 +503,7 @@ class TreeController extends Controller
 
         $parentescos = $this->generarParentescos($columnasparatabla);
 
-        // ── Recortar a 5 generaciones para la vista ───────────────────────
-        $temparr = [];
-        foreach ($columnasparatabla as $key => $columna) {
-            if ($key < 5) {
-                $temparr[] = $columna;
-            }
-        }
-        $columnasparatabla = $temparr;
+        $columnasparatabla = $this->limitarColumnasPorRol($columnasparatabla);
 
         $tipoarchivos   = TFile::all();
         $cliente        = json_decode(json_encode(User::where('passport', $IDCliente)->get()), true);
