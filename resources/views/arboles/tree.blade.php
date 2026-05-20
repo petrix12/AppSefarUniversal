@@ -1870,7 +1870,7 @@
 }
 
 .tree-node-compact:not(.tree-node-expanded) {
-    max-height: 52px;
+    max-height: 90px;
 }
 
 .tree-node-compact:not(.tree-node-expanded) .tree-node-info {
