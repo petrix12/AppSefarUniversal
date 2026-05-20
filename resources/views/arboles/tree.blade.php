@@ -201,9 +201,8 @@
                     $initialOffset = 20;
 
                     // Altura dinamica para evitar solapamientos en arboles profundos.
-                    $nodeVerticalStep = 150;
-                    $maxNodesInColumn = collect($columnasparatabla)->map(fn ($columna) => count($columna))->max() ?? 1;
-                    $totalTreeHeight = max(900, $maxNodesInColumn * $nodeVerticalStep);
+                    $maxLayoutY = collect($columnasparatabla)->flatten(1)->max('layout_y') ?? 900;
+                    $totalTreeHeight = max(900, $maxLayoutY + 180);
                     $totalTreeWidth = max(900, (count($columnasparatabla) * $columnWidth) + ($initialOffset * 2));
                     $rootPersonId = $columnasparatabla[0][0]["id"] ?? null;
                     $canInspectTreePerson = auth()->user()?->hasRole('Administrador') ?? false;
@@ -215,23 +214,20 @@
                      data-column-width="{{ $columnWidth }}"
                      data-initial-offset="{{ $initialOffset }}">
                     <div class="treecont_minimized" id="zoomableContent" style="position:relative;">
-                        <div id="mylines" class="mylines"></div>
+                        <div id="mylines" class="mylines" style="height: {{$totalTreeHeight}}px; min-width: {{$totalTreeWidth}}px;"></div>
                         <div class="arbolflex" style="height: {{$totalTreeHeight}}px; min-width: {{$totalTreeWidth}}px;">
 
                             @foreach ($columnasparatabla as $key1 => $columna)
                                 @php
                                     $posX = ($key1 * $columnWidth) + $initialOffset;
                                     $nodesInThisColumn = count($columna);
-
-                                    // Altura de cada contenedor en esta columna
-                                    $containerHeight = $nodesInThisColumn > 0 ? ($totalTreeHeight / $nodesInThisColumn) : $totalTreeHeight;
                                 @endphp
 
                                 <div class="cliente" style="left: {{$posX}}px; top: 0; width: {{$columnWidth}}px; height: 100%;" data-column="{{$key1}}">
                                     @foreach ($columna as $key2 => $persona)
                                         @php
-                                            // Posición Y del contenedor
-                                            $containerY = $key2 * $containerHeight;
+                                            $containerHeight = ($persona["showbtn"] ?? 0) == 1 ? 70 : 130;
+                                            $containerY = max(0, ($persona['layout_y'] ?? (($key2 + 1) * 150)) - ($containerHeight / 2));
                                         @endphp
 
                                         @if ($persona["showbtn"]==2)
@@ -1623,10 +1619,9 @@
 
 #mylines {
     position: absolute;
-    top: 30px;
+    top: 0;
     left: 0;
-    width: 100vw;
-    height: 2000px;
+    width: 100%;
     z-index: 0;
     pointer-events: none;
 }
@@ -2773,13 +2768,34 @@ dialog::backdrop {
     }
 
 function reloadlines(){
-    $("#mylines").html("");
+    const lineLayer = document.getElementById('mylines');
+
+    if (!lineLayer) {
+        return;
+    }
+
+    lineLayer.innerHTML = '';
+
+    const linesSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const svgWidth = Math.max(lineLayer.scrollWidth, lineLayer.offsetWidth, 1);
+    const svgHeight = Math.max(lineLayer.scrollHeight, lineLayer.offsetHeight, 1);
+
+    linesSvg.setAttribute('id', 'tree-lines-svg');
+    linesSvg.setAttribute('class', 'linea_conexion');
+    linesSvg.setAttribute('width', String(svgWidth));
+    linesSvg.setAttribute('height', String(svgHeight));
+    linesSvg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+    linesSvg.style.position = 'absolute';
+    linesSvg.style.top = '0';
+    linesSvg.style.left = '0';
+    linesSvg.style.width = '100%';
+    linesSvg.style.height = '100%';
+    linesSvg.style.pointerEvents = 'none';
+    lineLayer.appendChild(linesSvg);
 
     // Esperar a que el DOM esté completamente renderizado
     setTimeout(() => {
         const $cajasPersonas = $('.cajapernew_min');
-
-        console.log("Total de cajas encontradas:", $cajasPersonas.length);
 
         $cajasPersonas.each(function() {
             const $caja = $(this);
@@ -2799,8 +2815,6 @@ function reloadlines(){
                 const $cajaPadre = $(`.min_persona_id_${idPadre}`);
                 if ($cajaPadre.length > 0) {
                     dibujarLineaSVG($caja, $cajaPadre);
-                } else {
-                    console.log("No se encontró el padre con ID:", idPadre);
                 }
             }
 
@@ -2808,15 +2822,11 @@ function reloadlines(){
                 const $cajaMadre = $(`.min_persona_id_${idMadre}`);
                 if ($cajaMadre.length > 0) {
                     dibujarLineaSVG($caja, $cajaMadre);
-                } else {
-                    console.log("No se encontró la madre con ID:", idMadre);
                 }
             }
         });
 
         const $botonesAgregar = $('.addbtn');
-
-        console.log("Total de botones encontrados:", $botonesAgregar.length);
 
         $botonesAgregar.each(function() {
             const $boton = $(this);
@@ -2834,51 +2844,46 @@ function reloadlines(){
                 const $cajaHijo = $(`.min_persona_id_${idHijo}`);
                 if ($cajaHijo.length > 0) {
                     dibujarLineaSVG($boton, $cajaHijo);
-                } else {
-                    console.log("No se encontró el hijo con ID:", idHijo, "para el botón");
                 }
             }
         });
 
-        console.log("Líneas dibujadas");
     }, 200); // Espera 200ms para que el DOM se actualice completamente
 }
 
 function dibujarLineaSVG($caja1, $caja2) {
-    if ($caja2.length === 0) {
+    if ($caja1.length === 0 || $caja2.length === 0) {
         return;
     }
 
     // Obtener datos de posición
-    const col1 = parseInt($caja1.attr('data-column'));
-    const row1 = parseInt($caja1.attr('data-row'));
-    const containerY1 = parseFloat($caja1.attr('data-container-y'));
-    const containerHeight1 = parseFloat($caja1.attr('data-container-height'));
+    const lineLayer = document.getElementById('mylines');
 
-    const col2 = parseInt($caja2.attr('data-column'));
-    const row2 = parseInt($caja2.attr('data-row'));
-    const containerY2 = parseFloat($caja2.attr('data-container-y'));
-    const containerHeight2 = parseFloat($caja2.attr('data-container-height'));
+    if (!lineLayer) {
+        return;
+    }
 
-    const columnWidth = 300;
-    const initialOffset = 20;
+    const layerRect = lineLayer.getBoundingClientRect();
+    const rect1 = $caja1[0].getBoundingClientRect();
+    const rect2 = $caja2[0].getBoundingClientRect();
+    const zoom = zoomLevel || 1;
+    const x1 = ((rect1.left + rect1.width / 2) - layerRect.left) / zoom;
+    const y1 = ((rect1.top + rect1.height / 2) - layerRect.top) / zoom;
+    const x2 = ((rect2.left + rect2.width / 2) - layerRect.left) / zoom;
+    const y2 = ((rect2.top + rect2.height / 2) - layerRect.top) / zoom;
 
-    // Calcular centros exactos (centro del contenedor)
-    const x1 = (col1 * columnWidth) + initialOffset + (columnWidth / 2);
-    const y1 = containerY1 + (containerHeight1 / 2);
+    const linesSvg = document.getElementById('tree-lines-svg');
 
-    const x2 = (col2 * columnWidth) + initialOffset + (columnWidth / 2);
-    const y2 = containerY2 + (containerHeight2 / 2);
+    if (!linesSvg) {
+        return;
+    }
 
-    // Crear SVG
-    const svg = `<svg class="linea_conexion" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index: 0;">
-                    <line x1="${x1}" y1="${y1}"
-                          x2="${x2}" y2="${y2}"
-                          stroke="#093143"
-                          stroke-width="2" />
-                </svg>`;
-
-    $('#mylines').append(svg);
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', `M ${x1} ${y1} C ${(x1 + x2) / 2} ${y1}, ${(x1 + x2) / 2} ${y2}, ${x2} ${y2}`);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', '#093143');
+    path.setAttribute('stroke-width', '1.5');
+    linesSvg.appendChild(path);
 }
 
     $('#modeview').on('change', function(){

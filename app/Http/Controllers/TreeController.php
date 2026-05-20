@@ -193,122 +193,75 @@ class TreeController extends Controller
 
     private function construirColumnas(array $arreglo, array $personaInicio): array
     {
-        // ── Calcular generaciones desde el individuo hacia arriba ─────────
-        $generaciones = [$personaInicio['id'] => 1];
-        $porRevisar   = [$personaInicio];
-
-        while (!empty($porRevisar)) {
-            $siguientes = [];
-
-            foreach ($porRevisar as $persona) {
-                foreach (['idPadreNew', 'idMadreNew'] as $campo) {
-                    if (empty($persona[$campo])) {
-                        continue;
-                    }
-
-                    foreach ($arreglo as $candidato) {
-                        if ($candidato['id'] == $persona[$campo]) {
-                            if (!isset($generaciones[$candidato['id']])) {
-                                $generaciones[$candidato['id']] = $generaciones[$persona['id']] + 1;
-                                $siguientes[] = $candidato;
-                            }
-                            break;
-                        }
-                    }
-                }
+        $personasPorId = [];
+        foreach ($arreglo as $persona) {
+            if (!empty($persona['id'])) {
+                $personasPorId[(string) $persona['id']] = $persona;
             }
-
-            $porRevisar = $siguientes;
         }
 
-        // ── Recalcular hasta estabilizar ──────────────────────────────────
-        $cambio = true;
-        while ($cambio) {
-            $cambio = false;
-            foreach ($arreglo as $persona) {
-                if (!isset($generaciones[$persona['id']])) {
+        $columnasparatabla = [];
+        $siguienteY = 80;
+        $saltoVertical = 150;
+
+        $ubicarPersona = function ($personaId, int $generacion, array $ruta = []) use (&$ubicarPersona, &$columnasparatabla, &$siguienteY, $saltoVertical, $personasPorId): float {
+            $personaKey = (string) $personaId;
+
+            if ($personaKey === '' || !isset($personasPorId[$personaKey]) || isset($ruta[$personaKey])) {
+                $siguienteY += $saltoVertical;
+                return $siguienteY;
+            }
+
+            $persona = $personasPorId[$personaKey];
+            $ruta[$personaKey] = true;
+            $padresY = [];
+
+            foreach ([['idPadreNew', 'm'], ['idMadreNew', 'f']] as [$campo, $sexo]) {
+                $padreKey = !empty($persona[$campo]) ? (string) $persona[$campo] : '';
+
+                if ($padreKey !== '' && isset($personasPorId[$padreKey])) {
+                    $padresY[] = $ubicarPersona($persona[$campo], $generacion + 1, $ruta);
                     continue;
                 }
 
-                $genPadre  = isset($generaciones[$persona['idPadreNew']]) ? $generaciones[$persona['idPadreNew']] : 0;
-                $genMadre  = isset($generaciones[$persona['idMadreNew']]) ? $generaciones[$persona['idMadreNew']] : 0;
-                $genActual = max($genPadre, $genMadre) + 1;
-
-                if ($generaciones[$persona['id']] !== $genActual) {
-                    $generaciones[$persona['id']] = $genActual;
-                    $cambio = true;
-                }
+                $siguienteY += $saltoVertical;
+                $padresY[] = $siguienteY;
+                $columnasparatabla[$generacion + 1][] = [
+                    'showbtn' => 1,
+                    'showbtnsex' => $sexo,
+                    'id_hijo' => $personaId,
+                    'layout_y' => $siguienteY,
+                ];
             }
+
+            $persona['showbtn'] = 2;
+            $persona['layout_y'] = count($padresY) > 0
+                ? array_sum($padresY) / count($padresY)
+                : ($siguienteY += $saltoVertical);
+
+            $columnasparatabla[$generacion][] = $persona;
+
+            return $persona['layout_y'];
+        };
+
+        $ubicarPersona($personaInicio['id'], 0);
+        ksort($columnasparatabla);
+
+        foreach ($columnasparatabla as $generacion => $columna) {
+            usort($columna, fn ($a, $b) => ($a['layout_y'] ?? 0) <=> ($b['layout_y'] ?? 0));
+
+            foreach ($columna as $index => $persona) {
+                if (($persona['showbtn'] ?? 0) === 2) {
+                    $persona['PersonaIDNew'] = $index;
+                }
+
+                $columna[$index] = $persona;
+            }
+
+            $columnasparatabla[$generacion] = array_values($columna);
         }
 
-        $maxGeneraciones = !empty($generaciones) ? max($generaciones) + 1 : 1;
-
-        // ── Construir columnas ────────────────────────────────────────────
-        $columnasparatabla    = [];
-        $columnasparatabla[0] = [$personaInicio];
-        $columnasparatabla[0][0]['showbtn'] = 2;
-
-        for ($i = 1; $i < $maxGeneraciones; $i++) {
-            foreach ($columnasparatabla[$i - 1] as $persona2) {
-                if (($persona2['showbtn'] ?? 2) !== 2) {
-                    continue;
-                }
-
-                if (!isset($columnasparatabla[$i])) {
-                    $columnasparatabla[$i] = [];
-                }
-
-                $j = count($columnasparatabla[$i]);
-
-                // ── Padre ─────────────────────────────────────────────────
-                if (empty($persona2['idPadreNew'])) {
-                    $columnasparatabla[$i][$j]['showbtn'] = match (true) {
-                        $persona2['showbtn'] == 0 => 0,
-                        $persona2['showbtn'] == 1 => 0,
-                        default                   => 1,
-                    };
-
-                    if ($columnasparatabla[$i][$j]['showbtn'] === 1) {
-                        $columnasparatabla[$i][$j]['showbtnsex'] = 'm';
-                        $columnasparatabla[$i][$j]['id_hijo']    = $persona2['id'];
-                    }
-                } else {
-                    foreach ($arreglo as $candidato) {
-                        if ($candidato['id'] == $persona2['idPadreNew']) {
-                            $columnasparatabla[$i][$j]            = $candidato;
-                            $columnasparatabla[$i][$j]['showbtn'] = 2;
-                            break;
-                        }
-                    }
-                }
-
-                $j++;
-
-                // ── Madre ─────────────────────────────────────────────────
-                if (empty($persona2['idMadreNew'])) {
-                    $columnasparatabla[$i][$j]['showbtn'] = match (true) {
-                        $persona2['showbtn'] == 0 => 0,
-                        $persona2['showbtn'] == 1 => 0,
-                        default                   => 1,
-                    };
-
-                    if ($columnasparatabla[$i][$j]['showbtn'] === 1) {
-                        $columnasparatabla[$i][$j]['showbtnsex'] = 'f';
-                        $columnasparatabla[$i][$j]['id_hijo']    = $persona2['id'];
-                    }
-                } else {
-                    foreach ($arreglo as $candidato) {
-                        if ($candidato['id'] == $persona2['idMadreNew']) {
-                            $columnasparatabla[$i][$j]            = $candidato;
-                            $columnasparatabla[$i][$j]['showbtn'] = 2;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        return array_values(array_filter($columnasparatabla, fn ($columna) => count($columna) > 0));
+        return array_values($columnasparatabla);
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -446,9 +399,7 @@ class TreeController extends Controller
         $checkBtn       = 'no';
         $parentnumber   = 0;
 
-        $htmlGenerado = view('arboles.vistatree', compact(
-            'generacionBase', 'columnasparatabla', 'parentescos', 'checkBtn', 'parentnumber'
-        ))->render();
+        $htmlGenerado = '';
 
         return view('arboles.tree', compact(
             'generacionBase', 'user', 'IDCliente', 'people',
@@ -512,9 +463,7 @@ class TreeController extends Controller
         $checkBtn       = 'si';
         $parentnumber   = $parenttocheck;
 
-        $htmlGenerado = view('arboles.vistatree', compact(
-            'generacionBase', 'columnasparatabla', 'parentescos', 'checkBtn', 'parentnumber'
-        ))->render();
+        $htmlGenerado = '';
 
         return view('arboles.tree', compact(
             'generacionBase', 'user', 'IDCliente', 'people',
