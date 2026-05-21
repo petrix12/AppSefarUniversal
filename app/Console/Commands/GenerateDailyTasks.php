@@ -6,6 +6,8 @@ namespace App\Console\Commands;
 use App\Mail\DailyTasksAssignedMail;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\HubspotDealOwnerSyncService;
+use App\Services\HubspotService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +25,7 @@ class GenerateDailyTasks extends Command
 
     protected $description = 'Genera tareas diarias por asesor respetando cupos, evitando repetidos semanales y omitiendo desinteresados.';
 
-    public function handle(): int
+    public function handle(HubspotService $hubspot, HubspotDealOwnerSyncService $dealOwnerSync): int
     {
         $date   = $this->option('date') ? Carbon::parse($this->option('date')) : today();
         $base   = (int) ($this->option('per') ?? 10);
@@ -32,13 +34,27 @@ class GenerateDailyTasks extends Command
 
         $this->info("📅 Fecha: {$date->toDateString()} | Base: {$base} tareas | " . ($dryRun ? 'DRY-RUN' : 'REAL'));
 
-        // 1) Asesores activos
-        $advisors = User::role('Coord. de Nacionalidad y Genealogía')
-            ->where('exclude_from_task_assignment', false)
-            ->get(['id', 'name', 'task_assignment_daily_limit']);
+        // 1) Asesores activos: solo usuarios vinculados a un Owner real de HubSpot.
+        $advisors = User::query()
+            ->join('hubspot_owner_user as hou', 'hou.user_id', '=', 'users.id')
+            ->join('hubspot_owners as ho', 'ho.id', '=', 'hou.hubspot_owner_id')
+            ->where('ho.active', true)
+            ->whereNotNull('hou.hubspot_owner_id')
+            ->whereRaw("TRIM(hou.hubspot_owner_id) <> ''")
+            ->where('users.exclude_from_task_assignment', false)
+            ->orderBy('users.name')
+            ->select([
+                'users.id',
+                'users.name',
+                'users.email',
+                'users.task_assignment_daily_limit',
+                'hou.hubspot_owner_id as hs_owner_id',
+                'ho.name as hs_owner_name',
+            ])
+            ->get();
 
         if ($advisors->isEmpty()) {
-            $this->error('No hay usuarios con rol Coord. de Nacionalidad y Genealogía.');
+            $this->error('No hay usuarios asociados a HubSpot Owners activos y habilitados para tareas.');
             return self::FAILURE;
         }
 
@@ -51,6 +67,8 @@ class GenerateDailyTasks extends Command
             ->select(
                 'u.id as contact_id',
                 'u.name as contact_name',
+                'u.email as contact_email',
+                'u.hs_id as contact_hs_id',
                 'u.owner_id',
                 'l.id as list_id',
                 'l.name as list_name'
@@ -66,6 +84,7 @@ class GenerateDailyTasks extends Command
 
         $totalCreated = 0;
         $totalReassignedLocal = 0;
+        $totalSkippedByHubspot = 0;
         $assignedContactIdsThisRun = [];
         $disinterestedContacts = Task::query()
             ->where(function ($q) {
@@ -170,11 +189,24 @@ class GenerateDailyTasks extends Command
             foreach ($candidates as $contact) {
                 $ownerChanged = (int) $contact->owner_id !== (int) $advisor->id;
                 $ownerNote = $ownerChanged ? " | owner previo={$contact->owner_id}" : '';
-                $this->line("   + Tarea -> {$contact->contact_name} | Lista: {$contact->list_name} (contact_id={$contact->contact_id}){$ownerNote}");
+                $hubspotNote = $ownerChanged ? " | HubSpot owner destino={$advisor->hs_owner_id}" : '';
+                $this->line("   + Tarea -> {$contact->contact_name} | Lista: {$contact->list_name} (contact_id={$contact->contact_id}){$ownerNote}{$hubspotNote}");
 
                 if (! $dryRun) {
                     if ($ownerChanged) {
-                        User::whereKey($contact->contact_id)->update(['owner_id' => $advisor->id]);
+                        $synced = $this->syncContactOwnerForTaskGeneration(
+                            $hubspot,
+                            $dealOwnerSync,
+                            $contact,
+                            $advisor
+                        );
+
+                        if (! $synced) {
+                            $assignedContactIdsThisRun[] = (int) $contact->contact_id;
+                            $totalSkippedByHubspot++;
+                            continue;
+                        }
+
                         $totalReassignedLocal++;
                     }
 
@@ -204,6 +236,7 @@ class GenerateDailyTasks extends Command
 
         $this->info("✅ Tareas " . ($dryRun ? 'simuladas' : 'creadas') . ": {$totalCreated}");
         $this->info("Contactos reasignados localmente por cupo: {$totalReassignedLocal}");
+        $this->info("Contactos omitidos por no poder sincronizar HubSpot: {$totalSkippedByHubspot}");
         return self::SUCCESS;
     }
 
