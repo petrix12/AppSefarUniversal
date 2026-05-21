@@ -131,6 +131,8 @@ Route::middleware(['auth'])->prefix('tasks')->name('tasks.')->group(function () 
          Route::get('/reports/export',  [AdminTaskController::class, 'exportReport'])->name('reports.export');
          Route::post('/generate-daily', [AdminTaskController::class, 'generateDaily'])->name('generate-daily');
          Route::post('/',               [AdminTaskController::class, 'store'])->name('store');
+         Route::delete('/bulk',          [AdminTaskController::class, 'bulkDestroy'])->name('bulk-destroy');
+         Route::delete('/bulk-filtered', [AdminTaskController::class, 'bulkDestroyFiltered'])->name('bulk-destroy-filtered');
 
          Route::get('/{task}/edit',     [AdminTaskController::class, 'edit'])->name('edit');
          Route::put('/{task}',          [AdminTaskController::class, 'update'])->name('update');

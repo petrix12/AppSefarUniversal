@@ -12,6 +12,11 @@
 @section('content')
     @php
         $salesTagOptions = \App\Models\Task::salesTagOptions();
+        $currentTaskFilters = [
+            'date' => $date->toDateString(),
+            'user_id' => request('user_id'),
+            'status' => request('status'),
+        ];
     @endphp
 
     @if(session('success'))
@@ -58,7 +63,7 @@
 
     {{-- Filtros + Acciones --}}
     <div class="card card-outline card-secondary mb-3">
-        <div class="card-body py-2 d-flex flex-wrap align-items-center gap-2">
+        <div class="card-body py-2 d-flex flex-wrap align-items-center gap-2 task-admin-actions">
 
             {{-- ✅ FORM GET: filtros de fecha, asesor, estado --}}
             <form method="GET" class="form-inline flex-wrap gap-2 mr-2">
@@ -96,6 +101,31 @@
                 <i class="fas fa-file-excel mr-1"></i>Reportes
             </a>
 
+            <form id="bulk-delete-form" method="POST" action="{{ route('tasks.admin.bulk-destroy') }}" class="d-inline mr-2">
+                @csrf
+                @method('DELETE')
+                @foreach($currentTaskFilters as $filterName => $filterValue)
+                    <input type="hidden" name="{{ $filterName }}" value="{{ $filterValue }}">
+                @endforeach
+                <button type="submit" class="btn btn-sm btn-outline-danger" id="bulkDeleteButton" disabled>
+                    <i class="fas fa-trash-alt mr-1"></i>Borrar seleccionadas
+                    <span class="badge badge-danger ml-1" id="bulkDeleteCount">0</span>
+                </button>
+            </form>
+
+            <form method="POST" action="{{ route('tasks.admin.bulk-destroy-filtered') }}" class="d-inline mr-2">
+                @csrf
+                @method('DELETE')
+                @foreach($currentTaskFilters as $filterName => $filterValue)
+                    <input type="hidden" name="{{ $filterName }}" value="{{ $filterValue }}">
+                @endforeach
+                <button type="submit" class="btn btn-sm btn-outline-danger"
+                        {{ $filteredTaskCount < 1 ? 'disabled' : '' }}
+                        onclick="return confirm('Se eliminaran {{ $filteredTaskCount }} tarea(s) segun los filtros actuales. ¿Continuar?')">
+                    <i class="fas fa-filter mr-1"></i>Borrar filtradas ({{ $filteredTaskCount }})
+                </button>
+            </form>
+
             {{-- ✅ FORM POST: completamente independiente, fuera del GET --}}
             <form method="POST" action="{{ route('tasks.admin.generate-daily') }}" class="d-inline">
                 @csrf
@@ -112,9 +142,13 @@
     {{-- Tabla --}}
     <div class="card card-outline card-primary">
         <div class="card-body p-0">
+            <div class="table-responsive task-table-responsive">
             <table class="table table-hover table-sm mb-0">
                 <thead class="thead-dark">
                     <tr>
+                        <th class="task-select-col">
+                            <input type="checkbox" id="selectAllTasks" title="Seleccionar visibles">
+                        </th>
                         <th>#</th>
                         <th>Asesor</th>
                         <th>Contacto</th>
@@ -140,6 +174,14 @@
                             ];
                         @endphp
                         <tr>
+                            <td class="task-select-col">
+                                <input type="checkbox"
+                                       class="task-bulk-checkbox"
+                                       name="task_ids[]"
+                                       value="{{ $task->id }}"
+                                       form="bulk-delete-form"
+                                       aria-label="Seleccionar tarea #{{ $task->id }}">
+                            </td>
                             <td>{{ $task->id }}</td>
                             <td>{{ $task->assignee?->name ?? '—' }}</td>
                             <td>{{ $task->contact?->name ?? '—' }}</td>
@@ -181,13 +223,14 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="text-center py-4 text-muted">
+                            <td colspan="10" class="text-center py-4 text-muted">
                                 Sin tareas para los filtros aplicados.
                             </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
+            </div>
 
             @foreach($tasks as $task)
                 @php
@@ -414,11 +457,36 @@
             height: 100% !important;
         }
 
+        .task-admin-actions {
+            gap: .5rem;
+        }
+
+        .task-select-col {
+            width: 38px;
+            text-align: center;
+            vertical-align: middle !important;
+        }
+
+        .task-table-responsive {
+            min-height: 160px;
+        }
+
         @media (max-width: 767.98px) {
             .tasks-chart-wrap {
                 height: 280px;
                 min-height: 280px;
                 max-height: 280px;
+            }
+
+            .task-admin-actions > form,
+            .task-admin-actions > a {
+                width: 100%;
+                margin-right: 0 !important;
+            }
+
+            .task-admin-actions .btn,
+            .task-admin-actions .form-control {
+                width: 100%;
             }
         }
     </style>
@@ -428,44 +496,96 @@
 {{-- Chart.js desde CDN (sin instalación) --}}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-    const ctx = document.getElementById('taskChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: @json($chartData['labels']),
-            datasets: [
-                {
-                    label: 'Pendientes',
-                    data: @json($chartData['pending']),
-                    backgroundColor: 'rgba(255, 193, 7, 0.8)',
-                },
-                {
-                    label: 'En curso',
-                    data: @json($chartData['progress']),
-                    backgroundColor: 'rgba(0, 123, 255, 0.8)',
-                },
-                {
-                    label: 'Completadas',
-                    data: @json($chartData['done']),
-                    backgroundColor: 'rgba(40, 167, 69, 0.8)',
-                },
-                {
-                    label: 'Canceladas',
-                    data: @json($chartData['canceled']),
-                    backgroundColor: 'rgba(220, 53, 69, 0.8)',
-                },
-            ],
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            resizeDelay: 200,
-            plugins: { legend: { position: 'top' } },
-            scales: {
-                x: { stacked: true },
-                y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } },
+    const chartCanvas = document.getElementById('taskChart');
+
+    if (window.Chart && chartCanvas) {
+        const ctx = chartCanvas.getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: @json($chartData['labels']),
+                datasets: [
+                    {
+                        label: 'Pendientes',
+                        data: @json($chartData['pending']),
+                        backgroundColor: 'rgba(255, 193, 7, 0.8)',
+                    },
+                    {
+                        label: 'En curso',
+                        data: @json($chartData['progress']),
+                        backgroundColor: 'rgba(0, 123, 255, 0.8)',
+                    },
+                    {
+                        label: 'Completadas',
+                        data: @json($chartData['done']),
+                        backgroundColor: 'rgba(40, 167, 69, 0.8)',
+                    },
+                    {
+                        label: 'Canceladas',
+                        data: @json($chartData['canceled']),
+                        backgroundColor: 'rgba(220, 53, 69, 0.8)',
+                    },
+                ],
             },
-        },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                resizeDelay: 200,
+                plugins: { legend: { position: 'top' } },
+                scales: {
+                    x: { stacked: true },
+                    y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } },
+                },
+            },
+        });
+    }
+
+    const selectAllTasks = document.getElementById('selectAllTasks');
+    const taskCheckboxes = Array.from(document.querySelectorAll('.task-bulk-checkbox'));
+    const bulkDeleteForm = document.getElementById('bulk-delete-form');
+    const bulkDeleteButton = document.getElementById('bulkDeleteButton');
+    const bulkDeleteCount = document.getElementById('bulkDeleteCount');
+
+    function updateBulkDeleteState() {
+        const selected = taskCheckboxes.filter((checkbox) => checkbox.checked).length;
+
+        if (bulkDeleteButton) {
+            bulkDeleteButton.disabled = selected < 1;
+        }
+
+        if (bulkDeleteCount) {
+            bulkDeleteCount.textContent = selected;
+        }
+
+        if (selectAllTasks) {
+            selectAllTasks.checked = selected > 0 && selected === taskCheckboxes.length;
+            selectAllTasks.indeterminate = selected > 0 && selected < taskCheckboxes.length;
+        }
+    }
+
+    if (selectAllTasks) {
+        selectAllTasks.addEventListener('change', () => {
+            taskCheckboxes.forEach((checkbox) => {
+                checkbox.checked = selectAllTasks.checked;
+            });
+            updateBulkDeleteState();
+        });
+    }
+
+    taskCheckboxes.forEach((checkbox) => {
+        checkbox.addEventListener('change', updateBulkDeleteState);
     });
+
+    if (bulkDeleteForm) {
+        bulkDeleteForm.addEventListener('submit', (event) => {
+            const selected = taskCheckboxes.filter((checkbox) => checkbox.checked).length;
+
+            if (selected < 1 || !confirm(`Se eliminaran ${selected} tarea(s) seleccionada(s). ¿Continuar?`)) {
+                event.preventDefault();
+            }
+        });
+    }
+
+    updateBulkDeleteState();
 </script>
 @stop

@@ -39,6 +39,7 @@ class AdminTaskController extends Controller
             $query->where('status', $request->input('status'));
         }
 
+        $filteredTaskCount = (clone $query)->count();
         $tasks    = $query->orderBy('user_id')->paginate(30)->withQueryString();
         $advisors = User::whereDoesntHave('roles', function ($q) {
         $q->where('name', 'Cliente');
@@ -47,7 +48,7 @@ class AdminTaskController extends Controller
         $stats    = $this->getDayStats($date);
         $chartData = $this->buildChartData($date);
 
-        return view('tasks.admin.index', compact('tasks', 'date', 'advisors', 'stats', 'chartData'));
+        return view('tasks.admin.index', compact('tasks', 'date', 'advisors', 'stats', 'chartData', 'filteredTaskCount'));
     }
 
     // ── Crear manual ─────────────────────────────────────────
@@ -136,6 +137,51 @@ class AdminTaskController extends Controller
         $task->delete();
 
         return back()->with('success', 'Tarea eliminada.');
+    }
+
+    public function bulkDestroy(Request $request)
+    {
+        $data = $request->validate([
+            'task_ids' => ['required', 'array', 'min:1'],
+            'task_ids.*' => ['integer', 'exists:tasks,id'],
+            'date' => ['nullable', 'date'],
+            'user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'status' => ['nullable', Rule::in(array_keys($this->taskStatusLabels()))],
+        ]);
+
+        $deleted = Task::query()
+            ->whereKey($data['task_ids'])
+            ->delete();
+
+        return redirect()
+            ->route('tasks.admin.index', $this->taskIndexFilters($data))
+            ->with('success', "{$deleted} tarea(s) eliminada(s).");
+    }
+
+    public function bulkDestroyFiltered(Request $request)
+    {
+        $data = $request->validate([
+            'date' => ['required', 'date'],
+            'user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'status' => ['nullable', Rule::in(array_keys($this->taskStatusLabels()))],
+        ]);
+
+        $date = Carbon::parse($data['date']);
+        $query = Task::query()->forDate($date);
+
+        if (! empty($data['user_id'])) {
+            $query->where('user_id', $data['user_id']);
+        }
+
+        if (! empty($data['status'])) {
+            $query->where('status', $data['status']);
+        }
+
+        $deleted = $query->delete();
+
+        return redirect()
+            ->route('tasks.admin.index', $this->taskIndexFilters($data))
+            ->with('success', "{$deleted} tarea(s) eliminada(s) segun los filtros.");
     }
 
     // ── Resumen por asesor ────────────────────────────────────
@@ -374,5 +420,14 @@ class AdminTaskController extends Controller
             'canceled' => (int) ($byStatus[Task::STATUS_CANCELED] ?? 0),
             'overdue' => $overdue,
         ];
+    }
+
+    private function taskIndexFilters(array $data): array
+    {
+        return array_filter([
+            'date' => $data['date'] ?? null,
+            'user_id' => $data['user_id'] ?? null,
+            'status' => $data['status'] ?? null,
+        ], fn ($value) => filled($value));
     }
 }
