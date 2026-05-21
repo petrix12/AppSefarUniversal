@@ -128,7 +128,13 @@ class FamilyGroupService
 
         $fingerprint = $this->anchorFingerprint($anchorPassports);
 
-        if (empty($fingerprint['document_tokens']) && empty($fingerprint['name_keys']) && empty($fingerprint['surname_tokens'])) {
+        if (
+            empty($fingerprint['document_tokens'])
+            && empty($fingerprint['name_keys'])
+            && empty($fingerprint['sorted_name_keys'])
+            && empty($fingerprint['given_name_tokens'])
+            && empty($fingerprint['surname_tokens'])
+        ) {
             return collect();
         }
 
@@ -210,27 +216,44 @@ class FamilyGroupService
     private function anchorFingerprint(array $passports): array
     {
         $people = Agcliente::whereIn('IDCliente', $passports)
-            ->select(['id', 'IDCliente', 'Nombres', 'Apellidos', 'NPasaporte', 'NDocIdent'])
+            ->select([
+                'id', 'IDCliente', 'Nombres', 'Apellidos', 'NPasaporte', 'NDocIdent',
+                'AnhoNac', 'LugarNac',
+            ])
             ->get();
         $users = User::whereIn('passport', $passports)->get();
 
         $documentTokens = [];
         $nameKeys = [];
+        $sortedNameKeys = [];
+        $givenNameTokens = [];
         $surnameTokens = [];
+        $nameSurnamePairs = [];
+        $birthYears = [];
+        $birthPlaceTokens = [];
 
         foreach ($people as $person) {
             foreach ($this->documentTokens($person->NPasaporte, $person->NDocIdent) as $token) {
                 $documentTokens[$token] = true;
             }
 
-            $nameKey = $this->nameKey($person->Nombres, $person->Apellidos);
-            if ($nameKey !== '') {
-                $nameKeys[$nameKey] = true;
-            }
+            $signature = $this->personNameSignature(
+                $person->Nombres,
+                $person->Apellidos,
+                $person->AnhoNac,
+                $person->LugarNac
+            );
 
-            foreach ($this->surnameTokens((string) $person->Apellidos) as $token) {
-                $surnameTokens[$token] = true;
-            }
+            $this->mergeSignatureIntoFingerprint(
+                $signature,
+                $nameKeys,
+                $sortedNameKeys,
+                $givenNameTokens,
+                $surnameTokens,
+                $nameSurnamePairs,
+                $birthYears,
+                $birthPlaceTokens
+            );
         }
 
         foreach ($users as $user) {
@@ -238,20 +261,32 @@ class FamilyGroupService
                 $documentTokens[$token] = true;
             }
 
-            $nameKey = $this->normalizeText($user->name ?? '');
-            if ($nameKey !== '') {
-                $nameKeys[$nameKey] = true;
-            }
+            $signature = $this->personNameSignature(
+                $user->name ?? '',
+                $user->apellidos ?? ''
+            );
 
-            foreach ($this->surnameTokens(trim(($user->apellidos ?? '') . ' ' . ($user->name ?? ''))) as $token) {
-                $surnameTokens[$token] = true;
-            }
+            $this->mergeSignatureIntoFingerprint(
+                $signature,
+                $nameKeys,
+                $sortedNameKeys,
+                $givenNameTokens,
+                $surnameTokens,
+                $nameSurnamePairs,
+                $birthYears,
+                $birthPlaceTokens
+            );
         }
 
         return [
             'document_tokens' => $documentTokens,
             'name_keys' => $nameKeys,
+            'sorted_name_keys' => $sortedNameKeys,
+            'given_name_tokens' => $givenNameTokens,
             'surname_tokens' => $surnameTokens,
+            'name_surname_pairs' => $nameSurnamePairs,
+            'birth_years' => $birthYears,
+            'birth_place_tokens' => $birthPlaceTokens,
         ];
     }
 
@@ -272,30 +307,217 @@ class FamilyGroupService
             $reasons[] = 'Pasaporte o documento coincide';
         }
 
-        $nameKey = $this->nameKey($person->Nombres, $person->Apellidos);
-        if ($nameKey !== '' && isset($fingerprint['name_keys'][$nameKey])) {
-            $score += 85;
-            $types[] = 'nombre';
+        $signature = $this->personNameSignature(
+            $person->Nombres,
+            $person->Apellidos,
+            $person->AnhoNac,
+            $person->LugarNac
+        );
+
+        if ($signature['full_key'] !== '' && isset($fingerprint['name_keys'][$signature['full_key']])) {
+            $score += 90;
+            $types[] = 'nombre+apellido';
             $reasons[] = 'Nombre completo coincide';
+        } elseif ($signature['sorted_key'] !== '' && isset($fingerprint['sorted_name_keys'][$signature['sorted_key']])) {
+            $score += 82;
+            $types[] = 'nombre+apellido';
+            $reasons[] = 'Nombre completo coincide aunque cambie el orden';
         }
 
+        $surnameReferenceTokens = array_keys($fingerprint['surname_tokens']);
+        $givenNameReferenceTokens = array_keys($fingerprint['given_name_tokens']);
+
         $surnameMatches = array_values(array_intersect(
-            $this->surnameTokens((string) $person->Apellidos),
-            array_keys($fingerprint['surname_tokens'])
+            $signature['surname_tokens'],
+            $surnameReferenceTokens
         ));
 
+        $givenNameMatches = array_values(array_intersect(
+            $signature['given_tokens'],
+            $givenNameReferenceTokens
+        ));
+
+        $pairMatches = $this->nameSurnamePairMatches($signature, $fingerprint['name_surname_pairs']);
+        $fuzzySurnameMatches = empty($surnameMatches)
+            ? $this->fuzzyTokenMatches($signature['surname_tokens'], $surnameReferenceTokens)
+            : [];
+        $fuzzyGivenNameMatches = empty($givenNameMatches)
+            ? $this->fuzzyTokenMatches($signature['given_tokens'], $givenNameReferenceTokens)
+            : [];
+
+        if (!empty($pairMatches)) {
+            $score += count($surnameMatches) >= 2 ? 82 : 74;
+            $types[] = 'nombre+apellido';
+            $reasons[] = 'Nombre y apellido coinciden: ' . $this->tokensLabel($pairMatches);
+        } elseif (!empty($givenNameMatches) && !empty($surnameMatches)) {
+            $score += count($surnameMatches) >= 2 ? 74 : 66;
+            $types[] = 'nombre+apellido';
+            $reasons[] = 'Nombre y apellido compatibles: ' . $this->tokensLabel(array_merge($givenNameMatches, $surnameMatches));
+        } elseif ((!empty($givenNameMatches) && !empty($fuzzySurnameMatches)) || (!empty($fuzzyGivenNameMatches) && !empty($surnameMatches))) {
+            $score += 56;
+            $types[] = 'nombre+apellido similar';
+            $reasons[] = 'Nombre y apellido similares: ' . $this->tokensLabel(array_merge(
+                $givenNameMatches,
+                $surnameMatches,
+                $fuzzyGivenNameMatches,
+                $fuzzySurnameMatches
+            ));
+        }
+
         if (!empty($surnameMatches)) {
-            $surnameScore = count($surnameMatches) >= 2 ? 58 : 42;
+            $surnameScore = count($surnameMatches) >= 2 ? 58 : 38;
             $score += $surnameScore;
             $types[] = 'apellido';
-            $reasons[] = 'Apellido compatible: ' . implode(', ', array_slice($surnameMatches, 0, 3));
+            $reasons[] = 'Apellido compatible: ' . $this->tokensLabel($surnameMatches);
+        } elseif (!empty($fuzzySurnameMatches)) {
+            $score += 28;
+            $types[] = 'apellido similar';
+            $reasons[] = 'Apellido similar: ' . $this->tokensLabel($fuzzySurnameMatches);
+        }
+
+        if (!empty($givenNameMatches)) {
+            $score += 12;
+            $types[] = 'nombre';
+            $reasons[] = 'Nombre compatible: ' . $this->tokensLabel($givenNameMatches);
+        } elseif (!empty($fuzzyGivenNameMatches)) {
+            $score += 6;
+            $types[] = 'nombre similar';
+            $reasons[] = 'Nombre similar: ' . $this->tokensLabel($fuzzyGivenNameMatches);
+        }
+
+        if ($score > 0 && $signature['birth_year'] !== null && isset($fingerprint['birth_years'][$signature['birth_year']])) {
+            $score += 8;
+            $types[] = 'fecha';
+            $reasons[] = 'Ano de nacimiento compatible: ' . $signature['birth_year'];
+        }
+
+        $birthPlaceMatches = array_values(array_intersect(
+            $signature['birth_place_tokens'],
+            array_keys($fingerprint['birth_place_tokens'])
+        ));
+
+        if ($score > 0 && !empty($birthPlaceMatches)) {
+            $score += 4;
+            $types[] = 'lugar';
+            $reasons[] = 'Lugar de nacimiento compatible: ' . $this->tokensLabel($birthPlaceMatches);
         }
 
         return [
             'score' => min(100, $score),
-            'reasons' => $reasons,
-            'types' => $types,
+            'reasons' => array_values(array_unique($reasons)),
+            'types' => array_values(array_unique($types)),
         ];
+    }
+
+    private function mergeSignatureIntoFingerprint(
+        array $signature,
+        array &$nameKeys,
+        array &$sortedNameKeys,
+        array &$givenNameTokens,
+        array &$surnameTokens,
+        array &$nameSurnamePairs,
+        array &$birthYears,
+        array &$birthPlaceTokens
+    ): void {
+        if ($signature['full_key'] !== '') {
+            $nameKeys[$signature['full_key']] = true;
+        }
+
+        if ($signature['sorted_key'] !== '') {
+            $sortedNameKeys[$signature['sorted_key']] = true;
+        }
+
+        foreach ($signature['given_tokens'] as $token) {
+            $givenNameTokens[$token] = true;
+        }
+
+        foreach ($signature['surname_tokens'] as $token) {
+            $surnameTokens[$token] = true;
+        }
+
+        foreach ($signature['name_surname_pairs'] as $pair) {
+            $nameSurnamePairs[$pair] = true;
+        }
+
+        if ($signature['birth_year'] !== null) {
+            $birthYears[$signature['birth_year']] = true;
+        }
+
+        foreach ($signature['birth_place_tokens'] as $token) {
+            $birthPlaceTokens[$token] = true;
+        }
+    }
+
+    private function personNameSignature(?string $names, ?string $surnames, mixed $birthYear = null, ?string $birthPlace = null): array
+    {
+        $givenTokens = $this->nameTokens((string) $names);
+        $surnameTokens = $this->surnameTokens((string) $surnames);
+        $allTokens = array_values(array_unique(array_merge($givenTokens, $surnameTokens)));
+        $sortedTokens = $allTokens;
+        sort($sortedTokens, SORT_STRING);
+
+        $pairs = [];
+        foreach ($givenTokens as $givenToken) {
+            foreach ($surnameTokens as $surnameToken) {
+                $pairs[] = $givenToken . '|' . $surnameToken;
+            }
+        }
+
+        return [
+            'full_key' => $this->nameKey($names, $surnames),
+            'sorted_key' => !empty($givenTokens) && !empty($surnameTokens) ? implode(' ', $sortedTokens) : '',
+            'given_tokens' => $givenTokens,
+            'surname_tokens' => $surnameTokens,
+            'all_tokens' => $allTokens,
+            'name_surname_pairs' => array_values(array_unique($pairs)),
+            'birth_year' => $this->yearToken($birthYear),
+            'birth_place_tokens' => $this->nameTokens((string) $birthPlace),
+        ];
+    }
+
+    private function nameSurnamePairMatches(array $signature, array $referencePairs): array
+    {
+        $matches = [];
+
+        foreach ($signature['name_surname_pairs'] as $pair) {
+            if (isset($referencePairs[$pair])) {
+                $matches[] = str_replace('|', ' ', $pair);
+            }
+        }
+
+        return array_values(array_unique($matches));
+    }
+
+    private function fuzzyTokenMatches(array $candidateTokens, array $referenceTokens): array
+    {
+        $matches = [];
+        $referenceTokens = array_values(array_unique($referenceTokens));
+
+        foreach (array_values(array_unique($candidateTokens)) as $candidateToken) {
+            if (strlen($candidateToken) < 5) {
+                continue;
+            }
+
+            foreach ($referenceTokens as $referenceToken) {
+                if (
+                    $candidateToken === $referenceToken
+                    || strlen($referenceToken) < 5
+                    || $candidateToken[0] !== $referenceToken[0]
+                    || abs(strlen($candidateToken) - strlen($referenceToken)) > 2
+                ) {
+                    continue;
+                }
+
+                $allowedDistance = max(strlen($candidateToken), strlen($referenceToken)) >= 8 ? 2 : 1;
+
+                if (levenshtein($candidateToken, $referenceToken) <= $allowedDistance) {
+                    $matches[] = $candidateToken . ' ~ ' . $referenceToken;
+                    break;
+                }
+            }
+        }
+
+        return array_values(array_unique($matches));
     }
 
     private function clientRecord(string $passport): array
@@ -365,6 +587,16 @@ class FamilyGroupService
         return $this->normalizeText(trim((string) $names . ' ' . (string) $surnames));
     }
 
+    private function nameTokens(string $value): array
+    {
+        $normalized = $this->normalizeText($value);
+        $parts = preg_split('/\s+/', $normalized, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        return array_values(array_unique(array_filter($parts, function (string $token): bool {
+            return strlen($token) >= 3 && !in_array($token, self::STOP_WORDS, true);
+        })));
+    }
+
     private function documentTokens(?string ...$values): array
     {
         $tokens = [];
@@ -379,6 +611,13 @@ class FamilyGroupService
         return array_values(array_unique($tokens));
     }
 
+    private function yearToken(mixed $value): ?string
+    {
+        $year = preg_replace('/\D/', '', (string) $value) ?? '';
+
+        return strlen($year) >= 4 ? substr($year, 0, 4) : null;
+    }
+
     private function surnameTokens(string $value): array
     {
         $normalized = $this->normalizeText($value);
@@ -387,6 +626,11 @@ class FamilyGroupService
         return array_values(array_unique(array_filter($parts, function (string $token): bool {
             return strlen($token) >= 4 && !in_array($token, self::STOP_WORDS, true);
         })));
+    }
+
+    private function tokensLabel(array $tokens): string
+    {
+        return implode(', ', array_slice(array_values(array_unique(array_filter($tokens))), 0, 4));
     }
 
     private function normalizeText(string $value): string
