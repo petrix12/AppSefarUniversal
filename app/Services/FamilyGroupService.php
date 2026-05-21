@@ -14,6 +14,7 @@ class FamilyGroupService
 {
     private const AUTO_ADD_THRESHOLD = 42;
     private const CANDIDATE_THRESHOLD = 36;
+    private const SCAN_LIMIT = 8000;
 
     private const STOP_WORDS = [
         'DE', 'DEL', 'LA', 'LAS', 'LOS', 'Y', 'E', 'EL', 'DA', 'DAS', 'DO', 'DOS',
@@ -150,7 +151,7 @@ class FamilyGroupService
         }
 
         $candidates = [];
-        $people = $query->limit(12000)->get();
+        $people = $query->limit(self::SCAN_LIMIT)->get();
 
         foreach ($people as $person) {
             $passport = trim((string) $person->IDCliente);
@@ -166,10 +167,9 @@ class FamilyGroupService
             }
 
             if (!isset($candidates[$passport])) {
-                $client = $this->clientRecord($passport);
                 $candidates[$passport] = [
                     'IDCliente' => $passport,
-                    'name' => $client['name'] ?: $passport,
+                    'name' => $passport,
                     'score' => 0,
                     'reasons' => [],
                     'match_types' => [],
@@ -193,6 +193,12 @@ class FamilyGroupService
                     'reasons' => $match['reasons'],
                 ];
             }
+        }
+
+        $clientRecords = $this->clientRecordsForPassports(array_keys($candidates));
+
+        foreach ($candidates as $passport => $candidate) {
+            $candidates[$passport]['name'] = $clientRecords[$passport]['name'] ?: $passport;
         }
 
         return collect($candidates)
@@ -294,19 +300,50 @@ class FamilyGroupService
 
     private function clientRecord(string $passport): array
     {
-        $user = User::where('passport', $passport)->first();
-        $person = Agcliente::where('IDCliente', $passport)
+        $passport = trim($passport);
+
+        return $this->clientRecordsForPassports([$passport])[$passport] ?? [
+            'user' => null,
+            'person' => null,
+            'name' => '',
+        ];
+    }
+
+    private function clientRecordsForPassports(array $passports): array
+    {
+        $passports = array_values(array_unique(array_filter(array_map('trim', $passports))));
+
+        if (empty($passports)) {
+            return [];
+        }
+
+        $users = User::whereIn('passport', $passports)
+            ->get()
+            ->keyBy('passport');
+
+        $people = Agcliente::whereIn('IDCliente', $passports)
+            ->select(['id', 'IDCliente', 'IDPersona', 'Nombres', 'Apellidos'])
             ->orderByRaw('CASE WHEN IDPersona = 1 THEN 0 ELSE 1 END')
             ->orderBy('IDPersona')
-            ->first();
+            ->get()
+            ->groupBy('IDCliente')
+            ->map(fn ($items) => $items->first());
 
-        $name = $user?->name ?: trim(($person->Nombres ?? '') . ' ' . ($person->Apellidos ?? ''));
+        $records = [];
 
-        return [
-            'user' => $user,
-            'person' => $person,
-            'name' => trim((string) $name),
-        ];
+        foreach ($passports as $passport) {
+            $user = $users->get($passport);
+            $person = $people->get($passport);
+            $name = $user?->name ?: trim(($person->Nombres ?? '') . ' ' . ($person->Apellidos ?? ''));
+
+            $records[$passport] = [
+                'user' => $user,
+                'person' => $person,
+                'name' => trim((string) $name),
+            ];
+        }
+
+        return $records;
     }
 
     private function anchorSurnameTokens(array $passports): array

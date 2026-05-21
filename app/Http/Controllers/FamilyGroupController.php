@@ -67,11 +67,25 @@ class FamilyGroupController extends Controller
 
     public function show(Request $request, FamilyGroup $familyGroup)
     {
-        $familyGroup->load(['members.user', 'members.anchorPerson']);
-        $candidateSearch = trim((string) $request->query('candidate_search', ''));
-        $candidates = $this->familyGroupService->candidatesForGroup($familyGroup, $candidateSearch ?: null);
+        $familyGroup->load([
+            'members' => fn ($query) => $query
+                ->orderByDesc('confidence')
+                ->orderBy('display_name')
+                ->orderBy('IDCliente'),
+        ]);
 
-        return view('family_groups.show', compact('familyGroup', 'candidates', 'candidateSearch'));
+        $candidateSearch = trim((string) $request->query('candidate_search', ''));
+        $shouldSearchCandidates = $request->boolean('find_candidates') || $candidateSearch !== '';
+        $candidates = $shouldSearchCandidates
+            ? $this->familyGroupService->candidatesForGroup($familyGroup, $candidateSearch ?: null)
+            : collect();
+
+        return view('family_groups.show', compact(
+            'familyGroup',
+            'candidates',
+            'candidateSearch',
+            'shouldSearchCandidates'
+        ));
     }
 
     public function destroy(FamilyGroup $familyGroup)

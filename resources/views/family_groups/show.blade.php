@@ -45,6 +45,7 @@
                     <section class="family-group-panel">
                         <div class="family-group-panel-title">Buscar coincidencias</div>
                         <form method="GET" action="{{ route('family-groups.show', $familyGroup) }}" class="family-inline-form">
+                            <input type="hidden" name="find_candidates" value="1">
                             <input type="text" name="candidate_search" value="{{ $candidateSearch }}" placeholder="Nombre, apellido, pasaporte o IDCliente">
                             <button type="submit">Buscar</button>
                         </form>
@@ -124,45 +125,49 @@
                     </div>
 
                     <div class="family-candidates">
-                        @forelse($candidates as $candidate)
-                            <article class="family-candidate">
-                                <div class="family-candidate-main">
-                                    <div>
-                                        <h3>{{ $candidate['name'] }}</h3>
-                                        <p>IDCliente {{ $candidate['IDCliente'] }} / {{ $candidate['score'] }}% confianza</p>
+                        @if(!$shouldSearchCandidates)
+                            <div class="family-empty">Pulsa Buscar para calcular candidatos cuando los necesites.</div>
+                        @else
+                            @forelse($candidates as $candidate)
+                                <article class="family-candidate">
+                                    <div class="family-candidate-main">
+                                        <div>
+                                            <h3>{{ $candidate['name'] }}</h3>
+                                            <p>IDCliente {{ $candidate['IDCliente'] }} / {{ $candidate['score'] }}% confianza</p>
+                                        </div>
+                                        <form method="POST" action="{{ route('family-groups.members.store', $familyGroup) }}">
+                                            @csrf
+                                            <input type="hidden" name="IDCliente" value="{{ $candidate['IDCliente'] }}">
+                                            <button type="submit">Agregar al grupo</button>
+                                        </form>
                                     </div>
-                                    <form method="POST" action="{{ route('family-groups.members.store', $familyGroup) }}">
-                                        @csrf
-                                        <input type="hidden" name="IDCliente" value="{{ $candidate['IDCliente'] }}">
-                                        <button type="submit">Agregar al grupo</button>
-                                    </form>
-                                </div>
 
-                                <div class="family-candidate-reasons">
-                                    @foreach($candidate['reasons'] as $reason)
-                                        <span>{{ $reason }}</span>
-                                    @endforeach
-                                </div>
-
-                                @if(!empty($candidate['evidence']))
-                                    <div class="family-candidate-evidence">
-                                        @foreach($candidate['evidence'] as $evidence)
-                                            <div>
-                                                <strong>{{ $evidence['name'] ?: 'Persona sin nombre' }}</strong>
-                                                <span>
-                                                    IDPersona {{ $evidence['IDPersona'] ?? 'N/D' }}
-                                                    @if(!empty($evidence['passport']))
-                                                        / Doc. {{ $evidence['passport'] }}
-                                                    @endif
-                                                </span>
-                                            </div>
+                                    <div class="family-candidate-reasons">
+                                        @foreach($candidate['reasons'] as $reason)
+                                            <span>{{ $reason }}</span>
                                         @endforeach
                                     </div>
-                                @endif
-                            </article>
-                        @empty
-                            <div class="family-empty">No hay candidatos calculados para los filtros actuales.</div>
-                        @endforelse
+
+                                    @if(!empty($candidate['evidence']))
+                                        <div class="family-candidate-evidence">
+                                            @foreach($candidate['evidence'] as $evidence)
+                                                <div>
+                                                    <strong>{{ $evidence['name'] ?: 'Persona sin nombre' }}</strong>
+                                                    <span>
+                                                        IDPersona {{ $evidence['IDPersona'] ?? 'N/D' }}
+                                                        @if(!empty($evidence['passport']))
+                                                            / Doc. {{ $evidence['passport'] }}
+                                                        @endif
+                                                    </span>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </article>
+                            @empty
+                                <div class="family-empty">No hay candidatos calculados para los filtros actuales.</div>
+                            @endforelse
+                        @endif
                     </div>
                 </section>
             </div>
