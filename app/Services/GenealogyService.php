@@ -516,42 +516,49 @@ class GenealogyService
 
     private function separateColumnRows(array $nodes): array
     {
-        $realNodes = [];
-        $supportNodes = [];
+        usort($nodes, function (array $a, array $b): int {
+            $typeA = ($a['showbtn'] ?? null) === 2 ? 0 : 1;
+            $typeB = ($b['showbtn'] ?? null) === 2 ? 0 : 1;
 
-        foreach ($nodes as $node) {
-            if (($node['showbtn'] ?? null) === 2) {
-                $realNodes[] = $node;
-            } else {
-                $supportNodes[] = $node;
-            }
-        }
-
-        $sortByDesiredRow = function (array $a, array $b): int {
-            return [$a['tree_row'] ?? 0, $a['tree_layout_slot'] ?? 0]
-                <=> [$b['tree_row'] ?? 0, $b['tree_layout_slot'] ?? 0];
-        };
-
-        usort($realNodes, $sortByDesiredRow);
-        usort($supportNodes, $sortByDesiredRow);
+            return [
+                $a['tree_layout_slot'] ?? $a['tree_slot'] ?? 0,
+                $typeA,
+                $a['tree_row'] ?? 0,
+                $a['tree_node_key'] ?? '',
+            ] <=> [
+                $b['tree_layout_slot'] ?? $b['tree_slot'] ?? 0,
+                $typeB,
+                $b['tree_row'] ?? 0,
+                $b['tree_node_key'] ?? '',
+            ];
+        });
 
         $occupied = [];
         $placed = [];
 
-        foreach ($realNodes as $node) {
-            $node['tree_row'] = $this->nextAvailableRow((float) ($node['tree_row'] ?? 0), 0.64, $occupied);
-            $occupied[] = [$node['tree_row'] - 0.64, $node['tree_row'] + 0.64];
-            $placed[] = $node;
-        }
-
-        foreach ($supportNodes as $node) {
-            $halfHeight = ($node['showbtn'] ?? null) === 1 ? 0.34 : 0.48;
+        foreach ($nodes as $node) {
+            $halfHeight = $this->nodeVisualHalfHeight($node);
             $node['tree_row'] = $this->nextAvailableRow((float) ($node['tree_row'] ?? 0), $halfHeight, $occupied);
             $occupied[] = [$node['tree_row'] - $halfHeight, $node['tree_row'] + $halfHeight];
             $placed[] = $node;
         }
 
         return $placed;
+    }
+
+    private function nodeVisualHalfHeight(array $node): float
+    {
+        $generation = (int) ($node['tree_layout_generation'] ?? 0);
+
+        if (($node['showbtn'] ?? null) === 2) {
+            return $generation >= 4 ? 0.34 : ($generation >= 3 ? 0.42 : 0.5);
+        }
+
+        if (($node['showbtn'] ?? null) === 1) {
+            return $generation >= 4 ? 0.22 : 0.28;
+        }
+
+        return 0.34;
     }
 
     private function nextAvailableRow(float $desiredRow, float $halfHeight, array $occupied): float

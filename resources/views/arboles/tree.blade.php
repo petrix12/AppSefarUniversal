@@ -123,13 +123,13 @@
                         </div>
                         @endcan
 
-                        <div style="display: flex;">
-                            <div class="px-4 py-2 m-2">
+                        <div class="tree-toolbar-controls">
+                            <div class="tree-toolbar-control tree-toolbar-select">
                                 {{-- FAMILIARES --}}
-                                <div class="justify-center">
-                                    <label for="change_person" class="px-3 block text-sm font-medium text-gray-700"
+                                <div class="tree-toolbar-field">
+                                    <label for="change_person" class="tree-toolbar-label px-3 block text-sm font-medium text-gray-700"
                                         title="Ir a">Ir a</label>
-                                    <select id="change_person" class="change_person" style="height: 36px; border-radius: 10px; font-size: 16px; padding: 0px 10px;">
+                                    <select id="change_person" class="change_person tree-select-fixed">
                                         <option value="" selected disabled>Selecciona una persona</option>
                                         @foreach ($columnasparatabla  as $key1 => $columna)
                                             @foreach ($columna as $key2 => $persona)
@@ -143,38 +143,40 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="px-4 py-2 m-2">
-                                <div class="justify-center">
-                                    <label for="change_person" class="px-3 block text-sm font-medium text-gray-700"
+                            <div class="tree-toolbar-control tree-toolbar-zoom">
+                                <div class="tree-toolbar-field">
+                                    <label for="zoomIn" class="tree-toolbar-label px-3 block text-sm font-medium text-gray-700"
                                         title="Zoom">Zoom</label>
-                                    <button id="zoomIn" style="width: 36px; height: 36px; border-radius: 10px;" class="csrSefar"><i class="fa-solid fa-plus"></i></button>
-                                    <button id="zoomOut" style="width: 36px; height: 36px; border-radius: 10px;" class="csrSefar"><i class="fa-solid fa-minus"></i></button>
+                                    <div class="tree-zoom-buttons">
+                                        <button id="zoomIn" class="csrSefar tree-icon-button"><i class="fa-solid fa-plus"></i></button>
+                                        <button id="zoomOut" class="csrSefar tree-icon-button"><i class="fa-solid fa-minus"></i></button>
+                                    </div>
                                 </div>
                             </div>
                             @if ($checkBtn == "si")
-                            <div class="px-4 py-2 m-2">
-                                <div class="justify-center">
-                                    <label for="change_person" class="px-3 block text-sm font-medium text-gray-700"
+                            <div class="tree-toolbar-control tree-toolbar-action">
+                                <div class="tree-toolbar-field">
+                                    <label for="treeReturnToOriginalClient" class="tree-toolbar-label px-3 block text-sm font-medium text-gray-700"
                                         title="Zoom">Regresar a Cliente</label>
-                                    <button onclick="window.location.href='/tree/{{$columnasparatabla[0][0]["IDCliente"]}}'" style="height: 36px; border-radius: 10px; padding: 0px 10px;" class="csrSefar">Regresar a Cliente</button>
+                                    <button id="treeReturnToOriginalClient" onclick="window.location.href='/tree/{{$columnasparatabla[0][0]["IDCliente"]}}'" class="csrSefar tree-fixed-action">Regresar a Cliente</button>
                                 </div>
                             </div>
                             @endif
                             @if(auth()->user()->roles[0]->id != 5)
-                            <div class="px-4 py-2 m-2" id="treeReturnToClientWrap" style="display:none;">
-                                <div class="justify-center">
-                                    <label for="treeReturnToClient" class="px-3 block text-sm font-medium text-gray-700"
+                            <div class="tree-toolbar-control tree-toolbar-action" id="treeReturnToClientWrap" style="display:none;">
+                                <div class="tree-toolbar-field">
+                                    <label for="treeReturnToClient" class="tree-toolbar-label px-3 block text-sm font-medium text-gray-700"
                                         title="Volver al cliente">Vista</label>
-                                    <button id="treeReturnToClient" type="button" style="height: 36px; border-radius: 10px; padding: 0px 10px;" class="csrSefar">Volver al cliente</button>
+                                    <button id="treeReturnToClient" type="button" class="csrSefar tree-fixed-action">Volver al cliente</button>
                                 </div>
                             </div>
                             @endif
                             @if(auth()->user()->roles[0]->id != 5 && isset($user))
-                            <div class="px-4 py-2 m-2">
-                                <div class="justify-center">
-                                    <label for="change_person" class="px-3 block text-sm font-medium text-gray-700"
+                            <div class="tree-toolbar-control tree-toolbar-action">
+                                <div class="tree-toolbar-field">
+                                    <label for="treeCosLink" class="tree-toolbar-label px-3 block text-sm font-medium text-gray-700"
                                         title="Zoom">Ir al COS</label>
-                                    <a href="/users/{{$user->id}}/edit/" style="height: 36px; border-radius: 10px; padding: 0px 10px;" class="btn_status_loader csrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 edit-user-btn">Ir al COS</a>
+                                    <a id="treeCosLink" href="/users/{{$user->id}}/edit/" class="btn_status_loader csrSefar tree-fixed-action inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 edit-user-btn">Ir al COS</a>
                                 </div>
                             </div>
                             @endif
@@ -184,11 +186,11 @@
 
                 @php
                     $boxheight = 120;
-                    $nodeHeight = 130;
-                    $columnWidth = 300;
+                    $nodeHeight = 140;
+                    $columnWidth = 360;
                     $initialOffset = 20;
                     $topPadding = 40;
-                    $rowHeight = $nodeHeight + 46;
+                    $rowHeight = $nodeHeight + 58;
                     $maxTreeRow = 0;
                     foreach ($columnasparatabla as $columna) {
                         foreach ($columna as $persona) {
@@ -1760,6 +1762,89 @@
     position: absolute;
 }
 
+.tree-toolbar-controls {
+    display: grid;
+    grid-template-columns: minmax(360px, 620px) 88px repeat(3, 124px);
+    gap: 18px;
+    align-items: end;
+    width: 100%;
+    max-width: 1120px;
+    margin-top: 18px;
+}
+
+.tree-toolbar-control {
+    min-width: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.tree-toolbar-field {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.tree-toolbar-label {
+    min-height: 28px;
+    padding: 0 0 8px !important;
+    line-height: 1.1;
+    display: flex !important;
+    align-items: flex-end;
+}
+
+.tree-select-fixed {
+    width: 100%;
+    max-width: 620px;
+    min-width: 0;
+    height: 38px;
+    border-radius: 10px;
+    font-size: 16px;
+    padding: 0 12px;
+}
+
+.tree-zoom-buttons {
+    display: flex;
+    gap: 6px;
+    width: 88px;
+}
+
+.tree-icon-button {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 10px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 38px;
+}
+
+.tree-fixed-action {
+    width: 124px;
+    min-width: 124px;
+    height: 38px !important;
+    border-radius: 10px !important;
+    padding: 0 10px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.1;
+    white-space: normal;
+}
+
+@media (max-width: 1180px) {
+    .tree-toolbar-controls {
+        grid-template-columns: minmax(280px, 1fr) 88px repeat(2, 124px);
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 880px) {
+    .tree-toolbar-controls {
+        grid-template-columns: minmax(240px, 1fr) 88px;
+    }
+}
+
 .cajabtn_add {
     background-color: white !important;
     position: relative;
@@ -1921,7 +2006,7 @@
 .tree-lineage-strip {
     display: flex;
     width: 100%;
-    height: 7px;
+    height: 5px;
     margin-top: auto;
     border-top: 1px solid rgba(9, 49, 67, 0.12);
 }
@@ -2106,11 +2191,11 @@ dialog::backdrop {
     let treeBranchLoading = false;
 
     const treeLayout = {
-        nodeHeight: 130,
-        columnWidth: 300,
+        nodeHeight: 140,
+        columnWidth: 360,
         initialOffset: 20,
         topPadding: 40,
-        rowHeight: 176,
+        rowHeight: 198,
         compactFromColumn: 4,
         minHeight: 720,
         minWidth: 900,
@@ -3177,7 +3262,7 @@ function dibujarLineaSVG($caja1, $caja2) {
     const containerY2 = parseFloat($caja2.attr('data-container-y'));
     const containerHeight2 = parseFloat($caja2.attr('data-container-height'));
 
-    const columnWidth = 300;
+    const columnWidth = 360;
     const initialOffset = 20;
 
     // Calcular centros exactos (centro del contenedor)
@@ -3192,8 +3277,8 @@ function dibujarLineaSVG($caja1, $caja2) {
                     <line x1="${x1}" y1="${y1}"
                           x2="${x2}" y2="${y2}"
                           stroke="#093143"
-                          stroke-width="1.35"
-                          opacity="0.72" />
+                          stroke-width="1.15"
+                          opacity="0.58" />
                 </svg>`;
 
     $('#mylines').append(svg);
@@ -3217,10 +3302,11 @@ function reloadlines(){
             ['padreKey', 'madreKey'].forEach((field) => {
                 const targetKey = element.dataset[field];
                 if (targetKey && nodes.has(targetKey)) {
+                    const side = field === 'padreKey' ? 'padre' : 'madre';
                     const color = field === 'padreKey'
                         ? element.dataset.padreColor
                         : element.dataset.madreColor;
-                    fragment.appendChild(crearLineaSVG(element, nodes.get(targetKey), color));
+                    fragment.appendChild(crearLineaSVG(element, nodes.get(targetKey), color, side));
                 }
             });
         });
@@ -3229,22 +3315,42 @@ function reloadlines(){
     });
 }
 
-function crearLineaSVG(elementA, elementB, color = '#093143') {
+function crearLineaSVG(elementA, elementB, color = '#093143', side = 'padre') {
     const start = getLinePoint(elementA, 'right');
     const end = getLinePoint(elementB, 'left');
-    const distance = Math.max(28, Math.abs(end.x - start.x) * 0.42);
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const gap = end.x - start.x;
+    const minStub = 18;
+    const laneOffset = side === 'padre' ? -8 : 8;
+    const baseMidX = gap > 0
+        ? start.x + Math.max(minStub, Math.min(gap - minStub, gap / 2))
+        : start.x + (gap / 2);
+    const midX = gap > (minStub * 2)
+        ? baseMidX + laneOffset
+        : baseMidX;
+    const startStubX = gap > (minStub * 2) ? Math.min(start.x + minStub, midX) : midX;
+    const endStubX = gap > (minStub * 2) ? Math.max(end.x - minStub, midX) : midX;
+    const isAddTarget = elementB.classList.contains('tree-add-node');
+    const isFlat = Math.abs(start.y - end.y) < 2;
+    const d = isFlat
+        ? `M ${start.x} ${start.y} L ${end.x} ${end.y}`
+        : `M ${start.x} ${start.y} L ${startStubX} ${start.y} L ${midX} ${start.y} L ${midX} ${end.y} L ${endStubX} ${end.y} L ${end.x} ${end.y}`;
 
-    path.setAttribute(
-        'd',
-        `M ${start.x} ${start.y} C ${start.x + distance} ${start.y}, ${end.x - distance} ${end.y}, ${end.x} ${end.y}`
-    );
+    path.setAttribute('d', d);
     path.setAttribute('fill', 'none');
     path.setAttribute('stroke', normalizeHexColor(color || '#093143'));
-    path.setAttribute('stroke-width', '1.35');
+    path.setAttribute('stroke-width', isAddTarget ? '1' : '1.15');
     path.setAttribute('stroke-linecap', 'round');
-    path.setAttribute('opacity', '0.72');
+    path.setAttribute('stroke-linejoin', 'round');
+    path.setAttribute('opacity', isAddTarget ? '0.34' : '0.58');
     path.setAttribute('vector-effect', 'non-scaling-stroke');
+    path.setAttribute('pointer-events', 'none');
+    path.classList.add('tree-connector-line');
+
+    if (isAddTarget) {
+        path.setAttribute('stroke-dasharray', '5 6');
+    }
+
     return path;
 }
 
