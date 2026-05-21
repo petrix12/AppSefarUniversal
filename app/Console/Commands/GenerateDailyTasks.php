@@ -42,6 +42,8 @@ class GenerateDailyTasks extends Command
             return self::FAILURE;
         }
 
+        $activeAdvisorIds = $advisors->pluck('id')->map(fn ($id) => (int) $id)->all();
+
         // 2) Contactos disponibles (en list_user, no contactados)
         $contacts = DB::table('list_user as lu')
             ->join('users as u', 'u.id', '=', 'lu.user_id')
@@ -63,6 +65,19 @@ class GenerateDailyTasks extends Command
         }
 
         $totalCreated = 0;
+        $totalReassignedLocal = 0;
+        $assignedContactIdsThisRun = [];
+        $disinterestedContacts = Task::query()
+            ->where(function ($q) {
+                $q->whereIn('status', ['desinteres', 'no_interest', 'not_interested'])
+                  ->orWhereNotNull('reason_no_interest')
+                  ->orWhere('interest_level', 0);
+            })
+            ->pluck('contact_id')
+            ->filter()
+            ->unique()
+            ->map(fn ($id) => (int) $id)
+            ->toArray();
 
         foreach ($advisors as $advisor) {
             $createdTaskIds = [];
@@ -92,12 +107,13 @@ class GenerateDailyTasks extends Command
                 continue;
             }
 
-            // 5) Contactos que ya tienen tarea HOY para este asesor
+            // 5) Contactos que ya tienen tarea HOY en cualquier asesor
             $alreadyTaskedToday = Task::query()
-                ->where('user_id', $advisor->id)
                 ->whereDate('due_date', $date)
+                ->where('status', '!=', Task::STATUS_CANCELED)
                 ->pluck('contact_id')
                 ->filter()
+                ->map(fn ($id) => (int) $id)
                 ->toArray();
 
             // 6) Contactos que ya tuvieron tarea en los ÚLTIMOS 7 DÍAS para este asesor
@@ -110,6 +126,7 @@ class GenerateDailyTasks extends Command
                 ->pluck('contact_id')
                 ->filter()
                 ->unique()
+                ->map(fn ($id) => (int) $id)
                 ->toArray();
 
             // 7) Contactos con desinterés: excluirlos COMPLETAMENTE
@@ -117,27 +134,32 @@ class GenerateDailyTasks extends Command
             // a) status = 'no_interest' / 'desinterest'
             // b) interest_level = 0
             // c) reason_no_interest no null
-            $disinterestedContacts = Task::query()
-                ->where(function ($q) {
-                    $q->whereIn('status', ['desinteres', 'no_interest', 'not_interested'])
-                      ->orWhereNotNull('reason_no_interest')
-                      ->orWhere('interest_level', 0);
-                })
-                ->pluck('contact_id')
-                ->filter()
-                ->unique()
-                ->toArray();
+            // Ademas se usa como pool para completar cupo cuando el asesor no tiene contactos propios.
+            $candidates = collect([0, 1, 2])
+                ->flatMap(function (int $priority) use ($contacts, $advisor, $activeAdvisorIds, $alreadyTaskedToday, $recentlyTasked, $disinterestedContacts, &$assignedContactIdsThisRun) {
+                    return $contacts
+                        ->filter(function ($contact) use ($priority, $advisor, $activeAdvisorIds) {
+                            $ownerId = (int) $contact->owner_id;
 
-            // 8) Armar candidatos limpios
-            $candidates = $contacts
-                ->where('owner_id', $advisor->id)
-                ->reject(function ($contact) use ($alreadyTaskedToday, $recentlyTasked, $disinterestedContacts) {
-                    return in_array($contact->contact_id, $alreadyTaskedToday)
-                        || in_array($contact->contact_id, $recentlyTasked)
-                        || in_array($contact->contact_id, $disinterestedContacts);
+                            return match ($priority) {
+                                0 => $ownerId === (int) $advisor->id,
+                                1 => ! in_array($ownerId, $activeAdvisorIds, true),
+                                default => $ownerId !== (int) $advisor->id && in_array($ownerId, $activeAdvisorIds, true),
+                            };
+                        })
+                        ->reject(function ($contact) use ($alreadyTaskedToday, $recentlyTasked, $disinterestedContacts, &$assignedContactIdsThisRun) {
+                            $contactId = (int) $contact->contact_id;
+
+                            return in_array($contactId, $assignedContactIdsThisRun, true)
+                                || in_array($contactId, $alreadyTaskedToday, true)
+                                || in_array($contactId, $recentlyTasked, true)
+                                || in_array($contactId, $disinterestedContacts, true);
+                        })
+                        ->values()
+                        ->shuffle();
                 })
+                ->unique('contact_id')
                 ->values()
-                ->shuffle()
                 ->take($toCreate);
 
             if ($candidates->isEmpty()) {
@@ -146,14 +168,23 @@ class GenerateDailyTasks extends Command
             }
 
             foreach ($candidates as $contact) {
-                $this->line("   + Tarea → {$contact->contact_name} | Lista: {$contact->list_name} (contact_id={$contact->contact_id})");
+                $ownerChanged = (int) $contact->owner_id !== (int) $advisor->id;
+                $ownerNote = $ownerChanged ? " | owner previo={$contact->owner_id}" : '';
+                $this->line("   + Tarea -> {$contact->contact_name} | Lista: {$contact->list_name} (contact_id={$contact->contact_id}){$ownerNote}");
 
                 if (! $dryRun) {
+                    if ($ownerChanged) {
+                        User::whereKey($contact->contact_id)->update(['owner_id' => $advisor->id]);
+                        $totalReassignedLocal++;
+                    }
+
                     $task = Task::create([
                         'user_id'            => $advisor->id,
                         'contact_id'         => $contact->contact_id,
                         'title'              => "Comunicarse con el cliente {$contact->contact_name} [Lista: {$contact->list_name}]",
-                        'description' => "Lista origen: {$contact->list_name}",
+                        'description' => $ownerChanged
+                            ? "Lista origen: {$contact->list_name}. Reasignado automaticamente desde owner {$contact->owner_id}."
+                            : "Lista origen: {$contact->list_name}",
                         'due_date'           => $date->toDateString(),
                         'status'             => Task::STATUS_PENDING,
                         'created_by_user_id' => null,
@@ -162,6 +193,7 @@ class GenerateDailyTasks extends Command
                     $createdTaskIds[] = $task->id;
                 }
 
+                $assignedContactIdsThisRun[] = (int) $contact->contact_id;
                 $totalCreated++;
             }
 
@@ -171,6 +203,7 @@ class GenerateDailyTasks extends Command
         }
 
         $this->info("✅ Tareas " . ($dryRun ? 'simuladas' : 'creadas') . ": {$totalCreated}");
+        $this->info("Contactos reasignados localmente por cupo: {$totalReassignedLocal}");
         return self::SUCCESS;
     }
 

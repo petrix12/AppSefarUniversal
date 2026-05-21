@@ -36,7 +36,7 @@ class Kernel extends ConsoleKernel
         ->dailyAt('09:00')
         ->withoutOverlapping();
         // Ejecutar flujo diario de tareas en secuencia: primero reasignaciones, luego nuevas tareas.
-        $schedule->command('tasks:daily-workflow --force')
+        $schedule->command('tasks:daily-workflow --force-reassign')
                  ->weekdays()
                  ->at('6:00')
                  ->withoutOverlapping()

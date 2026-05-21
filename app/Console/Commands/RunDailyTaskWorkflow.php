@@ -17,6 +17,7 @@ class RunDailyTaskWorkflow extends Command
         {--date= : Fecha base opcional YYYY-MM-DD}
         {--per=10 : Tareas base por asesor}
         {--dry-run : Solo muestra cambios, no actualiza nada}
+        {--force : Alias de --force-reassign para compatibilidad con el cron anterior}
         {--force-reassign : Fuerza reasignacion de tareas inefectivas completadas y contactos en listas sin tareas}
         {--force-limit=200 : Maximo de contactos a revisar con --force-reassign}';
 
@@ -27,7 +28,7 @@ class RunDailyTaskWorkflow extends Command
         $date = $this->option('date');
         $per = (int) ($this->option('per') ?? 10);
         $dryRun = (bool) $this->option('dry-run');
-        $forceReassign = (bool) $this->option('force-reassign');
+        $forceReassign = (bool) $this->option('force-reassign') || (bool) $this->option('force');
         $forceLimit = max(1, (int) ($this->option('force-limit') ?? 200));
 
         $this->info('Iniciando flujo diario de tareas.');
