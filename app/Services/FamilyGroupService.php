@@ -141,7 +141,7 @@ class FamilyGroupService
         $query = Agcliente::query()
             ->select([
                 'id', 'IDCliente', 'IDPersona', 'Nombres', 'Apellidos', 'NPasaporte',
-                'NDocIdent', 'PaisPasaporte', 'PaisDocIdent', 'AnhoNac', 'LugarNac',
+                'NDocIdent', 'PaisPasaporte', 'PaisDocIdent',
             ])
             ->whereNotNull('IDCliente');
 
@@ -218,7 +218,6 @@ class FamilyGroupService
         $people = Agcliente::whereIn('IDCliente', $passports)
             ->select([
                 'id', 'IDCliente', 'Nombres', 'Apellidos', 'NPasaporte', 'NDocIdent',
-                'AnhoNac', 'LugarNac',
             ])
             ->get();
         $users = User::whereIn('passport', $passports)->get();
@@ -229,8 +228,6 @@ class FamilyGroupService
         $givenNameTokens = [];
         $surnameTokens = [];
         $nameSurnamePairs = [];
-        $birthYears = [];
-        $birthPlaceTokens = [];
 
         foreach ($people as $person) {
             foreach ($this->documentTokens($person->NPasaporte, $person->NDocIdent) as $token) {
@@ -239,9 +236,7 @@ class FamilyGroupService
 
             $signature = $this->personNameSignature(
                 $person->Nombres,
-                $person->Apellidos,
-                $person->AnhoNac,
-                $person->LugarNac
+                $person->Apellidos
             );
 
             $this->mergeSignatureIntoFingerprint(
@@ -250,9 +245,7 @@ class FamilyGroupService
                 $sortedNameKeys,
                 $givenNameTokens,
                 $surnameTokens,
-                $nameSurnamePairs,
-                $birthYears,
-                $birthPlaceTokens
+                $nameSurnamePairs
             );
         }
 
@@ -272,9 +265,7 @@ class FamilyGroupService
                 $sortedNameKeys,
                 $givenNameTokens,
                 $surnameTokens,
-                $nameSurnamePairs,
-                $birthYears,
-                $birthPlaceTokens
+                $nameSurnamePairs
             );
         }
 
@@ -285,8 +276,6 @@ class FamilyGroupService
             'given_name_tokens' => $givenNameTokens,
             'surname_tokens' => $surnameTokens,
             'name_surname_pairs' => $nameSurnamePairs,
-            'birth_years' => $birthYears,
-            'birth_place_tokens' => $birthPlaceTokens,
         ];
     }
 
@@ -309,9 +298,7 @@ class FamilyGroupService
 
         $signature = $this->personNameSignature(
             $person->Nombres,
-            $person->Apellidos,
-            $person->AnhoNac,
-            $person->LugarNac
+            $person->Apellidos
         );
 
         if ($signature['full_key'] !== '' && isset($fingerprint['name_keys'][$signature['full_key']])) {
@@ -365,12 +352,12 @@ class FamilyGroupService
         }
 
         if (!empty($surnameMatches)) {
-            $surnameScore = count($surnameMatches) >= 2 ? 58 : 38;
+            $surnameScore = count($surnameMatches) >= 2 ? 44 : 24;
             $score += $surnameScore;
             $types[] = 'apellido';
             $reasons[] = 'Apellido compatible: ' . $this->tokensLabel($surnameMatches);
         } elseif (!empty($fuzzySurnameMatches)) {
-            $score += 28;
+            $score += 14;
             $types[] = 'apellido similar';
             $reasons[] = 'Apellido similar: ' . $this->tokensLabel($fuzzySurnameMatches);
         }
@@ -383,23 +370,6 @@ class FamilyGroupService
             $score += 6;
             $types[] = 'nombre similar';
             $reasons[] = 'Nombre similar: ' . $this->tokensLabel($fuzzyGivenNameMatches);
-        }
-
-        if ($score > 0 && $signature['birth_year'] !== null && isset($fingerprint['birth_years'][$signature['birth_year']])) {
-            $score += 8;
-            $types[] = 'fecha';
-            $reasons[] = 'Ano de nacimiento compatible: ' . $signature['birth_year'];
-        }
-
-        $birthPlaceMatches = array_values(array_intersect(
-            $signature['birth_place_tokens'],
-            array_keys($fingerprint['birth_place_tokens'])
-        ));
-
-        if ($score > 0 && !empty($birthPlaceMatches)) {
-            $score += 4;
-            $types[] = 'lugar';
-            $reasons[] = 'Lugar de nacimiento compatible: ' . $this->tokensLabel($birthPlaceMatches);
         }
 
         return [
@@ -415,9 +385,7 @@ class FamilyGroupService
         array &$sortedNameKeys,
         array &$givenNameTokens,
         array &$surnameTokens,
-        array &$nameSurnamePairs,
-        array &$birthYears,
-        array &$birthPlaceTokens
+        array &$nameSurnamePairs
     ): void {
         if ($signature['full_key'] !== '') {
             $nameKeys[$signature['full_key']] = true;
@@ -438,17 +406,9 @@ class FamilyGroupService
         foreach ($signature['name_surname_pairs'] as $pair) {
             $nameSurnamePairs[$pair] = true;
         }
-
-        if ($signature['birth_year'] !== null) {
-            $birthYears[$signature['birth_year']] = true;
-        }
-
-        foreach ($signature['birth_place_tokens'] as $token) {
-            $birthPlaceTokens[$token] = true;
-        }
     }
 
-    private function personNameSignature(?string $names, ?string $surnames, mixed $birthYear = null, ?string $birthPlace = null): array
+    private function personNameSignature(?string $names, ?string $surnames): array
     {
         $givenTokens = $this->nameTokens((string) $names);
         $surnameTokens = $this->surnameTokens((string) $surnames);
@@ -470,8 +430,6 @@ class FamilyGroupService
             'surname_tokens' => $surnameTokens,
             'all_tokens' => $allTokens,
             'name_surname_pairs' => array_values(array_unique($pairs)),
-            'birth_year' => $this->yearToken($birthYear),
-            'birth_place_tokens' => $this->nameTokens((string) $birthPlace),
         ];
     }
 
@@ -609,13 +567,6 @@ class FamilyGroupService
         }
 
         return array_values(array_unique($tokens));
-    }
-
-    private function yearToken(mixed $value): ?string
-    {
-        $year = preg_replace('/\D/', '', (string) $value) ?? '';
-
-        return strlen($year) >= 4 ? substr($year, 0, 4) : null;
     }
 
     private function surnameTokens(string $value): array
