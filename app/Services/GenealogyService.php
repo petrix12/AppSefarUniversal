@@ -539,13 +539,13 @@ class GenealogyService
         $placed = [];
 
         foreach ($realNodes as $node) {
-            $node['tree_row'] = $this->nextAvailableRow((float) ($node['tree_row'] ?? 0), 0.52, $occupied);
-            $occupied[] = [$node['tree_row'] - 0.52, $node['tree_row'] + 0.52];
+            $node['tree_row'] = $this->nextAvailableRow((float) ($node['tree_row'] ?? 0), 0.64, $occupied);
+            $occupied[] = [$node['tree_row'] - 0.64, $node['tree_row'] + 0.64];
             $placed[] = $node;
         }
 
         foreach ($supportNodes as $node) {
-            $halfHeight = ($node['showbtn'] ?? null) === 1 ? 0.24 : 0.42;
+            $halfHeight = ($node['showbtn'] ?? null) === 1 ? 0.34 : 0.48;
             $node['tree_row'] = $this->nextAvailableRow((float) ($node['tree_row'] ?? 0), $halfHeight, $occupied);
             $occupied[] = [$node['tree_row'] - $halfHeight, $node['tree_row'] + $halfHeight];
             $placed[] = $node;

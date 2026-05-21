@@ -160,6 +160,15 @@
                                 </div>
                             </div>
                             @endif
+                            @if(auth()->user()->roles[0]->id != 5)
+                            <div class="px-4 py-2 m-2" id="treeReturnToClientWrap" style="display:none;">
+                                <div class="justify-center">
+                                    <label for="treeReturnToClient" class="px-3 block text-sm font-medium text-gray-700"
+                                        title="Volver al cliente">Vista</label>
+                                    <button id="treeReturnToClient" type="button" style="height: 36px; border-radius: 10px; padding: 0px 10px;" class="csrSefar">Volver al cliente</button>
+                                </div>
+                            </div>
+                            @endif
                             @if(auth()->user()->roles[0]->id != 5 && isset($user))
                             <div class="px-4 py-2 m-2">
                                 <div class="justify-center">
@@ -179,7 +188,7 @@
                     $columnWidth = 300;
                     $initialOffset = 20;
                     $topPadding = 40;
-                    $rowHeight = $nodeHeight + 24;
+                    $rowHeight = $nodeHeight + 46;
                     $maxTreeRow = 0;
                     foreach ($columnasparatabla as $columna) {
                         foreach ($columna as $persona) {
@@ -253,7 +262,7 @@
                                                                 type="button"
                                                                 class="tree-more-indicator"
                                                                 title="Hay mas familiares registrados"
-                                                                onclick="event.stopPropagation(); loadTreeBranch('{{$persona["id"]}}', '{{$persona["tree_generation"] ?? ($key1+$generacionBase)}}', '{{$persona["PersonaIDNew"] ?? $key2}}')">
+                                                                onclick="event.stopPropagation(); loadTreeBranch('{{$persona["id"]}}', '{{$persona["tree_generation"] ?? ($key1+$generacionBase)}}', '{{$persona["PersonaIDNew"] ?? $key2}}', '{{$persona["tree_inherited_color"] ?? '#B08A43'}}')">
                                                                 <i class="fa-solid fa-arrow-right"></i> Mas familiares
                                                             </button>
                                                         @endif
@@ -289,7 +298,7 @@
                                                             <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : json_encode($persona['Observaciones'])}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar</button>
                                                             <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Archivos</button>
                                                             <button class="copydata" onclick="copydata('datacopy_{{ $nodeKey }}')">Copiar</button>
-                                                            <button class="copydata" onclick="event.stopPropagation(); loadTreeBranch('{{$persona["id"]}}', '{{$persona["tree_generation"] ?? ($key1+$generacionBase)}}', '{{$persona["PersonaIDNew"] ?? $key2}}')">Extender</button>
+                                                            <button class="copydata" onclick="event.stopPropagation(); loadTreeBranch('{{$persona["id"]}}', '{{$persona["tree_generation"] ?? ($key1+$generacionBase)}}', '{{$persona["PersonaIDNew"] ?? $key2}}', '{{$persona["tree_inherited_color"] ?? '#B08A43'}}')">Extender</button>
                                                         @elseif(auth()->user() && auth()->user()->hasRole(['Cliente']))
                                                             <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : json_encode($persona['Observaciones'])}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar</button>
                                                             <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Archivos</button>
@@ -345,6 +354,7 @@
                                                     id="{{ $persona["showbtnsex"] == "m" ? "M" : "F" }}_{{$persona["id_hijo"]}}_{{$columnasparatabla[0][0]["IDCliente"]}}"
                                                     data-node-key="{{ $nodeKey }}"
                                                     data-child-key="{{ $persona['tree_child_key'] ?? '' }}"
+                                                    data-line-color="{{ $persona['tree_line_color'] ?? $persona['tree_inherited_color'] ?? '#B08A43' }}"
                                                     data-column="{{$key1}}"
                                                     data-row="{{$key2}}"
                                                     data-node-x="{{$posX + ($columnWidth / 2)}}"
@@ -1837,6 +1847,10 @@
     max-height: 180px;
 }
 
+.tree-person-node {
+    justify-content: flex-start;
+}
+
 .cajaperemptynew_min {
     position: relative;
     width: 16rem;
@@ -1902,6 +1916,41 @@
 .tree-more-indicator:hover {
     background: #06c2cc;
     color: #093143;
+}
+
+.tree-lineage-strip {
+    display: flex;
+    width: 100%;
+    height: 7px;
+    margin-top: auto;
+    border-top: 1px solid rgba(9, 49, 67, 0.12);
+}
+
+.tree-lineage-color {
+    position: relative;
+    display: block;
+    flex: 1 1 50%;
+    height: 100%;
+    cursor: pointer;
+}
+
+.tree-lineage-color:first-child {
+    border-bottom-left-radius: 4px;
+}
+
+.tree-lineage-color:last-child {
+    border-bottom-right-radius: 4px;
+}
+
+.tree-lineage-color input[type="color"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    opacity: 0;
+    cursor: pointer;
+    border: 0;
 }
 
 .tree-loading-overlay {
@@ -2061,16 +2110,25 @@ dialog::backdrop {
         columnWidth: 300,
         initialOffset: 20,
         topPadding: 40,
-        rowHeight: 154,
+        rowHeight: 176,
         compactFromColumn: 4,
         minHeight: 720,
         minWidth: 900,
     };
     const treeBranchBaseUrl = @json(url('/tree/' . $IDCliente . '/branch'));
     const treeColorBaseUrl = @json(url('/tree/' . $IDCliente . '/line-color'));
+    const treeRootUrl = @json(url('/tree/' . $IDCliente));
+    const treeRootPersonId = @json($columnasparatabla[0][0]['id'] ?? null);
     const csrfToken = @json(csrf_token());
     const canManageTree = @json(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']));
     const canEditClientTree = @json(auth()->user() && auth()->user()->hasRole(['Cliente']));
+    let currentTreeRoot = {
+        personId: treeRootPersonId,
+        generation: 0,
+        slot: 0,
+        lineColor: '#B08A43',
+        isClientRoot: true,
+    };
 
     let isDragging = false;
     let startX, startY, scrollLeft, scrollTop;
@@ -2134,13 +2192,15 @@ dialog::backdrop {
         containerTree.scrollLeft = 0;
     }
 
-    function treeBranchUrl(personId, generation, slot) {
-        return [
+    function treeBranchUrl(personId, generation, slot, lineColor = null) {
+        const url = [
             treeBranchBaseUrl,
             encodeURIComponent(personId),
             encodeURIComponent(generation || 0),
             encodeURIComponent(slot || 0),
         ].join('/');
+
+        return lineColor ? `${url}?lineColor=${encodeURIComponent(lineColor)}` : url;
     }
 
     function showTreeLoading() {
@@ -2161,7 +2221,7 @@ dialog::backdrop {
         treeLoadingOverlay.setAttribute('aria-hidden', 'true');
     }
 
-    async function loadTreeBranch(personId, generation, slot) {
+    async function loadTreeBranch(personId, generation, slot, lineColor = null, options = {}) {
         if (!personId || treeBranchLoading) {
             return;
         }
@@ -2170,7 +2230,7 @@ dialog::backdrop {
         showTreeLoading();
 
         try {
-            const response = await fetch(treeBranchUrl(personId, generation, slot), {
+            const response = await fetch(treeBranchUrl(personId, generation, slot, lineColor), {
                 headers: {
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
@@ -2184,6 +2244,14 @@ dialog::backdrop {
             const data = await response.json();
             renderTreeWindow(data.columnasparatabla || []);
             refreshVisiblePersonOptions(data.columnasparatabla || []);
+            currentTreeRoot = {
+                personId,
+                generation: Number(generation || 0),
+                slot: Number(slot || 0),
+                lineColor: lineColor || '#B08A43',
+                isClientRoot: Boolean(options.isClientRoot),
+            };
+            updateTreeReturnButton();
 
             zoomLevel = 1;
             zoomableContent.style.zoom = zoomLevel;
@@ -2201,6 +2269,24 @@ dialog::backdrop {
             treeBranchLoading = false;
             hideTreeLoading();
         }
+    }
+
+    function updateTreeReturnButton() {
+        const wrapper = document.getElementById('treeReturnToClientWrap');
+        if (!wrapper) {
+            return;
+        }
+
+        wrapper.style.display = currentTreeRoot.isClientRoot ? 'none' : '';
+    }
+
+    function returnToClientTree() {
+        if (treeRootPersonId) {
+            loadTreeBranch(treeRootPersonId, 0, 0, '#B08A43', {isClientRoot: true});
+            return;
+        }
+
+        window.location.href = treeRootUrl;
     }
 
     function renderTreeWindow(columns) {
@@ -2287,6 +2373,9 @@ dialog::backdrop {
                 data-madre-key="${escapeAttr(person.tree_madre_key || '')}"
                 data-tree-generation="${escapeAttr(person.tree_generation || 0)}"
                 data-persona-slot="${escapeAttr(person.PersonaIDNew || 0)}"
+                data-inherited-color="${escapeAttr(person.tree_inherited_color || '#B08A43')}"
+                data-padre-color="${escapeAttr(person.tree_color_padre || '#B08A43')}"
+                data-madre-color="${escapeAttr(person.tree_color_madre || '#B08A43')}"
                 data-column="${columnIndex}"
                 data-row="${rowIndex}"
                 data-node-x="${posX + (treeLayout.columnWidth / 2)}"
@@ -2304,6 +2393,7 @@ dialog::backdrop {
                     <div style="width:100%; height:0.5rem; border-bottom:#093143 1px solid; margin-bottom:0.5rem;"></div>
                     ${renderPersonActions(person)}
                 </div>
+                ${renderLineageStrip(person)}
             </div>
         `;
     }
@@ -2321,9 +2411,42 @@ dialog::backdrop {
                 data-tree-action="branch"
                 data-person-id="${escapeAttr(person.id)}"
                 data-tree-generation="${escapeAttr(person.tree_generation || 0)}"
-                data-persona-slot="${escapeAttr(person.PersonaIDNew || 0)}">
+                data-persona-slot="${escapeAttr(person.PersonaIDNew || 0)}"
+                data-line-color="${escapeAttr(person.tree_inherited_color || '#B08A43')}">
                 <i class="fa-solid fa-arrow-right"></i> Mas familiares
             </button>
+        `;
+    }
+
+    function renderLineageStrip(person) {
+        const padreColor = normalizeHexColor(person.tree_color_padre || '#B08A43');
+        const madreColor = normalizeHexColor(person.tree_color_madre || '#B08A43');
+        const inheritedColor = normalizeHexColor(person.tree_inherited_color || '#B08A43');
+        const disabledInput = canManageTree ? '' : 'disabled';
+        const padreInput = canManageTree ? `
+            <input type="color"
+                value="${escapeAttr(padreColor)}"
+                data-tree-color-side="padre"
+                data-person-id="${escapeAttr(person.id)}"
+                data-tree-generation="${escapeAttr(person.tree_generation || 0)}"
+                data-persona-slot="${escapeAttr(person.PersonaIDNew || 0)}"
+                data-inherited-color="${escapeAttr(inheritedColor)}" ${disabledInput}>
+        ` : '';
+        const madreInput = canManageTree ? `
+            <input type="color"
+                value="${escapeAttr(madreColor)}"
+                data-tree-color-side="madre"
+                data-person-id="${escapeAttr(person.id)}"
+                data-tree-generation="${escapeAttr(person.tree_generation || 0)}"
+                data-persona-slot="${escapeAttr(person.PersonaIDNew || 0)}"
+                data-inherited-color="${escapeAttr(inheritedColor)}" ${disabledInput}>
+        ` : '';
+
+        return `
+            <div class="tree-lineage-strip">
+                <label class="tree-lineage-color" style="background:${escapeAttr(padreColor)};" title="Linea paterna">${padreInput}</label>
+                <label class="tree-lineage-color" style="background:${escapeAttr(madreColor)};" title="Linea materna">${madreInput}</label>
+            </div>
         `;
     }
 
@@ -2331,12 +2454,14 @@ dialog::backdrop {
         const sex = person.showbtnsex === 'm' ? 'M' : 'F';
         const label = person.showbtnsex === 'm' ? 'Padre' : 'Madre';
         const clientId = person.IDCliente || @json($IDCliente);
+        const lineColor = normalizeHexColor(person.tree_line_color || person.tree_inherited_color || '#B08A43');
 
         return `
             <div class="cajapernew_min cajabtn_add addbtn tree-add-node ${sex}_${escapeAttr(person.id_hijo)}"
                 id="${sex}_${escapeAttr(person.id_hijo)}_${escapeAttr(clientId)}"
                 data-node-key="${escapeAttr(nodeKey)}"
                 data-child-key="${escapeAttr(person.tree_child_key || '')}"
+                data-line-color="${escapeAttr(lineColor)}"
                 data-column="${columnIndex}"
                 data-row="${rowIndex}"
                 data-node-x="${posX + (treeLayout.columnWidth / 2)}"
@@ -2359,7 +2484,7 @@ dialog::backdrop {
                 <button class="editperson" data-tree-action="edit" data-person-id="${escapeAttr(person.id)}">Editar</button>
                 <button class="editperson" data-tree-action="files" data-person-id="${escapeAttr(person.id)}" data-client-id="${escapeAttr(person.IDCliente)}">Archivos</button>
                 <button class="copydata" data-tree-action="copy" data-copy-target="datacopy_${safeId(person.tree_node_key || person.id)}">Copiar</button>
-                <button class="copydata" data-tree-action="branch" data-person-id="${escapeAttr(person.id)}" data-tree-generation="${escapeAttr(person.tree_generation || 0)}" data-persona-slot="${escapeAttr(person.PersonaIDNew || 0)}">Extender</button>
+                <button class="copydata" data-tree-action="branch" data-person-id="${escapeAttr(person.id)}" data-tree-generation="${escapeAttr(person.tree_generation || 0)}" data-persona-slot="${escapeAttr(person.PersonaIDNew || 0)}" data-line-color="${escapeAttr(person.tree_inherited_color || '#B08A43')}">Extender</button>
             `;
         }
 
@@ -2481,6 +2606,70 @@ dialog::backdrop {
         return String(value ?? '').replace(/[^A-Za-z0-9_-]/g, '_');
     }
 
+    function normalizeHexColor(value) {
+        const color = String(value || '').trim();
+        return /^#[0-9A-Fa-f]{6}$/.test(color) ? color.toUpperCase() : '#B08A43';
+    }
+
+    async function saveLineageColor(input) {
+        if (!canManageTree || !input.dataset.personId) {
+            return;
+        }
+
+        const color = normalizeHexColor(input.value);
+        const side = input.dataset.treeColorSide;
+        const label = input.closest('.tree-lineage-color');
+        const card = input.closest('.tree-person-node');
+
+        if (label) {
+            label.style.background = color;
+        }
+
+        if (card) {
+            if (side === 'padre') {
+                card.dataset.padreColor = color;
+            } else {
+                card.dataset.madreColor = color;
+            }
+        }
+
+        reloadlines();
+        showTreeLoading();
+
+        try {
+            const response = await fetch(`${treeColorBaseUrl}/${encodeURIComponent(input.dataset.personId)}`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({side, color}),
+            });
+
+            if (!response.ok) {
+                throw new Error('No se pudo guardar el color');
+            }
+
+            await loadTreeBranch(
+                currentTreeRoot.personId,
+                currentTreeRoot.generation,
+                currentTreeRoot.slot,
+                currentTreeRoot.lineColor,
+                {isClientRoot: currentTreeRoot.isClientRoot}
+            );
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: 'No se pudo guardar el color de la linea genealogica.',
+            });
+        } finally {
+            hideTreeLoading();
+        }
+    }
+
     document.getElementById('zoomIn').addEventListener('click', function() {
         zoomLevel += 0.1;
         adjustZoom();
@@ -2491,6 +2680,10 @@ dialog::backdrop {
             zoomLevel -= 0.1;
             adjustZoom();
         }
+    });
+
+    document.getElementById('treeReturnToClient')?.addEventListener('click', function() {
+        returnToClientTree();
     });
 
     $(document).ready(function() {
@@ -2610,7 +2803,7 @@ dialog::backdrop {
     });
 
     $(document).on("click", ".tree-person-node.tree-node-compact", function(e) {
-        if (e.target.closest('button')) {
+        if (e.target.closest('button') || e.target.closest('input')) {
             return;
         }
 
@@ -2623,12 +2816,22 @@ dialog::backdrop {
             return;
         }
 
-        if (e.target.closest('button')) {
+        if (e.target.closest('button') || e.target.closest('input')) {
             return;
         }
 
         e.preventDefault();
-        loadTreeBranch(this.dataset.personId, this.dataset.treeGeneration, this.dataset.personaSlot);
+        loadTreeBranch(this.dataset.personId, this.dataset.treeGeneration, this.dataset.personaSlot, this.dataset.inheritedColor);
+    });
+
+    $(document).on("change", "[data-tree-color-side]", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        saveLineageColor(this);
+    });
+
+    $(document).on("click", "[data-tree-color-side]", function(e) {
+        e.stopPropagation();
     });
 
     $(document).on("click", "[data-tree-action]", function(e) {
@@ -2651,7 +2854,7 @@ dialog::backdrop {
         }
 
         if (action === "branch") {
-            loadTreeBranch(this.dataset.personId, this.dataset.treeGeneration, this.dataset.personaSlot);
+            loadTreeBranch(this.dataset.personId, this.dataset.treeGeneration, this.dataset.personaSlot, this.dataset.lineColor);
         }
     });
 
@@ -2989,7 +3192,8 @@ function dibujarLineaSVG($caja1, $caja2) {
                     <line x1="${x1}" y1="${y1}"
                           x2="${x2}" y2="${y2}"
                           stroke="#093143"
-                          stroke-width="2" />
+                          stroke-width="1.35"
+                          opacity="0.72" />
                 </svg>`;
 
     $('#mylines').append(svg);
@@ -3013,7 +3217,10 @@ function reloadlines(){
             ['padreKey', 'madreKey'].forEach((field) => {
                 const targetKey = element.dataset[field];
                 if (targetKey && nodes.has(targetKey)) {
-                    fragment.appendChild(crearLineaSVG(element, nodes.get(targetKey)));
+                    const color = field === 'padreKey'
+                        ? element.dataset.padreColor
+                        : element.dataset.madreColor;
+                    fragment.appendChild(crearLineaSVG(element, nodes.get(targetKey), color));
                 }
             });
         });
@@ -3022,16 +3229,34 @@ function reloadlines(){
     });
 }
 
-function crearLineaSVG(elementA, elementB) {
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', elementA.dataset.nodeX || 0);
-    line.setAttribute('y1', elementA.dataset.nodeY || 0);
-    line.setAttribute('x2', elementB.dataset.nodeX || 0);
-    line.setAttribute('y2', elementB.dataset.nodeY || 0);
-    line.setAttribute('stroke', '#093143');
-    line.setAttribute('stroke-width', '2');
-    line.setAttribute('vector-effect', 'non-scaling-stroke');
-    return line;
+function crearLineaSVG(elementA, elementB, color = '#093143') {
+    const start = getLinePoint(elementA, 'right');
+    const end = getLinePoint(elementB, 'left');
+    const distance = Math.max(28, Math.abs(end.x - start.x) * 0.42);
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+
+    path.setAttribute(
+        'd',
+        `M ${start.x} ${start.y} C ${start.x + distance} ${start.y}, ${end.x - distance} ${end.y}, ${end.x} ${end.y}`
+    );
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', normalizeHexColor(color || '#093143'));
+    path.setAttribute('stroke-width', '1.35');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('opacity', '0.72');
+    path.setAttribute('vector-effect', 'non-scaling-stroke');
+    return path;
+}
+
+function getLinePoint(element, side) {
+    const centerX = Number(element.dataset.nodeX || 0);
+    const centerY = Number(element.dataset.nodeY || 0);
+    const halfWidth = Math.max(0, element.offsetWidth / 2);
+    const x = side === 'right'
+        ? centerX + halfWidth
+        : centerX - halfWidth;
+
+    return {x, y: centerY};
 }
 
     $('#modeview').on('change', function(){
