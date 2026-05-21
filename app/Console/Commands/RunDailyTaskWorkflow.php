@@ -18,7 +18,7 @@ class RunDailyTaskWorkflow extends Command
         {--per=10 : Tareas base por asesor}
         {--dry-run : Solo muestra cambios, no actualiza nada}
         {--force : Alias de --force-reassign para compatibilidad con el cron anterior}
-        {--force-reassign : Fuerza reasignacion de tareas inefectivas completadas y contactos en listas sin tareas}
+        {--force-reassign : Fuerza reasignacion de tareas pendientes, canceladas, no efectivas y contactos sin tareas}
         {--force-limit=200 : Maximo de contactos a revisar con --force-reassign}';
 
     protected $description = 'Ejecuta secuencialmente el cierre/reasignacion de tareas vencidas y la generacion de tareas diarias.';
@@ -87,7 +87,8 @@ class RunDailyTaskWorkflow extends Command
 
     private function forceReassignContacts(HubspotService $hubspot, HubspotDealOwnerSyncService $dealOwnerSync, bool $dryRun, int $limit): void
     {
-        $contacts = $this->forceReassignCandidates($limit);
+        $eligibleAdvisorIds = $this->eligibleAdvisorIdsForAutomaticTasks();
+        $contacts = $this->forceReassignCandidates($limit, $eligibleAdvisorIds);
 
         if ($contacts->isEmpty()) {
             $this->info('No hay contactos para reasignacion forzada.');
@@ -101,9 +102,10 @@ class RunDailyTaskWorkflow extends Command
         $hubspotDealsUpdated = 0;
         $hubspotNotFound = 0;
         $hubspotFailed = 0;
+        $openTasksCanceled = 0;
 
         foreach ($contacts as $contact) {
-            $advisor = $this->getNextAdvisorRoundRobin((int) ($contact->owner_id ?? 0));
+            $advisor = $this->getNextAdvisorRoundRobin();
 
             if (! $advisor) {
                 $this->warn("Sin asesor disponible para contact_id={$contact->id}");
@@ -111,7 +113,9 @@ class RunDailyTaskWorkflow extends Command
             }
 
             $reason = $contact->force_reason ?? 'sin motivo';
-            $this->line("   Reasignar contact_id={$contact->id} {$contact->name} | {$reason} -> {$advisor->name}");
+            $tasksToCancel = $this->countPendingTasksFromIneligibleAssignees((int) $contact->id, $eligibleAdvisorIds);
+            $cancelNote = $tasksToCancel > 0 ? " | tareas pendientes a cancelar={$tasksToCancel}" : '';
+            $this->line("   Reasignar contact_id={$contact->id} {$contact->name} | {$reason} -> {$advisor->name}{$cancelNote}");
 
             if ($dryRun) {
                 continue;
@@ -119,6 +123,7 @@ class RunDailyTaskWorkflow extends Command
 
             User::whereKey($contact->id)->update(['owner_id' => $advisor->id]);
             $updatedLocal++;
+            $openTasksCanceled += $this->cancelPendingTasksFromIneligibleAssignees((int) $contact->id, $eligibleAdvisorIds);
 
             try {
                 $hsContactId = $this->resolveHubspotContactId($hubspot, $contact);
@@ -163,11 +168,57 @@ class RunDailyTaskWorkflow extends Command
         $this->info("Negocios actualizados en HubSpot: {$hubspotDealsUpdated}");
         $this->info("No encontrados en HubSpot: {$hubspotNotFound}");
         $this->info("Fallidos en HubSpot: {$hubspotFailed}");
+        $this->info("Tareas pendientes canceladas de usuarios no elegibles: {$openTasksCanceled}");
     }
 
-    private function forceReassignCandidates(int $limit)
+    private function forceReassignCandidates(int $limit, array $eligibleAdvisorIds)
     {
         $systemsUserIds = Task::systemsUserIds();
+
+        $completedEffective = function ($query) use ($systemsUserIds) {
+            $query->select(DB::raw(1))
+                ->from('tasks')
+                ->whereColumn('tasks.contact_id', 'users.id')
+                ->where('tasks.status', Task::STATUS_COMPLETED)
+                ->where(function ($taskQuery) {
+                    $taskQuery->where('tasks.call_effective', 1)
+                        ->orWhere('tasks.customer_responded', 1)
+                        ->orWhereNotNull('tasks.sale_status')
+                        ->orWhereNotNull('tasks.reason_no_interest')
+                        ->orWhere('tasks.interest_level', 0);
+                })
+                ->when(! empty($systemsUserIds), function ($taskQuery) use ($systemsUserIds) {
+                    $taskQuery->whereNotIn('tasks.user_id', $systemsUserIds);
+                });
+        };
+
+        $inProgress = function ($query) use ($systemsUserIds) {
+            $query->select(DB::raw(1))
+                ->from('tasks')
+                ->whereColumn('tasks.contact_id', 'users.id')
+                ->where('tasks.status', Task::STATUS_IN_PROGRESS)
+                ->when(! empty($systemsUserIds), function ($taskQuery) use ($systemsUserIds) {
+                    $taskQuery->whereNotIn('tasks.user_id', $systemsUserIds);
+                });
+        };
+
+        $canceled = User::query()
+            ->select('users.id', 'users.name', 'users.email', 'users.hs_id', 'users.owner_id')
+            ->selectRaw("'tarea cancelada' as force_reason")
+            ->join('tasks', 'tasks.contact_id', '=', 'users.id')
+            ->where('tasks.status', Task::STATUS_CANCELED)
+            ->when(! empty($systemsUserIds), function ($query) use ($systemsUserIds) {
+                $query->whereNotIn('tasks.user_id', $systemsUserIds);
+            })
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('list_user as lu')
+                    ->whereColumn('lu.user_id', 'users.id')
+                    ->where('lu.contacted', 0);
+            })
+            ->whereNotExists($completedEffective)
+            ->whereNotExists($inProgress)
+            ->groupBy('users.id', 'users.name', 'users.email', 'users.hs_id', 'users.owner_id');
 
         $ineffective = User::query()
             ->select('users.id', 'users.name', 'users.email', 'users.hs_id', 'users.owner_id')
@@ -178,8 +229,14 @@ class RunDailyTaskWorkflow extends Command
             ->when(! empty($systemsUserIds), function ($query) use ($systemsUserIds) {
                 $query->whereNotIn('tasks.user_id', $systemsUserIds);
             })
-            ->whereColumn('tasks.user_id', 'users.owner_id')
-            ->whereNotNull('users.owner_id')
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('list_user as lu')
+                    ->whereColumn('lu.user_id', 'users.id')
+                    ->where('lu.contacted', 0);
+            })
+            ->whereNotExists($completedEffective)
+            ->whereNotExists($inProgress)
             ->groupBy('users.id', 'users.name', 'users.email', 'users.hs_id', 'users.owner_id');
 
         $withoutTasks = User::query()
@@ -187,7 +244,8 @@ class RunDailyTaskWorkflow extends Command
             ->selectRaw("'en lista sin tareas' as force_reason")
             ->join('list_user as lu', 'lu.user_id', '=', 'users.id')
             ->where('lu.contacted', 0)
-            ->whereNotNull('users.owner_id')
+            ->whereNotExists($completedEffective)
+            ->whereNotExists($inProgress)
             ->whereNotExists(function ($query) use ($systemsUserIds) {
                 $query->select(DB::raw(1))
                     ->from('tasks')
@@ -198,8 +256,53 @@ class RunDailyTaskWorkflow extends Command
             })
             ->groupBy('users.id', 'users.name', 'users.email', 'users.hs_id', 'users.owner_id');
 
+        $withoutEligibleOwner = User::query()
+            ->select('users.id', 'users.name', 'users.email', 'users.hs_id', 'users.owner_id')
+            ->selectRaw("'owner no elegible para tareas' as force_reason")
+            ->join('list_user as lu', 'lu.user_id', '=', 'users.id')
+            ->where('lu.contacted', 0)
+            ->whereNotExists($completedEffective)
+            ->whereNotExists($inProgress)
+            ->where(function ($query) use ($eligibleAdvisorIds) {
+                $query->whereNull('users.owner_id');
+
+                if (! empty($eligibleAdvisorIds)) {
+                    $query->orWhereNotIn('users.owner_id', $eligibleAdvisorIds);
+                }
+            })
+            ->groupBy('users.id', 'users.name', 'users.email', 'users.hs_id', 'users.owner_id');
+
+        $openTasksFromIneligible = User::query()
+            ->select('users.id', 'users.name', 'users.email', 'users.hs_id', 'users.owner_id')
+            ->selectRaw("'tarea pendiente en usuario no elegible' as force_reason")
+            ->join('tasks', 'tasks.contact_id', '=', 'users.id')
+            ->where('tasks.status', Task::STATUS_PENDING)
+            ->when(! empty($systemsUserIds), function ($query) use ($systemsUserIds) {
+                $query->whereNotIn('tasks.user_id', $systemsUserIds);
+            })
+            ->whereNotExists($completedEffective)
+            ->whereNotExists($inProgress)
+            ->where(function ($query) use ($eligibleAdvisorIds) {
+                $query->whereNull('tasks.user_id');
+
+                if (! empty($eligibleAdvisorIds)) {
+                    $query->orWhereNotIn('tasks.user_id', $eligibleAdvisorIds);
+                }
+            })
+            ->groupBy('users.id', 'users.name', 'users.email', 'users.hs_id', 'users.owner_id');
+
         return DB::query()
-            ->fromSub($ineffective->union($withoutTasks), 'candidates')
+            ->fromSub(
+                $canceled
+                    ->union($ineffective)
+                    ->union($withoutTasks)
+                    ->union($withoutEligibleOwner)
+                    ->union($openTasksFromIneligible),
+                'candidates'
+            )
+            ->select('id', 'name', 'email', 'hs_id', 'owner_id')
+            ->selectRaw('MIN(force_reason) as force_reason')
+            ->groupBy('id', 'name', 'email', 'hs_id', 'owner_id')
             ->orderBy('id')
             ->limit($limit)
             ->get();
@@ -220,15 +323,73 @@ class RunDailyTaskWorkflow extends Command
         return $hsContact['id'] ?? null;
     }
 
-    private function getNextAdvisorRoundRobin(?int $currentOwnerId = null): ?User
+    private function eligibleAdvisorIdsForAutomaticTasks(): array
     {
-        $advisors = User::query()
+        return User::query()
             ->join('hubspot_owner_user as hou', 'hou.user_id', '=', 'users.id')
+            ->join('hubspot_owners as ho', 'ho.id', '=', 'hou.hubspot_owner_id')
+            ->where('ho.active', true)
             ->whereNotNull('hou.hubspot_owner_id')
             ->whereRaw("TRIM(hou.hubspot_owner_id) <> ''")
             ->where('users.exclude_from_task_assignment', false)
-            ->when($currentOwnerId, function ($query) use ($currentOwnerId) {
-                $query->where('users.id', '!=', $currentOwnerId);
+            ->where(function ($query) {
+                $query->whereNull('users.task_assignment_daily_limit')
+                    ->orWhere('users.task_assignment_daily_limit', '>', 0);
+            })
+            ->pluck('users.id')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function countPendingTasksFromIneligibleAssignees(int $contactId, array $eligibleAdvisorIds): int
+    {
+        return (clone $this->pendingTasksFromIneligibleAssigneesQuery($contactId, $eligibleAdvisorIds))->count();
+    }
+
+    private function cancelPendingTasksFromIneligibleAssignees(int $contactId, array $eligibleAdvisorIds): int
+    {
+        $query = $this->pendingTasksFromIneligibleAssigneesQuery($contactId, $eligibleAdvisorIds);
+        $count = (clone $query)->count();
+
+        if ($count > 0) {
+            $query->update(['status' => Task::STATUS_CANCELED]);
+        }
+
+        return $count;
+    }
+
+    private function pendingTasksFromIneligibleAssigneesQuery(int $contactId, array $eligibleAdvisorIds)
+    {
+        return Task::query()
+            ->where('contact_id', $contactId)
+            ->where('status', Task::STATUS_PENDING)
+            ->notAssignedToSystems()
+            ->where(function ($query) use ($eligibleAdvisorIds) {
+                $query->whereNull('user_id');
+
+                if (! empty($eligibleAdvisorIds)) {
+                    $query->orWhereNotIn('user_id', $eligibleAdvisorIds);
+                }
+            });
+    }
+
+    private function getNextAdvisorRoundRobin(?int $excludedUserId = null): ?User
+    {
+        $advisors = User::query()
+            ->join('hubspot_owner_user as hou', 'hou.user_id', '=', 'users.id')
+            ->join('hubspot_owners as ho', 'ho.id', '=', 'hou.hubspot_owner_id')
+            ->where('ho.active', true)
+            ->whereNotNull('hou.hubspot_owner_id')
+            ->whereRaw("TRIM(hou.hubspot_owner_id) <> ''")
+            ->where('users.exclude_from_task_assignment', false)
+            ->where(function ($query) {
+                $query->whereNull('users.task_assignment_daily_limit')
+                    ->orWhere('users.task_assignment_daily_limit', '>', 0);
+            })
+            ->when($excludedUserId, function ($query) use ($excludedUserId) {
+                $query->where('users.id', '!=', $excludedUserId);
             })
             ->orderBy('users.id')
             ->select('users.*', 'hou.hubspot_owner_id as hs_owner_id')

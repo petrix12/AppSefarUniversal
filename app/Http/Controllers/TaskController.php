@@ -97,7 +97,12 @@ class TaskController extends Controller
         return view('tasks.show', compact('task'));
     }
 
-    public function updateSalesTracking(Request $request, Task $task, HubspotService $hubspot)
+    public function updateSalesTracking(
+        Request $request,
+        Task $task,
+        HubspotService $hubspot,
+        HubspotDealOwnerSyncService $dealOwnerSync
+    )
     {
         $this->authorizeAccess($task);
 
@@ -154,7 +159,7 @@ class TaskController extends Controller
         $message = 'Gestion comercial guardada. El cliente queda en tu seguimiento.';
 
         if ($onlyUnansweredCall) {
-            $message = 'Gestion guardada como llamada sin respuesta. El contacto no fue reasignado desde este cierre.';
+            $message = $this->reassignIneffectiveContact($task, $hubspot, $dealOwnerSync);
         } else {
             $this->markContacted->markFromTask($task);
         }
@@ -197,7 +202,7 @@ class TaskController extends Controller
                     $task->reason_no_effective = $request->reason_no_effective;
                     $task->status              = 'completed';
                     $taskWasCompleted          = true;
-                    $shouldReassignIneffectiveContact = false;
+                    $shouldReassignIneffectiveContact = true;
                 }
 
                 $task->save();
@@ -382,7 +387,7 @@ class TaskController extends Controller
             return 'Progreso guardado. No se pudo reasignar porque la tarea no tiene contacto asociado.';
         }
 
-        $advisor = $this->getNextAdvisorRoundRobin($contact->owner_id);
+        $advisor = $this->getNextAdvisorRoundRobin((int) $task->user_id);
 
         if (! $advisor) {
             Log::warning('No hay asesor disponible para reasignar contacto con comunicacion no efectiva.', [
@@ -471,15 +476,21 @@ class TaskController extends Controller
             ->with('success', 'Tarea interna de Sistemas completada. No se reasigno ningun cliente.');
     }
 
-    private function getNextAdvisorRoundRobin(?int $currentOwnerId = null): ?User
+    private function getNextAdvisorRoundRobin(?int $excludedUserId = null): ?User
     {
         $advisors = User::query()
             ->join('hubspot_owner_user as hou', 'hou.user_id', '=', 'users.id')
+            ->join('hubspot_owners as ho', 'ho.id', '=', 'hou.hubspot_owner_id')
+            ->where('ho.active', true)
             ->whereNotNull('hou.hubspot_owner_id')
             ->whereRaw("TRIM(hou.hubspot_owner_id) <> ''")
             ->where('users.exclude_from_task_assignment', false)
-            ->when($currentOwnerId, function ($query) use ($currentOwnerId) {
-                $query->where('users.id', '!=', $currentOwnerId);
+            ->where(function ($query) {
+                $query->whereNull('users.task_assignment_daily_limit')
+                    ->orWhere('users.task_assignment_daily_limit', '>', 0);
+            })
+            ->when($excludedUserId, function ($query) use ($excludedUserId) {
+                $query->where('users.id', '!=', $excludedUserId);
             })
             ->orderBy('users.id')
             ->select('users.*', 'hou.hubspot_owner_id as hs_owner_id')

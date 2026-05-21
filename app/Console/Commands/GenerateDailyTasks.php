@@ -8,6 +8,7 @@ use App\Models\Task;
 use App\Models\User;
 use App\Services\HubspotDealOwnerSyncService;
 use App\Services\HubspotService;
+use App\Services\MarkContactedService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -25,7 +26,11 @@ class GenerateDailyTasks extends Command
 
     protected $description = 'Genera tareas diarias por asesor respetando cupos, evitando repetidos semanales y omitiendo desinteresados.';
 
-    public function handle(HubspotService $hubspot, HubspotDealOwnerSyncService $dealOwnerSync): int
+    public function handle(
+        HubspotService $hubspot,
+        HubspotDealOwnerSyncService $dealOwnerSync,
+        MarkContactedService $markContacted
+    ): int
     {
         $date   = $this->option('date') ? Carbon::parse($this->option('date')) : today();
         $base   = (int) ($this->option('per') ?? 10);
@@ -58,7 +63,7 @@ class GenerateDailyTasks extends Command
             return self::FAILURE;
         }
 
-        $activeAdvisorIds = $advisors->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $this->markContactsThatShouldLeaveReassignmentLists($markContacted, $dryRun);
 
         // 2) Contactos disponibles (en list_user, no contactados)
         $contacts = DB::table('list_user as lu')
@@ -74,7 +79,6 @@ class GenerateDailyTasks extends Command
                 'l.name as list_name'
             )
             ->where('lu.contacted', 0)
-            ->whereNotNull('u.owner_id')
             ->get();
 
         if ($contacts->isEmpty()) {
@@ -86,12 +90,28 @@ class GenerateDailyTasks extends Command
         $totalReassignedLocal = 0;
         $totalSkippedByHubspot = 0;
         $assignedContactIdsThisRun = [];
-        $disinterestedContacts = Task::query()
+        $nonReassignableContacts = Task::query()
             ->where(function ($q) {
                 $q->whereIn('status', ['desinteres', 'no_interest', 'not_interested'])
-                  ->orWhereNotNull('reason_no_interest')
-                  ->orWhere('interest_level', 0);
+                    ->orWhere(function ($completed) {
+                        $completed->where('status', Task::STATUS_COMPLETED)
+                            ->where(function ($effective) {
+                                $effective->where('call_effective', 1)
+                                    ->orWhere('customer_responded', 1)
+                                    ->orWhereNotNull('sale_status')
+                                    ->orWhereNotNull('reason_no_interest')
+                                    ->orWhere('interest_level', 0);
+                            });
+                    });
             })
+            ->pluck('contact_id')
+            ->filter()
+            ->unique()
+            ->map(fn ($id) => (int) $id)
+            ->toArray();
+
+        $inProgressContacts = Task::query()
+            ->where('status', Task::STATUS_IN_PROGRESS)
             ->pluck('contact_id')
             ->filter()
             ->unique()
@@ -154,29 +174,17 @@ class GenerateDailyTasks extends Command
             // b) interest_level = 0
             // c) reason_no_interest no null
             // Ademas se usa como pool para completar cupo cuando el asesor no tiene contactos propios.
-            $candidates = collect([0, 1, 2])
-                ->flatMap(function (int $priority) use ($contacts, $advisor, $activeAdvisorIds, $alreadyTaskedToday, $recentlyTasked, $disinterestedContacts, &$assignedContactIdsThisRun) {
-                    return $contacts
-                        ->filter(function ($contact) use ($priority, $advisor, $activeAdvisorIds) {
-                            $ownerId = (int) $contact->owner_id;
+            $candidates = $contacts
+                ->reject(function ($contact) use ($alreadyTaskedToday, $recentlyTasked, $nonReassignableContacts, $inProgressContacts, &$assignedContactIdsThisRun) {
+                    $contactId = (int) $contact->contact_id;
 
-                            return match ($priority) {
-                                0 => $ownerId === (int) $advisor->id,
-                                1 => ! in_array($ownerId, $activeAdvisorIds, true),
-                                default => $ownerId !== (int) $advisor->id && in_array($ownerId, $activeAdvisorIds, true),
-                            };
-                        })
-                        ->reject(function ($contact) use ($alreadyTaskedToday, $recentlyTasked, $disinterestedContacts, &$assignedContactIdsThisRun) {
-                            $contactId = (int) $contact->contact_id;
-
-                            return in_array($contactId, $assignedContactIdsThisRun, true)
-                                || in_array($contactId, $alreadyTaskedToday, true)
-                                || in_array($contactId, $recentlyTasked, true)
-                                || in_array($contactId, $disinterestedContacts, true);
-                        })
-                        ->values()
-                        ->shuffle();
+                    return in_array($contactId, $assignedContactIdsThisRun, true)
+                        || in_array($contactId, $alreadyTaskedToday, true)
+                        || in_array($contactId, $recentlyTasked, true)
+                        || in_array($contactId, $inProgressContacts, true)
+                        || in_array($contactId, $nonReassignableContacts, true);
                 })
+                ->shuffle()
                 ->unique('contact_id')
                 ->values()
                 ->take($toCreate);
@@ -187,8 +195,9 @@ class GenerateDailyTasks extends Command
             }
 
             foreach ($candidates as $contact) {
-                $ownerChanged = (int) $contact->owner_id !== (int) $advisor->id;
-                $ownerNote = $ownerChanged ? " | owner previo={$contact->owner_id}" : '';
+                $previousOwner = $contact->owner_id ?? 'NULL';
+                $ownerChanged = (int) ($contact->owner_id ?? 0) !== (int) $advisor->id;
+                $ownerNote = $ownerChanged ? " | owner previo={$previousOwner}" : '';
                 $hubspotNote = $ownerChanged ? " | HubSpot owner destino={$advisor->hs_owner_id}" : '';
                 $this->line("   + Tarea -> {$contact->contact_name} | Lista: {$contact->list_name} (contact_id={$contact->contact_id}){$ownerNote}{$hubspotNote}");
 
@@ -215,7 +224,7 @@ class GenerateDailyTasks extends Command
                         'contact_id'         => $contact->contact_id,
                         'title'              => "Comunicarse con el cliente {$contact->contact_name} [Lista: {$contact->list_name}]",
                         'description' => $ownerChanged
-                            ? "Lista origen: {$contact->list_name}. Reasignado automaticamente desde owner {$contact->owner_id}."
+                            ? "Lista origen: {$contact->list_name}. Reasignado automaticamente desde owner {$previousOwner}."
                             : "Lista origen: {$contact->list_name}",
                         'due_date'           => $date->toDateString(),
                         'status'             => Task::STATUS_PENDING,
@@ -238,6 +247,44 @@ class GenerateDailyTasks extends Command
         $this->info("Contactos reasignados localmente por cupo: {$totalReassignedLocal}");
         $this->info("Contactos omitidos por no poder sincronizar HubSpot: {$totalSkippedByHubspot}");
         return self::SUCCESS;
+    }
+
+    private function markContactsThatShouldLeaveReassignmentLists(MarkContactedService $markContacted, bool $dryRun): void
+    {
+        $tasks = Task::query()
+            ->whereNotNull('contact_id')
+            ->where('status', Task::STATUS_COMPLETED)
+            ->where(function ($query) {
+                $query->where('call_effective', 1)
+                    ->orWhere('customer_responded', 1)
+                    ->orWhereNotNull('sale_status')
+                    ->orWhereNotNull('reason_no_interest')
+                    ->orWhere('interest_level', 0);
+            })
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('list_user as lu')
+                    ->whereColumn('lu.user_id', 'tasks.contact_id')
+                    ->where('lu.contacted', 0);
+            })
+            ->orderByDesc('id')
+            ->get()
+            ->unique('contact_id')
+            ->values();
+
+        if ($tasks->isEmpty()) {
+            return;
+        }
+
+        $this->warn("Contactos para sacar de listas de reasignacion: {$tasks->count()}");
+
+        if ($dryRun) {
+            return;
+        }
+
+        foreach ($tasks as $task) {
+            $markContacted->markFromTask($task);
+        }
     }
 
     private function sendAssignedTasksEmail(User $advisor, array $taskIds, Carbon $date): void
@@ -276,5 +323,79 @@ class GenerateDailyTasks extends Command
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    private function syncContactOwnerForTaskGeneration(
+        HubspotService $hubspot,
+        HubspotDealOwnerSyncService $dealOwnerSync,
+        object $contact,
+        object $advisor
+    ): bool {
+        try {
+            $hsContactId = $this->resolveHubspotContactId($hubspot, $contact);
+
+            if (! $hsContactId) {
+                $this->warn("      HubSpot no encontrado: contact_id={$contact->contact_id}, email={$contact->contact_email}, hs_id={$contact->contact_hs_id}");
+
+                Log::warning('Contacto no encontrado en HubSpot al reasignar durante generacion de tareas', [
+                    'client_id' => $contact->contact_id,
+                    'email' => $contact->contact_email,
+                    'hs_id' => $contact->contact_hs_id,
+                    'new_owner_user_id' => $advisor->id,
+                    'new_hubspot_owner_id' => $advisor->hs_owner_id,
+                ]);
+
+                return false;
+            }
+
+            $hubspot->updateContact($hsContactId, [
+                'hubspot_owner_id' => (string) $advisor->hs_owner_id,
+            ]);
+
+            $updatedDeals = $dealOwnerSync->syncForContact(
+                $hubspot,
+                $hsContactId,
+                (string) $advisor->hs_owner_id,
+                (int) $contact->contact_id
+            );
+
+            User::whereKey((int) $contact->contact_id)->update([
+                'owner_id' => (int) $advisor->id,
+            ]);
+
+            $contact->owner_id = (int) $advisor->id;
+
+            $this->line("      HubSpot actualizado: hs_id={$hsContactId}, owner={$advisor->hs_owner_id}, deals={$updatedDeals}");
+
+            return true;
+        } catch (\Throwable $e) {
+            $this->warn("      HubSpot fallo: contact_id={$contact->contact_id}, owner={$advisor->hs_owner_id}, error={$e->getMessage()}");
+
+            Log::error('Error reasignando contacto en HubSpot durante generacion de tareas', [
+                'client_id' => $contact->contact_id,
+                'email' => $contact->contact_email,
+                'hs_id' => $contact->contact_hs_id,
+                'new_owner_user_id' => $advisor->id,
+                'new_hubspot_owner_id' => $advisor->hs_owner_id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+    }
+
+    private function resolveHubspotContactId(HubspotService $hubspot, object $contact): ?string
+    {
+        if (! empty($contact->contact_hs_id)) {
+            return (string) $contact->contact_hs_id;
+        }
+
+        if (empty($contact->contact_email)) {
+            return null;
+        }
+
+        $hsContact = $hubspot->searchContactByEmail($contact->contact_email);
+
+        return $hsContact['id'] ?? null;
     }
 }

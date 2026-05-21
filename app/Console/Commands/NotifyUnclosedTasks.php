@@ -40,11 +40,17 @@ class NotifyUnclosedTasks extends Command
                 'assignee:id,name,email',
                 'contact:id,name,email,hs_id,owner_id',
             ])
-            ->whereIn('status', ['pending', 'in_progress'])
+            ->where('status', Task::STATUS_PENDING)
             ->notAssignedToSystems()
             ->whereNotNull('due_date')
             ->whereDate('due_date', '<=', $limitDate->toDateString())
             ->whereNotNull('contact_id')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('tasks as in_progress_tasks')
+                    ->whereColumn('in_progress_tasks.contact_id', 'tasks.contact_id')
+                    ->where('in_progress_tasks.status', Task::STATUS_IN_PROGRESS);
+            })
             ->get();
 
         if ($tasks->isEmpty()) {
@@ -72,7 +78,7 @@ class NotifyUnclosedTasks extends Command
                     continue;
                 }
 
-                $advisor = $this->getNextAdvisorRoundRobin($contact->owner_id);
+                $advisor = $this->getNextAdvisorRoundRobin((int) $task->user_id);
 
                 if (!$advisor) {
                     $this->warn('No hay asesores disponibles con owner real de HubSpot mapeado.');
@@ -205,15 +211,21 @@ class NotifyUnclosedTasks extends Command
         return $hsContact['id'] ?? null;
     }
 
-    private function getNextAdvisorRoundRobin(?int $currentOwnerId = null): ?User
+    private function getNextAdvisorRoundRobin(?int $excludedUserId = null): ?User
     {
         $advisors = User::query()
             ->join('hubspot_owner_user as hou', 'hou.user_id', '=', 'users.id')
+            ->join('hubspot_owners as ho', 'ho.id', '=', 'hou.hubspot_owner_id')
+            ->where('ho.active', true)
             ->whereNotNull('hou.hubspot_owner_id')
             ->whereRaw("TRIM(hou.hubspot_owner_id) <> ''")
             ->where('users.exclude_from_task_assignment', false)
-            ->when($currentOwnerId, function ($query) use ($currentOwnerId) {
-                $query->where('users.id', '!=', $currentOwnerId);
+            ->where(function ($query) {
+                $query->whereNull('users.task_assignment_daily_limit')
+                    ->orWhere('users.task_assignment_daily_limit', '>', 0);
+            })
+            ->when($excludedUserId, function ($query) use ($excludedUserId) {
+                $query->where('users.id', '!=', $excludedUserId);
             })
             ->orderBy('users.id')
             ->select('users.*', 'hou.hubspot_owner_id as hs_owner_id')

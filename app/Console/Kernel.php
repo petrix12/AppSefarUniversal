@@ -41,6 +41,11 @@ class Kernel extends ConsoleKernel
                  ->at('6:00')
                  ->withoutOverlapping()
                  ->appendOutputTo(storage_path('logs/tasks-daily-workflow.log'));
+        $schedule->command('tasks:remind-in-progress --days=7')
+                 ->weekdays()
+                 ->at('8:00')
+                 ->withoutOverlapping()
+                 ->appendOutputTo(storage_path('logs/tasks-in-progress-reminders.log'));
     }
 
     /**
