@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Agcliente;
+use App\Models\File as ClientFile;
 use App\Models\TFile;
 use App\Models\User;
 use App\Services\GenealogyService;
@@ -118,6 +119,89 @@ class TreeController extends Controller
             'side' => $validated['side'],
             'color' => $person->{$column},
         ]);
+    }
+
+    public function personDetail(string $IDCliente, int $id): JsonResponse
+    {
+        if (!$this->verificarAutorizacion($IDCliente)) {
+            abort(403);
+        }
+
+        if (!auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista'])) {
+            abort(403);
+        }
+
+        $person = Agcliente::where('IDCliente', $IDCliente)->findOrFail($id);
+
+        return response()->json([
+            'person' => $person,
+            'files' => $this->filesForPerson($person),
+            'tree_files' => $this->unassignedFilesForClient($IDCliente),
+        ]);
+    }
+
+    private function filesForPerson(Agcliente $person): array
+    {
+        $legacyPersonId = $person->IDPersona;
+
+        return ClientFile::where('IDCliente', $person->IDCliente)
+            ->where(function ($query) use ($person, $legacyPersonId) {
+                $query->where('IDPersonaNew', $person->id);
+
+                if (!empty($legacyPersonId)) {
+                    $query->orWhere(function ($legacyQuery) use ($legacyPersonId) {
+                        $legacyQuery->where('IDPersona', $legacyPersonId)
+                            ->where(function ($unmigratedQuery) {
+                                $unmigratedQuery->whereNull('IDPersonaNew')
+                                    ->orWhere('IDPersonaNew', 0)
+                                    ->orWhere('IDPersonaNew', '');
+                            });
+                    });
+                }
+            })
+            ->orderBy('tipo')
+            ->orderBy('file')
+            ->get()
+            ->map(fn (ClientFile $file): array => $this->formatTreeFile($file))
+            ->values()
+            ->all();
+    }
+
+    private function unassignedFilesForClient(string $IDCliente): array
+    {
+        return ClientFile::where('IDCliente', $IDCliente)
+            ->where(function ($query) {
+                $query->whereNull('IDPersonaNew')
+                    ->orWhere('IDPersonaNew', 0)
+                    ->orWhere('IDPersonaNew', '');
+            })
+            ->where(function ($query) {
+                $query->whereNull('IDPersona')
+                    ->orWhere('IDPersona', 0)
+                    ->orWhere('IDPersona', '');
+            })
+            ->orderBy('tipo')
+            ->orderBy('file')
+            ->get()
+            ->map(fn (ClientFile $file): array => $this->formatTreeFile($file))
+            ->values()
+            ->all();
+    }
+
+    private function formatTreeFile(ClientFile $file): array
+    {
+        $location = rtrim((string) $file->location, '/');
+        $name = (string) $file->file;
+
+        return [
+            'id' => $file->id,
+            'file' => $name,
+            'tipo' => $file->tipo,
+            'notas' => $file->notas,
+            'location' => $file->location,
+            'path' => $location . '/' . $name,
+            'created_at' => optional($file->created_at)->format('d/m/Y'),
+        ];
     }
 
     private function renderTree(

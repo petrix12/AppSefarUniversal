@@ -220,7 +220,7 @@
                                             $treeRow = $persona['tree_row'] ?? $key2;
                                             $containerY = $topPadding + ($treeRow * $rowHeight);
                                             $nodeKey = $persona['tree_node_key'] ?? ('node_' . $key1 . '_' . $key2);
-                                            $isCompactNode = $key1 >= 4;
+                                            $isCompactNode = false;
                                         @endphp
 
                                         @if ($persona["showbtn"]==2)
@@ -398,6 +398,24 @@
             </div>
         </div>
     </div>
+
+    @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
+    <aside id="treePersonPanel" class="tree-person-panel" aria-hidden="true">
+        <div class="tree-person-panel-header">
+            <div>
+                <div class="tree-person-panel-eyebrow">Persona seleccionada</div>
+                <h3 id="treePersonPanelTitle" class="tree-person-panel-title">Selecciona una persona</h3>
+                <div id="treePersonPanelSubtitle" class="tree-person-panel-subtitle"></div>
+            </div>
+            <button type="button" id="treePersonPanelClose" class="tree-person-panel-close" title="Cerrar">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div id="treePersonPanelBody" class="tree-person-panel-body">
+            <div class="tree-person-panel-empty">Haz click sobre una persona del arbol para ver su informacion y documentos.</div>
+        </div>
+    </aside>
+    @endif
 
     <div class="modaladdfamiliar" >
         <div class="contentmodaladdfamiliar">
@@ -1968,19 +1986,9 @@
     cursor: pointer;
 }
 
-.tree-node-compact:not(.tree-node-expanded) {
-    max-height: 90px;
-}
-
-.tree-node-compact:not(.tree-node-expanded) .tree-node-info {
-    display: none;
-}
-
-.tree-node-compact.tree-node-expanded {
-    max-height: 220px;
-    overflow: visible;
-    z-index: 20;
-    box-shadow: 0 8px 20px rgba(9, 49, 67, 0.18);
+.tree-person-node.is-selected {
+    box-shadow: 0 0 0 3px rgba(6, 194, 204, 0.34), 0 8px 18px rgba(9, 49, 67, 0.18);
+    z-index: 30;
 }
 
 .tree-more-indicator {
@@ -2051,6 +2059,184 @@
 
 .tree-loading-overlay.is-visible {
     display: flex;
+}
+
+.tree-person-panel {
+    position: fixed;
+    top: 96px;
+    right: 24px;
+    bottom: 24px;
+    z-index: 10020;
+    width: min(440px, calc(100vw - 48px));
+    display: none;
+    flex-direction: column;
+    background: #ffffff;
+    border: 1px solid rgba(9, 49, 67, 0.16);
+    border-radius: 8px;
+    box-shadow: 0 20px 45px rgba(9, 49, 67, 0.22);
+    overflow: hidden;
+}
+
+.tree-person-panel.is-visible {
+    display: flex;
+}
+
+.tree-person-panel-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 18px;
+    background: #093143;
+    color: white;
+}
+
+.tree-person-panel-eyebrow {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.tree-person-panel-title {
+    margin: 3px 0 0;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.tree-person-panel-subtitle {
+    margin-top: 4px;
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.76);
+}
+
+.tree-person-panel-close {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 34px;
+}
+
+.tree-person-panel-close:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.tree-person-panel-body {
+    overflow-y: auto;
+    padding: 16px;
+    color: #093143;
+}
+
+.tree-person-panel-empty,
+.tree-person-panel-loading {
+    padding: 22px 12px;
+    text-align: center;
+    color: rgba(9, 49, 67, 0.68);
+    font-size: 0.88rem;
+}
+
+.tree-person-detail-section {
+    margin-bottom: 18px;
+}
+
+.tree-person-detail-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #093143;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(9, 49, 67, 0.18);
+}
+
+.tree-person-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.tree-person-detail-item {
+    min-width: 0;
+    padding: 9px 10px;
+    border: 1px solid rgba(9, 49, 67, 0.12);
+    border-radius: 6px;
+    background: #f8fafb;
+}
+
+.tree-person-detail-item.is-wide {
+    grid-column: 1 / -1;
+}
+
+.tree-person-detail-label {
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: rgba(9, 49, 67, 0.58);
+}
+
+.tree-person-detail-value {
+    margin-top: 3px;
+    font-size: 0.82rem;
+    color: #093143;
+    overflow-wrap: anywhere;
+}
+
+.tree-panel-file {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid rgba(9, 49, 67, 0.14);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    background: white;
+}
+
+.tree-panel-file-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #093143;
+    overflow-wrap: anywhere;
+}
+
+.tree-panel-file-meta {
+    margin-top: 4px;
+    font-size: 0.72rem;
+    color: rgba(9, 49, 67, 0.62);
+}
+
+.tree-panel-file-button {
+    height: 32px;
+    min-width: 72px;
+    padding: 0 10px;
+    border-radius: 8px;
+    background: #093143;
+    color: white;
+    font-size: 0.76rem;
+}
+
+.tree-panel-file-button:hover {
+    background: #06c2cc;
+    color: #093143;
+}
+
+@media (max-width: 900px) {
+    .tree-person-panel {
+        top: auto;
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        width: auto;
+        max-height: 72vh;
+    }
+
+    .tree-person-detail-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .tree-loading-modal {
@@ -2196,17 +2382,21 @@ dialog::backdrop {
         initialOffset: 20,
         topPadding: 40,
         rowHeight: 198,
-        compactFromColumn: 4,
         minHeight: 720,
         minWidth: 900,
     };
     const treeBranchBaseUrl = @json(url('/tree/' . $IDCliente . '/branch'));
     const treeColorBaseUrl = @json(url('/tree/' . $IDCliente . '/line-color'));
+    const treePersonDetailBaseUrl = @json(url('/tree/' . $IDCliente . '/person'));
     const treeRootUrl = @json(url('/tree/' . $IDCliente));
     const treeRootPersonId = @json($columnasparatabla[0][0]['id'] ?? null);
     const csrfToken = @json(csrf_token());
     const canManageTree = @json(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']));
     const canEditClientTree = @json(auth()->user() && auth()->user()->hasRole(['Cliente']));
+    const treePersonPanel = document.getElementById('treePersonPanel');
+    const treePersonPanelBody = document.getElementById('treePersonPanelBody');
+    const treePersonPanelTitle = document.getElementById('treePersonPanelTitle');
+    const treePersonPanelSubtitle = document.getElementById('treePersonPanelSubtitle');
     let currentTreeRoot = {
         personId: treeRootPersonId,
         generation: 0,
@@ -2214,13 +2404,17 @@ dialog::backdrop {
         lineColor: '#B08A43',
         isClientRoot: true,
     };
+    let treePanelClickTimer = null;
+    let treePersonPanelAbortController = null;
 
     let isDragging = false;
+    let treeDragMoved = false;
     let startX, startY, scrollLeft, scrollTop;
 
     // Al hacer clic y arrastrar
     container.addEventListener('mousedown', (e) => {
         isDragging = true;
+        treeDragMoved = false;
         container.style.cursor = 'grabbing';
         startX = e.pageX - container.offsetLeft;
         startY = e.pageY - container.offsetTop;
@@ -2236,6 +2430,9 @@ dialog::backdrop {
     container.addEventListener('mouseup', () => {
         isDragging = false;
         container.style.cursor = 'grab';
+        setTimeout(() => {
+            treeDragMoved = false;
+        }, 120);
     });
 
     container.addEventListener('mousemove', (e) => {
@@ -2245,6 +2442,9 @@ dialog::backdrop {
         const y = e.pageY - container.offsetTop;
         const walkX = (x - startX) * 1; // Ajusta la sensibilidad del desplazamiento
         const walkY = (y - startY) * 1;
+        if (Math.abs(walkX) > 4 || Math.abs(walkY) > 4) {
+            treeDragMoved = true;
+        }
         container.scrollLeft = scrollLeft - walkX;
         container.scrollTop = scrollTop - walkY;
     });
@@ -2306,12 +2506,246 @@ dialog::backdrop {
         treeLoadingOverlay.setAttribute('aria-hidden', 'true');
     }
 
+    function treePersonDetailUrl(personId) {
+        return `${treePersonDetailBaseUrl}/${encodeURIComponent(personId)}/detail`;
+    }
+
+    function showTreePersonPanelShell(personId, nodeElement = null) {
+        if (!canManageTree || !treePersonPanel || !treePersonPanelBody) {
+            return;
+        }
+
+        document.querySelectorAll('.tree-person-node.is-selected').forEach((node) => {
+            node.classList.remove('is-selected');
+        });
+
+        if (nodeElement) {
+            nodeElement.classList.add('is-selected');
+        }
+
+        treePersonPanel.classList.add('is-visible');
+        treePersonPanel.setAttribute('aria-hidden', 'false');
+        treePersonPanelBody.innerHTML = '<div class="tree-person-panel-loading">Cargando informacion...</div>';
+
+        if (treePersonPanelTitle) {
+            treePersonPanelTitle.textContent = 'Cargando persona';
+        }
+
+        if (treePersonPanelSubtitle) {
+            treePersonPanelSubtitle.textContent = `ID ${personId}`;
+        }
+    }
+
+    function hideTreePersonPanel() {
+        if (!treePersonPanel) {
+            return;
+        }
+
+        treePersonPanel.classList.remove('is-visible');
+        treePersonPanel.setAttribute('aria-hidden', 'true');
+        document.querySelectorAll('.tree-person-node.is-selected').forEach((node) => {
+            node.classList.remove('is-selected');
+        });
+    }
+
+    async function openTreePersonPanel(personId, nodeElement = null) {
+        if (!canManageTree || !personId) {
+            return;
+        }
+
+        showTreePersonPanelShell(personId, nodeElement);
+
+        if (treePersonPanelAbortController) {
+            treePersonPanelAbortController.abort();
+        }
+
+        treePersonPanelAbortController = new AbortController();
+
+        try {
+            const response = await fetch(treePersonDetailUrl(personId), {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                signal: treePersonPanelAbortController.signal,
+            });
+
+            if (!response.ok) {
+                throw new Error('No se pudo cargar la informacion de la persona.');
+            }
+
+            const payload = await response.json();
+            renderTreePersonPanel(payload);
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                return;
+            }
+
+            if (treePersonPanelBody) {
+                treePersonPanelBody.innerHTML = `<div class="tree-person-panel-empty">${escapeHtml(error.message || 'No se pudo cargar la informacion.')}</div>`;
+            }
+        }
+    }
+
+    function renderTreePersonPanel(payload) {
+        const person = payload.person || {};
+        const fullName = [person.Nombres, person.Apellidos].filter(Boolean).join(' ') || 'Sin nombre';
+
+        if (treePersonPanelTitle) {
+            treePersonPanelTitle.textContent = fullName;
+        }
+
+        if (treePersonPanelSubtitle) {
+            treePersonPanelSubtitle.textContent = [person.parentesco, `IDCliente ${person.IDCliente || ''}`]
+                .filter(Boolean)
+                .join(' / ');
+        }
+
+        if (!treePersonPanelBody) {
+            return;
+        }
+
+        treePersonPanelBody.innerHTML = `
+            ${renderTreePersonInfo(person)}
+            ${renderTreePanelFileSection('Documentos de la persona', payload.files || [], 'No hay documentos asociados a esta persona.')}
+            ${renderTreePanelFileSection('Documentos del arbol', payload.tree_files || [], 'No hay documentos generales del arbol.')}
+        `;
+    }
+
+    function renderTreePersonInfo(person) {
+        const sections = [
+            {
+                title: 'Identificacion',
+                fields: [
+                    ['ID cliente', person.IDCliente],
+                    ['ID persona', person.IDPersona],
+                    ['Sexo', person.Sexo],
+                    ['Pasaporte', joinPanelParts(person.NPasaporte, person.PaisPasaporte)],
+                    ['Documento identidad', joinPanelParts(person.NDocIdent, person.PaisDocIdent)],
+                ],
+            },
+            {
+                title: 'Nacimiento',
+                fields: [
+                    ['Fecha', panelDate(person, 'Nac')],
+                    ['Lugar', joinPanelParts(person.LugarNac, person.PaisNac)],
+                ],
+            },
+            {
+                title: 'Bautizo',
+                fields: [
+                    ['Fecha', panelDate(person, 'Btzo')],
+                    ['Lugar', joinPanelParts(person.LugarBtzo, person.PaisBtzo)],
+                ],
+            },
+            {
+                title: 'Matrimonio',
+                fields: [
+                    ['Fecha', panelDate(person, 'Matr')],
+                    ['Lugar', joinPanelParts(person.LugarMatr, person.PaisMatr)],
+                ],
+            },
+            {
+                title: 'Defuncion',
+                fields: [
+                    ['Fecha', panelDate(person, 'Def')],
+                    ['Lugar', joinPanelParts(person.LugarDef, person.PaisDef)],
+                ],
+            },
+        ];
+
+        if (person.Observaciones) {
+            sections.push({
+                title: 'Observaciones',
+                fields: [
+                    ['Notas', person.Observaciones, true],
+                ],
+            });
+        }
+
+        return sections
+            .map((section) => renderTreePersonInfoSection(section.title, section.fields))
+            .join('');
+    }
+
+    function renderTreePersonInfoSection(title, fields) {
+        const visibleFields = fields.filter((field) => hasPanelValue(field[1]));
+
+        if (visibleFields.length === 0) {
+            return '';
+        }
+
+        const body = visibleFields
+            .map((field) => renderTreePersonInfoItem(field[0], field[1], Boolean(field[2])))
+            .join('');
+
+        return `
+            <section class="tree-person-detail-section">
+                <div class="tree-person-detail-title">${escapeHtml(title)}</div>
+                <div class="tree-person-detail-grid">${body}</div>
+            </section>
+        `;
+    }
+
+    function renderTreePersonInfoItem(label, value, wide = false) {
+        return `
+            <div class="tree-person-detail-item ${wide ? 'is-wide' : ''}">
+                <div class="tree-person-detail-label">${escapeHtml(label)}</div>
+                <div class="tree-person-detail-value">${escapeHtml(value)}</div>
+            </div>
+        `;
+    }
+
+    function renderTreePanelFileSection(title, files, emptyText) {
+        const content = Array.isArray(files) && files.length > 0
+            ? files.map((file) => renderTreePanelFile(file)).join('')
+            : `<div class="tree-person-panel-empty">${escapeHtml(emptyText)}</div>`;
+
+        return `
+            <section class="tree-person-detail-section">
+                <div class="tree-person-detail-title">${escapeHtml(title)}</div>
+                ${content}
+            </section>
+        `;
+    }
+
+    function renderTreePanelFile(file) {
+        const meta = [file.tipo, file.created_at, file.notas].filter(hasPanelValue).join(' / ');
+
+        return `
+            <div class="tree-panel-file">
+                <div>
+                    <div class="tree-panel-file-name">${escapeHtml(file.file || 'Archivo')}</div>
+                    <div class="tree-panel-file-meta">${escapeHtml(meta || 'Sin tipo registrado')}</div>
+                </div>
+                <button type="button" class="tree-panel-file-button" data-tree-file-path="${escapeAttr(file.path || '')}">
+                    Ver
+                </button>
+            </div>
+        `;
+    }
+
+    function panelDate(person, type) {
+        return [person[`Dia${type}`], person[`Mes${type}`], person[`Anho${type}`]]
+            .filter(hasPanelValue)
+            .join('/');
+    }
+
+    function joinPanelParts(...parts) {
+        return parts.filter(hasPanelValue).join(' / ');
+    }
+
+    function hasPanelValue(value) {
+        return value !== null && value !== undefined && String(value).trim() !== '';
+    }
+
     async function loadTreeBranch(personId, generation, slot, lineColor = null, options = {}) {
         if (!personId || treeBranchLoading) {
             return;
         }
 
         treeBranchLoading = true;
+        hideTreePersonPanel();
         showTreeLoading();
 
         try {
@@ -2445,7 +2879,7 @@ dialog::backdrop {
     }
 
     function renderPersonCard(person, columnIndex, rowIndex, posX, containerY, nodeKey) {
-        const compactClass = columnIndex >= treeLayout.compactFromColumn ? 'tree-node-compact' : '';
+        const compactClass = '';
         const fullName = [person.Nombres, person.Apellidos].filter(Boolean).join(' ');
         const copyId = `datacopy_${safeId(nodeKey)}`;
 
@@ -2771,6 +3205,10 @@ dialog::backdrop {
         returnToClientTree();
     });
 
+    document.getElementById('treePersonPanelClose')?.addEventListener('click', function() {
+        hideTreePersonPanel();
+    });
+
     $(document).ready(function() {
         reloadlines();
         centerInitialTree();
@@ -2887,13 +3325,26 @@ dialog::backdrop {
         gotofamiliar(this.value);
     });
 
-    $(document).on("click", ".tree-person-node.tree-node-compact", function(e) {
-        if (e.target.closest('button') || e.target.closest('input')) {
+    $(document).on("click", ".tree-person-node", function(e) {
+        if (!canManageTree) {
             return;
         }
 
-        this.classList.toggle("tree-node-expanded");
-        reloadlines();
+        if (
+            e.target.closest('button') ||
+            e.target.closest('input') ||
+            e.target.closest('a') ||
+            e.target.closest('.tree-lineage-strip') ||
+            treeDragMoved
+        ) {
+            return;
+        }
+
+        const node = this;
+        clearTimeout(treePanelClickTimer);
+        treePanelClickTimer = setTimeout(() => {
+            openTreePersonPanel(node.dataset.personId, node);
+        }, 180);
     });
 
     $(document).on("dblclick", ".tree-person-node", function(e) {
@@ -2901,7 +3352,15 @@ dialog::backdrop {
             return;
         }
 
-        if (e.target.closest('button') || e.target.closest('input')) {
+        clearTimeout(treePanelClickTimer);
+
+        if (
+            e.target.closest('button') ||
+            e.target.closest('input') ||
+            e.target.closest('a') ||
+            e.target.closest('.tree-lineage-strip') ||
+            treeDragMoved
+        ) {
             return;
         }
 
@@ -2940,6 +3399,15 @@ dialog::backdrop {
 
         if (action === "branch") {
             loadTreeBranch(this.dataset.personId, this.dataset.treeGeneration, this.dataset.personaSlot, this.dataset.lineColor);
+        }
+    });
+
+    $(document).on("click", "[data-tree-file-path]", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (this.dataset.treeFilePath) {
+            verArchivo(this.dataset.treeFilePath);
         }
     });
 
