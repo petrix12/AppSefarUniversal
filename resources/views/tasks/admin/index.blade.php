@@ -92,6 +92,10 @@
                 <i class="fas fa-plus mr-1"></i>Nueva tarea
             </a>
 
+            <a href="{{ route('tasks.admin.reports', ['period' => 'daily', 'date' => $date->toDateString()]) }}" class="btn btn-sm btn-outline-success mr-2">
+                <i class="fas fa-file-excel mr-1"></i>Reportes
+            </a>
+
             {{-- ✅ FORM POST: completamente independiente, fuera del GET --}}
             <form method="POST" action="{{ route('tasks.admin.generate-daily') }}" class="d-inline">
                 @csrf

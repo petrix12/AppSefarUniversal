@@ -3,12 +3,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\TaskStatusReportExport;
 use App\Models\Task;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AdminTaskController extends Controller
 {
@@ -170,6 +173,44 @@ class AdminTaskController extends Controller
         return back()->with('success', "<pre class='mb-0'>{$output}</pre>");
     }
 
+    public function reports(Request $request)
+    {
+        $filters = $this->normalizeTaskReportFilters($request);
+        [$startDate, $endDate, $periodLabel] = $this->resolveTaskReportPeriod($filters);
+
+        $advisors = $this->advisorOptions();
+        $statusLabels = $this->taskStatusLabels();
+        $stats = $this->buildTaskReportStats($startDate, $endDate, $filters);
+
+        return view('tasks.admin.reports', compact(
+            'advisors',
+            'endDate',
+            'filters',
+            'periodLabel',
+            'startDate',
+            'stats',
+            'statusLabels'
+        ));
+    }
+
+    public function exportReport(Request $request)
+    {
+        $filters = $this->validateTaskReportFilters($request);
+        [$startDate, $endDate, $periodLabel] = $this->resolveTaskReportPeriod($filters);
+
+        $filename = sprintf(
+            'reporte_tareas_%s_%s_%s.xlsx',
+            $filters['period'],
+            $startDate->format('Ymd'),
+            now()->format('His')
+        );
+
+        return Excel::download(
+            new TaskStatusReportExport($startDate, $endDate, $filters, $periodLabel),
+            $filename
+        );
+    }
+
     // ── Datos para el gráfico (sin librerías) ─────────────────
     private function buildChartData(Carbon $date): array
     {
@@ -211,5 +252,127 @@ class AdminTaskController extends Controller
             ->groupBy('status')
             ->pluck('total', 'status')
             ->toArray();
+    }
+
+    private function advisorOptions()
+    {
+        return User::whereDoesntHave('roles', function ($q) {
+            $q->where('name', 'Cliente');
+        })
+            ->orderBy('name')
+            ->pluck('name', 'id');
+    }
+
+    private function taskStatusLabels(): array
+    {
+        return [
+            Task::STATUS_PENDING => 'Pendiente',
+            Task::STATUS_IN_PROGRESS => 'En curso',
+            Task::STATUS_COMPLETED => 'Completada',
+            Task::STATUS_CANCELED => 'Cancelada',
+        ];
+    }
+
+    private function normalizeTaskReportFilters(Request $request): array
+    {
+        $period = $request->input('period', 'daily');
+
+        if (! in_array($period, ['daily', 'monthly', 'annual'], true)) {
+            $period = 'daily';
+        }
+
+        return [
+            'period' => $period,
+            'date' => $request->input('date', today()->toDateString()),
+            'month' => $request->input('month', today()->format('Y-m')),
+            'year' => $request->input('year', today()->format('Y')),
+            'user_id' => $request->input('user_id'),
+            'status' => $request->input('status'),
+        ];
+    }
+
+    private function validateTaskReportFilters(Request $request): array
+    {
+        $data = $request->validate([
+            'period' => ['required', Rule::in(['daily', 'monthly', 'annual'])],
+            'date' => ['nullable', 'date'],
+            'month' => ['nullable', 'regex:/^\d{4}-\d{2}$/'],
+            'year' => ['nullable', 'integer', 'min:2000', 'max:' . ((int) date('Y') + 1)],
+            'user_id' => ['nullable', 'exists:users,id'],
+            'status' => ['nullable', Rule::in(array_keys($this->taskStatusLabels()))],
+        ]);
+
+        $data['date'] = $data['date'] ?? today()->toDateString();
+        $data['month'] = $data['month'] ?? today()->format('Y-m');
+        $data['year'] = $data['year'] ?? today()->format('Y');
+        $data['user_id'] = $data['user_id'] ?? null;
+        $data['status'] = $data['status'] ?? null;
+
+        return $data;
+    }
+
+    private function resolveTaskReportPeriod(array $filters): array
+    {
+        if ($filters['period'] === 'monthly') {
+            $date = Carbon::createFromFormat('Y-m-d', $filters['month'] . '-01')->startOfMonth();
+
+            return [
+                $date->copy(),
+                $date->copy()->endOfMonth(),
+                'Mensual - ' . $date->translatedFormat('F Y'),
+            ];
+        }
+
+        if ($filters['period'] === 'annual') {
+            $date = Carbon::createFromDate((int) $filters['year'], 1, 1)->startOfYear();
+
+            return [
+                $date->copy(),
+                $date->copy()->endOfYear(),
+                'Anual - ' . $date->format('Y'),
+            ];
+        }
+
+        $date = Carbon::parse($filters['date'])->startOfDay();
+
+        return [
+            $date->copy(),
+            $date->copy()->endOfDay(),
+            'Diario - ' . $date->format('d/m/Y'),
+        ];
+    }
+
+    private function buildTaskReportStats(Carbon $startDate, Carbon $endDate, array $filters): array
+    {
+        $query = DB::table('tasks')
+            ->whereBetween('due_date', [$startDate->toDateString(), $endDate->toDateString()]);
+
+        if (! empty($filters['user_id'])) {
+            $query->where('user_id', $filters['user_id']);
+        }
+
+        if (! empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        $byStatus = (clone $query)
+            ->select('status', DB::raw('COUNT(*) as total'))
+            ->groupBy('status')
+            ->pluck('total', 'status')
+            ->toArray();
+
+        $overdue = (clone $query)
+            ->whereDate('due_date', '<', today())
+            ->whereIn('status', [Task::STATUS_PENDING, Task::STATUS_IN_PROGRESS])
+            ->count();
+
+        return [
+            'total' => array_sum($byStatus),
+            'pending' => (int) ($byStatus[Task::STATUS_PENDING] ?? 0),
+            'in_progress' => (int) ($byStatus[Task::STATUS_IN_PROGRESS] ?? 0),
+            'completed' => (int) ($byStatus[Task::STATUS_COMPLETED] ?? 0),
+            'canceled' => (int) ($byStatus[Task::STATUS_CANCELED] ?? 0),
+            'overdue' => $overdue,
+        ];
     }
 }

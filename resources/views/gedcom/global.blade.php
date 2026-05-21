@@ -1,94 +1,114 @@
 @extends('adminlte::page')
 
-@section('title', 'Herramientas GEDCOM')
+@section('title', 'GEDCOM')
 
 @section('content_header')
 @stop
 
 @section('content')
-<x-app-layout>
-    <div class="sefar-page gedcom-page">
-        <div class="sefar-page-header">
+    <div class="gedcom-workbench">
+        <header class="gedcom-topbar">
             <div>
-                <p class="sefar-eyebrow">Genealogia</p>
-                <h1>Herramientas GEDCOM</h1>
-                <p>Exporta arboles completos, valida archivos GEDCOM y conviertelos al modelo actual de agclientes.</p>
+                <span class="gedcom-kicker">Genealogia</span>
+                <h1>GEDCOM</h1>
             </div>
-        </div>
 
-        <div class="sefar-grid sefar-grid-2">
-            <section class="sefar-card">
-                <div class="sefar-card-header">
-                    <div>
-                        <h2>Exportar</h2>
-                        <p>Genera un GEDCOM 5.5.5 con individuos, familias, eventos principales y enlaces padre/madre.</p>
-                    </div>
-                    <i class="fas fa-file-export"></i>
-                </div>
+            @can('descargarGedcom')
+                <a href="{{ route('getGedcomGlobal') }}" class="gedcom-button gedcom-button-primary">
+                    <i class="fas fa-download"></i>
+                    <span>Global</span>
+                </a>
+            @endcan
+        </header>
 
-                @can('descargarGedcom')
-                    <a href="{{ route('getGedcomGlobal') }}" class="sefar-button sefar-button-primary">
-                        <i class="fas fa-download"></i>
-                        Descargar GEDCOM global
-                    </a>
-                @else
-                    <div class="sefar-empty">No tienes permiso para descargar el GEDCOM global.</div>
-                @endcan
-            </section>
-
-            <section class="sefar-card">
-                <div class="sefar-card-header">
-                    <div>
-                        <h2>Importar y validar</h2>
-                        <p>Primero valida el archivo. Si todo esta bien, puedes importarlo a un IDCliente destino.</p>
-                    </div>
+        <div class="gedcom-shell">
+            <section class="gedcom-panel gedcom-import-panel">
+                <div class="gedcom-panel-title">
                     <i class="fas fa-file-import"></i>
+                    <h2>Importar</h2>
                 </div>
 
-                <form action="{{ route('gedcom.import') }}" method="POST" enctype="multipart/form-data" class="sefar-form">
+                <form action="{{ route('gedcom.import') }}" method="POST" enctype="multipart/form-data" class="gedcom-form">
                     @csrf
 
-                    <label>
-                        <span>Archivo GEDCOM</span>
-                        <input type="file" name="gedcom_file" accept=".ged,.gedcom,text/*" required>
-                    </label>
+                    <div class="gedcom-field-grid">
+                        <label class="gedcom-field gedcom-file-field">
+                            <span>Archivo</span>
+                            <input type="file" name="gedcom_file" accept=".ged,.gedcom,text/*" required>
+                        </label>
 
-                    <label>
-                        <span>IDCliente destino</span>
-                        <input type="text" name="IDCliente" value="{{ old('IDCliente') }}" placeholder="Pasaporte o IDCliente para guardar el arbol">
-                    </label>
+                        <label class="gedcom-field">
+                            <span>IDCliente</span>
+                            <input type="text" name="IDCliente" value="{{ old('IDCliente') }}" placeholder="Pasaporte o IDCliente">
+                        </label>
+                    </div>
 
-                    <label class="sefar-check">
-                        <input type="checkbox" name="replace_existing" value="1" @checked(old('replace_existing'))>
-                        <span>Reemplazar arbol existente para ese IDCliente</span>
-                    </label>
+                    <div class="gedcom-form-footer">
+                        <label class="gedcom-check">
+                            <input type="checkbox" name="replace_existing" value="1" @checked(old('replace_existing'))>
+                            <span>Reemplazar arbol existente</span>
+                        </label>
 
-                    <div class="sefar-actions">
-                        <button type="submit" name="mode" value="validate" class="sefar-button sefar-button-secondary">
-                            <i class="fas fa-check-circle"></i>
-                            Validar
-                        </button>
-                        <button type="submit" name="mode" value="import" class="sefar-button sefar-button-primary">
-                            <i class="fas fa-database"></i>
-                            Importar
-                        </button>
+                        <div class="gedcom-actions">
+                            <button type="submit" name="mode" value="validate" class="gedcom-button gedcom-button-secondary">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Validar</span>
+                            </button>
+                            <button type="submit" name="mode" value="import" class="gedcom-button gedcom-button-primary">
+                                <i class="fas fa-database"></i>
+                                <span>Importar</span>
+                            </button>
+                        </div>
                     </div>
                 </form>
             </section>
+
+            <aside class="gedcom-side">
+                <section class="gedcom-panel gedcom-mini-panel">
+                    <div class="gedcom-panel-title">
+                        <i class="fas fa-file-export"></i>
+                        <h2>Exportar</h2>
+                    </div>
+
+                    @can('descargarGedcom')
+                        <a href="{{ route('getGedcomGlobal') }}" class="gedcom-export-row">
+                            <span>
+                                <strong>Base completa</strong>
+                                <small>AppSefarGlobal.ged</small>
+                            </span>
+                            <i class="fas fa-arrow-down"></i>
+                        </a>
+                    @else
+                        <div class="gedcom-empty">Sin permiso de descarga.</div>
+                    @endcan
+                </section>
+
+                <section class="gedcom-panel gedcom-mini-panel">
+                    <div class="gedcom-panel-title">
+                        <i class="fas fa-sitemap"></i>
+                        <h2>Mapeo</h2>
+                    </div>
+                    <div class="gedcom-map-list">
+                        <span>INDI</span>
+                        <span>FAM</span>
+                        <span>BIRT</span>
+                        <span>BAPM</span>
+                        <span>DEAT</span>
+                        <span>MARR</span>
+                    </div>
+                </section>
+            </aside>
         </div>
 
         @if($gedcomResult || !empty($gedcomErrors) || !empty($gedcomWarnings))
-            <section class="sefar-card gedcom-result">
-                <div class="sefar-card-header">
-                    <div>
-                        <h2>Resultado</h2>
-                        <p>Resumen de la ultima validacion o importacion.</p>
-                    </div>
+            <section class="gedcom-panel gedcom-result-panel">
+                <div class="gedcom-panel-title">
                     <i class="fas fa-list-check"></i>
+                    <h2>Resultado</h2>
                 </div>
 
                 @if($gedcomResult)
-                    <div class="sefar-metrics">
+                    <div class="gedcom-metrics">
                         <div>
                             <strong>{{ $gedcomResult['individuals_count'] ?? 0 }}</strong>
                             <span>Individuos</span>
@@ -109,7 +129,7 @@
                 @endif
 
                 @if(!empty($gedcomErrors))
-                    <div class="sefar-alert sefar-alert-error">
+                    <div class="gedcom-alert gedcom-alert-error">
                         <strong>Errores</strong>
                         <ul>
                             @foreach($gedcomErrors as $error)
@@ -120,7 +140,7 @@
                 @endif
 
                 @if(!empty($gedcomWarnings))
-                    <div class="sefar-alert sefar-alert-warning">
+                    <div class="gedcom-alert gedcom-alert-warning">
                         <strong>Advertencias</strong>
                         <ul>
                             @foreach($gedcomWarnings as $warning)
@@ -131,8 +151,8 @@
                 @endif
 
                 @if(!empty($gedcomPreview))
-                    <div class="sefar-table-wrap">
-                        <table class="sefar-table">
+                    <div class="gedcom-table-wrap">
+                        <table class="gedcom-table">
                             <thead>
                                 <tr>
                                     <th>XREF</th>
@@ -157,7 +177,6 @@
             </section>
         @endif
     </div>
-</x-app-layout>
 @stop
 
 @section('css')

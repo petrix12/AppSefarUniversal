@@ -21,6 +21,8 @@ body.dark-mode .bg-white,
 body.dark-mode .card,
 body.dark-mode .modal-content,
 body.dark-mode .sefar-card,
+body.dark-mode .gedcom-panel,
+body.dark-mode .gedcom-topbar,
 body.dark-mode .contentmodaladdfamiliar {
   background-color: var(--sefar-surface) !important;
   color: var(--sefar-text) !important;
@@ -35,7 +37,9 @@ body.dark-mode .page-link,
 body.dark-mode .sefar-form input[type='text'],
 body.dark-mode .sefar-form input[type='file'],
 body.dark-mode .sefar-form select,
-body.dark-mode .sefar-form textarea {
+body.dark-mode .sefar-form textarea,
+body.dark-mode .gedcom-field input[type='text'],
+body.dark-mode .gedcom-field input[type='file'] {
   background-color: #05111c !important;
   color: var(--sefar-text) !important;
   border-color: rgba(219, 234, 242, 0.22) !important;
@@ -62,15 +66,23 @@ body.dark-mode span,
 body.dark-mode label,
 body.dark-mode .sefar-page-header h1,
 body.dark-mode .sefar-card-header h2,
+body.dark-mode .gedcom-topbar h1,
+body.dark-mode .gedcom-panel-title h2,
+body.dark-mode .gedcom-export-row strong,
 body.dark-mode .sefar-table th,
-body.dark-mode .sefar-table td {
+body.dark-mode .sefar-table td,
+body.dark-mode .gedcom-table th,
+body.dark-mode .gedcom-table td {
   color: var(--sefar-text) !important;
 }
 
 body.dark-mode .sefar-page-header p,
 body.dark-mode .sefar-card-header p,
 body.dark-mode .sefar-muted,
-body.dark-mode .sefar-metrics span {
+body.dark-mode .sefar-metrics span,
+body.dark-mode .gedcom-check,
+body.dark-mode .gedcom-export-row small,
+body.dark-mode .gedcom-metrics span {
   color: var(--sefar-muted) !important;
 }
 
@@ -84,7 +96,12 @@ body.dark-mode .cerrarmodalarchivoedit svg {
 body.dark-mode .bg-gray-50,
 body.dark-mode .cajapernew_min,
 body.dark-mode .sefar-empty,
-body.dark-mode .sefar-metrics > div {
+body.dark-mode .sefar-metrics > div,
+body.dark-mode .gedcom-panel-title i,
+body.dark-mode .gedcom-export-row,
+body.dark-mode .gedcom-map-list span,
+body.dark-mode .gedcom-empty,
+body.dark-mode .gedcom-metrics > div {
   background-color: var(--sefar-primary-soft) !important;
 }
 
@@ -106,6 +123,10 @@ body.dark-mode .users-table tbody tr:hover {
 
 body.dark-mode .sefar-table th,
 body.dark-mode .sefar-table td,
+body.dark-mode .gedcom-table th,
+body.dark-mode .gedcom-table td,
+body.dark-mode .gedcom-export-row,
+body.dark-mode .gedcom-form-footer,
 body.dark-mode .addborderbottom {
   border-color: var(--sefar-border) !important;
 }
@@ -148,7 +169,13 @@ body.dark-mode .sefar-alert-error {
   color: #ffd8dd;
 }
 
-body.dark-mode .sefar-alert-warning {
+body.dark-mode .sefar-alert-warning,
+body.dark-mode .gedcom-alert-warning {
   background: #3c2e13;
   color: #ffe8b0;
+}
+
+body.dark-mode .gedcom-alert-error {
+  background: #42151a;
+  color: #ffd8dd;
 }

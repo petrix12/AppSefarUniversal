@@ -365,6 +365,12 @@ return [
                     'icon'       => 'fas fa-fw fa-chart-bar',
                     'can'        => 'administrador',
                 ],
+                [
+                    'text'       => 'Reportes',
+                    'url'        => 'tasks/admin/reports',
+                    'icon'       => 'fas fa-fw fa-file-excel',
+                    'can'        => 'administrador',
+                ],
             ],
         ],
         [
