@@ -646,6 +646,13 @@ return [
                     'can'           => 'crud.families.index',
                 ],
                 [
+                    'text'          => 'Grupos familiares',
+                    'icon'          => 'fa-fw fas fa-people-arrows',
+                    'icon_color'    => 'white',
+                    'route'         => 'family-groups.index',
+                    'can'           => 'genealogista',
+                ],
+                [
                     'text'          => 'Últimas modificaciones',
                     'icon'          => 'fa-fw fas fa-portrait',
                     'icon_color'    => 'white',

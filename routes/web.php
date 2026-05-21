@@ -8,6 +8,7 @@ use App\Http\Controllers\ConnectionController;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\FamilyController;
+use App\Http\Controllers\FamilyGroupController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\FormatController;
 use App\Http\Controllers\LadoController;
@@ -561,6 +562,17 @@ Route::group(['middleware' => ['auth'], 'as' => 'consultas.'], function(){
 Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
     return view('dashboard');
 })->name('dashboard');
+
+Route::group(['middleware' => ['auth', 'can:genealogista']], function(){
+    Route::resource('family-groups', FamilyGroupController::class)
+        ->only(['index', 'create', 'store', 'show', 'destroy']);
+    Route::post('family-groups/{familyGroup}/recalculate', [FamilyGroupController::class, 'recalculate'])
+        ->name('family-groups.recalculate');
+    Route::post('family-groups/{familyGroup}/members', [FamilyGroupController::class, 'addMember'])
+        ->name('family-groups.members.store');
+    Route::delete('family-groups/{familyGroup}/members/{member}', [FamilyGroupController::class, 'removeMember'])
+        ->name('family-groups.members.destroy');
+});
 
 // Grupo de rutas para vistas de árboles genealógicos
 Route::group(['middleware' => ['auth'], 'as' => 'arboles.'], function(){
