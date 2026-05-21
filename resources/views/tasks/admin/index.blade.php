@@ -156,6 +156,7 @@
                         <th>Estado</th>
                         <th>Via</th>
                         <th>Venta</th>
+                        <th>Resultado</th>
                         <th>Fecha</th>
                         <th>Acciones</th>
                     </tr>
@@ -172,6 +173,48 @@
                                 'pending'=>'Pendiente','in_progress'=>'En curso',
                                 'completed'=>'Completada','canceled'=>'Cancelada'
                             ];
+
+                            $resultBadge = ['class' => 'secondary', 'label' => 'Sin resultado'];
+
+                            if ($task->call_effective === true) {
+                                $resultBadge = ['class' => 'success', 'label' => 'Gestion efectiva'];
+                            } elseif ($task->call_effective === false) {
+                                $resultBadge = ['class' => 'danger', 'label' => 'No efectiva'];
+                            } elseif ($task->customer_responded === true) {
+                                $resultBadge = ['class' => 'info', 'label' => 'Respondio'];
+                            } elseif ($task->customer_responded === false) {
+                                $resultBadge = ['class' => 'warning', 'label' => 'Esperando respuesta'];
+                            } elseif ($task->status === \App\Models\Task::STATUS_COMPLETED) {
+                                $resultBadge = ['class' => 'secondary', 'label' => 'Completada sin detalle'];
+                            } elseif ($task->status === \App\Models\Task::STATUS_CANCELED) {
+                                $resultBadge = ['class' => 'danger', 'label' => 'Cancelada'];
+                            }
+
+                            $resultNotes = collect();
+
+                            if ($task->saleStatusLabel()) {
+                                $resultNotes->push($task->saleStatusLabel());
+                            }
+
+                            foreach (($task->sales_tags ?? []) as $tag) {
+                                if (isset($salesTagOptions[$tag])) {
+                                    $resultNotes->push($salesTagOptions[$tag]['label']);
+                                }
+                            }
+
+                            if ($task->reason_no_effective) {
+                                $resultNotes->push($task->reason_no_effective);
+                            } elseif ($task->reason_no_interest) {
+                                $resultNotes->push($task->reason_no_interest);
+                            }
+
+                            if ($task->follow_up_date) {
+                                $resultNotes->push('Seguimiento ' . $task->follow_up_date->format('d/m/Y'));
+                            }
+
+                            if ($task->product_of_interest) {
+                                $resultNotes->push($task->product_of_interest);
+                            }
                         @endphp
                         <tr>
                             <td class="task-select-col">
@@ -198,6 +241,16 @@
                             </td>
                             <td>{{ implode(', ', $task->contactMethodLabels()) ?: '-' }}</td>
                             <td>{{ $task->saleStatusLabel() ?? '-' }}</td>
+                            <td class="task-result-cell">
+                                <span class="badge badge-{{ $resultBadge['class'] }}">
+                                    {{ $resultBadge['label'] }}
+                                </span>
+                                @if($resultNotes->isNotEmpty())
+                                    <div class="task-result-note" title="{{ $resultNotes->implode(' / ') }}">
+                                        {{ Str::limit($resultNotes->take(3)->implode(' / '), 90) }}
+                                    </div>
+                                @endif
+                            </td>
                             <td>{{ $task->due_date->format('d/m/Y') }}</td>
                             <td>
                                 <button type="button"
@@ -223,7 +276,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" class="text-center py-4 text-muted">
+                            <td colspan="11" class="text-center py-4 text-muted">
                                 Sin tareas para los filtros aplicados.
                             </td>
                         </tr>
@@ -469,6 +522,19 @@
 
         .task-table-responsive {
             min-height: 160px;
+        }
+
+        .task-result-cell {
+            min-width: 210px;
+            max-width: 320px;
+        }
+
+        .task-result-note {
+            color: #6c757d;
+            font-size: .78rem;
+            line-height: 1.25;
+            margin-top: .25rem;
+            overflow-wrap: anywhere;
         }
 
         @media (max-width: 767.98px) {
