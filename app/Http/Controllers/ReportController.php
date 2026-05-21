@@ -19,7 +19,7 @@ class ReportController extends Controller
 {
     public function dashboard(Request $request)
     {
-        $month = (string) $request->input('month', now()->format('Y-m'));
+        $month = (string) $request->input('registration_month', $request->input('month', now()->format('Y-m')));
 
         try {
             $start = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
@@ -30,6 +30,21 @@ class ReportController extends Controller
 
         $end = $start->copy()->endOfMonth();
         $chartEnd = $start->isSameMonth(today()) ? today() : $end;
+        $pipelineMonth = (string) $request->input('pipeline_month', now()->format('Y-m'));
+
+        try {
+            $pipelineStart = Carbon::createFromFormat('Y-m', $pipelineMonth)->startOfMonth();
+        } catch (\Throwable $e) {
+            $pipelineStart = today()->startOfMonth();
+            $pipelineMonth = $pipelineStart->format('Y-m');
+        }
+
+        $pipelineEnd = $pipelineStart->copy()->endOfMonth();
+        $taskFilters = $this->dashboardTaskFilters($request);
+        $taskStart = Carbon::parse($taskFilters['start'])->startOfDay();
+        $taskEnd = Carbon::parse($taskFilters['end'])->endOfDay();
+        $advisors = $this->dashboardAdvisorOptions();
+        $taskStatusLabels = $this->dashboardTaskStatusLabels();
 
         $labels = [];
         $dateKeys = [];
@@ -77,29 +92,30 @@ class ReportController extends Controller
 
         $paymentMethods = $this->registrationPaymentsByMethod($start, $end);
         $serviceRevenue = $this->registrationPaymentsByService($start, $end);
-        $taskMetrics = $this->taskMetrics($start, $end);
-        $sellerOpenTasks = $this->sellerOpenTasks();
-        $salesPipeline = $this->salesPipeline($start, $end);
-        $cosMetrics = $this->cosMetrics();
+        $taskMetrics = $this->dashboardTaskMetrics($taskStart, $taskEnd, $taskFilters);
+        $sellerTasks = $this->dashboardTasksByAdvisor($taskStart, $taskEnd, $taskFilters);
+        $tasksByStatus = $this->dashboardTasksByStatus($taskStart, $taskEnd, $taskFilters);
+        $tasksByDate = $this->dashboardTasksByDate($taskStart, $taskEnd, $taskFilters);
+        $recentTasks = $this->dashboardRecentTasks($taskStart, $taskEnd, $taskFilters);
+        $pipelineUserId = $request->filled('pipeline_user_id') ? (int) $request->input('pipeline_user_id') : null;
+        $salesPipeline = $this->salesPipeline($pipelineStart, $pipelineEnd, $pipelineUserId);
 
         $kpis = [
             'registered_month' => $registeredThisMonth,
             'paid_registration_month' => (int) $registrationPayments->paid_clients,
             'registration_payment_amount' => (float) $registrationPayments->amount,
             'conversion_per_ten' => $conversionPerTen,
-            'open_tasks' => $taskMetrics['open'],
-            'overdue_tasks' => $taskMetrics['overdue'],
-            'cos_ready' => $cosMetrics['ready'],
-            'cos_with_data' => $cosMetrics['with_data'],
         ];
 
         $charts = [
-            'labels' => $labels,
-            'registrations' => $registrationsSeries,
-            'paid' => $paidSeries,
-            'conversion_per_ten' => $conversionPerTenSeries,
-            'cumulative_registrations' => $cumulativeRegistrations,
-            'cumulative_paid' => $cumulativePaid,
+            'registrations' => [
+                'labels' => $labels,
+                'registrations' => $registrationsSeries,
+                'paid' => $paidSeries,
+                'conversion_per_ten' => $conversionPerTenSeries,
+                'cumulative_registrations' => $cumulativeRegistrations,
+                'cumulative_paid' => $cumulativePaid,
+            ],
             'payment_methods' => [
                 'labels' => $paymentMethods->pluck('method')->values(),
                 'data' => $paymentMethods->pluck('total')->values(),
@@ -108,21 +124,24 @@ class ReportController extends Controller
                 'labels' => $serviceRevenue->pluck('service')->values(),
                 'data' => $serviceRevenue->pluck('amount')->values(),
             ],
-            'seller_open_tasks' => [
-                'labels' => $sellerOpenTasks->pluck('name')->values(),
-                'data' => $sellerOpenTasks->pluck('total')->values(),
+            'task_status' => [
+                'labels' => $tasksByStatus->pluck('label')->values(),
+                'data' => $tasksByStatus->pluck('total')->values(),
+            ],
+            'task_advisors' => [
+                'labels' => $sellerTasks->pluck('name')->values(),
+                'data' => $sellerTasks->pluck('total')->values(),
+            ],
+            'tasks_by_date' => [
+                'labels' => $tasksByDate->pluck('label')->values(),
+                'pending' => $tasksByDate->pluck('pending')->values(),
+                'in_progress' => $tasksByDate->pluck('in_progress')->values(),
+                'completed' => $tasksByDate->pluck('completed')->values(),
+                'canceled' => $tasksByDate->pluck('canceled')->values(),
             ],
             'sales_pipeline' => [
                 'labels' => $salesPipeline->pluck('label')->values(),
                 'data' => $salesPipeline->pluck('total')->values(),
-            ],
-            'cos_stages' => [
-                'labels' => $cosMetrics['stages']->pluck('stage')->values(),
-                'data' => $cosMetrics['stages']->pluck('total')->values(),
-            ],
-            'cos_services' => [
-                'labels' => $cosMetrics['services']->pluck('service')->values(),
-                'data' => $cosMetrics['services']->pluck('total')->values(),
             ],
         ];
 
@@ -130,12 +149,21 @@ class ReportController extends Controller
             'month',
             'start',
             'end',
+            'pipelineMonth',
+            'pipelineStart',
+            'pipelineEnd',
+            'pipelineUserId',
+            'taskFilters',
+            'taskStart',
+            'taskEnd',
+            'advisors',
+            'taskStatusLabels',
             'kpis',
             'charts',
             'taskMetrics',
-            'cosMetrics',
+            'recentTasks',
             'serviceRevenue',
-            'sellerOpenTasks',
+            'sellerTasks',
             'salesPipeline'
         ));
     }
@@ -1839,6 +1867,154 @@ class ReportController extends Controller
             ->get();
     }
 
+    private function dashboardTaskFilters(Request $request): array
+    {
+        $defaultStart = today()->startOfMonth()->toDateString();
+        $defaultEnd = today()->toDateString();
+
+        $start = $request->input('task_start', $defaultStart);
+        $end = $request->input('task_end', $defaultEnd);
+
+        try {
+            $startDate = Carbon::parse($start)->toDateString();
+        } catch (\Throwable $e) {
+            $startDate = $defaultStart;
+        }
+
+        try {
+            $endDate = Carbon::parse($end)->toDateString();
+        } catch (\Throwable $e) {
+            $endDate = $defaultEnd;
+        }
+
+        if (Carbon::parse($startDate)->gt(Carbon::parse($endDate))) {
+            [$startDate, $endDate] = [$endDate, $startDate];
+        }
+
+        $status = $request->input('task_status');
+        if ($status === null || ! array_key_exists($status, $this->dashboardTaskStatusLabels())) {
+            $status = null;
+        }
+
+        return [
+            'start' => $startDate,
+            'end' => $endDate,
+            'user_id' => $request->filled('task_user_id') ? (int) $request->input('task_user_id') : null,
+            'status' => $status,
+        ];
+    }
+
+    private function dashboardAdvisorOptions()
+    {
+        return User::whereDoesntHave('roles', function ($query) {
+            $query->where('name', 'Cliente');
+        })
+            ->orderBy('name')
+            ->pluck('name', 'id');
+    }
+
+    private function dashboardTaskStatusLabels(): array
+    {
+        return [
+            Task::STATUS_PENDING => 'Pendiente',
+            Task::STATUS_IN_PROGRESS => 'En curso',
+            Task::STATUS_COMPLETED => 'Completada',
+            Task::STATUS_CANCELED => 'Cancelada',
+        ];
+    }
+
+    private function dashboardTaskQuery(Carbon $start, Carbon $end, array $filters)
+    {
+        return Task::query()
+            ->whereBetween('due_date', [$start->toDateString(), $end->toDateString()])
+            ->when(! empty($filters['user_id']), function ($query) use ($filters) {
+                $query->where('user_id', $filters['user_id']);
+            })
+            ->when(! empty($filters['status']), function ($query) use ($filters) {
+                $query->where('status', $filters['status']);
+            });
+    }
+
+    private function dashboardTaskMetrics(Carbon $start, Carbon $end, array $filters): array
+    {
+        $query = $this->dashboardTaskQuery($start, $end, $filters);
+        $byStatus = (clone $query)
+            ->select('status', DB::raw('COUNT(*) as total'))
+            ->groupBy('status')
+            ->pluck('total', 'status')
+            ->toArray();
+
+        return [
+            'total' => array_sum($byStatus),
+            'pending' => (int) ($byStatus[Task::STATUS_PENDING] ?? 0),
+            'in_progress' => (int) ($byStatus[Task::STATUS_IN_PROGRESS] ?? 0),
+            'completed' => (int) ($byStatus[Task::STATUS_COMPLETED] ?? 0),
+            'canceled' => (int) ($byStatus[Task::STATUS_CANCELED] ?? 0),
+            'overdue' => (clone $query)
+                ->whereDate('due_date', '<', today())
+                ->whereIn('status', [Task::STATUS_PENDING, Task::STATUS_IN_PROGRESS])
+                ->count(),
+            'responded' => (clone $query)->where('customer_responded', true)->count(),
+            'effective' => (clone $query)->where('call_effective', true)->count(),
+        ];
+    }
+
+    private function dashboardTasksByAdvisor(Carbon $start, Carbon $end, array $filters)
+    {
+        return $this->dashboardTaskQuery($start, $end, $filters)
+            ->join('users as advisors', 'advisors.id', '=', 'tasks.user_id')
+            ->selectRaw('advisors.name as name, COUNT(*) as total')
+            ->groupBy('advisors.id', 'advisors.name')
+            ->orderByDesc('total')
+            ->limit(10)
+            ->get();
+    }
+
+    private function dashboardTasksByStatus(Carbon $start, Carbon $end, array $filters)
+    {
+        $counts = $this->dashboardTaskQuery($start, $end, $filters)
+            ->select('status', DB::raw('COUNT(*) as total'))
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        return collect($this->dashboardTaskStatusLabels())
+            ->map(fn ($label, $status) => [
+                'label' => $label,
+                'total' => (int) ($counts[$status] ?? 0),
+            ])
+            ->values();
+    }
+
+    private function dashboardTasksByDate(Carbon $start, Carbon $end, array $filters)
+    {
+        return $this->dashboardTaskQuery($start, $end, $filters)
+            ->selectRaw('DATE(due_date) as day')
+            ->selectRaw("SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending")
+            ->selectRaw("SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress")
+            ->selectRaw("SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed")
+            ->selectRaw("SUM(CASE WHEN status = 'canceled' THEN 1 ELSE 0 END) as canceled")
+            ->groupBy('day')
+            ->orderBy('day')
+            ->get()
+            ->map(fn ($row) => [
+                'label' => Carbon::parse($row->day)->format('d/m'),
+                'pending' => (int) $row->pending,
+                'in_progress' => (int) $row->in_progress,
+                'completed' => (int) $row->completed,
+                'canceled' => (int) $row->canceled,
+            ]);
+    }
+
+    private function dashboardRecentTasks(Carbon $start, Carbon $end, array $filters)
+    {
+        return $this->dashboardTaskQuery($start, $end, $filters)
+            ->with(['assignee:id,name,email', 'contact:id,name,email,passport'])
+            ->orderByDesc('due_date')
+            ->orderByDesc('id')
+            ->limit(12)
+            ->get();
+    }
+
     private function taskMetrics(Carbon $start, Carbon $end): array
     {
         $systemsUserIds = Task::systemsUserIds();
@@ -1896,10 +2072,13 @@ class ReportController extends Controller
             ->get();
     }
 
-    private function salesPipeline(Carbon $start, Carbon $end)
+    private function salesPipeline(Carbon $start, Carbon $end, ?int $userId = null)
     {
         $counts = Task::query()
             ->whereNotNull('sale_status')
+            ->when($userId, function ($query) use ($userId) {
+                $query->where('user_id', $userId);
+            })
             ->whereBetween('updated_at', [$start->copy()->startOfDay(), $end->copy()->endOfDay()])
             ->selectRaw('sale_status, COUNT(*) as total')
             ->groupBy('sale_status')
