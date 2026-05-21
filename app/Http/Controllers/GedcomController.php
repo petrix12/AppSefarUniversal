@@ -86,7 +86,26 @@ class GedcomController extends Controller
 
     public function getGedcomGlobal()
     {
-        return $this->downloadGedcom($this->gedcomService->exportGlobal(), 'AppSefarGlobal.ged');
+        @set_time_limit(0);
+
+        $directory = storage_path('app/gedcom');
+
+        if (!is_dir($directory) && !@mkdir($directory, 0755, true) && !is_dir($directory)) {
+            $directory = sys_get_temp_dir();
+        }
+
+        $path = tempnam($directory, 'global_');
+        $filename = 'AppSefarGlobal.ged';
+
+        if ($path === false) {
+            throw new RuntimeException('No se pudo crear el archivo temporal para el GEDCOM global.');
+        }
+
+        $this->gedcomService->exportGlobalToFile($path);
+
+        return Response::download($path, $filename, [
+            'Content-Type' => 'text/vnd.gedcom; charset=UTF-8',
+        ])->deleteFileAfterSend(true);
     }
 
     public function import(Request $request)

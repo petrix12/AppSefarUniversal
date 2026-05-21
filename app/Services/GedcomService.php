@@ -64,6 +64,46 @@ class GedcomService
         return $this->exportPeople($people, 'AppSefarGlobal.ged');
     }
 
+    public function exportGlobalToFile(string $path): void
+    {
+        @set_time_limit(0);
+
+        $query = Agcliente::query()
+            ->whereNotNull('IDCliente')
+            ->where('IDCliente', '<>', '')
+            ->where('IDCliente', '<>', '0');
+
+        $relations = $this->buildExportRelationsFromQuery(clone $query);
+
+        $handle = fopen($path, 'wb');
+
+        if (!$handle) {
+            throw new RuntimeException('No se pudo crear el archivo GEDCOM temporal.');
+        }
+
+        try {
+            fwrite($handle, "\xEF\xBB\xBF");
+            $this->writeLines($handle, $this->headerLines('AppSefarGlobal.ged'));
+
+            (clone $query)
+                ->select($this->exportColumns())
+                ->orderBy('id')
+                ->chunkById(1000, function (Collection $people) use ($handle, $relations): void {
+                    foreach ($people as $person) {
+                        $this->writeIndividual($handle, $person, $relations);
+                    }
+                });
+
+            foreach ($relations['families'] as $familyId => $family) {
+                $this->writeFamily($handle, $familyId, $family);
+            }
+
+            fwrite($handle, "0 TRLR\n");
+        } finally {
+            fclose($handle);
+        }
+    }
+
     public function validate(string $gedcom): array
     {
         $parsed = $this->parse($gedcom);
@@ -159,64 +199,96 @@ class GedcomService
         $lines = $this->headerLines($filename);
 
         foreach ($people as $person) {
-            $personId = (int) $person->id;
-
-            $lines = array_merge($lines, $this->recordLine(0, $this->xref('I', $personId), 'INDI'));
-            $lines = array_merge($lines, $this->line(1, 'NAME', $this->gedcomName($person)));
-            $lines = array_merge($lines, $this->line(2, 'GIVN', $person->Nombres));
-            $lines = array_merge($lines, $this->line(2, 'SURN', $person->Apellidos));
-            $lines = array_merge($lines, $this->line(1, 'SEX', $this->sex($person->Sexo)));
-            $lines = array_merge($lines, $this->eventLines(1, 'BIRT', $person->AnhoNac, $person->MesNac, $person->DiaNac, $person->LugarNac, $person->PaisNac));
-            $lines = array_merge($lines, $this->eventLines(1, 'BAPM', $person->AnhoBtzo, $person->MesBtzo, $person->DiaBtzo, $person->LugarBtzo, $person->PaisBtzo));
-            $lines = array_merge($lines, $this->eventLines(1, 'DEAT', $person->AnhoDef, $person->MesDef, $person->DiaDef, $person->LugarDef, $person->PaisDef));
-
-            if ($this->filled($person->NPasaporte)) {
-                $lines = array_merge($lines, $this->line(1, 'IDNO', $person->NPasaporte));
-                $lines = array_merge($lines, $this->line(2, 'TYPE', 'Passport'));
-            }
-
-            if ($this->filled($person->NDocIdent)) {
-                $lines = array_merge($lines, $this->line(1, 'IDNO', $person->NDocIdent));
-                $lines = array_merge($lines, $this->line(2, 'TYPE', 'Identity document'));
-            }
-
-            if ($this->filled($person->Observaciones)) {
-                $lines = array_merge($lines, $this->line(1, 'NOTE', $person->Observaciones));
-            }
-
-            foreach ($relations['child_families'][$personId] ?? [] as $familyId) {
-                $lines = array_merge($lines, $this->line(1, 'FAMC', $this->xref('F', $familyId), false));
-            }
-
-            foreach ($relations['parent_families'][$personId] ?? [] as $familyId) {
-                $lines = array_merge($lines, $this->line(1, 'FAMS', $this->xref('F', $familyId), false));
-            }
+            $lines = array_merge($lines, $this->individualLines($person, $relations));
         }
 
         foreach ($relations['families'] as $familyId => $family) {
-            $lines = array_merge($lines, $this->recordLine(0, $this->xref('F', $familyId), 'FAM'));
-
-            if ($family['father']) {
-                $lines = array_merge($lines, $this->line(1, 'HUSB', $this->xref('I', $family['father']), false));
-            }
-
-            if ($family['mother']) {
-                $lines = array_merge($lines, $this->line(1, 'WIFE', $this->xref('I', $family['mother']), false));
-            }
-
-            foreach ($family['children'] as $childId) {
-                $lines = array_merge($lines, $this->line(1, 'CHIL', $this->xref('I', $childId), false));
-            }
-
             $marriage = $this->firstMarriageData($people, $family['father'], $family['mother']);
-            if ($marriage) {
-                $lines = array_merge($lines, $this->eventLines(1, 'MARR', $marriage['year'], $marriage['month'], $marriage['day'], $marriage['place'], $marriage['country']));
-            }
+            $family['marriage'] = $marriage;
+            $lines = array_merge($lines, $this->familyLines($familyId, $family));
         }
 
         $lines[] = '0 TRLR';
 
         return "\xEF\xBB\xBF" . implode("\n", $lines) . "\n";
+    }
+
+    private function individualLines(object $person, array $relations): array
+    {
+        $personId = (int) $person->id;
+        $lines = $this->recordLine(0, $this->xref('I', $personId), 'INDI');
+        $lines = array_merge($lines, $this->line(1, 'NAME', $this->gedcomName($person)));
+        $lines = array_merge($lines, $this->line(2, 'GIVN', $person->Nombres));
+        $lines = array_merge($lines, $this->line(2, 'SURN', $person->Apellidos));
+        $lines = array_merge($lines, $this->line(1, 'SEX', $this->sex($person->Sexo)));
+        $lines = array_merge($lines, $this->eventLines(1, 'BIRT', $person->AnhoNac, $person->MesNac, $person->DiaNac, $person->LugarNac, $person->PaisNac));
+        $lines = array_merge($lines, $this->eventLines(1, 'BAPM', $person->AnhoBtzo, $person->MesBtzo, $person->DiaBtzo, $person->LugarBtzo, $person->PaisBtzo));
+        $lines = array_merge($lines, $this->eventLines(1, 'DEAT', $person->AnhoDef, $person->MesDef, $person->DiaDef, $person->LugarDef, $person->PaisDef));
+
+        if ($this->filled($person->NPasaporte)) {
+            $lines = array_merge($lines, $this->line(1, 'IDNO', $person->NPasaporte));
+            $lines = array_merge($lines, $this->line(2, 'TYPE', 'Passport'));
+        }
+
+        if ($this->filled($person->NDocIdent)) {
+            $lines = array_merge($lines, $this->line(1, 'IDNO', $person->NDocIdent));
+            $lines = array_merge($lines, $this->line(2, 'TYPE', 'Identity document'));
+        }
+
+        if ($this->filled($person->Observaciones)) {
+            $lines = array_merge($lines, $this->line(1, 'NOTE', $person->Observaciones));
+        }
+
+        foreach ($relations['child_families'][$personId] ?? [] as $familyId) {
+            $lines = array_merge($lines, $this->line(1, 'FAMC', $this->xref('F', $familyId), false));
+        }
+
+        foreach ($relations['parent_families'][$personId] ?? [] as $familyId) {
+            $lines = array_merge($lines, $this->line(1, 'FAMS', $this->xref('F', $familyId), false));
+        }
+
+        return $lines;
+    }
+
+    private function familyLines(int $familyId, array $family): array
+    {
+        $lines = $this->recordLine(0, $this->xref('F', $familyId), 'FAM');
+
+        if ($family['father']) {
+            $lines = array_merge($lines, $this->line(1, 'HUSB', $this->xref('I', $family['father']), false));
+        }
+
+        if ($family['mother']) {
+            $lines = array_merge($lines, $this->line(1, 'WIFE', $this->xref('I', $family['mother']), false));
+        }
+
+        foreach ($family['children'] as $childId) {
+            $lines = array_merge($lines, $this->line(1, 'CHIL', $this->xref('I', $childId), false));
+        }
+
+        $marriage = $family['marriage'] ?? null;
+        if ($marriage) {
+            $lines = array_merge($lines, $this->eventLines(1, 'MARR', $marriage['year'], $marriage['month'], $marriage['day'], $marriage['place'], $marriage['country']));
+        }
+
+        return $lines;
+    }
+
+    private function writeIndividual($handle, object $person, array $relations): void
+    {
+        $this->writeLines($handle, $this->individualLines($person, $relations));
+    }
+
+    private function writeFamily($handle, int $familyId, array $family): void
+    {
+        $this->writeLines($handle, $this->familyLines($familyId, $family));
+    }
+
+    private function writeLines($handle, array $lines): void
+    {
+        foreach ($lines as $line) {
+            fwrite($handle, $line . "\n");
+        }
     }
 
     private function buildExportRelations(Collection $people): array
@@ -280,6 +352,96 @@ class GedcomService
             'families' => $families,
             'child_families' => $childFamilies,
             'parent_families' => $parentFamilies,
+        ];
+    }
+
+    private function buildExportRelationsFromQuery($query): array
+    {
+        $people = $query
+            ->select([
+                'id',
+                'IDCliente',
+                'IDPersona',
+                'idPadreNew',
+                'idMadreNew',
+                'IDPadre',
+                'IDMadre',
+                'AnhoMatr',
+                'MesMatr',
+                'DiaMatr',
+                'LugarMatr',
+                'PaisMatr',
+            ])
+            ->orderBy('id')
+            ->get();
+
+        $relations = $this->buildExportRelations($people);
+        $marriages = [];
+
+        foreach ($people as $person) {
+            if ($this->filled($person->AnhoMatr) || $this->filled($person->PaisMatr) || $this->filled($person->LugarMatr)) {
+                $marriages[(int) $person->id] = [
+                    'year' => $person->AnhoMatr,
+                    'month' => $person->MesMatr,
+                    'day' => $person->DiaMatr,
+                    'place' => $person->LugarMatr,
+                    'country' => $person->PaisMatr,
+                ];
+            }
+        }
+
+        foreach ($relations['families'] as $familyId => $family) {
+            $relations['families'][$familyId]['marriage'] = null;
+
+            foreach (array_filter([$family['father'], $family['mother']]) as $parentId) {
+                if (isset($marriages[$parentId])) {
+                    $relations['families'][$familyId]['marriage'] = $marriages[$parentId];
+                    break;
+                }
+            }
+        }
+
+        unset($people);
+
+        return $relations;
+    }
+
+    private function exportColumns(): array
+    {
+        return [
+            'id',
+            'IDCliente',
+            'IDPersona',
+            'idPadreNew',
+            'idMadreNew',
+            'IDPadre',
+            'IDMadre',
+            'Nombres',
+            'Apellidos',
+            'Sexo',
+            'NPasaporte',
+            'NDocIdent',
+            'AnhoNac',
+            'MesNac',
+            'DiaNac',
+            'LugarNac',
+            'PaisNac',
+            'AnhoBtzo',
+            'MesBtzo',
+            'DiaBtzo',
+            'LugarBtzo',
+            'PaisBtzo',
+            'AnhoDef',
+            'MesDef',
+            'DiaDef',
+            'LugarDef',
+            'PaisDef',
+            'AnhoMatr',
+            'MesMatr',
+            'DiaMatr',
+            'LugarMatr',
+            'PaisMatr',
+            'Observaciones',
         ];
     }
 

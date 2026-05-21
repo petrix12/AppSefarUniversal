@@ -95,21 +95,28 @@
                             }
                         </style>
 
-                        @can('descargarGedcom')
-
+                        @php
+                            $rootTreePerson = $columnasparatabla[0][0] ?? null;
+                            $rootTreePersonId = is_array($rootTreePerson)
+                                ? ($rootTreePerson['id'] ?? null)
+                                : ($rootTreePerson->id ?? null);
+                        @endphp
                         <div style="display:flex;">
-                        <!--
+                            @can('administrador')
+                            @if($rootTreePersonId)
                             <div class="px-4 py-2 m-2">
                                 {{-- FAMILIARES --}}
                                 <div class="justify-center">
                                     <label for="downloadgedcom" class="px-3 block text-sm font-medium text-gray-700"
                                         title="Descargar Gedcom">Descargar Gedcom</label>
-                                    <a href="{{route('getGedcomCliente', $columnasparatabla[0][0])}}" class="csrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600">
+                                    <a href="{{route('getGedcomCliente', $rootTreePersonId)}}" class="csrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600">
                                         <b>Descargar Gedcom</b>
                                     </a>
                                 </div>
                             </div>
-                        -->
+                            @endif
+                            @endcan
+                            @can('descargarGedcom')
                             <div class="px-4 py-2 m-2">
                                 {{-- FAMILIARES --}}
                                 <div class="justify-center">
@@ -120,8 +127,8 @@
                                     </a>
                                 </div>
                             </div>
+                            @endcan
                         </div>
-                        @endcan
 
                         <div class="tree-toolbar-controls">
                             <div class="tree-toolbar-control tree-toolbar-select">

@@ -450,8 +450,10 @@ Route::get('/prompttreena', [TreenaController::class, 'index'])->name('treena.in
 
 Route::post('/updatetreena', [TreenaController::class, 'update'])->name('treena.update');
 
-//Ruta Comprobantes de Pago
-Route::get('/downloadTree/{id}', [GedcomController::class, 'getGedcomCliente'])->name('getGedcomCliente');
+//Ruta GEDCOM por cliente
+Route::get('/downloadTree/{id}', [GedcomController::class, 'getGedcomCliente'])
+    ->name('getGedcomCliente')
+    ->middleware(['auth', 'can:administrador']);
 
 //Ruta Comprobantes de Pago
 Route::get('/downloadExcel/{id}', [GedcomController::class, 'getExcelCliente'])->name('getExcelCliente');
