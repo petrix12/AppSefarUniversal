@@ -39,6 +39,7 @@
         <!-- Styles -->
         <link rel="stylesheet" href="{{ asset('/css/app.css') }}">
         <link rel="stylesheet" href="{{ asset('/css/sefar.css') }}">
+        <link rel="stylesheet" href="{{ asset('/css/darkmode.css') }}">
 
         @livewireStyles
 

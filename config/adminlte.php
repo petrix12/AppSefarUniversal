@@ -670,14 +670,14 @@ return [
         ],
 
         [
-            'text'        => 'Herramientas GED',
+            'text'        => 'Herramientas GEDCOM',
             'icon'        => 'fa-fw fab fa-pagelines',
             'icon_color'  => 'white',
             'can'  => ['administrador'],
             'submenu' => [
                 [
-                    'text'          => 'Exportar Gedcom',
-                    'icon'          => 'fa-fw fab fa-pagelines',
+                    'text'          => 'Importar / Exportar',
+                    'icon'          => 'fa-fw fas fa-file-import',
                     'icon_color'    => 'white',
                     'route'         => 'gedcomexport',
                     'can'           => ['administrador'],

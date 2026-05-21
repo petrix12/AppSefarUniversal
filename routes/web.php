@@ -496,8 +496,9 @@ Route::get('makereport', [ReportController::class, 'makereport'])->name('makerep
 Route::post('/destroypayelement', [ClienteController::class, 'destroypayelement'])->name('destroypayelement');
 
 //GEDCOM EXPORT
-Route::get('/gedcomexport', [GedcomController::class, 'gedcomexport'])->name('gedcomexport');
-Route::get('/getGedcomGlobal', [GedcomController::class, 'getGedcomGlobal'])->name('getGedcomGlobal');
+Route::get('/gedcomexport', [GedcomController::class, 'gedcomexport'])->name('gedcomexport')->middleware(['auth', 'can:administrador']);
+Route::get('/getGedcomGlobal', [GedcomController::class, 'getGedcomGlobal'])->name('getGedcomGlobal')->middleware(['auth', 'can:administrador']);
+Route::post('/gedcom/import', [GedcomController::class, 'import'])->name('gedcom.import')->middleware(['auth', 'can:administrador']);
 
 //Rutas para Stripe:
 Route::get('stripeverify', [StripeController::class, 'stripeverify'])->name('stripeverify')

@@ -1,87 +1,154 @@
-body.dark-mode,
+body.dark-mode {
+  --sefar-surface: #071522;
+  --sefar-page: #000d1a;
+  --sefar-primary-soft: #0c2230;
+  --sefar-border: rgba(219, 234, 242, 0.16);
+  --sefar-text: #eef6f8;
+  --sefar-muted: #a9bdc8;
+  --sefar-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+  background-color: var(--sefar-page) !important;
+  color: var(--sefar-text) !important;
+}
+
+body.dark-mode .content,
+body.dark-mode .container-fluid,
+body.dark-mode .bg-gray-100,
+body.dark-mode .content-wrapper {
+  background-color: var(--sefar-page) !important;
+}
+
 body.dark-mode .bg-white,
-body.dark-mode .card ,
+body.dark-mode .card,
+body.dark-mode .modal-content,
+body.dark-mode .sefar-card,
+body.dark-mode .contentmodaladdfamiliar {
+  background-color: var(--sefar-surface) !important;
+  color: var(--sefar-text) !important;
+  border-color: var(--sefar-border) !important;
+}
+
 body.dark-mode input,
 body.dark-mode select,
-body.dark-mode textarea, body.dark-mode .paginate_button, body.dark-mode .page-link, body.dark-mode .contentmodaladdfamiliar
-{
-    background-color: #05111c !important;
-    color: #eeeeee!important;
+body.dark-mode textarea,
+body.dark-mode .paginate_button,
+body.dark-mode .page-link,
+body.dark-mode .sefar-form input[type='text'],
+body.dark-mode .sefar-form input[type='file'],
+body.dark-mode .sefar-form select,
+body.dark-mode .sefar-form textarea {
+  background-color: #05111c !important;
+  color: var(--sefar-text) !important;
+  border-color: rgba(219, 234, 242, 0.22) !important;
 }
 
-body.dark-mode .bar-label, body.dark-mode .cerrarmodal, body.dark-mode .tituloform, body.dark-mode p,  body.dark-mode h3, body.dark-mode .ctvSefar, body.dark-mode h2, body.dark-mode .uppercase, body.dark-mode .text-gray-700, body.dark-mode span{
-  color: #eeeeee!important;
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+  color: #8297a3 !important;
 }
 
-body.dark-mode .cerrarmodal svg, body.dark-mode .cerrarmodalarchivo svg, body.dark-mode .cerrarmodalarchivoedit svg{
-  stroke: #eeeeee !important; /* Use !important to override inline styles */
-  fill: none; /* Ensure the SVG isn't filled with a color */
+body.dark-mode .bar-label,
+body.dark-mode .cerrarmodal,
+body.dark-mode .tituloform,
+body.dark-mode p,
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode h5,
+body.dark-mode .ctvSefar,
+body.dark-mode .uppercase,
+body.dark-mode .text-gray-700,
+body.dark-mode span,
+body.dark-mode label,
+body.dark-mode .sefar-page-header h1,
+body.dark-mode .sefar-card-header h2,
+body.dark-mode .sefar-table th,
+body.dark-mode .sefar-table td {
+  color: var(--sefar-text) !important;
 }
 
-body.dark-mode .bg-gray-50, body.dark-mode .cajapernew_min{
-  background-color: #0c1823 !important;
+body.dark-mode .sefar-page-header p,
+body.dark-mode .sefar-card-header p,
+body.dark-mode .sefar-muted,
+body.dark-mode .sefar-metrics span {
+  color: var(--sefar-muted) !important;
 }
 
-body.dark-mode .content , body.dark-mode .container-fluid, body.dark-mode .bg-gray-100, body.dark-mode .content-wrapper {
-    background-color: #000d1a !important;
+body.dark-mode .cerrarmodal svg,
+body.dark-mode .cerrarmodalarchivo svg,
+body.dark-mode .cerrarmodalarchivoedit svg {
+  stroke: var(--sefar-text) !important;
+  fill: none;
 }
 
-body.dark-mode input[type='checkbox']:checked{
-	border-color: white;
+body.dark-mode .bg-gray-50,
+body.dark-mode .cajapernew_min,
+body.dark-mode .sefar-empty,
+body.dark-mode .sefar-metrics > div {
+  background-color: var(--sefar-primary-soft) !important;
 }
 
-body.dark-mode .nav-link, body.dark-mode .fontwhite, body.dark-mode .contentfiles {
-    color: #eeeeee!important;
+body.dark-mode input[type='checkbox']:checked {
+  border-color: #ffffff;
 }
 
-body.dark-mode .styled-table tbody tr:nth-of-type(even){
-	background-color: #0c1823 !important;
-	color: #eeeeee!important;
+body.dark-mode .nav-link,
+body.dark-mode .fontwhite,
+body.dark-mode .contentfiles {
+  color: var(--sefar-text) !important;
 }
 
-body.dark-mode .addborderbottom {
-  border-bottom: 2px solid #cccccc!important;
-}
-
+body.dark-mode .styled-table tbody tr:nth-of-type(even),
 body.dark-mode .users-table tbody tr:hover {
-    background-color: #081623!important;
+  background-color: #081623 !important;
+  color: var(--sefar-text) !important;
+}
+
+body.dark-mode .sefar-table th,
+body.dark-mode .sefar-table td,
+body.dark-mode .addborderbottom {
+  border-color: var(--sefar-border) !important;
 }
 
 body.dark-mode .badge-paid {
-    background-color: darkgreen;
+  background-color: darkgreen;
 }
 
 body.dark-mode .badge-unpaid {
-    background-color: #991b1b;
+  background-color: #991b1b;
 }
 
-body.dark-mode #dailygraph{
-  display: none!important;
+body.dark-mode #dailygraph {
+  display: none !important;
 }
 
-body.dark-mode #nightlygraph{
-  display: block!important;
+body.dark-mode #nightlygraph {
+  display: block !important;
 }
 
 body.dark-mode .flatpickr-calendar {
-    background-color: #05111c!important;
+  background-color: #05111c !important;
 }
 
 body.dark-mode .flatpickr-disabled {
-    color:#777777!important;
+  color: #777777 !important;
 }
 
 .separator {
-    margin: 1rem 0;
-    border-bottom: 1px solid #ced4da !important;       /* Espacio arriba y abajo (opcional) */
-  }
+  margin: 1rem 0;
+  border-bottom: 1px solid #ced4da !important;
+}
 
-  /* ----------- MODO OSCURO ----------- */
-  body.dark-mode .separator {
-    border-bottom: 1px solid #eeeeee !important; /* Color de la línea en dark mode */
-  }
+body.dark-mode .separator {
+  border-bottom: 1px solid var(--sefar-border) !important;
+}
 
-body.dark-mode .modal-content {
-    background-color: #0c1823 !important;
-    color: #eeeeee!important;
+body.dark-mode .sefar-alert-error {
+  background: #42151a;
+  color: #ffd8dd;
+}
+
+body.dark-mode .sefar-alert-warning {
+  background: #3c2e13;
+  color: #ffe8b0;
 }

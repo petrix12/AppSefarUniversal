@@ -9,7 +9,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="shortcut icon" type="image/x-icon" href="{{ asset('/favicon.ico') }}">
-    <link rel="stylesheet" href='/css/darkmode.css'>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
 
     <style>
@@ -40,9 +39,13 @@
         @include('adminlte::plugins', ['type' => 'css'])
 
         <link rel="stylesheet" href="{{ asset('vendor/adminlte/dist/css/adminlte.min.css') }}">
+        <link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
+        <link rel="stylesheet" href="{{ asset('css/darkmode.css') }}">
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700,300italic,400italic,600italic">
     @else
         <link rel="stylesheet" href="{{ mix(config('adminlte.laravel_mix_css_path', 'css/app.css')) }}">
+        <link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
+        <link rel="stylesheet" href="{{ asset('css/darkmode.css') }}">
     @endif
 
     {{-- Livewire Styles --}}
