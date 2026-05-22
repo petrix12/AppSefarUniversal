@@ -80,6 +80,56 @@
     </div>
   @endif
 
+  @if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+      <i class="fas fa-exclamation-triangle mr-2"></i>{{ session('error') }}
+      <button type="button" class="close" data-dismiss="alert">
+        <span>&times;</span>
+      </button>
+    </div>
+  @endif
+
+  @if(session('import_report'))
+    @php($report = session('import_report'))
+    <div class="alert alert-info shadow-sm" role="alert">
+      <div class="font-weight-bold mb-1">
+        Resultado de importacion de contactos
+      </div>
+      <div class="small">
+        Procesados: <strong>{{ $report['total_input'] ?? 0 }}</strong> |
+        Con pasaporte: <strong>{{ $report['with_passport'] ?? ($report['total_input'] ?? 0) }}</strong> |
+        Existentes: <strong>{{ $report['found'] ?? 0 }}</strong> |
+        Creados: <strong>{{ $report['created'] ?? 0 }}</strong> |
+        Agregados: <strong>{{ $report['added'] ?? 0 }}</strong> |
+        Ya estaban: <strong>{{ $report['already'] ?? 0 }}</strong> |
+        No agregados: <strong>{{ $report['missing'] ?? 0 }}</strong>
+      </div>
+      <div class="small mt-1">
+        Duplicados ignorados: <strong>{{ $report['duplicates'] ?? 0 }}</strong> |
+        Sin pasaporte: <strong>{{ $report['empty_passport'] ?? 0 }}</strong> |
+        Faltan datos obligatorios: <strong>{{ $report['missing_required'] ?? 0 }}</strong> |
+        Correos en conflicto: <strong>{{ $report['email_conflicts'] ?? 0 }}</strong> |
+        Correos invalidos: <strong>{{ $report['invalid_email'] ?? 0 }}</strong>
+      </div>
+      @if(!empty($report['missing_preview']))
+        <div class="small mt-2">
+          <strong>No agregados:</strong>
+          {{ implode(', ', $report['missing_preview']) }}
+          @if(($report['missing'] ?? 0) > count($report['missing_preview']))
+            y {{ ($report['missing'] ?? 0) - count($report['missing_preview']) }} mas.
+          @endif
+        </div>
+      @endif
+      @if(!empty($report['issues_preview']))
+        <ul class="small mb-0 mt-2 pl-3">
+          @foreach($report['issues_preview'] as $issue)
+            <li>{{ $issue }}</li>
+          @endforeach
+        </ul>
+      @endif
+    </div>
+  @endif
+
   <div class="card shadow-sm border-0">
 
     <div class="card-header bg-white border-bottom py-3 px-4">
@@ -94,6 +144,18 @@
             @if($lista->description)
               <small class="text-muted">{{ $lista->description }}</small>
             @endif
+            <div class="mt-2">
+              @if($lista->include_in_task_pool)
+                <span class="badge badge-success mr-1">En pool de tareas</span>
+                @if($lista->disable_hubspot_reassignment)
+                  <span class="badge badge-warning">No reasigna en HubSpot</span>
+                @else
+                  <span class="badge badge-primary">Reasigna en HubSpot primero</span>
+                @endif
+              @else
+                <span class="badge badge-secondary">Fuera del pool de tareas</span>
+              @endif
+            </div>
           </div>
         </div>
 
@@ -219,6 +281,128 @@
               Ingresa los IDs numéricos separados por coma. Puedes añadir varios a la vez.
             </small>
           </form>
+        </div>
+      </div>
+
+      @php($importPreview = session('import_preview'))
+      <div class="section-block section-block--success mb-4">
+        <div class="section-block__header">
+          <i class="fas fa-file-import mr-2 text-success"></i>
+          <span class="font-weight-semibold">Importar contactos desde archivo</span>
+        </div>
+        <div class="section-block__body">
+          <form method="POST" action="{{ route('crud.lists.members.import.preview', $lista) }}" enctype="multipart/form-data">
+            @csrf
+            <div class="row align-items-end g-2">
+              <div class="col-md-8">
+                <label class="form-label text-muted small mb-1">Archivo CSV o JSON</label>
+                <input type="file"
+                       class="form-control"
+                       name="contacts_file"
+                       accept=".csv,.txt,.json,text/csv,text/plain,application/json"
+                       required>
+              </div>
+              <div class="col-md-4">
+                <button class="btn btn-success w-100">
+                  <i class="fas fa-search mr-1"></i> Detectar campos
+                </button>
+              </div>
+            </div>
+          </form>
+
+          @if($importPreview)
+            @php
+              $mappingFields = [
+                'passport' => ['label' => 'Pasaporte', 'required' => true],
+                'nombres' => ['label' => 'Nombre', 'required' => false],
+                'apellidos' => ['label' => 'Apellido', 'required' => false],
+                'servicio' => ['label' => 'Servicio contratado', 'required' => false],
+                'phone' => ['label' => 'Telefono', 'required' => false],
+                'email' => ['label' => 'Correo electronico', 'required' => false],
+              ];
+              $previewColumns = $importPreview['columns'] ?? [];
+              $sampleColumns = array_slice($previewColumns, 0, 8);
+            @endphp
+
+            <hr>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+              <div class="small text-muted">
+                Archivo: <strong>{{ $importPreview['filename'] ?? 'archivo' }}</strong> |
+                Filas detectadas: <strong>{{ $importPreview['total_rows'] ?? 0 }}</strong>
+              </div>
+              <span class="badge badge-light border">Busqueda principal: pasaporte</span>
+            </div>
+
+            <form method="POST" action="{{ route('crud.lists.members.import.process', $lista) }}">
+              @csrf
+              <input type="hidden" name="import_token" value="{{ $importPreview['token'] }}">
+
+              <div class="row g-2">
+                @foreach($mappingFields as $field => $config)
+                  <div class="col-md-4">
+                    <label class="form-label text-muted small mb-1">
+                      {{ $config['label'] }}
+                      @if($config['required'])
+                        <span class="text-danger">*</span>
+                      @endif
+                    </label>
+                    <select class="form-control"
+                            name="mapping[{{ $field }}]"
+                            {{ $config['required'] ? 'required' : '' }}>
+                      <option value="">{{ $config['required'] ? 'Selecciona columna' : 'No importar' }}</option>
+                      @foreach($previewColumns as $column)
+                        <option value="{{ $column }}" {{ (($importPreview['guesses'][$field] ?? '') === $column) ? 'selected' : '' }}>
+                          {{ $column }}
+                        </option>
+                      @endforeach
+                    </select>
+                  </div>
+                @endforeach
+              </div>
+
+              <div class="custom-control custom-checkbox mt-3">
+                <input type="checkbox" class="custom-control-input" id="create_missing_contacts" name="create_missing" value="1">
+                <label class="custom-control-label" for="create_missing_contacts">
+                  Crear clientes no encontrados usando los campos mapeados
+                </label>
+              </div>
+              <small class="text-muted d-block mt-1">
+                Para crear clientes nuevos se requiere nombre, apellido, servicio contratado, pasaporte, telefono y correo electronico.
+              </small>
+
+              @if(!empty($importPreview['sample_rows']))
+                <div class="table-responsive mt-3 border rounded">
+                  <table class="table table-sm mb-0">
+                    <thead class="bg-light">
+                      <tr>
+                        @foreach($sampleColumns as $column)
+                          <th class="small text-muted">{{ $column }}</th>
+                        @endforeach
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @foreach($importPreview['sample_rows'] as $row)
+                        <tr>
+                          @foreach($sampleColumns as $column)
+                            <td class="small">{{ Str::limit($row[$column] ?? '', 40) }}</td>
+                          @endforeach
+                        </tr>
+                      @endforeach
+                    </tbody>
+                  </table>
+                </div>
+                @if(count($previewColumns) > count($sampleColumns))
+                  <small class="text-muted d-block mt-1">
+                    Vista previa mostrando {{ count($sampleColumns) }} de {{ count($previewColumns) }} columnas.
+                  </small>
+                @endif
+              @endif
+
+              <button class="btn btn-success mt-3">
+                <i class="fas fa-file-import mr-1"></i> Importar contactos
+              </button>
+            </form>
+          @endif
         </div>
       </div>
 

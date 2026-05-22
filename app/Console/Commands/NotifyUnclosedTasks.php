@@ -53,6 +53,8 @@ class NotifyUnclosedTasks extends Command
             })
             ->get();
 
+        $tasks = $this->withListReassignmentPolicy($tasks);
+
         if ($tasks->isEmpty()) {
             $this->info('✅ No hay tareas vencidas.');
             return self::SUCCESS;
@@ -66,6 +68,7 @@ class NotifyUnclosedTasks extends Command
         $hubspotDealsUpdated = 0;
         $hubspotNotFound = 0;
         $hubspotFailed = 0;
+        $hubspotSkippedByList = 0;
 
         DB::beginTransaction();
 
@@ -101,6 +104,13 @@ class NotifyUnclosedTasks extends Command
                     ]);
 
                     $reassignedClients++;
+
+                    if ((bool) ($task->skip_hubspot_reassignment ?? false)) {
+                        $hubspotSkippedByList++;
+                        $this->line("   HubSpot omitido por configuracion de lista: contact_id={$contact->id}");
+                        $processedTasks->push($task);
+                        continue;
+                    }
 
                     // 3. Actualizar propietario en HubSpot
                     try {
@@ -190,10 +200,49 @@ class NotifyUnclosedTasks extends Command
         $this->info("Clientes reasignados en BD: {$reassignedClients}");
         $this->info("Contactos actualizados en HubSpot: {$hubspotUpdated}");
         $this->info("Negocios actualizados en HubSpot: {$hubspotDealsUpdated}");
+        $this->info("HubSpot omitidos por configuracion de lista: {$hubspotSkippedByList}");
         $this->info("Contactos no encontrados en HubSpot: {$hubspotNotFound}");
         $this->info("Actualizaciones fallidas en HubSpot: {$hubspotFailed}");
 
         return self::SUCCESS;
+    }
+
+    private function withListReassignmentPolicy($tasks)
+    {
+        $contactIds = $tasks
+            ->pluck('contact_id')
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($contactIds->isEmpty()) {
+            return $tasks;
+        }
+
+        $metadata = DB::table('list_user as lu')
+            ->join('lists as l', 'l.id', '=', 'lu.list_id')
+            ->whereIn('lu.user_id', $contactIds->all())
+            ->where('lu.contacted', 0)
+            ->where('l.include_in_task_pool', true)
+            ->select('lu.user_id', 'l.name', 'l.disable_hubspot_reassignment')
+            ->get()
+            ->groupBy('user_id');
+
+        return $tasks
+            ->map(function ($task) use ($metadata) {
+                $rows = $metadata->get($task->contact_id, collect());
+                $listNames = $rows->pluck('name')->filter()->unique()->values();
+
+                $task->task_pool_list_name = $listNames->implode(', ');
+                $task->skip_hubspot_reassignment = $rows->contains(
+                    fn ($row) => (bool) $row->disable_hubspot_reassignment
+                );
+
+                return $task;
+            })
+            ->sortBy(fn ($task) => (bool) ($task->skip_hubspot_reassignment ?? false) ? 1 : 0)
+            ->values();
     }
 
     private function resolveHubspotContactId(HubspotService $hubspotService, User $contact): ?string

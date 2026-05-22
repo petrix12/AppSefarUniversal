@@ -102,6 +102,7 @@ class RunDailyTaskWorkflow extends Command
         $hubspotDealsUpdated = 0;
         $hubspotNotFound = 0;
         $hubspotFailed = 0;
+        $hubspotSkippedByList = 0;
         $openTasksCanceled = 0;
 
         foreach ($contacts as $contact) {
@@ -113,9 +114,13 @@ class RunDailyTaskWorkflow extends Command
             }
 
             $reason = $contact->force_reason ?? 'sin motivo';
+            $listInfo = ! empty($contact->task_pool_list_name) ? " | listas={$contact->task_pool_list_name}" : '';
             $tasksToCancel = $this->countPendingTasksFromIneligibleAssignees((int) $contact->id, $eligibleAdvisorIds);
             $cancelNote = $tasksToCancel > 0 ? " | tareas pendientes a cancelar={$tasksToCancel}" : '';
-            $this->line("   Reasignar contact_id={$contact->id} {$contact->name} | {$reason} -> {$advisor->name}{$cancelNote}");
+            $hubspotPolicyNote = (bool) ($contact->disable_hubspot_reassignment ?? false)
+                ? ' | HubSpot omitido por lista'
+                : '';
+            $this->line("   Reasignar contact_id={$contact->id} {$contact->name} | {$reason}{$listInfo} -> {$advisor->name}{$cancelNote}{$hubspotPolicyNote}");
 
             if ($dryRun) {
                 continue;
@@ -124,6 +129,11 @@ class RunDailyTaskWorkflow extends Command
             User::whereKey($contact->id)->update(['owner_id' => $advisor->id]);
             $updatedLocal++;
             $openTasksCanceled += $this->cancelPendingTasksFromIneligibleAssignees((int) $contact->id, $eligibleAdvisorIds);
+
+            if ((bool) ($contact->disable_hubspot_reassignment ?? false)) {
+                $hubspotSkippedByList++;
+                continue;
+            }
 
             try {
                 $hsContactId = $this->resolveHubspotContactId($hubspot, $contact);
@@ -166,6 +176,7 @@ class RunDailyTaskWorkflow extends Command
         $this->info("Reasignados en app: {$updatedLocal}");
         $this->info("Actualizados en HubSpot: {$hubspotUpdated}");
         $this->info("Negocios actualizados en HubSpot: {$hubspotDealsUpdated}");
+        $this->info("HubSpot omitidos por configuracion de lista: {$hubspotSkippedByList}");
         $this->info("No encontrados en HubSpot: {$hubspotNotFound}");
         $this->info("Fallidos en HubSpot: {$hubspotFailed}");
         $this->info("Tareas pendientes canceladas de usuarios no elegibles: {$openTasksCanceled}");
@@ -174,6 +185,14 @@ class RunDailyTaskWorkflow extends Command
     private function forceReassignCandidates(int $limit, array $eligibleAdvisorIds)
     {
         $systemsUserIds = Task::systemsUserIds();
+        $taskPoolExists = function ($query) {
+            $query->select(DB::raw(1))
+                ->from('list_user as lu')
+                ->join('lists as l', 'l.id', '=', 'lu.list_id')
+                ->whereColumn('lu.user_id', 'users.id')
+                ->where('lu.contacted', 0)
+                ->where('l.include_in_task_pool', true);
+        };
 
         $completedEffective = function ($query) use ($systemsUserIds) {
             $query->select(DB::raw(1))
@@ -210,12 +229,7 @@ class RunDailyTaskWorkflow extends Command
             ->when(! empty($systemsUserIds), function ($query) use ($systemsUserIds) {
                 $query->whereNotIn('tasks.user_id', $systemsUserIds);
             })
-            ->whereExists(function ($query) {
-                $query->select(DB::raw(1))
-                    ->from('list_user as lu')
-                    ->whereColumn('lu.user_id', 'users.id')
-                    ->where('lu.contacted', 0);
-            })
+            ->whereExists($taskPoolExists)
             ->whereNotExists($completedEffective)
             ->whereNotExists($inProgress)
             ->groupBy('users.id', 'users.name', 'users.email', 'users.hs_id', 'users.owner_id');
@@ -229,12 +243,7 @@ class RunDailyTaskWorkflow extends Command
             ->when(! empty($systemsUserIds), function ($query) use ($systemsUserIds) {
                 $query->whereNotIn('tasks.user_id', $systemsUserIds);
             })
-            ->whereExists(function ($query) {
-                $query->select(DB::raw(1))
-                    ->from('list_user as lu')
-                    ->whereColumn('lu.user_id', 'users.id')
-                    ->where('lu.contacted', 0);
-            })
+            ->whereExists($taskPoolExists)
             ->whereNotExists($completedEffective)
             ->whereNotExists($inProgress)
             ->groupBy('users.id', 'users.name', 'users.email', 'users.hs_id', 'users.owner_id');
@@ -243,7 +252,9 @@ class RunDailyTaskWorkflow extends Command
             ->select('users.id', 'users.name', 'users.email', 'users.hs_id', 'users.owner_id')
             ->selectRaw("'en lista sin tareas' as force_reason")
             ->join('list_user as lu', 'lu.user_id', '=', 'users.id')
+            ->join('lists as l', 'l.id', '=', 'lu.list_id')
             ->where('lu.contacted', 0)
+            ->where('l.include_in_task_pool', true)
             ->whereNotExists($completedEffective)
             ->whereNotExists($inProgress)
             ->whereNotExists(function ($query) use ($systemsUserIds) {
@@ -260,7 +271,9 @@ class RunDailyTaskWorkflow extends Command
             ->select('users.id', 'users.name', 'users.email', 'users.hs_id', 'users.owner_id')
             ->selectRaw("'owner no elegible para tareas' as force_reason")
             ->join('list_user as lu', 'lu.user_id', '=', 'users.id')
+            ->join('lists as l', 'l.id', '=', 'lu.list_id')
             ->where('lu.contacted', 0)
+            ->where('l.include_in_task_pool', true)
             ->whereNotExists($completedEffective)
             ->whereNotExists($inProgress)
             ->where(function ($query) use ($eligibleAdvisorIds) {
@@ -280,6 +293,7 @@ class RunDailyTaskWorkflow extends Command
             ->when(! empty($systemsUserIds), function ($query) use ($systemsUserIds) {
                 $query->whereNotIn('tasks.user_id', $systemsUserIds);
             })
+            ->whereExists($taskPoolExists)
             ->whereNotExists($completedEffective)
             ->whereNotExists($inProgress)
             ->where(function ($query) use ($eligibleAdvisorIds) {
@@ -291,7 +305,7 @@ class RunDailyTaskWorkflow extends Command
             })
             ->groupBy('users.id', 'users.name', 'users.email', 'users.hs_id', 'users.owner_id');
 
-        return DB::query()
+        $contacts = DB::query()
             ->fromSub(
                 $canceled
                     ->union($ineffective)
@@ -304,8 +318,48 @@ class RunDailyTaskWorkflow extends Command
             ->selectRaw('MIN(force_reason) as force_reason')
             ->groupBy('id', 'name', 'email', 'hs_id', 'owner_id')
             ->orderBy('id')
-            ->limit($limit)
+            ->limit($limit * 2)
             ->get();
+
+        return $this->withTaskPoolMetadata($contacts)
+            ->sortBy(fn ($contact) => (bool) ($contact->disable_hubspot_reassignment ?? false) ? 1 : 0)
+            ->take($limit)
+            ->values();
+    }
+
+    private function withTaskPoolMetadata($contacts)
+    {
+        $contactIds = $contacts
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($contactIds->isEmpty()) {
+            return $contacts;
+        }
+
+        $metadata = DB::table('list_user as lu')
+            ->join('lists as l', 'l.id', '=', 'lu.list_id')
+            ->whereIn('lu.user_id', $contactIds->all())
+            ->where('lu.contacted', 0)
+            ->where('l.include_in_task_pool', true)
+            ->select('lu.user_id', 'l.name', 'l.disable_hubspot_reassignment')
+            ->get()
+            ->groupBy('user_id');
+
+        return $contacts->map(function ($contact) use ($metadata) {
+            $rows = $metadata->get($contact->id, collect());
+            $listNames = $rows->pluck('name')->filter()->unique()->values();
+
+            $contact->task_pool_list_name = $listNames->implode(', ');
+            $contact->disable_hubspot_reassignment = $rows->contains(
+                fn ($row) => (bool) $row->disable_hubspot_reassignment
+            );
+
+            return $contact;
+        });
     }
 
     private function resolveHubspotContactId(HubspotService $hubspot, object $contact): ?string

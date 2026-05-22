@@ -7,7 +7,19 @@ use Illuminate\Database\Eloquent\Model;
 class Lista extends Model
 {
     protected $table = 'lists';
-    protected $fillable = ['name', 'description', 'owner_id', 'created_by'];
+    protected $fillable = [
+        'name',
+        'description',
+        'owner_id',
+        'created_by',
+        'include_in_task_pool',
+        'disable_hubspot_reassignment',
+    ];
+
+    protected $casts = [
+        'include_in_task_pool' => 'boolean',
+        'disable_hubspot_reassignment' => 'boolean',
+    ];
 
     public function users()
     {

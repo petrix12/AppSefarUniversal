@@ -83,6 +83,7 @@
               <th class="pl-3"><i class="fas fa-layer-group mr-1 text-muted"></i> Lista</th>
               <th class="text-center" style="width:110px;"><i class="fas fa-users mr-1 text-muted"></i> Miembros</th>
               <th><i class="fas fa-user-tie mr-1 text-muted"></i> Owner</th>
+              <th class="text-center" style="width:190px;">Pool tareas</th>
               <th class="text-center" style="width:140px;">Acciones</th>
             </tr>
           </thead>
@@ -133,6 +134,19 @@
                   @endif
                 </td>
 
+                <td class="text-center">
+                  @if($lista->include_in_task_pool)
+                    <span class="badge badge-success d-block mb-1">En pool</span>
+                    @if($lista->disable_hubspot_reassignment)
+                      <span class="badge badge-warning">Sin HubSpot</span>
+                    @else
+                      <span class="badge badge-primary">Con HubSpot</span>
+                    @endif
+                  @else
+                    <span class="badge badge-secondary">Fuera del pool</span>
+                  @endif
+                </td>
+
                 {{-- Acciones --}}
                 <td class="text-center">
                   <div class="d-flex gap-1 justify-content-center">
@@ -170,7 +184,7 @@
               </tr>
             @empty
               <tr>
-                <td colspan="4" class="text-center py-5">
+                <td colspan="5" class="text-center py-5">
                   <div class="empty-state">
                     <i class="fas fa-layer-group fa-3x text-muted mb-3 d-block"></i>
                     <p class="text-muted mb-1">

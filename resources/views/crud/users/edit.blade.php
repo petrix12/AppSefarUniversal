@@ -2856,34 +2856,67 @@
             const label = $('#labelCosReviewTask');
             const originalLabel = label.text();
 
-            $.ajax({
-                url: '{{ route("crud.users.cos-review-task", $user) }}',
-                type: 'POST',
-                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                beforeSend: function () {
-                    button.prop('disabled', true).css('opacity', '.75');
-                    icon.addClass('fa-spin');
-                    label.text('Creando tarea...');
+            Swal.fire({
+                title: 'Explica el problema del COS',
+                input: 'textarea',
+                inputLabel: 'Que esta pasando?',
+                inputPlaceholder: 'Ej: El servicio aparece duplicado, falta una fase, muestra datos que no corresponden, el boton no carga...',
+                inputAttributes: {
+                    'aria-label': 'Descripcion del problema del COS',
+                    maxlength: 3000
                 },
-                success: function (response) {
-                    Swal.fire({
-                        icon: response.created ? 'success' : 'info',
-                        title: response.created ? 'Tarea creada' : 'Tarea ya abierta',
-                        text: response.message
-                    });
-                },
-                error: function (xhr) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: xhr.responseJSON?.message || 'No se pudo solicitar la revision del COS.'
-                    });
-                },
-                complete: function () {
-                    button.prop('disabled', false).css('opacity', '1');
-                    icon.removeClass('fa-spin');
-                    label.text(originalLabel);
+                showCancelButton: true,
+                confirmButtonText: 'Crear tarea',
+                cancelButtonText: 'Cancelar',
+                inputValidator: function (value) {
+                    const text = (value || '').trim();
+
+                    if (text.length < 15) {
+                        return 'Describe el problema con al menos 15 caracteres.';
+                    }
+
+                    return null;
                 }
+            }).then(function (result) {
+                if (!result.isConfirmed) return;
+
+                $.ajax({
+                    url: '{{ route("crud.users.cos-review-task", $user) }}',
+                    type: 'POST',
+                    data: {
+                        issue_description: result.value
+                    },
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    beforeSend: function () {
+                        button.prop('disabled', true).css('opacity', '.75');
+                        icon.addClass('fa-spin');
+                        label.text('Creando tarea...');
+                    },
+                    success: function (response) {
+                        Swal.fire({
+                            icon: response.created ? 'success' : 'info',
+                            title: response.created ? 'Tarea creada' : 'Tarea actualizada',
+                            text: response.message
+                        });
+                    },
+                    error: function (xhr) {
+                        const errors = xhr.responseJSON?.errors || {};
+                        const message = errors.issue_description?.[0]
+                            || xhr.responseJSON?.message
+                            || 'No se pudo solicitar la revision del COS.';
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: message
+                        });
+                    },
+                    complete: function () {
+                        button.prop('disabled', false).css('opacity', '1');
+                        icon.removeClass('fa-spin');
+                        label.text(originalLabel);
+                    }
+                });
             });
         });
 

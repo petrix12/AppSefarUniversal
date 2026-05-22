@@ -403,6 +403,10 @@ class TaskController extends Controller
             'owner_id' => $advisor->id,
         ]);
 
+        if ($this->shouldSkipHubspotReassignmentForContact((int) $contact->id)) {
+            return "Progreso guardado. Contacto reasignado a {$advisor->name} en la app. HubSpot no se actualizo por configuracion de la lista.";
+        }
+
         try {
             $hsContactId = $this->resolveHubspotContactId($hubspot, $contact);
             $updatedDeals = 0;
@@ -445,6 +449,17 @@ class TaskController extends Controller
         }
 
         return "Progreso guardado. Contacto reasignado a {$advisor->name}. Negocios asociados actualizados: {$updatedDeals}.";
+    }
+
+    private function shouldSkipHubspotReassignmentForContact(int $contactId): bool
+    {
+        return DB::table('list_user as lu')
+            ->join('lists as l', 'l.id', '=', 'lu.list_id')
+            ->where('lu.user_id', $contactId)
+            ->where('lu.contacted', 0)
+            ->where('l.include_in_task_pool', true)
+            ->where('l.disable_hubspot_reassignment', true)
+            ->exists();
     }
 
     private function resolveHubspotContactId(HubspotService $hubspot, User $contact): ?string

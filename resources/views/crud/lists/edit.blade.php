@@ -37,6 +37,37 @@
           @error('owner_id') <small class="text-danger">{{ $message }}</small> @enderror
         </div>
 
+        <div class="form-group">
+          <div class="custom-control custom-switch">
+            <input type="checkbox"
+                   class="custom-control-input"
+                   id="include_in_task_pool"
+                   name="include_in_task_pool"
+                   value="1"
+                   {{ old('include_in_task_pool', $lista->include_in_task_pool) ? 'checked' : '' }}>
+            <label class="custom-control-label" for="include_in_task_pool">
+              Tomar en cuenta esta lista en el pool de tareas
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="custom-control custom-switch">
+            <input type="checkbox"
+                   class="custom-control-input"
+                   id="disable_hubspot_reassignment"
+                   name="disable_hubspot_reassignment"
+                   value="1"
+                   {{ old('disable_hubspot_reassignment', $lista->disable_hubspot_reassignment) ? 'checked' : '' }}>
+            <label class="custom-control-label" for="disable_hubspot_reassignment">
+              No reasignar estos contactos en HubSpot
+            </label>
+          </div>
+          <small class="text-muted">
+            Si esta activo, las tareas pueden generarse, pero el owner de HubSpot no se cambia.
+          </small>
+        </div>
+
         <button class="btn btn-primary">Guardar</button>
         <a class="btn btn-secondary" href="{{ route('crud.lists.show', $lista) }}">Volver</a>
       </form>

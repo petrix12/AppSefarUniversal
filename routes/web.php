@@ -249,6 +249,12 @@ Route::prefix('crud/lists')->name('crud.lists.')->group(function () {
     Route::post('/{lista}/members/add', [ListController::class, 'addMembers'])
         ->name('members.add')->middleware('can:lists.manage_members');
 
+    Route::post('/{lista}/members/import/preview', [ListController::class, 'previewMembersImport'])
+        ->name('members.import.preview')->middleware('can:lists.manage_members');
+
+    Route::post('/{lista}/members/import/process', [ListController::class, 'processMembersImport'])
+        ->name('members.import.process')->middleware('can:lists.manage_members');
+
     Route::delete('/{lista}/members/{user}', [ListController::class, 'removeMember'])
         ->name('members.remove')->middleware('can:lists.manage_members');
 

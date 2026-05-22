@@ -94,6 +94,22 @@ class UserController extends Controller
             abort(403, 'No tienes acceso para solicitar revision interna del COS.');
         }
 
+        $data = $request->validate([
+            'issue_description' => ['required', 'string', 'min:15', 'max:3000'],
+        ]);
+
+        $issueDescription = trim($data['issue_description']);
+        $requester = auth()->user()?->name ?? 'Usuario desconocido';
+        $requesterId = auth()->id() ?? 'N/A';
+        $requestBlock = implode("\n", [
+            '',
+            '---',
+            'Detalle reportado:',
+            $issueDescription,
+            'Reportado por: ' . $requester . ' (ID ' . $requesterId . ')',
+            'Fecha reporte: ' . now()->format('Y-m-d H:i:s'),
+        ]);
+
         $supportUser = User::query()
             ->where('id', 13515)
             ->orWhere('email', 'sistemasccs@sefarvzla.com')
@@ -114,8 +130,12 @@ class UserController extends Controller
             ->first();
 
         if ($existingTask) {
+            $existingTask->update([
+                'description' => trim((string) $existingTask->description) . "\n" . $requestBlock,
+            ]);
+
             return response()->json([
-                'message' => 'Ya existe una tarea abierta para revisar el COS de este cliente.',
+                'message' => 'Ya existe una tarea abierta para revisar el COS de este cliente. Se agrego tu explicacion a la descripcion.',
                 'task_id' => $existingTask->id,
                 'created' => false,
             ]);
@@ -127,6 +147,8 @@ class UserController extends Controller
             'title' => 'Revisar COS del cliente: ' . ($user->name ?: "Cliente #{$user->id}"),
             'description' => implode("\n", array_filter([
                 'Solicitud interna para revisar un problema visualizando el COS o datos inusuales del cliente.',
+                'Detalle reportado:',
+                $issueDescription,
                 'Solicitado por: ' . (auth()->user()?->name ?? 'Usuario desconocido') . ' (ID ' . auth()->id() . ')',
                 'Cliente: ' . ($user->name ?: '-') . " (ID {$user->id})",
                 'Email cliente: ' . ($user->email ?: '-'),
@@ -139,7 +161,7 @@ class UserController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Listo. Se creo una tarea para Sistemas revisar este COS.',
+            'message' => 'Listo. Se creo una tarea para Sistemas revisar este COS con tu explicacion.',
             'task_id' => $task->id,
             'created' => true,
         ], 201);

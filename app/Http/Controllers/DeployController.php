@@ -37,10 +37,18 @@ class DeployController extends Controller
         $mailSent  = false;
         $mailError = null;
         $modelUsed = null;
+        $migrateOut = null;
+        $optimizeClearOut = null;
 
         if ($pulledNewChanges) {
 
-            shell_exec("cd " . escapeshellarg($projectPath) . " && php artisan optimize:clear 2>&1");
+            $migrateOut = trim(shell_exec(
+                "cd " . escapeshellarg($projectPath) . " && php artisan migrate 2>&1"
+            ) ?: '');
+
+            $optimizeClearOut = trim(shell_exec(
+                "cd " . escapeshellarg($projectPath) . " && php artisan optimize:clear 2>&1"
+            ) ?: '');
 
             $changes = $this->getCodeChangesSummary($projectPath, $beforeHead, $afterHead);
 
@@ -67,6 +75,8 @@ class DeployController extends Controller
             'summary'          => $summary,
             'mail_sent'        => $mailSent,
             'mail_error'       => $mailError,
+            'migrate_output'   => $migrateOut,
+            'optimize_output'  => $optimizeClearOut,
         ]);
     }
 

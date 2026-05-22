@@ -65,7 +65,7 @@ class GenerateDailyTasks extends Command
 
         $this->markContactsThatShouldLeaveReassignmentLists($markContacted, $dryRun);
 
-        // 2) Contactos disponibles (en list_user, no contactados)
+        // 2) Contactos disponibles en listas habilitadas para el pool.
         $contacts = DB::table('list_user as lu')
             ->join('users as u', 'u.id', '=', 'lu.user_id')
             ->join('lists as l', 'l.id', '=', 'lu.list_id')
@@ -76,19 +76,35 @@ class GenerateDailyTasks extends Command
                 'u.hs_id as contact_hs_id',
                 'u.owner_id',
                 'l.id as list_id',
-                'l.name as list_name'
+                'l.name as list_name',
+                'l.disable_hubspot_reassignment'
             )
             ->where('lu.contacted', 0)
-            ->get();
+            ->where('l.include_in_task_pool', true)
+            ->get()
+            ->groupBy('contact_id')
+            ->map(function ($rows) {
+                $contact = clone $rows->first();
+                $listNames = $rows->pluck('list_name')->filter()->unique()->values();
+
+                $contact->list_name = $listNames->implode(', ');
+                $contact->disable_hubspot_reassignment = $rows->contains(
+                    fn ($row) => (bool) $row->disable_hubspot_reassignment
+                );
+
+                return $contact;
+            })
+            ->values();
 
         if ($contacts->isEmpty()) {
-            $this->warn('No hay contactos disponibles en las listas.');
+            $this->warn('No hay contactos disponibles en listas habilitadas para el pool de tareas.');
             return self::SUCCESS;
         }
 
         $totalCreated = 0;
         $totalReassignedLocal = 0;
         $totalSkippedByHubspot = 0;
+        $totalSkippedHubspotByList = 0;
         $assignedContactIdsThisRun = [];
         $nonReassignableContacts = Task::query()
             ->where(function ($q) {
@@ -184,8 +200,15 @@ class GenerateDailyTasks extends Command
                         || in_array($contactId, $inProgressContacts, true)
                         || in_array($contactId, $nonReassignableContacts, true);
                 })
-                ->shuffle()
                 ->unique('contact_id')
+                ->values();
+
+            [$hubspotOwnerCandidates, $localOnlyCandidates] = $candidates
+                ->partition(fn ($contact) => ! (bool) ($contact->disable_hubspot_reassignment ?? false));
+
+            $candidates = $hubspotOwnerCandidates
+                ->shuffle()
+                ->concat($localOnlyCandidates->shuffle())
                 ->values()
                 ->take($toCreate);
 
@@ -197,23 +220,35 @@ class GenerateDailyTasks extends Command
             foreach ($candidates as $contact) {
                 $previousOwner = $contact->owner_id ?? 'NULL';
                 $ownerChanged = (int) ($contact->owner_id ?? 0) !== (int) $advisor->id;
+                $skipHubspotByList = (bool) ($contact->disable_hubspot_reassignment ?? false);
                 $ownerNote = $ownerChanged ? " | owner previo={$previousOwner}" : '';
-                $hubspotNote = $ownerChanged ? " | HubSpot owner destino={$advisor->hs_owner_id}" : '';
+                $hubspotNote = $ownerChanged
+                    ? ($skipHubspotByList ? ' | HubSpot omitido por lista' : " | HubSpot owner destino={$advisor->hs_owner_id}")
+                    : '';
                 $this->line("   + Tarea -> {$contact->contact_name} | Lista: {$contact->list_name} (contact_id={$contact->contact_id}){$ownerNote}{$hubspotNote}");
 
                 if (! $dryRun) {
                     if ($ownerChanged) {
-                        $synced = $this->syncContactOwnerForTaskGeneration(
-                            $hubspot,
-                            $dealOwnerSync,
-                            $contact,
-                            $advisor
-                        );
+                        if ($skipHubspotByList) {
+                            User::whereKey((int) $contact->contact_id)->update([
+                                'owner_id' => (int) $advisor->id,
+                            ]);
 
-                        if (! $synced) {
-                            $assignedContactIdsThisRun[] = (int) $contact->contact_id;
-                            $totalSkippedByHubspot++;
-                            continue;
+                            $contact->owner_id = (int) $advisor->id;
+                            $totalSkippedHubspotByList++;
+                        } else {
+                            $synced = $this->syncContactOwnerForTaskGeneration(
+                                $hubspot,
+                                $dealOwnerSync,
+                                $contact,
+                                $advisor
+                            );
+
+                            if (! $synced) {
+                                $assignedContactIdsThisRun[] = (int) $contact->contact_id;
+                                $totalSkippedByHubspot++;
+                                continue;
+                            }
                         }
 
                         $totalReassignedLocal++;
@@ -223,9 +258,12 @@ class GenerateDailyTasks extends Command
                         'user_id'            => $advisor->id,
                         'contact_id'         => $contact->contact_id,
                         'title'              => "Comunicarse con el cliente {$contact->contact_name} [Lista: {$contact->list_name}]",
-                        'description' => $ownerChanged
-                            ? "Lista origen: {$contact->list_name}. Reasignado automaticamente desde owner {$previousOwner}."
-                            : "Lista origen: {$contact->list_name}",
+                        'description' => $this->taskDescriptionForGeneratedContact(
+                            $contact,
+                            $ownerChanged,
+                            $previousOwner,
+                            $skipHubspotByList
+                        ),
                         'due_date'           => $date->toDateString(),
                         'status'             => Task::STATUS_PENDING,
                         'created_by_user_id' => null,
@@ -245,8 +283,30 @@ class GenerateDailyTasks extends Command
 
         $this->info("✅ Tareas " . ($dryRun ? 'simuladas' : 'creadas') . ": {$totalCreated}");
         $this->info("Contactos reasignados localmente por cupo: {$totalReassignedLocal}");
+        $this->info("Reasignaciones HubSpot omitidas por configuracion de lista: {$totalSkippedHubspotByList}");
         $this->info("Contactos omitidos por no poder sincronizar HubSpot: {$totalSkippedByHubspot}");
         return self::SUCCESS;
+    }
+
+    private function taskDescriptionForGeneratedContact(
+        object $contact,
+        bool $ownerChanged,
+        mixed $previousOwner,
+        bool $skipHubspotByList
+    ): string {
+        $description = "Lista origen: {$contact->list_name}";
+
+        if (! $ownerChanged) {
+            return $description;
+        }
+
+        $description .= ". Reasignado automaticamente desde owner {$previousOwner}.";
+
+        if ($skipHubspotByList) {
+            $description .= ' HubSpot no se actualizo por configuracion de la lista.';
+        }
+
+        return $description;
     }
 
     private function markContactsThatShouldLeaveReassignmentLists(MarkContactedService $markContacted, bool $dryRun): void
