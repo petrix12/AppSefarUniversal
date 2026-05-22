@@ -247,16 +247,16 @@ Route::prefix('crud/lists')->name('crud.lists.')->group(function () {
 
     // miembros
     Route::post('/{lista}/members/add', [ListController::class, 'addMembers'])
-        ->name('members.add')->middleware('can:lists.manage_members');
+        ->name('members.add')->middleware('can:administrador');
 
     Route::post('/{lista}/members/import/preview', [ListController::class, 'previewMembersImport'])
-        ->name('members.import.preview')->middleware('can:lists.manage_members');
+        ->name('members.import.preview')->middleware('can:administrador');
 
     Route::post('/{lista}/members/import/process', [ListController::class, 'processMembersImport'])
-        ->name('members.import.process')->middleware('can:lists.manage_members');
+        ->name('members.import.process')->middleware('can:administrador');
 
     Route::delete('/{lista}/members/{user}', [ListController::class, 'removeMember'])
-        ->name('members.remove')->middleware('can:lists.manage_members');
+        ->name('members.remove')->middleware('can:administrador');
 
     // marcar contactado
     Route::patch('/{lista}/members/{user}/contacted', [ListController::class, 'setContacted'])

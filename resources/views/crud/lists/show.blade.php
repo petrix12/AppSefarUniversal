@@ -253,7 +253,7 @@
       </div>
 
       {{-- Añadir miembros --}}
-      @can('lists.manage_members')
+      @can('administrador')
       <div class="section-block section-block--success mb-4">
         <div class="section-block__header">
           <i class="fas fa-user-plus mr-2 text-success"></i>
@@ -284,7 +284,9 @@
         </div>
       </div>
 
-      @php($importPreview = session('import_preview'))
+      @php
+        $importPreview = session('import_preview');
+      @endphp
       <div class="section-block section-block--success mb-4">
         <div class="section-block__header">
           <i class="fas fa-file-import mr-2 text-success"></i>
@@ -527,7 +529,7 @@
                         <i class="fas fa-check"></i>
                     </button>
                     @endif
-                  @can('lists.manage_members')
+                  @can('administrador')
                   <form method="POST"
                         action="{{ route('crud.lists.members.remove', [$lista, $u]) }}"
                         onsubmit="return confirm('¿Quitar a {{ addslashes($u->name) }} de la lista?')">
@@ -546,7 +548,7 @@
                 <div class="empty-state">
                   <i class="fas fa-users-slash fa-3x text-muted mb-3 d-block"></i>
                   <p class="text-muted mb-2">No hay miembros en esta lista.</p>
-                  @can('lists.manage_members')
+                  @can('administrador')
                     <small class="text-muted">Usa el formulario de arriba para añadir usuarios.</small>
                   @endcan
                 </div>
