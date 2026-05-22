@@ -253,8 +253,7 @@
       </div>
 
       {{-- Añadir miembros --}}
-      <?php $canManageListMembers = auth()->user()?->can('lists.manage_members'); ?>
-      <?php if ($canManageListMembers): ?>
+      @can('lists.manage_members')
       <div class="section-block section-block--success mb-4">
         <div class="section-block__header">
           <i class="fas fa-user-plus mr-2 text-success"></i>
@@ -424,7 +423,7 @@
           }
         }, true);
       </script>
-      <?php endif; ?>
+      @endcan
 
       {{-- Tabla --}}
       <div class="table-responsive rounded border">
