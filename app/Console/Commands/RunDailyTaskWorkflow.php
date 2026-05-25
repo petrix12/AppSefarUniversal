@@ -10,15 +10,22 @@ use App\Services\HubspotService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class RunDailyTaskWorkflow extends Command
 {
+    private ?bool $userReassignmentColumnExists = null;
+
     protected $signature = 'tasks:daily-workflow
         {--date= : Fecha base opcional YYYY-MM-DD}
         {--per=10 : Tareas base por asesor}
+        {--advisor-id= : Limita el flujo a un asesor/owner interno}
         {--dry-run : Solo muestra cambios, no actualiza nada}
         {--force : Alias de --force-reassign para compatibilidad con el cron anterior}
         {--force-reassign : Fuerza reasignacion de tareas pendientes, canceladas, no efectivas y contactos sin tareas}
+        {--skip-notify : Omite la revision de tareas vencidas}
+        {--skip-generate : Omite la generacion diaria de tareas}
+        {--skip-force : Omite la reasignacion forzada aunque se envie --force-reassign}
         {--force-limit=200 : Maximo de contactos a revisar con --force-reassign}';
 
     protected $description = 'Ejecuta secuencialmente el cierre/reasignacion de tareas vencidas y la generacion de tareas diarias.';
@@ -26,36 +33,49 @@ class RunDailyTaskWorkflow extends Command
     public function handle(HubspotService $hubspot, HubspotDealOwnerSyncService $dealOwnerSync): int
     {
         $date = $this->option('date');
+        $reassignmentDate = today()->toDateString();
         $per = (int) ($this->option('per') ?? 10);
+        $advisorId = (int) ($this->option('advisor-id') ?: 0);
         $dryRun = (bool) $this->option('dry-run');
         $forceReassign = (bool) $this->option('force-reassign') || (bool) $this->option('force');
+        $skipNotify = (bool) $this->option('skip-notify');
+        $skipGenerate = (bool) $this->option('skip-generate');
+        $skipForce = (bool) $this->option('skip-force');
         $forceLimit = max(1, (int) ($this->option('force-limit') ?? 200));
 
         $this->info('Iniciando flujo diario de tareas.');
+        if ($advisorId > 0) {
+            $this->info("Flujo limitado al asesor {$advisorId}.");
+        }
 
-        if ($forceReassign) {
+        if ($forceReassign && ! $skipForce) {
             $this->line('');
             $this->info('Paso 0/3: forzar reasignacion previa.');
-            $this->forceReassignContacts($hubspot, $dealOwnerSync, $dryRun, $forceLimit);
+            $this->forceReassignContacts($hubspot, $dealOwnerSync, $dryRun, $forceLimit, $reassignmentDate, $advisorId > 0 ? $advisorId : null);
         }
 
         $notifyOptions = [];
         if ($date) {
             $notifyOptions['--date'] = $date;
         }
+        if ($advisorId > 0) {
+            $notifyOptions['--source-user-id'] = $advisorId;
+        }
         if ($dryRun) {
             $notifyOptions['--dry-run'] = true;
         }
 
-        $this->line('');
-        $this->info($forceReassign
-            ? 'Paso 1/3: revisar tareas vencidas y reasignar clientes.'
-            : 'Paso 1/2: revisar tareas vencidas y reasignar clientes.');
-        $notifyExitCode = $this->call('tasks:notify-unclosed', $notifyOptions);
+        if (! $skipNotify) {
+            $this->line('');
+            $this->info($forceReassign
+                ? 'Paso 1/3: revisar tareas vencidas y reasignar clientes.'
+                : 'Paso 1/2: revisar tareas vencidas y reasignar clientes.');
+            $notifyExitCode = $this->call('tasks:notify-unclosed', $notifyOptions);
 
-        if ($notifyExitCode !== self::SUCCESS) {
-            $this->error('El flujo se detuvo porque tasks:notify-unclosed fallo.');
-            return $notifyExitCode;
+            if ($notifyExitCode !== self::SUCCESS) {
+                $this->error('El flujo se detuvo porque tasks:notify-unclosed fallo.');
+                return $notifyExitCode;
+            }
         }
 
         $generateOptions = [
@@ -64,19 +84,24 @@ class RunDailyTaskWorkflow extends Command
         if ($date) {
             $generateOptions['--date'] = $date;
         }
+        if ($advisorId > 0) {
+            $generateOptions['--advisor-id'] = $advisorId;
+        }
         if ($dryRun) {
             $generateOptions['--dry-run'] = true;
         }
 
-        $this->line('');
-        $this->info($forceReassign
-            ? 'Paso 2/3: generar tareas diarias.'
-            : 'Paso 2/2: generar tareas diarias.');
-        $generateExitCode = $this->call('tasks:generate-daily', $generateOptions);
+        if (! $skipGenerate) {
+            $this->line('');
+            $this->info($forceReassign
+                ? 'Paso 2/3: generar tareas diarias.'
+                : 'Paso 2/2: generar tareas diarias.');
+            $generateExitCode = $this->call('tasks:generate-daily', $generateOptions);
 
-        if ($generateExitCode !== self::SUCCESS) {
-            $this->error('El flujo termino con error en tasks:generate-daily.');
-            return $generateExitCode;
+            if ($generateExitCode !== self::SUCCESS) {
+                $this->error('El flujo termino con error en tasks:generate-daily.');
+                return $generateExitCode;
+            }
         }
 
         $this->line('');
@@ -85,10 +110,23 @@ class RunDailyTaskWorkflow extends Command
         return self::SUCCESS;
     }
 
-    private function forceReassignContacts(HubspotService $hubspot, HubspotDealOwnerSyncService $dealOwnerSync, bool $dryRun, int $limit): void
+    private function forceReassignContacts(
+        HubspotService $hubspot,
+        HubspotDealOwnerSyncService $dealOwnerSync,
+        bool $dryRun,
+        int $limit,
+        string $workflowDate,
+        ?int $targetAdvisorId = null
+    ): void
     {
         $eligibleAdvisorIds = $this->eligibleAdvisorIdsForAutomaticTasks();
-        $contacts = $this->forceReassignCandidates($limit, $eligibleAdvisorIds);
+        $targetAdvisor = $targetAdvisorId ? $this->advisorById($targetAdvisorId) : null;
+
+        if ($targetAdvisorId && ! $targetAdvisor) {
+            throw new \RuntimeException("El asesor {$targetAdvisorId} no tiene owner activo de HubSpot o esta excluido de tareas.");
+        }
+
+        $contacts = $this->forceReassignCandidates($limit, $eligibleAdvisorIds, $workflowDate, $targetAdvisorId);
 
         if ($contacts->isEmpty()) {
             $this->info('No hay contactos para reasignacion forzada.');
@@ -106,7 +144,7 @@ class RunDailyTaskWorkflow extends Command
         $openTasksCanceled = 0;
 
         foreach ($contacts as $contact) {
-            $advisor = $this->getNextAdvisorRoundRobin();
+            $advisor = $targetAdvisor ?: $this->getNextAdvisorRoundRobin();
 
             if (! $advisor) {
                 $this->warn("Sin asesor disponible para contact_id={$contact->id}");
@@ -126,7 +164,7 @@ class RunDailyTaskWorkflow extends Command
                 continue;
             }
 
-            User::whereKey($contact->id)->update(['owner_id' => $advisor->id]);
+            User::whereKey($contact->id)->update($this->ownerUpdateAttributes((int) $advisor->id));
             $updatedLocal++;
             $openTasksCanceled += $this->cancelPendingTasksFromIneligibleAssignees((int) $contact->id, $eligibleAdvisorIds);
 
@@ -161,7 +199,7 @@ class RunDailyTaskWorkflow extends Command
                 $hubspotFailed++;
                 $this->warn("      HubSpot fallo: {$e->getMessage()}");
 
-                Log::error('Error en reasignacion forzada de HubSpot', [
+                Log::channel('tasks')->error('Error en reasignacion forzada de HubSpot', [
                     'client_id' => $contact->id,
                     'email' => $contact->email,
                     'hs_id' => $contact->hs_id,
@@ -182,9 +220,20 @@ class RunDailyTaskWorkflow extends Command
         $this->info("Tareas pendientes canceladas de usuarios no elegibles: {$openTasksCanceled}");
     }
 
-    private function forceReassignCandidates(int $limit, array $eligibleAdvisorIds)
+    private function forceReassignCandidates(int $limit, array $eligibleAdvisorIds, string $workflowDate, ?int $targetAdvisorId = null)
     {
         $systemsUserIds = Task::systemsUserIds();
+        $skipReassignedToday = $this->userReassignmentColumnExists();
+        $notReassignedToday = function ($query) use ($skipReassignedToday, $workflowDate) {
+            if (! $skipReassignedToday) {
+                return;
+            }
+
+            $query->where(function ($dateQuery) use ($workflowDate) {
+                $dateQuery->whereNull('users.last_task_reassigned_at')
+                    ->orWhereDate('users.last_task_reassigned_at', '!=', $workflowDate);
+            });
+        };
         $taskPoolExists = function ($query) {
             $query->select(DB::raw(1))
                 ->from('list_user as lu')
@@ -221,6 +270,22 @@ class RunDailyTaskWorkflow extends Command
                 });
         };
 
+        $pendingInEligibleAdvisor = function ($query) use ($systemsUserIds, $eligibleAdvisorIds) {
+            $query->select(DB::raw(1))
+                ->from('tasks')
+                ->whereColumn('tasks.contact_id', 'users.id')
+                ->where('tasks.status', Task::STATUS_PENDING)
+                ->when(! empty($systemsUserIds), function ($taskQuery) use ($systemsUserIds) {
+                    $taskQuery->whereNotIn('tasks.user_id', $systemsUserIds);
+                });
+
+            if (! empty($eligibleAdvisorIds)) {
+                $query->whereIn('tasks.user_id', $eligibleAdvisorIds);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        };
+
         $canceled = User::query()
             ->select('users.id', 'users.name', 'users.email', 'users.hs_id', 'users.owner_id')
             ->selectRaw("'tarea cancelada' as force_reason")
@@ -230,8 +295,10 @@ class RunDailyTaskWorkflow extends Command
                 $query->whereNotIn('tasks.user_id', $systemsUserIds);
             })
             ->whereExists($taskPoolExists)
+            ->where($notReassignedToday)
             ->whereNotExists($completedEffective)
             ->whereNotExists($inProgress)
+            ->whereNotExists($pendingInEligibleAdvisor)
             ->groupBy('users.id', 'users.name', 'users.email', 'users.hs_id', 'users.owner_id');
 
         $ineffective = User::query()
@@ -244,8 +311,10 @@ class RunDailyTaskWorkflow extends Command
                 $query->whereNotIn('tasks.user_id', $systemsUserIds);
             })
             ->whereExists($taskPoolExists)
+            ->where($notReassignedToday)
             ->whereNotExists($completedEffective)
             ->whereNotExists($inProgress)
+            ->whereNotExists($pendingInEligibleAdvisor)
             ->groupBy('users.id', 'users.name', 'users.email', 'users.hs_id', 'users.owner_id');
 
         $withoutTasks = User::query()
@@ -255,6 +324,7 @@ class RunDailyTaskWorkflow extends Command
             ->join('lists as l', 'l.id', '=', 'lu.list_id')
             ->where('lu.contacted', 0)
             ->where('l.include_in_task_pool', true)
+            ->where($notReassignedToday)
             ->whereNotExists($completedEffective)
             ->whereNotExists($inProgress)
             ->whereNotExists(function ($query) use ($systemsUserIds) {
@@ -274,8 +344,10 @@ class RunDailyTaskWorkflow extends Command
             ->join('lists as l', 'l.id', '=', 'lu.list_id')
             ->where('lu.contacted', 0)
             ->where('l.include_in_task_pool', true)
+            ->where($notReassignedToday)
             ->whereNotExists($completedEffective)
             ->whereNotExists($inProgress)
+            ->whereNotExists($pendingInEligibleAdvisor)
             ->where(function ($query) use ($eligibleAdvisorIds) {
                 $query->whereNull('users.owner_id');
 
@@ -294,8 +366,10 @@ class RunDailyTaskWorkflow extends Command
                 $query->whereNotIn('tasks.user_id', $systemsUserIds);
             })
             ->whereExists($taskPoolExists)
+            ->where($notReassignedToday)
             ->whereNotExists($completedEffective)
             ->whereNotExists($inProgress)
+            ->whereNotExists($pendingInEligibleAdvisor)
             ->where(function ($query) use ($eligibleAdvisorIds) {
                 $query->whereNull('tasks.user_id');
 
@@ -318,12 +392,39 @@ class RunDailyTaskWorkflow extends Command
             ->selectRaw('MIN(force_reason) as force_reason')
             ->groupBy('id', 'name', 'email', 'hs_id', 'owner_id')
             ->orderBy('id')
-            ->limit($limit * 2)
+            ->limit($targetAdvisorId ? $limit * max(2, count($eligibleAdvisorIds) * 2) : $limit * 2)
             ->get();
 
-        return $this->withTaskPoolMetadata($contacts)
+        $contacts = $this->withTaskPoolMetadata($contacts);
+
+        if ($targetAdvisorId && count($eligibleAdvisorIds) > 1) {
+            $contacts = $this->partitionCandidatesForAdvisor($contacts, $eligibleAdvisorIds, $targetAdvisorId);
+        }
+
+        return $contacts
             ->sortBy(fn ($contact) => (bool) ($contact->disable_hubspot_reassignment ?? false) ? 1 : 0)
             ->take($limit)
+            ->values();
+    }
+
+    private function partitionCandidatesForAdvisor($contacts, array $eligibleAdvisorIds, int $targetAdvisorId)
+    {
+        $advisorSlots = collect($eligibleAdvisorIds)
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->sort()
+            ->values();
+
+        $slot = $advisorSlots->search($targetAdvisorId, true);
+
+        if ($slot === false) {
+            return $contacts;
+        }
+
+        $slotCount = max(1, $advisorSlots->count());
+
+        return $contacts
+            ->filter(fn ($contact) => ((int) $contact->id % $slotCount) === (int) $slot)
             ->values();
     }
 
@@ -414,6 +515,26 @@ class RunDailyTaskWorkflow extends Command
         return $count;
     }
 
+    private function ownerUpdateAttributes(int $advisorId): array
+    {
+        $attributes = ['owner_id' => $advisorId];
+
+        if ($this->userReassignmentColumnExists()) {
+            $attributes['last_task_reassigned_at'] = now();
+        }
+
+        return $attributes;
+    }
+
+    private function userReassignmentColumnExists(): bool
+    {
+        if ($this->userReassignmentColumnExists === null) {
+            $this->userReassignmentColumnExists = Schema::hasColumn('users', 'last_task_reassigned_at');
+        }
+
+        return $this->userReassignmentColumnExists;
+    }
+
     private function pendingTasksFromIneligibleAssigneesQuery(int $contactId, array $eligibleAdvisorIds)
     {
         return Task::query()
@@ -427,6 +548,24 @@ class RunDailyTaskWorkflow extends Command
                     $query->orWhereNotIn('user_id', $eligibleAdvisorIds);
                 }
             });
+    }
+
+    private function advisorById(int $advisorId): ?User
+    {
+        return User::query()
+            ->join('hubspot_owner_user as hou', 'hou.user_id', '=', 'users.id')
+            ->join('hubspot_owners as ho', 'ho.id', '=', 'hou.hubspot_owner_id')
+            ->where('users.id', $advisorId)
+            ->where('ho.active', true)
+            ->whereNotNull('hou.hubspot_owner_id')
+            ->whereRaw("TRIM(hou.hubspot_owner_id) <> ''")
+            ->where('users.exclude_from_task_assignment', false)
+            ->where(function ($query) {
+                $query->whereNull('users.task_assignment_daily_limit')
+                    ->orWhere('users.task_assignment_daily_limit', '>', 0);
+            })
+            ->select('users.*', 'hou.hubspot_owner_id as hs_owner_id')
+            ->first();
     }
 
     private function getNextAdvisorRoundRobin(?int $excludedUserId = null): ?User

@@ -39,6 +39,7 @@ class User extends Authenticatable
         'arraycos_expire' => 'datetime',
         'exclude_from_task_assignment' => 'boolean',
         'task_assignment_daily_limit' => 'integer',
+        'last_task_reassigned_at' => 'datetime',
     ];
 
     protected $appends = [

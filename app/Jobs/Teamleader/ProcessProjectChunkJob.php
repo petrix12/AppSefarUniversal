@@ -32,14 +32,14 @@ class ProcessProjectChunkJob implements ShouldQueue
 
     public function handle(TeamleaderService $service): void
     {
-        Log::info("[TL] Chunk {$this->chunkNumber}/{$this->totalChunks} — procesando " . count($this->projectIds) . " proyectos");
+        Log::channel('teamleader')->info("[TL] Chunk {$this->chunkNumber}/{$this->totalChunks} — procesando " . count($this->projectIds) . " proyectos");
 
         foreach ($this->projectIds as $offset => $id) {
             try {
                 $detail  = $service->getProjectDetails($id);
 
                 if (!is_array($detail)) {
-                    Log::warning("[TL] Proyecto {$id}: Teamleader no devolvio detalle.");
+                    Log::channel('teamleader')->warning("[TL] Proyecto {$id}: Teamleader no devolvio detalle.");
                     TlSyncLog::find($this->syncLogId)?->incrementCounter('failed');
                     continue;
                 }
@@ -56,14 +56,14 @@ class ProcessProjectChunkJob implements ShouldQueue
                 $this->releaseRemaining($offset, $e);
                 return;
             } catch (\Throwable $e) {
-                Log::error("[TL] Error proyecto {$id}: " . $e->getMessage());
+                Log::channel('teamleader')->error("[TL] Error proyecto {$id}: " . $e->getMessage());
                 TlSyncLog::find($this->syncLogId)?->incrementCounter('failed');
             }
 
             usleep(150000); // 150ms entre llamadas a la API
         }
 
-        Log::info("[TL] Chunk {$this->chunkNumber}/{$this->totalChunks} — completado");
+        Log::channel('teamleader')->info("[TL] Chunk {$this->chunkNumber}/{$this->totalChunks} — completado");
 
         // ── ¿Es el último chunk? → marcar sync como completado ───────────
         $this->checkIfCompleted();
@@ -73,7 +73,7 @@ class ProcessProjectChunkJob implements ShouldQueue
     {
         $remaining = array_slice($this->projectIds, $offset);
 
-        Log::warning("[TL] Proyectos — rate limit en chunk {$this->chunkNumber}. Reintentando " . count($remaining) . " proyectos luego.");
+        Log::channel('teamleader')->warning("[TL] Proyectos — rate limit en chunk {$this->chunkNumber}. Reintentando " . count($remaining) . " proyectos luego.");
 
         self::dispatch(
             $remaining,
@@ -99,7 +99,7 @@ class ProcessProjectChunkJob implements ShouldQueue
         $processed = $log->processed + $log->failed;
 
         if ($processed >= $log->total) {
-            Log::info("[TL] Proyectos — SYNC COMPLETADO. Total: {$log->total}");
+            Log::channel('teamleader')->info("[TL] Proyectos — SYNC COMPLETADO. Total: {$log->total}");
             $log->update([
                 'status'      => 'completed',
                 'finished_at' => now(),
@@ -109,7 +109,7 @@ class ProcessProjectChunkJob implements ShouldQueue
 
     public function failed(\Throwable $e): void
     {
-        Log::error("[TL] ProcessProjectChunkJob {$this->chunkNumber}/{$this->totalChunks} falló: " . $e->getMessage());
+        Log::channel('teamleader')->error("[TL] ProcessProjectChunkJob {$this->chunkNumber}/{$this->totalChunks} falló: " . $e->getMessage());
 
         // Marcar los proyectos del chunk como fallidos
         $count = count($this->projectIds);

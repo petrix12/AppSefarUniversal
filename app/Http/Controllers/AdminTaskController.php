@@ -262,12 +262,12 @@ class AdminTaskController extends Controller
         RunDailyTaskWorkflowJob::dispatch($options, auth()->id())
             ->onConnection('database');
 
-        Log::info('Workflow diario forzado encolado desde panel admin', [
+        Log::channel('tasks')->info('Workflow diario forzado encolado desde panel admin', [
             'admin_user_id' => auth()->id(),
             'options' => $options,
         ]);
 
-        return back()->with('success', 'Workflow diario forzado encolado. El panel no queda bloqueado; procesa la cola para ejecutarlo.');
+        return back()->with('success', 'Workflow diario forzado encolado por HubSpot owner. El panel no queda bloqueado; procesa la cola para ejecutarlo.');
     }
 
     public function bulkReassignContacts(Request $request)

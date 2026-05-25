@@ -453,7 +453,7 @@ public function getContactById($id)
 {
     try {
         if (!$this->isValidUuid($id)) {
-            \Log::warning('Teamleader: tl_id inválido al obtener contacto', [
+            \Log::channel('teamleader')->warning('Teamleader: tl_id inválido al obtener contacto', [
                 'tl_id' => $id,
             ]);
             return null;
@@ -469,7 +469,7 @@ public function getContactById($id)
         $error = $response->json();
         $errorMessage = $error['errors'][0]['title'] ?? 'Error desconocido';
 
-        \Log::warning('Teamleader: error al obtener contacto', [
+        \Log::channel('teamleader')->warning('Teamleader: error al obtener contacto', [
             'tl_id' => $id,
             'status' => $response->status(),
             'error' => $errorMessage,
@@ -480,7 +480,7 @@ public function getContactById($id)
     } catch (TeamleaderRateLimitException $e) {
         throw $e;
     } catch (\Throwable $e) {
-        \Log::error('Teamleader: excepción al obtener contacto', [
+        \Log::channel('teamleader')->error('Teamleader: excepción al obtener contacto', [
             'tl_id' => $id,
             'error' => $e->getMessage(),
         ]);
@@ -531,7 +531,7 @@ public function listProjectsByCustomerId(string $customerId)
 {
     try {
         if (!$this->isValidUuid($customerId)) {
-            \Log::warning('Teamleader: customerId inválido al listar proyectos', [
+            \Log::channel('teamleader')->warning('Teamleader: customerId inválido al listar proyectos', [
                 'customer_id' => $customerId,
             ]);
             return [];
@@ -566,7 +566,7 @@ public function listProjectsByCustomerId(string $customerId)
         $error = $response->json();
         $errorMessage = $error['errors'][0]['title'] ?? 'Error desconocido';
 
-        \Log::warning('Teamleader: error al listar proyectos', [
+        \Log::channel('teamleader')->warning('Teamleader: error al listar proyectos', [
             'customer_id' => $customerId,
             'status' => $response->status(),
             'error' => $errorMessage,
@@ -575,7 +575,7 @@ public function listProjectsByCustomerId(string $customerId)
 
         return [];
     } catch (\Throwable $e) {
-        \Log::error('Teamleader: excepción al listar proyectos', [
+        \Log::channel('teamleader')->error('Teamleader: excepción al listar proyectos', [
             'customer_id' => $customerId,
             'error' => $e->getMessage(),
         ]);
@@ -821,7 +821,7 @@ public function getProjectsWithDetailsByCustomerId(string $customerId)
 {
     try {
         if (!$this->isValidUuid($customerId)) {
-            \Log::warning('Teamleader: customerId inválido al obtener proyectos con detalle', [
+            \Log::channel('teamleader')->warning('Teamleader: customerId inválido al obtener proyectos con detalle', [
                 'customer_id' => $customerId,
             ]);
             return [];
@@ -835,7 +835,7 @@ public function getProjectsWithDetailsByCustomerId(string $customerId)
                 $details = $this->getProjectDetails($project['id']);
                 $detailedProjects[] = array_merge($project, $details);
             } catch (\Throwable $e) {
-                \Log::warning('Teamleader: no se pudieron obtener detalles de proyecto', [
+                \Log::channel('teamleader')->warning('Teamleader: no se pudieron obtener detalles de proyecto', [
                     'project_id' => $project['id'] ?? null,
                     'customer_id' => $customerId,
                     'error' => $e->getMessage(),
@@ -847,7 +847,7 @@ public function getProjectsWithDetailsByCustomerId(string $customerId)
 
         return $detailedProjects;
     } catch (\Throwable $e) {
-        \Log::error('Teamleader: excepción en getProjectsWithDetailsByCustomerId', [
+        \Log::channel('teamleader')->error('Teamleader: excepción en getProjectsWithDetailsByCustomerId', [
             'customer_id' => $customerId,
             'error' => $e->getMessage(),
         ]);

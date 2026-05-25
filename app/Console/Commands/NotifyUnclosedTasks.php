@@ -19,9 +19,11 @@ class NotifyUnclosedTasks extends Command
     private const TASK_RESPONSE_DAYS = 1;
 
     private ?bool $taskPoolPolicyColumnsExist = null;
+    private ?bool $userReassignmentColumnExists = null;
 
     protected $signature = 'tasks:notify-unclosed
         {--date= : Fecha base opcional YYYY-MM-DD}
+        {--source-user-id= : Procesa solo tareas vencidas asignadas a este asesor}
         {--dry-run : Solo muestra cambios, no actualiza nada}';
 
     protected $description = 'Cancela tareas comerciales abiertas vencidas por 1 dia y reasigna el cliente en BD y HubSpot.';
@@ -33,6 +35,8 @@ class NotifyUnclosedTasks extends Command
             : today();
 
         $dryRun = (bool) $this->option('dry-run');
+        $sourceUserId = (int) ($this->option('source-user-id') ?: 0);
+        $reassignmentDate = today()->toDateString();
 
         $limitDate = $date->copy()->subDays(self::TASK_RESPONSE_DAYS)->endOfDay();
 
@@ -48,6 +52,17 @@ class NotifyUnclosedTasks extends Command
             ->whereNotNull('due_date')
             ->whereDate('due_date', '<=', $limitDate->toDateString())
             ->whereNotNull('contact_id')
+            ->when($sourceUserId > 0, function ($query) use ($sourceUserId) {
+                $query->where('user_id', $sourceUserId);
+            })
+            ->when($this->userReassignmentColumnExists(), function ($query) use ($reassignmentDate) {
+                $query->whereNotExists(function ($subQuery) use ($reassignmentDate) {
+                    $subQuery->select(DB::raw(1))
+                        ->from('users as reassigned_contacts')
+                        ->whereColumn('reassigned_contacts.id', 'tasks.contact_id')
+                        ->whereDate('reassigned_contacts.last_task_reassigned_at', $reassignmentDate);
+                });
+            })
             ->whereNotExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('tasks as in_progress_tasks')
@@ -115,9 +130,7 @@ class NotifyUnclosedTasks extends Command
                     $task->update($taskUpdate);
 
                     // 2. Actualizar propietario local del cliente
-                    $contact->update([
-                        'owner_id' => $advisor->id,
-                    ]);
+                    $contact->update($this->ownerUpdateAttributes((int) $advisor->id));
 
                     $reassignedClients++;
 
@@ -151,7 +164,7 @@ class NotifyUnclosedTasks extends Command
                             $hubspotNotFound++;
                             $this->warn("   HubSpot no encontrado: contact_id={$contact->id}, email={$contact->email}, hs_id={$contact->hs_id}");
 
-                            Log::warning('Contacto no encontrado en HubSpot al reasignar owner', [
+                            Log::channel('tasks')->warning('Contacto no encontrado en HubSpot al reasignar owner', [
                                 'client_id' => $contact->id,
                                 'email' => $contact->email,
                                 'hs_id' => $contact->hs_id,
@@ -163,7 +176,7 @@ class NotifyUnclosedTasks extends Command
                         $hubspotFailed++;
                         $this->warn("   HubSpot falló: contact_id={$contact->id}, owner={$advisor->hs_owner_id}, error={$e->getMessage()}");
 
-                        Log::error('Error actualizando owner en HubSpot', [
+                        Log::channel('tasks')->error('Error actualizando owner en HubSpot', [
                             'client_id' => $contact->id,
                             'email' => $contact->email,
                             'hs_id' => $contact->hs_id,
@@ -182,7 +195,7 @@ class NotifyUnclosedTasks extends Command
         } catch (\Throwable $e) {
             DB::rollBack();
 
-            Log::error('Error cancelando tareas vencidas y reasignando clientes', [
+            Log::channel('tasks')->error('Error cancelando tareas vencidas y reasignando clientes', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -269,6 +282,26 @@ class NotifyUnclosedTasks extends Command
         }
 
         return $this->taskPoolPolicyColumnsExist;
+    }
+
+    private function ownerUpdateAttributes(int $advisorId): array
+    {
+        $attributes = ['owner_id' => $advisorId];
+
+        if ($this->userReassignmentColumnExists()) {
+            $attributes['last_task_reassigned_at'] = now();
+        }
+
+        return $attributes;
+    }
+
+    private function userReassignmentColumnExists(): bool
+    {
+        if ($this->userReassignmentColumnExists === null) {
+            $this->userReassignmentColumnExists = Schema::hasColumn('users', 'last_task_reassigned_at');
+        }
+
+        return $this->userReassignmentColumnExists;
     }
 
     private function resolveHubspotContactId(HubspotService $hubspotService, User $contact): ?string

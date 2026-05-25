@@ -34,7 +34,7 @@ class ProcessInvoiceChunkJob implements ShouldQueue
 
     public function handle(TeamleaderService $service): void
     {
-        Log::info("[TL] Facturas — Chunk {$this->chunkNumber}/{$this->totalChunks} — procesando " . count($this->invoiceIds) . " facturas");
+        Log::channel('teamleader')->info("[TL] Facturas — Chunk {$this->chunkNumber}/{$this->totalChunks} — procesando " . count($this->invoiceIds) . " facturas");
 
         foreach ($this->invoiceIds as $offset => $id) {
             try {
@@ -42,7 +42,7 @@ class ProcessInvoiceChunkJob implements ShouldQueue
                 $detail = $service->getInvoiceById($id);
 
                 if (!is_array($detail)) {
-                    Log::warning("[TL] Factura {$id}: Teamleader no devolvio detalle.");
+                    Log::channel('teamleader')->warning("[TL] Factura {$id}: Teamleader no devolvio detalle.");
                     TlSyncLog::find($this->syncLogId)?->incrementCounter('failed');
                     continue;
                 }
@@ -55,7 +55,7 @@ class ProcessInvoiceChunkJob implements ShouldQueue
                     } catch (TeamleaderRateLimitException $e) {
                         throw $e;
                     } catch (\Throwable $pdfError) {
-                        Log::error("[TL] Error PDF factura {$id}: " . $pdfError->getMessage());
+                        Log::channel('teamleader')->error("[TL] Error PDF factura {$id}: " . $pdfError->getMessage());
                     }
                 }
 
@@ -64,14 +64,14 @@ class ProcessInvoiceChunkJob implements ShouldQueue
                 $this->releaseRemaining($offset, $e);
                 return;
             } catch (\Throwable $e) {
-                Log::error("[TL] Error factura {$id}: " . $e->getMessage());
+                Log::channel('teamleader')->error("[TL] Error factura {$id}: " . $e->getMessage());
                 TlSyncLog::find($this->syncLogId)?->incrementCounter('failed');
             }
 
             usleep(150000);
         }
 
-        Log::info("[TL] Facturas — Chunk {$this->chunkNumber}/{$this->totalChunks} — completado");
+        Log::channel('teamleader')->info("[TL] Facturas — Chunk {$this->chunkNumber}/{$this->totalChunks} — completado");
         $this->checkIfCompleted();
     }
 
@@ -79,7 +79,7 @@ class ProcessInvoiceChunkJob implements ShouldQueue
     {
         $remaining = array_slice($this->invoiceIds, $offset);
 
-        Log::warning("[TL] Facturas — rate limit en chunk {$this->chunkNumber}. Reintentando " . count($remaining) . " facturas luego.");
+        Log::channel('teamleader')->warning("[TL] Facturas — rate limit en chunk {$this->chunkNumber}. Reintentando " . count($remaining) . " facturas luego.");
 
         self::dispatch(
             $remaining,
@@ -140,14 +140,14 @@ class ProcessInvoiceChunkJob implements ShouldQueue
         if (!$log) return;
 
         if (($log->processed + $log->failed) >= $log->total) {
-            Log::info("[TL] Facturas — SYNC COMPLETADO. Total: {$log->total}");
+            Log::channel('teamleader')->info("[TL] Facturas — SYNC COMPLETADO. Total: {$log->total}");
             $log->update(['status' => 'completed', 'finished_at' => now()]);
         }
     }
 
     public function failed(\Throwable $e): void
     {
-        Log::error("[TL] ProcessInvoiceChunkJob {$this->chunkNumber}/{$this->totalChunks} falló: " . $e->getMessage());
+        Log::channel('teamleader')->error("[TL] ProcessInvoiceChunkJob {$this->chunkNumber}/{$this->totalChunks} falló: " . $e->getMessage());
         TlSyncLog::find($this->syncLogId)?->incrementCounter('failed', count($this->invoiceIds));
         $this->checkIfCompleted();
     }

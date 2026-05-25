@@ -34,13 +34,13 @@ class SyncContactsJob implements ShouldQueue
         $allIds = [];
         $lastCount = 0;
 
-        Log::info("[TL] Contactos - recolectando IDs desde pagina {$page}...");
+        Log::channel('teamleader')->info("[TL] Contactos - recolectando IDs desde pagina {$page}...");
 
         for ($i = 0; $i < $pagesPerJob; $i++) {
             try {
                 $response = $service->listContacts($page, $perPage);
             } catch (TeamleaderRateLimitException $e) {
-                Log::warning("[TL] Contactos - rate limit en pagina {$page}. Reintentando luego.");
+                Log::channel('teamleader')->warning("[TL] Contactos - rate limit en pagina {$page}. Reintentando luego.");
                 $this->release($e->retryAfterSeconds());
                 return;
             }
@@ -54,7 +54,7 @@ class SyncContactsJob implements ShouldQueue
                 }
             }
 
-            Log::info("[TL] Contactos - pagina {$page}: {$lastCount} IDs");
+            Log::channel('teamleader')->info("[TL] Contactos - pagina {$page}: {$lastCount} IDs");
 
             $page++;
 
@@ -100,7 +100,7 @@ class SyncContactsJob implements ShouldQueue
         $chunks = array_chunk($ids, $chunkSize);
         $totalChunks = count($chunks);
 
-        Log::info("[TL] Contactos - {$totalChunks} chunks de {$chunkSize}. Despachando...");
+        Log::channel('teamleader')->info("[TL] Contactos - {$totalChunks} chunks de {$chunkSize}. Despachando...");
 
         foreach ($chunks as $index => $chunk) {
             ProcessContactChunkJob::dispatch(
@@ -122,7 +122,7 @@ class SyncContactsJob implements ShouldQueue
 
     public function failed(\Throwable $e): void
     {
-        Log::error("[TL] SyncContactsJob fallo: " . $e->getMessage());
+        Log::channel('teamleader')->error("[TL] SyncContactsJob fallo: " . $e->getMessage());
         TlSyncLog::find($this->syncLogId)?->fail($e->getMessage());
     }
 }

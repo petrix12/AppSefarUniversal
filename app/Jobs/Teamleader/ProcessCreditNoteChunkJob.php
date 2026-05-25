@@ -31,14 +31,14 @@ class ProcessCreditNoteChunkJob implements ShouldQueue
 
     public function handle(TeamleaderService $service): void
     {
-        Log::info("[TL] CreditNotes — Chunk {$this->chunkNumber}/{$this->totalChunks} — procesando " . count($this->creditNoteIds) . " notas de crédito");
+        Log::channel('teamleader')->info("[TL] CreditNotes — Chunk {$this->chunkNumber}/{$this->totalChunks} — procesando " . count($this->creditNoteIds) . " notas de crédito");
 
         foreach ($this->creditNoteIds as $offset => $id) {
             try {
                 $detail = $service->getCreditNoteById($id);
 
                 if (!is_array($detail)) {
-                    Log::warning("[TL] Nota de credito {$id}: Teamleader no devolvio detalle.");
+                    Log::channel('teamleader')->warning("[TL] Nota de credito {$id}: Teamleader no devolvio detalle.");
                     TlSyncLog::find($this->syncLogId)?->incrementCounter('failed');
                     continue;
                 }
@@ -49,14 +49,14 @@ class ProcessCreditNoteChunkJob implements ShouldQueue
                 $this->releaseRemaining($offset, $e);
                 return;
             } catch (\Throwable $e) {
-                Log::error("[TL] Error creditNote {$id}: " . $e->getMessage());
+                Log::channel('teamleader')->error("[TL] Error creditNote {$id}: " . $e->getMessage());
                 TlSyncLog::find($this->syncLogId)?->incrementCounter('failed');
             }
 
             usleep(150000);
         }
 
-        Log::info("[TL] CreditNotes — Chunk {$this->chunkNumber}/{$this->totalChunks} — completado");
+        Log::channel('teamleader')->info("[TL] CreditNotes — Chunk {$this->chunkNumber}/{$this->totalChunks} — completado");
         $this->checkIfCompleted();
     }
 
@@ -64,7 +64,7 @@ class ProcessCreditNoteChunkJob implements ShouldQueue
     {
         $remaining = array_slice($this->creditNoteIds, $offset);
 
-        Log::warning("[TL] CreditNotes — rate limit en chunk {$this->chunkNumber}. Reintentando " . count($remaining) . " notas luego.");
+        Log::channel('teamleader')->warning("[TL] CreditNotes — rate limit en chunk {$this->chunkNumber}. Reintentando " . count($remaining) . " notas luego.");
 
         self::dispatch(
             $remaining,
@@ -82,14 +82,14 @@ class ProcessCreditNoteChunkJob implements ShouldQueue
         if (!$log) return;
 
         if (($log->processed + $log->failed) >= $log->total) {
-            Log::info("[TL] CreditNotes — SYNC COMPLETADO. Total: {$log->total}");
+            Log::channel('teamleader')->info("[TL] CreditNotes — SYNC COMPLETADO. Total: {$log->total}");
             $log->update(['status' => 'completed', 'finished_at' => now()]);
         }
     }
 
     public function failed(\Throwable $e): void
     {
-        Log::error("[TL] ProcessCreditNoteChunkJob {$this->chunkNumber}/{$this->totalChunks} falló: " . $e->getMessage());
+        Log::channel('teamleader')->error("[TL] ProcessCreditNoteChunkJob {$this->chunkNumber}/{$this->totalChunks} falló: " . $e->getMessage());
         TlSyncLog::find($this->syncLogId)?->incrementCounter('failed', count($this->creditNoteIds));
         $this->checkIfCompleted();
     }

@@ -32,14 +32,14 @@ class ProcessDealChunkJob implements ShouldQueue
 
     public function handle(TeamleaderService $service): void
     {
-        Log::info("[TL] Deals — Chunk {$this->chunkNumber}/{$this->totalChunks} — procesando " . count($this->dealIds) . " deals");
+        Log::channel('teamleader')->info("[TL] Deals — Chunk {$this->chunkNumber}/{$this->totalChunks} — procesando " . count($this->dealIds) . " deals");
 
         foreach ($this->dealIds as $offset => $id) {
             try {
                 $detail = $service->getDealById($id);
 
                 if (!is_array($detail)) {
-                    Log::warning("[TL] Deal {$id}: Teamleader no devolvio detalle.");
+                    Log::channel('teamleader')->warning("[TL] Deal {$id}: Teamleader no devolvio detalle.");
                     TlSyncLog::find($this->syncLogId)?->incrementCounter('failed');
                     continue;
                 }
@@ -55,14 +55,14 @@ class ProcessDealChunkJob implements ShouldQueue
                 $this->releaseRemaining($offset, $e);
                 return;
             } catch (\Throwable $e) {
-                Log::error("[TL] Error deal {$id}: " . $e->getMessage());
+                Log::channel('teamleader')->error("[TL] Error deal {$id}: " . $e->getMessage());
                 TlSyncLog::find($this->syncLogId)?->incrementCounter('failed');
             }
 
             usleep(150000);
         }
 
-        Log::info("[TL] Deals — Chunk {$this->chunkNumber}/{$this->totalChunks} — completado");
+        Log::channel('teamleader')->info("[TL] Deals — Chunk {$this->chunkNumber}/{$this->totalChunks} — completado");
         $this->checkIfCompleted();
     }
 
@@ -70,7 +70,7 @@ class ProcessDealChunkJob implements ShouldQueue
     {
         $remaining = array_slice($this->dealIds, $offset);
 
-        Log::warning("[TL] Deals — rate limit en chunk {$this->chunkNumber}. Reintentando " . count($remaining) . " deals luego.");
+        Log::channel('teamleader')->warning("[TL] Deals — rate limit en chunk {$this->chunkNumber}. Reintentando " . count($remaining) . " deals luego.");
 
         self::dispatch(
             $remaining,
@@ -94,14 +94,14 @@ class ProcessDealChunkJob implements ShouldQueue
         if (!$log) return;
 
         if (($log->processed + $log->failed) >= $log->total) {
-            Log::info("[TL] Deals — SYNC COMPLETADO. Total: {$log->total}");
+            Log::channel('teamleader')->info("[TL] Deals — SYNC COMPLETADO. Total: {$log->total}");
             $log->update(['status' => 'completed', 'finished_at' => now()]);
         }
     }
 
     public function failed(\Throwable $e): void
     {
-        Log::error("[TL] ProcessDealChunkJob {$this->chunkNumber}/{$this->totalChunks} falló: " . $e->getMessage());
+        Log::channel('teamleader')->error("[TL] ProcessDealChunkJob {$this->chunkNumber}/{$this->totalChunks} falló: " . $e->getMessage());
         TlSyncLog::find($this->syncLogId)?->incrementCounter('failed', count($this->dealIds));
         $this->checkIfCompleted();
     }

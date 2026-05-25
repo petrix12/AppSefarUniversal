@@ -44,7 +44,7 @@ class SyncTlCustomFieldDefinitions extends Command
 
             if ($response->failed()) {
                 $this->error('Error en la API: ' . $response->status() . ' - ' . $response->body());
-                Log::error('SyncTlCustomFieldDefinitions error', [
+                Log::channel('teamleader')->error('SyncTlCustomFieldDefinitions error', [
                     'status' => $response->status(),
                     'body'   => $response->body(),
                 ]);

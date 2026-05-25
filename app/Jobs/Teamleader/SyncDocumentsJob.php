@@ -52,7 +52,7 @@ class SyncDocumentsJob implements ShouldQueue
         $page = isset($this->page) ? $this->page : 1;
         $pageSize = isset($this->pageSize) ? $this->pageSize : 100;
 
-        Log::info("[TL Docs] {$this->entityType}/{$this->entityId} page {$page}");
+        Log::channel('teamleader')->info("[TL Docs] {$this->entityType}/{$this->entityId} page {$page}");
 
         try {
             $response = $service->listFiles(
@@ -62,7 +62,7 @@ class SyncDocumentsJob implements ShouldQueue
                 $pageSize
             );
         } catch (TeamleaderRateLimitException $e) {
-            Log::warning("[TL Docs] rate limit listando {$this->entityType}/{$this->entityId}. Reintentando luego.");
+            Log::channel('teamleader')->warning("[TL Docs] rate limit listando {$this->entityType}/{$this->entityId}. Reintentando luego.");
             $this->release($e->retryAfterSeconds());
             return;
         }
@@ -74,11 +74,11 @@ class SyncDocumentsJob implements ShouldQueue
             try {
                 $this->processFile($fileData, $service);
             } catch (TeamleaderRateLimitException $e) {
-                Log::warning("[TL Docs] rate limit migrando {$this->entityType}/{$this->entityId}. Reintentando luego.");
+                Log::channel('teamleader')->warning("[TL Docs] rate limit migrando {$this->entityType}/{$this->entityId}. Reintentando luego.");
                 $this->release($e->retryAfterSeconds());
                 return;
             } catch (\Throwable $e) {
-                Log::error('[TL Docs] Error migrando archivo', [
+                Log::channel('teamleader')->error('[TL Docs] Error migrando archivo', [
                     'entity_type' => $this->entityType,
                     'entity_id' => $this->entityId,
                     'file_id' => $fileData['id'] ?? null,
@@ -120,7 +120,7 @@ class SyncDocumentsJob implements ShouldQueue
         }
 
         $this->markEntityCompleted();
-        Log::info("[TL Docs] {$this->entityType}/{$this->entityId} completado.");
+        Log::channel('teamleader')->info("[TL Docs] {$this->entityType}/{$this->entityId} completado.");
     }
 
     private function processFile(array $fileData, TeamleaderService $service): void
@@ -136,7 +136,7 @@ class SyncDocumentsJob implements ShouldQueue
 
         if (!$this->documentNeedsDownload($existingDocument, $fileData)) {
             $this->linkDocumentToAppUser($document);
-            Log::info("[TL Docs] {$fileId} ya estaba en S3.");
+            Log::channel('teamleader')->info("[TL Docs] {$fileId} ya estaba en S3.");
             return;
         }
 
@@ -156,7 +156,7 @@ class SyncDocumentsJob implements ShouldQueue
 
         $this->linkDocumentToAppUser($document);
 
-        Log::info("[TL Docs] {$fileName} -> s3://{$s3Path}");
+        Log::channel('teamleader')->info("[TL Docs] {$fileName} -> s3://{$s3Path}");
     }
 
     private function documentNeedsDownload(?TlDocument $existingDocument, array $fileData): bool
@@ -319,7 +319,7 @@ class SyncDocumentsJob implements ShouldQueue
 
     public function failed(\Throwable $e): void
     {
-        Log::error("[TL Docs] Job fallo para {$this->entityType}/{$this->entityId}: " . $e->getMessage());
+        Log::channel('teamleader')->error("[TL Docs] Job fallo para {$this->entityType}/{$this->entityId}: " . $e->getMessage());
         TlSyncLog::find($this->syncLogId)?->incrementCounter('failed');
     }
 }

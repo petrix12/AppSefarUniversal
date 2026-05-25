@@ -54,6 +54,20 @@ return [
             'days' => 14,
         ],
 
+        'tasks' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/tasks.log'),
+            'level' => env('TASKS_LOG_LEVEL', env('LOG_LEVEL', 'debug')),
+            'days' => 14,
+        ],
+
+        'teamleader' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/teamleader.log'),
+            'level' => env('TEAMLEADER_LOG_LEVEL', env('LOG_LEVEL', 'debug')),
+            'days' => 14,
+        ],
+
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),

@@ -33,13 +33,13 @@ class SyncCreditNotesJob implements ShouldQueue
         $allIds = [];
         $lastCount = 0;
 
-        Log::info("[TL] CreditNotes - recolectando IDs desde pagina {$page}...");
+        Log::channel('teamleader')->info("[TL] CreditNotes - recolectando IDs desde pagina {$page}...");
 
         for ($i = 0; $i < $pagesPerJob; $i++) {
             try {
                 $response = $service->listCreditNotes($page, $perPage);
             } catch (TeamleaderRateLimitException $e) {
-                Log::warning("[TL] CreditNotes - rate limit en pagina {$page}. Reintentando luego.");
+                Log::channel('teamleader')->warning("[TL] CreditNotes - rate limit en pagina {$page}. Reintentando luego.");
                 $this->release($e->retryAfterSeconds());
                 return;
             }
@@ -53,7 +53,7 @@ class SyncCreditNotesJob implements ShouldQueue
                 }
             }
 
-            Log::info("[TL] CreditNotes - pagina {$page}: {$lastCount} IDs");
+            Log::channel('teamleader')->info("[TL] CreditNotes - pagina {$page}: {$lastCount} IDs");
 
             $page++;
 
@@ -99,7 +99,7 @@ class SyncCreditNotesJob implements ShouldQueue
         $chunks = array_chunk($ids, $chunkSize);
         $totalChunks = count($chunks);
 
-        Log::info("[TL] CreditNotes - {$totalChunks} chunks de {$chunkSize}. Despachando...");
+        Log::channel('teamleader')->info("[TL] CreditNotes - {$totalChunks} chunks de {$chunkSize}. Despachando...");
 
         foreach ($chunks as $index => $chunk) {
             ProcessCreditNoteChunkJob::dispatch(
@@ -115,7 +115,7 @@ class SyncCreditNotesJob implements ShouldQueue
 
     public function failed(\Throwable $e): void
     {
-        Log::error("[TL] SyncCreditNotesJob fallo: " . $e->getMessage());
+        Log::channel('teamleader')->error("[TL] SyncCreditNotesJob fallo: " . $e->getMessage());
         TlSyncLog::find($this->syncLogId)?->fail($e->getMessage());
     }
 }

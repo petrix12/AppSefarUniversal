@@ -11,16 +11,22 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
+use Throwable;
 
 class BulkReassignContactsToAdvisorJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    private const ALERT_EMAIL = 'sistemasccs@gmail.com';
+
     public int $tries = 1;
     public int $timeout = 1800;
+    private ?bool $userReassignmentColumnExists = null;
 
     public function __construct(
         private array $contactIds,
@@ -39,7 +45,7 @@ class BulkReassignContactsToAdvisorJob implements ShouldQueue
             ->get(['id', 'name', 'email', 'hs_id', 'owner_id']);
 
         if ($contacts->isEmpty()) {
-            Log::warning('Reasignacion masiva sin contactos encontrados', [
+            Log::channel('tasks')->warning('Reasignacion masiva sin contactos encontrados', [
                 'admin_user_id' => $this->adminUserId,
                 'advisor_user_id' => $this->advisorUserId,
                 'input_contact_ids' => $this->contactIds,
@@ -84,14 +90,14 @@ class BulkReassignContactsToAdvisorJob implements ShouldQueue
         ];
 
         if ($dryRun) {
-            Log::info('Dry-run de reasignacion masiva de contactos', $result);
+            Log::channel('tasks')->info('Dry-run de reasignacion masiva de contactos', $result);
             return;
         }
 
         DB::transaction(function () use ($contactIds, $cancelPendingTasks, $updateDeals, &$result) {
             $result['local_users_updated'] = User::query()
                 ->whereIn('id', $contactIds)
-                ->update(['owner_id' => $this->advisorUserId]);
+                ->update($this->ownerUpdateAttributes($this->advisorUserId));
 
             if ($cancelPendingTasks) {
                 $result['pending_tasks_canceled'] = Task::query()
@@ -128,7 +134,56 @@ class BulkReassignContactsToAdvisorJob implements ShouldQueue
             }
         }
 
-        Log::info('Reasignacion masiva de contactos completada', $result);
+        Log::channel('tasks')->info('Reasignacion masiva de contactos completada', $result);
+    }
+
+    public function failed(Throwable $e): void
+    {
+        $key = 'tasks-bulk-reassign-alert:' . md5($this->advisorUserId . '|' . json_encode($this->contactIds) . '|' . $e->getMessage());
+
+        if (! Cache::add($key, true, now()->addDay())) {
+            return;
+        }
+
+        Log::channel('tasks')->error('Fallo job de reasignacion masiva de contactos', [
+            'admin_user_id' => $this->adminUserId,
+            'advisor_user_id' => $this->advisorUserId,
+            'hubspot_owner_id' => $this->hubspotOwnerId,
+            'contact_ids_count' => count($this->contactIds),
+            'options' => $this->options,
+            'error' => $e->getMessage(),
+        ]);
+
+        $body = implode("\n", [
+            'Fallo el job de reasignacion masiva de contactos.',
+            '',
+            "Asesor destino user_id: {$this->advisorUserId}",
+            "HubSpot owner id: {$this->hubspotOwnerId}",
+            'Admin que lo lanzo: ' . ($this->adminUserId ?: 'N/A'),
+            'Contactos: ' . count($this->contactIds),
+            'Fecha: ' . now()->toDateTimeString(),
+            '',
+            'Error:',
+            get_class($e) . ': ' . $e->getMessage(),
+            '',
+            'Opciones:',
+            json_encode($this->options, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
+            '',
+            'Primeros IDs:',
+            implode(', ', array_slice($this->contactIds, 0, 100)),
+        ]);
+
+        try {
+            Mail::raw($body, function ($message) {
+                $message->to(self::ALERT_EMAIL)->subject('[App Sefar] Fallo reasignacion masiva');
+            });
+        } catch (Throwable $mailError) {
+            Log::channel('tasks')->error('No se pudo enviar alerta de fallo de reasignacion masiva', [
+                'recipient' => self::ALERT_EMAIL,
+                'mail_error' => $mailError->getMessage(),
+                'original_error' => $e->getMessage(),
+            ]);
+        }
     }
 
     private function contactsBlockedForHubspot(array $contactIds): array
@@ -146,5 +201,25 @@ class BulkReassignContactsToAdvisorJob implements ShouldQueue
             ->unique()
             ->values()
             ->all();
+    }
+
+    private function ownerUpdateAttributes(int $advisorId): array
+    {
+        $attributes = ['owner_id' => $advisorId];
+
+        if ($this->userReassignmentColumnExists()) {
+            $attributes['last_task_reassigned_at'] = now();
+        }
+
+        return $attributes;
+    }
+
+    private function userReassignmentColumnExists(): bool
+    {
+        if ($this->userReassignmentColumnExists === null) {
+            $this->userReassignmentColumnExists = Schema::hasColumn('users', 'last_task_reassigned_at');
+        }
+
+        return $this->userReassignmentColumnExists;
     }
 }

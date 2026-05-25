@@ -14,13 +14,18 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 
 class GenerateDailyTasks extends Command
 {
+    private ?bool $userReassignmentColumnExists = null;
+
     protected $signature = 'tasks:generate-daily
         {--date=      : Fecha Y-m-d (defecto: hoy)}
         {--per=10     : Tareas base por asesor}
+        {--advisor-id= : Genera tareas solo para este asesor}
         {--dry-run    : Solo muestra, no escribe}
+        {--skip-list-cleanup : No marca contactos para salir de listas}
         {--no-email   : No envia correo a los vendedores}
     ';
 
@@ -35,6 +40,9 @@ class GenerateDailyTasks extends Command
         $date   = $this->option('date') ? Carbon::parse($this->option('date')) : today();
         $base   = (int) ($this->option('per') ?? 10);
         $dryRun = (bool) $this->option('dry-run');
+        $advisorId = (int) ($this->option('advisor-id') ?: 0);
+        $skipListCleanup = (bool) $this->option('skip-list-cleanup');
+        $reassignmentDate = today();
         $sendEmails = ! $dryRun && ! (bool) $this->option('no-email');
 
         $this->info("📅 Fecha: {$date->toDateString()} | Base: {$base} tareas | " . ($dryRun ? 'DRY-RUN' : 'REAL'));
@@ -47,6 +55,9 @@ class GenerateDailyTasks extends Command
             ->whereNotNull('hou.hubspot_owner_id')
             ->whereRaw("TRIM(hou.hubspot_owner_id) <> ''")
             ->where('users.exclude_from_task_assignment', false)
+            ->when($advisorId > 0, function ($query) use ($advisorId) {
+                $query->where('users.id', $advisorId);
+            })
             ->orderBy('users.name')
             ->select([
                 'users.id',
@@ -59,26 +70,37 @@ class GenerateDailyTasks extends Command
             ->get();
 
         if ($advisors->isEmpty()) {
-            $this->error('No hay usuarios asociados a HubSpot Owners activos y habilitados para tareas.');
+            $this->error($advisorId > 0
+                ? "El asesor {$advisorId} no tiene owner activo de HubSpot o esta excluido de tareas."
+                : 'No hay usuarios asociados a HubSpot Owners activos y habilitados para tareas.'
+            );
             return self::FAILURE;
         }
 
-        $this->markContactsThatShouldLeaveReassignmentLists($markContacted, $dryRun);
+        if (! $skipListCleanup) {
+            $this->markContactsThatShouldLeaveReassignmentLists($markContacted, $dryRun);
+        }
 
         // 2) Contactos disponibles en listas habilitadas para el pool.
+        $contactColumns = [
+            'u.id as contact_id',
+            'u.name as contact_name',
+            'u.email as contact_email',
+            'u.hs_id as contact_hs_id',
+            'u.owner_id',
+            'l.id as list_id',
+            'l.name as list_name',
+            'l.disable_hubspot_reassignment',
+        ];
+
+        if ($this->userReassignmentColumnExists()) {
+            $contactColumns[] = 'u.last_task_reassigned_at';
+        }
+
         $contacts = DB::table('list_user as lu')
             ->join('users as u', 'u.id', '=', 'lu.user_id')
             ->join('lists as l', 'l.id', '=', 'lu.list_id')
-            ->select(
-                'u.id as contact_id',
-                'u.name as contact_name',
-                'u.email as contact_email',
-                'u.hs_id as contact_hs_id',
-                'u.owner_id',
-                'l.id as list_id',
-                'l.name as list_name',
-                'l.disable_hubspot_reassignment'
-            )
+            ->select($contactColumns)
             ->where('lu.contacted', 0)
             ->where('l.include_in_task_pool', true)
             ->get()
@@ -128,6 +150,15 @@ class GenerateDailyTasks extends Command
 
         $inProgressContacts = Task::query()
             ->where('status', Task::STATUS_IN_PROGRESS)
+            ->pluck('contact_id')
+            ->filter()
+            ->unique()
+            ->map(fn ($id) => (int) $id)
+            ->toArray();
+
+        $pendingContacts = Task::query()
+            ->where('status', Task::STATUS_PENDING)
+            ->notAssignedToSystems()
             ->pluck('contact_id')
             ->filter()
             ->unique()
@@ -191,13 +222,15 @@ class GenerateDailyTasks extends Command
             // c) reason_no_interest no null
             // Ademas se usa como pool para completar cupo cuando el asesor no tiene contactos propios.
             $candidates = $contacts
-                ->reject(function ($contact) use ($alreadyTaskedToday, $recentlyTasked, $nonReassignableContacts, $inProgressContacts, &$assignedContactIdsThisRun) {
+                ->reject(function ($contact) use ($advisor, $reassignmentDate, $alreadyTaskedToday, $recentlyTasked, $nonReassignableContacts, $inProgressContacts, $pendingContacts, &$assignedContactIdsThisRun) {
                     $contactId = (int) $contact->contact_id;
 
                     return in_array($contactId, $assignedContactIdsThisRun, true)
                         || in_array($contactId, $alreadyTaskedToday, true)
                         || in_array($contactId, $recentlyTasked, true)
+                        || in_array($contactId, $pendingContacts, true)
                         || in_array($contactId, $inProgressContacts, true)
+                        || $this->wasReassignedTodayToDifferentAdvisor($contact, $advisor, $reassignmentDate)
                         || in_array($contactId, $nonReassignableContacts, true);
                 })
                 ->unique('contact_id')
@@ -230,9 +263,8 @@ class GenerateDailyTasks extends Command
                 if (! $dryRun) {
                     if ($ownerChanged) {
                         if ($skipHubspotByList) {
-                            User::whereKey((int) $contact->contact_id)->update([
-                                'owner_id' => (int) $advisor->id,
-                            ]);
+                            User::whereKey((int) $contact->contact_id)
+                                ->update($this->ownerUpdateAttributes((int) $advisor->id));
 
                             $contact->owner_id = (int) $advisor->id;
                             $totalSkippedHubspotByList++;
@@ -309,6 +341,40 @@ class GenerateDailyTasks extends Command
         return $description;
     }
 
+    private function wasReassignedTodayToDifferentAdvisor(object $contact, object $advisor, Carbon $date): bool
+    {
+        if (! $this->userReassignmentColumnExists()) {
+            return false;
+        }
+
+        if (empty($contact->last_task_reassigned_at)) {
+            return false;
+        }
+
+        return Carbon::parse($contact->last_task_reassigned_at)->isSameDay($date)
+            && (int) ($contact->owner_id ?? 0) !== (int) $advisor->id;
+    }
+
+    private function ownerUpdateAttributes(int $advisorId): array
+    {
+        $attributes = ['owner_id' => $advisorId];
+
+        if ($this->userReassignmentColumnExists()) {
+            $attributes['last_task_reassigned_at'] = now();
+        }
+
+        return $attributes;
+    }
+
+    private function userReassignmentColumnExists(): bool
+    {
+        if ($this->userReassignmentColumnExists === null) {
+            $this->userReassignmentColumnExists = Schema::hasColumn('users', 'last_task_reassigned_at');
+        }
+
+        return $this->userReassignmentColumnExists;
+    }
+
     private function markContactsThatShouldLeaveReassignmentLists(MarkContactedService $markContacted, bool $dryRun): void
     {
         $tasks = Task::query()
@@ -376,7 +442,7 @@ class GenerateDailyTasks extends Command
         } catch (\Throwable $e) {
             $this->warn("   ↳ No se pudo enviar correo a {$advisor->email}: {$e->getMessage()}");
 
-            Log::error('Error enviando correo de tareas asignadas', [
+            Log::channel('tasks')->error('Error enviando correo de tareas asignadas', [
                 'advisor_id' => $advisor->id,
                 'advisor_email' => $advisor->email,
                 'task_ids' => $taskIds,
@@ -397,7 +463,7 @@ class GenerateDailyTasks extends Command
             if (! $hsContactId) {
                 $this->warn("      HubSpot no encontrado: contact_id={$contact->contact_id}, email={$contact->contact_email}, hs_id={$contact->contact_hs_id}");
 
-                Log::warning('Contacto no encontrado en HubSpot al reasignar durante generacion de tareas', [
+                Log::channel('tasks')->warning('Contacto no encontrado en HubSpot al reasignar durante generacion de tareas', [
                     'client_id' => $contact->contact_id,
                     'email' => $contact->contact_email,
                     'hs_id' => $contact->contact_hs_id,
@@ -419,9 +485,8 @@ class GenerateDailyTasks extends Command
                 (int) $contact->contact_id
             );
 
-            User::whereKey((int) $contact->contact_id)->update([
-                'owner_id' => (int) $advisor->id,
-            ]);
+            User::whereKey((int) $contact->contact_id)
+                ->update($this->ownerUpdateAttributes((int) $advisor->id));
 
             $contact->owner_id = (int) $advisor->id;
 
@@ -431,7 +496,7 @@ class GenerateDailyTasks extends Command
         } catch (\Throwable $e) {
             $this->warn("      HubSpot fallo: contact_id={$contact->contact_id}, owner={$advisor->hs_owner_id}, error={$e->getMessage()}");
 
-            Log::error('Error reasignando contacto en HubSpot durante generacion de tareas', [
+            Log::channel('tasks')->error('Error reasignando contacto en HubSpot durante generacion de tareas', [
                 'client_id' => $contact->contact_id,
                 'email' => $contact->contact_email,
                 'hs_id' => $contact->contact_hs_id,
