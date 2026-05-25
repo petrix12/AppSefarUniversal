@@ -8,17 +8,19 @@ use Illuminate\Support\Facades\Artisan;
 
 class TaskCronController extends Controller
 {
+    private const QUEUE = 'tasks';
+
     public function work(Request $request): JsonResponse
     {
         $this->authorizeCron($request);
 
-        $jobs = min(200, max(1, (int) $request->query('jobs', $request->query('limit', 5))));
+        $jobs = 1;
         $timeout = min(1800, max(60, (int) $request->query('timeout', 600)));
         $maxTime = min(1800, max(30, (int) $request->query('max_time', 600)));
 
         $exitCode = Artisan::call('queue:work', [
             'connection' => 'database',
-            '--queue' => 'default',
+            '--queue' => self::QUEUE,
             '--stop-when-empty' => true,
             '--tries' => 1,
             '--timeout' => $timeout,
@@ -34,7 +36,7 @@ class TaskCronController extends Controller
             'timeout' => $timeout,
             'max_time' => $maxTime,
             'connection' => 'database',
-            'queues' => ['default'],
+            'queues' => [self::QUEUE],
             'output' => trim(Artisan::output()),
         ], $exitCode === 0 ? 200 : 500);
     }

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\TaskWorkflowOwnerDispatcher;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class InternalTaskWorkflowController extends Controller
 {
@@ -25,34 +25,29 @@ class InternalTaskWorkflowController extends Controller
             abort(403);
         }
 
-        if (function_exists('set_time_limit')) {
-            set_time_limit(0);
-        }
-
-        $lock = Cache::lock('tasks-daily-workflow-http', 1800);
-
-        if (! $lock->get()) {
+        if (! Schema::hasTable('jobs')) {
             return response()->json([
                 'ok' => false,
-                'message' => 'El workflow diario ya esta en ejecucion.',
-            ], 409);
+                'message' => 'No existe la tabla jobs para encolar el workflow diario.',
+            ], 503);
         }
 
-        try {
-            $options = $this->commandOptions($request);
-            $exitCode = Artisan::call('tasks:daily-workflow', $options);
-            $output = Artisan::output();
+        $options = $this->commandOptions($request);
 
-            Log::info('Workflow diario ejecutado via HTTPS', [
-                'exit_code' => $exitCode,
-                'options' => array_keys(array_filter($options)),
-            ]);
+        $result = app(TaskWorkflowOwnerDispatcher::class)->dispatch($options);
 
-            return response($output, $exitCode === 0 ? 200 : 500)
-                ->header('Content-Type', 'text/plain; charset=UTF-8');
-        } finally {
-            optional($lock)->release();
-        }
+        Log::channel('tasks')->info('Workflow diario encolado via HTTPS', [
+            'options' => $options,
+            'result' => $result,
+        ]);
+
+        return response()->json([
+            'ok' => true,
+            'queued' => true,
+            'message' => 'Workflow diario encolado por vendedor. Procesa la cola con /cron/tasks/work; esa URL ejecuta solo 1 job por llamada.',
+            'options' => $options,
+            'result' => $result,
+        ], 202);
     }
 
     private function commandOptions(Request $request): array

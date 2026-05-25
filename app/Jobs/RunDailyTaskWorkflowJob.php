@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Models\User;
+use App\Services\TaskWorkflowOwnerDispatcher;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -28,39 +28,14 @@ class RunDailyTaskWorkflowJob implements ShouldQueue
     ) {
     }
 
-    public function handle(): void
+    public function handle(TaskWorkflowOwnerDispatcher $dispatcher): void
     {
-        $advisors = $this->eligibleAdvisors();
+        $result = $dispatcher->dispatch($this->options, $this->adminUserId);
 
-        if ($advisors->isEmpty()) {
-            throw new \RuntimeException('No hay HubSpot owners activos asociados a usuarios habilitados para tareas.');
-        }
-
-        $basePerAdvisor = max(1, (int) ($this->options['--per'] ?? 10));
-        $forceLimit = max(1, (int) ($this->options['--force-limit'] ?? 200));
-        $perOwnerForceLimit = max($basePerAdvisor, (int) ceil($forceLimit / max(1, $advisors->count())));
-
-        foreach ($advisors as $index => $advisor) {
-            $ownerOptions = $this->options;
-            $ownerOptions['--advisor-id'] = (int) $advisor->id;
-            $ownerOptions['--force-limit'] = $perOwnerForceLimit;
-
-            RunDailyTaskWorkflowForOwnerJob::dispatch(
-                (int) $advisor->id,
-                trim(($advisor->name ?? "Usuario {$advisor->id}") . ' <' . ($advisor->email ?? 'sin correo') . '>'),
-                $ownerOptions,
-                $this->adminUserId,
-                $index === 0
-            )
-                ->onConnection('database')
-                ->onQueue('default');
-        }
-
-        Log::channel('tasks')->info('Workflow diario de tareas dividido por HubSpot owner', [
+        Log::channel('tasks')->info('Despachador legacy de workflow diario ejecuto jobs por owner', [
             'admin_user_id' => $this->adminUserId,
             'options' => $this->options,
-            'owners_enqueued' => $advisors->count(),
-            'per_owner_force_limit' => $perOwnerForceLimit,
+            'result' => $result,
         ]);
     }
 
@@ -104,27 +79,4 @@ class RunDailyTaskWorkflowJob implements ShouldQueue
         }
     }
 
-    private function eligibleAdvisors()
-    {
-        return User::query()
-            ->join('hubspot_owner_user as hou', 'hou.user_id', '=', 'users.id')
-            ->join('hubspot_owners as ho', 'ho.id', '=', 'hou.hubspot_owner_id')
-            ->where('ho.active', true)
-            ->whereNotNull('hou.hubspot_owner_id')
-            ->whereRaw("TRIM(hou.hubspot_owner_id) <> ''")
-            ->where('users.exclude_from_task_assignment', false)
-            ->where(function ($query) {
-                $query->whereNull('users.task_assignment_daily_limit')
-                    ->orWhere('users.task_assignment_daily_limit', '>', 0);
-            })
-            ->orderBy('users.name')
-            ->select([
-                'users.id',
-                'users.name',
-                'users.email',
-                'hou.hubspot_owner_id as hs_owner_id',
-                'ho.name as hs_owner_name',
-            ])
-            ->get();
-    }
 }

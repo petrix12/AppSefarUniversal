@@ -5,12 +5,11 @@ namespace App\Http\Controllers;
 
 use App\Exports\TaskStatusReportExport;
 use App\Jobs\BulkReassignContactsToAdvisorJob;
-use App\Jobs\RunDailyTaskWorkflowJob;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\TaskWorkflowOwnerDispatcher;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -225,11 +224,23 @@ class AdminTaskController extends Controller
     {
         $date = $request->input('date', today()->toDateString());
 
-        Artisan::call('tasks:generate-daily', ['--date' => $date]);
+        if (! Schema::hasTable('jobs')) {
+            return back()->with('error', 'No existe la tabla jobs para generar tareas en segundo plano.');
+        }
 
-        $output = Artisan::output();
+        $result = app(TaskWorkflowOwnerDispatcher::class)->dispatch([
+            '--date' => $date,
+            '--skip-notify' => true,
+            '--skip-force' => true,
+        ], auth()->id());
 
-        return back()->with('success', "<pre class='mb-0'>{$output}</pre>");
+        Log::channel('tasks')->info('Generacion diaria de tareas encolada desde panel admin', [
+            'admin_user_id' => auth()->id(),
+            'date' => $date,
+            'result' => $result,
+        ]);
+
+        return back()->with('success', "Generacion diaria encolada por vendedor ({$result['owners_enqueued']} job(s)). Cada llamada a /cron/tasks/work procesa solo 1 job.");
     }
 
     public function forceDailyWorkflow(Request $request)
@@ -259,15 +270,15 @@ class AdminTaskController extends Controller
             $options['--dry-run'] = true;
         }
 
-        RunDailyTaskWorkflowJob::dispatch($options, auth()->id())
-            ->onConnection('database');
+        $result = app(TaskWorkflowOwnerDispatcher::class)->dispatch($options, auth()->id());
 
         Log::channel('tasks')->info('Workflow diario forzado encolado desde panel admin', [
             'admin_user_id' => auth()->id(),
             'options' => $options,
+            'result' => $result,
         ]);
 
-        return back()->with('success', 'Workflow diario forzado encolado por HubSpot owner. El panel no queda bloqueado; procesa la cola para ejecutarlo.');
+        return back()->with('success', "Workflow diario encolado por vendedor ({$result['owners_enqueued']} job(s)). Cada llamada a /cron/tasks/work procesa solo 1 job.");
     }
 
     public function bulkReassignContacts(Request $request)
@@ -333,7 +344,9 @@ class AdminTaskController extends Controller
                 'dry_run' => $request->boolean('dry_run'),
             ],
             auth()->id()
-        )->onConnection('database');
+        )
+            ->onConnection('database')
+            ->onQueue(TaskWorkflowOwnerDispatcher::QUEUE);
 
         $message = 'Reasignacion masiva encolada para ' . count($contactIds) . ' contacto(s).';
 
