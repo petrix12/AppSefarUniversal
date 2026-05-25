@@ -89,8 +89,10 @@
     </div>
   @endif
 
-  @if(session('import_report'))
-    @php($report = session('import_report'))
+  @php
+    $report = session('import_report');
+  @endphp
+  @if($report)
     <div class="alert alert-info shadow-sm" role="alert">
       <div class="font-weight-bold mb-1">
         Resultado de importacion de contactos
