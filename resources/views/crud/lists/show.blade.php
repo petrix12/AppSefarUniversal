@@ -371,7 +371,7 @@
                 </label>
               </div>
               <small class="text-muted d-block mt-1">
-                Para crear clientes nuevos se requiere nombre, apellido, servicio contratado, pasaporte, telefono y correo electronico.
+                Para crear clientes nuevos se requiere nombre, apellido, pasaporte, telefono y correo electronico. Si el archivo trae servicio, se guarda; si no, el cliente queda sin servicio registrado.
               </small>
 
               @if(!empty($importPreview['sample_rows']))

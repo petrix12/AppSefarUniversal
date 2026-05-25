@@ -865,7 +865,6 @@ class ListController extends Controller
         $labels = [
             'nombres' => 'nombre',
             'apellidos' => 'apellido',
-            'servicio' => 'servicio contratado',
             'passport' => 'pasaporte',
             'phone' => 'telefono',
             'email' => 'correo electronico',
