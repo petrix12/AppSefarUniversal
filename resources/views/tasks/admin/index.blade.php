@@ -161,12 +161,78 @@
                        value="200"
                        title="Limite de contactos a revisar">
                 <button type="submit" class="btn btn-sm btn-danger"
-                        onclick="return confirm('Esto ejecutara reasignacion forzada y generacion de tareas para {{ $date->toDateString() }}. ¿Continuar?')">
-                    <i class="fas fa-bolt mr-1"></i>Workflow forzado
+                        onclick="return confirm('Esto encolara reasignacion forzada y generacion de tareas para {{ $date->toDateString() }}. ¿Continuar?')">
+                    <i class="fas fa-bolt mr-1"></i>Encolar workflow forzado
                 </button>
             </form>
 
         </div>
+    </div>
+
+    <div class="card card-outline card-warning mb-3">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-random mr-1"></i>Reasignacion masiva de contactos</h3>
+        </div>
+        <form method="POST" action="{{ route('tasks.admin.bulk-reassign-contacts') }}">
+            @csrf
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-5 mb-3">
+                        <label class="form-label text-muted small mb-1">Asesor destino</label>
+                        <select name="advisor_user_id" class="form-control" required>
+                            <option value="">Selecciona asesor con owner activo</option>
+                            @foreach($reassignmentAdvisors as $advisorId => $advisorLabel)
+                                <option value="{{ $advisorId }}">{{ $advisorLabel }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-7 mb-3">
+                        <label class="form-label text-muted small mb-1">IDs o correos de contactos</label>
+                        <textarea
+                            name="identifiers"
+                            class="form-control task-bulk-reassign-textarea"
+                            rows="3"
+                            placeholder="Ej: 13797, cliente@correo.com, 14002"
+                            required
+                        ></textarea>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap align-items-center task-bulk-reassign-options">
+                    <div class="custom-control custom-checkbox mr-3">
+                        <input type="hidden" name="update_hubspot" value="0">
+                        <input type="checkbox" class="custom-control-input" id="bulk_update_hubspot" name="update_hubspot" value="1" checked>
+                        <label class="custom-control-label" for="bulk_update_hubspot">Actualizar HubSpot</label>
+                    </div>
+                    <div class="custom-control custom-checkbox mr-3">
+                        <input type="hidden" name="update_deals" value="0">
+                        <input type="checkbox" class="custom-control-input" id="bulk_update_deals" name="update_deals" value="1" checked>
+                        <label class="custom-control-label" for="bulk_update_deals">Actualizar negocios</label>
+                    </div>
+                    <div class="custom-control custom-checkbox mr-3">
+                        <input type="hidden" name="cancel_pending_tasks" value="0">
+                        <input type="checkbox" class="custom-control-input" id="bulk_cancel_pending" name="cancel_pending_tasks" value="1" checked>
+                        <label class="custom-control-label" for="bulk_cancel_pending">Cancelar pendientes de otros asesores</label>
+                    </div>
+                    <div class="custom-control custom-checkbox mr-3">
+                        <input type="hidden" name="respect_no_hubspot_lists" value="0">
+                        <input type="checkbox" class="custom-control-input" id="bulk_respect_lists" name="respect_no_hubspot_lists" value="1" checked>
+                        <label class="custom-control-label" for="bulk_respect_lists">Respetar listas sin HubSpot</label>
+                    </div>
+                    <div class="custom-control custom-checkbox mr-3">
+                        <input type="hidden" name="dry_run" value="0">
+                        <input type="checkbox" class="custom-control-input" id="bulk_dry_run" name="dry_run" value="1">
+                        <label class="custom-control-label" for="bulk_dry_run">Solo simular</label>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-end">
+                <button type="submit" class="btn btn-warning"
+                        onclick="return confirm('Se encolara la reasignacion masiva en segundo plano. ¿Continuar?')">
+                    <i class="fas fa-paper-plane mr-1"></i>Encolar reasignacion
+                </button>
+            </div>
+        </form>
     </div>
 
     {{-- Tabla --}}
@@ -550,6 +616,15 @@
 
         .task-admin-number {
             width: 74px;
+        }
+
+        .task-bulk-reassign-textarea {
+            min-height: 92px;
+            resize: vertical;
+        }
+
+        .task-bulk-reassign-options {
+            gap: .35rem .75rem;
         }
 
         .task-select-col {

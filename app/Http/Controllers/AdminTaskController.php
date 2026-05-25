@@ -4,14 +4,16 @@
 namespace App\Http\Controllers;
 
 use App\Exports\TaskStatusReportExport;
+use App\Jobs\BulkReassignContactsToAdvisorJob;
+use App\Jobs\RunDailyTaskWorkflowJob;
 use App\Models\Task;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -49,8 +51,17 @@ class AdminTaskController extends Controller
     ->pluck('name', 'id');
         $stats    = $this->getDayStats($date);
         $chartData = $this->buildChartData($date);
+        $reassignmentAdvisors = $this->reassignmentAdvisorOptions();
 
-        return view('tasks.admin.index', compact('tasks', 'date', 'advisors', 'stats', 'chartData', 'filteredTaskCount'));
+        return view('tasks.admin.index', compact(
+            'tasks',
+            'date',
+            'advisors',
+            'stats',
+            'chartData',
+            'filteredTaskCount',
+            'reassignmentAdvisors'
+        ));
     }
 
     // ── Crear manual ─────────────────────────────────────────
@@ -230,45 +241,107 @@ class AdminTaskController extends Controller
             'dry_run' => ['nullable', 'boolean'],
         ]);
 
-        if (function_exists('set_time_limit')) {
-            set_time_limit(0);
+        if (! Schema::hasTable('jobs')) {
+            return back()->with('error', 'No existe la tabla jobs para ejecutar el workflow en segundo plano.');
         }
 
-        $lock = Cache::lock('tasks-daily-workflow-admin', 1800);
+        $options = [
+            '--force-reassign' => true,
+            '--per' => (int) ($data['per'] ?? 10),
+            '--force-limit' => (int) ($data['force_limit'] ?? 200),
+        ];
 
-        if (! $lock->get()) {
-            return back()->with('error', 'El workflow diario ya esta en ejecucion.');
+        if (! empty($data['date'])) {
+            $options['--date'] = $data['date'];
         }
 
-        try {
-            $options = [
-                '--force-reassign' => true,
-                '--per' => (int) ($data['per'] ?? 10),
-                '--force-limit' => (int) ($data['force_limit'] ?? 200),
-            ];
-
-            if (! empty($data['date'])) {
-                $options['--date'] = $data['date'];
-            }
-
-            if ($request->boolean('dry_run')) {
-                $options['--dry-run'] = true;
-            }
-
-            $exitCode = Artisan::call('tasks:daily-workflow', $options);
-            $output = Artisan::output();
-            $message = "<pre class='mb-0'>" . e($output) . '</pre>';
-
-            Log::info('Workflow diario forzado desde panel admin', [
-                'admin_user_id' => auth()->id(),
-                'exit_code' => $exitCode,
-                'options' => $options,
-            ]);
-
-            return back()->with($exitCode === 0 ? 'success' : 'error', $message);
-        } finally {
-            optional($lock)->release();
+        if ($request->boolean('dry_run')) {
+            $options['--dry-run'] = true;
         }
+
+        RunDailyTaskWorkflowJob::dispatch($options, auth()->id())
+            ->onConnection('database');
+
+        Log::info('Workflow diario forzado encolado desde panel admin', [
+            'admin_user_id' => auth()->id(),
+            'options' => $options,
+        ]);
+
+        return back()->with('success', 'Workflow diario forzado encolado. El panel no queda bloqueado; procesa la cola para ejecutarlo.');
+    }
+
+    public function bulkReassignContacts(Request $request)
+    {
+        $data = $request->validate([
+            'advisor_user_id' => ['required', 'integer', 'exists:users,id'],
+            'identifiers' => ['required', 'string', 'max:50000'],
+            'update_hubspot' => ['nullable', 'boolean'],
+            'update_deals' => ['nullable', 'boolean'],
+            'cancel_pending_tasks' => ['nullable', 'boolean'],
+            'respect_no_hubspot_lists' => ['nullable', 'boolean'],
+            'dry_run' => ['nullable', 'boolean'],
+        ]);
+
+        if (! Schema::hasTable('jobs')) {
+            return back()->with('error', 'No existe la tabla jobs para ejecutar la reasignacion en segundo plano.');
+        }
+
+        $advisor = $this->reassignmentAdvisorQuery()
+            ->where('users.id', $data['advisor_user_id'])
+            ->first();
+
+        if (! $advisor) {
+            return back()->with('error', 'El asesor destino no tiene owner activo de HubSpot asociado.');
+        }
+
+        [$ids, $emails, $invalid] = $this->parseContactIdentifiers($data['identifiers']);
+
+        if (empty($ids) && empty($emails)) {
+            return back()->with('error', 'No se detectaron IDs o correos validos para reasignar.');
+        }
+
+        $contactIds = User::query()
+            ->where(function ($query) use ($ids, $emails) {
+                if (! empty($ids)) {
+                    $query->whereIn('id', $ids);
+                }
+
+                if (! empty($emails)) {
+                    $method = empty($ids) ? 'whereIn' : 'orWhereIn';
+                    $query->{$method}('email', $emails);
+                }
+            })
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        if (empty($contactIds)) {
+            return back()->with('error', 'No se encontro ningun contacto con esos IDs o correos.');
+        }
+
+        BulkReassignContactsToAdvisorJob::dispatch(
+            $contactIds,
+            (int) $advisor->id,
+            (string) $advisor->hs_owner_id,
+            [
+                'update_hubspot' => $request->boolean('update_hubspot', true),
+                'update_deals' => $request->boolean('update_deals', true),
+                'cancel_pending_tasks' => $request->boolean('cancel_pending_tasks', true),
+                'respect_no_hubspot_lists' => $request->boolean('respect_no_hubspot_lists', true),
+                'dry_run' => $request->boolean('dry_run'),
+            ],
+            auth()->id()
+        )->onConnection('database');
+
+        $message = 'Reasignacion masiva encolada para ' . count($contactIds) . ' contacto(s).';
+
+        if (! empty($invalid)) {
+            $message .= ' Ignorados por formato: ' . count($invalid) . '.';
+        }
+
+        return back()->with('success', $message);
     }
 
     public function reports(Request $request)
@@ -359,6 +432,74 @@ class AdminTaskController extends Controller
         })
             ->orderBy('name')
             ->pluck('name', 'id');
+    }
+
+    private function reassignmentAdvisorOptions()
+    {
+        return $this->reassignmentAdvisorQuery()
+            ->get()
+            ->mapWithKeys(function ($advisor) {
+                $label = trim(($advisor->name ?? '') . ' - ' . ($advisor->email ?? ''));
+
+                return [
+                    $advisor->id => "{$label} | HubSpot: {$advisor->hs_owner_name}",
+                ];
+            });
+    }
+
+    private function reassignmentAdvisorQuery()
+    {
+        return User::query()
+            ->join('hubspot_owner_user as hou', 'hou.user_id', '=', 'users.id')
+            ->join('hubspot_owners as ho', 'ho.id', '=', 'hou.hubspot_owner_id')
+            ->where('ho.active', true)
+            ->whereNotNull('hou.hubspot_owner_id')
+            ->whereRaw("TRIM(hou.hubspot_owner_id) <> ''")
+            ->where('users.exclude_from_task_assignment', false)
+            ->orderBy('users.name')
+            ->select([
+                'users.id',
+                'users.name',
+                'users.email',
+                'hou.hubspot_owner_id as hs_owner_id',
+                'ho.name as hs_owner_name',
+            ]);
+    }
+
+    private function parseContactIdentifiers(string $raw): array
+    {
+        $tokens = preg_split('/[\s,;]+/', trim($raw)) ?: [];
+        $ids = [];
+        $emails = [];
+        $invalid = [];
+
+        foreach ($tokens as $token) {
+            $token = trim($token);
+
+            if ($token === '') {
+                continue;
+            }
+
+            if (ctype_digit($token)) {
+                $ids[] = (int) $token;
+                continue;
+            }
+
+            $email = strtolower($token);
+
+            if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $emails[] = $email;
+                continue;
+            }
+
+            $invalid[] = $token;
+        }
+
+        return [
+            array_values(array_unique($ids)),
+            array_values(array_unique($emails)),
+            array_values(array_unique($invalid)),
+        ];
     }
 
     private function taskStatusLabels(): array

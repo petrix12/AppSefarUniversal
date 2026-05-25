@@ -74,6 +74,7 @@ use App\Http\Controllers\ClientChatController;
 use App\Http\Controllers\ExternalClientImportController;
 use App\Http\Controllers\TeamleaderCronController;
 use App\Http\Controllers\TeamleaderJobController;
+use App\Http\Controllers\TaskCronController;
 
 Route::get('/internal/tasks/daily-workflow', InternalTaskWorkflowController::class)
     ->name('internal.tasks.daily-workflow');
@@ -85,6 +86,13 @@ Route::prefix('cron/teamleader')
             ->name('sync');
 
         Route::get('/work', [TeamleaderCronController::class, 'work'])
+            ->name('work');
+    });
+
+Route::prefix('cron/tasks')
+    ->name('cron.tasks.')
+    ->group(function () {
+        Route::get('/work', [TaskCronController::class, 'work'])
             ->name('work');
     });
 
@@ -131,6 +139,7 @@ Route::middleware(['auth'])->prefix('tasks')->name('tasks.')->group(function () 
          Route::get('/reports/export',  [AdminTaskController::class, 'exportReport'])->name('reports.export');
          Route::post('/generate-daily', [AdminTaskController::class, 'generateDaily'])->name('generate-daily');
          Route::post('/daily-workflow/force', [AdminTaskController::class, 'forceDailyWorkflow'])->name('daily-workflow.force');
+         Route::post('/bulk-reassign-contacts', [AdminTaskController::class, 'bulkReassignContacts'])->name('bulk-reassign-contacts');
          Route::post('/',               [AdminTaskController::class, 'store'])->name('store');
          Route::delete('/bulk',          [AdminTaskController::class, 'bulkDestroy'])->name('bulk-destroy');
          Route::delete('/bulk-filtered', [AdminTaskController::class, 'bulkDestroyFiltered'])->name('bulk-destroy-filtered');

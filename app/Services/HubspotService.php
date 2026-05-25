@@ -4,8 +4,12 @@ namespace App\Services;
 
 use HubSpot\Factory;
 use HubSpot\Client\Crm\Contacts\Model\SimplePublicObjectInput;
+use HubSpot\Client\Crm\Contacts\Model\BatchInputSimplePublicObjectBatchInput as ContactBatchInput;
+use HubSpot\Client\Crm\Contacts\Model\SimplePublicObjectBatchInput as ContactBatchObjectInput;
 use HubSpot\Client\Crm\Contacts\ApiException as ContactException;
 use HubSpot\Client\Crm\Deals\ApiException as DealException;
+use HubSpot\Client\Crm\Deals\Model\BatchInputSimplePublicObjectBatchInput as DealBatchInput;
+use HubSpot\Client\Crm\Deals\Model\SimplePublicObjectBatchInput as DealBatchObjectInput;
 use HubSpot\Client\Crm\Associations\Model\BatchInputPublicObjectId;
 use HubSpot\Client\Crm\Associations\ApiException as AssociationsApiException;
 use HubSpot\Client\Crm\Properties\ApiException as PropertiesApiException;
@@ -322,6 +326,31 @@ class HubspotService
         }
     }
 
+    public function batchUpdateContactOwners(array $contactIds, string $hubspotOwnerId, int $chunkSize = 100): int
+    {
+        $contactIds = array_values(array_unique(array_filter(array_map('strval', $contactIds))));
+        $updated = 0;
+
+        foreach (array_chunk($contactIds, $chunkSize) as $chunk) {
+            $input = new ContactBatchInput([
+                'inputs' => array_map(
+                    fn ($id) => new ContactBatchObjectInput([
+                        'id' => $id,
+                        'properties' => [
+                            'hubspot_owner_id' => $hubspotOwnerId,
+                        ],
+                    ]),
+                    $chunk
+                ),
+            ]);
+
+            $this->hubspot->crm()->contacts()->batchApi()->update($input);
+            $updated += count($chunk);
+        }
+
+        return $updated;
+    }
+
     public function getDealById(string $dealId): ?array
     {
         try {
@@ -477,6 +506,55 @@ class HubspotService
         }
 
         return count($dealIds);
+    }
+
+    public function getDealIdsByContactIds(array $contactIds, int $chunkSize = 100): array
+    {
+        $contactIds = array_values(array_unique(array_filter(array_map('strval', $contactIds))));
+        $dealIds = [];
+
+        foreach (array_chunk($contactIds, $chunkSize) as $chunk) {
+            $associations = $this->hubspot->crm()->associations()->batchApi()->read(
+                'contacts',
+                'deals',
+                new BatchInputPublicObjectId([
+                    'inputs' => array_map(fn ($id) => ['id' => $id], $chunk),
+                ])
+            );
+
+            foreach ($associations->getResults() as $association) {
+                foreach ($association->getTo() as $toItem) {
+                    $dealIds[] = (string) $toItem->getId();
+                }
+            }
+        }
+
+        return array_values(array_unique($dealIds));
+    }
+
+    public function batchUpdateDealOwners(array $dealIds, string $hubspotOwnerId, int $chunkSize = 100): int
+    {
+        $dealIds = array_values(array_unique(array_filter(array_map('strval', $dealIds))));
+        $updated = 0;
+
+        foreach (array_chunk($dealIds, $chunkSize) as $chunk) {
+            $input = new DealBatchInput([
+                'inputs' => array_map(
+                    fn ($id) => new DealBatchObjectInput([
+                        'id' => $id,
+                        'properties' => [
+                            'hubspot_owner_id' => $hubspotOwnerId,
+                        ],
+                    ]),
+                    $chunk
+                ),
+            ]);
+
+            $this->hubspot->crm()->deals()->batchApi()->update($input);
+            $updated += count($chunk);
+        }
+
+        return $updated;
     }
 
     public function getDealsByContactId(string $contactId): array
