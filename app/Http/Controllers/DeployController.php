@@ -37,10 +37,12 @@ class DeployController extends Controller
         $mailSent  = false;
         $mailError = null;
         $modelUsed = null;
+        $releaseVersion = null;
         $migrateOut = null;
         $optimizeClearOut = null;
 
         if ($pulledNewChanges) {
+            $releaseVersion = $this->releaseVersion($afterHead);
 
             $migrateOut = trim(shell_exec(
                 "cd " . escapeshellarg($projectPath) . " && php artisan migrate 2>&1"
@@ -53,14 +55,14 @@ class DeployController extends Controller
             $changes = $this->getCodeChangesSummary($projectPath, $beforeHead, $afterHead);
 
             try {
-                [$summary, $modelUsed] = $this->callOpenRouterSummary($changes);
+                [$summary, $modelUsed] = $this->callOpenRouterSummary($changes, $releaseVersion);
             } catch (\Throwable $e) {
                 Log::error('Error IA', ['msg' => $e->getMessage()]);
-                $summary = $this->buildFallbackSummary($changes);
+                $summary = $this->buildFallbackSummary($changes, $releaseVersion);
             }
 
             try {
-                $this->sendSummaryMail($summary, $modelUsed);
+                $this->sendSummaryMail($summary, $modelUsed, $releaseVersion);
                 $mailSent = true;
             } catch (\Throwable $e) {
                 $mailError = $e->getMessage();
@@ -72,6 +74,7 @@ class DeployController extends Controller
             'ok'               => true,
             'changes_detected' => $pulledNewChanges,
             'model_used'       => $modelUsed,
+            'version'          => $releaseVersion,
             'summary'          => $summary,
             'mail_sent'        => $mailSent,
             'mail_error'       => $mailError,
@@ -185,8 +188,25 @@ class DeployController extends Controller
     }
 
     // ── Prompt orientado a código ─────────────────────────────
-    private function buildPrompt(string $changes): string
+    private function releaseVersion(string $afterHead): string
     {
+        $configuredVersion = trim((string) (config('app.version') ?? env('APP_VERSION', '')));
+
+        if ($configuredVersion !== '') {
+            return $configuredVersion;
+        }
+
+        $shortCommit = preg_match('/^[a-f0-9]{7,40}$/i', $afterHead)
+            ? substr($afterHead, 0, 7)
+            : 'local';
+
+        return now()->format('Y.m.d.Hi') . '-' . $shortCommit;
+    }
+
+    private function buildPrompt(string $changes, string $version): string
+    {
+        $appName = config('app.name', 'Sefar Universal');
+
         return <<<PROMPT
     Eres un experto en desarrollo de software. Recibes cambios reales de una aplicacion Laravel.
 
@@ -194,19 +214,35 @@ class DeployController extends Controller
     - Responde solo en texto plano.
     - No uses markdown, tablas, negritas, titulos con #, bloques de codigo ni enlaces.
     - No menciones hashes, commits, diffs ni el modelo.
+    - No menciones nombres de archivos, rutas internas ni detalles de implementacion salvo que sean necesarios para entender el cambio.
     - No inventes funcionalidades.
     - No recortes ni reemplaces informacion con puntos suspensivos.
     - Incluye todos los cambios relevantes que puedas identificar.
-    - Cada linea debe ser clara y facil de leer.
+    - Agrupa los cambios por modulo o area funcional.
+    - Cada bullet debe tener un titulo breve y debajo una explicacion clara de una o dos frases.
 
     Usa exactamente este formato:
 
-    Cambios implementados
-    - Se actualizo ..., que resuelve ...
-    - Se actualizo ..., que arregla el problema ...
-    - Se agrego ..., que sirve para ...
+    Hola a todos,
 
-    Usa tantas lineas como sean necesarias.
+    Les compartimos las novedades incluidas en la version {$version} de la aplicacion {$appName}:
+
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    emoji MODULO — Tema del cambio
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    • Titulo breve del cambio.
+      Explicacion concreta del cambio y de su impacto practico para el usuario o el equipo.
+
+    • Otro titulo breve.
+      Explicacion concreta del cambio.
+
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    Un saludo,
+    Alejandro — Equipo Tech
+
+    Usa tantas secciones y bullets como sean necesarios. Si no encuentras un emoji adecuado, usa 📌.
 
     Cambios analizados:
 
@@ -215,7 +251,7 @@ class DeployController extends Controller
     }
 
     // ── OpenRouter con fallback entre modelos ─────────────────
-    private function callOpenRouterSummary(string $changes): array
+    private function callOpenRouterSummary(string $changes, string $version): array
     {
         $apiKey = config('services.openrouter.key') ?? env('OPENROUTER_API_KEY');
 
@@ -239,11 +275,11 @@ class DeployController extends Controller
                         'messages'    => [
                             [
                                 'role'    => 'system',
-                                'content' => 'Resume cambios de codigo en espanol usando solo texto plano y el formato indicado. No uses markdown.',
+                                'content' => 'Redacta notas de version en espanol para un correo de despliegue. Usa solo texto plano y respeta exactamente el formato solicitado.',
                             ],
                             [
                                 'role'    => 'user',
-                                'content' => $this->buildPrompt($changes),
+                                'content' => $this->buildPrompt($changes, $version),
                             ],
                         ],
                         'temperature' => 0.1,  // Muy determinista para resumenes tecnicos
@@ -253,8 +289,9 @@ class DeployController extends Controller
                     throw new \Exception("Error con modelo {$model}: " . $response->body());
                 }
 
-                $content = $this->normalizeSummary(
-                    trim($response->json()['choices'][0]['message']['content'] ?? '')
+                $content = $this->normalizeReleaseNotes(
+                    trim($response->json()['choices'][0]['message']['content'] ?? ''),
+                    $version
                 );
 
                 if (empty($content)) {
@@ -279,47 +316,34 @@ class DeployController extends Controller
         );
     }
 
-    private function normalizeSummary(string $summary): string
+    private function normalizeReleaseNotes(string $summary, string $version): string
     {
         $summary = str_replace(["\r\n", "\r"], "\n", trim($summary));
         $summary = preg_replace('/```.*?```/s', '', $summary) ?? $summary;
         $summary = preg_replace('/\[([^\]]+)\]\([^)]+\)/', '$1', $summary) ?? $summary;
         $summary = str_replace(['**', '__', '`'], '', $summary);
+        $summary = preg_replace('/^\s*#{1,6}\s*/m', '', $summary) ?? $summary;
+        $summary = preg_replace("/\n{3,}/", "\n\n", $summary) ?? $summary;
+        $summary = trim($summary);
 
-        $lines = preg_split('/\n+/', $summary) ?: [];
-        $items = [];
-
-        foreach ($lines as $line) {
-            $line = trim($line);
-
-            if ($line === '' || strcasecmp($line, 'Cambios implementados') === 0) {
-                continue;
-            }
-
-            $line = preg_replace('/^\s*(#{1,6}|\*|\x{2022}|\d+[.)]|-)\s*/u', '', $line) ?? $line;
-            $line = trim($line);
-
-            if ($line === '') {
-                continue;
-            }
-
-            if (!preg_match('/^Se\s+/i', $line)) {
-                $line = 'Se actualizo ' . lcfirst($line);
-            }
-
-            $items[] = $line;
+        if ($summary === '') {
+            return $this->buildFallbackSummary('', $version);
         }
 
-        if (empty($items)) {
-            $items[] = 'Se actualizaron cambios del despliegue, que dejan la aplicacion al dia.';
+        if (!str_starts_with($summary, 'Hola')) {
+            $summary = $this->releaseIntro($version) . "\n\n" . $summary;
         }
 
-        return "Cambios implementados\n- " . implode("\n- ", $items);
+        if (!str_contains($summary, 'Un saludo')) {
+            $summary .= "\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nUn saludo,\nAlejandro — Equipo Tech";
+        }
+
+        return $summary;
     }
 
-    private function buildFallbackSummary(string $changes): string
+    private function buildFallbackSummary(string $changes, string $version): string
     {
-        $items = [];
+        $sections = [];
 
         foreach (preg_split('/\r\n|\r|\n/', $changes) ?: [] as $line) {
             $line = trim($line);
@@ -330,24 +354,56 @@ class DeployController extends Controller
 
             $status = $matches[1];
             $file = $matches[2];
+            $module = $this->moduleLabelForFile($file);
 
-            $items[] = match ($status) {
-                'CREADO' => "Se agrego {$file}, que sirve para incorporar cambios nuevos al sistema.",
-                'ELIMINADO' => "Se elimino {$file}, que retira codigo que ya no se usa.",
-                default => "Se actualizo {$file}, que incluye ajustes recientes del despliegue.",
+            $sections[$module][] = match ($status) {
+                'CREADO' => "• Nuevo ajuste en {$module}.\n  Se incorporaron cambios nuevos en esta area para ampliar o completar el comportamiento disponible.",
+                'ELIMINADO' => "• Limpieza en {$module}.\n  Se retiraron piezas que ya no forman parte del flujo actual, dejando el despliegue mas ordenado.",
+                default => "• Actualizacion en {$module}.\n  Se aplicaron ajustes recientes en esta area para mantener la aplicacion al dia.",
             };
 
         }
 
-        if (empty($items)) {
-            $items[] = 'Se actualizaron cambios del despliegue, que dejan la aplicacion al dia.';
+        if (empty($sections)) {
+            $sections['GENERAL — Actualizacion del sistema'][] =
+                "• Ajustes generales del despliegue.\n  Se actualizaron cambios internos para dejar la aplicacion al dia.";
         }
 
-        return "Cambios implementados\n- " . implode("\n- ", $items);
+        $body = $this->releaseIntro($version);
+
+        foreach ($sections as $module => $items) {
+            $body .= "\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+            $body .= "📌 {$module}\n";
+            $body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+            $body .= implode("\n\n", $items);
+        }
+
+        return $body . "\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nUn saludo,\nAlejandro — Equipo Tech";
+    }
+
+    private function releaseIntro(string $version): string
+    {
+        $appName = config('app.name', 'Sefar Universal');
+
+        return "Hola a todos,\n\nLes compartimos las novedades incluidas en la version {$version} de la aplicacion {$appName}:";
+    }
+
+    private function moduleLabelForFile(string $file): string
+    {
+        return match (true) {
+            str_contains($file, 'Task') || str_contains($file, 'tasks') => 'TAREAS — Gestion y reasignacion',
+            str_contains($file, 'List') || str_contains($file, 'lists') => 'LISTAS — Importacion y contactos',
+            str_contains($file, 'Teamleader') || str_contains($file, 'teamleader') => 'TEAMLEADER — Sincronizacion',
+            str_contains($file, 'Deploy') || str_contains($file, 'deploy') => 'DEPLOY — Despliegues y notificaciones',
+            str_contains($file, 'Hubspot') || str_contains($file, 'hubspot') => 'HUBSPOT — Propietarios y sincronizacion',
+            str_contains($file, 'User') || str_contains($file, 'users') => 'USUARIOS — Gestion de clientes',
+            str_contains($file, 'migration') || str_contains($file, 'migrations') => 'BASE DE DATOS — Estructura',
+            default => 'GENERAL — Actualizacion del sistema',
+        };
     }
 
     // ── Mail con info del modelo usado ────────────────────────
-    private function sendSummaryMail(string $summary, ?string $modelUsed): void
+    private function sendSummaryMail(string $summary, ?string $modelUsed, string $version): void
     {
         $recipients = [
             'jladera@sefarvzla.com',
@@ -359,7 +415,7 @@ class DeployController extends Controller
 
         $body = $summary;
 
-        Mail::raw($body, function ($message) use ($recipients) {
+        Mail::raw($body, function ($message) use ($recipients, $version) {
             $message->to($recipients)
                     ->subject('🚀 Nuevo despliegue - resumen de cambios');
         });
