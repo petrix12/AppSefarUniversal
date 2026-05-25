@@ -26,6 +26,13 @@
         </div>
     @endif
 
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show">
+            {!! session('error') !!}
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+    @endif
+
     {{-- Stats --}}
     <div class="row">
         @php
@@ -133,6 +140,29 @@
                 <button type="submit" class="btn btn-sm btn-warning"
                         onclick="return confirm('¿Generar tareas para {{ $date->toDateString() }}?')">
                     <i class="fas fa-magic mr-1"></i>Generar tareas diarias
+                </button>
+            </form>
+
+            <form method="POST" action="{{ route('tasks.admin.daily-workflow.force') }}" class="d-inline-flex align-items-center task-workflow-force-form">
+                @csrf
+                <input type="hidden" name="date" value="{{ $date->toDateString() }}">
+                <input type="number"
+                       name="per"
+                       class="form-control form-control-sm task-admin-number"
+                       min="1"
+                       max="100"
+                       value="10"
+                       title="Tareas base por asesor">
+                <input type="number"
+                       name="force_limit"
+                       class="form-control form-control-sm task-admin-number"
+                       min="1"
+                       max="2000"
+                       value="200"
+                       title="Limite de contactos a revisar">
+                <button type="submit" class="btn btn-sm btn-danger"
+                        onclick="return confirm('Esto ejecutara reasignacion forzada y generacion de tareas para {{ $date->toDateString() }}. ¿Continuar?')">
+                    <i class="fas fa-bolt mr-1"></i>Workflow forzado
                 </button>
             </form>
 
@@ -512,6 +542,14 @@
 
         .task-admin-actions {
             gap: .5rem;
+        }
+
+        .task-workflow-force-form {
+            gap: .35rem;
+        }
+
+        .task-admin-number {
+            width: 74px;
         }
 
         .task-select-col {

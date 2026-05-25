@@ -12,10 +12,13 @@ use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class NotifyUnclosedTasks extends Command
 {
     private const TASK_RESPONSE_DAYS = 1;
+
+    private ?bool $taskPoolPolicyColumnsExist = null;
 
     protected $signature = 'tasks:notify-unclosed
         {--date= : Fecha base opcional YYYY-MM-DD}
@@ -94,9 +97,22 @@ class NotifyUnclosedTasks extends Command
 
                 if (!$dryRun) {
                     // 1. Cancelar tarea
-                    $task->update([
-                        'status' => 'canceled',
-                    ]);
+                    $skipHubspotReassignment = (bool) ($task->skip_hubspot_reassignment ?? false);
+                    $taskUpdate = [
+                        'status' => Task::STATUS_CANCELED,
+                    ];
+
+                    if ($this->taskPoolPolicyColumnsExist()) {
+                        $taskUpdate['task_pool_list_name'] = $task->task_pool_list_name ?: null;
+                        $taskUpdate['skip_hubspot_reassignment'] = $skipHubspotReassignment;
+                    } else {
+                        $task->syncOriginalAttributes([
+                            'task_pool_list_name',
+                            'skip_hubspot_reassignment',
+                        ]);
+                    }
+
+                    $task->update($taskUpdate);
 
                     // 2. Actualizar propietario local del cliente
                     $contact->update([
@@ -105,7 +121,7 @@ class NotifyUnclosedTasks extends Command
 
                     $reassignedClients++;
 
-                    if ((bool) ($task->skip_hubspot_reassignment ?? false)) {
+                    if ($skipHubspotReassignment) {
                         $hubspotSkippedByList++;
                         $this->line("   HubSpot omitido por configuracion de lista: contact_id={$contact->id}");
                         $processedTasks->push($task);
@@ -243,6 +259,16 @@ class NotifyUnclosedTasks extends Command
             })
             ->sortBy(fn ($task) => (bool) ($task->skip_hubspot_reassignment ?? false) ? 1 : 0)
             ->values();
+    }
+
+    private function taskPoolPolicyColumnsExist(): bool
+    {
+        if ($this->taskPoolPolicyColumnsExist === null) {
+            $this->taskPoolPolicyColumnsExist = Schema::hasColumn('tasks', 'task_pool_list_name')
+                && Schema::hasColumn('tasks', 'skip_hubspot_reassignment');
+        }
+
+        return $this->taskPoolPolicyColumnsExist;
     }
 
     private function resolveHubspotContactId(HubspotService $hubspotService, User $contact): ?string

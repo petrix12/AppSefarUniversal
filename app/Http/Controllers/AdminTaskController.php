@@ -9,7 +9,9 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -217,6 +219,56 @@ class AdminTaskController extends Controller
         $output = Artisan::output();
 
         return back()->with('success', "<pre class='mb-0'>{$output}</pre>");
+    }
+
+    public function forceDailyWorkflow(Request $request)
+    {
+        $data = $request->validate([
+            'date' => ['nullable', 'date'],
+            'per' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'force_limit' => ['nullable', 'integer', 'min:1', 'max:2000'],
+            'dry_run' => ['nullable', 'boolean'],
+        ]);
+
+        if (function_exists('set_time_limit')) {
+            set_time_limit(0);
+        }
+
+        $lock = Cache::lock('tasks-daily-workflow-admin', 1800);
+
+        if (! $lock->get()) {
+            return back()->with('error', 'El workflow diario ya esta en ejecucion.');
+        }
+
+        try {
+            $options = [
+                '--force-reassign' => true,
+                '--per' => (int) ($data['per'] ?? 10),
+                '--force-limit' => (int) ($data['force_limit'] ?? 200),
+            ];
+
+            if (! empty($data['date'])) {
+                $options['--date'] = $data['date'];
+            }
+
+            if ($request->boolean('dry_run')) {
+                $options['--dry-run'] = true;
+            }
+
+            $exitCode = Artisan::call('tasks:daily-workflow', $options);
+            $output = Artisan::output();
+            $message = "<pre class='mb-0'>" . e($output) . '</pre>';
+
+            Log::info('Workflow diario forzado desde panel admin', [
+                'admin_user_id' => auth()->id(),
+                'exit_code' => $exitCode,
+                'options' => $options,
+            ]);
+
+            return back()->with($exitCode === 0 ? 'success' : 'error', $message);
+        } finally {
+            optional($lock)->release();
+        }
     }
 
     public function reports(Request $request)

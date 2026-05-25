@@ -34,6 +34,8 @@ class Task extends Model
         'product_of_interest',
         'follow_up_date',
         'created_by_user_id',
+        'task_pool_list_name',
+        'skip_hubspot_reassignment',
     ];
 
     protected $casts = [
@@ -44,6 +46,7 @@ class Task extends Model
         'call_effective' => 'boolean',
         'interest_level' => 'boolean',
         'sales_tags'     => 'array',
+        'skip_hubspot_reassignment' => 'boolean',
     ];
 
     // ── Constantes de estado ────────────────────────────────
