@@ -7,6 +7,7 @@ use App\Models\Task;
 use App\Models\User;
 use App\Services\HubspotDealOwnerSyncService;
 use App\Services\HubspotService;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -33,6 +34,7 @@ class RunDailyTaskWorkflow extends Command
     public function handle(HubspotService $hubspot, HubspotDealOwnerSyncService $dealOwnerSync): int
     {
         $date = $this->option('date');
+        $taskDate = $date ? Carbon::parse($date)->toDateString() : today()->toDateString();
         $reassignmentDate = today()->toDateString();
         $per = (int) ($this->option('per') ?? 10);
         $advisorId = (int) ($this->option('advisor-id') ?: 0);
@@ -51,7 +53,7 @@ class RunDailyTaskWorkflow extends Command
         if ($forceReassign && ! $skipForce) {
             $this->line('');
             $this->info('Paso 0/3: forzar reasignacion previa.');
-            $this->forceReassignContacts($hubspot, $dealOwnerSync, $dryRun, $forceLimit, $reassignmentDate, $advisorId > 0 ? $advisorId : null);
+            $this->forceReassignContacts($hubspot, $dealOwnerSync, $dryRun, $forceLimit, $reassignmentDate, $taskDate, $per, $advisorId > 0 ? $advisorId : null);
         }
 
         $notifyOptions = [];
@@ -116,6 +118,8 @@ class RunDailyTaskWorkflow extends Command
         bool $dryRun,
         int $limit,
         string $workflowDate,
+        string $taskDate,
+        int $basePerAdvisor,
         ?int $targetAdvisorId = null
     ): void
     {
@@ -124,6 +128,18 @@ class RunDailyTaskWorkflow extends Command
 
         if ($targetAdvisorId && ! $targetAdvisor) {
             throw new \RuntimeException("El asesor {$targetAdvisorId} no tiene owner activo de HubSpot o esta excluido de tareas.");
+        }
+
+        if ($targetAdvisor) {
+            $availableSlots = $this->availableTaskSlotsForAdvisor($targetAdvisor, $taskDate, $basePerAdvisor);
+
+            if ($availableSlots <= 0) {
+                $this->info("El asesor {$targetAdvisor->name} ya tiene el cupo diario lleno para {$taskDate}; no se reasignan contactos en este job.");
+                return;
+            }
+
+            $limit = min($limit, $availableSlots);
+            $this->info("Cupo disponible para {$targetAdvisor->name} en {$taskDate}: {$availableSlots}. Limite de reasignacion aplicado: {$limit}.");
         }
 
         $contacts = $this->forceReassignCandidates($limit, $eligibleAdvisorIds, $workflowDate, $targetAdvisorId);
@@ -566,6 +582,20 @@ class RunDailyTaskWorkflow extends Command
             })
             ->select('users.*', 'hou.hubspot_owner_id as hs_owner_id')
             ->first();
+    }
+
+    private function availableTaskSlotsForAdvisor(User $advisor, string $taskDate, int $basePerAdvisor): int
+    {
+        $dailyLimit = $advisor->task_assignment_daily_limit;
+        $advisorBase = is_null($dailyLimit) ? $basePerAdvisor : max(0, (int) $dailyLimit);
+
+        $assignedTodayCount = Task::query()
+            ->where('user_id', $advisor->id)
+            ->whereDate('due_date', $taskDate)
+            ->where('status', '!=', Task::STATUS_CANCELED)
+            ->count();
+
+        return max(0, $advisorBase - $assignedTodayCount);
     }
 
     private function getNextAdvisorRoundRobin(?int $excludedUserId = null): ?User
