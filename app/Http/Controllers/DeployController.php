@@ -187,7 +187,7 @@ class DeployController extends Controller
         return trim($result);
     }
 
-    // ── Prompt orientado a código ─────────────────────────────
+    // ── Version del despliegue ────────────────────────────────
     private function releaseVersion(string $afterHead): string
     {
         $configuredVersion = trim((string) (config('app.version') ?? env('APP_VERSION', '')));
@@ -203,6 +203,7 @@ class DeployController extends Controller
         return now()->format('Y.m.d.Hi') . '-' . $shortCommit;
     }
 
+    // ── Prompt orientado a notas de version ───────────────────
     private function buildPrompt(string $changes, string $version): string
     {
         $appName = config('app.name', 'Sefar Universal');
@@ -225,10 +226,10 @@ class DeployController extends Controller
 
     Hola a todos,
 
-    Les compartimos las novedades incluidas en la version {$version} de la aplicacion {$appName}:
+    Les compartimos las novedades incluidas en la versión {$version} de la aplicación {$appName}:
 
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    emoji MODULO — Tema del cambio
+    📌 MODULO — Tema del cambio
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
     • Titulo breve del cambio.
@@ -385,19 +386,21 @@ class DeployController extends Controller
     {
         $appName = config('app.name', 'Sefar Universal');
 
-        return "Hola a todos,\n\nLes compartimos las novedades incluidas en la version {$version} de la aplicacion {$appName}:";
+        return "Hola a todos,\n\nLes compartimos las novedades incluidas en la versión {$version} de la aplicación {$appName}:";
     }
 
     private function moduleLabelForFile(string $file): string
     {
+        $file = strtolower($file);
+
         return match (true) {
-            str_contains($file, 'Task') || str_contains($file, 'tasks') => 'TAREAS — Gestion y reasignacion',
-            str_contains($file, 'List') || str_contains($file, 'lists') => 'LISTAS — Importacion y contactos',
-            str_contains($file, 'Teamleader') || str_contains($file, 'teamleader') => 'TEAMLEADER — Sincronizacion',
-            str_contains($file, 'Deploy') || str_contains($file, 'deploy') => 'DEPLOY — Despliegues y notificaciones',
-            str_contains($file, 'Hubspot') || str_contains($file, 'hubspot') => 'HUBSPOT — Propietarios y sincronizacion',
-            str_contains($file, 'User') || str_contains($file, 'users') => 'USUARIOS — Gestion de clientes',
-            str_contains($file, 'migration') || str_contains($file, 'migrations') => 'BASE DE DATOS — Estructura',
+            str_contains($file, 'task') => 'TAREAS — Gestion y reasignacion',
+            str_contains($file, 'list') => 'LISTAS — Importacion y contactos',
+            str_contains($file, 'teamleader') => 'TEAMLEADER — Sincronizacion',
+            str_contains($file, 'deploy') => 'DEPLOY — Despliegues y notificaciones',
+            str_contains($file, 'hubspot') => 'HUBSPOT — Propietarios y sincronizacion',
+            str_contains($file, 'user') => 'USUARIOS — Gestion de clientes',
+            str_contains($file, 'migration') => 'BASE DE DATOS — Estructura',
             default => 'GENERAL — Actualizacion del sistema',
         };
     }
@@ -417,7 +420,7 @@ class DeployController extends Controller
 
         Mail::raw($body, function ($message) use ($recipients, $version) {
             $message->to($recipients)
-                    ->subject('🚀 Nuevo despliegue - resumen de cambios');
+                    ->subject("Novedades App Sefar Universal - versión {$version}");
         });
     }
 }
