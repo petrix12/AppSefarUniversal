@@ -465,6 +465,15 @@
                                     </select>
                                 </div>
 
+                                <div>
+                                    <label for="filterChatActivity" class="block text-xs font-medium text-gray-700 mb-1">Chat interno</label>
+                                    <select wire:model.live="filterChatActivity" id="filterChatActivity"
+                                            class="block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <option value="">Todos</option>
+                                        <option value="recent">Con actividad reciente</option>
+                                    </select>
+                                </div>
+
                                 <!-- Proveedores -->
                                 <div>
                                     <label class="block text-xs font-medium text-gray-700 mb-1">Pendientes por aprobar</label>
@@ -497,6 +506,7 @@
                                     ($filterServicio !== '')
                                     || ($filterContrato !== '')
                                     || ($filterPago !== '')
+                                    || ($filterChatActivity !== '')
                                     || ($filterProveedor !== '')
                                     || ($filterOwner !== '')
                                     || (!empty($filterRoles));
@@ -555,6 +565,19 @@
                                                 <p class="text-sm text-gray-600">
                                                     <i class="fas fa-passport mr-1"></i> {{ $user->passport }}
                                                 </p>
+                                            @endif
+
+                                            @if($user->latest_internal_chat_at)
+                                                <a href="{{ route('crud.users.edit', $user) }}#client-chat"
+                                                   class="inline-flex items-center mt-2 px-2 py-1 text-xs rounded bg-amber-100 text-amber-800 hover:text-amber-900">
+                                                    <i class="fas fa-comments mr-1"></i>
+                                                    Ultimo chat {{ \Illuminate\Support\Carbon::parse($user->latest_internal_chat_at)->diffForHumans() }}
+                                                </a>
+                                                @if($user->latest_internal_chat_message)
+                                                    <p class="text-xs text-gray-500 mt-1">
+                                                        {{ \Illuminate\Support\Str::limit($user->latest_internal_chat_message, 70) }}
+                                                    </p>
+                                                @endif
                                             @endif
                                         </div>
 
@@ -778,6 +801,19 @@
                                                 <p class="user-name">{{ \Illuminate\Support\Str::limit($user->name, 25) }}</p>
                                                 <p class="user-info">{{ $user->email }}</p>
                                                 <p class="user-info">{{ $user->passport }}</p>
+                                                @if($user->latest_internal_chat_at)
+                                                    <a href="{{ route('crud.users.edit', $user) }}#client-chat"
+                                                       class="badge badge-warning mt-1"
+                                                       style="font-size:.72rem; text-decoration:none;">
+                                                        <i class="fas fa-comments mr-1"></i>
+                                                        Ultimo chat {{ \Illuminate\Support\Carbon::parse($user->latest_internal_chat_at)->diffForHumans() }}
+                                                    </a>
+                                                    @if($user->latest_internal_chat_message)
+                                                        <p class="user-info mt-1">
+                                                            {{ \Illuminate\Support\Str::limit($user->latest_internal_chat_message, 80) }}
+                                                        </p>
+                                                    @endif
+                                                @endif
                                             </td>
 
                                             <td style="vertical-align:middle;">

@@ -22,6 +22,11 @@
         {{-- Configured right links --}}
         @each('adminlte::partials.navbar.menu-item', $adminlte->menu('navbar-right'), 'item')
 
+        {{-- In-app notifications --}}
+        @if(Auth::user())
+            @include('adminlte::partials.navbar.client-notifications')
+        @endif
+
         {{-- User menu link --}}
         @if(Auth::user())
             @if(config('adminlte.usermenu_enabled'))

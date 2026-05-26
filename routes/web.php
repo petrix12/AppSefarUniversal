@@ -71,6 +71,7 @@ use App\Http\Controllers\RequestAuditController;
 use App\Http\Controllers\UserSyncController;
 use App\Http\Controllers\InternalTaskWorkflowController;
 use App\Http\Controllers\ClientChatController;
+use App\Http\Controllers\ClientNotificationController;
 use App\Http\Controllers\ExternalClientImportController;
 use App\Http\Controllers\TeamleaderCronController;
 use App\Http\Controllers\TeamleaderJobController;
@@ -99,6 +100,15 @@ Route::prefix('cron/tasks')
 Route::post('/users/{user}/sync-deals', [UserSyncController::class, 'sync'])
     ->name('users.sync-deals')
     ->middleware(['auth']);
+
+Route::middleware(['auth'])
+    ->prefix('notifications')
+    ->name('notifications.')
+    ->group(function () {
+        Route::get('/', [ClientNotificationController::class, 'index'])->name('index');
+        Route::patch('/{notification}/read', [ClientNotificationController::class, 'markAsRead'])->name('read');
+        Route::post('/read-all', [ClientNotificationController::class, 'markAllAsRead'])->name('read-all');
+    });
 
 Route::get('/api/contacts/search', [App\Http\Controllers\Api\ContactSearchController::class, 'search'])
     ->name('api.contacts.search')
@@ -343,6 +353,9 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
 			->middleware('can:crud.users.index');
     Route::post('users/{user}/cos-review-task', [UserController::class, 'requestCosReviewTask'])
             ->name('users.cos-review-task')
+            ->middleware('can:crud.users.index');
+    Route::post('users/{user}/notify-cos-status', [UserController::class, 'notifyCosStatusUpdate'])
+            ->name('users.notify-cos-status')
             ->middleware('can:crud.users.index');
     Route::get('users/{user}/internal-chat', [ClientChatController::class, 'messages'])
             ->name('users.internal-chat.index')

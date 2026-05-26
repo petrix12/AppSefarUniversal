@@ -128,6 +128,14 @@
                 @endif
                 @if(auth()->user()->roles[0]->id != 5)
                 <li class="nav-item" role="presentation">
+                    <button style="color:black" class="nav-link" id="teamleader-migration-tab" data-bs-toggle="tab" data-bs-target="#teamleader-migration" type="button" role="tab" aria-controls="teamleader-migration" aria-selected="false">
+                        Teamleader
+                        @if(($teamleaderMigration['contact'] ?? null))
+                            <span class="badge bg-secondary ms-1">{{ ($teamleaderMigration['summary']['deals'] ?? 0) + ($teamleaderMigration['summary']['projects'] ?? 0) + ($teamleaderMigration['summary']['invoices'] ?? 0) }}</span>
+                        @endif
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
                     <button style="color:black" class="nav-link" id="client-tasks-tab" data-bs-toggle="tab" data-bs-target="#client-tasks" type="button" role="tab" aria-controls="client-tasks" aria-selected="false">
                         Tareas
                     </button>
@@ -215,6 +223,29 @@
                         >
                             <i class="fas fa-clipboard-check" id="iconCosReviewTask"></i>
                             <span id="labelCosReviewTask">Solicitar revision del COS a Sistemas</span>
+                        </button>
+                        <button
+                            type="button"
+                            id="btnNotifyCosStatus"
+                            style="
+                                display: inline-flex;
+                                align-items: center;
+                                gap: .45rem;
+                                background: #7c3aed;
+                                color: #fff;
+                                border: none;
+                                border-radius: .5rem;
+                                padding: .45rem 1rem;
+                                font-size: .83rem;
+                                font-weight: 600;
+                                cursor: pointer;
+                                transition: background .2s;
+                            "
+                            onmouseover="this.style.background='#6d28d9'"
+                            onmouseout="this.style.background='#7c3aed'"
+                        >
+                            <i class="fas fa-bell" id="iconNotifyCosStatus"></i>
+                            <span id="labelNotifyCosStatus">Notificar estatus al cliente</span>
                         </button>
                     </div>
 
@@ -316,6 +347,328 @@
                         @endif
 
                     </div>
+                    @endif
+
+                    @if($rolId !== 5)
+                        @php
+                            $tlPaymentTotals = $teamleaderProjectPayments['totals'] ?? [];
+                            $tlPaymentProjects = collect($teamleaderProjectPayments['projects'] ?? []);
+                            $tlPaymentRows = $tlPaymentProjects
+                                ->flatMap(function ($project) {
+                                    return collect($project['phases'] ?? [])
+                                        ->filter(function ($phase) {
+                                            return ($phase['status'] ?? 'empty') !== 'empty'
+                                                || (float) ($phase['effective_preestab_amount'] ?? 0) > 0
+                                                || (float) ($phase['effective_paid_amount'] ?? 0) > 0
+                                                || trim((string) ($phase['preestab_raw'] ?? '')) !== ''
+                                                || trim((string) ($phase['paid_raw'] ?? '')) !== '';
+                                        })
+                                        ->map(function ($phase) use ($project) {
+                                            $phase['project_title'] = $project['project_title'] ?? $project['project_id'] ?? '-';
+                                            return $phase;
+                                        });
+                                })
+                                ->values();
+                            $tlPaymentHasData = $tlPaymentRows->isNotEmpty();
+                            $tlMoney = fn ($amount) => number_format((float) $amount, 2, ',', '.') . ' EUR';
+                            $tlStatusLabels = [
+                                'paid' => 'Pagado',
+                                'partial' => 'Parcial',
+                                'pending' => 'Pendiente',
+                                'exonerated' => 'Exonerado',
+                                'included' => 'Incluido',
+                                'empty' => 'Sin datos',
+                            ];
+                            $tlStatusClasses = [
+                                'paid' => 'bg-success',
+                                'partial' => 'bg-warning text-dark',
+                                'pending' => 'bg-danger',
+                                'exonerated' => 'bg-info text-dark',
+                                'included' => 'bg-secondary',
+                                'empty' => 'bg-light text-dark',
+                            ];
+                        @endphp
+
+                        <div class="mb-4" style="border:1px solid #dbeafe; border-radius:.65rem; overflow:hidden; background:#fff;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.75rem; padding:1rem 1.25rem; background:#eff6ff; border-bottom:1px solid #dbeafe;">
+                                <div>
+                                    <div style="font-size:.78rem; font-weight:700; color:#1d4ed8; text-transform:uppercase; letter-spacing:.04em;">
+                                        Finanzas Teamleader
+                                    </div>
+                                    <h3 style="font-size:1.1rem; font-weight:800; color:#111827; margin:0;">
+                                        Resumen global por proyectos
+                                    </h3>
+                                </div>
+                                @if(($teamleaderMigration['contact'] ?? null))
+                                    <span class="badge bg-primary" style="font-size:.78rem;">
+                                        {{ $tlPaymentTotals['projects'] ?? 0 }} proyecto(s)
+                                    </span>
+                                @else
+                                    <span class="badge bg-secondary" style="font-size:.78rem;">Sin contacto TL asociado</span>
+                                @endif
+                            </div>
+
+                            <div style="padding:1rem 1.25rem;">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <div style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:.55rem; padding:.85rem;">
+                                            <div class="small text-muted">Preestablecido</div>
+                                            <div style="font-size:1.15rem; font-weight:800; color:#111827;">
+                                                {{ $tlMoney($tlPaymentTotals['preestab_amount'] ?? 0) }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:.55rem; padding:.85rem;">
+                                            <div class="small text-muted">Pagado / abonado</div>
+                                            <div style="font-size:1.15rem; font-weight:800; color:#166534;">
+                                                {{ $tlMoney($tlPaymentTotals['paid_amount'] ?? 0) }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:.55rem; padding:.85rem;">
+                                            <div class="small text-muted">Saldo pendiente</div>
+                                            <div style="font-size:1.15rem; font-weight:800; color:#9a3412;">
+                                                {{ $tlMoney($tlPaymentTotals['balance_amount'] ?? 0) }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:.55rem; padding:.85rem;">
+                                            <div class="small text-muted">Sobrepago detectado</div>
+                                            <div style="font-size:1.15rem; font-weight:800; color:#991b1b;">
+                                                {{ $tlMoney($tlPaymentTotals['overpaid_amount'] ?? 0) }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @if($tlPaymentHasData)
+                                    <div class="table-responsive mt-3">
+                                        <table class="table table-sm table-hover align-middle mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Proyecto</th>
+                                                    <th>Fase</th>
+                                                    <th>Estado</th>
+                                                    <th class="text-end">Preestab</th>
+                                                    <th class="text-end">Pagado</th>
+                                                    <th class="text-end">Saldo</th>
+                                                    <th>Valor TL</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($tlPaymentRows->take(12) as $phase)
+                                                    @php
+                                                        $status = $phase['status'] ?? 'empty';
+                                                        $rawPieces = array_filter([
+                                                            trim((string) ($phase['preestab_raw'] ?? '')),
+                                                            trim((string) ($phase['paid_raw'] ?? '')),
+                                                        ]);
+                                                    @endphp
+                                                    <tr>
+                                                        <td>{{ \Illuminate\Support\Str::limit($phase['project_title'] ?? '-', 42) }}</td>
+                                                        <td>Fase {{ $phase['phase'] ?? '-' }}</td>
+                                                        <td>
+                                                            <span class="badge {{ $tlStatusClasses[$status] ?? 'bg-secondary' }}">
+                                                                {{ $tlStatusLabels[$status] ?? $status }}
+                                                            </span>
+                                                        </td>
+                                                        <td class="text-end">{{ $tlMoney($phase['effective_preestab_amount'] ?? 0) }}</td>
+                                                        <td class="text-end">{{ $tlMoney($phase['effective_paid_amount'] ?? 0) }}</td>
+                                                        <td class="text-end fw-bold {{ ((float) ($phase['balance_amount'] ?? 0)) > 0 ? 'text-danger' : 'text-success' }}">
+                                                            {{ $tlMoney($phase['balance_amount'] ?? 0) }}
+                                                        </td>
+                                                        <td class="small text-muted">{{ \Illuminate\Support\Str::limit(implode(' | ', $rawPieces), 70) ?: '-' }}</td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    @if($tlPaymentRows->count() > 12)
+                                        <div class="small text-muted mt-2">
+                                            Se muestran 12 de {{ $tlPaymentRows->count() }} fases con movimiento.
+                                        </div>
+                                    @endif
+                                @else
+                                    <div class="alert alert-light border mt-3 mb-0">
+                                        No hay montos detectados en los campos Fase 1/2/3 Preestab y Pagado de los proyectos Teamleader asociados.
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+
+                    @if($rolId !== 5)
+                        @php
+                            $tlContactMain = $teamleaderMigration['contact'] ?? null;
+                            $tlSummaryMain = $teamleaderMigration['summary'] ?? [];
+                            $tlProjectsMain = collect($teamleaderMigration['projects'] ?? []);
+                            $tlDealsMain = collect($teamleaderMigration['deals'] ?? []);
+                            $tlInvoicesMain = collect($teamleaderMigration['invoices'] ?? []);
+                            $tlDocumentsMain = collect($teamleaderMigration['documents'] ?? []);
+                            $tlMatchLabelsMain = $teamleaderMigration['match_labels'] ?? [];
+                            $canViewTeamleader = auth()->user()->can('tl.view');
+
+                            $tlAssociatedRows = collect()
+                                ->concat($tlProjectsMain->map(function ($project) use ($canViewTeamleader) {
+                                    return [
+                                        'type' => 'Proyecto',
+                                        'icon' => 'fa-project-diagram',
+                                        'name' => $project->title ?: $project->id,
+                                        'status' => $project->status ?: '-',
+                                        'amount' => $project->budget_amount ? number_format((float) $project->budget_amount, 2, ',', '.') . ' ' . ($project->budget_currency ?: 'EUR') : '-',
+                                        'meta' => $project->custom_field_value ?: '-',
+                                        'updated' => $project->tl_updated_at ?: $project->updated_at,
+                                        'url' => $canViewTeamleader ? route('teamleader.projects.show', $project->id) : null,
+                                    ];
+                                }))
+                                ->concat($tlDealsMain->map(function ($deal) {
+                                    return [
+                                        'type' => 'Deal',
+                                        'icon' => 'fa-handshake',
+                                        'name' => $deal->title ?: $deal->id,
+                                        'status' => $deal->status ?: '-',
+                                        'amount' => $deal->amount ? number_format((float) $deal->amount, 2, ',', '.') . ' ' . ($deal->currency ?: 'EUR') : '-',
+                                        'meta' => optional($deal->estimated_closing_date)->format('d/m/Y') ?: '-',
+                                        'updated' => $deal->tl_updated_at ?: $deal->updated_at,
+                                        'url' => null,
+                                    ];
+                                }))
+                                ->concat($tlInvoicesMain->map(function ($invoice) use ($canViewTeamleader) {
+                                    return [
+                                        'type' => 'Factura',
+                                        'icon' => 'fa-file-invoice-dollar',
+                                        'name' => $invoice->invoice_number ?: $invoice->id,
+                                        'status' => $invoice->status ?: '-',
+                                        'amount' => $invoice->total_price_incl_tax ? number_format((float) $invoice->total_price_incl_tax, 2, ',', '.') . ' ' . ($invoice->currency ?: 'EUR') : '-',
+                                        'meta' => optional($invoice->invoice_date)->format('d/m/Y') ?: '-',
+                                        'updated' => $invoice->tl_updated_at ?: $invoice->updated_at,
+                                        'url' => $canViewTeamleader ? route('teamleader.invoices.show', $invoice->id) : null,
+                                    ];
+                                }))
+                                ->concat($tlDocumentsMain->map(function ($document) {
+                                    return [
+                                        'type' => 'Documento',
+                                        'icon' => 'fa-file-alt',
+                                        'name' => $document->name ?: $document->id,
+                                        'status' => $document->downloaded ? 'Descargado' : 'Pendiente',
+                                        'amount' => $document->readable_size,
+                                        'meta' => $document->entity_type ?: '-',
+                                        'updated' => $document->tl_updated_at ?: $document->updated_at,
+                                        'url' => null,
+                                    ];
+                                }))
+                                ->sortByDesc(function ($row) {
+                                    return $row['updated'] ? \Illuminate\Support\Carbon::parse($row['updated'])->timestamp : 0;
+                                })
+                                ->values();
+                        @endphp
+
+                        <div class="mb-4" style="border:1px solid #e5e7eb; border-radius:.65rem; overflow:hidden; background:#fff;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.75rem; padding:1rem 1.25rem; background:#f8fafc; border-bottom:1px solid #e5e7eb;">
+                                <div>
+                                    <div style="font-size:.78rem; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:.04em;">
+                                        Registros asociados
+                                    </div>
+                                    <h3 style="font-size:1.1rem; font-weight:800; color:#111827; margin:0;">
+                                        Teamleader
+                                    </h3>
+                                </div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <span class="badge bg-secondary">{{ $tlContactMain ? 1 : 0 }} contacto</span>
+                                    <span class="badge bg-secondary">{{ $tlSummaryMain['projects'] ?? 0 }} proyecto(s)</span>
+                                    <span class="badge bg-secondary">{{ $tlSummaryMain['deals'] ?? 0 }} deal(s)</span>
+                                    <span class="badge bg-secondary">{{ $tlSummaryMain['invoices'] ?? 0 }} factura(s)</span>
+                                    <span class="badge bg-secondary">{{ $tlSummaryMain['documents'] ?? 0 }} documento(s)</span>
+                                </div>
+                            </div>
+
+                            <div style="padding:1rem 1.25rem;">
+                                @if(! $tlContactMain)
+                                    <div class="alert alert-light border mb-0">
+                                        No se encontro un contacto Teamleader asociado por ID, pasaporte o correo.
+                                    </div>
+                                @else
+                                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+                                        <div>
+                                            <div class="small text-muted">Contacto Teamleader</div>
+                                            <div style="font-size:1rem; font-weight:800; color:#111827;">
+                                                {{ $tlContactMain->full_name ?: $tlContactMain->email ?: $tlContactMain->id }}
+                                            </div>
+                                            <div class="small text-muted">
+                                                {{ $tlContactMain->email ?: 'Sin email TL' }} | ID {{ $tlContactMain->id }}
+                                            </div>
+                                        </div>
+                                        <div class="d-flex flex-wrap gap-2 align-items-center">
+                                            @foreach($tlMatchLabelsMain as $label)
+                                                <span class="badge bg-success">{{ $label }}</span>
+                                            @endforeach
+                                            @if($canViewTeamleader)
+                                                <a href="{{ route('teamleader.contacts.show', $tlContactMain->id) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-external-link-alt me-1"></i> Ver contacto TL
+                                                </a>
+                                            @endif
+                                        </div>
+                                    </div>
+
+                                    @if($tlAssociatedRows->isNotEmpty())
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-hover align-middle mb-0">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Tipo</th>
+                                                        <th>Registro</th>
+                                                        <th>Estado</th>
+                                                        <th>Monto / Tamano</th>
+                                                        <th>Dato clave</th>
+                                                        <th>Actualizado</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($tlAssociatedRows->take(12) as $row)
+                                                        <tr>
+                                                            <td>
+                                                                <span class="badge bg-light text-dark">
+                                                                    <i class="fas {{ $row['icon'] }} me-1"></i>{{ $row['type'] }}
+                                                                </span>
+                                                            </td>
+                                                            <td>{{ \Illuminate\Support\Str::limit($row['name'], 48) }}</td>
+                                                            <td>{{ $row['status'] }}</td>
+                                                            <td>{{ $row['amount'] }}</td>
+                                                            <td class="small text-muted">{{ \Illuminate\Support\Str::limit($row['meta'], 42) }}</td>
+                                                            <td class="small text-muted">
+                                                                {{ $row['updated'] ? \Illuminate\Support\Carbon::parse($row['updated'])->format('d/m/Y H:i') : '-' }}
+                                                            </td>
+                                                            <td class="text-end">
+                                                                @if($row['url'])
+                                                                    <a href="{{ $row['url'] }}" target="_blank" class="btn btn-xs btn-outline-secondary">
+                                                                        <i class="fas fa-eye"></i>
+                                                                    </a>
+                                                                @endif
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        @if($tlAssociatedRows->count() > 12)
+                                            <div class="small text-muted mt-2">
+                                                Se muestran 12 de {{ $tlAssociatedRows->count() }} registros asociados.
+                                            </div>
+                                        @endif
+                                    @else
+                                        <div class="alert alert-light border mb-0">
+                                            El contacto Teamleader fue asociado, pero no hay proyectos, deals, facturas o documentos vinculados.
+                                        </div>
+                                    @endif
+                                @endif
+                            </div>
+                        </div>
                     @endif
 
                     @if(sizeof($cosuser)>0)
@@ -1863,6 +2216,201 @@
                 </div>
 
                 @if($rolId !== 5)
+                <div class="tab-pane fade" id="teamleader-migration" role="tabpanel" aria-labelledby="teamleader-migration-tab">
+                    @php
+                        $tlContact = $teamleaderMigration['contact'] ?? null;
+                        $tlSummary = $teamleaderMigration['summary'] ?? [];
+                        $tlDeals = $teamleaderMigration['deals'] ?? collect();
+                        $tlProjects = $teamleaderMigration['projects'] ?? collect();
+                        $tlInvoices = $teamleaderMigration['invoices'] ?? collect();
+                        $tlDocuments = $teamleaderMigration['documents'] ?? collect();
+                        $tlOtherContacts = $teamleaderMigration['other_contacts'] ?? collect();
+                        $tlMatchLabels = $teamleaderMigration['match_labels'] ?? [];
+                    @endphp
+
+                    <div class="mb-3">
+                        <h3 class="text-xl font-bold text-gray-900 mb-1">Datos migrados de Teamleader</h3>
+                        <p class="text-sm text-gray-500 mb-0">Cruce de solo lectura usando ID Teamleader, pasaporte o correo del cliente.</p>
+                    </div>
+
+                    @if(! $tlContact)
+                        <div class="alert alert-warning d-flex align-items-start gap-2">
+                            <i class="fas fa-search mt-1"></i>
+                            <div>
+                                <strong>No se encontro un contacto migrado de Teamleader para este cliente.</strong>
+                                <div class="small">Se intento asociar por el ID Teamleader guardado, por pasaporte y por correo principal/alternativo.</div>
+                            </div>
+                        </div>
+                    @else
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-3">
+                                <div class="border rounded p-3 bg-light h-100">
+                                    <div class="small text-muted">Deals</div>
+                                    <div class="h4 mb-0">{{ $tlSummary['deals'] ?? 0 }}</div>
+                                    <small class="text-muted">{{ $tlSummary['open_deals'] ?? 0 }} abiertos</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="border rounded p-3 bg-light h-100">
+                                    <div class="small text-muted">Proyectos</div>
+                                    <div class="h4 mb-0">{{ $tlSummary['projects'] ?? 0 }}</div>
+                                    <small class="text-muted">{{ $tlSummary['active_projects'] ?? 0 }} activos</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="border rounded p-3 bg-light h-100">
+                                    <div class="small text-muted">Facturas</div>
+                                    <div class="h4 mb-0">{{ $tlSummary['invoices'] ?? 0 }}</div>
+                                    <small class="text-muted">{{ $tlSummary['outstanding_invoices'] ?? 0 }} pendientes/vencidas</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="border rounded p-3 bg-light h-100">
+                                    <div class="small text-muted">Total facturado</div>
+                                    <div class="h5 mb-0">{{ number_format((float) ($tlSummary['total_invoiced'] ?? 0), 2) }}</div>
+                                    <small class="text-muted">{{ $tlSummary['currency'] ?? '-' }}</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                    <div>
+                                        <h4 class="mb-1">{{ $tlContact->full_name ?: '(Sin nombre en Teamleader)' }}</h4>
+                                        <div class="text-muted small">
+                                            ID TL: <code>{{ $tlContact->id }}</code>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach($tlMatchLabels as $label)
+                                            <span class="badge bg-success">{{ $label }}</span>
+                                        @endforeach
+                                        @if(auth()->user()->can('tl.view'))
+                                            <a href="{{ route('teamleader.contacts.show', $tlContact->id) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-external-link-alt me-1"></i> Ver ficha TL
+                                            </a>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mt-2">
+                                    <div class="col-md-3"><b>Email:</b><br>{{ $tlContact->email ?: '-' }}</div>
+                                    <div class="col-md-3"><b>Telefono:</b><br>{{ $tlContact->phone ?: '-' }}</div>
+                                    <div class="col-md-3"><b>Pasaporte:</b><br>{{ $tlContact->passport ?: '-' }}</div>
+                                    <div class="col-md-3"><b>Status:</b><br>{{ $tlContact->status ?: '-' }}</div>
+                                    <div class="col-md-3"><b>Creado TL:</b><br>{{ optional($tlContact->tl_added_at)->format('d/m/Y H:i') ?: '-' }}</div>
+                                    <div class="col-md-3"><b>Actualizado TL:</b><br>{{ optional($tlContact->tl_updated_at)->format('d/m/Y H:i') ?: '-' }}</div>
+                                    <div class="col-md-3"><b>Sync local:</b><br>{{ optional($tlContact->updated_at)->format('d/m/Y H:i') ?: '-' }}</div>
+                                    <div class="col-md-3"><b>Documentos:</b><br>{{ $tlSummary['documents'] ?? 0 }}</div>
+                                </div>
+
+                                @if($tlOtherContacts->isNotEmpty())
+                                    <div class="alert alert-info mt-3 mb-0">
+                                        Tambien hay {{ $tlOtherContacts->count() }} posible(s) coincidencia(s) adicional(es) en Teamleader.
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <h5 class="fw-bold mt-4">Deals migrados</h5>
+                        <table id="tlDealsTable" class="table table-striped table-hover w-100">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Status</th>
+                                    <th>Monto</th>
+                                    <th>Cierre estimado</th>
+                                    <th>Actualizado TL</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($tlDeals as $deal)
+                                    <tr>
+                                        <td>{{ $deal->title ?: '-' }}</td>
+                                        <td>{{ $deal->status ?: '-' }}</td>
+                                        <td>{{ $deal->amount ? number_format((float) $deal->amount, 2) . ' ' . $deal->currency : '-' }}</td>
+                                        <td>{{ optional($deal->estimated_closing_date)->format('d/m/Y') ?: '-' }}</td>
+                                        <td>{{ optional($deal->tl_updated_at)->format('d/m/Y H:i') ?: '-' }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+
+                        <h5 class="fw-bold mt-4">Proyectos migrados</h5>
+                        <table id="tlProjectsTable" class="table table-striped table-hover w-100">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Status</th>
+                                    <th>Producto</th>
+                                    <th>Presupuesto</th>
+                                    <th>Vence</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($tlProjects as $project)
+                                    <tr>
+                                        <td>{{ $project->title ?: '-' }}</td>
+                                        <td>{{ $project->status ?: '-' }}</td>
+                                        <td>{{ $project->custom_field_value ?: '-' }}</td>
+                                        <td>{{ $project->budget_amount ? number_format((float) $project->budget_amount, 2) . ' ' . $project->budget_currency : '-' }}</td>
+                                        <td>{{ optional($project->due_on)->format('d/m/Y') ?: '-' }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+
+                        <h5 class="fw-bold mt-4">Facturas migradas</h5>
+                        <table id="tlInvoicesTable" class="table table-striped table-hover w-100">
+                            <thead>
+                                <tr>
+                                    <th>Numero</th>
+                                    <th>Status</th>
+                                    <th>Total</th>
+                                    <th>Fecha</th>
+                                    <th>Pagada</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($tlInvoices as $invoice)
+                                    <tr>
+                                        <td>{{ $invoice->invoice_number ?: '-' }}</td>
+                                        <td>{{ $invoice->status ?: '-' }}</td>
+                                        <td>{{ $invoice->total_price_incl_tax ? number_format((float) $invoice->total_price_incl_tax, 2) . ' ' . $invoice->currency : '-' }}</td>
+                                        <td>{{ optional($invoice->invoice_date)->format('d/m/Y') ?: '-' }}</td>
+                                        <td>{{ optional($invoice->paid_date)->format('d/m/Y') ?: '-' }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+
+                        <h5 class="fw-bold mt-4">Documentos migrados</h5>
+                        <table id="tlDocumentsTable" class="table table-striped table-hover w-100">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Entidad</th>
+                                    <th>Tipo</th>
+                                    <th>Tamano</th>
+                                    <th>Descargado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($tlDocuments as $document)
+                                    <tr>
+                                        <td>{{ \Illuminate\Support\Str::limit($document->name ?: '-', 70) }}</td>
+                                        <td>{{ $document->entity_type ?: '-' }}</td>
+                                        <td>{{ $document->extension ?: ($document->mime_type ?: '-') }}</td>
+                                        <td>{{ $document->readable_size }}</td>
+                                        <td>{{ $document->downloaded ? 'Si' : 'No' }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @endif
+                </div>
+
                 <div class="tab-pane fade" id="client-tasks" role="tabpanel" aria-labelledby="client-tasks-tab">
                     <div class="mb-3">
                         <h3 class="text-xl font-bold text-gray-900 mb-1">Tareas del cliente</h3>
@@ -2849,6 +3397,18 @@
                 "order": [[0, "desc"]]
             });
         }
+        ['#tlDealsTable', '#tlProjectsTable', '#tlInvoicesTable', '#tlDocumentsTable'].forEach(function (selector) {
+            if ($(selector).length) {
+                $(selector).DataTable({
+                    "language": {
+                        "lengthMenu": "Mostrar _MENU_ resultados por pagina",
+                        "zeroRecords": "No hay resultados",
+                        "info": "Pagina _PAGE_ de _PAGES_",
+                        "infoEmpty": "No hay resultados"
+                    }
+                });
+            }
+        });
 
         $('#btnCosReviewTask').on('click', function () {
             const button = $(this);
@@ -2904,6 +3464,120 @@
                         const message = errors.issue_description?.[0]
                             || xhr.responseJSON?.message
                             || 'No se pudo solicitar la revision del COS.';
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: message
+                        });
+                    },
+                    complete: function () {
+                        button.prop('disabled', false).css('opacity', '1');
+                        icon.removeClass('fa-spin');
+                        label.text(originalLabel);
+                    }
+                });
+            });
+        });
+
+        $('#btnNotifyCosStatus').on('click', function () {
+            const button = $(this);
+            const icon = $('#iconNotifyCosStatus');
+            const label = $('#labelNotifyCosStatus');
+            const originalLabel = label.text();
+            const clientFirstName = @json($user->nombres ?: $user->name ?: 'cliente');
+            const cosNotifyTemplates = {
+                custom: {
+                    title: 'Actualizacion de estatus de tu proceso',
+                    message: ''
+                },
+                status: {
+                    title: 'Actualizacion de estatus de tu proceso',
+                    message: `Hola ${clientFirstName},\n\nQueremos informarte que tu proceso tuvo una actualizacion de estatus. Puedes revisar el detalle desde tu cuenta.\n\nSaludos,\nEquipo Sefar`
+                },
+                documents: {
+                    title: 'Actualizacion sobre documentos',
+                    message: `Hola ${clientFirstName},\n\nTenemos una actualizacion relacionada con los documentos de tu expediente. Por favor revisa tu estatus en la plataforma para ver el detalle.\n\nSaludos,\nEquipo Sefar`
+                },
+                review: {
+                    title: 'Tu expediente esta en revision',
+                    message: `Hola ${clientFirstName},\n\nTu expediente se encuentra en revision interna. Te notificaremos cuando exista una nueva actualizacion o accion requerida.\n\nSaludos,\nEquipo Sefar`
+                },
+                payment: {
+                    title: 'Actualizacion relacionada con pagos',
+                    message: `Hola ${clientFirstName},\n\nTenemos una actualizacion relacionada con pagos o servicios de tu proceso. Puedes revisar el detalle desde tu cuenta.\n\nSaludos,\nEquipo Sefar`
+                }
+            };
+
+            Swal.fire({
+                title: 'Notificar al cliente',
+                html: `
+                    <select id="cosNotifyTemplate" class="swal2-select">
+                        <option value="custom">Mensaje personalizado</option>
+                        <option value="status">Actualizacion general</option>
+                        <option value="documents">Documentos</option>
+                        <option value="review">Expediente en revision</option>
+                        <option value="payment">Pagos o servicios</option>
+                    </select>
+                    <input id="cosNotifyTitle" class="swal2-input" placeholder="Titulo" value="Actualizacion de estatus de tu proceso">
+                    <textarea id="cosNotifyMessage" class="swal2-textarea" placeholder="Mensaje para el cliente"></textarea>
+                    <label style="display:flex;align-items:center;gap:.5rem;justify-content:center;font-size:.9rem;">
+                        <input type="checkbox" id="cosNotifyEmail" checked>
+                        Enviar tambien por correo
+                    </label>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Enviar',
+                cancelButtonText: 'Cancelar',
+                focusConfirm: false,
+                didOpen: function () {
+                    $('#cosNotifyTemplate').on('change', function () {
+                        const selectedTemplate = cosNotifyTemplates[$(this).val()] || cosNotifyTemplates.custom;
+
+                        $('#cosNotifyTitle').val(selectedTemplate.title);
+                        $('#cosNotifyMessage').val(selectedTemplate.message);
+                    });
+                },
+                preConfirm: function () {
+                    const title = ($('#cosNotifyTitle').val() || '').trim();
+                    const message = ($('#cosNotifyMessage').val() || '').trim();
+
+                    if (message.length < 10) {
+                        Swal.showValidationMessage('Escribe un mensaje de al menos 10 caracteres.');
+                        return false;
+                    }
+
+                    return {
+                        title: title,
+                        message: message,
+                        send_email: $('#cosNotifyEmail').is(':checked') ? 1 : 0
+                    };
+                }
+            }).then(function (result) {
+                if (!result.isConfirmed) return;
+
+                $.ajax({
+                    url: '{{ route("crud.users.notify-cos-status", $user) }}',
+                    type: 'POST',
+                    data: result.value,
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    beforeSend: function () {
+                        button.prop('disabled', true).css('opacity', '.75');
+                        icon.addClass('fa-spin');
+                        label.text('Enviando...');
+                    },
+                    success: function (response) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Notificacion enviada',
+                            text: response.message
+                        });
+                    },
+                    error: function (xhr) {
+                        const errors = xhr.responseJSON?.errors || {};
+                        const message = errors.message?.[0]
+                            || xhr.responseJSON?.message
+                            || 'No se pudo enviar la notificacion.';
 
                         Swal.fire({
                             icon: 'error',

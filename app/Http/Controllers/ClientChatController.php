@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\ClientChatMessage;
 use App\Models\ClientChatAttachment;
 use App\Models\User;
+use App\Notifications\ClientAppNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
@@ -98,6 +100,7 @@ class ClientChatController extends Controller
         }
 
         $message->load(['author:id,name', 'attachments']);
+        $this->notifyUnreadChatParticipants($message, $user);
 
         return response()->json([
             'message' => $this->formatMessage($message),
@@ -156,5 +159,53 @@ class ClientChatController extends Controller
         }
 
         return $bytes . ' B';
+    }
+
+    private function notifyUnreadChatParticipants(ClientChatMessage $message, User $client): void
+    {
+        try {
+            $notificationsReady = Schema::hasTable('notifications');
+        } catch (Throwable) {
+            $notificationsReady = false;
+        }
+
+        if (! $notificationsReady) {
+            return;
+        }
+
+        $recipientIds = ClientChatMessage::query()
+            ->where('client_id', $client->id)
+            ->whereNotNull('user_id')
+            ->where('user_id', '!=', auth()->id())
+            ->distinct()
+            ->pluck('user_id');
+
+        if (! empty($client->owner_id) && (int) $client->owner_id !== (int) auth()->id()) {
+            $recipientIds->push((int) $client->owner_id);
+        }
+
+        $recipients = User::query()
+            ->whereIn('id', $recipientIds->unique()->values())
+            ->whereDoesntHave('roles', fn ($query) => $query->where('name', 'Cliente'))
+            ->get();
+
+        if ($recipients->isEmpty()) {
+            return;
+        }
+
+        $preview = trim((string) $message->message);
+        $preview = $preview !== ''
+            ? Str::limit($preview, 180)
+            : 'Se adjunto un archivo al chat interno.';
+
+        foreach ($recipients as $recipient) {
+            $recipient->notify(new ClientAppNotification(
+                title: 'Nuevo mensaje interno sobre ' . ($client->name ?: "cliente #{$client->id}"),
+                body: $preview,
+                actionUrl: route('crud.users.edit', $client) . '#client-chat',
+                actionText: 'Abrir chat',
+                category: 'internal_chat',
+            ));
+        }
     }
 }

@@ -6,6 +6,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\User;
 use App\Models\Servicio;
+use App\Models\ClientChatMessage;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +24,7 @@ class UsersTable extends Component
         'filterServicio' => ['except' => ''],
         'filterContrato' => ['except' => ''],
         'filterPago' => ['except' => ''],
+        'filterChatActivity' => ['except' => ''],
         'filterRoles' => ['except' => []], // ✅ multi
     ];
 
@@ -30,6 +32,7 @@ class UsersTable extends Component
     public $filterServicio = '';
     public $filterContrato = '';
     public $filterPago = '';
+    public $filterChatActivity = '';
     public $perPage = 10;
     public $filterProveedor = '';
     public $filterOwner = '';
@@ -84,6 +87,22 @@ class UsersTable extends Component
                 'email_2', 'phone', 'pais_de_residencia', 'city', 'address',
                 'metodo_pago_preferido', 'motivo_coordinador', 'tiene_contactos_sociales',
             ])
+            ->selectSub(
+                ClientChatMessage::query()
+                    ->select('created_at')
+                    ->whereColumn('client_id', 'users.id')
+                    ->latest('created_at')
+                    ->limit(1),
+                'latest_internal_chat_at'
+            )
+            ->selectSub(
+                ClientChatMessage::query()
+                    ->select('message')
+                    ->whereColumn('client_id', 'users.id')
+                    ->latest('created_at')
+                    ->limit(1),
+                'latest_internal_chat_message'
+            )
             ->with([
                 'compras:id,id_user,servicio_hs_id,pagado',
                 'roles:id,name', // ✅ necesario para decidir botones sin queries extra
@@ -144,6 +163,15 @@ class UsersTable extends Component
         $query->when($this->filterContrato !== '', fn ($q) => $q->where('contrato', $this->filterContrato))
               ->when($this->filterPago !== '', fn ($q) => $q->where('pay', $this->filterPago));
 
+        $query->when($this->filterChatActivity === 'recent', function ($q) {
+            $q->whereExists(function ($subQuery) {
+                $subQuery
+                    ->select(DB::raw(1))
+                    ->from('client_chat_messages')
+                    ->whereColumn('client_chat_messages.client_id', 'users.id');
+            });
+        });
+
         logger()->info('AUTH roles', $rolesIds);
 
         logger()->info('PENDIENTES total', [
@@ -154,8 +182,13 @@ class UsersTable extends Component
         'count' => (clone $query)->where('estado_vendedor','Pendiente')->count()
         ]);
 
-        $users = $query->orderBy('created_at', 'DESC')
-            ->paginate($this->perPage);
+        if ($this->filterChatActivity === 'recent') {
+            $query->orderByDesc('latest_internal_chat_at');
+        } else {
+            $query->orderBy('created_at', 'DESC');
+        }
+
+        $users = $query->paginate($this->perPage);
 
         return view('livewire.crud.users-table', [
             'users' => $users,
@@ -339,6 +372,7 @@ class UsersTable extends Component
             'filterServicio',
             'filterContrato',
             'filterPago',
+            'filterChatActivity',
             'filterProveedor',
             'filterOwner',
             'filterRoles',

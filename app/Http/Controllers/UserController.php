@@ -11,6 +11,11 @@ use App\Models\Compras;
 use App\Models\Factura;
 use App\Models\CosVisit;
 use App\Models\Negocio;
+use App\Models\TlContact;
+use App\Models\TlDeal;
+use App\Models\TlDocument;
+use App\Models\TlInvoice;
+use App\Models\TlProject;
 use Illuminate\Support\Facades\Http;
 use App\Models\File;
 use App\Models\AssocTlHs;
@@ -44,11 +49,13 @@ use GuzzleHttp\Promise;
 use Carbon\Carbon;
 use App\Models\DocumentRequest;
 use App\Services\CustomerOrderStatusService;
+use App\Services\TeamleaderProjectPaymentAnalyzer;
 use Illuminate\Support\Facades\Cache;  // ← AGREGAR ESTE
 use App\Services\UserSyncService;      // ← AGREGAR ESTE
 use App\Services\GenealogyService;     // ← AGREGAR ESTE
 use App\Jobs\SyncUserDealsJob;         // ← AGREGAR ESTE
 use App\Jobs\UpdateHubspotContactJob;  // ← AGREGAR ESTE
+use App\Notifications\ClientAppNotification;
 use Illuminate\Support\Facades\Redis;
 
 class UserController extends Controller
@@ -165,6 +172,61 @@ class UserController extends Controller
             'task_id' => $task->id,
             'created' => true,
         ], 201);
+    }
+
+    public function notifyCosStatusUpdate(Request $request, User $user)
+    {
+        if (auth()->user()?->hasRole('Cliente')) {
+            abort(403, 'No tienes acceso para notificar cambios de estatus del COS.');
+        }
+
+        $data = $request->validate([
+            'title' => ['nullable', 'string', 'max:120'],
+            'message' => ['required', 'string', 'min:10', 'max:3000'],
+            'service' => ['nullable', 'string', 'max:255'],
+            'send_email' => ['nullable', 'boolean'],
+        ]);
+
+        $notificationsReady = false;
+        try {
+            $notificationsReady = Schema::hasTable('notifications');
+        } catch (\Throwable) {
+            $notificationsReady = false;
+        }
+
+        $sendEmail = $request->boolean('send_email', true);
+
+        if (! $notificationsReady && ! $sendEmail) {
+            return response()->json([
+                'message' => 'La notificacion interna aun no esta activa. Marca el envio por correo o ejecuta la migracion mas adelante.',
+            ], 422);
+        }
+
+        $title = trim((string) ($data['title'] ?? ''));
+        $title = $title !== '' ? $title : 'Actualizacion de estatus de tu proceso';
+
+        $message = trim($data['message']);
+        $service = trim((string) ($data['service'] ?? ''));
+
+        if ($service !== '') {
+            $message = "Servicio: {$service}\n\n{$message}";
+        }
+
+        $user->notify(new ClientAppNotification(
+            title: $title,
+            body: $message,
+            actionUrl: route('clientes.status'),
+            actionText: 'Ver mi estatus',
+            category: 'cos_status',
+            sendEmail: $sendEmail,
+            storeInApp: $notificationsReady,
+        ));
+
+        return response()->json([
+            'message' => $notificationsReady
+                ? 'Notificacion enviada al cliente.'
+                : 'Notificacion enviada por correo. La campana interna quedara disponible cuando exista la tabla de notificaciones.',
+        ]);
     }
 
     /**
@@ -1831,6 +1893,10 @@ class UserController extends Controller
         ->limit(100)
         ->get();
 
+    $teamleaderMigration = $this->getTeamleaderMigrationData($user);
+    $teamleaderProjectPayments = app(TeamleaderProjectPaymentAnalyzer::class)
+        ->analyzeProjects($teamleaderMigration['projects'] ?? collect());
+
     // ==========================================
     // PREPARAR DATOS PARA VISTA
     // ==========================================
@@ -1951,6 +2017,8 @@ class UserController extends Controller
         'facturas',
         'clientTasks',
         'clientChatMessages',
+        'teamleaderMigration',
+        'teamleaderProjectPayments',
         'servicios',
         'columnasparatabla'
     ))->render();
@@ -1961,6 +2029,195 @@ class UserController extends Controller
 // ==========================================
 // MÉTODOS AUXILIARES
 // ==========================================
+
+private function getTeamleaderMigrationData(User $user): array
+{
+    $matches = collect();
+
+    $rememberMatch = function (?TlContact $contact, string $reason, int $priority) use (&$matches): void {
+        if (! $contact) {
+            return;
+        }
+
+        $key = (string) $contact->getKey();
+        $existing = $matches->get($key, [
+            'contact' => $contact,
+            'reasons' => [],
+            'priority' => 0,
+        ]);
+
+        $existing['reasons'][] = $reason;
+        $existing['reasons'] = array_values(array_unique($existing['reasons']));
+        $existing['priority'] = max($existing['priority'], $priority);
+
+        $matches->put($key, $existing);
+    };
+
+    if (filled($user->tl_id)) {
+        $rememberMatch(
+            TlContact::query()->find((string) $user->tl_id),
+            'ID Teamleader guardado en el usuario',
+            100
+        );
+    }
+
+    $passport = $this->normalizeTeamleaderMatchValue($user->passport);
+    if ($passport !== '') {
+        TlContact::query()
+            ->whereRaw('LOWER(TRIM(passport)) = ?', [$passport])
+            ->get()
+            ->each(fn (TlContact $contact) => $rememberMatch($contact, 'Pasaporte', 80));
+    }
+
+    $emails = collect([
+            $user->email,
+            $user->email_2 ?? null,
+            $user->email_alternativo ?? null,
+        ])
+        ->map(fn ($email) => $this->normalizeTeamleaderMatchValue($email))
+        ->filter()
+        ->unique()
+        ->values();
+
+    if ($emails->isNotEmpty()) {
+        TlContact::query()
+            ->whereIn(DB::raw('LOWER(TRIM(email))'), $emails->all())
+            ->get()
+            ->each(fn (TlContact $contact) => $rememberMatch($contact, 'Correo', 70));
+    }
+
+    $orderedMatches = $matches
+        ->sortByDesc('priority')
+        ->values();
+
+    $selected = $orderedMatches->first();
+    $contact = $selected['contact'] ?? null;
+
+    if (! $contact) {
+        return [
+            'contact' => null,
+            'match_labels' => [],
+            'other_contacts' => collect(),
+            'deals' => collect(),
+            'projects' => collect(),
+            'invoices' => collect(),
+            'documents' => collect(),
+            'summary' => [
+                'contacts' => 0,
+                'deals' => 0,
+                'projects' => 0,
+                'invoices' => 0,
+                'documents' => 0,
+                'open_deals' => 0,
+                'active_projects' => 0,
+                'outstanding_invoices' => 0,
+                'total_invoiced' => 0,
+                'currency' => null,
+            ],
+        ];
+    }
+
+    $deals = TlDeal::query()
+        ->where('customer_type', 'contact')
+        ->where('customer_id', $contact->id)
+        ->orderByDesc('tl_updated_at')
+        ->orderByDesc('tl_created_at')
+        ->get();
+
+    $projects = TlProject::query()
+        ->where('customer_type', 'contact')
+        ->where('customer_id', $contact->id)
+        ->orderByDesc('tl_updated_at')
+        ->orderByDesc('tl_created_at')
+        ->get();
+
+    $dealIds = $deals->pluck('id')->filter()->values();
+    $projectIds = $projects->pluck('id')->filter()->values();
+
+    $invoices = TlInvoice::query()
+        ->where(function ($query) use ($contact, $dealIds, $projectIds) {
+            $query->where(function ($subQuery) use ($contact) {
+                $subQuery
+                    ->where('customer_type', 'contact')
+                    ->where('customer_id', $contact->id);
+            });
+
+            if ($dealIds->isNotEmpty()) {
+                $query->orWhereIn('deal_id', $dealIds->all());
+            }
+
+            if ($projectIds->isNotEmpty()) {
+                $query->orWhereIn('project_id', $projectIds->all());
+            }
+        })
+        ->orderByDesc('invoice_date')
+        ->orderByDesc('tl_created_at')
+        ->get()
+        ->unique('id')
+        ->values();
+
+    $documents = TlDocument::query()
+        ->where(function ($query) use ($contact, $dealIds, $projectIds) {
+            $query->where(function ($subQuery) use ($contact) {
+                $subQuery
+                    ->where('entity_type', 'contact')
+                    ->where('entity_id', $contact->id);
+            });
+
+            if ($dealIds->isNotEmpty()) {
+                $query->orWhere(function ($subQuery) use ($dealIds) {
+                    $subQuery
+                        ->where('entity_type', 'deal')
+                        ->whereIn('entity_id', $dealIds->all());
+                });
+            }
+
+            if ($projectIds->isNotEmpty()) {
+                $query->orWhere(function ($subQuery) use ($projectIds) {
+                    $subQuery
+                        ->where('entity_type', 'project')
+                        ->whereIn('entity_id', $projectIds->all());
+                });
+            }
+        })
+        ->orderByDesc('tl_created_at')
+        ->limit(100)
+        ->get();
+
+    $currency = $invoices->pluck('currency')->filter()->first()
+        ?: $deals->pluck('currency')->filter()->first()
+        ?: $projects->pluck('budget_currency')->filter()->first();
+
+    return [
+        'contact' => $contact,
+        'match_labels' => $selected['reasons'] ?? [],
+        'other_contacts' => $orderedMatches
+            ->skip(1)
+            ->map(fn ($match) => $match['contact'])
+            ->values(),
+        'deals' => $deals,
+        'projects' => $projects,
+        'invoices' => $invoices,
+        'documents' => $documents,
+        'summary' => [
+            'contacts' => $orderedMatches->count(),
+            'deals' => $deals->count(),
+            'projects' => $projects->count(),
+            'invoices' => $invoices->count(),
+            'documents' => $documents->count(),
+            'open_deals' => $deals->where('status', 'open')->count(),
+            'active_projects' => $projects->where('status', 'active')->count(),
+            'outstanding_invoices' => $invoices->whereIn('status', ['outstanding', 'late'])->count(),
+            'total_invoiced' => $invoices->sum(fn (TlInvoice $invoice) => (float) $invoice->total_price_incl_tax),
+            'currency' => $currency,
+        ],
+    ];
+}
+
+private function normalizeTeamleaderMatchValue(?string $value): string
+{
+    return mb_strtolower(trim((string) $value));
+}
 
 private function getMondayDataCached(User $user): array
 {
