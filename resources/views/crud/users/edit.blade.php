@@ -882,7 +882,7 @@
                                     @endif
 
                                     {{-- ══ PANEL VENDEDOR (roles 2,3,4 — NO 1 ni 5) ══ --}}
-                                    @if($rolId !== 1 && $rolId !== 5)
+                                    @if($rolId !== 5)
                                     <div class="accordion mb-3" id="vendedorAccordion{{ $index }}">
                                         <div class="accordion-item" style="border:1px solid #e2e8f0; border-radius:.6rem; overflow:hidden;">
 
