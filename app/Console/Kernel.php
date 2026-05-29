@@ -29,7 +29,6 @@ class Kernel extends ConsoleKernel
         $schedule->command('send:monthreport')->monthlyOn(1, '12:00')->timezone('UTC');
         $schedule->command('send:yearreport')->yearlyOn(1, 1, '12:00')->timezone('UTC');
         $schedule->command('app:actualizar-y-limpiar')->everyMinute()->timezone('UTC');
-        $schedule->command('jotform:obtener-datos 242624572998370')->everyMinute()->timezone('UTC');
         $schedule->command('teamleader:refresh-token')->everyMinute()->timezone('UTC');
         $schedule->command('chat:clean-expired')->everyFiveMinutes();
         $schedule->command('followups:registration-payment')
