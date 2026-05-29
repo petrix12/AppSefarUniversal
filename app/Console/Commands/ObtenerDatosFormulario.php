@@ -23,12 +23,12 @@ class ObtenerDatosFormulario extends Command
             $submissions = JotForm::getFormSubmissions($formId);
         } catch (\Exception $e) {
             $this->error('Error al obtener submissions: ' . $e->getMessage());
-            return self::FAILURE;
+            return;
         }
 
         if (empty($submissions)) {
             $this->info('No hay submissions para procesar.');
-            return self::SUCCESS;
+            return;
         }
 
         foreach ($submissions as $submissionData) {
@@ -112,7 +112,5 @@ class ObtenerDatosFormulario extends Command
         }
 
         $this->info('Proceso completado.');
-
-        return self::SUCCESS;
     }
 }
