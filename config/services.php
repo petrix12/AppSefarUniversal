@@ -46,6 +46,10 @@ return [
         'webhook_token' => env('N8N_WEBHOOK_TOKEN'),
     ],
 
+    'jotform' => [
+        'cron_token' => env('JOTFORM_CRON_TOKEN'),
+    ],
+
     'tasks_daily_workflow' => [
         'token' => env('TASKS_DAILY_WORKFLOW_TOKEN'),
     ],

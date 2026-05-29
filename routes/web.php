@@ -76,6 +76,7 @@ use App\Http\Controllers\ExternalClientImportController;
 use App\Http\Controllers\TeamleaderCronController;
 use App\Http\Controllers\TeamleaderJobController;
 use App\Http\Controllers\TaskCronController;
+use App\Http\Controllers\JotformCouponCronController;
 
 Route::get('/internal/tasks/daily-workflow', InternalTaskWorkflowController::class)
     ->name('internal.tasks.daily-workflow');
@@ -96,6 +97,9 @@ Route::prefix('cron/tasks')
         Route::get('/work', [TaskCronController::class, 'work'])
             ->name('work');
     });
+
+Route::get('/cron/jotform/coupons', JotformCouponCronController::class)
+    ->name('cron.jotform.coupons');
 
 Route::post('/users/{user}/sync-deals', [UserSyncController::class, 'sync'])
     ->name('users.sync-deals')
