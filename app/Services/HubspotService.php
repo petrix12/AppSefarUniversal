@@ -901,7 +901,7 @@ class HubspotService
     private function tryAddFileUrl(array &$fileUrls, string $fileId, $hubspot)
     {
         try {
-            $fileDetails = $hubspot->crm()->files()->filesApi()->getById($fileId);
+            $fileDetails = $hubspot->files()->filesApi()->getById($fileId);
 
             // Filtra sólo los que tengan 'access' público
             if (
