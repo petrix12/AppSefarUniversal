@@ -5,6 +5,35 @@
   <div class="alert alert-success">{{ session('success') }}</div>
 @endif
 
+@if(session('sync_conflict'))
+  @php($conflict = session('sync_conflict'))
+  <div class="alert alert-warning">
+    <strong>Conflicto de sincronizacion.</strong>
+    <div>{{ $conflict['message'] ?? 'Revisa los datos antes de continuar.' }}</div>
+
+    @if(!empty($conflict['conflicting_user']))
+      <div class="mt-2">
+        El dato en conflicto ya esta asociado a:
+        <a href="{{ route('crud.users.editBasic', $conflict['conflicting_user']['id']) }}">
+          #{{ $conflict['conflicting_user']['id'] }}
+          {{ $conflict['conflicting_user']['nombres'] ?? '' }}
+          {{ $conflict['conflicting_user']['apellidos'] ?? '' }}
+        </a>
+        ({{ $conflict['conflicting_user']['email'] ?? 'sin email' }}).
+      </div>
+    @endif
+
+    @if(!empty($conflict['updates_to_db']))
+      <div class="mt-2 small">
+        Valores sugeridos por HubSpot:
+        @foreach($conflict['updates_to_db'] as $field => $value)
+          <span class="badge badge-light border mr-1">{{ $field }}: {{ is_scalar($value) ? $value : json_encode($value) }}</span>
+        @endforeach
+      </div>
+    @endif
+  </div>
+@endif
+
 <div class="card">
   <div class="card-header">
     <div class="d-flex justify-content-between align-items-center">
@@ -62,6 +91,18 @@
             @error('passport')
                 <small class="text-danger">{{ $message }}</small>
             @enderror
+        </div>
+
+        <div class="col-md-6 mt-3">
+          <label>HubSpot ID</label>
+          <input class="form-control" name="hs_id" value="{{ old('hs_id', $user->hs_id) }}">
+          @error('hs_id') <small class="text-danger">{{ $message }}</small> @enderror
+        </div>
+
+        <div class="col-md-6 mt-3">
+          <label>Teamleader ID</label>
+          <input class="form-control" name="tl_id" value="{{ old('tl_id', $user->tl_id) }}">
+          @error('tl_id') <small class="text-danger">{{ $message }}</small> @enderror
         </div>
 
         <div class="col-md-6 mt-3">

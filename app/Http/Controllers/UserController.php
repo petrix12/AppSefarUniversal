@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Agcliente;
 use Illuminate\Http\Request;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
@@ -1777,7 +1778,42 @@ class UserController extends Controller
         foreach ($fieldUpdates['updatesToDB'] as $field => $value) {
             $user->{$field} = $value;
         }
-        $user->save();
+
+        try {
+            $user->save();
+        } catch (UniqueConstraintViolationException $e) {
+            if (! $this->isAdminUser()) {
+                throw $e;
+            }
+
+            $emailConflict = $fieldUpdates['updatesToDB']['email'] ?? null;
+            $conflictingUser = $emailConflict
+                ? User::where('email', $emailConflict)->whereKeyNot($user->id)->first()
+                : null;
+
+            Log::warning('Conflicto de sincronizacion HubSpot -> DB al abrir usuario', [
+                'user_id' => $user->id,
+                'updates_to_db' => $fieldUpdates['updatesToDB'],
+                'conflicting_user_id' => $conflictingUser?->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()
+                ->route('crud.users.editBasic', $user->id)
+                ->with('sync_conflict', [
+                    'message' => 'La sincronizacion encontro datos que chocan con otro usuario. Verifica y guarda los datos correctos manualmente.',
+                    'updates_to_db' => $fieldUpdates['updatesToDB'],
+                    'conflicting_user' => $conflictingUser ? [
+                        'id' => $conflictingUser->id,
+                        'nombres' => $conflictingUser->nombres,
+                        'apellidos' => $conflictingUser->apellidos,
+                        'email' => $conflictingUser->email,
+                        'passport' => $conflictingUser->passport,
+                        'hs_id' => $conflictingUser->hs_id,
+                        'tl_id' => $conflictingUser->tl_id,
+                    ] : null,
+                ]);
+        }
 
         Log::info("Usuario actualizado desde HubSpot", [
             'user_id' => $user->id,
@@ -3153,7 +3189,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
 
     public function editBasic(User $user)
     {
-        //$this->authorizeAdminOnly();
+        $this->authorizeAdminOnly();
 
         // Roles/Permisos disponibles
         $roles = Role::orderBy('name')->get();
@@ -3183,6 +3219,8 @@ private function removeDuplicatesAndSort(array $cosuser): array
             'apellidos' => 'required|string|max:255',
             'email'     => 'required|email|unique:users,email,' . $user->id,
             'phone'     => 'required|string|max:25',
+            'hs_id'     => 'nullable|string|max:255',
+            'tl_id'     => 'nullable|string|max:255',
 
             // Password opcional
             'password'  => 'nullable|string|min:8|confirmed',
@@ -3202,6 +3240,8 @@ private function removeDuplicatesAndSort(array $cosuser): array
         $user->email     = $request->email;
         $user->phone     = $request->phone;
         $user->passport  = $request->passport;
+        $user->hs_id     = $request->filled('hs_id') ? $request->hs_id : null;
+        $user->tl_id     = $request->filled('tl_id') ? $request->tl_id : null;
 
         if ($request->filled('password')) {
             $user->password = bcrypt($request->password);
@@ -3230,12 +3270,19 @@ private function removeDuplicatesAndSort(array $cosuser): array
      */
     private function authorizeAdminOnly(): void
     {
-        abort_unless(auth()->check(), 401);
+        abort_unless($this->isAdminUser(), 403);
+    }
 
-        // Ajusta estos nombres al que tengas en tu BD
+    private function isAdminUser(): bool
+    {
+        if (! auth()->check()) {
+            return false;
+        }
+
         $allowed = ['Administrador', 'Admin', 'Super Admin', 'SuperAdmin'];
 
-        abort_unless(auth()->user()->hasAnyRole($allowed), 403);
+        return auth()->user()->can('administrador')
+            || auth()->user()->hasAnyRole($allowed);
     }
 
 }
