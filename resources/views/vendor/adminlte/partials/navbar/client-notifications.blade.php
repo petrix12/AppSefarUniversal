@@ -20,10 +20,9 @@
     }
 @endphp
 
-@if($notificationsReady)
-    <li class="nav-item dropdown">
-        <a class="nav-link" data-toggle="dropdown" href="#" aria-label="Notificaciones">
-            <i class="far fa-bell"></i>
+    <li class="nav-item dropdown" id="appNotificationsMenu">
+        <a class="nav-link text-white" data-toggle="dropdown" href="#" aria-label="Notificaciones" style="color:#fff !important;">
+            <i class="far fa-bell fa-lg"></i>
             @if($unreadCount > 0)
                 <span class="badge badge-warning navbar-badge">{{ $unreadCount }}</span>
             @endif
@@ -35,6 +34,12 @@
             </span>
             <div class="dropdown-divider"></div>
 
+            @if(!$notificationsReady)
+                <a href="{{ route('notifications.index') }}" class="dropdown-item text-muted text-center py-3">
+                    Notificaciones pendientes de activar
+                </a>
+                <div class="dropdown-divider"></div>
+            @else
             @forelse($latestNotifications as $notification)
                 @php
                     $data = $notification->data ?? [];
@@ -62,10 +67,21 @@
                 <span class="dropdown-item text-muted text-center py-3">Sin notificaciones</span>
                 <div class="dropdown-divider"></div>
             @endforelse
+            @endif
 
             <a href="{{ route('notifications.index') }}" class="dropdown-item dropdown-footer">
                 Ver todas
             </a>
         </div>
     </li>
-@endif
+
+@once
+    <style>
+        #appNotificationsMenu > .nav-link,
+        #appNotificationsMenu > .nav-link:hover,
+        #appNotificationsMenu > .nav-link:focus,
+        #appNotificationsMenu > .nav-link:active {
+            color: #fff !important;
+        }
+    </style>
+@endonce

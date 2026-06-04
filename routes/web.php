@@ -364,6 +364,9 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
     Route::get('users/{user}/internal-chat', [ClientChatController::class, 'messages'])
             ->name('users.internal-chat.index')
             ->middleware('can:crud.users.index');
+    Route::get('users/{user}/internal-chat/mentions', [ClientChatController::class, 'mentionableUsers'])
+            ->name('users.internal-chat.mentions')
+            ->middleware('can:crud.users.index');
     Route::post('users/{user}/internal-chat', [ClientChatController::class, 'storeMessage'])
             ->name('users.internal-chat.store')
             ->middleware('can:crud.users.index');

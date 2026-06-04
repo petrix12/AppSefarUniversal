@@ -35,6 +35,32 @@ class ClientChatController extends Controller
         ]);
     }
 
+    public function mentionableUsers(Request $request, User $user): JsonResponse
+    {
+        $this->authorizeChatAccess();
+
+        $search = trim((string) $request->query('q', ''));
+
+        $users = User::query()
+            ->select(['id', 'name', 'email'])
+            ->whereKeyNot(auth()->id())
+            ->whereDoesntHave('roles', fn ($query) => $query->where('name', 'Cliente'))
+            ->when($search !== '', function ($query) use ($search) {
+                $like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $search) . '%';
+
+                $query->where(function ($query) use ($like) {
+                    $query->where('name', 'like', $like)
+                        ->orWhere('email', 'like', $like);
+                });
+            })
+            ->orderByRaw('CASE WHEN name LIKE ? THEN 0 ELSE 1 END', [$search . '%'])
+            ->orderBy('name')
+            ->limit(10)
+            ->get();
+
+        return response()->json(['users' => $users]);
+    }
+
     public function storeMessage(Request $request, User $user): JsonResponse
     {
         $this->authorizeChatAccess();
@@ -43,6 +69,8 @@ class ClientChatController extends Controller
             'message' => 'nullable|string|max:2000',
             'attachments' => 'nullable|array|max:5',
             'attachments.*' => 'file|max:20480',
+            'mentioned_user_ids' => 'nullable|array|max:20',
+            'mentioned_user_ids.*' => 'integer|distinct|exists:users,id',
         ], [
             'attachments.max' => 'Puedes subir hasta 5 archivos por mensaje.',
             'attachments.*.file' => 'Uno de los adjuntos no es un archivo valido.',
@@ -100,7 +128,13 @@ class ClientChatController extends Controller
         }
 
         $message->load(['author:id,name', 'attachments']);
-        $this->notifyUnreadChatParticipants($message, $user);
+        $mentionedUserIds = User::query()
+            ->whereIn('id', $data['mentioned_user_ids'] ?? [])
+            ->whereKeyNot(auth()->id())
+            ->whereDoesntHave('roles', fn ($query) => $query->where('name', 'Cliente'))
+            ->pluck('id');
+
+        $this->notifyUnreadChatParticipants($message, $user, $mentionedUserIds);
 
         return response()->json([
             'message' => $this->formatMessage($message),
@@ -161,7 +195,7 @@ class ClientChatController extends Controller
         return $bytes . ' B';
     }
 
-    private function notifyUnreadChatParticipants(ClientChatMessage $message, User $client): void
+    private function notifyUnreadChatParticipants(ClientChatMessage $message, User $client, $mentionedUserIds): void
     {
         try {
             $notificationsReady = Schema::hasTable('notifications');
@@ -184,6 +218,8 @@ class ClientChatController extends Controller
             $recipientIds->push((int) $client->owner_id);
         }
 
+        $recipientIds = $recipientIds->merge($mentionedUserIds);
+
         $recipients = User::query()
             ->whereIn('id', $recipientIds->unique()->values())
             ->whereDoesntHave('roles', fn ($query) => $query->where('name', 'Cliente'))
@@ -199,8 +235,11 @@ class ClientChatController extends Controller
             : 'Se adjunto un archivo al chat interno.';
 
         foreach ($recipients as $recipient) {
+            $wasMentioned = $mentionedUserIds->contains($recipient->id);
+
             $recipient->notify(new ClientAppNotification(
-                title: 'Nuevo mensaje interno sobre ' . ($client->name ?: "cliente #{$client->id}"),
+                title: ($wasMentioned ? 'Te mencionaron en el chat de ' : 'Nuevo mensaje interno sobre ')
+                    . ($client->name ?: "cliente #{$client->id}"),
                 body: $preview,
                 actionUrl: route('crud.users.edit', $client) . '#client-chat',
                 actionText: 'Abrir chat',

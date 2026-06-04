@@ -2524,7 +2524,11 @@
                         <form id="clientInternalChatForm" class="mt-3">
                             @csrf
                             <label class="form-label fw-bold">Nuevo mensaje interno</label>
-                            <textarea id="clientInternalChatInput" class="form-control" rows="3" maxlength="2000" placeholder="Escribe una nota interna sobre este cliente..."></textarea>
+                            <div class="position-relative">
+                                <textarea id="clientInternalChatInput" class="form-control" rows="3" maxlength="2000" placeholder="Escribe una nota interna. Usa @ para mencionar a alguien..."></textarea>
+                                <div id="clientInternalChatMentions" class="list-group position-absolute w-100 d-none shadow" style="z-index:1050; max-height:240px; overflow-y:auto;"></div>
+                            </div>
+                            <small class="text-muted">Escribe @ y parte del nombre o correo para mencionar a un usuario interno.</small>
                             <label class="form-label fw-bold mt-2">Adjuntos</label>
                             <input id="clientInternalChatFiles" type="file" class="form-control" multiple>
                             <small class="text-muted">Puedes subir hasta 5 archivos por mensaje. Maximo 20 MB por archivo.</small>
@@ -3600,10 +3604,15 @@
         const chatFiles = $('#clientInternalChatFiles');
         const chatTab = $('#client-chat-tab');
         const chatBadge = $('#clientInternalChatBadge');
+        const chatMentions = $('#clientInternalChatMentions');
         const originalDocumentTitle = document.title;
         let lastClientChatId = 0;
         let unreadClientChatMessages = 0;
         let clientChatLoading = false;
+        let mentionSearchTimer = null;
+        let mentionResults = [];
+        let activeMentionIndex = 0;
+        let mentionedUserIds = new Set();
 
         function escapeHtml(value) {
             return $('<div>').text(value || '').html();
@@ -3612,6 +3621,106 @@
         function isClientChatActive() {
             return chatTab.hasClass('active') || $('#client-chat').hasClass('active');
         }
+
+        function currentMentionQuery() {
+            const input = chatInput[0];
+            if (!input) return null;
+
+            const beforeCursor = input.value.slice(0, input.selectionStart);
+            const match = beforeCursor.match(/(^|\s)@([^\s@]*)$/);
+
+            if (!match) return null;
+
+            return {
+                query: match[2],
+                start: input.selectionStart - match[2].length - 1,
+                end: input.selectionStart
+            };
+        }
+
+        function closeMentionResults() {
+            mentionResults = [];
+            activeMentionIndex = 0;
+            chatMentions.empty().addClass('d-none');
+        }
+
+        function renderMentionResults(users) {
+            mentionResults = users || [];
+            activeMentionIndex = 0;
+
+            if (!mentionResults.length) {
+                chatMentions.html('<div class="list-group-item text-muted">Sin resultados</div>').removeClass('d-none');
+                return;
+            }
+
+            chatMentions.html(mentionResults.map(function (user, index) {
+                return `
+                    <button type="button" class="list-group-item list-group-item-action mention-result ${index === 0 ? 'active' : ''}" data-index="${index}">
+                        <b>${escapeHtml(user.name)}</b>
+                        <small class="d-block ${index === 0 ? 'text-white' : 'text-muted'}">${escapeHtml(user.email)}</small>
+                    </button>
+                `;
+            }).join('')).removeClass('d-none');
+        }
+
+        function highlightMentionResult() {
+            chatMentions.find('.mention-result').removeClass('active').find('small').removeClass('text-white').addClass('text-muted');
+            const active = chatMentions.find(`.mention-result[data-index="${activeMentionIndex}"]`);
+            active.addClass('active').find('small').removeClass('text-muted').addClass('text-white');
+        }
+
+        function selectMention(user) {
+            const mention = currentMentionQuery();
+            if (!mention || !user) return;
+
+            const input = chatInput[0];
+            const label = '@' + user.name.replace(/\s+/g, ' ').trim();
+            input.value = input.value.slice(0, mention.start) + label + ' ' + input.value.slice(mention.end);
+            const cursor = mention.start + label.length + 1;
+            input.setSelectionRange(cursor, cursor);
+            mentionedUserIds.add(parseInt(user.id, 10));
+            closeMentionResults();
+            input.focus();
+        }
+
+        chatInput.on('input', function () {
+            clearTimeout(mentionSearchTimer);
+            const mention = currentMentionQuery();
+
+            if (!mention) {
+                closeMentionResults();
+                return;
+            }
+
+            mentionSearchTimer = setTimeout(function () {
+                $.get('{{ route("crud.users.internal-chat.mentions", $user) }}', { q: mention.query })
+                    .done(function (response) {
+                        if (currentMentionQuery()) renderMentionResults(response.users || []);
+                    });
+            }, 180);
+        });
+
+        chatInput.on('keydown', function (event) {
+            if (chatMentions.hasClass('d-none') || !mentionResults.length) return;
+
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                activeMentionIndex = event.key === 'ArrowDown'
+                    ? (activeMentionIndex + 1) % mentionResults.length
+                    : (activeMentionIndex - 1 + mentionResults.length) % mentionResults.length;
+                highlightMentionResult();
+            } else if (event.key === 'Enter' || event.key === 'Tab') {
+                event.preventDefault();
+                selectMention(mentionResults[activeMentionIndex]);
+            } else if (event.key === 'Escape') {
+                closeMentionResults();
+            }
+        });
+
+        chatMentions.on('mousedown', '.mention-result', function (event) {
+            event.preventDefault();
+            selectMention(mentionResults[parseInt($(this).data('index'), 10)]);
+        });
 
         function setClientChatUnread(count) {
             unreadClientChatMessages = Math.max(0, count);
@@ -3760,6 +3869,9 @@
 
             const formData = new FormData();
             formData.append('message', message);
+            mentionedUserIds.forEach(function (userId) {
+                formData.append('mentioned_user_ids[]', userId);
+            });
             selectedFiles.forEach(function (file) {
                 formData.append('attachments[]', file);
             });
@@ -3777,6 +3889,8 @@
                 success: function (response) {
                     chatInput.val('');
                     chatFiles.val('');
+                    mentionedUserIds.clear();
+                    closeMentionResults();
                     appendClientChatMessage(response.message, { notify: false });
                 },
                 error: function (xhr) {
