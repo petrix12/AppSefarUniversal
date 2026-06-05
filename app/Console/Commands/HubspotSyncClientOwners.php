@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
+use Illuminate\Support\Facades\Schema;
 use HubSpot\Factory;
 use HubSpot\Client\Crm\Contacts\Model\Filter;
 use HubSpot\Client\Crm\Contacts\Model\FilterGroup;
@@ -120,6 +121,7 @@ class HubspotSyncClientOwners extends Command
                             'key' => $email,
                             'old_owner_id' => $client->owner_id,
                             'new_owner_id' => $advisorUserId,
+                            'new_hubspot_owner_id' => $hsOwnerId,
                         ];
                     }
                 }
@@ -155,6 +157,7 @@ class HubspotSyncClientOwners extends Command
                             'key' => $hsId,
                             'old_owner_id' => $client->owner_id,
                             'new_owner_id' => $advisorUserId,
+                            'new_hubspot_owner_id' => $hsOwnerId,
                         ];
                     }
                 }
@@ -188,7 +191,7 @@ class HubspotSyncClientOwners extends Command
                             $q->whereNull('owner_id')
                               ->orWhere('owner_id', '!=', $row['new_owner_id']);
                         })
-                        ->update(['owner_id' => $row['new_owner_id']]);
+                        ->update($this->ownerUpdateAttributes((int) $row['new_owner_id'], (string) $row['new_hubspot_owner_id']));
 
                     $totalUpdates += $affected;
                 }
@@ -249,5 +252,28 @@ class HubspotSyncClientOwners extends Command
         } while (!is_null($after));
 
         return $all;
+    }
+
+    private function ownerUpdateAttributes(int $advisorId, string $hubspotOwnerId): array
+    {
+        $attributes = ['owner_id' => $advisorId];
+
+        if (Schema::hasColumn('users', 'last_task_reassigned_at')) {
+            $attributes['last_task_reassigned_at'] = now();
+        }
+
+        if (Schema::hasColumn('users', 'task_reassignment_locked_at')) {
+            $attributes['task_reassignment_locked_at'] = now();
+        }
+
+        if (Schema::hasColumn('users', 'task_reassignment_locked_owner_id')) {
+            $attributes['task_reassignment_locked_owner_id'] = $advisorId;
+        }
+
+        if (Schema::hasColumn('users', 'task_reassignment_locked_hubspot_owner_id')) {
+            $attributes['task_reassignment_locked_hubspot_owner_id'] = $hubspotOwnerId;
+        }
+
+        return $attributes;
     }
 }

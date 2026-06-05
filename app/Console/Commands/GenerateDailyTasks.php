@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\Schema;
 class GenerateDailyTasks extends Command
 {
     private ?bool $userReassignmentColumnExists = null;
+    private ?bool $reassignmentLockColumnExists = null;
+    private array $hubspotOwnerCache = [];
 
     protected $signature = 'tasks:generate-daily
         {--date=      : Fecha Y-m-d (defecto: hoy)}
@@ -77,6 +79,8 @@ class GenerateDailyTasks extends Command
             return self::FAILURE;
         }
 
+        $advisorsByHubspotOwnerId = $advisors->keyBy(fn ($advisor) => (string) $advisor->hs_owner_id);
+
         if (! $skipListCleanup) {
             $this->markContactsThatShouldLeaveReassignmentLists($markContacted, $dryRun);
         }
@@ -95,6 +99,12 @@ class GenerateDailyTasks extends Command
 
         if ($this->userReassignmentColumnExists()) {
             $contactColumns[] = 'u.last_task_reassigned_at';
+        }
+
+        if ($this->reassignmentLockColumnExists()) {
+            $contactColumns[] = 'u.task_reassignment_locked_at';
+            $contactColumns[] = 'u.task_reassignment_locked_owner_id';
+            $contactColumns[] = 'u.task_reassignment_locked_hubspot_owner_id';
         }
 
         $contacts = DB::table('list_user as lu')
@@ -243,7 +253,7 @@ class GenerateDailyTasks extends Command
                 ->shuffle()
                 ->concat($localOnlyCandidates->shuffle())
                 ->values()
-                ->take($toCreate);
+                ->take(max($toCreate * 3, $toCreate));
 
             if ($candidates->isEmpty()) {
                 $this->warn("   ↳ Sin candidatos disponibles.");
@@ -251,38 +261,34 @@ class GenerateDailyTasks extends Command
             }
 
             foreach ($candidates as $contact) {
+                if (count($createdTaskIds) >= $toCreate) {
+                    break;
+                }
+
+                if (! $this->contactBelongsToAdvisorInHubspot(
+                    $hubspot,
+                    $contact,
+                    $advisor,
+                    $advisorsByHubspotOwnerId,
+                    $dryRun
+                )) {
+                    continue;
+                }
+
                 $previousOwner = $contact->owner_id ?? 'NULL';
                 $ownerChanged = (int) ($contact->owner_id ?? 0) !== (int) $advisor->id;
                 $skipHubspotByList = (bool) ($contact->disable_hubspot_reassignment ?? false);
                 $ownerNote = $ownerChanged ? " | owner previo={$previousOwner}" : '';
                 $hubspotNote = $ownerChanged
-                    ? ($skipHubspotByList ? ' | HubSpot omitido por lista' : " | HubSpot owner destino={$advisor->hs_owner_id}")
+                    ? ' | owner local actualizado desde HubSpot'
                     : '';
                 $this->line("   + Tarea -> {$contact->contact_name} | Lista: {$contact->list_name} (contact_id={$contact->contact_id}){$ownerNote}{$hubspotNote}");
 
                 if (! $dryRun) {
                     if ($ownerChanged) {
-                        if ($skipHubspotByList) {
-                            User::whereKey((int) $contact->contact_id)
-                                ->update($this->ownerUpdateAttributes((int) $advisor->id));
-
-                            $contact->owner_id = (int) $advisor->id;
-                            $totalSkippedHubspotByList++;
-                        } else {
-                            $synced = $this->syncContactOwnerForTaskGeneration(
-                                $hubspot,
-                                $dealOwnerSync,
-                                $contact,
-                                $advisor
-                            );
-
-                            if (! $synced) {
-                                $assignedContactIdsThisRun[] = (int) $contact->contact_id;
-                                $totalSkippedByHubspot++;
-                                continue;
-                            }
-                        }
-
+                        User::whereKey((int) $contact->contact_id)
+                            ->update($this->ownerUpdateAttributes((int) $advisor->id, (string) $advisor->hs_owner_id));
+                        $contact->owner_id = (int) $advisor->id;
                         $totalReassignedLocal++;
                     }
 
@@ -320,6 +326,99 @@ class GenerateDailyTasks extends Command
         return self::SUCCESS;
     }
 
+    private function contactBelongsToAdvisorInHubspot(
+        HubspotService $hubspot,
+        object $contact,
+        object $advisor,
+        $advisorsByHubspotOwnerId,
+        bool $dryRun
+    ): bool {
+        $hubspotOwnerId = $this->hubspotOwnerIdForContact($hubspot, $contact);
+
+        if (! $hubspotOwnerId) {
+            if ($this->contactLockedToAnotherAdvisor($contact, (int) $advisor->id)) {
+                $this->line("   - Omitido: contact_id={$contact->contact_id} ya esta bloqueado para owner local {$contact->task_reassignment_locked_owner_id}.");
+                return false;
+            }
+
+            return true;
+        }
+
+        $hubspotAdvisor = $advisorsByHubspotOwnerId->get((string) $hubspotOwnerId);
+
+        if (! $hubspotAdvisor) {
+            $this->line("   - Omitido: contact_id={$contact->contact_id} tiene owner HubSpot {$hubspotOwnerId} sin asesor interno mapeado.");
+            return false;
+        }
+
+        if ((int) $hubspotAdvisor->id !== (int) $advisor->id) {
+            if (! $dryRun) {
+                User::whereKey((int) $contact->contact_id)
+                    ->update($this->ownerUpdateAttributes((int) $hubspotAdvisor->id, (string) $hubspotOwnerId));
+            }
+
+            $contact->owner_id = (int) $hubspotAdvisor->id;
+            $contact->task_reassignment_locked_owner_id = (int) $hubspotAdvisor->id;
+            $contact->task_reassignment_locked_hubspot_owner_id = (string) $hubspotOwnerId;
+
+            $this->line("   - Omitido: HubSpot dice que contact_id={$contact->contact_id} pertenece a {$hubspotAdvisor->name}, no a {$advisor->name}.");
+            return false;
+        }
+
+        if ((int) ($contact->owner_id ?? 0) !== (int) $advisor->id) {
+            if (! $dryRun) {
+                User::whereKey((int) $contact->contact_id)
+                    ->update($this->ownerUpdateAttributes((int) $advisor->id, (string) $hubspotOwnerId));
+            }
+
+            $contact->owner_id = (int) $advisor->id;
+            $contact->task_reassignment_locked_owner_id = (int) $advisor->id;
+            $contact->task_reassignment_locked_hubspot_owner_id = (string) $hubspotOwnerId;
+        }
+
+        return true;
+    }
+
+    private function hubspotOwnerIdForContact(HubspotService $hubspot, object $contact): ?string
+    {
+        $cacheKey = (string) ($contact->contact_hs_id ?: $contact->contact_email ?: $contact->contact_id);
+
+        if (array_key_exists($cacheKey, $this->hubspotOwnerCache)) {
+            return $this->hubspotOwnerCache[$cacheKey];
+        }
+
+        try {
+            $hsContactId = $this->resolveHubspotContactId($hubspot, $contact);
+
+            if (! $hsContactId) {
+                return $this->hubspotOwnerCache[$cacheKey] = null;
+            }
+
+            $data = $hubspot->getContactById($hsContactId);
+            $ownerId = $data['properties']['hubspot_owner_id'] ?? null;
+
+            return $this->hubspotOwnerCache[$cacheKey] = filled($ownerId) ? (string) $ownerId : null;
+        } catch (\Throwable $e) {
+            $this->warn("   - No se pudo leer owner HubSpot para contact_id={$contact->contact_id}: {$e->getMessage()}");
+
+            Log::channel('tasks')->warning('No se pudo leer owner HubSpot antes de generar tarea', [
+                'client_id' => $contact->contact_id,
+                'email' => $contact->contact_email,
+                'hs_id' => $contact->contact_hs_id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->hubspotOwnerCache[$cacheKey] = null;
+        }
+    }
+
+    private function contactLockedToAnotherAdvisor(object $contact, int $advisorId): bool
+    {
+        return $this->reassignmentLockColumnExists()
+            && ! empty($contact->task_reassignment_locked_owner_id)
+            && (int) $contact->task_reassignment_locked_owner_id !== $advisorId;
+    }
+
     private function taskDescriptionForGeneratedContact(
         object $contact,
         bool $ownerChanged,
@@ -355,12 +454,24 @@ class GenerateDailyTasks extends Command
             && (int) ($contact->owner_id ?? 0) !== (int) $advisor->id;
     }
 
-    private function ownerUpdateAttributes(int $advisorId): array
+    private function ownerUpdateAttributes(int $advisorId, ?string $hubspotOwnerId = null): array
     {
         $attributes = ['owner_id' => $advisorId];
 
         if ($this->userReassignmentColumnExists()) {
             $attributes['last_task_reassigned_at'] = now();
+        }
+
+        if ($this->reassignmentLockColumnExists()) {
+            $attributes['task_reassignment_locked_at'] = now();
+        }
+
+        if (Schema::hasColumn('users', 'task_reassignment_locked_owner_id')) {
+            $attributes['task_reassignment_locked_owner_id'] = $advisorId;
+        }
+
+        if (Schema::hasColumn('users', 'task_reassignment_locked_hubspot_owner_id')) {
+            $attributes['task_reassignment_locked_hubspot_owner_id'] = $hubspotOwnerId;
         }
 
         return $attributes;
@@ -373,6 +484,15 @@ class GenerateDailyTasks extends Command
         }
 
         return $this->userReassignmentColumnExists;
+    }
+
+    private function reassignmentLockColumnExists(): bool
+    {
+        if ($this->reassignmentLockColumnExists === null) {
+            $this->reassignmentLockColumnExists = Schema::hasColumn('users', 'task_reassignment_locked_at');
+        }
+
+        return $this->reassignmentLockColumnExists;
     }
 
     private function markContactsThatShouldLeaveReassignmentLists(MarkContactedService $markContacted, bool $dryRun): void

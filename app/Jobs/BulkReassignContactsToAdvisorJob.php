@@ -27,6 +27,7 @@ class BulkReassignContactsToAdvisorJob implements ShouldQueue
     public int $tries = 1;
     public int $timeout = 1800;
     private ?bool $userReassignmentColumnExists = null;
+    private ?bool $reassignmentLockColumnExists = null;
 
     public function __construct(
         private array $contactIds,
@@ -42,6 +43,9 @@ class BulkReassignContactsToAdvisorJob implements ShouldQueue
     {
         $contacts = User::query()
             ->whereIn('id', $this->contactIds)
+            ->when($this->reassignmentLockColumnExists(), function ($query) {
+                $query->whereNull('task_reassignment_locked_at');
+            })
             ->get(['id', 'name', 'email', 'hs_id', 'owner_id']);
 
         if ($contacts->isEmpty()) {
@@ -80,6 +84,7 @@ class BulkReassignContactsToAdvisorJob implements ShouldQueue
             'hubspot_owner_id' => $this->hubspotOwnerId,
             'dry_run' => $dryRun,
             'contacts_found' => count($contactIds),
+            'contacts_skipped_by_reassignment_lock' => count($this->contactIds) - count($contactIds),
             'hubspot_contact_ids' => count($hubspotContactIds),
             'hubspot_blocked_by_list' => count($blockedForHubspot),
             'hubspot_missing_id' => $contacts->filter(fn (User $contact) => empty($contact->hs_id))->count(),
@@ -211,6 +216,18 @@ class BulkReassignContactsToAdvisorJob implements ShouldQueue
             $attributes['last_task_reassigned_at'] = now();
         }
 
+        if ($this->reassignmentLockColumnExists()) {
+            $attributes['task_reassignment_locked_at'] = now();
+        }
+
+        if (Schema::hasColumn('users', 'task_reassignment_locked_owner_id')) {
+            $attributes['task_reassignment_locked_owner_id'] = $advisorId;
+        }
+
+        if (Schema::hasColumn('users', 'task_reassignment_locked_hubspot_owner_id')) {
+            $attributes['task_reassignment_locked_hubspot_owner_id'] = $this->hubspotOwnerId;
+        }
+
         return $attributes;
     }
 
@@ -221,5 +238,14 @@ class BulkReassignContactsToAdvisorJob implements ShouldQueue
         }
 
         return $this->userReassignmentColumnExists;
+    }
+
+    private function reassignmentLockColumnExists(): bool
+    {
+        if ($this->reassignmentLockColumnExists === null) {
+            $this->reassignmentLockColumnExists = Schema::hasColumn('users', 'task_reassignment_locked_at');
+        }
+
+        return $this->reassignmentLockColumnExists;
     }
 }

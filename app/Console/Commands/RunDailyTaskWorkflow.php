@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Schema;
 class RunDailyTaskWorkflow extends Command
 {
     private ?bool $userReassignmentColumnExists = null;
+    private ?bool $reassignmentLockColumnExists = null;
 
     protected $signature = 'tasks:daily-workflow
         {--date= : Fecha base opcional YYYY-MM-DD}
@@ -180,7 +181,7 @@ class RunDailyTaskWorkflow extends Command
                 continue;
             }
 
-            User::whereKey($contact->id)->update($this->ownerUpdateAttributes((int) $advisor->id));
+            User::whereKey($contact->id)->update($this->ownerUpdateAttributes((int) $advisor->id, (string) $advisor->hs_owner_id));
             $updatedLocal++;
             $openTasksCanceled += $this->cancelPendingTasksFromIneligibleAssignees((int) $contact->id, $eligibleAdvisorIds);
 
@@ -240,6 +241,12 @@ class RunDailyTaskWorkflow extends Command
     {
         $systemsUserIds = Task::systemsUserIds();
         $skipReassignedToday = $this->userReassignmentColumnExists();
+        $skipLocked = $this->reassignmentLockColumnExists();
+        $notLocked = function ($query) use ($skipLocked) {
+            if ($skipLocked) {
+                $query->whereNull('users.task_reassignment_locked_at');
+            }
+        };
         $notReassignedToday = function ($query) use ($skipReassignedToday, $workflowDate) {
             if (! $skipReassignedToday) {
                 return;
@@ -311,6 +318,7 @@ class RunDailyTaskWorkflow extends Command
                 $query->whereNotIn('tasks.user_id', $systemsUserIds);
             })
             ->whereExists($taskPoolExists)
+            ->where($notLocked)
             ->where($notReassignedToday)
             ->whereNotExists($completedEffective)
             ->whereNotExists($inProgress)
@@ -327,6 +335,7 @@ class RunDailyTaskWorkflow extends Command
                 $query->whereNotIn('tasks.user_id', $systemsUserIds);
             })
             ->whereExists($taskPoolExists)
+            ->where($notLocked)
             ->where($notReassignedToday)
             ->whereNotExists($completedEffective)
             ->whereNotExists($inProgress)
@@ -340,6 +349,7 @@ class RunDailyTaskWorkflow extends Command
             ->join('lists as l', 'l.id', '=', 'lu.list_id')
             ->where('lu.contacted', 0)
             ->where('l.include_in_task_pool', true)
+            ->where($notLocked)
             ->where($notReassignedToday)
             ->whereNotExists($completedEffective)
             ->whereNotExists($inProgress)
@@ -360,6 +370,7 @@ class RunDailyTaskWorkflow extends Command
             ->join('lists as l', 'l.id', '=', 'lu.list_id')
             ->where('lu.contacted', 0)
             ->where('l.include_in_task_pool', true)
+            ->where($notLocked)
             ->where($notReassignedToday)
             ->whereNotExists($completedEffective)
             ->whereNotExists($inProgress)
@@ -382,6 +393,7 @@ class RunDailyTaskWorkflow extends Command
                 $query->whereNotIn('tasks.user_id', $systemsUserIds);
             })
             ->whereExists($taskPoolExists)
+            ->where($notLocked)
             ->where($notReassignedToday)
             ->whereNotExists($completedEffective)
             ->whereNotExists($inProgress)
@@ -531,12 +543,24 @@ class RunDailyTaskWorkflow extends Command
         return $count;
     }
 
-    private function ownerUpdateAttributes(int $advisorId): array
+    private function ownerUpdateAttributes(int $advisorId, ?string $hubspotOwnerId = null): array
     {
         $attributes = ['owner_id' => $advisorId];
 
         if ($this->userReassignmentColumnExists()) {
             $attributes['last_task_reassigned_at'] = now();
+        }
+
+        if ($this->reassignmentLockColumnExists()) {
+            $attributes['task_reassignment_locked_at'] = now();
+        }
+
+        if (Schema::hasColumn('users', 'task_reassignment_locked_owner_id')) {
+            $attributes['task_reassignment_locked_owner_id'] = $advisorId;
+        }
+
+        if (Schema::hasColumn('users', 'task_reassignment_locked_hubspot_owner_id')) {
+            $attributes['task_reassignment_locked_hubspot_owner_id'] = $hubspotOwnerId;
         }
 
         return $attributes;
@@ -549,6 +573,15 @@ class RunDailyTaskWorkflow extends Command
         }
 
         return $this->userReassignmentColumnExists;
+    }
+
+    private function reassignmentLockColumnExists(): bool
+    {
+        if ($this->reassignmentLockColumnExists === null) {
+            $this->reassignmentLockColumnExists = Schema::hasColumn('users', 'task_reassignment_locked_at');
+        }
+
+        return $this->reassignmentLockColumnExists;
     }
 
     private function pendingTasksFromIneligibleAssigneesQuery(int $contactId, array $eligibleAdvisorIds)

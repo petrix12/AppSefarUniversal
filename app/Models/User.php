@@ -40,6 +40,7 @@ class User extends Authenticatable
         'exclude_from_task_assignment' => 'boolean',
         'task_assignment_daily_limit' => 'integer',
         'last_task_reassigned_at' => 'datetime',
+        'task_reassignment_locked_at' => 'datetime',
     ];
 
     protected $appends = [

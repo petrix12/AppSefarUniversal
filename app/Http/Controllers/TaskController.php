@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class TaskController extends Controller
 {
@@ -380,11 +381,15 @@ class TaskController extends Controller
             return 'Tarea interna de Sistemas completada. No se reasigno ningun cliente.';
         }
 
-        $task->loadMissing('contact:id,name,email,hs_id,owner_id');
+        $task->loadMissing('contact:id,name,email,hs_id,owner_id,task_reassignment_locked_at');
         $contact = $task->contact;
 
         if (! $contact) {
             return 'Progreso guardado. No se pudo reasignar porque la tarea no tiene contacto asociado.';
+        }
+
+        if ($this->contactReassignmentLocked($contact)) {
+            return 'Progreso guardado. Este contacto ya tuvo una primera reasignacion y queda bloqueado para no volver a moverlo.';
         }
 
         $advisor = $this->getNextAdvisorRoundRobin((int) $task->user_id);
@@ -399,9 +404,7 @@ class TaskController extends Controller
             return 'Progreso guardado. No se reasigno el contacto porque no hay asesores disponibles.';
         }
 
-        $contact->update([
-            'owner_id' => $advisor->id,
-        ]);
+        $contact->update($this->ownerUpdateAttributes((int) $advisor->id, (string) $advisor->hs_owner_id));
 
         if ($this->shouldSkipHubspotReassignmentForContact((int) $contact->id)) {
             return "Progreso guardado. Contacto reasignado a {$advisor->name} en la app. HubSpot no se actualizo por configuracion de la lista.";
@@ -475,6 +478,37 @@ class TaskController extends Controller
         $hsContact = $hubspot->searchContactByEmail($contact->email);
 
         return $hsContact['id'] ?? null;
+    }
+
+    private function contactReassignmentLocked(User $contact): bool
+    {
+        return Schema::hasColumn('users', 'task_reassignment_locked_at')
+            && ! is_null($contact->task_reassignment_locked_at);
+    }
+
+    private function ownerUpdateAttributes(int $advisorId, ?string $hubspotOwnerId = null): array
+    {
+        $attributes = [
+            'owner_id' => $advisorId,
+        ];
+
+        if (Schema::hasColumn('users', 'last_task_reassigned_at')) {
+            $attributes['last_task_reassigned_at'] = now();
+        }
+
+        if (Schema::hasColumn('users', 'task_reassignment_locked_at')) {
+            $attributes['task_reassignment_locked_at'] = now();
+        }
+
+        if (Schema::hasColumn('users', 'task_reassignment_locked_owner_id')) {
+            $attributes['task_reassignment_locked_owner_id'] = $advisorId;
+        }
+
+        if (Schema::hasColumn('users', 'task_reassignment_locked_hubspot_owner_id')) {
+            $attributes['task_reassignment_locked_hubspot_owner_id'] = $hubspotOwnerId;
+        }
+
+        return $attributes;
     }
 
     private function completeInternalTask(Task $task)

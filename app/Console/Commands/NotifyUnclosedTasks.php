@@ -20,6 +20,7 @@ class NotifyUnclosedTasks extends Command
 
     private ?bool $taskPoolPolicyColumnsExist = null;
     private ?bool $userReassignmentColumnExists = null;
+    private ?bool $reassignmentLockColumnExists = null;
 
     protected $signature = 'tasks:notify-unclosed
         {--date= : Fecha base opcional YYYY-MM-DD}
@@ -45,7 +46,7 @@ class NotifyUnclosedTasks extends Command
         $tasks = Task::query()
             ->with([
                 'assignee:id,name,email',
-                'contact:id,name,email,hs_id,owner_id',
+                'contact:id,name,email,hs_id,owner_id,task_reassignment_locked_at',
             ])
             ->where('status', Task::STATUS_PENDING)
             ->notAssignedToSystems()
@@ -61,6 +62,14 @@ class NotifyUnclosedTasks extends Command
                         ->from('users as reassigned_contacts')
                         ->whereColumn('reassigned_contacts.id', 'tasks.contact_id')
                         ->whereDate('reassigned_contacts.last_task_reassigned_at', $reassignmentDate);
+                });
+            })
+            ->when($this->reassignmentLockColumnExists(), function ($query) {
+                $query->whereNotExists(function ($subQuery) {
+                    $subQuery->select(DB::raw(1))
+                        ->from('users as locked_contacts')
+                        ->whereColumn('locked_contacts.id', 'tasks.contact_id')
+                        ->whereNotNull('locked_contacts.task_reassignment_locked_at');
                 });
             })
             ->whereNotExists(function ($query) {
@@ -130,7 +139,7 @@ class NotifyUnclosedTasks extends Command
                     $task->update($taskUpdate);
 
                     // 2. Actualizar propietario local del cliente
-                    $contact->update($this->ownerUpdateAttributes((int) $advisor->id));
+                    $contact->update($this->ownerUpdateAttributes((int) $advisor->id, (string) $advisor->hs_owner_id));
 
                     $reassignedClients++;
 
@@ -284,12 +293,24 @@ class NotifyUnclosedTasks extends Command
         return $this->taskPoolPolicyColumnsExist;
     }
 
-    private function ownerUpdateAttributes(int $advisorId): array
+    private function ownerUpdateAttributes(int $advisorId, ?string $hubspotOwnerId = null): array
     {
         $attributes = ['owner_id' => $advisorId];
 
         if ($this->userReassignmentColumnExists()) {
             $attributes['last_task_reassigned_at'] = now();
+        }
+
+        if ($this->reassignmentLockColumnExists()) {
+            $attributes['task_reassignment_locked_at'] = now();
+        }
+
+        if (Schema::hasColumn('users', 'task_reassignment_locked_owner_id')) {
+            $attributes['task_reassignment_locked_owner_id'] = $advisorId;
+        }
+
+        if (Schema::hasColumn('users', 'task_reassignment_locked_hubspot_owner_id')) {
+            $attributes['task_reassignment_locked_hubspot_owner_id'] = $hubspotOwnerId;
         }
 
         return $attributes;
@@ -302,6 +323,15 @@ class NotifyUnclosedTasks extends Command
         }
 
         return $this->userReassignmentColumnExists;
+    }
+
+    private function reassignmentLockColumnExists(): bool
+    {
+        if ($this->reassignmentLockColumnExists === null) {
+            $this->reassignmentLockColumnExists = Schema::hasColumn('users', 'task_reassignment_locked_at');
+        }
+
+        return $this->reassignmentLockColumnExists;
     }
 
     private function resolveHubspotContactId(HubspotService $hubspotService, User $contact): ?string
