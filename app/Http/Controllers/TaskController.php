@@ -118,52 +118,68 @@ class TaskController extends Controller
             'sale_status' => 'nullable|in:' . implode(',', array_keys(Task::saleStatusOptions())),
             'sales_tags' => 'nullable|array',
             'sales_tags.*' => 'in:' . implode(',', array_keys(Task::salesTagOptions())),
-            'interest_level' => 'nullable|in:0,1',
-            'reason_no_interest' => 'nullable|string|max:255',
-            'reason_no_effective' => 'nullable|string|max:255',
+            'interest_level' => 'required_if:customer_responded,1|nullable|in:0,1',
+            'reason_no_interest' => 'required_if:interest_level,0|nullable|string|max:255',
+            'reason_no_effective' => 'required_if:customer_responded,0|nullable|string|max:255',
             'product_of_interest' => 'nullable|string|max:255',
+            'contact_proof' => ['required_if:customer_responded,1', 'nullable', 'string', 'max:2000', 'not_regex:/^\s*$/'],
             'follow_up_date' => 'nullable|date|after:today',
         ]);
 
         $oldFollowUpDate = optional($task->follow_up_date)->toDateString();
         $methods = array_values(array_unique($data['contact_methods']));
         $customerResponded = $data['customer_responded'] === '1';
-        $onlyUnansweredCall = ! $customerResponded
-            && count($methods) === 1
-            && in_array(Task::CONTACT_METHOD_CALL, $methods, true);
+        $waitingForResponse = ! $customerResponded;
 
         $interest = array_key_exists('interest_level', $data) && $data['interest_level'] !== null
             ? $data['interest_level'] === '1'
             : null;
 
+        $followUpDate = $data['follow_up_date'] ?? null;
+
+        if ($waitingForResponse && ! $followUpDate) {
+            $followUpDate = today()->addDay()->toDateString();
+        }
+
         $task->contact_methods = $methods;
         $task->customer_responded = $customerResponded;
-        $task->call_effective = ! $onlyUnansweredCall;
-        $task->reason_no_effective = $onlyUnansweredCall
-            ? ($request->filled('reason_no_effective') ? $data['reason_no_effective'] : 'Solo llamada sin respuesta')
-            : ($data['reason_no_effective'] ?? null);
-        $task->interest_level = $interest;
-        $task->reason_no_interest = $interest === false
+        $task->call_effective = $customerResponded;
+        $task->reason_no_effective = $waitingForResponse
+            ? ($data['reason_no_effective'] ?? 'En espera de respuesta del cliente')
+            : null;
+        $task->interest_level = $customerResponded ? $interest : null;
+        $task->reason_no_interest = $customerResponded && $interest === false
             ? ($data['reason_no_interest'] ?? null)
             : null;
-        $task->sale_status = $data['sale_status'] ?? null;
-        $task->sales_tags = array_values($data['sales_tags'] ?? []);
-        $task->product_of_interest = $data['product_of_interest'] ?? null;
-        $task->follow_up_date = $data['follow_up_date'] ?? null;
-        $task->status = Task::STATUS_COMPLETED;
+        $task->sale_status = $customerResponded ? ($data['sale_status'] ?? null) : null;
+        $task->sales_tags = $customerResponded
+            ? array_values($data['sales_tags'] ?? [])
+            : [Task::SALES_TAG_NO_CONTACT];
+        $task->product_of_interest = $customerResponded ? ($data['product_of_interest'] ?? null) : null;
+        $task->contact_proof = $customerResponded
+            ? trim((string) ($data['contact_proof'] ?? ''))
+            : null;
+        $task->follow_up_date = $followUpDate;
+        $task->status = $waitingForResponse ? Task::STATUS_IN_PROGRESS : Task::STATUS_COMPLETED;
+
+        if ($waitingForResponse) {
+            $task->due_date = Carbon::parse($followUpDate)->toDateString();
+        }
+
         $task->save();
 
-        if ($task->follow_up_date && $task->follow_up_date->toDateString() !== $oldFollowUpDate) {
+        if (! $waitingForResponse && $task->follow_up_date && $task->follow_up_date->toDateString() !== $oldFollowUpDate) {
             $this->createFollowUp($task);
         }
 
-        $message = 'Gestion comercial guardada. El cliente queda en tu seguimiento.';
-
-        if ($onlyUnansweredCall) {
-            $message = $this->reassignIneffectiveContact($task, $hubspot, $dealOwnerSync);
-        } else {
-            $this->markContacted->markFromTask($task);
+        if ($waitingForResponse) {
+            return redirect()->route('tasks.show', $task)
+                ->with('success', 'Seguimiento guardado. El cliente sigue como no contactado y la tarea queda abierta para el siguiente dia.');
         }
+
+        $this->markContacted->markFromTask($task);
+
+        $message = 'Gestion comercial guardada. El cliente fue marcado como contactado en la lista.';
 
         return redirect()->route('tasks.show', $task)->with('success', $message);
     }
@@ -201,9 +217,9 @@ class TaskController extends Controller
 
                 if (! $effective) {
                     $task->reason_no_effective = $request->reason_no_effective;
-                    $task->status              = 'completed';
-                    $taskWasCompleted          = true;
-                    $shouldReassignIneffectiveContact = true;
+                    $task->status              = Task::STATUS_IN_PROGRESS;
+                    $task->follow_up_date      = today()->addDay()->toDateString();
+                    $task->due_date            = today()->addDay()->toDateString();
                 }
 
                 $task->save();
@@ -381,15 +397,15 @@ class TaskController extends Controller
             return 'Tarea interna de Sistemas completada. No se reasigno ningun cliente.';
         }
 
-        $task->loadMissing('contact:id,name,email,hs_id,owner_id,task_reassignment_locked_at');
+        $task->loadMissing('contact:id,name,email,hs_id,owner_id,last_task_reassigned_at');
         $contact = $task->contact;
 
         if (! $contact) {
             return 'Progreso guardado. No se pudo reasignar porque la tarea no tiene contacto asociado.';
         }
 
-        if ($this->contactReassignmentLocked($contact)) {
-            return 'Progreso guardado. Este contacto ya tuvo una primera reasignacion y queda bloqueado para no volver a moverlo.';
+        if ($this->contactWasReassignedToday($contact)) {
+            return 'Progreso guardado. Este contacto ya fue reasignado hoy y no se movera otra vez en el mismo dia.';
         }
 
         $advisor = $this->getNextAdvisorRoundRobin((int) $task->user_id);
@@ -475,15 +491,16 @@ class TaskController extends Controller
             return null;
         }
 
-        $hsContact = $hubspot->searchContactByEmail($contact->email);
+        $hsContact = $hubspot->searchContactOwnerByEmail($contact->email);
 
         return $hsContact['id'] ?? null;
     }
 
-    private function contactReassignmentLocked(User $contact): bool
+    private function contactWasReassignedToday(User $contact): bool
     {
-        return Schema::hasColumn('users', 'task_reassignment_locked_at')
-            && ! is_null($contact->task_reassignment_locked_at);
+        return Schema::hasColumn('users', 'last_task_reassigned_at')
+            && ! is_null($contact->last_task_reassigned_at)
+            && Carbon::parse($contact->last_task_reassigned_at)->isSameDay(today());
     }
 
     private function ownerUpdateAttributes(int $advisorId, ?string $hubspotOwnerId = null): array

@@ -41,6 +41,7 @@ class User extends Authenticatable
         'task_assignment_daily_limit' => 'integer',
         'last_task_reassigned_at' => 'datetime',
         'task_reassignment_locked_at' => 'datetime',
+        'hubspot_user_provisioned_at' => 'datetime',
     ];
 
     protected $appends = [

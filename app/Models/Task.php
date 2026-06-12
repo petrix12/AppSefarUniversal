@@ -32,6 +32,7 @@ class Task extends Model
         'sales_tags',
         'reason_no_interest',
         'product_of_interest',
+        'contact_proof',
         'follow_up_date',
         'created_by_user_id',
         'task_pool_list_name',
@@ -229,6 +230,12 @@ class Task extends Model
             || $this->customer_responded === true
             || filled($this->sale_status)
             || $tags->diff([self::SALES_TAG_NO_CONTACT])->isNotEmpty();
+    }
+
+    public function isWaitingForFollowUp(): bool
+    {
+        return $this->status === self::STATUS_IN_PROGRESS
+            && $this->customer_responded === false;
     }
 
     public function contactMethodLabels(): array

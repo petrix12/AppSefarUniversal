@@ -24,6 +24,8 @@ use GuzzleHttp\Psr7\Response;
 use HubSpot\Client\Crm\Contacts\Model\Filter;
 use HubSpot\Client\Crm\Contacts\Model\FilterGroup;
 use HubSpot\Client\Crm\Contacts\Model\PublicObjectSearchRequest;
+use HubSpot\Client\Settings\Users\ApiException as UsersApiException;
+use HubSpot\Client\Settings\Users\Model\UserProvisionRequest;
 
 use HubSpot\Client\Files\Model\FileUpdateInput;
 
@@ -240,6 +242,184 @@ class HubspotService
         }
     }
 
+    public function getContactOwnerById($id): ?array
+    {
+        try {
+            $this->hubspotThrottle();
+
+            $contact = $this->hubspot
+                ->crm()
+                ->contacts()
+                ->basicApi()
+                ->getById((string) $id, 'email,hubspot_owner_id');
+
+            return [
+                'id' => $contact->getId(),
+                'properties' => $contact->getProperties(),
+            ];
+        } catch (ContactException $e) {
+            throw new \Exception('Error al obtener owner del contacto en HubSpot: ' . $e->getMessage());
+        }
+    }
+
+    public function searchContactOwnerByEmail($email): ?array
+    {
+        try {
+            $this->hubspotThrottle();
+
+            $filter = new Filter();
+            $filter
+                ->setOperator('EQ')
+                ->setPropertyName('email')
+                ->setValue($email);
+
+            $filterGroup = new FilterGroup();
+            $filterGroup->setFilters([$filter]);
+
+            $searchRequest = new PublicObjectSearchRequest();
+            $searchRequest->setFilterGroups([$filterGroup]);
+            $searchRequest->setProperties(['email', 'hubspot_owner_id']);
+            $searchRequest->setLimit(1);
+
+            $contactsPage = $this->hubspot->crm()->contacts()->searchApi()->doSearch($searchRequest);
+
+            if (count($contactsPage->getResults()) === 0) {
+                return null;
+            }
+
+            $contact = $contactsPage->getResults()[0];
+
+            return [
+                'id' => $contact->getId(),
+                'properties' => $contact->getProperties(),
+            ];
+        } catch (ContactException $e) {
+            throw new \Exception('Error al buscar owner del contacto en HubSpot: ' . $e->getMessage());
+        }
+    }
+
+    public function createUser(array $payload): array
+    {
+        try {
+            $this->hubspotThrottle();
+
+            $userProvisionRequest = new UserProvisionRequest([
+                'email' => (string) ($payload['email'] ?? ''),
+                'role_id' => $payload['roleId'] ?? $payload['role_id'] ?? null,
+                'primary_team_id' => $payload['primaryTeamId'] ?? $payload['primary_team_id'] ?? null,
+                'secondary_team_ids' => $payload['secondaryTeamIds'] ?? $payload['secondary_team_ids'] ?? null,
+                'send_welcome_email' => (bool) ($payload['sendWelcomeEmail'] ?? $payload['send_welcome_email'] ?? true),
+            ]);
+
+            if (! $userProvisionRequest->valid()) {
+                throw new \InvalidArgumentException(
+                    'Payload invalido para crear usuario HubSpot: ' .
+                    implode(', ', $userProvisionRequest->listInvalidProperties())
+                );
+            }
+
+            $createdUser = $this->hubspot
+                ->settings()
+                ->users()
+                ->usersApi()
+                ->create($userProvisionRequest);
+
+            return [
+                'id' => $createdUser->getId(),
+                'email' => $createdUser->getEmail(),
+                'roleId' => $createdUser->getRoleId(),
+                'primaryTeamId' => $createdUser->getPrimaryTeamId(),
+                'secondaryTeamIds' => $createdUser->getSecondaryTeamIds(),
+            ];
+        } catch (UsersApiException $e) {
+            $body = $e->getResponseBody();
+            $body = is_scalar($body)
+                ? (string) $body
+                : json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+            throw new \RuntimeException("Error creando usuario en HubSpot ({$e->getCode()}): {$body}", $e->getCode(), $e);
+        } catch (\Throwable $e) {
+            throw new \RuntimeException('Error creando usuario en HubSpot: ' . $e->getMessage(), 0, $e);
+        }
+    }
+
+    public function findUserByEmail(string $email): ?array
+    {
+        $email = strtolower(trim($email));
+
+        if ($email === '') {
+            return null;
+        }
+
+        try {
+            $this->hubspotThrottle();
+
+            $hubspotUser = $this->hubspot
+                ->settings()
+                ->users()
+                ->usersApi()
+                ->getById($email, 'EMAIL');
+
+            return [
+                'id' => $hubspotUser->getId(),
+                'email' => $hubspotUser->getEmail(),
+                'roleId' => $hubspotUser->getRoleId(),
+                'primaryTeamId' => $hubspotUser->getPrimaryTeamId(),
+                'secondaryTeamIds' => $hubspotUser->getSecondaryTeamIds(),
+            ];
+        } catch (UsersApiException $e) {
+            if ((int) $e->getCode() === 404) {
+                return null;
+            }
+
+            $body = $e->getResponseBody();
+            $body = is_scalar($body)
+                ? (string) $body
+                : json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+            throw new \RuntimeException("Error buscando usuario en HubSpot ({$e->getCode()}): {$body}", $e->getCode(), $e);
+        }
+    }
+
+    public function findOwnerByEmail(string $email, bool $includeArchived = false): ?array
+    {
+        $email = strtolower(trim($email));
+
+        if ($email === '') {
+            return null;
+        }
+
+        try {
+            $this->hubspotThrottle();
+
+            $response = $this->hubspot->apiRequest([
+                'method' => 'GET',
+                'path' => '/crm/v3/owners',
+                'qs' => [
+                    'email' => $email,
+                    'archived' => $includeArchived ? 'true' : 'false',
+                    'limit' => 100,
+                ],
+            ]);
+
+            $body = json_decode((string) $response->getBody(), true) ?: [];
+            $owners = $body['results'] ?? [];
+
+            foreach ($owners as $owner) {
+                if (strtolower(trim((string) ($owner['email'] ?? ''))) === $email) {
+                    return $owner;
+                }
+            }
+
+            return null;
+        } catch (RequestException $e) {
+            $statusCode = $e->getResponse()?->getStatusCode() ?: 0;
+            $body = $e->getResponse() ? (string) $e->getResponse()->getBody() : $e->getMessage();
+
+            throw new \RuntimeException("Error buscando owner en HubSpot ({$statusCode}): {$body}", $statusCode, $e);
+        }
+    }
+
     /**
      * Obtener un contacto por ID.
      */
@@ -306,6 +486,8 @@ class HubspotService
     public function updateContact($hsId, $properties)
     {
         try {
+            $this->hubspotThrottle();
+
             $input = new SimplePublicObjectInput([
                 'properties' => $properties,
             ]);
@@ -332,6 +514,8 @@ class HubspotService
         $updated = 0;
 
         foreach (array_chunk($contactIds, $chunkSize) as $chunk) {
+            $this->hubspotThrottle();
+
             $input = new ContactBatchInput([
                 'inputs' => array_map(
                     fn ($id) => new ContactBatchObjectInput([
@@ -472,6 +656,8 @@ class HubspotService
     public function getDealIdsByContactId(string $contactId): array
     {
         try {
+            $this->hubspotThrottle();
+
             $associations = $this->hubspot->crm()->associations()->batchApi()->read(
                 'contacts',
                 'deals',
@@ -499,13 +685,11 @@ class HubspotService
     {
         $dealIds = $this->getDealIdsByContactId($contactId);
 
-        foreach ($dealIds as $dealId) {
-            $this->updateDeals($dealId, [
-                'hubspot_owner_id' => $hubspotOwnerId,
-            ]);
+        if (empty($dealIds)) {
+            return 0;
         }
 
-        return count($dealIds);
+        return $this->batchUpdateDealOwners($dealIds, $hubspotOwnerId);
     }
 
     public function getDealIdsByContactIds(array $contactIds, int $chunkSize = 100): array
@@ -538,6 +722,8 @@ class HubspotService
         $updated = 0;
 
         foreach (array_chunk($dealIds, $chunkSize) as $chunk) {
+            $this->hubspotThrottle();
+
             $input = new DealBatchInput([
                 'inputs' => array_map(
                     fn ($id) => new DealBatchObjectInput([
@@ -926,6 +1112,15 @@ class HubspotService
         }
         json_decode($string);
         return (json_last_error() === JSON_ERROR_NONE);
+    }
+
+    private function hubspotThrottle(): void
+    {
+        $milliseconds = (int) env('HUBSPOT_TASKS_THROTTLE_MS', 250);
+
+        if ($milliseconds > 0) {
+            usleep($milliseconds * 1000);
+        }
     }
 
     /**

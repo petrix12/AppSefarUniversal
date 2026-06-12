@@ -132,6 +132,7 @@
                                 'completed'   => 'Completada',
                                 'canceled'    => 'Cancelada',
                             ];
+                            $waitingFollowUp = $task->isWaitingForFollowUp();
                         @endphp
                         <tr class="{{ $task->isClosed() ? 'text-muted' : '' }}">
                             <td>{{ $task->id }}</td>
@@ -157,12 +158,12 @@
                                 @endif
                             </td>
                             <td>
-                                <span class="badge badge-{{ $badgeMap[$task->status] ?? 'secondary' }}">
-                                    {{ $labelMap[$task->status] ?? $task->status }}
+                                <span class="badge badge-{{ $waitingFollowUp ? 'info' : ($badgeMap[$task->status] ?? 'secondary') }}">
+                                    {{ $waitingFollowUp ? 'En espera de seguimiento' : ($labelMap[$task->status] ?? $task->status) }}
                                 </span>
                             </td>
                             <td>{{ implode(', ', $task->contactMethodLabels()) ?: '-' }}</td>
-                            <td>{{ $task->saleStatusLabel() ?? '-' }}</td>
+                            <td>{{ $waitingFollowUp ? 'Esperando respuesta' : ($task->saleStatusLabel() ?? '-') }}</td>
                             <td>
                                 @foreach($task->sales_tags ?? [] as $tag)
                                     @php($tagMeta = \App\Models\Task::salesTagOptions()[$tag] ?? null)

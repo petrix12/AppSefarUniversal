@@ -160,6 +160,7 @@
         || !empty($task->sales_tags)
         || $task->reason_no_interest
         || $task->product_of_interest
+        || $task->contact_proof
         || $task->follow_up_date;
 @endphp
 
@@ -294,7 +295,7 @@
         <div class="hint-box">
             <i class="fas fa-info-circle" style="margin-top:.15rem;"></i>
             <span>
-                Si contactaste al cliente por WhatsApp o email/correo, la tarea cuenta como efectiva aunque aun estes esperando respuesta. Si solo llamaste y no respondio, quedara como llamada sin respuesta, pero cerrar esta tarea no reasigna el cliente automaticamente.
+                Solo se marca como contactado cuando el cliente responde y queda una evidencia registrada. Si estas esperando respuesta, la tarea sigue abierta como seguimiento para el siguiente dia.
             </span>
         </div>
 
@@ -331,6 +332,18 @@
                     </label>
                 </div>
                 @error('customer_responded')
+                    <p style="color:#ef4444; font-size:.75rem; margin-top:.25rem;">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div style="margin-bottom:1rem;">
+                <label class="field-label">Evidencia si respondio</label>
+                <textarea name="contact_proof" rows="3" maxlength="2000" placeholder="Ej: enlace al chat, resumen verificable de la respuesta, numero desde el que respondio" class="modern-input">{{ old('contact_proof', $task->contact_proof) }}</textarea>
+                <p style="font-size:.72rem; color:#9ca3af; margin-top:.35rem;">
+                    <i class="fas fa-shield-alt mr-1"></i>
+                    Obligatoria cuando marcas que el cliente respondio.
+                </p>
+                @error('contact_proof')
                     <p style="color:#ef4444; font-size:.75rem; margin-top:.25rem;">{{ $message }}</p>
                 @enderror
             </div>
@@ -391,7 +404,7 @@
             </div>
 
             <div style="margin-bottom:1rem;">
-                <label class="field-label">Motivo / observacion si no respondio</label>
+                <label class="field-label">Motivo / observacion si no respondio <span style="color:#ef4444;">*</span></label>
                 <input type="text" name="reason_no_effective" value="{{ old('reason_no_effective', $task->reason_no_effective) }}" maxlength="255" placeholder="Ej: llamada sin respuesta, se envio WhatsApp y correo" class="modern-input">
                 @error('reason_no_effective')
                     <p style="color:#ef4444; font-size:.75rem; margin-top:.25rem;">{{ $message }}</p>
@@ -454,6 +467,12 @@
                     <div class="progress-row">
                         <dt><i class="fas fa-comment-alt mr-1"></i> Observacion</dt>
                         <dd>{{ $task->reason_no_effective }}</dd>
+                    </div>
+                @endif
+                @if($task->contact_proof)
+                    <div class="progress-row">
+                        <dt><i class="fas fa-shield-alt mr-1"></i> Evidencia</dt>
+                        <dd>{{ $task->contact_proof }}</dd>
                     </div>
                 @endif
                 @if($task->interest_level !== null)

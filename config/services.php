@@ -54,4 +54,17 @@ return [
         'token' => env('TASKS_DAILY_WORKFLOW_TOKEN'),
     ],
 
+    'hubspot' => [
+        'coordinator_user_provisioning' => [
+            'enabled' => env('HUBSPOT_COORDINATOR_USER_PROVISIONING', true),
+            'role_id' => env('HUBSPOT_COORDINATOR_ROLE_ID'),
+            'primary_team_id' => env('HUBSPOT_COORDINATOR_PRIMARY_TEAM_ID'),
+            'secondary_team_ids' => array_values(array_filter(array_map(
+                'trim',
+                explode(',', (string) env('HUBSPOT_COORDINATOR_SECONDARY_TEAM_IDS', ''))
+            ))),
+            'send_welcome_email' => env('HUBSPOT_COORDINATOR_SEND_WELCOME_EMAIL', true),
+        ],
+    ],
+
 ];

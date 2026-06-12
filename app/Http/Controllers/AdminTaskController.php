@@ -90,12 +90,15 @@ class AdminTaskController extends Controller
             'sale_status' => 'nullable|in:' . implode(',', array_keys(Task::saleStatusOptions())),
             'sales_tags' => 'nullable|array',
             'sales_tags.*' => 'in:' . implode(',', array_keys(Task::salesTagOptions())),
+            'contact_proof' => ['required_if:customer_responded,1', 'nullable', 'string', 'max:2000', 'not_regex:/^\s*$/'],
         ]);
 
         $data['created_by_user_id'] = auth()->id();
         $data['status']             = $data['status'] ?? 'pending';
         $data['contact_methods']    = array_values($data['contact_methods'] ?? []);
         $data['customer_responded'] = isset($data['customer_responded']) ? $data['customer_responded'] === '1' : null;
+        $data['sale_status']        = $data['customer_responded'] === true ? ($data['sale_status'] ?? null) : null;
+        $data['contact_proof']      = $data['customer_responded'] === true ? ($data['contact_proof'] ?? null) : null;
         $data['sales_tags']         = array_values($data['sales_tags'] ?? []);
 
         Task::create($data);
@@ -131,10 +134,13 @@ class AdminTaskController extends Controller
             'sale_status' => 'nullable|in:' . implode(',', array_keys(Task::saleStatusOptions())),
             'sales_tags' => 'nullable|array',
             'sales_tags.*' => 'in:' . implode(',', array_keys(Task::salesTagOptions())),
+            'contact_proof' => ['required_if:customer_responded,1', 'nullable', 'string', 'max:2000', 'not_regex:/^\s*$/'],
         ]);
 
         $data['contact_methods'] = array_values($data['contact_methods'] ?? []);
         $data['customer_responded'] = isset($data['customer_responded']) ? $data['customer_responded'] === '1' : null;
+        $data['sale_status'] = $data['customer_responded'] === true ? ($data['sale_status'] ?? null) : null;
+        $data['contact_proof'] = $data['customer_responded'] === true ? ($data['contact_proof'] ?? null) : null;
         $data['sales_tags'] = array_values($data['sales_tags'] ?? []);
 
         $task->update($data);

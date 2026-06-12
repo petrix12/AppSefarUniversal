@@ -46,7 +46,7 @@ class NotifyUnclosedTasks extends Command
         $tasks = Task::query()
             ->with([
                 'assignee:id,name,email',
-                'contact:id,name,email,hs_id,owner_id,task_reassignment_locked_at',
+                'contact:id,name,email,hs_id,owner_id',
             ])
             ->where('status', Task::STATUS_PENDING)
             ->notAssignedToSystems()
@@ -62,14 +62,6 @@ class NotifyUnclosedTasks extends Command
                         ->from('users as reassigned_contacts')
                         ->whereColumn('reassigned_contacts.id', 'tasks.contact_id')
                         ->whereDate('reassigned_contacts.last_task_reassigned_at', $reassignmentDate);
-                });
-            })
-            ->when($this->reassignmentLockColumnExists(), function ($query) {
-                $query->whereNotExists(function ($subQuery) {
-                    $subQuery->select(DB::raw(1))
-                        ->from('users as locked_contacts')
-                        ->whereColumn('locked_contacts.id', 'tasks.contact_id')
-                        ->whereNotNull('locked_contacts.task_reassignment_locked_at');
                 });
             })
             ->whereNotExists(function ($query) {
@@ -96,6 +88,7 @@ class NotifyUnclosedTasks extends Command
         $hubspotNotFound = 0;
         $hubspotFailed = 0;
         $hubspotSkippedByList = 0;
+        $retryTasksCreated = 0;
 
         DB::beginTransaction();
 
@@ -108,9 +101,12 @@ class NotifyUnclosedTasks extends Command
                     continue;
                 }
 
-                $advisor = $this->getNextAdvisorRoundRobin((int) $task->user_id);
+                $skipHubspotReassignment = (bool) ($task->skip_hubspot_reassignment ?? false);
+                $advisor = $skipHubspotReassignment
+                    ? $task->assignee
+                    : $this->getNextAdvisorRoundRobin((int) $task->user_id);
 
-                if (!$advisor) {
+                if (! $skipHubspotReassignment && !$advisor) {
                     $this->warn('No hay asesores disponibles con owner real de HubSpot mapeado.');
                     continue;
                 }
@@ -138,17 +134,25 @@ class NotifyUnclosedTasks extends Command
 
                     $task->update($taskUpdate);
 
+                    if ($skipHubspotReassignment) {
+                        $hubspotSkippedByList++;
+                        $retryTask = $this->createRetryTask($task, $date);
+
+                        if ($retryTask) {
+                            $retryTasksCreated++;
+                            $this->line("   Reintento creado: tarea {$retryTask->id} para {$date->toDateString()}");
+                        } else {
+                            $this->line("   Reintento omitido: ya existe una tarea abierta para este contacto y asesor.");
+                        }
+
+                        $processedTasks->push($task);
+                        continue;
+                    }
+
                     // 2. Actualizar propietario local del cliente
                     $contact->update($this->ownerUpdateAttributes((int) $advisor->id, (string) $advisor->hs_owner_id));
 
                     $reassignedClients++;
-
-                    if ($skipHubspotReassignment) {
-                        $hubspotSkippedByList++;
-                        $this->line("   HubSpot omitido por configuracion de lista: contact_id={$contact->id}");
-                        $processedTasks->push($task);
-                        continue;
-                    }
 
                     // 3. Actualizar propietario en HubSpot
                     try {
@@ -239,10 +243,37 @@ class NotifyUnclosedTasks extends Command
         $this->info("Contactos actualizados en HubSpot: {$hubspotUpdated}");
         $this->info("Negocios actualizados en HubSpot: {$hubspotDealsUpdated}");
         $this->info("HubSpot omitidos por configuracion de lista: {$hubspotSkippedByList}");
+        $this->info("Tareas de reintento creadas sin reasignar: {$retryTasksCreated}");
         $this->info("Contactos no encontrados en HubSpot: {$hubspotNotFound}");
         $this->info("Actualizaciones fallidas en HubSpot: {$hubspotFailed}");
 
         return self::SUCCESS;
+    }
+
+    private function createRetryTask(Task $task, Carbon $date): ?Task
+    {
+        $hasOpenRetry = Task::query()
+            ->where('user_id', $task->user_id)
+            ->where('contact_id', $task->contact_id)
+            ->whereIn('status', [Task::STATUS_PENDING, Task::STATUS_IN_PROGRESS])
+            ->notAssignedToSystems()
+            ->exists();
+
+        if ($hasOpenRetry) {
+            return null;
+        }
+
+        return Task::create([
+            'user_id' => $task->user_id,
+            'contact_id' => $task->contact_id,
+            'title' => $task->title,
+            'description' => trim(($task->description ?: '') . "\nReintento generado porque la tarea #{$task->id} vencio sin gestion."),
+            'due_date' => $date->toDateString(),
+            'status' => Task::STATUS_PENDING,
+            'created_by_user_id' => null,
+            'task_pool_list_name' => $task->task_pool_list_name,
+            'skip_hubspot_reassignment' => true,
+        ]);
     }
 
     private function withListReassignmentPolicy($tasks)
@@ -344,7 +375,7 @@ class NotifyUnclosedTasks extends Command
             return null;
         }
 
-        $hsContact = $hubspotService->searchContactByEmail($contact->email);
+        $hsContact = $hubspotService->searchContactOwnerByEmail($contact->email);
 
         return $hsContact['id'] ?? null;
     }

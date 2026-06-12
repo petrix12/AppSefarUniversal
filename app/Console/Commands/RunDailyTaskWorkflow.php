@@ -181,14 +181,15 @@ class RunDailyTaskWorkflow extends Command
                 continue;
             }
 
+            if ((bool) ($contact->disable_hubspot_reassignment ?? false)) {
+                $hubspotSkippedByList++;
+                $this->line("      Sin reasignacion: la lista no permite cambiar HubSpot; se generara tarea local de reintento.");
+                continue;
+            }
+
             User::whereKey($contact->id)->update($this->ownerUpdateAttributes((int) $advisor->id, (string) $advisor->hs_owner_id));
             $updatedLocal++;
             $openTasksCanceled += $this->cancelPendingTasksFromIneligibleAssignees((int) $contact->id, $eligibleAdvisorIds);
-
-            if ((bool) ($contact->disable_hubspot_reassignment ?? false)) {
-                $hubspotSkippedByList++;
-                continue;
-            }
 
             try {
                 $hsContactId = $this->resolveHubspotContactId($hubspot, $contact);
@@ -241,12 +242,6 @@ class RunDailyTaskWorkflow extends Command
     {
         $systemsUserIds = Task::systemsUserIds();
         $skipReassignedToday = $this->userReassignmentColumnExists();
-        $skipLocked = $this->reassignmentLockColumnExists();
-        $notLocked = function ($query) use ($skipLocked) {
-            if ($skipLocked) {
-                $query->whereNull('users.task_reassignment_locked_at');
-            }
-        };
         $notReassignedToday = function ($query) use ($skipReassignedToday, $workflowDate) {
             if (! $skipReassignedToday) {
                 return;
@@ -318,7 +313,6 @@ class RunDailyTaskWorkflow extends Command
                 $query->whereNotIn('tasks.user_id', $systemsUserIds);
             })
             ->whereExists($taskPoolExists)
-            ->where($notLocked)
             ->where($notReassignedToday)
             ->whereNotExists($completedEffective)
             ->whereNotExists($inProgress)
@@ -335,7 +329,6 @@ class RunDailyTaskWorkflow extends Command
                 $query->whereNotIn('tasks.user_id', $systemsUserIds);
             })
             ->whereExists($taskPoolExists)
-            ->where($notLocked)
             ->where($notReassignedToday)
             ->whereNotExists($completedEffective)
             ->whereNotExists($inProgress)
@@ -349,7 +342,6 @@ class RunDailyTaskWorkflow extends Command
             ->join('lists as l', 'l.id', '=', 'lu.list_id')
             ->where('lu.contacted', 0)
             ->where('l.include_in_task_pool', true)
-            ->where($notLocked)
             ->where($notReassignedToday)
             ->whereNotExists($completedEffective)
             ->whereNotExists($inProgress)
@@ -370,7 +362,6 @@ class RunDailyTaskWorkflow extends Command
             ->join('lists as l', 'l.id', '=', 'lu.list_id')
             ->where('lu.contacted', 0)
             ->where('l.include_in_task_pool', true)
-            ->where($notLocked)
             ->where($notReassignedToday)
             ->whereNotExists($completedEffective)
             ->whereNotExists($inProgress)
@@ -393,7 +384,6 @@ class RunDailyTaskWorkflow extends Command
                 $query->whereNotIn('tasks.user_id', $systemsUserIds);
             })
             ->whereExists($taskPoolExists)
-            ->where($notLocked)
             ->where($notReassignedToday)
             ->whereNotExists($completedEffective)
             ->whereNotExists($inProgress)
@@ -501,7 +491,7 @@ class RunDailyTaskWorkflow extends Command
             return null;
         }
 
-        $hsContact = $hubspot->searchContactByEmail($contact->email);
+        $hsContact = $hubspot->searchContactOwnerByEmail($contact->email);
 
         return $hsContact['id'] ?? null;
     }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\HubspotUserProvisioningService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -80,6 +81,7 @@ class ProveedorRegisterController extends Controller
             if ($role) $user->assignRole($role);
         }
 
+        $this->provisionHubspotUser($user);
         $this->notifyNewCoordinator($user);
 
         // Opcional: loguear o NO loguear
@@ -89,6 +91,26 @@ class ProveedorRegisterController extends Controller
         return redirect()->route('login')
             ->with('status', 'Tu registro fue recibido. Un administrador validará tu cuenta.');
     }
+
+    private function provisionHubspotUser(User $user): void
+    {
+        try {
+            $result = app(HubspotUserProvisioningService::class)->provisionCoordinator($user);
+
+            Log::info('Provisioning HubSpot de coordinador procesado.', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'result' => $result,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('No se pudo crear usuario HubSpot para coordinador.', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
     private function notifyNewCoordinator(User $user): void
     {
         $recipients = [

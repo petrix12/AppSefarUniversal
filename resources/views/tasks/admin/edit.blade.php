@@ -226,6 +226,15 @@
                             </div>
 
                             <div class="form-group">
+                                <label class="font-weight-bold">Evidencia si respondio</label>
+                                <textarea name="contact_proof" rows="3" maxlength="2000" class="form-control @error('contact_proof') is-invalid @enderror" placeholder="Enlace al chat, resumen verificable o soporte de la respuesta">{{ old('contact_proof', $task->contact_proof) }}</textarea>
+                                <small class="form-text text-muted">Obligatoria si marcas que el cliente respondio.</small>
+                                @error('contact_proof')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="form-group">
                                 <label class="font-weight-bold">Estatus de la venta</label>
                                 <select name="sale_status" class="form-control @error('sale_status') is-invalid @enderror">
                                     <option value="">Sin estatus</option>
@@ -269,6 +278,9 @@
                                 <li>Gestion efectiva: {{ $task->call_effective ? 'Si' : 'No' }}</li>
                                 @if($task->reason_no_effective)
                                     <li>Motivo no efectiva: {{ $task->reason_no_effective }}</li>
+                                @endif
+                                @if($task->contact_proof)
+                                    <li>Evidencia: {{ $task->contact_proof }}</li>
                                 @endif
                                 @if(!is_null($task->interest_level))
                                     <li>Interés: {{ $task->interest_level ? '✅ Sí' : '❌ No' }}</li>
