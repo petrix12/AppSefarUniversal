@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\HubspotOwner;
 use App\Models\HubspotOwnerUser;
+use App\Models\HubspotUserProvisioning;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -201,9 +202,22 @@ class HubspotUserProvisioningService
 
     private function markProvisioned(User $user, ?string $hubspotUserId): void
     {
+        if (Schema::hasTable('hubspot_user_provisionings')) {
+            HubspotUserProvisioning::updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'hubspot_user_id' => $hubspotUserId,
+                    'provisioned_at' => now(),
+                    'last_error' => null,
+                ]
+            );
+
+            return;
+        }
+
         $updates = [];
 
-        if ($hubspotUserId && Schema::hasColumn('users', 'hubspot_user_id')) {
+        if ($hubspotUserId !== null && Schema::hasColumn('users', 'hubspot_user_id')) {
             $updates['hubspot_user_id'] = $hubspotUserId;
         }
 
@@ -222,6 +236,15 @@ class HubspotUserProvisioningService
 
     private function markProvisioningError(User $user, string $error): void
     {
+        if (Schema::hasTable('hubspot_user_provisionings')) {
+            HubspotUserProvisioning::updateOrCreate(
+                ['user_id' => $user->id],
+                ['last_error' => mb_substr($error, 0, 4000)]
+            );
+
+            return;
+        }
+
         if (! Schema::hasColumn('users', 'hubspot_user_provisioning_error')) {
             return;
         }

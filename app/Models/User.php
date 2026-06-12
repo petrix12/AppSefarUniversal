@@ -41,7 +41,6 @@ class User extends Authenticatable
         'task_assignment_daily_limit' => 'integer',
         'last_task_reassigned_at' => 'datetime',
         'task_reassignment_locked_at' => 'datetime',
-        'hubspot_user_provisioned_at' => 'datetime',
     ];
 
     protected $appends = [
@@ -132,6 +131,11 @@ class User extends Authenticatable
     public function hubspotOwnerLink()
     {
         return $this->hasOne(\App\Models\HubspotOwnerUser::class);
+    }
+
+    public function hubspotUserProvisioning()
+    {
+        return $this->hasOne(\App\Models\HubspotUserProvisioning::class);
     }
 
     public function strategicSuggestions()
