@@ -52,13 +52,32 @@ class UnclosedTasksNotification extends Notification implements ShouldQueue
 
     public function toArray(object $notifiable): array
     {
+        return $this->databasePayload();
+    }
+
+    public function toDatabase(object $notifiable): array
+    {
+        return $this->databasePayload();
+    }
+
+    private function databasePayload(): array
+    {
+        $dateStr = $this->date->format('d/m/Y');
+        $totalTasks = $this->unclosedByAdvisor->flatten()->count();
+        $byAdvisor = $this->unclosedByAdvisor->map(fn($tasks) => [
+            'advisor' => $tasks->first()->assignee->name ?? '?',
+            'count'   => $tasks->count(),
+        ])->values();
+
         return [
+            'title'       => "{$totalTasks} tarea(s) sin cerrar",
+            'body'        => "Tareas del {$dateStr} quedaron sin completar. Revisa el panel para ver asesores y clientes afectados.",
+            'action_url'  => route('tasks.admin.summary', ['date' => $this->date->toDateString()]),
+            'action_text' => 'Ver panel de tareas',
+            'category'    => 'tasks',
             'date'        => $this->date->toDateString(),
-            'total'       => $this->unclosedByAdvisor->flatten()->count(),
-            'by_advisor'  => $this->unclosedByAdvisor->map(fn($tasks) => [
-                'advisor' => $tasks->first()->assignee->name ?? '?',
-                'count'   => $tasks->count(),
-            ])->values(),
+            'total'       => $totalTasks,
+            'by_advisor'  => $byAdvisor,
         ];
     }
 }

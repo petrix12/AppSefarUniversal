@@ -33,16 +33,18 @@
         <div class="card-body p-0">
             @forelse($notifications as $notification)
                 @php
-                    $data = $notification->data ?? [];
+                    $data = \App\Support\NotificationViewData::normalize($notification);
                     $title = $data['title'] ?? 'Notificacion';
                     $body = $data['body'] ?? '';
                     $category = $data['category'] ?? 'general';
-                    $actionText = $data['action_text'] ?? 'Ver detalle';
+                    $actionUrl = $data['action_url'] ?? null;
+                    $actionText = $data['action_text'] ?? ($actionUrl ? 'Ver detalle' : 'Marcar como leida');
                     $isUnread = is_null($notification->read_at);
                     $icon = match($category) {
                         'cos_status' => 'fa-route',
                         'internal_chat' => 'fa-comments',
                         'document_request' => 'fa-file-alt',
+                        'tasks' => 'fa-tasks',
                         default => 'fa-bell',
                     };
                 @endphp
@@ -70,12 +72,12 @@
                                     <form method="POST" action="{{ route('notifications.read', $notification->id) }}">
                                         @csrf
                                         @method('PATCH')
-                                        <button type="submit" class="btn btn-sm btn-primary">
+                                        <button type="submit" class="btn btn-sm {{ $actionUrl ? 'btn-primary' : 'btn-outline-secondary' }}">
                                             {{ $actionText }}
                                         </button>
                                     </form>
-                                @elseif(!empty($data['action_url']))
-                                    <a href="{{ $data['action_url'] }}" class="btn btn-sm btn-outline-secondary">
+                                @elseif($actionUrl)
+                                    <a href="{{ $actionUrl }}" class="btn btn-sm btn-outline-secondary">
                                         {{ $actionText }}
                                     </a>
                                 @endif

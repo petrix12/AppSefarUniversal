@@ -42,7 +42,7 @@
             @else
             @forelse($latestNotifications as $notification)
                 @php
-                    $data = $notification->data ?? [];
+                    $data = \App\Support\NotificationViewData::normalize($notification);
                     $title = $data['title'] ?? 'Notificacion';
                     $body = $data['body'] ?? '';
                     $category = $data['category'] ?? 'general';
@@ -50,6 +50,7 @@
                         'cos_status' => 'fa-route',
                         'internal_chat' => 'fa-comments',
                         'document_request' => 'fa-file-alt',
+                        'tasks' => 'fa-tasks',
                         default => 'fa-bell',
                     };
                 @endphp

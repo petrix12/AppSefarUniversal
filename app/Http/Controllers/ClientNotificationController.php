@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\NotificationViewData;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -44,7 +45,7 @@ class ClientNotificationController extends Controller
 
         $notificationModel->markAsRead();
 
-        $actionUrl = $notificationModel->data['action_url'] ?? null;
+        $actionUrl = NotificationViewData::normalize($notificationModel)['action_url'] ?? null;
 
         if ($request->expectsJson()) {
             return response()->json(['success' => true]);
