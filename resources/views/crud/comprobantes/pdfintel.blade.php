@@ -87,6 +87,12 @@
             @if(!is_null($datos_factura[0]["idcharge"]))
                 <b>ID de Pago:</b> {{$datos_factura[0]["idcharge"]}}<br>
             @endif
+            @if(isset($ventaReferida) && $ventaReferida)
+                <br>
+                <b>Codigo de Referido:</b> {{ $ventaReferida->code }}<br>
+                <b>Coordinador Referido:</b> {{ optional($ventaReferida->coordinator)->name ?? 'N/A' }} ({{ optional($ventaReferida->coordinator)->email ?? 'sin correo' }})<br>
+                <b>Estado de Comision:</b> {{ $ventaReferida->commission_status }}<br>
+            @endif
 
             <p style="width: 100%; text-align: right;"><b>Fecha de Comprobante:</b> <?php echo(date("d-m-Y", strtotime($datos_factura[0]["created_at"]))); ?><br></p>
             <table class="styled-table">

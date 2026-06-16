@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\AgclienteController;
+use App\Http\Controllers\AdminConsultationCalendarController;
 use App\Http\Controllers\AlberoController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\ConnectionController;
+use App\Http\Controllers\CoordinatorReferralCodeController;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\FamilyController;
@@ -26,6 +28,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\StripeController;
 use App\Http\Controllers\CouponController;
 use App\Http\Controllers\ServicioController;
+use App\Http\Controllers\ServiceStoreController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\HsReferidoController;
 use App\Http\Controllers\MondayController;
@@ -187,6 +190,24 @@ Route::middleware(['auth', 'can:administrador'])->group(function () {
         ->name('invoices.user-search');
 
 });
+
+Route::resource('admin/consultation-calendars', AdminConsultationCalendarController::class)
+    ->names('admin.consultation-calendars')
+    ->except(['show'])
+    ->middleware(['auth', 'can:administrador']);
+
+Route::get('referral-codes/validate', [CoordinatorReferralCodeController::class, 'validateCode'])
+    ->name('referral-codes.validate')
+    ->middleware(['auth']);
+
+Route::middleware(['auth', 'can:administrador'])
+    ->prefix('admin/referral-codes')
+    ->name('admin.referral-codes.')
+    ->group(function () {
+        Route::get('/', [CoordinatorReferralCodeController::class, 'index'])->name('index');
+        Route::post('/sync', [CoordinatorReferralCodeController::class, 'sync'])->name('sync');
+        Route::post('/send-all', [CoordinatorReferralCodeController::class, 'sendAll'])->name('send-all');
+    });
 
 // ── Teamleader (auth + admin) ─────────────────────────────────────────
 Route::middleware(['auth', 'can:administrador'])
@@ -651,6 +672,15 @@ Route::group(['middleware' => ['auth'], 'as' => 'clientes.'], function(){
     Route::get('status', [ClienteController::class, 'status'])->name('status')
     ->middleware('can:cliente');
 });
+
+Route::middleware(['auth', 'can:cliente'])
+    ->prefix('servicios-disponibles')
+    ->name('service-store.')
+    ->group(function () {
+        Route::get('/', [ServiceStoreController::class, 'index'])->name('index');
+        Route::get('/{servicio}', [ServiceStoreController::class, 'show'])->name('show');
+        Route::post('/{servicio}', [ServiceStoreController::class, 'purchase'])->name('purchase');
+    });
 
 Route::get('testcorreos', [CorreoController::class, 'testcorreos'])->name('testcorreos');
 Route::post('testcorreos', [CorreoController::class, 'sendcorreo'])->name('sendcorreo');

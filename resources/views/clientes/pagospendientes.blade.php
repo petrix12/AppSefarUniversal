@@ -40,7 +40,7 @@
                             <thead class="bg-gray-50">
                             <tr>
                                 <th scope="col" class="px-3 py-1" style="width: 75%;">
-                                    Factura
+                                    Servicio
                                 </th>
                                 <th scope="col" class="px-3 py-1" style="width: 15%;">
                                     Fecha de Emisión
@@ -55,7 +55,15 @@
                             @foreach ($compras as $compra)
                             <tr>
                                 <td class="py-2 px-3" >
-                                    <b>{{ $compra["descripcion"] }}
+                                    <b>{{ $compra["descripcion"] }}</b>
+                                    @if($compra->consultationBooking)
+                                        <br>
+                                        <small class="text-muted">
+                                            Consulta:
+                                            {{ optional($compra->consultationBooking->starts_at)->timezone($compra->consultationBooking->timezone)->format('d-m-Y H:i') }}
+                                            ({{ optional($compra->consultationBooking->calendar)->nombre }})
+                                        </small>
+                                    @endif
                                 </td>
                                 <td class="py-2 px-3">
                                     <?php
@@ -63,6 +71,7 @@
                                     ?>
                                 </td>
                                 <td class="py-2 px-3" style="text-align: center;">
+                                    @if($compra['deal_id'])
                                     <form action="{{ route('gotopayfases') }}" method="POST" style="display: inline;">
                                         @csrf <!-- Token de seguridad para Laravel -->
                                         <input type="hidden" name="id" value="{{ $compra['id'] }}">
@@ -70,6 +79,11 @@
                                             <i class="fas fa-credit-card"></i>
                                         </button>
                                     </form>
+                                    @else
+                                        <a href="{{ route('clientes.pay') }}" class="btn btn-primary" title="Ir a pagar">
+                                            <i class="fas fa-credit-card"></i>
+                                        </a>
+                                    @endif
                                 </td>
                             </tr>
                             @endforeach

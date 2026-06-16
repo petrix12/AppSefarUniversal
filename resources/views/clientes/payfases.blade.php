@@ -89,6 +89,16 @@
         </script>
     @endif
 
+    @if(session('referral_error'))
+        <script type="text/javascript">
+            Swal.fire({
+                icon: 'error',
+                title: '{{ session('referral_error') }}',
+                showConfirmButton: true
+            });
+        </script>
+    @endif
+
     <style>
         .content-wrapper {
 
@@ -127,7 +137,7 @@
                     $('#nameoncard').keyup(function(){
                         this.value = this.value.toUpperCase();
                     });
-                    $('#coupon').keyup(function(){
+                    $('#coupon, #referral_code').keyup(function(){
                         this.value = this.value.toUpperCase();
                     });
 
@@ -160,7 +170,8 @@
                         $.ajax({
                             url: '{{ route("revisarcupon") }}',
                             data: {
-                                cpn: $("#coupon").val()
+                                cpn: $("#coupon").val(),
+                                referral_code: $("#referral_code").val()
                             },
                             success: function(response){
                                 if(response["status"]=="true"){
@@ -198,6 +209,14 @@
                                     });
                                 }
 
+                            },
+                            error: function(xhr){
+                                $("#ajaxload").hide();
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'No se pudo validar el cupon.',
+                                    showConfirmButton: true
+                                });
                             }
 
                         });
@@ -240,6 +259,19 @@
                         <h2 class="text-center mb-4">
                             <b>Datos de Pago</b>
                         </h2>
+
+                        <div class="form-group mb-3">
+                            <label for="referral_code" class="control-label">Codigo de referido (opcional)</label>
+                            <input
+                                autocomplete="off"
+                                id="referral_code"
+                                name="referral_code"
+                                class="form-control"
+                                type="text"
+                                value="{{ old('referral_code') }}"
+                                placeholder="Codigo del coordinador"
+                                style="text-transform: uppercase;">
+                        </div>
 
                         <div class="form-group required mb-3">
                             <label for="nameoncard" class="control-label">Nombre en la Tarjeta</label>
@@ -409,11 +441,45 @@
         document.addEventListener('DOMContentLoaded', function () {
 
             // Configurar el botón de PayPal
+            function referralCodeValue() {
+                var input = document.getElementById('referral_code');
+                return input ? input.value : '';
+            }
+
+            function validateReferralCodeBeforePay() {
+                var code = referralCodeValue();
+
+                if (!code) {
+                    return Promise.resolve();
+                }
+
+                return fetch('{{ route("referral-codes.validate") }}?code=' + encodeURIComponent(code), {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                }).then(function(response) {
+                    return response.json().then(function(body) {
+                        if (!response.ok || !body.valid) {
+                            throw new Error(body.message || 'El codigo de referido no existe o no esta activo.');
+                        }
+                    });
+                }).catch(function(error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: error.message,
+                        showConfirmButton: true
+                    });
+
+                    return Promise.reject(error);
+                });
+            }
+
             window.paypal.Buttons({
 
                 // Configura el monto a pagar
                 createOrder: function (data, actions) {
-                    return actions.order.create({
+                    return validateReferralCodeBeforePay().then(function() {
+                        return actions.order.create({
                         purchase_units: [{
                             amount: {
                                 // Aquí puedes pasar el total calculado en tu Blade
@@ -421,6 +487,7 @@
                                 value: '{{ $total }}'
                             }
                         }]
+                        });
                     });
                 },
 
@@ -439,7 +506,8 @@
                             data: JSON.stringify({
                                 orderID: data.orderID,
                                 details: details,
-                                compraid: {{$compraid}}
+                                compraid: {{$compraid}},
+                                referral_code: referralCodeValue()
                             }),
                             contentType: 'application/json',
                             success: function(response) {
@@ -451,7 +519,7 @@
                                 Swal.fire({
                                     icon: 'error',
                                     title: 'Error',
-                                    text: 'Hubo un problema al procesar tu pago. Por favor, intenta nuevamente.'
+                                    text: (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Hubo un problema al procesar tu pago. Por favor, intenta nuevamente.'
                                 });
                             }
                         });

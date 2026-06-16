@@ -128,7 +128,22 @@
                     ID de Hubspot
                 </th>
                 <th scope="col" class="">
+                    Tipo
+                </th>
+                <th scope="col" class="">
+                    Categoria
+                </th>
+                <th scope="col" class="">
                     Precio
+                </th>
+                <th scope="col" class="">
+                    Cliente
+                </th>
+                <th scope="col" class="">
+                    Agenda
+                </th>
+                <th scope="col" class="">
+                    Estado
                 </th>
                 @can('crud.servicios.edit')
                 <th scope="col" class="">
@@ -156,7 +171,34 @@
                     {{ $servicio->id_hubspot }}
                 </td>
                 <td class="">
-                    {{ $servicio->precio }}
+                    {{ $servicio->tipo ?? 'servicio' }}
+                </td>
+                <td class="">
+                    {{ $servicio->categoria ?? 'general' }}
+                </td>
+                <td class="">
+                    {{ $servicio->precio }} {{ $servicio->moneda ?? 'EUR' }}
+                </td>
+                <td class="text-center">
+                    @if($servicio->visible_cliente)
+                        <span class="badge badge-success">Visible</span>
+                    @else
+                        <span class="badge badge-secondary">Oculto</span>
+                    @endif
+                </td>
+                <td class="text-center">
+                    @if($servicio->requiere_agenda)
+                        <span class="badge badge-info">{{ $servicio->duracion_minutos ?? 60 }} min</span>
+                    @else
+                        <span class="badge badge-light">No</span>
+                    @endif
+                </td>
+                <td class="text-center">
+                    @if($servicio->activo ?? true)
+                        <span class="badge badge-success">Activo</span>
+                    @else
+                        <span class="badge badge-danger">Inactivo</span>
+                    @endif
                 </td>
                 @can('crud.servicios.edit')
                 <td class="text-center">

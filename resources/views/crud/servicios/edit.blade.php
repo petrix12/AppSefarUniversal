@@ -26,6 +26,8 @@
                                                     Lista de Servicios
                                                 </a>
                                             </div>
+
+                                            @include('crud.servicios.partials.catalog-fields', ['servicio' => $servicio])
                                         </div>
                                     </div>
                                 </div>

@@ -28,6 +28,8 @@
                                                     Listar Servicios
                                                 </a>
                                             </div>
+
+                                            @include('crud.servicios.partials.catalog-fields', ['servicio' => null])
                                         </div>
                                     </div>
                                 </div>

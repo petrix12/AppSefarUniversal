@@ -567,6 +567,20 @@ return [
             'can'           => 'crud.servicios.index',
             'url'           => 'servicios',
         ],
+        [
+            'text'          => 'Calendarios',
+            'icon'          => 'fa-fw fas fa-calendar-alt',
+            'icon_color'    => 'white',
+            'can'           => 'administrador',
+            'url'           => 'admin/consultation-calendars',
+        ],
+        [
+            'text'          => 'Referidos',
+            'icon'          => 'fa-fw fas fa-handshake',
+            'icon_color'    => 'white',
+            'can'           => 'administrador',
+            'url'           => 'admin/referral-codes',
+        ],
 
         /* *** Alertas *** */
         [
@@ -820,6 +834,22 @@ return [
                     'icon_color'    => 'rgba(255,255,255,0.8)',
                     'route'         => 'clientes.pay',
                     'can'           => 'pay.services',
+                ],
+                [
+                    'text'          => 'Servicios disponibles',
+                    'classes'       => "btn_services",
+                    'icon'          => 'fa-fw fas fa-shopping-cart',
+                    'icon_color'    => 'rgba(255,255,255,0.8)',
+                    'route'         => 'service-store.index',
+                    'can'           => 'cliente',
+                ],
+                [
+                    'text'          => 'Pagos pendientes',
+                    'classes'       => "btn_pending_payments",
+                    'icon'          => 'fa-fw fas fa-credit-card',
+                    'icon_color'    => 'rgba(255,255,255,0.8)',
+                    'route'         => 'clientes.pagospendientes',
+                    'can'           => 'cliente',
                 ],
                 [
                     'text'          => 'Completar información',

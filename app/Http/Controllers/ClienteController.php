@@ -20,6 +20,9 @@ use Monday;
 use App\Models\Hermano;
 use App\Models\Alert as Alertas;
 use App\Models\GeneralCoupon;
+use App\Models\ConsultationBooking;
+use App\Models\CoordinatorReferralCode;
+use App\Models\ReferralSale;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -73,7 +76,11 @@ class ClienteController extends Controller
     public function pagospendientes(){
         $user = Auth::user()->id;
 
-        $compras = Compras::where('id_user', $user)->where('pagado', 0)->whereNotNull("deal_id")->get();
+        $compras = Compras::with(['consultationBooking.calendar'])
+            ->where('id_user', $user)
+            ->where('pagado', 0)
+            ->orderByDesc('created_at')
+            ->get();
 
         return view('clientes.pagospendientes', compact('compras'));
     }
@@ -2014,15 +2021,16 @@ class ClienteController extends Controller
     }
 
     public function pay(){
+        $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->whereNull('deal_id')->get();
+
         if (Auth::user()->roles->first()->name == "Cliente"){
-            if (Auth::user()->pay==2){
+            if ($compras->isEmpty() && Auth::user()->pay==2){
                 $IDCliente = Auth::user()->passport;
                 return redirect('/tree');
-            } else if(Auth::user()->pay==1 || Auth::user()->pay==3){
+            } else if($compras->isEmpty() && (Auth::user()->pay==1 || Auth::user()->pay==3)){
                 return redirect()->route('clientes.getinfo');
             }
         }
-        $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->whereNull('deal_id')->get();
 
         if (auth()->user()->tiene_hermanos==1 || auth()->user()->tiene_hermanos=="1" || auth()->user()->tiene_hermanos=="Si") {
             $servicio = Servicio::where('id_hubspot', 'like', auth()->user()->servicio . '% - Hermano')->get();
@@ -2146,6 +2154,15 @@ class ClienteController extends Controller
                         'percentage' => $cupon["percentage"]."%"
                     ]);
                 } else {
+                    [$referralCode, $normalizedReferralCode] = $this->resolveReferralCode($data['referral_code'] ?? null);
+
+                    if ($normalizedReferralCode && ! $referralCode) {
+                        return response()->json([
+                            'status' => 'referralfalse',
+                            'message' => 'El codigo de referido no existe o no esta activo.'
+                        ], 422);
+                    }
+
                     $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
                     $hash_factura = "sef_".$this->generate_string($permitted_chars, 50);
@@ -2159,6 +2176,9 @@ class ClienteController extends Controller
                     foreach ($compras as $key => $compra) {
                         DB::table('compras')->where('id', $compra['id'])->update(['pagado' => 1, 'hash_factura' => $hash_factura]);
                     }
+
+                    $this->finalizeCatalogPurchases($compras, $hash_factura);
+                    $this->registerReferralSale($referralCode, $hash_factura, $compras, 0);
 
                     if (isset($datos[0]["id_pago"])){
                         if(is_array(json_decode($datos[0]["id_pago"],true))) {
@@ -2284,6 +2304,7 @@ class ClienteController extends Controller
                             $apiResponse = json_decode(json_encode($hubspot->crm()->deals()->basicApi()->create($dealInput)),true);
 
                             $iddeal = $apiResponse["id"];
+                            $this->attachHubspotDealToCatalogPurchase($compra, $iddeal);
 
                             $associationSpec1 = new AssociationSpec([
                                 'association_category' => 'HUBSPOT_DEFINED',
@@ -2411,6 +2432,15 @@ class ClienteController extends Controller
             $monto = $monto + $compra["monto"];
         }
 
+        [$referralCode, $normalizedReferralCode] = $this->resolveReferralCode($request->input('referral_code'));
+
+        if ($normalizedReferralCode && ! $referralCode) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El codigo de referido no existe o no esta activo.'
+            ], 422);
+        }
+
         $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
         $hash_factura = "sef_".$this->generate_string($permitted_chars, 50);
@@ -2424,6 +2454,9 @@ class ClienteController extends Controller
         foreach ($compras as $key => $compra) {
             DB::table('compras')->where('id', $compra['id'])->update(['pagado' => 1, 'hash_factura' => $hash_factura]);
         }
+
+        $this->finalizeCatalogPurchases($compras, $hash_factura);
+        $this->registerReferralSale($referralCode, $hash_factura, $compras, $monto);
 
         $cargostemp = [];
 
@@ -2569,6 +2602,7 @@ class ClienteController extends Controller
                 $apiResponse = json_decode(json_encode($hubspot->crm()->deals()->basicApi()->create($dealInput)),true);
 
                 $iddeal = $apiResponse["id"];
+                $this->attachHubspotDealToCatalogPurchase($compra, $iddeal);
 
                 $associationSpec1 = new AssociationSpec([
                     'association_category' => 'HUBSPOT_DEFINED',
@@ -2670,6 +2704,15 @@ class ClienteController extends Controller
 
         foreach ($compras as $key => $compra) {
             $monto = $monto + $compra["monto"];
+        }
+
+        [$referralCode, $normalizedReferralCode] = $this->resolveReferralCode($request->input('referral_code'));
+
+        if ($normalizedReferralCode && ! $referralCode) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El codigo de referido no existe o no esta activo.'
+            ], 422);
         }
 
         $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -2937,6 +2980,8 @@ class ClienteController extends Controller
             }
         }
 
+        $this->registerReferralSale($referralCode, $hash_factura, $compras, $monto);
+
         $user = User::find(auth()->user()->id);
         $user->pay = $user->pay-10;
         $user->save();
@@ -3005,6 +3050,14 @@ class ClienteController extends Controller
 
         foreach ($compras as $key => $compra) {
             $monto = $monto + $compra["monto"];
+        }
+
+        [$referralCode, $normalizedReferralCode] = $this->resolveReferralCode($request->input('referral_code'));
+
+        if ($normalizedReferralCode && ! $referralCode) {
+            return back()
+                ->withInput()
+                ->with('referral_error', 'El codigo de referido no existe o no esta activo.');
         }
 
         try {
@@ -3081,6 +3134,9 @@ class ClienteController extends Controller
                 foreach ($compras as $key => $compra) {
                     DB::table('compras')->where('id', $compra['id'])->update(['pagado' => 1, 'hash_factura' => $hash_factura]);
                 }
+
+                $this->finalizeCatalogPurchases($compras, $hash_factura, $charged->id);
+                $this->registerReferralSale($referralCode, $hash_factura, $compras, $monto);
 
                 $cargostemp = [];
 
@@ -3229,6 +3285,7 @@ class ClienteController extends Controller
                         $apiResponse = json_decode(json_encode($hubspot->crm()->deals()->basicApi()->create($dealInput)),true);
 
                         $iddeal = $apiResponse["id"];
+                        $this->attachHubspotDealToCatalogPurchase($compra, $iddeal);
 
                         $associationSpec1 = new AssociationSpec([
                             'association_category' => 'HUBSPOT_DEFINED',
@@ -3352,6 +3409,14 @@ class ClienteController extends Controller
 
         foreach ($compras as $key => $compra) {
             $monto = $monto + $compra["monto"];
+        }
+
+        [$referralCode, $normalizedReferralCode] = $this->resolveReferralCode($request->input('referral_code'));
+
+        if ($normalizedReferralCode && ! $referralCode) {
+            return back()
+                ->withInput()
+                ->with('referral_error', 'El codigo de referido no existe o no esta activo.');
         }
 
         try {
@@ -3680,6 +3745,8 @@ class ClienteController extends Controller
                     }
                 }
 
+                $this->registerReferralSale($referralCode, $hash_factura, $compras, $monto);
+
                 $user = User::find(auth()->user()->id);
                 $user->pay = $user->pay-10;
                 $user->save();
@@ -3756,6 +3823,15 @@ class ClienteController extends Controller
                     'success' => false,
                     'message' => 'No se recibió el método de pago.'
                 ], 400);
+            }
+
+            [$referralCode, $normalizedReferralCode] = $this->resolveReferralCode($data['referral_code'] ?? null);
+
+            if ($normalizedReferralCode && ! $referralCode) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El codigo de referido no existe o no esta activo.'
+                ], 422);
             }
 
             // Obtener compras pendientes
@@ -3934,6 +4010,9 @@ class ClienteController extends Controller
                         ]);
                 }
 
+                $this->finalizeCatalogPurchases($compras, $hash_factura, $paymentIntent->id);
+                $this->registerReferralSale($referralCode, $hash_factura, $compras, $monto);
+
                 // Obtener datos del usuario
                 $datos = DB::table('users')
                     ->where('id', auth()->user()->id)
@@ -4072,11 +4151,16 @@ class ClienteController extends Controller
                         foreach ($compras as $compra) {
                             \Log::info('Creando deal para compra ID: ' . $compra->id . ' servicio: ' . $compra->servicio_hs_id);
 
+                            $servicioCompra = $compra->servicio ?: Servicio::where('id_hubspot', $compra->servicio_hs_id)->first();
+                            $pipelineId = $servicioCompra?->hubspot_pipeline_id ?: "94794";
+                            $stageId = $servicioCompra?->hubspot_stage_id ?: "429097";
+
                             $dealInput = new \HubSpot\Client\Crm\Deals\Model\SimplePublicObjectInput();
                             $dealInput->setProperties([
                                 'dealname'             => auth()->user()->name . ' - ' . $compra->servicio_hs_id,
-                                'pipeline'             => "94794",
-                                'dealstage'            => "429097",
+                                'pipeline'             => $pipelineId,
+                                'dealstage'            => $stageId,
+                                'amount'               => $compra->monto,
                                 'servicio_solicitado'  => $compra->servicio_hs_id,
                                 'servicio_solicitado2' => $compra->servicio_hs_id,
                             ]);
@@ -4088,6 +4172,7 @@ class ClienteController extends Controller
 
                             $iddeal = $dealResponse["id"];
                             \Log::info('Deal creado con ID: ' . $iddeal);
+                            $this->attachHubspotDealToCatalogPurchase($compra, $iddeal);
 
                             // ✅ Asociación via HTTP directo
                             $hubspotToken = env('HUBSPOT_KEY');
@@ -4233,12 +4318,102 @@ class ClienteController extends Controller
         }
     }
 
+    private function finalizeCatalogPurchases($compras, string $hashFactura, ?string $paymentReference = null): void
+    {
+        $ids = collect($compras)->pluck('id')->filter()->values();
+
+        if ($ids->isEmpty()) {
+            return;
+        }
+
+        Compras::whereIn('id', $ids)->update([
+            'paid_at' => now(),
+        ]);
+
+        ConsultationBooking::whereIn('compra_id', $ids)
+            ->where('status', ConsultationBooking::STATUS_PENDING_PAYMENT)
+            ->update([
+                'status' => ConsultationBooking::STATUS_PAID,
+                'paid_at' => now(),
+            ]);
+    }
+
+    private function attachHubspotDealToCatalogPurchase($compra, string $hubspotDealId): void
+    {
+        ConsultationBooking::where('compra_id', $compra->id)
+            ->update(['hubspot_deal_id' => $hubspotDealId]);
+    }
+
+    private function resolveReferralCode(?string $code): array
+    {
+        $normalized = $this->normalizeReferralCode($code);
+
+        if (! $normalized) {
+            return [null, null];
+        }
+
+        if (! Schema::hasTable('coordinator_referral_codes')) {
+            return [null, $normalized];
+        }
+
+        $referralCode = CoordinatorReferralCode::with('coordinator')
+            ->where('code', $normalized)
+            ->where('active', true)
+            ->first();
+
+        return [$referralCode, $normalized];
+    }
+
+    private function normalizeReferralCode(?string $code): ?string
+    {
+        $normalized = strtoupper(trim((string) $code));
+        $normalized = preg_replace('/\s+/', '', $normalized);
+
+        return $normalized !== '' ? $normalized : null;
+    }
+
+    private function registerReferralSale(?CoordinatorReferralCode $referralCode, string $hashFactura, $compras, float $amount, string $currency = 'EUR'): void
+    {
+        if (! $referralCode) {
+            return;
+        }
+
+        if (! Schema::hasTable('referral_sales')) {
+            return;
+        }
+
+        $sale = ReferralSale::firstOrNew(['hash_factura' => $hashFactura]);
+
+        $sale->fill([
+            'coordinator_referral_code_id' => $referralCode->id,
+            'coordinator_user_id' => $referralCode->coordinator_user_id,
+            'buyer_user_id' => auth()->id(),
+            'code' => $referralCode->code,
+            'amount' => round($amount, 2),
+            'currency' => $currency,
+        ]);
+
+        if (! $sale->exists) {
+            $sale->commission_status = 'pending';
+        }
+
+        $sale->save();
+    }
+
+    private function referralSaleForHash(string $hashFactura): ?ReferralSale
+    {
+        if (! Schema::hasTable('referral_sales')) {
+            return null;
+        }
+
+        return ReferralSale::with(['coordinator', 'referralCode'])
+            ->where('hash_factura', $hashFactura)
+            ->first();
+    }
+
     /**
- * Mapea los nombres de servicios de la base de datos a los valores del dropdown de Monday
- *
- * @param string $servicio Nombre del servicio en la base de datos
- * @return string Nombre del servicio según Monday
- */
+     * Mapea los nombres de servicios de la base de datos a los valores del dropdown de Monday.
+     */
     protected function mapearServicioParaMonday($servicio)
     {
         // Mapeo completo de servicios
@@ -4843,8 +5018,9 @@ class ClienteController extends Controller
         $datos_factura = json_decode(json_encode(DB::select($query)),true);
 
         $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
+        $ventaReferida = $this->referralSaleForHash($datos_factura[0]["hash_factura"]);
 
-        $pdf = PDF::loadView('crud.comprobantes.pdfintel', compact('datos_factura', 'productos'));
+        $pdf = PDF::loadView('crud.comprobantes.pdfintel', compact('datos_factura', 'productos', 'ventaReferida'));
 
         return $pdf->output();
     }

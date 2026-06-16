@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Factura;
 use App\Models\Compras;
+use App\Models\ReferralSale;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Stripe;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Abort;
+use Illuminate\Support\Facades\Schema;
 
 class FacturaController extends Controller
 {
@@ -43,8 +45,13 @@ class FacturaController extends Controller
         ->get()),true);
 
         $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
+        $ventaReferida = Schema::hasTable('referral_sales')
+            ? ReferralSale::with(['coordinator', 'referralCode'])
+                ->where('hash_factura', $datos_factura[0]["hash_factura"])
+                ->first()
+            : null;
 
-        $pdf = PDF::loadView('crud.comprobantes.pdfintel', compact('datos_factura', 'productos'));
+        $pdf = PDF::loadView('crud.comprobantes.pdfintel', compact('datos_factura', 'productos', 'ventaReferida'));
 
         return $pdf->stream("comprobantecliente.pdf", array("Attachment" => false));
     }
@@ -59,8 +66,13 @@ class FacturaController extends Controller
         }
 
         $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
+        $ventaReferida = Schema::hasTable('referral_sales')
+            ? ReferralSale::with(['coordinator', 'referralCode'])
+                ->where('hash_factura', $datos_factura[0]["hash_factura"])
+                ->first()
+            : null;
 
-        $pdf = PDF::loadView('crud.comprobantes.pdfintel', compact('datos_factura', 'productos'));
+        $pdf = PDF::loadView('crud.comprobantes.pdfintel', compact('datos_factura', 'productos', 'ventaReferida'));
 
         return $pdf->stream("comprobantecliente.pdf", array("Attachment" => false));
     }
