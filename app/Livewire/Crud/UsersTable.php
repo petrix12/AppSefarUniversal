@@ -104,7 +104,8 @@ class UsersTable extends Component
                 'latest_internal_chat_message'
             )
             ->with([
-                'compras:id,id_user,servicio_hs_id,pagado',
+                'compras:id,id_user,servicio_id,source,servicio_hs_id,descripcion,pagado,hash_factura,metadata,paid_at,created_at,updated_at',
+                'compras.servicio:id,nombre',
                 'roles:id,name', // ✅ necesario para decidir botones sin queries extra
             ]);
 

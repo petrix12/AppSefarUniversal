@@ -40,7 +40,9 @@ use App\Http\Controllers\HermanoController;
 use App\Http\Controllers\AgClienteNewController;
 use App\Http\Controllers\SolicitudCuponController;
 use App\Http\Controllers\AlertController;
+use App\Http\Controllers\AdminBancaOnlineController;
 use App\Http\Controllers\GeneralCouponController;
+use App\Http\Controllers\BancaOnlineController;
 use App\Http\Controllers\NegocioController;
 use App\Http\Controllers\TreenaController;
 use Illuminate\Support\Facades\Artisan;
@@ -530,6 +532,33 @@ Route::get('/viewcomprobantecliente/{id}', [FacturaController::class, 'viewcompr
 Route::get('/users/status/{id}', [UserController::class, 'getuserstatus'])->name('getuserstatus');
 
 Route::post('/guardar-datos-personales', [UserController::class, 'savePersonalData'])->name('saveuserdata');
+
+Route::prefix('banca-online-2026')
+    ->name('banca-online.')
+    ->group(function () {
+        Route::get('/', [BancaOnlineController::class, 'landing'])->name('index');
+        Route::get('/cliente', [BancaOnlineController::class, 'lookupClient'])->name('client.lookup');
+        Route::get('/pago/{token}', [BancaOnlineController::class, 'payment'])->name('payment');
+        Route::post('/pago/{token}/stripe', [BancaOnlineController::class, 'processPayment'])->name('payment.process');
+        Route::get('/gracias/{token}', [BancaOnlineController::class, 'thankYou'])->name('thank-you');
+        Route::get('/{country}', [BancaOnlineController::class, 'landingForCountry'])
+            ->whereIn('country', ['espana', 'portugal', 'italia'])
+            ->name('country');
+        Route::get('/{country}/{plan}', [BancaOnlineController::class, 'configureForCountry'])->name('configure.country');
+        Route::post('/{country}/{plan}', [BancaOnlineController::class, 'checkoutForCountry'])->name('checkout.country');
+        Route::get('/{plan}', [BancaOnlineController::class, 'configure'])->name('configure');
+        Route::post('/{plan}', [BancaOnlineController::class, 'checkout'])->name('checkout');
+    });
+
+Route::middleware(['auth', 'can:administrador'])
+    ->prefix('admin/banca-online-2026')
+    ->name('admin.banca-online.')
+    ->group(function () {
+        Route::get('/', [AdminBancaOnlineController::class, 'index'])->name('index');
+        Route::post('/sync', [AdminBancaOnlineController::class, 'sync'])->name('sync');
+        Route::post('/items', [AdminBancaOnlineController::class, 'store'])->name('items.store');
+        Route::put('/items/{servicio}', [AdminBancaOnlineController::class, 'update'])->name('items.update');
+    });
 
 //panel produccion y ventas status
 Route::get('/clientes/status/{agcliente}', [UserController::class, 'getuserstatus_ventas'])->name('getuserstatus_ventas');

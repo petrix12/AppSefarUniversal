@@ -307,6 +307,133 @@
             margin-bottom: 4px;
         }
 
+        .services-summary {
+            display: grid;
+            gap: 10px;
+            min-width: 260px;
+            max-width: 620px;
+        }
+
+        .service-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 5px 8px;
+        }
+
+        .service-name {
+            color: #111827;
+            font-size: 0.875rem;
+            font-weight: 600;
+            overflow-wrap: anywhere;
+        }
+
+        .bank-payment {
+            padding: 10px 12px;
+            border-left: 3px solid #0f766e;
+            border-radius: 4px;
+            background: #f0fdfa;
+        }
+
+        .bank-payment.is-pending {
+            border-left-color: #b45309;
+            background: #fffbeb;
+        }
+
+        .bank-payment-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 3px 10px;
+        }
+
+        .bank-payment-title {
+            color: #115e59;
+            font-size: 0.875rem;
+            font-weight: 700;
+        }
+
+        .bank-payment.is-pending .bank-payment-title {
+            color: #92400e;
+        }
+
+        .bank-payment-date {
+            color: #4b5563;
+            font-size: 0.75rem;
+            white-space: nowrap;
+        }
+
+        .bank-payment-plan {
+            margin-top: 2px;
+            color: #4b5563;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .bank-service-list {
+            display: grid;
+            gap: 5px;
+            margin: 8px 0 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .bank-service-list li {
+            position: relative;
+            margin: 0;
+            padding-left: 14px;
+            color: #374151;
+            font-size: 0.8125rem;
+            line-height: 1.35;
+        }
+
+        .bank-service-list li::before {
+            content: "";
+            position: absolute;
+            top: 0.48em;
+            left: 1px;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: #0f766e;
+        }
+
+        .bank-payment.is-pending .bank-service-list li::before {
+            background: #b45309;
+        }
+
+        .case-status {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px 14px;
+            padding-top: 8px;
+            border-top: 1px solid #e5e7eb;
+            color: #4b5563;
+            font-size: 0.75rem;
+        }
+
+        .case-status-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .case-status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #b91c1c;
+        }
+
+        .case-status-item.is-complete {
+            color: #065f46;
+        }
+
+        .case-status-item.is-complete .case-status-dot {
+            background: #059669;
+        }
+
         .badge-paid {
             display: inline-block;
             padding: 2px 8px;
@@ -586,50 +713,7 @@
                                     <div class="mb-3 p-3 bg-gray-50 rounded-md">
                                         <h4 class="text-xs font-semibold text-gray-700 uppercase mb-2">Servicios y Pago</h4>
 
-                                        @php
-                                            $helperc = 0;
-                                            foreach ($user->compras as $compra) {
-                                                if ($compra['id_user'] == $user->id){
-                                                    $helperc = 1;
-                                                    break;
-                                                }
-                                            }
-                                        @endphp
-
-                                        @if ($helperc==1)
-                                            @foreach ($user->compras as $compra)
-                                                @if ($compra['id_user'] == $user->id && $compra['servicio_hs_id'])
-                                                    <p class="text-sm mb-1">
-                                                        <span class="font-semibold">{{ $compra['servicio_hs_id'] }}</span>
-                                                        <span class="ml-2 px-2 py-1 text-xs rounded {{ $compra->pagado == 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' }}">
-                                                            {{ $compra->pagado == 0 ? 'No pagó Registro' : 'Pagó Registro' }}
-                                                        </span>
-                                                    </p>
-                                                @endif
-                                            @endforeach
-
-                                            <p class="text-sm text-gray-600">
-                                                {{ $user->pay == 2 ? '✓ Completó información' : '✗ NO completó información' }}
-                                                <b>{{ $user->pay == 3 ? ' - Estatus 3 activo' : '' }}</b>
-                                            </p>
-                                        @else
-                                            @if (auth()->user()->roles[0]->id == 1)
-                                                <p class="text-sm mb-1">{{ $user->servicio == null ? ($user->getRoleNames()[0] ?? 'Cliente') : $user->servicio }}</p>
-                                            @else
-                                                <p class="text-sm mb-1">{{ $user->servicio != null ? $user->servicio : "Usuario App" }}</p>
-                                            @endif
-
-                                            <p class="text-sm">
-                                                <span class="px-2 py-1 rounded {{ $user->pay == 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' }}">
-                                                    {{ $user->pay == 0 ? 'No pagó Registro' : ($user->pay == 1 ? 'Pagó Registro' : 'Pagó Registro y completó información') }}
-                                                </span>
-                                                <b>{{ $user->pay == 3 ? ' - Estatus 3' : '' }}</b>
-                                            </p>
-                                        @endif
-
-                                        <p class="text-sm mt-2 {{ $user->contrato ? 'text-green-600' : 'text-red-600' }}">
-                                            {{ $user->contrato ? '✓ Contrato firmado' : '✗ Contrato NO firmado' }}
-                                        </p>
+                                        @include('livewire.crud.partials.user-services-summary', ['user' => $user])
                                     </div>
 
                                     @if(auth()->user()->email == 'sistemasccs@sefarvzla.com')
@@ -817,52 +901,7 @@
                                             </td>
 
                                             <td style="vertical-align:middle;">
-                                                @php
-                                                    $helperc = 0;
-                                                    foreach ($user->compras as $compra) {
-                                                        if ($compra['id_user'] == $user->id){
-                                                            $helperc = 1;
-                                                            break;
-                                                        }
-                                                    }
-                                                @endphp
-
-                                                @if ($helperc==1)
-                                                    @foreach ($user->compras as $compra)
-                                                        @if ($compra['id_user'] == $user->id && $compra['servicio_hs_id'])
-                                                            <p class="service-item">
-                                                                <b>{{ $compra['servicio_hs_id'] }}</b>
-                                                                <span class="{{ $compra->pagado == 0 ? 'badge-unpaid' : 'badge-paid' }}">
-                                                                    {{ $compra->pagado == 0 ? 'No pagó Registro' : 'Pagó Registro' }}
-                                                                </span>
-                                                            </p>
-                                                        @endif
-                                                    @endforeach
-
-                                                    <p class="service-item">
-                                                        {{ $user->pay == 2 ? 'Completó información' : 'NO completó información' }}
-                                                        <b>{{ $user->pay == 3 ? ' - Estatus 3' : '' }}</b>
-                                                    </p>
-                                                @else
-                                                    @if (auth()->user()->roles[0]->id == 1)
-                                                        <p class="service-item">{{ $user->servicio == null ? ($user->getRoleNames()[0] ?? 'Cliente') : $user->servicio }}</p>
-                                                    @else
-                                                        <p class="service-item">{{ $user->servicio != null ? $user->servicio : "Usuario App" }}</p>
-                                                    @endif
-
-                                                    <p class="service-item">
-                                                        <span class="{{ $user->pay == 0 ? 'badge-unpaid' : 'badge-paid' }}">
-                                                            {{ $user->pay == 0 ? 'No pagó Registro' : ($user->pay == 1 ? 'Pagó Registro' : 'Pagó Registro y completó información') }}
-                                                        </span>
-                                                        <b>{{ $user->pay == 3 ? ' - Estatus 3' : '' }}</b>
-                                                    </p>
-                                                @endif
-
-                                                @if($user->contrato)
-                                                    <p class="service-item" style="color:#065f46;">✓ Contrato firmado</p>
-                                                @else
-                                                    <p class="service-item" style="color:#991b1b;">✗ NO firmó contrato</p>
-                                                @endif
+                                                @include('livewire.crud.partials.user-services-summary', ['user' => $user])
                                             </td>
 
                                             @if(auth()->user()->email == 'sistemasccs@sefarvzla.com')

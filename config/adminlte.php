@@ -568,6 +568,13 @@ return [
             'url'           => 'servicios',
         ],
         [
+            'text'          => 'Banca Online 2026',
+            'icon'          => 'fa-fw fas fa-credit-card',
+            'icon_color'    => 'white',
+            'can'           => 'administrador',
+            'url'           => 'admin/banca-online-2026',
+        ],
+        [
             'text'          => 'Calendarios',
             'icon'          => 'fa-fw fas fa-calendar-alt',
             'icon_color'    => 'white',
