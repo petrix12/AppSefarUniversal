@@ -381,11 +381,21 @@
 
         .bank-service-list li {
             position: relative;
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 8px;
             margin: 0;
             padding-left: 14px;
             color: #374151;
             font-size: 0.8125rem;
             line-height: 1.35;
+        }
+
+        .bank-service-list li strong {
+            color: #115e59;
+            font-size: 0.75rem;
+            white-space: nowrap;
         }
 
         .bank-service-list li::before {
@@ -716,12 +726,12 @@
                                         @include('livewire.crud.partials.user-services-summary', ['user' => $user])
                                     </div>
 
-                                    @if(auth()->user()->email == 'sistemasccs@sefarvzla.com')
-                                        <div class="mb-3 flex justify-between text-sm text-gray-500">
-                                            <span><i class="fas fa-calendar mr-1"></i> {{ date_format($user->created_at,"Y-m-d") }}</span>
+                                    <div class="mb-3 flex justify-between text-sm text-gray-500">
+                                        <span><i class="fas fa-calendar mr-1"></i> {{ optional($user->created_at)->format('Y-m-d') ?? '-' }}</span>
+                                        @role('Administrador')
                                             <span><i class="fas fa-id-card mr-1"></i> ID: {{ $user->id }}</span>
-                                        </div>
-                                    @endif
+                                        @endrole
+                                    </div>
 
                                     {{-- ✅ Acciones --}}
                                     <div class="flex flex-wrap gap-2 justify-center pt-3 border-t border-gray-200">
@@ -853,9 +863,12 @@
                                         <th></th>
                                         <th>Nombre, Correo y Pasaporte</th>
                                         <th>Servicios Solicitados / Pago</th>
-                                        @if(auth()->user()->email == 'sistemasccs@sefarvzla.com')
-                                            <th>Fecha Registro / ID</th>
-                                        @endif
+                                        <th>
+                                            Fecha Registro
+                                            @role('Administrador')
+                                                / ID
+                                            @endrole
+                                        </th>
                                         <th style="text-align:center;">Opciones</th>
                                     </tr>
                                     </thead>
@@ -904,12 +917,12 @@
                                                 @include('livewire.crud.partials.user-services-summary', ['user' => $user])
                                             </td>
 
-                                            @if(auth()->user()->email == 'sistemasccs@sefarvzla.com')
-                                                <td style="vertical-align:middle;">
-                                                    <p class="service-item">{{ date_format($user->created_at,"Y-m-d") }}</p>
+                                            <td style="vertical-align:middle;">
+                                                <p class="service-item">{{ optional($user->created_at)->format('Y-m-d') ?? '-' }}</p>
+                                                @role('Administrador')
                                                     <p class="user-info">ID: {{ $user->id }}</p>
-                                                </td>
-                                            @endif
+                                                @endrole
+                                            </td>
 
                                             <td class="actions-cell" style="vertical-align:middle;">
                                                 <div class="action-buttons">
