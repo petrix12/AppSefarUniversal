@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Negocio;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use App\Services\TeamleaderContactResolver;
 
 class UserSyncService
 {
@@ -148,47 +149,7 @@ public function syncWithTeamleader(User $user): array
      */
 private function ensureTeamleaderContact(User $user): void
 {
-    try {
-        // Si ya tiene un tl_id válido y el contacto existe, no hacer nada
-        if (!empty($user->tl_id)) {
-            $existing = $this->teamleaderService->getContactById($user->tl_id);
-
-            if ($existing) {
-                return;
-            }
-
-            // Si el tl_id guardado está roto, lo limpiamos
-            Log::warning("Teamleader: tl_id inválido o inexistente, se limpiará", [
-                'user_id' => $user->id,
-                'tl_id' => $user->tl_id,
-            ]);
-
-            $user->tl_id = null;
-            $user->save();
-        }
-
-        $TLcontact = $this->teamleaderService->searchContactByEmail($user->email);
-
-        if (!is_null($TLcontact)) {
-            $user->tl_id = $TLcontact['id'];
-        } else {
-            $newContact = $this->teamleaderService->createContact($user);
-            $user->tl_id = $newContact['id'] ?? null;
-        }
-
-        $user->save();
-
-        Log::info("Teamleader: Contacto sincronizado", [
-            'user_id' => $user->id,
-            'tl_id' => $user->tl_id
-        ]);
-    } catch (\Throwable $e) {
-        Log::error("Error al sincronizar con Teamleader", [
-            'user_id' => $user->id,
-            'tl_id' => $user->tl_id,
-            'error' => $e->getMessage()
-        ]);
-    }
+    app(TeamleaderContactResolver::class)->resolve($user, $this->teamleaderService);
 }
 
     /**

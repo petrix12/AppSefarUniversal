@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\User;
 use App\Models\Negocio;
 use App\Services\HubspotService;
+use App\Services\TeamleaderContactResolver;
 use App\Services\TeamleaderService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -28,9 +29,15 @@ class SyncUserDealsJob implements ShouldQueue
         $this->user = $user;
     }
 
-    public function handle(HubspotService $hubspotService, TeamleaderService $teamleaderService)
+    public function handle(
+        HubspotService $hubspotService,
+        TeamleaderService $teamleaderService,
+        TeamleaderContactResolver $teamleaderContactResolver
+    )
     {
         try {
+            $this->user = $this->user->fresh();
+
             Log::info("Iniciando sincronización de deals", [
                 'user_id' => $this->user->id,
                 'attempt' => $this->attempts()
@@ -39,15 +46,28 @@ class SyncUserDealsJob implements ShouldQueue
             // Obtener deals de ambas plataformas
             $deals = $hubspotService->getDealsByContactId($this->user->hs_id);
 
-            $tlDeals = $teamleaderService->getProjectsWithDetailsByCustomerId($this->user->tl_id);
+            $tlDeals = [];
+            $teamleaderId = $teamleaderContactResolver->resolve($this->user, $teamleaderService);
+
+            if ($teamleaderId) {
+                $this->user->tl_id = $teamleaderId;
+                $tlDeals = $teamleaderService->getProjectsWithDetailsByCustomerId($teamleaderId);
+            }
 
             Log::info("Info de Cliente", [
                 'hubspot' => $deals,
                 'teamleader' => $tlDeals
             ]);
 
-            // Sincronizar con Teamleader
-            $this->syncDealsToTeamleader($deals, $tlDeals, $teamleaderService);
+            if ($teamleaderId) {
+                // Sincronizar con Teamleader
+                $this->syncDealsToTeamleader($deals, $tlDeals, $teamleaderService);
+            } else {
+                Log::info("Teamleader omitido durante sincronizacion COS", [
+                    'user_id' => $this->user->id,
+                    'reason' => 'Contacto no encontrado en respaldo local ni API',
+                ]);
+            }
 
             // Sincronizar con base de datos
             $this->syncDealsToDatabase($deals);
