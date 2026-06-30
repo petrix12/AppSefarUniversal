@@ -1,11 +1,5 @@
 @php
     $serviceName = $country['service_name'] ?? 'Servicio Sefar';
-    $planIcons = [
-        'solicitud-estrategica' => 'fas fa-balance-scale',
-        'administrativo' => 'fas fa-folder-open',
-        'judicial' => 'fas fa-gavel',
-        'reforzamiento-seguro' => 'fas fa-shield-alt',
-    ];
 @endphp
 <!doctype html>
 <html lang="es">
@@ -39,8 +33,8 @@
         <section class="bo-intro" aria-label="Banca Online 2026">
             <div class="bo-intro-main">
                 <span class="bo-eyebrow"><i class="fas fa-credit-card"></i> Banca Online 2026</span>
-                <h1>{{ $serviceName }}</h1>
-                <p>Configura el plan estrategico correspondiente, ajusta sus servicios y pasa directo al pago sin iniciar sesion.</p>
+                <h1>Planes estrategicos</h1>
+                <p>Elige la ruta que corresponde a la situacion actual de tu expediente. Dentro encontraras tres niveles de cobertura predefinidos.</p>
             </div>
 
             <aside class="bo-switch-panel">
@@ -59,22 +53,31 @@
             </aside>
         </section>
 
-        <section class="bo-plan-grid" aria-label="Planes estrategicos">
+        <section class="bo-strategy-grid" aria-label="Planes estrategicos">
             @foreach($plans as $slug => $plan)
-                <a class="bo-plan-card" href="{{ route('banca-online.configure.country', [$countrySlug, $slug]) }}">
-                    <span>
-                        <span class="bo-plan-icon"><i class="{{ $planIcons[$slug] ?? 'fas fa-layer-group' }}"></i></span>
-                        <h2>{{ $plan['short_title'] ?? $plan['title'] }}</h2>
-                        <p>{{ $plan['summary'] ?? '' }}</p>
-                    </span>
-                    <span class="bo-plan-action">
-                        Configurar <i class="fas fa-arrow-right"></i>
-                    </span>
-                </a>
+                <article class="bo-strategy-card {{ $loop->iteration === 2 ? 'is-featured' : '' }}">
+                    <div class="bo-strategy-head">
+                        <span class="bo-strategy-number">{{ $loop->iteration }}</span>
+                        <span class="bo-strategy-eyebrow">{{ $plan['eyebrow'] ?? 'Ruta estrategica' }}</span>
+                        <h2>{{ $plan['public_title'] ?? $plan['title'] }}</h2>
+                    </div>
+                    <div class="bo-strategy-body">
+                        <p>{{ $plan['intro'] ?? $plan['summary'] }}</p>
+                        <ul>
+                            @foreach(($plan['highlights'] ?? []) as $highlight)
+                                <li>{{ $highlight }}</li>
+                            @endforeach
+                        </ul>
+                        <a class="bo-strategy-action" href="{{ route('banca-online.configure.country', [$countrySlug, $slug]) }}">
+                            <span>{{ $plan['action'] ?? 'Ver estrategia' }}</span>
+                            <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                </article>
             @endforeach
         </section>
 
-        <p class="bo-note">Los importes se calculan segun los servicios seleccionados y los precios configurados por administracion.</p>
+        <p class="bo-note">Cada ruta ofrece paquetes Regular, Medium y Premium con componentes y precio definidos por administracion.</p>
     </main>
     <script src="{{ asset('js/banca-online-2026.js') }}"></script>
 </body>

@@ -558,6 +558,7 @@ Route::middleware(['auth', 'can:administrador'])
         Route::post('/sync', [AdminBancaOnlineController::class, 'sync'])->name('sync');
         Route::post('/items', [AdminBancaOnlineController::class, 'store'])->name('items.store');
         Route::put('/items/{servicio}', [AdminBancaOnlineController::class, 'update'])->name('items.update');
+        Route::put('/packages/{servicio}', [AdminBancaOnlineController::class, 'updatePackage'])->name('packages.update');
     });
 
 //panel produccion y ventas status

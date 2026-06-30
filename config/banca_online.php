@@ -28,11 +28,42 @@ return [
         ],
     ],
 
+    'packages' => [
+        'regular' => [
+            'title' => 'Regular',
+            'summary' => 'La cobertura esencial para avanzar con una estrategia definida.',
+            'recommended' => false,
+            'order' => 1,
+        ],
+        'medium' => [
+            'title' => 'Medium',
+            'summary' => 'Una cobertura ampliada con mayor acompañamiento durante el proceso.',
+            'recommended' => true,
+            'order' => 2,
+        ],
+        'premium' => [
+            'title' => 'Premium',
+            'summary' => 'La cobertura más completa para escenarios que requieren máxima atención.',
+            'recommended' => false,
+            'order' => 3,
+        ],
+    ],
+
     'plans' => [
         'solicitud-estrategica' => [
+            'enabled' => true,
             'title' => 'Solicitud estrategica de nacionalidad',
             'short_title' => 'Solicitud estrategica',
             'summary' => 'Fase legal y fase genealogica configurables en una sola contratacion.',
+            'public_title' => 'Plan de Solicitud Estrategica de Nacionalidad Española por Origen Sefardi',
+            'eyebrow' => 'Primera ruta estrategica',
+            'intro' => 'Inicia tu camino con una estrategia integral que combina el rigor genealogico y juridico desde el primer paso.',
+            'highlights' => [
+                'Plan Estrategico Genealogico.',
+                'Plan Estrategico Juridico.',
+                'Preparacion, formalizacion y subsanacion cuando corresponda.',
+            ],
+            'action' => 'Ver estrategia de solicitud',
             'service_scope' => ['espana', 'portugal', 'italia'],
             'sections' => [
                 [
@@ -77,10 +108,80 @@ return [
         ],
 
         'administrativo' => [
+            'enabled' => true,
             'title' => 'Plan estrategico administrativo',
             'short_title' => 'Administrativo',
             'summary' => 'Subsanaciones, mejoras y recursos administrativos despues de la formalizacion.',
+            'public_title' => 'Plan Estrategico Administrativo',
+            'eyebrow' => 'Segunda ruta estrategica',
+            'intro' => 'Diseñado para maximizar tus posibilidades de exito en via administrativa con estrategia, seguimiento y presion juridica.',
+            'highlights' => [
+                'Analisis y preparacion de escritos.',
+                'Impulso y optimizacion del expediente.',
+                'Acciones para forzar una decision estimatoria.',
+            ],
+            'action' => 'Activar estrategia administrativa',
             'service_scope' => ['espana', 'portugal', 'italia'],
+            'packages' => [
+                'regular' => [
+                    'title' => 'Plan Administrativo Uno',
+                    'summary' => 'Cobertura esencial para revisar, reforzar y defender el expediente en via administrativa.',
+                    'list_price' => 5305,
+                    'price' => 3205,
+                    'saving' => 2100,
+                    'show_component_prices' => false,
+                    'features' => [
+                        'Revision integral del expediente',
+                        'Generacion de la estrategia de derecho genealogista',
+                        'Incorporacion de los elementos y argumentos estrategicos en el expediente del representado',
+                        'Recurso de alzada cuando corresponda',
+                        'Revision del expediente y del recurso por 1 abogado y 1 genealogista',
+                    ],
+                ],
+                'medium' => [
+                    'title' => 'Plan Administrativo Dos',
+                    'summary' => 'La alternativa recomendada para incorporar acciones adicionales y doble revision especializada.',
+                    'list_price' => 6427,
+                    'price' => 4007,
+                    'saving' => 2420,
+                    'show_component_prices' => false,
+                    'features' => [
+                        'Revision integral del expediente',
+                        'Generacion de la estrategia de derecho genealogista',
+                        'Incorporacion de los elementos y argumentos estrategicos en el expediente del representado',
+                        'Recurso de alzada cuando corresponda',
+                        '1 solicitud de resolucion expresa',
+                        '1 subsanacion',
+                        '1 mejora documental',
+                        '1 introduccion de prueba adicional',
+                        '1 impulso administrativo',
+                        '1 consulta juridica',
+                        'Revision del expediente y del recurso por 2 abogados y 2 genealogistas',
+                    ],
+                ],
+                'premium' => [
+                    'title' => 'Plan Administrativo Tres',
+                    'summary' => 'La cobertura mas completa para expedientes que requieren mayor insistencia documental y juridica.',
+                    'list_price' => 7319,
+                    'price' => 4521,
+                    'saving' => 2798,
+                    'show_component_prices' => false,
+                    'features' => [
+                        'Revision integral del expediente',
+                        'Generacion de la estrategia de derecho genealogista',
+                        'Incorporacion de los elementos y argumentos estrategicos en el expediente del representado',
+                        'Recurso de alzada cuando corresponda',
+                        'Solicitud de resolucion expresa',
+                        '3 subsanaciones',
+                        '3 mejoras documentales',
+                        '3 introducciones de prueba adicional',
+                        '3 impulsos administrativos',
+                        '3 consultas juridicas',
+                        'Revision del expediente y del recurso por 2 abogados y 2 genealogistas',
+                        'Copia de constancias cuando corresponda',
+                    ],
+                ],
+            ],
             'sections' => [
                 [
                     'title' => 'Despues de la formalizacion',
@@ -100,9 +201,19 @@ return [
         ],
 
         'judicial' => [
+            'enabled' => true,
             'title' => 'Plan estrategico judicial',
             'short_title' => 'Judicial',
             'summary' => 'Recurso contencioso administrativo, pendiente de desglose operativo.',
+            'public_title' => 'Plan Estrategico Judicial',
+            'eyebrow' => 'Tercera ruta estrategica',
+            'intro' => 'Si la via administrativa no prospera, activamos la via judicial con la maxima solidez y estrategia procesal.',
+            'highlights' => [
+                'Preparacion de la demanda.',
+                'Introduccion del escrito.',
+                'Seguimiento, impulso e informes complementarios.',
+            ],
+            'action' => 'Activar estrategia judicial',
             'service_scope' => ['espana', 'portugal', 'italia'],
             'sections' => [
                 [
@@ -116,6 +227,7 @@ return [
         ],
 
         'reforzamiento-seguro' => [
+            'enabled' => false,
             'title' => 'Plan estrategico de reforzamiento y seguro',
             'short_title' => 'Reforzamiento y seguro',
             'summary' => 'Analisis preventivo para cubrir un eventual cambio de linea.',

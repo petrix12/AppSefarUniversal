@@ -1,3 +1,4 @@
+@php($packageComponents = collect($metadata['components'] ?? []))
 <!doctype html>
 <html lang="es">
 <head>
@@ -24,25 +25,40 @@
         <section class="bo-payment-title">
             <span class="bo-eyebrow"><i class="fas fa-lock"></i> Pago seguro</span>
             <h1>Completar contratacion</h1>
-            <p>{{ $metadata['plan_title'] ?? 'Plan estrategico' }}.</p>
+            <p>{{ $metadata['plan_title'] ?? 'Plan estrategico' }} · {{ $metadata['package_title'] ?? 'Paquete contratado' }}.</p>
         </section>
 
         <div class="bo-payment-layout">
             <section class="bo-panel">
-                <h2>Servicios seleccionados</h2>
+                <h2>{{ $metadata['package_title'] ?? 'Paquete contratado' }}</h2>
                 <ul class="bo-payment-items">
-                    @foreach($compras as $compra)
+                    @forelse($packageComponents as $component)
                         <li>
                             <i class="fas fa-check"></i>
-                            <span>{{ $compra->servicio?->nombre ?? $compra->descripcion }}</span>
+                            <span class="bo-service-line">
+                                <strong>{{ $component['name'] ?? 'Servicio incluido' }}</strong>
+                                @if(!empty($component['description']))<small>{{ $component['description'] }}</small>@endif
+                                @isset($component['price'])<span>{{ number_format((float) $component['price'], 2, ',', '.') }} EUR</span>@endisset
+                            </span>
                         </li>
-                    @endforeach
+                    @empty
+                        @foreach($compras as $compra)
+                            <li><i class="fas fa-check"></i><span>{{ $compra->servicio?->nombre ?? $compra->descripcion }}</span></li>
+                        @endforeach
+                    @endforelse
                 </ul>
             </section>
 
             <aside class="bo-panel">
                 @if(!$stripeKey)
                     <div class="bo-alert">No esta configurada la clave publica de Stripe para este servicio.</div>
+                @endif
+
+                @if((float) ($metadata['package_discount'] ?? 0) > 0)
+                    <div class="bo-payment-breakdown">
+                        <span>Subtotal <strong>{{ number_format((float) ($metadata['package_subtotal'] ?? $total), 2, ',', '.') }} EUR</strong></span>
+                        <span>Descuento <strong>-{{ number_format((float) $metadata['package_discount'], 2, ',', '.') }} EUR</strong></span>
+                    </div>
                 @endif
 
                 <div class="bo-total-label">Total a pagar</div>

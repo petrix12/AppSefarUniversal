@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Servicio;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class BancaOnlineCatalog
@@ -26,6 +27,19 @@ class BancaOnlineCatalog
     public function countries(): array
     {
         return config('banca_online.countries', []);
+    }
+
+    public function packages(): array
+    {
+        return config('banca_online.packages', []);
+    }
+
+    public function packageDefaults(?string $planSlug, string $tierSlug): array
+    {
+        $tier = $this->packages()[$tierSlug] ?? [];
+        $planPackage = $this->plan($planSlug)['packages'][$tierSlug] ?? [];
+
+        return array_merge($tier, $planPackage);
     }
 
     public function publicCountries(): array
@@ -57,7 +71,7 @@ class BancaOnlineCatalog
         return array_filter($this->plans(), function (array $plan) use ($countrySlug) {
             $scope = $plan['service_scope'] ?? [];
 
-            return empty($scope) || in_array($countrySlug, $scope, true);
+            return ($plan['enabled'] ?? true) && (empty($scope) || in_array($countrySlug, $scope, true));
         });
     }
 
@@ -101,6 +115,155 @@ class BancaOnlineCatalog
 
     public function servicesForPlan(string $countrySlug, string $planSlug, bool $activeOnly = true): Collection
     {
+        return $this->recordsForPlan($countrySlug, $planSlug, $activeOnly)
+            ->filter(fn (Servicio $servicio) => $this->recordType($servicio) === 'component')
+            ->values();
+    }
+
+    public function packagesForPlan(string $countrySlug, string $planSlug, bool $activeOnly = true): Collection
+    {
+        return $this->recordsForPlan($countrySlug, $planSlug, $activeOnly)
+            ->filter(fn (Servicio $servicio) => $this->recordType($servicio) === 'package')
+            ->sortBy(fn (Servicio $servicio) => (int) ($this->metadata($servicio)['tier_order'] ?? $servicio->orden))
+            ->values();
+    }
+
+    public function packageForTier(string $countrySlug, string $planSlug, string $tierSlug, bool $activeOnly = true): ?Servicio
+    {
+        return $this->packagesForPlan($countrySlug, $planSlug, $activeOnly)
+            ->first(fn (Servicio $servicio) => ($this->metadata($servicio)['tier_slug'] ?? null) === $tierSlug);
+    }
+
+    public function packageComponents(Servicio $package, bool $activeOnly = true): Collection
+    {
+        $metadata = $this->metadata($package);
+        $componentIds = collect($metadata['component_ids'] ?? [])->map(fn ($id) => (int) $id)->filter()->unique();
+
+        return $this->servicesForPlan(
+            $this->countrySlugForService($package),
+            (string) ($metadata['plan_slug'] ?? ''),
+            $activeOnly
+        )->filter(fn (Servicio $servicio) => $componentIds->contains((int) $servicio->id))->values();
+    }
+
+    public function packageFeatures(Servicio $package): Collection
+    {
+        return collect($this->metadata($package)['features'] ?? [])
+            ->map(function ($feature) {
+                if (is_array($feature)) {
+                    $name = trim((string) ($feature['name'] ?? $feature['title'] ?? ''));
+
+                    return [
+                        'name' => $name,
+                        'description' => trim((string) ($feature['description'] ?? '')) ?: null,
+                    ];
+                }
+
+                return [
+                    'name' => trim((string) $feature),
+                    'description' => null,
+                ];
+            })
+            ->filter(fn (array $feature) => $feature['name'] !== '')
+            ->values();
+    }
+
+    public function packageDisplayItems(Servicio $package, bool $activeOnly = true): Collection
+    {
+        $features = $this->packageFeatures($package);
+
+        if ($features->isNotEmpty()) {
+            return $features;
+        }
+
+        $showPrices = $this->showsComponentPrices($package);
+
+        return $this->packageComponents($package, $activeOnly)
+            ->map(function (Servicio $component) use ($package, $showPrices) {
+                $item = [
+                    'id' => $component->id,
+                    'name' => $component->nombre,
+                    'description' => $component->descripcion_publica,
+                ];
+
+                if ($showPrices) {
+                    $item['price'] = $this->packageComponentPrice($package, $component);
+                }
+
+                return $item;
+            })
+            ->values();
+    }
+
+    public function showsComponentPrices(Servicio $package): bool
+    {
+        return (bool) ($this->metadata($package)['show_component_prices'] ?? true);
+    }
+
+    public function packageComponentPrice(Servicio $package, Servicio $component): float
+    {
+        return max(0, (float) ($component->precio ?? 0));
+    }
+
+    public function packageSubtotal(Servicio $package): float
+    {
+        $metadata = $this->metadata($package);
+
+        if (array_key_exists('list_price', $metadata)) {
+            return round(max(0, (float) $metadata['list_price']), 2);
+        }
+
+        return round((float) $this->packageComponents($package)
+            ->sum(fn (Servicio $component) => $this->packageComponentPrice($package, $component)), 2);
+    }
+
+    public function packageDiscount(Servicio $package): float
+    {
+        $metadata = $this->metadata($package);
+        $subtotal = $this->packageSubtotal($package);
+
+        if (array_key_exists('price', $metadata)) {
+            return round(max(0, $subtotal - max(0, (float) $metadata['price'])), 2);
+        }
+
+        if (array_key_exists('saving', $metadata)) {
+            return round(min($subtotal, max(0, (float) $metadata['saving'])), 2);
+        }
+
+        $value = max(0, (float) ($metadata['discount_value'] ?? 0));
+
+        if (($metadata['discount_type'] ?? 'percentage') === 'fixed') {
+            return round(min($subtotal, $value), 2);
+        }
+
+        return round($subtotal * min(100, $value) / 100, 2);
+    }
+
+    public function packageTotal(Servicio $package): float
+    {
+        $metadata = $this->metadata($package);
+
+        if (array_key_exists('price', $metadata)) {
+            return round(max(0, (float) $metadata['price']), 2);
+        }
+
+        return round(max(0, $this->packageSubtotal($package) - $this->packageDiscount($package)), 2);
+    }
+
+    public function packageIsReady(Servicio $package): bool
+    {
+        return (bool) $package->activo
+            && $this->packageDisplayItems($package)->isNotEmpty()
+            && $this->packageTotal($package) > 0;
+    }
+
+    public function recordType(Servicio $servicio): string
+    {
+        return (string) ($this->metadata($servicio)['record_type'] ?? 'component');
+    }
+
+    private function recordsForPlan(string $countrySlug, string $planSlug, bool $activeOnly = true): Collection
+    {
         $countrySlug = $this->normalizeCountry($countrySlug);
 
         return Servicio::where('categoria', $this->category())
@@ -110,15 +273,9 @@ class BancaOnlineCatalog
             ->filter(function (Servicio $servicio) use ($countrySlug, $planSlug, $activeOnly) {
                 $metadata = $this->metadata($servicio);
 
-                if (($metadata['plan_slug'] ?? null) !== $planSlug) {
-                    return false;
-                }
-
-                if ($this->countrySlugForService($servicio) !== $countrySlug) {
-                    return false;
-                }
-
-                return ! $activeOnly || (bool) ($servicio->activo ?? true);
+                return ($metadata['plan_slug'] ?? null) === $planSlug
+                    && $this->countrySlugForService($servicio) === $countrySlug
+                    && (! $activeOnly || (bool) ($servicio->activo ?? true));
             })
             ->values();
     }
@@ -210,7 +367,6 @@ class BancaOnlineCatalog
                         $servicio->fill([
                             'nombre' => $servicio->nombre ?: $item['name'],
                             'precio' => $exists ? (int) $servicio->precio : ($countrySlug === 'espana' ? (int) ($item['price'] ?? 0) : 0),
-                            'tipov' => (int) ($servicio->tipov ?? 0),
                             'categoria' => $this->category(),
                             'tipo' => $servicio->tipo ?: 'servicio',
                             'descripcion_publica' => $servicio->descripcion_publica ?: ($section['summary'] ?? $plan['summary'] ?? null),
@@ -226,10 +382,90 @@ class BancaOnlineCatalog
                         $exists ? $updated++ : $created++;
                     }
                 }
+
+                foreach ($this->packages() as $tierSlug => $tier) {
+                    $defaults = $this->packageDefaults($planSlug, $tierSlug);
+                    $idHubspot = $this->packageHubspotId($countrySlug, $planSlug, $tierSlug);
+                    $servicio = Servicio::firstOrNew(['id_hubspot' => $idHubspot]);
+                    $exists = $servicio->exists;
+                    $oldMetadata = $this->metadata($servicio);
+                    $genericTitle = $tier['title'] ?? ucfirst($tierSlug);
+                    $defaultTitle = $defaults['title'] ?? $genericTitle;
+                    $genericSummary = $tier['summary'] ?? null;
+                    $defaultSummary = $defaults['summary'] ?? $genericSummary;
+                    $metadata = array_merge($oldMetadata, [
+                        'banca_online' => true,
+                        'record_type' => 'package',
+                        'country_slug' => $countrySlug,
+                        'country_label' => $country['label'] ?? $countrySlug,
+                        'requested_service' => $country['service_name'] ?? null,
+                        'plan_slug' => $planSlug,
+                        'plan_title' => $plan['title'] ?? $planSlug,
+                        'plan_short_title' => $plan['short_title'] ?? ($plan['title'] ?? $planSlug),
+                        'tier_slug' => $tierSlug,
+                        'tier_title' => $defaultTitle,
+                        'tier_order' => (int) ($defaults['order'] ?? $tier['order'] ?? 0),
+                        'recommended' => (bool) ($defaults['recommended'] ?? $tier['recommended'] ?? false),
+                        'component_ids' => $defaults['component_ids'] ?? ($oldMetadata['component_ids'] ?? []),
+                        'discount_type' => $defaults['discount_type'] ?? ($oldMetadata['discount_type'] ?? 'percentage'),
+                        'discount_value' => (float) ($defaults['discount_value'] ?? ($oldMetadata['discount_value'] ?? 0)),
+                        'features' => $defaults['features'] ?? ($oldMetadata['features'] ?? []),
+                        'show_component_prices' => (bool) ($defaults['show_component_prices'] ?? ($oldMetadata['show_component_prices'] ?? true)),
+                    ]);
+
+                    foreach (['list_price', 'price', 'saving'] as $pricingKey) {
+                        if (array_key_exists($pricingKey, $defaults)) {
+                            $metadata[$pricingKey] = (float) $defaults[$pricingKey];
+                        }
+                    }
+
+                    unset($metadata['pricing_mode'], $metadata['component_prices']);
+
+                    $currentName = trim((string) $servicio->nombre);
+                    $packageName = (! $exists || $currentName === '' || $currentName === $genericTitle || $currentName === ($oldMetadata['tier_title'] ?? null))
+                        ? $defaultTitle
+                        : $currentName;
+
+                    $currentDescription = trim((string) $servicio->descripcion_publica);
+                    $packageDescription = (! $exists || $currentDescription === '' || $currentDescription === $genericSummary)
+                        ? $defaultSummary
+                        : $currentDescription;
+
+                    $servicio->fill([
+                        'nombre' => $packageName,
+                        'precio' => $exists ? (int) $servicio->precio : 0,
+                        'categoria' => $this->category(),
+                        'tipo' => $servicio->tipo ?: 'servicio',
+                        'descripcion_publica' => $packageDescription,
+                        'activo' => $exists ? (bool) $servicio->activo : true,
+                        'visible_cliente' => false,
+                        'moneda' => $servicio->moneda ?: 'EUR',
+                        'orden' => $exists ? (int) $servicio->orden : (9000 + (int) ($defaults['order'] ?? $tier['order'] ?? 0)),
+                        'metadata' => $metadata,
+                    ]);
+                    $servicio->save();
+
+                    $exists ? $updated++ : $created++;
+                }
             }
         }
 
         return compact('created', 'updated');
+    }
+
+    public function purgeSeededCatalog(): array
+    {
+        return DB::transaction(function () {
+            $deleted = Servicio::query()
+                ->where(function ($query) {
+                    $query
+                        ->where('categoria', $this->category())
+                        ->orWhere('id_hubspot', 'like', 'BO2026-%');
+                })
+                ->delete();
+
+            return compact('deleted');
+        });
     }
 
     public function updateServiceMetadata(Servicio $servicio, array $values): void
@@ -294,7 +530,7 @@ class BancaOnlineCatalog
 
                     return empty($scope) || in_array($countrySlug, $scope, true);
                 })->count();
-            });
+            }) + count($this->packages());
         });
     }
 
@@ -325,7 +561,6 @@ class BancaOnlineCatalog
             'id_hubspot' => $idHubspot,
             'nombre' => trim($values['nombre']),
             'precio' => (int) ($values['precio'] ?? 0),
-            'tipov' => 0,
             'categoria' => $this->category(),
             'tipo' => 'servicio',
             'descripcion_publica' => $values['descripcion_publica'] ?? null,
@@ -335,6 +570,7 @@ class BancaOnlineCatalog
             'orden' => $order,
             'metadata' => [
                 'banca_online' => true,
+                'record_type' => 'component',
                 'custom_item' => true,
                 'country_slug' => $countrySlug,
                 'country_label' => $country['label'] ?? $countrySlug,
@@ -362,10 +598,16 @@ class BancaOnlineCatalog
         return 'BO2026-' . $prefix . Str::upper(Str::slug($planSlug . '-' . $itemSlug));
     }
 
+    public function packageHubspotId(string $countrySlug, string $planSlug, string $tierSlug): string
+    {
+        return $this->hubspotId($countrySlug, $planSlug, 'paquete-' . $tierSlug);
+    }
+
     private function baseMetadata(string $countrySlug, array $country, string $planSlug, array $plan, array $section, int $sectionIndex, array $item): array
     {
         return [
             'banca_online' => true,
+            'record_type' => 'component',
             'country_slug' => $countrySlug,
             'country_label' => $country['label'] ?? $countrySlug,
             'requested_service' => $country['service_name'] ?? null,

@@ -135,9 +135,9 @@
     form.dataset.boBound = '1';
 
     const totalNode = root.querySelector('#totalAmount');
-    const selectedCount = root.querySelector('#selectedCount');
+    const selectedPackageName = root.querySelector('#selectedPackageName');
     const selectedList = root.querySelector('#selectedList');
-    const options = Array.from(root.querySelectorAll('.service-option'));
+    const options = Array.from(root.querySelectorAll('.package-option'));
     const emailInput = root.querySelector('#emailLookup');
     const lookupStatus = root.querySelector('#lookupStatus');
     const newClientFields = root.querySelector('#newClientFields');
@@ -163,42 +163,59 @@
       if (!selectedList) return;
 
       selectedList.replaceChildren();
-      selected.forEach((name) => {
+      selected.forEach((entry) => {
+        const service = typeof entry === 'string' ? { name: entry } : entry;
         const item = document.createElement('li');
         const icon = document.createElement('i');
-        const label = document.createElement('span');
+        const copy = document.createElement('span');
+        const label = document.createElement('strong');
         icon.className = 'fas fa-check';
-        label.textContent = name;
-        item.append(icon, label);
+        copy.className = 'bo-service-line';
+        label.textContent = service.name || 'Servicio incluido';
+        copy.append(label);
+
+        if (service.description) {
+          const description = document.createElement('small');
+          description.textContent = service.description;
+          copy.append(description);
+        }
+
+        if (service.price !== undefined) {
+          const price = document.createElement('span');
+          price.textContent = `${money(service.price)} EUR`;
+          copy.append(price);
+        }
+
+        item.append(icon, copy);
         selectedList.appendChild(item);
       });
     }
 
     function refreshCards() {
-      let total = 0;
-      const selected = [];
+      const selectedInput = options.find((input) => input.checked);
 
       options.forEach((input) => {
-        const card = input.closest('.bo-option');
-        const label = card.querySelector('.selected-label');
-
-        if (input.checked) {
-          total += Number(input.dataset.price || 0);
-          selected.push(input.dataset.name || 'Servicio seleccionado');
-          card.classList.add('selected');
-          label.classList.remove('is-hidden');
-        } else {
-          card.classList.remove('selected');
-          label.classList.add('is-hidden');
-        }
+        const card = input.closest('.bo-package-card');
+        if (card) card.classList.toggle('selected', input.checked);
       });
 
-      if (totalNode) totalNode.textContent = money(total);
-      if (selectedCount) {
-        selectedCount.textContent = `${selected.length} ${selected.length === 1 ? 'modulo' : 'modulos'}`;
+      if (!selectedInput) {
+        if (totalNode) totalNode.textContent = money(0);
+        if (selectedPackageName) selectedPackageName.textContent = 'Selecciona una opcion';
+        renderSelectedList([]);
+        return;
       }
 
-      renderSelectedList(selected);
+      let components = [];
+      try {
+        components = JSON.parse(selectedInput.dataset.components || '[]');
+      } catch (error) {
+        components = [];
+      }
+
+      if (totalNode) totalNode.textContent = money(selectedInput.dataset.price);
+      if (selectedPackageName) selectedPackageName.textContent = selectedInput.dataset.name || 'Paquete seleccionado';
+      renderSelectedList(components);
     }
 
     async function verifyEmail() {
@@ -249,16 +266,7 @@
     }
 
     options.forEach((input) => {
-      input.addEventListener('change', () => {
-        if (input.checked && input.dataset.group) {
-          options
-            .filter((other) => other !== input && other.dataset.group === input.dataset.group)
-            .forEach((other) => {
-              other.checked = false;
-            });
-        }
-        refreshCards();
-      });
+      input.addEventListener('change', refreshCards);
     });
 
     if (emailInput) {
@@ -327,12 +335,26 @@
 
   function paymentItems(items) {
     return (items || [])
-      .map((item) => `
+      .map((item) => {
+        const service = typeof item === 'string' ? { name: item } : item;
+        const description = service.description
+          ? `<small>${escapeHtml(service.description)}</small>`
+          : '';
+        const price = service.price !== undefined
+          ? `<span>${money(service.price)} EUR</span>`
+          : '';
+
+        return `
         <li>
           <i class="fas fa-check"></i>
-          <span>${escapeHtml(item.name)}</span>
+          <span class="bo-service-line">
+            <strong>${escapeHtml(service.name)}</strong>
+            ${description}
+            ${price}
+          </span>
         </li>
-      `)
+      `;
+      })
       .join('');
   }
 
@@ -356,6 +378,12 @@
 
         <aside class="bo-panel">
           ${checkout.stripe_key ? '' : '<div class="bo-alert">No esta configurada la clave publica de Stripe para este servicio.</div>'}
+          ${Number(checkout.discount || 0) > 0 ? `
+            <div class="bo-payment-breakdown">
+              <span>Subtotal <strong>${escapeHtml(checkout.subtotal_label)} EUR</strong></span>
+              <span>Descuento <strong>-${escapeHtml(checkout.discount_label)} EUR</strong></span>
+            </div>
+          ` : ''}
           <div class="bo-total-label">Total a pagar</div>
           <div class="bo-total">${escapeHtml(checkout.total_label)} <small>${escapeHtml(checkout.currency || 'EUR')}</small></div>
 

@@ -31,12 +31,22 @@ class AdminBancaOnlineController extends Controller
             ->orderBy('id')
             ->get();
 
-        $services = $allServices
-            ->filter(fn (Servicio $servicio) => $this->catalog->countrySlugForService($servicio) === $countrySlug)
-            ->filter(fn (Servicio $servicio) => ($this->catalog->metadata($servicio)['plan_slug'] ?? null) === $planSlug)
+        $services = $this->catalog->servicesForPlan($countrySlug, $planSlug, false)
             ->groupBy(fn (Servicio $servicio) => $this->catalog->metadata($servicio)['section'] ?? 'General');
 
+        $packages = $this->catalog->packagesForPlan($countrySlug, $planSlug, false);
+        $tiers = $this->catalog->packages();
+        $packageSlug = (string) $request->query('paquete', array_key_first($tiers));
+
+        if (! array_key_exists($packageSlug, $tiers)) {
+            $packageSlug = array_key_first($tiers);
+        }
+
+        $package = $this->catalog->packageForTier($countrySlug, $planSlug, $packageSlug, false);
+        $planSlugs = array_keys($plans);
+
         $countryCounts = $allServices
+            ->filter(fn (Servicio $servicio) => in_array($this->catalog->metadata($servicio)['plan_slug'] ?? null, $planSlugs, true))
             ->groupBy(fn (Servicio $servicio) => $this->catalog->countrySlugForService($servicio))
             ->map->count();
 
@@ -52,6 +62,10 @@ class AdminBancaOnlineController extends Controller
             'plans',
             'planSlug',
             'services',
+            'packages',
+            'tiers',
+            'packageSlug',
+            'package',
             'expected',
             'current',
             'planCurrent'
@@ -111,6 +125,7 @@ class AdminBancaOnlineController extends Controller
             ->route('admin.banca-online.index', [
                 'pais' => $metadata['country_slug'] ?? 'espana',
                 'plan' => $metadata['plan_slug'] ?? 'solicitud-estrategica',
+                'paquete' => $request->input('paquete', 'regular'),
             ])
             ->with('success', 'Item actualizado.');
     }
@@ -130,6 +145,7 @@ class AdminBancaOnlineController extends Controller
             'required' => ['nullable', 'boolean'],
             'default_selected' => ['nullable', 'boolean'],
             'locked' => ['nullable', 'boolean'],
+            'paquete' => ['nullable', 'string'],
         ]);
 
         abort_unless($this->catalog->planForCountry($data['pais'], $data['plan']), 404);
@@ -142,7 +158,92 @@ class AdminBancaOnlineController extends Controller
         ]));
 
         return redirect()
-            ->route('admin.banca-online.index', ['pais' => $data['pais'], 'plan' => $data['plan']])
+            ->route('admin.banca-online.index', [
+                'pais' => $data['pais'],
+                'plan' => $data['plan'],
+                'paquete' => $data['paquete'] ?? 'regular',
+            ])
             ->with('success', 'Servicio agregado al catalogo.');
+    }
+
+    public function updatePackage(Request $request, Servicio $servicio)
+    {
+        abort_unless(
+            $servicio->categoria === $this->catalog->category()
+            && $this->catalog->recordType($servicio) === 'package',
+            404
+        );
+
+        $metadata = $this->catalog->metadata($servicio);
+        $countrySlug = $this->catalog->countrySlugForService($servicio);
+        $planSlug = (string) ($metadata['plan_slug'] ?? '');
+        $allowedComponents = $this->catalog->servicesForPlan($countrySlug, $planSlug, false);
+
+        $data = $request->validate([
+            'nombre' => ['required', 'string', 'max:255'],
+            'descripcion_publica' => ['nullable', 'string', 'max:1000'],
+            'discount_type' => ['required', Rule::in(['percentage', 'fixed'])],
+            'discount_value' => [
+                'required',
+                'numeric',
+                'min:0',
+                $request->input('discount_type') === 'percentage' ? 'max:100' : 'max:999999999',
+            ],
+            'activo' => ['nullable', 'boolean'],
+            'component_ids' => ['nullable', 'array'],
+            'component_ids.*' => ['integer'],
+            'component_names' => ['nullable', 'array'],
+            'component_names.*' => ['nullable', 'string', 'max:255'],
+            'component_descriptions' => ['nullable', 'array'],
+            'component_descriptions.*' => ['nullable', 'string', 'max:2000'],
+            'component_prices' => ['nullable', 'array'],
+            'component_prices.*' => ['nullable', 'integer', 'min:0'],
+        ]);
+
+        $selectedIds = collect($data['component_ids'] ?? [])
+            ->map(fn ($id) => (int) $id)
+            ->intersect($allowedComponents->pluck('id')->map(fn ($id) => (int) $id))
+            ->unique()
+            ->values();
+
+        $componentNames = collect($data['component_names'] ?? []);
+        $componentDescriptions = collect($data['component_descriptions'] ?? []);
+        $componentPrices = collect($data['component_prices'] ?? []);
+        $allowedComponents->each(function (Servicio $component) use ($componentNames, $componentDescriptions, $componentPrices) {
+            $name = trim((string) $componentNames->get((string) $component->id, $component->nombre));
+            $description = trim((string) $componentDescriptions->get((string) $component->id, $component->descripcion_publica));
+            $price = max(0, (int) $componentPrices->get((string) $component->id, $component->precio));
+
+            $component->fill([
+                'nombre' => $name !== '' ? $name : $component->nombre,
+                'descripcion_publica' => $description !== '' ? $description : null,
+                'precio' => $price,
+            ]);
+
+            if ($component->isDirty()) {
+                $component->save();
+            }
+        });
+
+        $metadata['component_ids'] = $selectedIds->all();
+        $metadata['discount_type'] = $data['discount_type'];
+        $metadata['discount_value'] = (float) $data['discount_value'];
+        unset($metadata['pricing_mode'], $metadata['component_prices']);
+
+        $servicio->fill([
+            'nombre' => trim($data['nombre']),
+            'descripcion_publica' => $data['descripcion_publica'] ?? null,
+            'precio' => 0,
+            'activo' => $request->boolean('activo'),
+            'metadata' => $metadata,
+        ])->save();
+
+        return redirect()
+            ->route('admin.banca-online.index', [
+                'pais' => $countrySlug,
+                'plan' => $planSlug,
+                'paquete' => $metadata['tier_slug'] ?? 'regular',
+            ])
+            ->with('success', 'Paquete actualizado.');
     }
 }

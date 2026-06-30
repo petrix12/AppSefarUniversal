@@ -254,6 +254,25 @@ class BancaOnlineController extends Controller
             ])->save();
         });
 
+        $paidItems = collect($metadata['components'] ?? [])->map(function (array $component) {
+            $item = [
+                'name' => $component['name'] ?? 'Servicio incluido',
+                'description' => $component['description'] ?? null,
+            ];
+
+            if (array_key_exists('price', $component)) {
+                $item['price'] = (float) $component['price'];
+            }
+
+            return $item;
+        })->values();
+
+        if ($paidItems->isEmpty()) {
+            $paidItems = $compras->map(fn (Compras $compra) => [
+                'name' => $compra->servicio?->nombre ?? $compra->descripcion,
+            ])->values();
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Pago procesado exitosamente.',
@@ -264,9 +283,7 @@ class BancaOnlineController extends Controller
                 'total' => $total,
                 'total_label' => number_format($total, 2, ',', '.'),
                 'currency' => 'EUR',
-                'items' => $compras->map(fn (Compras $compra) => [
-                    'name' => $compra->servicio?->nombre ?? $compra->descripcion,
-                ])->values(),
+                'items' => $paidItems,
             ],
         ]);
     }
@@ -292,16 +309,9 @@ class BancaOnlineController extends Controller
 
         $countries = $this->catalog->publicCountries();
         $country = $this->catalog->country($countrySlug);
-        $groupedServices = $this->catalog->groupedServicesForPlan($countrySlug, $planSlug);
-        $totalDefault = $this->catalog->checkoutTotal(
-            $groupedServices->flatten(1)->filter(function (Servicio $servicio) {
-                $metadata = $this->catalog->metadata($servicio);
+        $packages = $this->catalog->packagesForPlan($countrySlug, $planSlug, false);
 
-                return (bool) ($metadata['required'] ?? false) || (bool) ($metadata['default_selected'] ?? false);
-            })
-        );
-
-        return view('banca-online.configurator', compact('planSlug', 'plan', 'countries', 'countrySlug', 'country', 'groupedServices', 'totalDefault'));
+        return view('banca-online.configurator', compact('planSlug', 'plan', 'countries', 'countrySlug', 'country', 'packages'));
     }
 
     private function storeCheckout(Request $request, string $countrySlug, string $planSlug)
@@ -313,39 +323,43 @@ class BancaOnlineController extends Controller
 
         $baseData = $request->validate([
             'email' => ['required', 'email', 'max:175'],
-            'selected_items' => ['nullable', 'array'],
-            'selected_items.*' => ['integer'],
+            'package_id' => ['required', 'integer'],
         ]);
 
-        $selectedServices = $this->catalog->selectedServices($countrySlug, $planSlug, $baseData['selected_items'] ?? []);
-        $total = $this->catalog->checkoutTotal($selectedServices);
+        $package = $this->catalog->packagesForPlan($countrySlug, $planSlug)
+            ->firstWhere('id', (int) $baseData['package_id']);
 
-        if ($selectedServices->isEmpty()) {
+        if (! $package) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Selecciona al menos un servicio del plan.',
-                    'errors' => ['selected_items' => ['Selecciona al menos un servicio del plan.']],
+                    'message' => 'Selecciona un paquete disponible.',
+                    'errors' => ['package_id' => ['Selecciona un paquete disponible.']],
                 ], 422);
             }
 
             return back()
                 ->withInput()
-                ->withErrors(['selected_items' => 'Selecciona al menos un servicio del plan.']);
+                ->withErrors(['package_id' => 'Selecciona un paquete disponible.']);
         }
 
-        if ($total <= 0) {
+        $items = $this->catalog->packageDisplayItems($package);
+        $subtotal = $this->catalog->packageSubtotal($package);
+        $discount = $this->catalog->packageDiscount($package);
+        $total = $this->catalog->packageTotal($package);
+
+        if ($items->isEmpty() || $total <= 0) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'El total del plan esta en 0 EUR. Administracion debe cargar los precios antes de cobrar.',
-                    'errors' => ['selected_items' => ['El total del plan esta en 0 EUR. Administracion debe cargar los precios antes de cobrar.']],
+                    'message' => 'Este paquete aun no esta disponible para contratar.',
+                    'errors' => ['package_id' => ['Administracion debe definir sus beneficios y precio.']],
                 ], 422);
             }
 
             return back()
                 ->withInput()
-                ->withErrors(['selected_items' => 'El total del plan esta en 0 EUR. Administracion debe cargar los precios antes de cobrar.']);
+                ->withErrors(['package_id' => 'Administracion debe definir los beneficios y el precio del paquete.']);
         }
 
         $email = Str::lower(trim($baseData['email']));
@@ -371,7 +385,7 @@ class BancaOnlineController extends Controller
         $token = Str::random(64);
         $serviceName = $this->catalog->serviceNameForCountry($countrySlug);
 
-        DB::transaction(function () use (&$user, &$generatedPassword, $newUserData, $email, $serviceName, $selectedServices, $planSlug, $plan, $countrySlug, $token) {
+        DB::transaction(function () use (&$user, &$generatedPassword, $newUserData, $email, $serviceName, $package, $items, $subtotal, $discount, $total, $planSlug, $plan, $countrySlug, $token) {
             if (! $user) {
                 $generatedPassword = Str::random(10);
                 $user = $this->createCheckoutUser($newUserData, $email, $serviceName, $generatedPassword);
@@ -379,24 +393,28 @@ class BancaOnlineController extends Controller
                 $user->forceFill(['servicio' => $serviceName])->save();
             }
 
-            foreach ($selectedServices as $servicio) {
-                $metadata = $this->catalog->metadata($servicio);
+            $metadata = $this->catalog->metadata($package);
+            $componentRows = $items->values()->all();
 
-                Compras::create([
-                    'id_user' => $user->id,
-                    'servicio_id' => $servicio->id,
-                    'source' => $this->catalog->source(),
-                    'servicio_hs_id' => $servicio->id_hubspot,
-                    'descripcion' => 'Banca Online 2026 - ' . ($plan['title'] ?? $planSlug) . ': ' . $servicio->nombre,
-                    'pagado' => 0,
-                    'monto' => (float) $servicio->precio,
-                    'metadata' => array_merge($metadata, [
-                        'checkout_token' => $token,
-                        'country_slug' => $countrySlug,
-                        'requested_service' => $serviceName,
-                    ]),
-                ]);
-            }
+            Compras::create([
+                'id_user' => $user->id,
+                'servicio_id' => $package->id,
+                'source' => $this->catalog->source(),
+                'servicio_hs_id' => $package->id_hubspot,
+                'descripcion' => 'Banca Online 2026 - ' . ($plan['title'] ?? $planSlug) . ': ' . $package->nombre,
+                'pagado' => 0,
+                'monto' => $total,
+                'metadata' => array_merge($metadata, [
+                    'checkout_token' => $token,
+                    'country_slug' => $countrySlug,
+                    'requested_service' => $serviceName,
+                    'package_title' => $package->nombre,
+                    'package_subtotal' => $subtotal,
+                    'package_discount' => $discount,
+                    'package_total' => $total,
+                    'components' => $componentRows,
+                ]),
+            ]);
         });
 
         if ($generatedPassword) {
@@ -406,14 +424,14 @@ class BancaOnlineController extends Controller
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'checkout' => $this->checkoutPayload($token, $selectedServices, $user, $plan, $countrySlug, $serviceName),
+                'checkout' => $this->checkoutPayload($token, $package, $items, $subtotal, $discount, $total, $user, $plan, $countrySlug, $serviceName),
             ]);
         }
 
         return redirect()->route('banca-online.payment', $token);
     }
 
-    private function checkoutPayload(string $token, Collection $services, User $user, array $plan, string $countrySlug, string $serviceName): array
+    private function checkoutPayload(string $token, Servicio $package, Collection $items, float $subtotal, float $discount, float $total, User $user, array $plan, string $countrySlug, string $serviceName): array
     {
         return [
             'token' => $token,
@@ -424,12 +442,15 @@ class BancaOnlineController extends Controller
             'country_slug' => $countrySlug,
             'requested_service' => $serviceName,
             'plan_title' => $plan['title'] ?? 'Plan estrategico',
+            'package_title' => $package->nombre,
             'currency' => 'EUR',
-            'total' => (float) $services->sum('precio'),
-            'total_label' => number_format((float) $services->sum('precio'), 2, ',', '.'),
-            'items' => $services->map(fn (Servicio $servicio) => [
-                'name' => $servicio->nombre,
-            ])->values(),
+            'subtotal' => $subtotal,
+            'subtotal_label' => number_format($subtotal, 2, ',', '.'),
+            'discount' => $discount,
+            'discount_label' => number_format($discount, 2, ',', '.'),
+            'total' => $total,
+            'total_label' => number_format($total, 2, ',', '.'),
+            'items' => $items->values(),
             'billing' => [
                 'email' => $user->email,
             ],

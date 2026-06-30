@@ -1,3 +1,7 @@
+@php
+    $purchaseMetadata = $compras->first()?->metadata ?? [];
+    $packageComponents = collect($purchaseMetadata['components'] ?? []);
+@endphp
 <!doctype html>
 <html lang="es">
 <head>
@@ -17,13 +21,24 @@
             <p>Tu contratacion de Banca Online 2026 fue registrada correctamente. El equipo de Sefar Universal continuara el seguimiento operativo del servicio seleccionado.</p>
 
             <div class="bo-confirm-total">{{ number_format($total, 2, ',', '.') }} EUR</div>
+            @if(!empty($purchaseMetadata['package_title']))
+                <h2>{{ $purchaseMetadata['package_title'] }}</h2>
+            @endif
             <ul class="bo-confirm-list">
-                @foreach($compras as $compra)
+                @forelse($packageComponents as $component)
                     <li>
                         <i class="fas fa-check"></i>
-                        <span>{{ $compra->servicio?->nombre ?? $compra->descripcion }}</span>
+                        <span class="bo-service-line">
+                            <strong>{{ $component['name'] ?? 'Servicio incluido' }}</strong>
+                            @if(!empty($component['description']))<small>{{ $component['description'] }}</small>@endif
+                            @isset($component['price'])<span>{{ number_format((float) $component['price'], 2, ',', '.') }} EUR</span>@endisset
+                        </span>
                     </li>
-                @endforeach
+                @empty
+                    @foreach($compras as $compra)
+                        <li><i class="fas fa-check"></i><span>{{ $compra->servicio?->nombre ?? $compra->descripcion }}</span></li>
+                    @endforeach
+                @endforelse
             </ul>
         </section>
     </main>

@@ -55,6 +55,8 @@
             $firstPurchase = $paymentPurchases->first();
             $planTitle = data_get($firstPurchase->metadata, 'plan_short_title')
                 ?: data_get($firstPurchase->metadata, 'plan_title');
+            $packageTitle = data_get($firstPurchase->metadata, 'package_title');
+            $packageComponents = collect(data_get($firstPurchase->metadata, 'components', []));
             $statusTitle = $isPaid
                 ? 'Pago Banca Online'
                 : ($hasPaidItems ? 'Pago parcial Banca Online' : 'Banca Online pendiente');
@@ -72,19 +74,29 @@
 
             @if ($planTitle)
                 <div class="bank-payment-plan">
-                    {{ $planTitle }} · {{ $paymentPurchases->count() }} {{ Illuminate\Support\Str::plural('servicio', $paymentPurchases->count()) }}
+                    {{ $planTitle }}
+                    @if($packageTitle) · {{ $packageTitle }} @endif
+                    · {{ $packageComponents->isNotEmpty() ? $packageComponents->count() : $paymentPurchases->count() }}
+                    {{ Illuminate\Support\Str::plural('servicio', $packageComponents->isNotEmpty() ? $packageComponents->count() : $paymentPurchases->count()) }}
                 </div>
             @endif
 
             <ul class="bank-service-list">
-                @foreach ($paymentPurchases as $purchase)
+                @forelse ($packageComponents as $component)
                     <li>
-                        {{ $purchase->servicio?->nombre ?: (Illuminate\Support\Str::after((string) $purchase->descripcion, ': ') ?: $purchase->servicio_hs_id) }}
-                        @if ((int) $purchase->pagado === 0 && $hasPaidItems)
-                            <span class="badge-unpaid">Pendiente</span>
-                        @endif
+                        <span>{{ $component['name'] ?? 'Servicio incluido' }}</span>
+                        @isset($component['price'])<strong>{{ number_format((float) $component['price'], 2, ',', '.') }} EUR</strong>@endisset
                     </li>
-                @endforeach
+                @empty
+                    @foreach ($paymentPurchases as $purchase)
+                        <li>
+                            {{ $purchase->servicio?->nombre ?: (Illuminate\Support\Str::after((string) $purchase->descripcion, ': ') ?: $purchase->servicio_hs_id) }}
+                            @if ((int) $purchase->pagado === 0 && $hasPaidItems)
+                                <span class="badge-unpaid">Pendiente</span>
+                            @endif
+                        </li>
+                    @endforeach
+                @endforelse
             </ul>
         </section>
     @endforeach
