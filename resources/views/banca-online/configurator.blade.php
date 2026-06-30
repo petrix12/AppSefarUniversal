@@ -109,11 +109,11 @@
                                     @if($total > 0)
                                         @if($discount > 0)
                                             <div class="bo-package-saving">
-                                                <del>{{ number_format($subtotal, 2, ',', '.') }} EUR</del>
-                                                <span>Ahorras {{ number_format($discount, 2, ',', '.') }} EUR</span>
+                                                <del>{{ number_format($subtotal, 0, ',', '.') }} EUR</del>
+                                                <span>Ahorras {{ number_format($discount, 0, ',', '.') }} EUR</span>
                                             </div>
                                         @endif
-                                        <strong>{{ number_format($total, 2, ',', '.') }}</strong> <span>EUR pago unico</span>
+                                        <strong>{{ number_format($total, 0, ',', '.') }}</strong> <span>EUR pago unico</span>
                                     @else
                                         <strong>Por definir</strong>
                                     @endif
@@ -126,7 +126,7 @@
                                             <span class="bo-package-component-copy">
                                                 <strong>{{ $item['name'] ?? 'Servicio incluido' }}</strong>
                                                 @if(!empty($item['description']))<small>{{ $item['description'] }}</small>@endif
-                                                @if(array_key_exists('price', $item))<span>{{ number_format((float) $item['price'], 2, ',', '.') }} EUR</span>@endif
+                                                @if(array_key_exists('price', $item))<span>{{ number_format((float) $item['price'], 0, ',', '.') }} EUR</span>@endif
                                             </span>
                                         </li>
                                     @empty
@@ -148,7 +148,7 @@
                     <aside class="bo-panel bo-package-summary">
                         <div class="bo-total-label">Paquete seleccionado</div>
                         <h2 id="selectedPackageName">Selecciona una opcion</h2>
-                        <div class="bo-total"><span id="totalAmount">0,00</span> <small>EUR</small></div>
+                        <div class="bo-total"><span id="totalAmount">0</span> <small>EUR</small></div>
                         <ul class="bo-selected-list" id="selectedList"></ul>
                     </aside>
 

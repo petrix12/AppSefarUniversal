@@ -12,8 +12,8 @@
 
   function money(value) {
     return new Intl.NumberFormat('es-ES', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(Number(value || 0));
   }
 
@@ -146,6 +146,34 @@
     let lookupTimer = null;
     let lookupController = null;
 
+    function lookupRouteContext() {
+      const actionUrl = new URL(form.action, window.location.href);
+      const segments = actionUrl.pathname.split('/').filter(Boolean);
+      const baseIndex = segments.indexOf('banca-online-2026');
+      const countryInput = form.querySelector('input[name="country"]');
+
+      return {
+        country: segments[baseIndex + 1] || (countryInput ? countryInput.value : ''),
+        plan: segments[baseIndex + 2] || segments[baseIndex + 1] || '',
+      };
+    }
+
+    function setLookupStatus(message, tone) {
+      if (!lookupStatus) return;
+
+      lookupStatus.textContent = message || '';
+      lookupStatus.classList.toggle('is-error', tone === 'error');
+      lookupStatus.classList.toggle('is-success', tone === 'success');
+    }
+
+    function focusEmailLookup() {
+      if (!emailInput) return;
+
+      const panel = emailInput.closest('.bo-client-panel') || emailInput;
+      panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      window.setTimeout(() => emailInput.focus({ preventScroll: true }), 320);
+    }
+
     function setNewClientMode(enabled) {
       if (!newClientFields) return;
 
@@ -223,41 +251,57 @@
 
       if (lookupController) lookupController.abort();
       lookupController = new AbortController();
+      emailInput.setCustomValidity('');
 
       try {
         const email = emailInput.value.trim();
         if (!email) {
-          lookupStatus.textContent = '';
+          setLookupStatus('');
           setNewClientMode(false);
           return true;
         }
 
         if (!emailInput.checkValidity()) {
-          lookupStatus.textContent = '';
+          setLookupStatus('');
           setNewClientMode(false);
           return false;
         }
 
-        lookupStatus.textContent = 'Verificando...';
+        setLookupStatus('Verificando...');
 
-        const response = await fetch(`/banca-online-2026/cliente?email=${encodeURIComponent(email)}`, {
+        const context = lookupRouteContext();
+        const lookupUrl = new URL('/banca-online-2026/cliente', window.location.origin);
+        lookupUrl.searchParams.set('email', email);
+        lookupUrl.searchParams.set('country', context.country);
+        lookupUrl.searchParams.set('plan', context.plan);
+
+        const response = await fetch(lookupUrl.href, {
           headers: { Accept: 'application/json' },
           signal: lookupController.signal,
         });
         const data = await response.json();
 
+        if (data.has_paid_similar_plan) {
+          const message = data.message || 'Este correo ya tiene un pago registrado para un plan similar. Si quieres registrar a otro familiar, usa un correo diferente.';
+          emailInput.setCustomValidity(message);
+          setLookupStatus(message, 'error');
+          setNewClientMode(false);
+          return false;
+        }
+
         if (data.exists) {
-          lookupStatus.textContent = 'Correo registrado. Puedes continuar.';
+          setLookupStatus('');
           setNewClientMode(false);
         } else {
-          lookupStatus.textContent = 'Correo no registrado. Completa los datos basicos.';
+          setLookupStatus('Correo no registrado. Completa los datos basicos.');
           setNewClientMode(true);
         }
 
         return true;
       } catch (error) {
         if (error.name !== 'AbortError') {
-          lookupStatus.textContent = 'No se pudo verificar el correo. Completa los datos basicos.';
+          emailInput.setCustomValidity('');
+          setLookupStatus('No se pudo verificar el correo. Completa los datos basicos.', 'error');
           setNewClientMode(true);
         }
 
@@ -266,7 +310,10 @@
     }
 
     options.forEach((input) => {
-      input.addEventListener('change', refreshCards);
+      input.addEventListener('change', () => {
+        refreshCards();
+        focusEmailLookup();
+      });
     });
 
     if (emailInput) {
@@ -317,6 +364,15 @@
         const payload = await response.json();
 
         if (!response.ok || !payload.success) {
+          const emailError = payload.errors && payload.errors.email && payload.errors.email[0];
+          if (emailError && emailInput) {
+            emailInput.setCustomValidity(emailError);
+            setLookupStatus(emailError, 'error');
+            emailInput.reportValidity();
+            setBusy(submitButton, false);
+            return;
+          }
+
           showAlert(form, payload.message || 'No se pudo preparar el pago.');
           setBusy(submitButton, false);
           return;

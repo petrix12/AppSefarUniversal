@@ -20,7 +20,7 @@
             <h1>Gracias.</h1>
             <p>Tu contratacion de Banca Online 2026 fue registrada correctamente. El equipo de Sefar Universal continuara el seguimiento operativo del servicio seleccionado.</p>
 
-            <div class="bo-confirm-total">{{ number_format($total, 2, ',', '.') }} EUR</div>
+            <div class="bo-confirm-total">{{ number_format($total, 0, ',', '.') }} EUR</div>
             @if(!empty($purchaseMetadata['package_title']))
                 <h2>{{ $purchaseMetadata['package_title'] }}</h2>
             @endif
@@ -31,7 +31,7 @@
                         <span class="bo-service-line">
                             <strong>{{ $component['name'] ?? 'Servicio incluido' }}</strong>
                             @if(!empty($component['description']))<small>{{ $component['description'] }}</small>@endif
-                            @isset($component['price'])<span>{{ number_format((float) $component['price'], 2, ',', '.') }} EUR</span>@endisset
+                            @isset($component['price'])<span>{{ number_format((float) $component['price'], 0, ',', '.') }} EUR</span>@endisset
                         </span>
                     </li>
                 @empty

@@ -406,6 +406,7 @@ class BancaOnlineCatalog
                         'plan_short_title' => $plan['short_title'] ?? ($plan['title'] ?? $planSlug),
                         'tier_slug' => $tierSlug,
                         'tier_title' => $defaultTitle,
+                        'tier_summary' => $defaultSummary,
                         'tier_order' => (int) ($defaults['order'] ?? $tier['order'] ?? 0),
                         'recommended' => (bool) ($defaults['recommended'] ?? $tier['recommended'] ?? false),
                         'component_ids' => $defaults['component_ids'] ?? ($oldMetadata['component_ids'] ?? []),
@@ -437,12 +438,12 @@ class BancaOnlineCatalog
                     unset($metadata['pricing_mode'], $metadata['component_prices']);
 
                     $currentName = trim((string) $servicio->nombre);
-                    $packageName = (! $exists || $currentName === '' || $currentName === $genericTitle || $currentName === ($oldMetadata['tier_title'] ?? null))
+                    $packageName = ($hasPlanPackageDefaults || ! $exists || $currentName === '' || $currentName === $genericTitle || $currentName === ($oldMetadata['tier_title'] ?? null))
                         ? $defaultTitle
                         : $currentName;
 
                     $currentDescription = trim((string) $servicio->descripcion_publica);
-                    $packageDescription = (! $exists || $currentDescription === '' || $currentDescription === $genericSummary)
+                    $packageDescription = ($hasPlanPackageDefaults || ! $exists || $currentDescription === '' || $currentDescription === $genericSummary)
                         ? $defaultSummary
                         : $currentDescription;
 

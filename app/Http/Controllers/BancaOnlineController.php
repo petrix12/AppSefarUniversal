@@ -63,12 +63,19 @@ class BancaOnlineController extends Controller
     {
         $data = $request->validate([
             'email' => ['required', 'email', 'max:175'],
+            'country' => ['nullable', 'string', 'max:80'],
+            'plan' => ['nullable', 'string', 'max:120'],
         ]);
 
         $user = $this->findUserByEmail($data['email']);
+        $countrySlug = $this->catalog->normalizeCountry($data['country'] ?? $request->query('servicio'));
+        $planSlug = trim((string) ($data['plan'] ?? ''));
+        $hasPaidSimilarPlan = $user && $this->hasPaidSimilarPlan($user, $countrySlug, $planSlug);
 
         return response()->json([
             'exists' => (bool) $user,
+            'has_paid_similar_plan' => $hasPaidSimilarPlan,
+            'message' => $hasPaidSimilarPlan ? $this->paidSimilarPlanMessage() : null,
         ]);
     }
 
@@ -281,7 +288,7 @@ class BancaOnlineController extends Controller
                 'title' => 'Pago recibido',
                 'name' => trim($data['first_name']),
                 'total' => $total,
-                'total_label' => number_format($total, 2, ',', '.'),
+                'total_label' => number_format($total, 0, ',', '.'),
                 'currency' => 'EUR',
                 'items' => $paidItems,
             ],
@@ -367,6 +374,22 @@ class BancaOnlineController extends Controller
         $generatedPassword = null;
         $newUserData = [];
 
+        if ($user && $this->hasPaidSimilarPlan($user, $countrySlug, $planSlug)) {
+            $message = $this->paidSimilarPlanMessage();
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                    'errors' => ['email' => [$message]],
+                ], 422);
+            }
+
+            return back()
+                ->withInput()
+                ->withErrors(['email' => $message]);
+        }
+
         if (! $user) {
             $newUserData = $request->validate([
                 'nombres' => ['required', 'string', 'max:255'],
@@ -445,11 +468,11 @@ class BancaOnlineController extends Controller
             'package_title' => $package->nombre,
             'currency' => 'EUR',
             'subtotal' => $subtotal,
-            'subtotal_label' => number_format($subtotal, 2, ',', '.'),
+            'subtotal_label' => number_format($subtotal, 0, ',', '.'),
             'discount' => $discount,
-            'discount_label' => number_format($discount, 2, ',', '.'),
+            'discount_label' => number_format($discount, 0, ',', '.'),
             'total' => $total,
-            'total_label' => number_format($total, 2, ',', '.'),
+            'total_label' => number_format($total, 0, ',', '.'),
             'items' => $items->values(),
             'billing' => [
                 'email' => $user->email,
@@ -511,6 +534,31 @@ class BancaOnlineController extends Controller
     private function findUserByEmail(string $email): ?User
     {
         return User::whereRaw('LOWER(email) = ?', [Str::lower(trim($email))])->first();
+    }
+
+    private function hasPaidSimilarPlan(User $user, string $countrySlug, string $planSlug): bool
+    {
+        if ($planSlug === '') {
+            return false;
+        }
+
+        $countrySlug = $this->catalog->normalizeCountry($countrySlug);
+
+        return Compras::where('id_user', $user->id)
+            ->where('source', $this->catalog->source())
+            ->where('pagado', 1)
+            ->get()
+            ->contains(function (Compras $compra) use ($countrySlug, $planSlug) {
+                $metadata = $compra->metadata ?? [];
+
+                return ($metadata['plan_slug'] ?? null) === $planSlug
+                    && $this->catalog->normalizeCountry($metadata['country_slug'] ?? $countrySlug) === $countrySlug;
+            });
+    }
+
+    private function paidSimilarPlanMessage(): string
+    {
+        return 'Este correo ya tiene un pago registrado para un plan similar. Si quieres registrar a otro familiar, usa un correo diferente.';
     }
 
     private function purchasesForToken(string $token, bool $pendingOnly = true): Collection

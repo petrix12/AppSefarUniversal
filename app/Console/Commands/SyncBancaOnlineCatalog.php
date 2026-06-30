@@ -55,9 +55,9 @@ class SyncBancaOnlineCatalog extends Command
             $packages->map(fn ($package) => [
                 $catalog->metadata($package)['tier_slug'] ?? '-',
                 $package->nombre,
-                number_format($catalog->packageSubtotal($package), 2, ',', '.') . ' EUR',
-                number_format($catalog->packageDiscount($package), 2, ',', '.') . ' EUR',
-                number_format($catalog->packageTotal($package), 2, ',', '.') . ' EUR',
+                number_format($catalog->packageSubtotal($package), 0, ',', '.') . ' EUR',
+                number_format($catalog->packageDiscount($package), 0, ',', '.') . ' EUR',
+                number_format($catalog->packageTotal($package), 0, ',', '.') . ' EUR',
                 $catalog->packageDisplayItems($package, false)->count(),
                 $package->activo ? 'si' : 'no',
             ])->all()

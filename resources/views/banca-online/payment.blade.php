@@ -38,7 +38,7 @@
                             <span class="bo-service-line">
                                 <strong>{{ $component['name'] ?? 'Servicio incluido' }}</strong>
                                 @if(!empty($component['description']))<small>{{ $component['description'] }}</small>@endif
-                                @isset($component['price'])<span>{{ number_format((float) $component['price'], 2, ',', '.') }} EUR</span>@endisset
+                                @isset($component['price'])<span>{{ number_format((float) $component['price'], 0, ',', '.') }} EUR</span>@endisset
                             </span>
                         </li>
                     @empty
@@ -56,13 +56,13 @@
 
                 @if((float) ($metadata['package_discount'] ?? 0) > 0)
                     <div class="bo-payment-breakdown">
-                        <span>Subtotal <strong>{{ number_format((float) ($metadata['package_subtotal'] ?? $total), 2, ',', '.') }} EUR</strong></span>
-                        <span>Descuento <strong>-{{ number_format((float) $metadata['package_discount'], 2, ',', '.') }} EUR</strong></span>
+                        <span>Subtotal <strong>{{ number_format((float) ($metadata['package_subtotal'] ?? $total), 0, ',', '.') }} EUR</strong></span>
+                        <span>Descuento <strong>-{{ number_format((float) $metadata['package_discount'], 0, ',', '.') }} EUR</strong></span>
                     </div>
                 @endif
 
                 <div class="bo-total-label">Total a pagar</div>
-                <div class="bo-total">{{ number_format($total, 2, ',', '.') }} <small>EUR</small></div>
+                <div class="bo-total">{{ number_format($total, 0, ',', '.') }} <small>EUR</small></div>
 
                 <form
                     id="payment-form"

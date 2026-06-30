@@ -233,15 +233,15 @@
                     <div class="bo-package-totals">
                         <div>
                             <strong>Subtotal</strong>
-                            <span data-package-subtotal>{{ number_format($catalog->packageSubtotal($package), 2, ',', '.') }} EUR</span>
+                            <span data-package-subtotal>{{ number_format($catalog->packageSubtotal($package), 0, ',', '.') }} EUR</span>
                         </div>
                         <div>
                             <strong>Descuento</strong>
-                            <span data-package-discount>-{{ number_format($catalog->packageDiscount($package), 2, ',', '.') }} EUR</span>
+                            <span data-package-discount>-{{ number_format($catalog->packageDiscount($package), 0, ',', '.') }} EUR</span>
                         </div>
                         <div class="is-total">
                             <strong>Total del paquete</strong>
-                            <span data-package-total>{{ number_format($catalog->packageTotal($package), 2, ',', '.') }} EUR</span>
+                            <span data-package-total>{{ number_format($catalog->packageTotal($package), 0, ',', '.') }} EUR</span>
                         </div>
                     </div>
                     <button type="submit" class="btn bo-save-package-button">
@@ -306,8 +306,8 @@
             const fixedTotal = amount(editor.dataset.fixedTotal);
             const fixedFeatureCount = Number(editor.dataset.fixedFeatureCount || 0);
             const money = new Intl.NumberFormat('es-ES', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
             });
 
             function amount(value) {

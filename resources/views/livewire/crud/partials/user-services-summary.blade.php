@@ -85,7 +85,7 @@
                 @forelse ($packageComponents as $component)
                     <li>
                         <span>{{ $component['name'] ?? 'Servicio incluido' }}</span>
-                        @isset($component['price'])<strong>{{ number_format((float) $component['price'], 2, ',', '.') }} EUR</strong>@endisset
+                        @isset($component['price'])<strong>{{ number_format((float) $component['price'], 0, ',', '.') }} EUR</strong>@endisset
                     </li>
                 @empty
                     @foreach ($paymentPurchases as $purchase)
