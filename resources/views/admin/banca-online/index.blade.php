@@ -2,6 +2,9 @@
     $catalog = app(\App\Services\BancaOnlineCatalog::class);
     $activePlan = $plans[$planSlug] ?? [];
     $activeTier = $tiers[$packageSlug] ?? [];
+    $activePackageDefaults = $activePlan['packages'][$packageSlug] ?? [];
+    $activePackageTitle = $activePackageDefaults['title'] ?? ($package?->nombre ?? ($activeTier['title'] ?? 'Paquete'));
+    $activePackageSummary = $activePackageDefaults['summary'] ?? ($package?->descripcion_publica ?? ($activeTier['summary'] ?? ''));
     $countryCodes = ['espana' => 'ES', 'portugal' => 'PT', 'italia' => 'IT'];
     $packageMetadata = $package ? $catalog->metadata($package) : [];
     $selectedComponentIds = collect(old('component_ids', $packageMetadata['component_ids'] ?? []))->map(fn ($id) => (int) $id);
@@ -88,7 +91,8 @@
         <nav class="bo-plan-switch" aria-label="Ruta estrategica">
             @foreach($plans as $slug => $plan)
                 <a class="{{ $planSlug === $slug ? 'is-active' : '' }}"
-                   href="{{ route('admin.banca-online.index', ['pais' => $countrySlug, 'plan' => $slug, 'paquete' => 'regular']) }}">
+                   href="{{ route('admin.banca-online.index', ['pais' => $countrySlug, 'plan' => $slug, 'paquete' => 'regular']) }}"
+                   title="{{ $plan['public_title'] ?? $plan['title'] }}">
                     {{ $plan['short_title'] ?? $plan['title'] }}
                 </a>
             @endforeach
@@ -104,11 +108,18 @@
 
         <nav class="bo-package-switch" aria-label="Paquete">
             @foreach($tiers as $slug => $tier)
-                @php($tierPackage = $packages->first(fn ($item) => ($catalog->metadata($item)['tier_slug'] ?? null) === $slug))
+                @php
+                    $tierPackage = $packages->first(fn ($item) => ($catalog->metadata($item)['tier_slug'] ?? null) === $slug);
+                    $tierDefaults = $activePlan['packages'][$slug] ?? [];
+                    $tierTitle = $tierDefaults['title'] ?? ($tierPackage?->nombre ?? ($tier['title'] ?? ucfirst($slug)));
+                    $tierSummary = $tierDefaults['summary'] ?? ($tierPackage?->descripcion_publica ?? ($tier['summary'] ?? ''));
+                    $tierRecommended = (bool) ($tierDefaults['recommended'] ?? ($tier['recommended'] ?? false));
+                @endphp
                 <a class="{{ $packageSlug === $slug ? 'is-active' : '' }}"
-                   href="{{ route('admin.banca-online.index', ['pais' => $countrySlug, 'plan' => $planSlug, 'paquete' => $slug]) }}">
-                    <span>{{ $tier['title'] }}</span>
-                    @if($tier['recommended'] ?? false)<small>Recomendado</small>@endif
+                   href="{{ route('admin.banca-online.index', ['pais' => $countrySlug, 'plan' => $planSlug, 'paquete' => $slug]) }}"
+                   title="{{ $tierSummary }}">
+                    <span>{{ $tierTitle }}</span>
+                    @if($tierRecommended)<small>Recomendado</small>@endif
                     <i class="fas {{ $tierPackage && $catalog->packageIsReady($tierPackage) ? 'fa-check-circle is-ready' : 'fa-circle' }}" aria-hidden="true"></i>
                 </a>
             @endforeach
@@ -135,7 +146,7 @@
                 <section class="bo-package-settings">
                     <div class="bo-package-settings-head">
                         <div>
-                            <span class="bo-context-label">Paquete {{ $activeTier['title'] ?? $package->nombre }}</span>
+                            <span class="bo-context-label">Paquete {{ $activePackageTitle }}</span>
                             <h3>Configuracion comercial</h3>
                         </div>
                         <div class="custom-control custom-switch">
@@ -147,7 +158,7 @@
                     <div class="bo-package-settings-grid">
                         <label class="bo-field bo-package-name-field">
                             <span>Nombre del paquete</span>
-                            <input class="form-control" type="text" name="nombre" value="{{ old('nombre', $package->nombre) }}" required>
+                            <input class="form-control" type="text" name="nombre" value="{{ old('nombre', $activePackageTitle) }}" required>
                         </label>
 
                         <div class="bo-field bo-discount-type">
@@ -174,7 +185,7 @@
 
                         <label class="bo-field bo-package-description">
                             <span>Descripcion publica</span>
-                            <textarea class="form-control" name="descripcion_publica" rows="2">{{ old('descripcion_publica', $package->descripcion_publica) }}</textarea>
+                            <textarea class="form-control" name="descripcion_publica" rows="2">{{ old('descripcion_publica', $activePackageSummary) }}</textarea>
                         </label>
                     </div>
 

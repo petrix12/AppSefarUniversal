@@ -561,10 +561,14 @@
 }
 
 .bo-package-switch span {
+  display: block;
   font-weight: 800;
+  line-height: 1.15;
 }
 
 .bo-package-switch small {
+  display: block;
+  margin-top: 0.25rem;
   color: var(--sefar-accent);
   font-size: 0.68rem;
   font-weight: 800;

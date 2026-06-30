@@ -108,12 +108,14 @@
                                 <div class="bo-package-price">
                                     @if($total > 0)
                                         @if($discount > 0)
+                                            <del class="bo-package-old-price">{{ number_format($subtotal, 0, ',', '.') }} EUR</del>
+                                        @endif
+                                        <strong>{{ number_format($total, 0, ',', '.') }}</strong> <span>EUR pago unico</span>
+                                        @if($discount > 0)
                                             <div class="bo-package-saving">
-                                                <del>{{ number_format($subtotal, 0, ',', '.') }} EUR</del>
                                                 <span>Ahorras {{ number_format($discount, 0, ',', '.') }} EUR</span>
                                             </div>
                                         @endif
-                                        <strong>{{ number_format($total, 0, ',', '.') }}</strong> <span>EUR pago unico</span>
                                     @else
                                         <strong>Por definir</strong>
                                     @endif
