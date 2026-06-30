@@ -384,7 +384,9 @@ class BancaOnlineCatalog
                 }
 
                 foreach ($this->packages() as $tierSlug => $tier) {
-                    $defaults = $this->packageDefaults($planSlug, $tierSlug);
+                    $planPackageDefaults = $plan['packages'][$tierSlug] ?? [];
+                    $hasPlanPackageDefaults = ! empty($planPackageDefaults);
+                    $defaults = array_merge($tier, $planPackageDefaults);
                     $idHubspot = $this->packageHubspotId($countrySlug, $planSlug, $tierSlug);
                     $servicio = Servicio::firstOrNew(['id_hubspot' => $idHubspot]);
                     $exists = $servicio->exists;
@@ -409,14 +411,27 @@ class BancaOnlineCatalog
                         'component_ids' => $defaults['component_ids'] ?? ($oldMetadata['component_ids'] ?? []),
                         'discount_type' => $defaults['discount_type'] ?? ($oldMetadata['discount_type'] ?? 'percentage'),
                         'discount_value' => (float) ($defaults['discount_value'] ?? ($oldMetadata['discount_value'] ?? 0)),
-                        'features' => $defaults['features'] ?? ($oldMetadata['features'] ?? []),
-                        'show_component_prices' => (bool) ($defaults['show_component_prices'] ?? ($oldMetadata['show_component_prices'] ?? true)),
                     ]);
 
-                    foreach (['list_price', 'price', 'saving'] as $pricingKey) {
-                        if (array_key_exists($pricingKey, $defaults)) {
+                    if ($hasPlanPackageDefaults) {
+                        $metadata['features'] = $defaults['features'] ?? [];
+                        $metadata['show_component_prices'] = (bool) ($defaults['show_component_prices'] ?? true);
+
+                        foreach (['list_price', 'price', 'saving'] as $pricingKey) {
+                            if (! array_key_exists($pricingKey, $defaults)) {
+                                continue;
+                            }
+
                             $metadata[$pricingKey] = (float) $defaults[$pricingKey];
                         }
+                    } else {
+                        unset(
+                            $metadata['features'],
+                            $metadata['show_component_prices'],
+                            $metadata['list_price'],
+                            $metadata['price'],
+                            $metadata['saving']
+                        );
                     }
 
                     unset($metadata['pricing_mode'], $metadata['component_prices']);

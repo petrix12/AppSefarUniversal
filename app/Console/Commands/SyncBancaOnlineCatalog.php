@@ -10,7 +10,7 @@ class SyncBancaOnlineCatalog extends Command
 {
     protected $signature = 'banca-online:sync-catalog
         {--country=espana : Pais a mostrar en el resumen}
-        {--plan=administrativo : Plan a mostrar en el resumen}';
+        {--plan=solicitud-estrategica : Plan a mostrar en el resumen}';
 
     protected $description = 'Sincroniza el catalogo base de Banca Online sin borrar registros existentes.';
 
