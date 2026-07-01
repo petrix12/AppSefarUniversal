@@ -148,6 +148,10 @@ class BancaOnlineCatalog
 
     public function packageFeatures(Servicio $package): Collection
     {
+        if ($this->usesComponentCatalog($package)) {
+            return collect();
+        }
+
         return collect($this->metadata($package)['features'] ?? [])
             ->map(function ($feature) {
                 if (is_array($feature)) {
@@ -170,7 +174,9 @@ class BancaOnlineCatalog
 
     public function packageDisplayItems(Servicio $package, bool $activeOnly = true): Collection
     {
-        $features = $this->packageFeatures($package);
+        $features = $this->usesComponentCatalog($package)
+            ? collect()
+            : $this->packageFeatures($package);
 
         if ($features->isNotEmpty()) {
             return $features;
@@ -200,6 +206,14 @@ class BancaOnlineCatalog
         return (bool) ($this->metadata($package)['show_component_prices'] ?? true);
     }
 
+    public function usesComponentCatalog(Servicio $package): bool
+    {
+        return collect($this->metadata($package)['component_ids'] ?? [])
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->isNotEmpty();
+    }
+
     public function packageComponentPrice(Servicio $package, Servicio $component): float
     {
         return max(0, (float) ($component->precio ?? 0));
@@ -209,7 +223,7 @@ class BancaOnlineCatalog
     {
         $metadata = $this->metadata($package);
 
-        if (array_key_exists('list_price', $metadata)) {
+        if (! $this->usesComponentCatalog($package) && array_key_exists('list_price', $metadata)) {
             return round(max(0, (float) $metadata['list_price']), 2);
         }
 
@@ -222,11 +236,11 @@ class BancaOnlineCatalog
         $metadata = $this->metadata($package);
         $subtotal = $this->packageSubtotal($package);
 
-        if (array_key_exists('price', $metadata)) {
+        if (! $this->usesComponentCatalog($package) && array_key_exists('price', $metadata)) {
             return round(max(0, $subtotal - max(0, (float) $metadata['price'])), 2);
         }
 
-        if (array_key_exists('saving', $metadata)) {
+        if (! $this->usesComponentCatalog($package) && array_key_exists('saving', $metadata)) {
             return round(min($subtotal, max(0, (float) $metadata['saving'])), 2);
         }
 
@@ -243,7 +257,7 @@ class BancaOnlineCatalog
     {
         $metadata = $this->metadata($package);
 
-        if (array_key_exists('price', $metadata)) {
+        if (! $this->usesComponentCatalog($package) && array_key_exists('price', $metadata)) {
             return round(max(0, (float) $metadata['price']), 2);
         }
 
@@ -395,6 +409,7 @@ class BancaOnlineCatalog
                     $defaultTitle = $defaults['title'] ?? $genericTitle;
                     $genericSummary = $tier['summary'] ?? null;
                     $defaultSummary = $defaults['summary'] ?? $genericSummary;
+                    $cmsManaged = (bool) ($oldMetadata['cms_managed'] ?? false);
                     $metadata = array_merge($oldMetadata, [
                         'banca_online' => true,
                         'record_type' => 'package',
@@ -405,16 +420,24 @@ class BancaOnlineCatalog
                         'plan_title' => $plan['title'] ?? $planSlug,
                         'plan_short_title' => $plan['short_title'] ?? ($plan['title'] ?? $planSlug),
                         'tier_slug' => $tierSlug,
-                        'tier_title' => $defaultTitle,
-                        'tier_summary' => $defaultSummary,
+                        'tier_title' => $exists ? ($oldMetadata['tier_title'] ?? $defaultTitle) : $defaultTitle,
+                        'tier_summary' => $exists ? ($oldMetadata['tier_summary'] ?? $defaultSummary) : $defaultSummary,
                         'tier_order' => (int) ($defaults['order'] ?? $tier['order'] ?? 0),
-                        'recommended' => (bool) ($defaults['recommended'] ?? $tier['recommended'] ?? false),
-                        'component_ids' => $defaults['component_ids'] ?? ($oldMetadata['component_ids'] ?? []),
-                        'discount_type' => $defaults['discount_type'] ?? ($oldMetadata['discount_type'] ?? 'percentage'),
-                        'discount_value' => (float) ($defaults['discount_value'] ?? ($oldMetadata['discount_value'] ?? 0)),
+                        'recommended' => $exists
+                            ? (bool) ($oldMetadata['recommended'] ?? ($defaults['recommended'] ?? $tier['recommended'] ?? false))
+                            : (bool) ($defaults['recommended'] ?? $tier['recommended'] ?? false),
+                        'component_ids' => $exists
+                            ? ($oldMetadata['component_ids'] ?? ($defaults['component_ids'] ?? []))
+                            : ($defaults['component_ids'] ?? []),
+                        'discount_type' => $exists
+                            ? ($oldMetadata['discount_type'] ?? ($defaults['discount_type'] ?? 'percentage'))
+                            : ($defaults['discount_type'] ?? 'percentage'),
+                        'discount_value' => $exists
+                            ? (float) ($oldMetadata['discount_value'] ?? ($defaults['discount_value'] ?? 0))
+                            : (float) ($defaults['discount_value'] ?? 0),
                     ]);
 
-                    if ($hasPlanPackageDefaults) {
+                    if ($hasPlanPackageDefaults && ! $cmsManaged) {
                         $metadata['features'] = $defaults['features'] ?? [];
                         $metadata['show_component_prices'] = (bool) ($defaults['show_component_prices'] ?? true);
 
@@ -425,7 +448,9 @@ class BancaOnlineCatalog
 
                             $metadata[$pricingKey] = (float) $defaults[$pricingKey];
                         }
-                    } else {
+                    }
+
+                    if (! $hasPlanPackageDefaults) {
                         unset(
                             $metadata['features'],
                             $metadata['show_component_prices'],
@@ -438,12 +463,19 @@ class BancaOnlineCatalog
                     unset($metadata['pricing_mode'], $metadata['component_prices']);
 
                     $currentName = trim((string) $servicio->nombre);
-                    $packageName = ($hasPlanPackageDefaults || ! $exists || $currentName === '' || $currentName === $genericTitle || $currentName === ($oldMetadata['tier_title'] ?? null))
+                    $packageName = (
+                        ! $exists
+                        || $currentName === ''
+                        || (! $cmsManaged && ($currentName === $genericTitle || $currentName === ($oldMetadata['tier_title'] ?? null)))
+                    )
                         ? $defaultTitle
                         : $currentName;
 
                     $currentDescription = trim((string) $servicio->descripcion_publica);
-                    $packageDescription = ($hasPlanPackageDefaults || ! $exists || $currentDescription === '' || $currentDescription === $genericSummary)
+                    $packageDescription = (
+                        ! $exists
+                        || (! $cmsManaged && ($currentDescription === '' || $currentDescription === $genericSummary))
+                    )
                         ? $defaultSummary
                         : $currentDescription;
 

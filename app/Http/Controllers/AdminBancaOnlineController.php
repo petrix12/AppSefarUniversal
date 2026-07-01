@@ -227,14 +227,31 @@ class AdminBancaOnlineController extends Controller
             }
         });
 
+        $packageName = trim($data['nombre']);
+        $packageDescription = trim((string) ($data['descripcion_publica'] ?? ''));
+
         $metadata['component_ids'] = $selectedIds->all();
         $metadata['discount_type'] = $data['discount_type'];
         $metadata['discount_value'] = (float) $data['discount_value'];
+        $metadata['cms_managed'] = true;
+        $metadata['tier_title'] = $packageName;
+        $metadata['tier_summary'] = $packageDescription !== '' ? $packageDescription : null;
+
+        if ($selectedIds->isNotEmpty()) {
+            unset(
+                $metadata['features'],
+                $metadata['show_component_prices'],
+                $metadata['list_price'],
+                $metadata['price'],
+                $metadata['saving']
+            );
+        }
+
         unset($metadata['pricing_mode'], $metadata['component_prices']);
 
         $servicio->fill([
-            'nombre' => trim($data['nombre']),
-            'descripcion_publica' => $data['descripcion_publica'] ?? null,
+            'nombre' => $packageName,
+            'descripcion_publica' => $packageDescription !== '' ? $packageDescription : null,
             'precio' => 0,
             'activo' => $request->boolean('activo'),
             'metadata' => $metadata,

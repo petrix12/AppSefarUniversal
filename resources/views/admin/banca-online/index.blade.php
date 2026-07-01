@@ -3,8 +3,8 @@
     $activePlan = $plans[$planSlug] ?? [];
     $activeTier = $tiers[$packageSlug] ?? [];
     $activePackageDefaults = $activePlan['packages'][$packageSlug] ?? [];
-    $activePackageTitle = $activePackageDefaults['title'] ?? ($package?->nombre ?? ($activeTier['title'] ?? 'Modalidad'));
-    $activePackageSummary = $activePackageDefaults['summary'] ?? ($package?->descripcion_publica ?? ($activeTier['summary'] ?? ''));
+    $activePackageTitle = $package?->nombre ?? ($activePackageDefaults['title'] ?? ($activeTier['title'] ?? 'Modalidad'));
+    $activePackageSummary = $package?->descripcion_publica ?? ($activePackageDefaults['summary'] ?? ($activeTier['summary'] ?? ''));
     $countryCodes = ['espana' => 'ES', 'portugal' => 'PT', 'italia' => 'IT'];
     $packageMetadata = $package ? $catalog->metadata($package) : [];
     $selectedComponentIds = collect(old('component_ids', $packageMetadata['component_ids'] ?? []))->map(fn ($id) => (int) $id);
@@ -113,8 +113,8 @@
                 @php
                     $tierPackage = $packages->first(fn ($item) => ($catalog->metadata($item)['tier_slug'] ?? null) === $slug);
                     $tierDefaults = $activePlan['packages'][$slug] ?? [];
-                    $tierTitle = $tierDefaults['title'] ?? ($tierPackage?->nombre ?? ($tier['title'] ?? ucfirst($slug)));
-                    $tierSummary = $tierDefaults['summary'] ?? ($tierPackage?->descripcion_publica ?? ($tier['summary'] ?? ''));
+                    $tierTitle = $tierPackage?->nombre ?? ($tierDefaults['title'] ?? ($tier['title'] ?? ucfirst($slug)));
+                    $tierSummary = $tierPackage?->descripcion_publica ?? ($tierDefaults['summary'] ?? ($tier['summary'] ?? ''));
                     $tierRecommended = (bool) ($tierDefaults['recommended'] ?? ($tier['recommended'] ?? false));
                 @endphp
                 <a class="{{ $packageSlug === $slug ? 'is-active' : '' }}"
