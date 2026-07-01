@@ -905,24 +905,24 @@ body.bo-page {
 }
 
 .bo-package-card {
-  border-color: rgba(90, 151, 101, 0.5);
+  border-color: rgba(206, 143, 42, 0.46);
   border-radius: var(--bo-card-radius);
   padding: 2rem;
   background:
-    radial-gradient(circle at top right, rgba(144, 190, 119, 0.2), transparent 35%),
-    linear-gradient(145deg, #285d3f 0%, #183d2d 100%);
+    radial-gradient(circle at top right, rgba(206, 143, 42, 0.28), transparent 35%),
+    linear-gradient(145deg, #003746 0%, #002635 100%);
   color: #ffffff;
-  box-shadow: 0 32px 90px rgba(24, 61, 45, 0.24);
+  box-shadow: 0 32px 90px rgba(0, 47, 61, 0.24);
   transform: none;
 }
 
 .bo-package-card.is-recommended {
-  border-color: rgba(90, 151, 101, 0.5);
+  border-color: rgba(206, 143, 42, 0.7);
   background:
-    radial-gradient(circle at top right, rgba(144, 190, 119, 0.2), transparent 35%),
-    linear-gradient(145deg, #285d3f 0%, #183d2d 100%);
+    radial-gradient(circle at top right, rgba(206, 143, 42, 0.28), transparent 35%),
+    linear-gradient(145deg, #003746 0%, #002635 100%);
   color: #ffffff;
-  box-shadow: 0 32px 90px rgba(24, 61, 45, 0.24);
+  box-shadow: 0 32px 90px rgba(0, 47, 61, 0.24);
   transform: none;
 }
 
@@ -932,21 +932,21 @@ body.bo-page {
   inset: auto 2rem 0;
   height: 4px;
   border-radius: 999px 999px 0 0;
-  background: linear-gradient(90deg, transparent, #6fb06f, transparent);
+  background: linear-gradient(90deg, transparent, #ce8f2a, transparent);
   opacity: 0.82;
 }
 
 .bo-package-card:hover,
 .bo-package-card.selected {
-  border-color: rgba(111, 176, 111, 0.72);
-  box-shadow: 0 36px 96px rgba(24, 61, 45, 0.3), inset 0 0 0 1px rgba(111, 176, 111, 0.18);
+  border-color: rgba(206, 143, 42, 0.72);
+  box-shadow: 0 36px 96px rgba(0, 47, 61, 0.3), inset 0 0 0 1px rgba(206, 143, 42, 0.18);
   transform: none;
 }
 
 .bo-package-card.is-recommended:hover,
 .bo-package-card.is-recommended.selected {
-  border-color: rgba(111, 176, 111, 0.72);
-  box-shadow: 0 36px 96px rgba(24, 61, 45, 0.3), inset 0 0 0 1px rgba(111, 176, 111, 0.18);
+  border-color: rgba(206, 143, 42, 0.9);
+  box-shadow: 0 36px 96px rgba(0, 47, 61, 0.2), inset 0 0 0 1px rgba(206, 143, 42, 0.18);
   transform: none;
 }
 
