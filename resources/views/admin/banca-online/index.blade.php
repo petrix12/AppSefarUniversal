@@ -54,7 +54,9 @@
     <div class="bo-admin-workspace">
         <nav class="bo-country-switch" aria-label="Catalogo por pais">
             @foreach($countries as $slug => $item)
-                @php($countryPlan = array_key_first($catalog->plansForCountry($slug)))
+                @php
+                    $countryPlan = array_key_first($catalog->plansForCountry($slug));
+                @endphp
                 <a class="bo-country-option {{ $countrySlug === $slug ? 'is-active' : '' }}"
                    href="{{ route('admin.banca-online.index', ['pais' => $slug, 'plan' => $countryPlan, 'paquete' => 'regular']) }}">
                     <span class="bo-country-code">{{ $countryCodes[$slug] ?? strtoupper(substr($slug, 0, 2)) }}</span>
@@ -214,7 +216,9 @@
                         <div class="bo-component-section">
                             <h4>{{ $section }}</h4>
                             @foreach($sectionItems as $component)
-                                @php($included = $selectedComponentIds->contains((int) $component->id))
+                                @php
+                                    $included = $selectedComponentIds->contains((int) $component->id);
+                                @endphp
                                 <div class="bo-component-row {{ $included ? 'is-included' : '' }}" data-component-row>
                                     <label class="bo-component-check" title="Incluir componente">
                                         <input data-component-toggle type="checkbox" name="component_ids[]" value="{{ $component->id }}" {{ $included ? 'checked' : '' }}>
