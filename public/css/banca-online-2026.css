@@ -904,8 +904,7 @@ body.bo-page {
   color: var(--bo-primary-dark);
 }
 
-.bo-package-card,
-.bo-package-card.is-recommended {
+.bo-package-card {
   border-color: rgba(206, 143, 42, 0.46);
   border-radius: var(--bo-card-radius);
   padding: 2rem;
@@ -915,6 +914,15 @@ body.bo-page {
   color: #ffffff;
   box-shadow: 0 32px 90px rgba(0, 47, 61, 0.24);
   transform: none;
+}
+
+.bo-package-card.is-recommended {
+  border-color: rgba(206, 143, 42, 0.7);
+  background:
+    radial-gradient(circle at top right, rgba(206, 143, 42, 0.14), transparent 36%),
+    #ffffff;
+  color: var(--bo-text);
+  box-shadow: 0 32px 90px rgba(0, 47, 61, 0.16);
 }
 
 .bo-package-card::after {
@@ -928,11 +936,16 @@ body.bo-page {
 }
 
 .bo-package-card:hover,
-.bo-package-card.selected,
-.bo-package-card.is-recommended:hover,
-.bo-package-card.is-recommended.selected {
+.bo-package-card.selected {
   border-color: rgba(206, 143, 42, 0.72);
   box-shadow: 0 36px 96px rgba(0, 47, 61, 0.3), inset 0 0 0 1px rgba(206, 143, 42, 0.18);
+  transform: none;
+}
+
+.bo-package-card.is-recommended:hover,
+.bo-package-card.is-recommended.selected {
+  border-color: rgba(206, 143, 42, 0.9);
+  box-shadow: 0 36px 96px rgba(0, 47, 61, 0.2), inset 0 0 0 1px rgba(206, 143, 42, 0.18);
   transform: none;
 }
 
@@ -956,6 +969,29 @@ body.bo-page {
   padding: 1.25rem 0 1.15rem;
 }
 
+.bo-package-card.is-recommended .bo-package-card-head h3,
+.bo-package-card.is-recommended .bo-package-price,
+.bo-package-card.is-recommended .bo-package-components li,
+.bo-package-card.is-recommended .bo-package-component-copy strong {
+  color: var(--bo-text);
+}
+
+.bo-package-card.is-recommended .bo-package-tier,
+.bo-package-card.is-recommended .bo-package-card-head p,
+.bo-package-card.is-recommended .bo-package-price span,
+.bo-package-card.is-recommended .bo-package-component-copy small {
+  color: var(--bo-muted);
+}
+
+.bo-package-card.is-recommended .bo-package-price {
+  border-color: var(--bo-border);
+}
+
+.bo-package-card.is-recommended .bo-package-recommended {
+  background: rgba(9, 49, 67, 0.08);
+  color: var(--bo-primary);
+}
+
 .bo-package-old-price {
   display: block;
   margin-bottom: 0.45rem;
@@ -965,24 +1001,38 @@ body.bo-page {
   text-decoration-thickness: 2px;
 }
 
+.bo-package-card.is-recommended .bo-package-old-price {
+  color: rgba(9, 49, 67, 0.46);
+}
+
+.bo-package-current-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
 .bo-package-price strong {
-  font-size: clamp(1.9rem, 2.6vw, 2.35rem);
+  font-size: clamp(1.25rem, 1.65vw, 1.55rem);
   line-height: 1;
 }
 
 .bo-package-saving,
 .bo-package-card.is-recommended .bo-package-saving {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0;
+  justify-content: center;
+  width: 100%;
+  gap: 0.2rem;
   margin-top: 0.75rem;
   border: 1px solid rgba(22, 163, 74, 0.36);
-  border-radius: 999px;
-  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
+  padding: 0.7rem 0.85rem;
   background: rgba(22, 163, 74, 0.18);
   color: #ffffff;
   box-shadow: none;
-  font-size: 0.9rem;
+  font-size: 1rem;
+  text-align: center;
 }
 
 .bo-package-saving span,
@@ -993,7 +1043,16 @@ body.bo-page {
 
 .bo-package-saving span,
 .bo-package-card.is-recommended .bo-package-saving span {
-  font-size: 1.08rem;
+  font-size: clamp(1.55rem, 2.35vw, 2.1rem);
+  line-height: 1.05;
+}
+
+.bo-package-card.is-recommended .bo-package-saving {
+  background: rgba(15, 118, 110, 0.1);
+}
+
+.bo-package-card.is-recommended .bo-package-saving span {
+  color: var(--bo-success);
 }
 
 .bo-package-card .bo-package-components i {
@@ -1008,15 +1067,26 @@ body.bo-page {
   font-size: 0.72rem;
 }
 
+.bo-package-card.is-recommended .bo-package-components i {
+  background: rgba(206, 143, 42, 0.16);
+  color: var(--bo-accent);
+}
+
 .bo-package-card .bo-package-select,
-.bo-package-card.is-recommended .bo-package-select,
-.bo-package-card.is-recommended.selected .bo-package-select {
+.bo-package-card.is-recommended .bo-package-select {
   border: 1.5px solid rgba(255, 255, 255, 0.22);
   background: transparent;
   color: #ffffff;
 }
 
-.bo-package-card.selected .bo-package-select {
+.bo-package-card.is-recommended .bo-package-select {
+  border-color: rgba(9, 49, 67, 0.16);
+  background: var(--bo-primary-soft);
+  color: var(--bo-primary);
+}
+
+.bo-package-card.selected .bo-package-select,
+.bo-package-card.is-recommended.selected .bo-package-select {
   border-color: #ce8f2a;
   background: #ce8f2a;
   color: var(--bo-primary-dark);
