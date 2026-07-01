@@ -1018,7 +1018,7 @@ body.bo-page {
   line-height: 1;
 }
 
-.bo-package-saving,
+.bo-package-card .bo-package-saving,
 .bo-package-card.is-recommended .bo-package-saving {
   display: flex;
   align-items: center;
@@ -1036,13 +1036,13 @@ body.bo-page {
   text-align: center;
 }
 
-.bo-package-saving span,
+.bo-package-card .bo-package-saving span,
 .bo-package-card.is-recommended .bo-package-saving span {
   color: #86efac;
   font-weight: 900;
 }
 
-.bo-package-saving span,
+.bo-package-card .bo-package-saving span,
 .bo-package-card.is-recommended .bo-package-saving span {
   font-size: clamp(1.55rem, 2.35vw, 2.1rem);
   line-height: 1.05;
