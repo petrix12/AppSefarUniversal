@@ -12,6 +12,8 @@
   --bo-danger: var(--sefar-danger, #ac2630);
   --bo-success: #0f766e;
   --bo-radius: var(--sefar-radius, 8px);
+  --bo-container-radius: 22px;
+  --bo-card-radius: 26px;
   --bo-shadow: var(--sefar-shadow, 0 10px 24px rgba(9, 49, 67, 0.08));
 }
 
@@ -131,7 +133,7 @@ body.bo-page {
 .bo-empty,
 .bo-confirm-card {
   border: 1px solid var(--bo-border);
-  border-radius: var(--bo-radius);
+  border-radius: var(--bo-container-radius);
   background: var(--bo-surface);
   box-shadow: var(--bo-shadow);
 }
@@ -233,6 +235,7 @@ body.bo-page {
   display: grid;
   grid-template-rows: auto 1fr auto;
   min-height: 250px;
+  border-radius: var(--bo-container-radius);
   padding: 1rem;
   color: var(--bo-text);
   text-decoration: none;
@@ -543,7 +546,7 @@ body.bo-page {
   overflow: hidden;
   min-width: 0;
   border: 1px solid var(--bo-border);
-  border-radius: var(--bo-radius);
+  border-radius: var(--bo-container-radius);
   background: #fff;
   box-shadow: var(--bo-shadow);
 }
@@ -678,7 +681,7 @@ body.bo-page {
   min-height: 460px;
   overflow: hidden;
   border: 1px solid var(--bo-border);
-  border-radius: var(--bo-radius);
+  border-radius: var(--bo-card-radius);
   padding: 1.35rem;
   background: #fff;
   box-shadow: var(--bo-shadow);
@@ -904,6 +907,7 @@ body.bo-page {
 .bo-package-card,
 .bo-package-card.is-recommended {
   border-color: rgba(206, 143, 42, 0.46);
+  border-radius: var(--bo-card-radius);
   padding: 2rem;
   background:
     radial-gradient(circle at top right, rgba(206, 143, 42, 0.28), transparent 35%),
