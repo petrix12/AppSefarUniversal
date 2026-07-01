@@ -242,7 +242,7 @@
       }
 
       if (totalNode) totalNode.textContent = money(selectedInput.dataset.price);
-      if (selectedPackageName) selectedPackageName.textContent = selectedInput.dataset.name || 'Paquete seleccionado';
+      if (selectedPackageName) selectedPackageName.textContent = selectedInput.dataset.name || 'Modalidad seleccionada';
       renderSelectedList(components);
     }
 

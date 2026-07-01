@@ -36,7 +36,7 @@ class AdminBancaOnlineController extends Controller
 
         $packages = $this->catalog->packagesForPlan($countrySlug, $planSlug, false);
         $tiers = $this->catalog->packages();
-        $packageSlug = (string) $request->query('paquete', array_key_first($tiers));
+        $packageSlug = (string) $request->query('modalidad', $request->query('paquete', array_key_first($tiers)));
 
         if (! array_key_exists($packageSlug, $tiers)) {
             $packageSlug = array_key_first($tiers);
@@ -125,7 +125,7 @@ class AdminBancaOnlineController extends Controller
             ->route('admin.banca-online.index', [
                 'pais' => $metadata['country_slug'] ?? 'espana',
                 'plan' => $metadata['plan_slug'] ?? 'solicitud-estrategica',
-                'paquete' => $request->input('paquete', 'regular'),
+                'modalidad' => $request->input('modalidad', $request->input('paquete', 'regular')),
             ])
             ->with('success', 'Item actualizado.');
     }
@@ -145,10 +145,12 @@ class AdminBancaOnlineController extends Controller
             'required' => ['nullable', 'boolean'],
             'default_selected' => ['nullable', 'boolean'],
             'locked' => ['nullable', 'boolean'],
+            'modalidad' => ['nullable', 'string'],
             'paquete' => ['nullable', 'string'],
         ]);
 
         abort_unless($this->catalog->planForCountry($data['pais'], $data['plan']), 404);
+        $modalidad = $data['modalidad'] ?? $data['paquete'] ?? 'regular';
 
         $this->catalog->createCustomService($data['pais'], $data['plan'], array_merge($data, [
             'activo' => $request->boolean('activo'),
@@ -161,7 +163,7 @@ class AdminBancaOnlineController extends Controller
             ->route('admin.banca-online.index', [
                 'pais' => $data['pais'],
                 'plan' => $data['plan'],
-                'paquete' => $data['paquete'] ?? 'regular',
+                'modalidad' => $modalidad,
             ])
             ->with('success', 'Servicio agregado al catalogo.');
     }
@@ -242,8 +244,8 @@ class AdminBancaOnlineController extends Controller
             ->route('admin.banca-online.index', [
                 'pais' => $countrySlug,
                 'plan' => $planSlug,
-                'paquete' => $metadata['tier_slug'] ?? 'regular',
+                'modalidad' => $metadata['tier_slug'] ?? 'regular',
             ])
-            ->with('success', 'Paquete actualizado.');
+            ->with('success', 'Modalidad actualizada.');
     }
 }

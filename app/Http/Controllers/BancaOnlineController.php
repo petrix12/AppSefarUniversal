@@ -340,14 +340,14 @@ class BancaOnlineController extends Controller
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Selecciona un paquete disponible.',
-                    'errors' => ['package_id' => ['Selecciona un paquete disponible.']],
+                    'message' => 'Selecciona una modalidad disponible.',
+                    'errors' => ['package_id' => ['Selecciona una modalidad disponible.']],
                 ], 422);
             }
 
             return back()
                 ->withInput()
-                ->withErrors(['package_id' => 'Selecciona un paquete disponible.']);
+                ->withErrors(['package_id' => 'Selecciona una modalidad disponible.']);
         }
 
         $items = $this->catalog->packageDisplayItems($package);
@@ -359,14 +359,14 @@ class BancaOnlineController extends Controller
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Este paquete aun no esta disponible para contratar.',
+                    'message' => 'Esta modalidad aun no esta disponible para contratar.',
                     'errors' => ['package_id' => ['Administracion debe definir sus beneficios y precio.']],
                 ], 422);
             }
 
             return back()
                 ->withInput()
-                ->withErrors(['package_id' => 'Administracion debe definir los beneficios y el precio del paquete.']);
+                ->withErrors(['package_id' => 'Administracion debe definir los beneficios y el precio de la modalidad.']);
         }
 
         $email = Str::lower(trim($baseData['email']));

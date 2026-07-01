@@ -42,7 +42,7 @@ class SyncBancaOnlineCatalog extends Command
         $packages = $catalog->packagesForPlan($countrySlug, $planSlug, false);
 
         if ($packages->isEmpty()) {
-            $this->warn("No hay paquetes para {$countrySlug}/{$planSlug}.");
+            $this->warn("No hay modalidades para {$countrySlug}/{$planSlug}.");
 
             return self::SUCCESS;
         }
@@ -51,7 +51,7 @@ class SyncBancaOnlineCatalog extends Command
         $this->line(($plan['public_title'] ?? $plan['title'] ?? $planSlug) . " ({$countrySlug})");
 
         $this->table(
-            ['Nivel', 'Paquete', 'Precio lista', 'Ahorro', 'Total', 'Beneficios', 'Activo'],
+            ['Nivel', 'Modalidad', 'Precio lista', 'Ahorro', 'Total', 'Beneficios', 'Activo'],
             $packages->map(fn ($package) => [
                 $catalog->metadata($package)['tier_slug'] ?? '-',
                 $package->nombre,

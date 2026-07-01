@@ -55,7 +55,7 @@
         @if($packages->isEmpty())
             <div class="bo-empty">
                 <i class="fas fa-info-circle"></i>
-                Los paquetes de esta estrategia aun no han sido sincronizados.
+                Las modalidades de esta estrategia aun no han sido sincronizadas.
             </div>
         @else
             <form method="POST" action="{{ route('banca-online.checkout.country', [$countrySlug, $planSlug]) }}" id="bancaCheckoutForm">
@@ -66,9 +66,9 @@
                     <div class="bo-package-heading">
                         <div>
                             <span class="bo-section-kicker">Nivel de cobertura</span>
-                            <h2 id="package-heading">Elige tu paquete</h2>
+                            <h2 id="package-heading">Elige tu modalidad</h2>
                         </div>
-                        <p>Los servicios de cada paquete son fijos.</p>
+                        <p>Los servicios de cada modalidad son fijos.</p>
                     </div>
 
                     <div class="bo-package-grid">
@@ -100,7 +100,7 @@
                                 @endif
 
                                 <div class="bo-package-card-head">
-                                    <span class="bo-package-tier">Paquete</span>
+                                    <span class="bo-package-tier">Modalidad</span>
                                     <h3>{{ $package->nombre }}</h3>
                                     <p>{{ $package->descripcion_publica }}</p>
                                 </div>
@@ -140,7 +140,7 @@
                                 </ul>
 
                                 <span class="bo-package-select">
-                                    {{ $ready ? 'Elegir paquete' : 'Proximamente' }}
+                                    {{ $ready ? 'Elegir modalidad' : 'Proximamente' }}
                                     @if($ready)<i class="fas fa-arrow-right" aria-hidden="true"></i>@endif
                                 </span>
                             </label>
@@ -151,7 +151,7 @@
 
                 <div class="bo-package-checkout">
                     <aside class="bo-panel bo-package-summary">
-                        <div class="bo-total-label">Paquete seleccionado</div>
+                        <div class="bo-total-label">Modalidad seleccionada</div>
                         <h2 id="selectedPackageName">Selecciona una opcion</h2>
                         <div class="bo-total"><span id="totalAmount">0</span> <small>EUR</small></div>
                         <ul class="bo-selected-list" id="selectedList"></ul>

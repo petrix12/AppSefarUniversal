@@ -1,4 +1,6 @@
-@php($packageComponents = collect($metadata['components'] ?? []))
+@php
+    $packageComponents = collect($metadata['components'] ?? []);
+@endphp
 <!doctype html>
 <html lang="es">
 <head>
@@ -25,12 +27,12 @@
         <section class="bo-payment-title">
             <span class="bo-eyebrow"><i class="fas fa-lock"></i> Pago seguro</span>
             <h1>Completar contratacion</h1>
-            <p>{{ $metadata['plan_title'] ?? 'Plan estrategico' }} · {{ $metadata['package_title'] ?? 'Paquete contratado' }}.</p>
+            <p>{{ $metadata['plan_title'] ?? 'Plan estrategico' }} · {{ $metadata['package_title'] ?? 'Modalidad contratada' }}.</p>
         </section>
 
         <div class="bo-payment-layout">
             <section class="bo-panel">
-                <h2>{{ $metadata['package_title'] ?? 'Paquete contratado' }}</h2>
+                <h2>{{ $metadata['package_title'] ?? 'Modalidad contratada' }}</h2>
                 <ul class="bo-payment-items">
                     @forelse($packageComponents as $component)
                         <li>

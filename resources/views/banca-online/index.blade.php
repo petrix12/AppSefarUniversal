@@ -77,7 +77,7 @@
             @endforeach
         </section>
 
-        <p class="bo-note">Cada ruta ofrece paquetes Regular, Medium y Premium con componentes y precio definidos por administracion.</p>
+        <p class="bo-note">Cada ruta ofrece modalidades Regular, Medium y Premium con componentes y precio definidos por administracion.</p>
     </main>
     <script src="{{ asset('js/banca-online-2026.js') }}"></script>
 </body>

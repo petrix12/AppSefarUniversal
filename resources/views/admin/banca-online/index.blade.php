@@ -3,7 +3,7 @@
     $activePlan = $plans[$planSlug] ?? [];
     $activeTier = $tiers[$packageSlug] ?? [];
     $activePackageDefaults = $activePlan['packages'][$packageSlug] ?? [];
-    $activePackageTitle = $activePackageDefaults['title'] ?? ($package?->nombre ?? ($activeTier['title'] ?? 'Paquete'));
+    $activePackageTitle = $activePackageDefaults['title'] ?? ($package?->nombre ?? ($activeTier['title'] ?? 'Modalidad'));
     $activePackageSummary = $activePackageDefaults['summary'] ?? ($package?->descripcion_publica ?? ($activeTier['summary'] ?? ''));
     $countryCodes = ['espana' => 'ES', 'portugal' => 'PT', 'italia' => 'IT'];
     $packageMetadata = $package ? $catalog->metadata($package) : [];
@@ -21,7 +21,7 @@
 @section('content_header')
     <div class="bo-admin-header">
         <div>
-            <p class="sefar-eyebrow">Administracion de paquetes</p>
+            <p class="sefar-eyebrow">Administracion de modalidades</p>
             <h1>Banca Online 2026</h1>
         </div>
         <form method="POST" action="{{ route('admin.banca-online.sync') }}">
@@ -58,7 +58,7 @@
                     $countryPlan = array_key_first($catalog->plansForCountry($slug));
                 @endphp
                 <a class="bo-country-option {{ $countrySlug === $slug ? 'is-active' : '' }}"
-                   href="{{ route('admin.banca-online.index', ['pais' => $slug, 'plan' => $countryPlan, 'paquete' => 'regular']) }}">
+                   href="{{ route('admin.banca-online.index', ['pais' => $slug, 'plan' => $countryPlan, 'modalidad' => 'regular']) }}">
                     <span class="bo-country-code">{{ $countryCodes[$slug] ?? strtoupper(substr($slug, 0, 2)) }}</span>
                     <span class="bo-country-copy">
                         <strong>{{ $item['label'] }}</strong>
@@ -93,7 +93,7 @@
         <nav class="bo-plan-switch" aria-label="Ruta estrategica">
             @foreach($plans as $slug => $plan)
                 <a class="{{ $planSlug === $slug ? 'is-active' : '' }}"
-                   href="{{ route('admin.banca-online.index', ['pais' => $countrySlug, 'plan' => $slug, 'paquete' => 'regular']) }}"
+                   href="{{ route('admin.banca-online.index', ['pais' => $countrySlug, 'plan' => $slug, 'modalidad' => 'regular']) }}"
                    title="{{ $plan['public_title'] ?? $plan['title'] }}">
                     {{ $plan['short_title'] ?? $plan['title'] }}
                 </a>
@@ -108,7 +108,7 @@
             <span>{{ $planCurrent }} {{ $planCurrent === 1 ? 'servicio' : 'servicios' }}</span>
         </header>
 
-        <nav class="bo-package-switch" aria-label="Paquete">
+        <nav class="bo-package-switch" aria-label="Modalidad">
             @foreach($tiers as $slug => $tier)
                 @php
                     $tierPackage = $packages->first(fn ($item) => ($catalog->metadata($item)['tier_slug'] ?? null) === $slug);
@@ -118,7 +118,7 @@
                     $tierRecommended = (bool) ($tierDefaults['recommended'] ?? ($tier['recommended'] ?? false));
                 @endphp
                 <a class="{{ $packageSlug === $slug ? 'is-active' : '' }}"
-                   href="{{ route('admin.banca-online.index', ['pais' => $countrySlug, 'plan' => $planSlug, 'paquete' => $slug]) }}"
+                   href="{{ route('admin.banca-online.index', ['pais' => $countrySlug, 'plan' => $planSlug, 'modalidad' => $slug]) }}"
                    title="{{ $tierSummary }}">
                     <span>{{ $tierTitle }}</span>
                     @if($tierRecommended)<small>Recomendado</small>@endif
@@ -130,7 +130,7 @@
         @if(!$package)
             <div class="bo-admin-empty">
                 <i class="fas fa-sync-alt" aria-hidden="true"></i>
-                <p>Sincroniza el catalogo para crear los paquetes de esta ruta.</p>
+                <p>Sincroniza el catalogo para crear las modalidades de esta ruta.</p>
             </div>
         @else
             <form
@@ -148,7 +148,7 @@
                 <section class="bo-package-settings">
                     <div class="bo-package-settings-head">
                         <div>
-                            <span class="bo-context-label">Paquete {{ $activePackageTitle }}</span>
+                            <span class="bo-context-label">Modalidad {{ $activePackageTitle }}</span>
                             <h3>Configuracion comercial</h3>
                         </div>
                         <div class="custom-control custom-switch">
@@ -159,7 +159,7 @@
 
                     <div class="bo-package-settings-grid">
                         <label class="bo-field bo-package-name-field">
-                            <span>Nombre del paquete</span>
+                            <span>Nombre de la modalidad</span>
                             <input class="form-control" type="text" name="nombre" value="{{ old('nombre', $activePackageTitle) }}" required>
                         </label>
 
@@ -193,7 +193,7 @@
 
                     @if($packageFeatures->isNotEmpty())
                         <div class="bo-fixed-package-preview">
-                            <span>Beneficios publicos del paquete</span>
+                            <span>Beneficios publicos de la modalidad</span>
                             <ul>
                                 @foreach($packageFeatures as $feature)
                                     <li>{{ $feature['name'] }}</li>
@@ -206,8 +206,8 @@
                 <section class="bo-component-editor">
                     <header>
                         <div>
-                            <h3>Servicios del paquete</h3>
-                            <p>Cada servicio conserva su descripcion y costo base; aqui decides si el paquete lo incluye.</p>
+                            <h3>Servicios de la modalidad</h3>
+                            <p>Cada servicio conserva su descripcion y costo base; aqui decides si la modalidad lo incluye.</p>
                         </div>
                         <span data-included-count>{{ $includedCount }} {{ $includedCount === 1 ? 'incluido' : 'incluidos' }}</span>
                     </header>
@@ -255,12 +255,12 @@
                             <span data-package-discount>-{{ number_format($catalog->packageDiscount($package), 0, ',', '.') }} EUR</span>
                         </div>
                         <div class="is-total">
-                            <strong>Total del paquete</strong>
+                            <strong>Total de la modalidad</strong>
                             <span data-package-total>{{ number_format($catalog->packageTotal($package), 0, ',', '.') }} EUR</span>
                         </div>
                     </div>
                     <button type="submit" class="btn bo-save-package-button">
-                        <i class="fas fa-save mr-1" aria-hidden="true"></i> Guardar paquete
+                        <i class="fas fa-save mr-1" aria-hidden="true"></i> Guardar modalidad
                     </button>
                 </div>
             </form>
@@ -274,7 +274,7 @@
                     @csrf
                     <input type="hidden" name="pais" value="{{ $countrySlug }}">
                     <input type="hidden" name="plan" value="{{ $planSlug }}">
-                    <input type="hidden" name="paquete" value="{{ $packageSlug }}">
+                    <input type="hidden" name="modalidad" value="{{ $packageSlug }}">
                     <input type="hidden" name="activo" value="1">
                     <div class="bo-create-grid">
                         <label class="bo-field bo-create-name">
