@@ -919,10 +919,11 @@ body.bo-page {
 .bo-package-card.is-recommended {
   border-color: rgba(206, 143, 42, 0.7);
   background:
-    radial-gradient(circle at top right, rgba(206, 143, 42, 0.14), transparent 36%),
-    #ffffff;
-  color: var(--bo-text);
-  box-shadow: 0 32px 90px rgba(0, 47, 61, 0.16);
+    radial-gradient(circle at top right, rgba(206, 143, 42, 0.28), transparent 35%),
+    linear-gradient(145deg, #003746 0%, #002635 100%);
+  color: #ffffff;
+  box-shadow: 0 32px 90px rgba(0, 47, 61, 0.24);
+  transform: none;
 }
 
 .bo-package-card::after {
@@ -973,23 +974,23 @@ body.bo-page {
 .bo-package-card.is-recommended .bo-package-price,
 .bo-package-card.is-recommended .bo-package-components li,
 .bo-package-card.is-recommended .bo-package-component-copy strong {
-  color: var(--bo-text);
+  color: #ffffff;
 }
 
 .bo-package-card.is-recommended .bo-package-tier,
 .bo-package-card.is-recommended .bo-package-card-head p,
 .bo-package-card.is-recommended .bo-package-price span,
 .bo-package-card.is-recommended .bo-package-component-copy small {
-  color: var(--bo-muted);
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .bo-package-card.is-recommended .bo-package-price {
-  border-color: var(--bo-border);
+  border-color: rgba(255, 255, 255, 0.16);
 }
 
 .bo-package-card.is-recommended .bo-package-recommended {
-  background: rgba(9, 49, 67, 0.08);
-  color: var(--bo-primary);
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--bo-accent-light);
 }
 
 .bo-package-old-price {
@@ -1002,7 +1003,7 @@ body.bo-page {
 }
 
 .bo-package-card.is-recommended .bo-package-old-price {
-  color: rgba(9, 49, 67, 0.46);
+  color: rgba(255, 255, 255, 0.52);
 }
 
 .bo-package-current-price {
@@ -1048,11 +1049,11 @@ body.bo-page {
 }
 
 .bo-package-card.is-recommended .bo-package-saving {
-  background: rgba(15, 118, 110, 0.1);
+  background: rgba(22, 163, 74, 0.18);
 }
 
 .bo-package-card.is-recommended .bo-package-saving span {
-  color: var(--bo-success);
+  color: #86efac;
 }
 
 .bo-package-card .bo-package-components i {
@@ -1068,8 +1069,8 @@ body.bo-page {
 }
 
 .bo-package-card.is-recommended .bo-package-components i {
-  background: rgba(206, 143, 42, 0.16);
-  color: var(--bo-accent);
+  background: rgba(206, 143, 42, 0.22);
+  color: #f3dfb9;
 }
 
 .bo-package-card .bo-package-select,
@@ -1080,9 +1081,9 @@ body.bo-page {
 }
 
 .bo-package-card.is-recommended .bo-package-select {
-  border-color: rgba(9, 49, 67, 0.16);
-  background: var(--bo-primary-soft);
-  color: var(--bo-primary);
+  border-color: rgba(255, 255, 255, 0.22);
+  background: transparent;
+  color: #ffffff;
 }
 
 .bo-package-card.selected .bo-package-select,
