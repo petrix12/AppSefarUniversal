@@ -179,11 +179,12 @@ class AdminBancaOnlineController extends Controller
         $metadata = $this->catalog->metadata($servicio);
         $countrySlug = $this->catalog->countrySlugForService($servicio);
         $planSlug = (string) ($metadata['plan_slug'] ?? '');
-        $allowedComponents = $this->catalog->servicesForPlan($countrySlug, $planSlug, false);
 
         $data = $request->validate([
             'nombre' => ['required', 'string', 'max:255'],
             'descripcion_publica' => ['nullable', 'string', 'max:1000'],
+            'list_price' => ['required', 'numeric', 'min:0', 'max:999999999'],
+            'price' => ['required', 'numeric', 'min:0', 'max:999999999'],
             'discount_type' => ['required', Rule::in(['percentage', 'fixed'])],
             'discount_value' => [
                 'required',
@@ -192,14 +193,10 @@ class AdminBancaOnlineController extends Controller
                 $request->input('discount_type') === 'percentage' ? 'max:100' : 'max:999999999',
             ],
             'activo' => ['nullable', 'boolean'],
-            'component_ids' => ['nullable', 'array'],
-            'component_ids.*' => ['integer'],
-            'component_names' => ['nullable', 'array'],
-            'component_names.*' => ['nullable', 'string', 'max:255'],
-            'component_descriptions' => ['nullable', 'array'],
-            'component_descriptions.*' => ['nullable', 'string', 'max:2000'],
-            'component_prices' => ['nullable', 'array'],
-            'component_prices.*' => ['nullable', 'integer', 'min:0'],
+            'public_feature_names' => ['nullable', 'array'],
+            'public_feature_names.*' => ['nullable', 'string', 'max:255'],
+            'public_feature_descriptions' => ['nullable', 'array'],
+            'public_feature_descriptions.*' => ['nullable', 'string', 'max:2000'],
             'installment_periods' => ['nullable', 'array'],
             'installment_periods.*.enabled' => ['nullable', 'boolean'],
             'installment_periods.*.surcharge_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
@@ -209,35 +206,20 @@ class AdminBancaOnlineController extends Controller
             'installment_rule_max_count.*' => ['nullable', 'integer', 'min:1', 'max:60'],
         ]);
 
-        $selectedIds = collect($data['component_ids'] ?? [])
-            ->map(fn ($id) => (int) $id)
-            ->intersect($allowedComponents->pluck('id')->map(fn ($id) => (int) $id))
-            ->unique()
-            ->values();
-
-        $componentNames = collect($data['component_names'] ?? []);
-        $componentDescriptions = collect($data['component_descriptions'] ?? []);
-        $componentPrices = collect($data['component_prices'] ?? []);
-        $allowedComponents->each(function (Servicio $component) use ($componentNames, $componentDescriptions, $componentPrices) {
-            $name = trim((string) $componentNames->get((string) $component->id, $component->nombre));
-            $description = trim((string) $componentDescriptions->get((string) $component->id, $component->descripcion_publica));
-            $price = max(0, (int) $componentPrices->get((string) $component->id, $component->precio));
-
-            $component->fill([
-                'nombre' => $name !== '' ? $name : $component->nombre,
-                'descripcion_publica' => $description !== '' ? $description : null,
-                'precio' => $price,
-            ]);
-
-            if ($component->isDirty()) {
-                $component->save();
-            }
-        });
-
         $packageName = trim($data['nombre']);
         $packageDescription = trim((string) ($data['descripcion_publica'] ?? ''));
+        $listPrice = round(max(0, (float) $data['list_price']), 2);
+        $price = round(max(0, min($listPrice, (float) $data['price'])), 2);
 
-        $metadata['component_ids'] = $selectedIds->all();
+        $metadata['component_ids'] = [];
+        $metadata['features'] = $this->normalizedPublicFeatures(
+            $request->input('public_feature_names', []),
+            $request->input('public_feature_descriptions', [])
+        );
+        $metadata['show_component_prices'] = false;
+        $metadata['list_price'] = $listPrice;
+        $metadata['price'] = $price;
+        $metadata['saving'] = round(max(0, $listPrice - $price), 2);
         $metadata['discount_type'] = $data['discount_type'];
         $metadata['discount_value'] = (float) $data['discount_value'];
         $metadata['cms_managed'] = true;
@@ -248,16 +230,6 @@ class AdminBancaOnlineController extends Controller
             $request->input('installment_rule_min_percent', []),
             $request->input('installment_rule_max_count', [])
         );
-
-        if ($selectedIds->isNotEmpty()) {
-            unset(
-                $metadata['features'],
-                $metadata['show_component_prices'],
-                $metadata['list_price'],
-                $metadata['price'],
-                $metadata['saving']
-            );
-        }
 
         unset($metadata['pricing_mode'], $metadata['component_prices']);
 
@@ -278,6 +250,27 @@ class AdminBancaOnlineController extends Controller
             ->with('success', 'Modalidad actualizada.');
     }
 
+    private function normalizedPublicFeatures(array $names, array $descriptions): array
+    {
+        return collect($names)
+            ->map(function ($name, $index) use ($descriptions) {
+                $name = trim((string) $name);
+                $description = trim((string) ($descriptions[$index] ?? ''));
+
+                if ($name === '') {
+                    return null;
+                }
+
+                return [
+                    'name' => $name,
+                    'description' => $description !== '' ? $description : null,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
     private function normalizedInstallmentPeriods(array $input): array
     {
         return collect($this->catalog->installmentPeriodDefaults())
@@ -296,6 +289,10 @@ class AdminBancaOnlineController extends Controller
     {
         $rules = collect($minPercents)
             ->map(function ($percent, $index) use ($maxCounts) {
+                if (trim((string) $percent) === '' || trim((string) ($maxCounts[$index] ?? '')) === '') {
+                    return null;
+                }
+
                 $percent = round(max(1, min(99, (float) $percent)), 2);
                 $maxCount = max(1, min(60, (int) ($maxCounts[$index] ?? 1)));
 
@@ -304,7 +301,7 @@ class AdminBancaOnlineController extends Controller
                     'max_installments' => $maxCount,
                 ];
             })
-            ->filter(fn (array $rule) => $rule['min_initial_percent'] > 0 && $rule['max_installments'] > 0)
+            ->filter(fn ($rule) => is_array($rule) && $rule['min_initial_percent'] > 0 && $rule['max_installments'] > 0)
             ->unique('min_initial_percent')
             ->sortBy('min_initial_percent')
             ->values();

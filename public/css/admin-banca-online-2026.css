@@ -603,8 +603,7 @@
   margin-bottom: 1rem;
 }
 
-.bo-package-settings-head h3,
-.bo-component-editor h3 {
+.bo-package-settings-head h3 {
   margin: 0.15rem 0 0;
   color: var(--sefar-text);
   font-size: 1rem;
@@ -638,179 +637,6 @@
 
 .bo-package-description textarea {
   min-height: 4.5rem;
-}
-
-.bo-fixed-package-preview {
-  margin-top: 1rem;
-  border: 1px solid rgba(190, 132, 28, .32);
-  border-radius: var(--bo-admin-inner-radius);
-  padding: 0.85rem;
-  background: #fffdf8;
-}
-
-.bo-fixed-package-preview > span {
-  display: block;
-  margin-bottom: 0.55rem;
-  color: var(--sefar-accent);
-  font-size: 0.72rem;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.bo-fixed-package-preview ul {
-  display: grid;
-  gap: 0.35rem;
-  margin: 0;
-  padding-left: 1.1rem;
-  color: var(--sefar-text);
-  font-size: 0.86rem;
-}
-
-.bo-pricing-switch {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  overflow: hidden;
-  min-height: 2.35rem;
-  border: 1px solid var(--sefar-border);
-  border-radius: 999px;
-}
-
-.bo-pricing-switch label {
-  margin: 0;
-}
-
-.bo-pricing-switch input {
-  position: absolute;
-  opacity: 0;
-}
-
-.bo-pricing-switch span {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  margin: 0;
-  padding: 0.45rem 0.7rem;
-  color: var(--sefar-muted);
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: none;
-  cursor: pointer;
-}
-
-.bo-pricing-switch input:checked + span {
-  background: var(--sefar-primary);
-  color: #fff;
-}
-
-.bo-input-suffix {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: stretch;
-}
-
-.bo-input-suffix input {
-  border-radius: 4px 0 0 4px;
-}
-
-.bo-input-suffix > span {
-  display: flex;
-  align-items: center;
-  min-width: 3.2rem;
-  border: 1px solid #ced4da;
-  border-left: 0;
-  border-radius: 0 4px 4px 0;
-  padding: 0 0.7rem;
-  background: #f4f7f8;
-  color: var(--sefar-muted);
-  font-size: 0.78rem;
-  font-weight: 800;
-}
-
-.bo-component-editor > header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem 1.25rem;
-}
-
-.bo-component-editor > header p {
-  margin: 0.2rem 0 0;
-  color: var(--sefar-muted);
-  font-size: 0.8rem;
-}
-
-.bo-component-editor > header > span {
-  color: var(--sefar-muted);
-  font-size: 0.76rem;
-  font-weight: 800;
-}
-
-.bo-component-section {
-  border-top: 1px solid var(--sefar-border);
-}
-
-.bo-component-section h4 {
-  margin: 0;
-  padding: 0.55rem 1.25rem;
-  background: var(--sefar-primary-soft);
-  color: var(--sefar-text);
-  font-size: 0.78rem;
-  font-weight: 800;
-}
-
-.bo-component-row {
-  display: grid;
-  grid-template-columns: 2.3rem minmax(190px, 0.85fr) minmax(260px, 1.35fr) 140px;
-  align-items: end;
-  gap: 0.75rem;
-  padding: 0.75rem 1.25rem;
-  border-top: 1px solid var(--sefar-border);
-}
-
-.bo-component-row.is-included {
-    border-color: rgba(190, 132, 28, .45);
-    background: #fffdf8;
-    box-shadow: inset 4px 0 0 rgba(190, 132, 28, .42);
-}
-
-.bo-component-row:not(.is-included) {
-  background: #fbfcfd;
-}
-
-.bo-component-check {
-  display: block;
-  margin: 0 0 0.12rem;
-}
-
-.bo-component-check input {
-  position: absolute;
-  opacity: 0;
-}
-
-.bo-component-check span {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.2rem;
-  height: 2.2rem;
-  border: 1px solid #b9c6cd;
-  border-radius: 10px;
-  background: #fff;
-  color: transparent;
-  cursor: pointer;
-}
-
-.bo-component-check input:checked + span {
-  border-color: #0f766e;
-  background: #e7f6f2;
-  color: #0f766e;
-}
-
-.bo-component-description textarea {
-  min-height: 4rem;
-  resize: vertical;
 }
 
 .bo-package-savebar {
@@ -883,6 +709,16 @@
   background: #fbfcfd;
 }
 
+.bo-benefits-editor {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 1rem;
+  border: 1px solid rgba(190, 132, 28, 0.28);
+  border-radius: var(--bo-admin-inner-radius);
+  padding: 1rem;
+  background: #fffdf8;
+}
+
 .bo-installment-admin-head {
   display: flex;
   align-items: flex-start;
@@ -904,6 +740,38 @@
   font-weight: 700;
   line-height: 1.35;
   text-align: right;
+}
+
+.bo-inline-action {
+  border: 1px solid #0f766e;
+  border-radius: 999px;
+  background: #e7f6f2;
+  color: #0f766e;
+  font-size: 0.8rem;
+  font-weight: 850;
+}
+
+.bo-inline-action:hover {
+  border-color: #095c56;
+  background: #d4ede8;
+  color: #095c56;
+}
+
+.bo-benefit-list,
+.bo-rule-list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.bo-benefit-row,
+.bo-rule-row {
+  display: grid;
+  align-items: end;
+  gap: 0.75rem;
+}
+
+.bo-benefit-row {
+  grid-template-columns: minmax(220px, 0.9fr) minmax(280px, 1.2fr) 2.4rem;
 }
 
 .bo-period-grid {
@@ -932,9 +800,26 @@
 }
 
 .bo-rule-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 2.4rem;
+}
+
+.bo-remove-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid #f2c7c7;
+  border-radius: 10px;
+  background: #fff5f5;
+  color: #b4232a;
+  padding: 0;
+}
+
+.bo-remove-row:hover {
+  border-color: #d9363e;
+  background: #ffe8e8;
+  color: #8f1d24;
 }
 
 @media (max-width: 991px) {
@@ -950,13 +835,6 @@
     grid-column: 1 / -1;
   }
 
-  .bo-component-row {
-    grid-template-columns: 2.3rem minmax(190px, 0.8fr) minmax(220px, 1.2fr);
-  }
-
-  .bo-component-price {
-    grid-column: 2 / -1;
-  }
 }
 
 @media (max-width: 767px) {
@@ -973,14 +851,8 @@
     grid-template-columns: 1fr;
   }
 
-  .bo-component-row {
-    grid-template-columns: 2.3rem minmax(0, 1fr);
-    align-items: start;
-  }
-
   .bo-package-settings-head,
   .bo-installment-admin-head,
-  .bo-component-editor > header,
   .bo-package-savebar {
     align-items: stretch;
     flex-direction: column;
@@ -992,20 +864,13 @@
   }
 
   .bo-period-grid,
+  .bo-benefit-row,
   .bo-rule-row {
     grid-template-columns: 1fr;
   }
 
-  .bo-component-check {
-    grid-column: 1;
-    grid-row: 1 / span 3;
-    justify-self: start;
-    margin-top: 1.35rem;
-  }
-
-  .bo-component-row > .bo-field,
-  .bo-component-price {
-    grid-column: 2;
+  .bo-remove-row {
+    width: 100%;
   }
 
   .bo-save-package-button {

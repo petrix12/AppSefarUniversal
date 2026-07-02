@@ -7,15 +7,24 @@
     $activePackageSummary = $package?->descripcion_publica ?? ($activePackageDefaults['summary'] ?? ($activeTier['summary'] ?? ''));
     $countryCodes = ['espana' => 'ES', 'portugal' => 'PT', 'italia' => 'IT'];
     $packageMetadata = $package ? $catalog->metadata($package) : [];
-    $selectedComponentIds = collect(old('component_ids', $packageMetadata['component_ids'] ?? []))->map(fn ($id) => (int) $id);
     $packageFeatures = $package ? $catalog->packageFeatures($package) : collect();
-    $includedCount = $selectedComponentIds->count() ?: $packageFeatures->count();
-    $discountType = old('discount_type', $packageMetadata['discount_type'] ?? 'percentage');
-    $discountValue = old('discount_value', $packageMetadata['discount_value'] ?? 0);
+    $listPrice = old('list_price', $package ? $catalog->packageSubtotal($package) : ($packageMetadata['list_price'] ?? 0));
+    $packagePrice = old('price', $package ? $catalog->packageTotal($package) : ($packageMetadata['price'] ?? 0));
+    $discountType = old('discount_type', 'fixed');
+    $discountValue = old('discount_value', max(0, (float) $listPrice - (float) $packagePrice));
     $installmentPeriods = $package ? $catalog->packageInstallmentPeriods($package) : [];
     $installmentRules = $package ? $catalog->packageInstallmentRules($package) : $catalog->installmentInitialRuleDefaults();
+    $featureNames = old('public_feature_names');
+    $featureDescriptions = old('public_feature_descriptions');
     $oldRulePercents = old('installment_rule_min_percent');
     $oldRuleCounts = old('installment_rule_max_count');
+
+    if (is_array($featureNames)) {
+        $packageFeatures = collect($featureNames)->map(fn ($name, $index) => [
+            'name' => $name,
+            'description' => $featureDescriptions[$index] ?? null,
+        ])->filter(fn ($feature) => trim((string) ($feature['name'] ?? '')) !== '')->values();
+    }
 
     if (is_array($oldRulePercents)) {
         $installmentRules = collect($oldRulePercents)->map(fn ($percent, $index) => [
@@ -147,14 +156,13 @@
             <form
                 class="bo-package-editor"
                 data-package-editor
-                data-fixed-subtotal="{{ $packageMetadata['list_price'] ?? '' }}"
-                data-fixed-total="{{ $packageMetadata['price'] ?? '' }}"
-                data-fixed-feature-count="{{ $packageFeatures->count() }}"
                 method="POST"
                 action="{{ route('admin.banca-online.packages.update', $package) }}">
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="activo" value="0">
+                <input type="hidden" name="discount_type" value="{{ $discountType }}">
+                <input type="hidden" name="discount_value" data-discount-value value="{{ $discountValue }}">
 
                 <section class="bo-package-settings">
                     <div class="bo-package-settings-head">
@@ -174,32 +182,64 @@
                             <input class="form-control" type="text" name="nombre" value="{{ old('nombre', $activePackageTitle) }}" required>
                         </label>
 
-                        <div class="bo-field bo-discount-type">
-                            <span>Tipo de descuento</span>
-                            <div class="bo-pricing-switch">
-                                <label>
-                                    <input type="radio" name="discount_type" value="percentage" {{ $discountType === 'percentage' ? 'checked' : '' }}>
-                                    <span>Porcentaje</span>
-                                </label>
-                                <label>
-                                    <input type="radio" name="discount_type" value="fixed" {{ $discountType === 'fixed' ? 'checked' : '' }}>
-                                    <span>Importe fijo</span>
-                                </label>
-                            </div>
-                        </div>
+                        <label class="bo-field">
+                            <span>Precio lista EUR</span>
+                            <input class="form-control" data-list-price type="number" name="list_price" value="{{ $listPrice }}" min="0" step="0.01" required>
+                        </label>
 
-                        <label class="bo-field bo-discount-value">
-                            <span>Valor del descuento</span>
-                            <div class="bo-input-suffix">
-                                <input class="form-control" data-discount-value type="number" name="discount_value" value="{{ $discountValue }}" min="0" step="0.01" required>
-                                <span data-discount-unit>{{ $discountType === 'fixed' ? 'EUR' : '%' }}</span>
-                            </div>
+                        <label class="bo-field">
+                            <span>Precio venta EUR</span>
+                            <input class="form-control" data-package-price type="number" name="price" value="{{ $packagePrice }}" min="0" step="0.01" required>
                         </label>
 
                         <label class="bo-field bo-package-description">
                             <span>Descripcion publica</span>
                             <textarea class="form-control" name="descripcion_publica" rows="2">{{ old('descripcion_publica', $activePackageSummary) }}</textarea>
                         </label>
+
+                        <div class="bo-benefits-editor" data-benefits-editor>
+                            <div class="bo-installment-admin-head">
+                                <div>
+                                    <span class="bo-context-label">Beneficios publicos</span>
+                                    <h4>Beneficios que vera el cliente</h4>
+                                </div>
+                                <button type="button" class="btn bo-inline-action" data-add-benefit>
+                                    <i class="fas fa-plus mr-1" aria-hidden="true"></i> Agregar beneficio
+                                </button>
+                            </div>
+
+                            <div class="bo-benefit-list" data-benefit-list>
+                                @forelse($packageFeatures as $feature)
+                                    <div class="bo-benefit-row" data-benefit-row>
+                                        <label class="bo-field">
+                                            <span>Beneficio</span>
+                                            <input class="form-control" type="text" name="public_feature_names[]" value="{{ $feature['name'] ?? '' }}">
+                                        </label>
+                                        <label class="bo-field">
+                                            <span>Descripcion opcional</span>
+                                            <input class="form-control" type="text" name="public_feature_descriptions[]" value="{{ $feature['description'] ?? '' }}">
+                                        </label>
+                                        <button type="button" class="btn bo-remove-row" data-remove-row title="Eliminar beneficio">
+                                            <i class="fas fa-trash" aria-hidden="true"></i>
+                                        </button>
+                                    </div>
+                                @empty
+                                    <div class="bo-benefit-row" data-benefit-row>
+                                        <label class="bo-field">
+                                            <span>Beneficio</span>
+                                            <input class="form-control" type="text" name="public_feature_names[]" value="">
+                                        </label>
+                                        <label class="bo-field">
+                                            <span>Descripcion opcional</span>
+                                            <input class="form-control" type="text" name="public_feature_descriptions[]" value="">
+                                        </label>
+                                        <button type="button" class="btn bo-remove-row" data-remove-row title="Eliminar beneficio">
+                                            <i class="fas fa-trash" aria-hidden="true"></i>
+                                        </button>
+                                    </div>
+                                @endforelse
+                            </div>
+                        </div>
 
                         <div class="bo-installment-admin">
                             <div class="bo-installment-admin-head">
@@ -237,76 +277,31 @@
                                         <span class="bo-context-label">Reglas por inicial</span>
                                         <h4>Inicial minima y cuotas permitidas</h4>
                                     </div>
-                                    <small>Ejemplo: 35% permite hasta 9 cuotas.</small>
+                                    <button type="button" class="btn bo-inline-action" data-add-rule>
+                                        <i class="fas fa-plus mr-1" aria-hidden="true"></i> Agregar regla
+                                    </button>
                                 </div>
 
-                                @foreach($installmentRules as $index => $rule)
-                                    <div class="bo-rule-row">
-                                        <label class="bo-field">
-                                            <span>Inicial minima %</span>
-                                            <input class="form-control" type="number" name="installment_rule_min_percent[]" value="{{ $rule['min_initial_percent'] ?? 20 }}" min="1" max="99" step="0.01">
-                                        </label>
-                                        <label class="bo-field">
-                                            <span>Maximo de cuotas</span>
-                                            <input class="form-control" type="number" name="installment_rule_max_count[]" value="{{ $rule['max_installments'] ?? 1 }}" min="1" max="60">
-                                        </label>
-                                    </div>
-                                @endforeach
+                                <div class="bo-rule-list" data-rule-list>
+                                    @foreach($installmentRules as $index => $rule)
+                                        <div class="bo-rule-row" data-rule-row>
+                                            <label class="bo-field">
+                                                <span>Inicial minima %</span>
+                                                <input class="form-control" type="number" name="installment_rule_min_percent[]" value="{{ $rule['min_initial_percent'] ?? 20 }}" min="1" max="99" step="0.01">
+                                            </label>
+                                            <label class="bo-field">
+                                                <span>Maximo de cuotas</span>
+                                                <input class="form-control" type="number" name="installment_rule_max_count[]" value="{{ $rule['max_installments'] ?? 1 }}" min="1" max="60">
+                                            </label>
+                                            <button type="button" class="btn bo-remove-row" data-remove-row title="Eliminar regla">
+                                                <i class="fas fa-trash" aria-hidden="true"></i>
+                                            </button>
+                                        </div>
+                                    @endforeach
+                                </div>
                             </div>
                         </div>
                     </div>
-
-                    @if($packageFeatures->isNotEmpty())
-                        <div class="bo-fixed-package-preview">
-                            <span>Beneficios publicos de la modalidad</span>
-                            <ul>
-                                @foreach($packageFeatures as $feature)
-                                    <li>{{ $feature['name'] }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
-                </section>
-
-                <section class="bo-component-editor">
-                    <header>
-                        <div>
-                            <h3>Servicios de la modalidad</h3>
-                            <p>Cada servicio conserva su descripcion y costo base; aqui decides si la modalidad lo incluye.</p>
-                        </div>
-                        <span data-included-count>{{ $includedCount }} {{ $includedCount === 1 ? 'incluido' : 'incluidos' }}</span>
-                    </header>
-
-                    @forelse($services as $section => $sectionItems)
-                        <div class="bo-component-section">
-                            <h4>{{ $section }}</h4>
-                            @foreach($sectionItems as $component)
-                                @php
-                                    $included = $selectedComponentIds->contains((int) $component->id);
-                                @endphp
-                                <div class="bo-component-row {{ $included ? 'is-included' : '' }}" data-component-row>
-                                    <label class="bo-component-check" title="Incluir componente">
-                                        <input data-component-toggle type="checkbox" name="component_ids[]" value="{{ $component->id }}" {{ $included ? 'checked' : '' }}>
-                                        <span><i class="fas fa-check" aria-hidden="true"></i></span>
-                                    </label>
-                                    <label class="bo-field">
-                                        <span>Servicio</span>
-                                        <input class="form-control" type="text" name="component_names[{{ $component->id }}]" value="{{ old("component_names.{$component->id}", $component->nombre) }}">
-                                    </label>
-                                    <label class="bo-field bo-component-description">
-                                        <span>Descripcion</span>
-                                        <textarea class="form-control" name="component_descriptions[{{ $component->id }}]" rows="2">{{ old("component_descriptions.{$component->id}", $component->descripcion_publica) }}</textarea>
-                                    </label>
-                                    <label class="bo-field bo-component-price">
-                                        <span>Costo EUR</span>
-                                        <input class="form-control" data-component-price type="number" name="component_prices[{{ $component->id }}]" value="{{ old("component_prices.{$component->id}", $component->precio ?? 0) }}" min="0" required>
-                                    </label>
-                                </div>
-                            @endforeach
-                        </div>
-                    @empty
-                        <div class="bo-admin-empty"><p>No hay componentes disponibles para esta ruta.</p></div>
-                    @endforelse
                 </section>
 
                 <div class="bo-package-savebar">
@@ -330,38 +325,6 @@
                 </div>
             </form>
 
-            <details class="bo-create-service" {{ $errors->has('section') ? 'open' : '' }}>
-                <summary>
-                    <span><i class="fas fa-plus" aria-hidden="true"></i> Agregar servicio</span>
-                    <i class="fas fa-chevron-down bo-details-arrow" aria-hidden="true"></i>
-                </summary>
-                <form method="POST" action="{{ route('admin.banca-online.items.store') }}">
-                    @csrf
-                    <input type="hidden" name="pais" value="{{ $countrySlug }}">
-                    <input type="hidden" name="plan" value="{{ $planSlug }}">
-                    <input type="hidden" name="modalidad" value="{{ $packageSlug }}">
-                    <input type="hidden" name="activo" value="1">
-                    <div class="bo-create-grid">
-                        <label class="bo-field bo-create-name">
-                            <span>Servicio</span>
-                            <input type="text" name="nombre" value="" class="form-control" required>
-                        </label>
-                        <label class="bo-field">
-                            <span>Seccion</span>
-                            <input type="text" name="section" value="General" class="form-control" required>
-                        </label>
-                        <label class="bo-field bo-create-description">
-                            <span>Descripcion</span>
-                            <input type="text" name="descripcion_publica" value="" class="form-control">
-                        </label>
-                        <label class="bo-field">
-                            <span>Costo EUR</span>
-                            <input type="number" name="precio" value="0" min="0" class="form-control" required>
-                        </label>
-                        <button type="submit" class="btn bo-add-button"><i class="fas fa-plus mr-1" aria-hidden="true"></i> Agregar</button>
-                    </div>
-                </form>
-            </details>
         @endif
     </div>
 @stop
@@ -374,17 +337,14 @@
 @section('js')
     <script>
         document.querySelectorAll('[data-package-editor]').forEach(function (editor) {
-            const discountTypes = editor.querySelectorAll('input[name="discount_type"]');
+            const listPriceInput = editor.querySelector('[data-list-price]');
+            const packagePriceInput = editor.querySelector('[data-package-price]');
             const discountValue = editor.querySelector('[data-discount-value]');
-            const discountUnit = editor.querySelector('[data-discount-unit]');
-            const rows = editor.querySelectorAll('[data-component-row]');
-            const includedCount = editor.querySelector('[data-included-count]');
             const subtotalLabel = editor.querySelector('[data-package-subtotal]');
             const discountLabel = editor.querySelector('[data-package-discount]');
             const totalLabel = editor.querySelector('[data-package-total]');
-            const fixedSubtotal = amount(editor.dataset.fixedSubtotal);
-            const fixedTotal = amount(editor.dataset.fixedTotal);
-            const fixedFeatureCount = Number(editor.dataset.fixedFeatureCount || 0);
+            const benefitList = editor.querySelector('[data-benefit-list]');
+            const ruleList = editor.querySelector('[data-rule-list]');
             const money = new Intl.NumberFormat('es-ES', {
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0
@@ -397,57 +357,99 @@
             }
 
             function refreshPackageTotal() {
-                const selectedDiscount = editor.querySelector('input[name="discount_type"]:checked');
-                const fixedDiscount = selectedDiscount && selectedDiscount.value === 'fixed';
-                let selectedCount = 0;
-                let subtotal = 0;
+                const subtotal = amount(listPriceInput ? listPriceInput.value : 0);
+                const total = Math.min(subtotal, amount(packagePriceInput ? packagePriceInput.value : 0));
+                const discount = Math.max(0, subtotal - total);
 
-                rows.forEach(function (row) {
-                    const toggle = row.querySelector('[data-component-toggle]');
-                    const price = row.querySelector('[data-component-price]');
-                    const included = toggle.checked;
-
-                    row.classList.toggle('is-included', included);
-
-                    if (included) {
-                        selectedCount++;
-                        subtotal += amount(price.value);
-                    }
-                });
-
-                if (selectedCount === 0 && fixedTotal > 0) {
-                    const fixedListPrice = fixedSubtotal > 0 ? fixedSubtotal : fixedTotal;
-                    const fixedDiscount = Math.max(0, fixedListPrice - fixedTotal);
-                    const benefitCount = fixedFeatureCount || selectedCount;
-
-                    includedCount.textContent = benefitCount + (benefitCount === 1 ? ' incluido' : ' incluidos');
-                    discountUnit.textContent = 'EUR';
-                    subtotalLabel.textContent = money.format(fixedListPrice) + ' EUR';
-                    discountLabel.textContent = '-' + money.format(fixedDiscount) + ' EUR';
-                    totalLabel.textContent = money.format(fixedTotal) + ' EUR';
-                    return;
+                if (packagePriceInput && amount(packagePriceInput.value) > subtotal) {
+                    packagePriceInput.value = subtotal;
                 }
 
-                const rawDiscount = amount(discountValue.value);
-                const discount = fixedDiscount
-                    ? Math.min(subtotal, rawDiscount)
-                    : subtotal * Math.min(100, rawDiscount) / 100;
-                const total = Math.max(0, subtotal - discount);
+                if (discountValue) discountValue.value = discount;
 
-                includedCount.textContent = selectedCount + (selectedCount === 1 ? ' incluido' : ' incluidos');
-                discountUnit.textContent = fixedDiscount ? 'EUR' : '%';
-                discountValue.max = fixedDiscount ? '' : '100';
                 subtotalLabel.textContent = money.format(subtotal) + ' EUR';
                 discountLabel.textContent = '-' + money.format(discount) + ' EUR';
                 totalLabel.textContent = money.format(total) + ' EUR';
             }
 
-            discountTypes.forEach(function (input) { input.addEventListener('change', refreshPackageTotal); });
-            discountValue.addEventListener('input', refreshPackageTotal);
-            rows.forEach(function (row) {
-                row.querySelector('[data-component-toggle]').addEventListener('change', refreshPackageTotal);
-                row.querySelector('[data-component-price]').addEventListener('input', refreshPackageTotal);
+            function benefitRow() {
+                const row = document.createElement('div');
+                row.className = 'bo-benefit-row';
+                row.dataset.benefitRow = '1';
+                row.innerHTML = `
+                    <label class="bo-field">
+                        <span>Beneficio</span>
+                        <input class="form-control" type="text" name="public_feature_names[]" value="">
+                    </label>
+                    <label class="bo-field">
+                        <span>Descripcion opcional</span>
+                        <input class="form-control" type="text" name="public_feature_descriptions[]" value="">
+                    </label>
+                    <button type="button" class="btn bo-remove-row" data-remove-row title="Eliminar beneficio">
+                        <i class="fas fa-trash" aria-hidden="true"></i>
+                    </button>
+                `;
+
+                return row;
+            }
+
+            function ruleRow() {
+                const row = document.createElement('div');
+                row.className = 'bo-rule-row';
+                row.dataset.ruleRow = '1';
+                row.innerHTML = `
+                    <label class="bo-field">
+                        <span>Inicial minima %</span>
+                        <input class="form-control" type="number" name="installment_rule_min_percent[]" value="20" min="1" max="99" step="0.01">
+                    </label>
+                    <label class="bo-field">
+                        <span>Maximo de cuotas</span>
+                        <input class="form-control" type="number" name="installment_rule_max_count[]" value="12" min="1" max="60">
+                    </label>
+                    <button type="button" class="btn bo-remove-row" data-remove-row title="Eliminar regla">
+                        <i class="fas fa-trash" aria-hidden="true"></i>
+                    </button>
+                `;
+
+                return row;
+            }
+
+            if (listPriceInput) listPriceInput.addEventListener('input', refreshPackageTotal);
+            if (packagePriceInput) packagePriceInput.addEventListener('input', refreshPackageTotal);
+
+            editor.querySelector('[data-add-benefit]')?.addEventListener('click', function () {
+                if (!benefitList) return;
+                const row = benefitRow();
+                benefitList.appendChild(row);
+                row.querySelector('input')?.focus();
             });
+
+            editor.querySelector('[data-add-rule]')?.addEventListener('click', function () {
+                if (!ruleList) return;
+                const row = ruleRow();
+                ruleList.appendChild(row);
+                row.querySelector('input')?.focus();
+            });
+
+            editor.addEventListener('click', function (event) {
+                const button = event.target.closest('[data-remove-row]');
+                if (!button) return;
+
+                const row = button.closest('[data-benefit-row], [data-rule-row]');
+                if (!row) return;
+
+                const list = row.parentElement;
+                row.remove();
+
+                if (list && list.matches('[data-benefit-list]') && list.children.length === 0) {
+                    list.appendChild(benefitRow());
+                }
+
+                if (list && list.matches('[data-rule-list]') && list.children.length === 0) {
+                    list.appendChild(ruleRow());
+                }
+            });
+
             refreshPackageTotal();
         });
     </script>
