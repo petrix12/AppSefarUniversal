@@ -12,6 +12,17 @@
     $includedCount = $selectedComponentIds->count() ?: $packageFeatures->count();
     $discountType = old('discount_type', $packageMetadata['discount_type'] ?? 'percentage');
     $discountValue = old('discount_value', $packageMetadata['discount_value'] ?? 0);
+    $installmentPeriods = $package ? $catalog->packageInstallmentPeriods($package) : [];
+    $installmentRules = $package ? $catalog->packageInstallmentRules($package) : $catalog->installmentInitialRuleDefaults();
+    $oldRulePercents = old('installment_rule_min_percent');
+    $oldRuleCounts = old('installment_rule_max_count');
+
+    if (is_array($oldRulePercents)) {
+        $installmentRules = collect($oldRulePercents)->map(fn ($percent, $index) => [
+            'min_initial_percent' => $percent,
+            'max_installments' => $oldRuleCounts[$index] ?? 1,
+        ])->values()->all();
+    }
 @endphp
 
 @extends('adminlte::page')
@@ -189,6 +200,60 @@
                             <span>Descripcion publica</span>
                             <textarea class="form-control" name="descripcion_publica" rows="2">{{ old('descripcion_publica', $activePackageSummary) }}</textarea>
                         </label>
+
+                        <div class="bo-installment-admin">
+                            <div class="bo-installment-admin-head">
+                                <div>
+                                    <span class="bo-context-label">Pagos por cuotas</span>
+                                    <h4>Periodos y recargos</h4>
+                                </div>
+                                <small>El recargo se aplica solo al saldo financiado, no a la inicial.</small>
+                            </div>
+
+                            <div class="bo-period-grid">
+                                @foreach($installmentPeriods as $slug => $period)
+                                    @php
+                                        $periodOld = old("installment_periods.{$slug}", $period);
+                                        $periodEnabled = (bool) ($periodOld['enabled'] ?? false);
+                                        $periodSurcharge = $periodOld['surcharge_percent'] ?? ($period['surcharge_percent'] ?? 0);
+                                    @endphp
+                                    <div class="bo-period-card">
+                                        <input type="hidden" name="installment_periods[{{ $slug }}][enabled]" value="0">
+                                        <div class="custom-control custom-switch">
+                                            <input type="checkbox" class="custom-control-input" id="period-{{ $slug }}" name="installment_periods[{{ $slug }}][enabled]" value="1" {{ $periodEnabled ? 'checked' : '' }}>
+                                            <label class="custom-control-label" for="period-{{ $slug }}">{{ $period['label'] ?? ucfirst($slug) }}</label>
+                                        </div>
+                                        <label class="bo-field">
+                                            <span>% recargo</span>
+                                            <input class="form-control" type="number" name="installment_periods[{{ $slug }}][surcharge_percent]" value="{{ $periodSurcharge }}" min="0" max="100" step="0.01">
+                                        </label>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            <div class="bo-installment-rules">
+                                <div class="bo-installment-admin-head">
+                                    <div>
+                                        <span class="bo-context-label">Reglas por inicial</span>
+                                        <h4>Inicial minima y cuotas permitidas</h4>
+                                    </div>
+                                    <small>Ejemplo: 35% permite hasta 9 cuotas.</small>
+                                </div>
+
+                                @foreach($installmentRules as $index => $rule)
+                                    <div class="bo-rule-row">
+                                        <label class="bo-field">
+                                            <span>Inicial minima %</span>
+                                            <input class="form-control" type="number" name="installment_rule_min_percent[]" value="{{ $rule['min_initial_percent'] ?? 20 }}" min="1" max="99" step="0.01">
+                                        </label>
+                                        <label class="bo-field">
+                                            <span>Maximo de cuotas</span>
+                                            <input class="form-control" type="number" name="installment_rule_max_count[]" value="{{ $rule['max_installments'] ?? 1 }}" min="1" max="60">
+                                        </label>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
                     </div>
 
                     @if($packageFeatures->isNotEmpty())

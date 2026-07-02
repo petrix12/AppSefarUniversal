@@ -200,6 +200,13 @@ class AdminBancaOnlineController extends Controller
             'component_descriptions.*' => ['nullable', 'string', 'max:2000'],
             'component_prices' => ['nullable', 'array'],
             'component_prices.*' => ['nullable', 'integer', 'min:0'],
+            'installment_periods' => ['nullable', 'array'],
+            'installment_periods.*.enabled' => ['nullable', 'boolean'],
+            'installment_periods.*.surcharge_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'installment_rule_min_percent' => ['nullable', 'array'],
+            'installment_rule_min_percent.*' => ['nullable', 'numeric', 'min:1', 'max:99'],
+            'installment_rule_max_count' => ['nullable', 'array'],
+            'installment_rule_max_count.*' => ['nullable', 'integer', 'min:1', 'max:60'],
         ]);
 
         $selectedIds = collect($data['component_ids'] ?? [])
@@ -236,6 +243,11 @@ class AdminBancaOnlineController extends Controller
         $metadata['cms_managed'] = true;
         $metadata['tier_title'] = $packageName;
         $metadata['tier_summary'] = $packageDescription !== '' ? $packageDescription : null;
+        $metadata['installment_periods'] = $this->normalizedInstallmentPeriods($request->input('installment_periods', []));
+        $metadata['installment_initial_rules'] = $this->normalizedInstallmentRules(
+            $request->input('installment_rule_min_percent', []),
+            $request->input('installment_rule_max_count', [])
+        );
 
         if ($selectedIds->isNotEmpty()) {
             unset(
@@ -264,5 +276,41 @@ class AdminBancaOnlineController extends Controller
                 'modalidad' => $metadata['tier_slug'] ?? 'regular',
             ])
             ->with('success', 'Modalidad actualizada.');
+    }
+
+    private function normalizedInstallmentPeriods(array $input): array
+    {
+        return collect($this->catalog->installmentPeriodDefaults())
+            ->map(function (array $defaults, string $slug) use ($input) {
+                $values = $input[$slug] ?? [];
+
+                return [
+                    'enabled' => filter_var($values['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                    'surcharge_percent' => round(max(0, min(100, (float) ($values['surcharge_percent'] ?? ($defaults['surcharge_percent'] ?? 0)))), 2),
+                ];
+            })
+            ->all();
+    }
+
+    private function normalizedInstallmentRules(array $minPercents, array $maxCounts): array
+    {
+        $rules = collect($minPercents)
+            ->map(function ($percent, $index) use ($maxCounts) {
+                $percent = round(max(1, min(99, (float) $percent)), 2);
+                $maxCount = max(1, min(60, (int) ($maxCounts[$index] ?? 1)));
+
+                return [
+                    'min_initial_percent' => $percent,
+                    'max_installments' => $maxCount,
+                ];
+            })
+            ->filter(fn (array $rule) => $rule['min_initial_percent'] > 0 && $rule['max_installments'] > 0)
+            ->unique('min_initial_percent')
+            ->sortBy('min_initial_percent')
+            ->values();
+
+        return $rules->isNotEmpty()
+            ? $rules->all()
+            : $this->catalog->installmentInitialRuleDefaults();
     }
 }

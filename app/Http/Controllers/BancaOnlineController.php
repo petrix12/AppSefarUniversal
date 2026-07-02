@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 
 class BancaOnlineController extends Controller
@@ -101,9 +102,11 @@ class BancaOnlineController extends Controller
         $metadata = $compras->first()->metadata ?? [];
         $countrySlug = $metadata['country_slug'] ?? 'espana';
         $stripeKey = $this->stripePublicKey($countrySlug);
-        $total = (float) $compras->sum('monto');
+        $package = $compras->first()->servicio;
+        $paymentOptions = $package ? $this->checkoutPaymentOptions($package) : [];
+        $total = (float) ($metadata['package_total'] ?? $compras->sum('monto'));
 
-        return view('banca-online.payment', compact('token', 'compras', 'user', 'metadata', 'countrySlug', 'stripeKey', 'total'));
+        return view('banca-online.payment', compact('token', 'compras', 'user', 'metadata', 'countrySlug', 'stripeKey', 'total', 'paymentOptions'));
     }
 
     public function processPayment(Request $request, string $token)
@@ -120,6 +123,10 @@ class BancaOnlineController extends Controller
             'state' => ['nullable', 'string', 'max:120'],
             'postal_code' => ['required', 'string', 'max:40'],
             'country' => ['required', 'string', 'size:2'],
+            'payment_mode' => ['nullable', Rule::in(['full', 'installments'])],
+            'payment_period' => ['nullable', 'string', 'max:40'],
+            'initial_percent' => ['nullable', 'numeric', 'min:1', 'max:100'],
+            'installments_count' => ['nullable', 'integer', 'min:1', 'max:60'],
         ]);
 
         $compras = $this->purchasesForToken($token);
@@ -131,7 +138,31 @@ class BancaOnlineController extends Controller
             ], 404);
         }
 
-        $total = (float) $compras->sum('monto');
+        $package = $compras->first()->servicio;
+
+        if (! $package) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontro la modalidad asociada a este checkout.',
+            ], 422);
+        }
+
+        $paymentPlan = $this->paymentPlanForPackage(
+            $package,
+            (string) ($data['payment_mode'] ?? 'full'),
+            $data['payment_period'] ?? null,
+            isset($data['initial_percent']) ? (float) $data['initial_percent'] : null,
+            isset($data['installments_count']) ? (int) $data['installments_count'] : null
+        );
+
+        if (! $paymentPlan['valid']) {
+            return response()->json([
+                'success' => false,
+                'message' => $paymentPlan['message'],
+            ], 422);
+        }
+
+        $total = (float) $paymentPlan['amount_due_now'];
 
         if ($total <= 0) {
             return response()->json([
@@ -144,6 +175,9 @@ class BancaOnlineController extends Controller
         $metadata = $compras->first()->metadata ?? [];
         $countrySlug = $metadata['country_slug'] ?? 'espana';
         $secret = $this->stripeSecretKey($countrySlug);
+        $metadata['payment_plan'] = $paymentPlan;
+        $isInstallmentPayment = ($paymentPlan['mode'] ?? 'full') === 'installments';
+        $stripeInstallmentSchedule = null;
 
         if (! $secret) {
             return response()->json([
@@ -165,7 +199,15 @@ class BancaOnlineController extends Controller
                 ],
             ]);
 
-            $paymentIntent = \Stripe\PaymentIntent::create([
+            if ($isInstallmentPayment) {
+                $stripeInstallmentSchedule = $this->createStripeInstallmentSchedule($user, $metadata, $customer, $data['payment_method_id']);
+
+                if (empty($stripeInstallmentSchedule['schedule_id'])) {
+                    throw new \RuntimeException('No se pudo crear el calendario de cuotas en Stripe.');
+                }
+            }
+
+            $paymentIntentPayload = [
                 'amount' => (int) round($total * 100),
                 'currency' => 'eur',
                 'customer' => $customer->id,
@@ -183,19 +225,34 @@ class BancaOnlineController extends Controller
                     'user_email' => $user->email,
                     'plan' => $metadata['plan_slug'] ?? null,
                     'country' => $countrySlug,
+                    'payment_mode' => $paymentPlan['mode'] ?? 'full',
                 ],
-            ]);
+            ];
+
+            if ($isInstallmentPayment) {
+                $paymentIntentPayload['setup_future_usage'] = 'off_session';
+                $paymentIntentPayload['metadata']['installments_count'] = (string) ($paymentPlan['installments_count'] ?? '');
+                $paymentIntentPayload['metadata']['payment_period'] = (string) ($paymentPlan['period'] ?? '');
+                $paymentIntentPayload['metadata']['stripe_schedule_id'] = $stripeInstallmentSchedule['schedule_id'] ?? '';
+            }
+
+            $paymentIntent = \Stripe\PaymentIntent::create($paymentIntentPayload);
         } catch (\Stripe\Exception\CardException $e) {
+            $this->cancelStripeInstallmentSchedule($stripeInstallmentSchedule['schedule_id'] ?? null);
+
             return response()->json([
                 'success' => false,
                 'message' => $this->stripeErrorMessage($e->getError()->code),
             ], 400);
         } catch (\Stripe\Exception\RateLimitException $e) {
+            $this->cancelStripeInstallmentSchedule($stripeInstallmentSchedule['schedule_id'] ?? null);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Se realizaron varios intentos sin exito. Por favor, comunicarse con el emisor de su tarjeta.',
             ], 429);
         } catch (\Stripe\Exception\InvalidRequestException $e) {
+            $this->cancelStripeInstallmentSchedule($stripeInstallmentSchedule['schedule_id'] ?? null);
             Log::error('Banca Online Stripe InvalidRequestException: ' . $e->getMessage());
 
             return response()->json([
@@ -203,21 +260,28 @@ class BancaOnlineController extends Controller
                 'message' => 'Stripe rechazo la solicitud: ' . $e->getMessage(),
             ], 400);
         } catch (\Stripe\Exception\AuthenticationException $e) {
+            $this->cancelStripeInstallmentSchedule($stripeInstallmentSchedule['schedule_id'] ?? null);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Error de autenticacion con Stripe. Por favor, comunicar este error a Sistemas.',
             ], 401);
         } catch (\Stripe\Exception\ApiConnectionException $e) {
+            $this->cancelStripeInstallmentSchedule($stripeInstallmentSchedule['schedule_id'] ?? null);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Error conectandose a la pasarela de pago. Por favor, intente mas tarde.',
             ], 500);
         } catch (\Stripe\Exception\ApiErrorException $e) {
+            $this->cancelStripeInstallmentSchedule($stripeInstallmentSchedule['schedule_id'] ?? null);
+
             return response()->json([
                 'success' => false,
                 'message' => 'La pasarela de pago esta en mantenimiento. Por favor, intente mas tarde.',
             ], 503);
         } catch (\Throwable $e) {
+            $this->cancelStripeInstallmentSchedule($stripeInstallmentSchedule['schedule_id'] ?? null);
             Log::error('Banca Online payment error: ' . $e->getMessage(), ['token' => $token]);
 
             return response()->json([
@@ -227,14 +291,17 @@ class BancaOnlineController extends Controller
         }
 
         if (! $paymentIntent || $paymentIntent->status !== 'succeeded') {
+            $this->cancelStripeInstallmentSchedule($stripeInstallmentSchedule['schedule_id'] ?? null);
+
             return response()->json([
                 'success' => false,
                 'message' => 'El pago no pudo ser completado. Estado: ' . ($paymentIntent->status ?? 'desconocido'),
             ], 400);
         }
 
-        DB::transaction(function () use ($compras, $user, $customer, $paymentIntent, $total) {
+        DB::transaction(function () use ($compras, $user, $customer, $paymentIntent, $total, $stripeInstallmentSchedule, $paymentPlan) {
             $hashFactura = 'sef_' . Str::random(50);
+            $paidAt = now();
 
             Factura::create([
                 'id_cliente' => $user->id,
@@ -244,11 +311,25 @@ class BancaOnlineController extends Controller
                 'idcharge' => $paymentIntent->id,
             ]);
 
-            Compras::whereIn('id', $compras->pluck('id'))->update([
-                'pagado' => 1,
-                'hash_factura' => $hashFactura,
-                'paid_at' => now(),
-            ]);
+            $compras->each(function (Compras $compra) use ($hashFactura, $paidAt, $customer, $paymentIntent, $stripeInstallmentSchedule, $paymentPlan, $total) {
+                $metadata = $compra->metadata ?? [];
+                $metadata['stripe_customer_id'] = $customer->id;
+                $metadata['stripe_payment_intent_id'] = $paymentIntent->id;
+
+                if ($stripeInstallmentSchedule) {
+                    $metadata['stripe_installment_schedule'] = $stripeInstallmentSchedule;
+                }
+
+                $metadata['payment_plan'] = $paymentPlan;
+
+                $compra->fill([
+                    'pagado' => 1,
+                    'monto' => $total,
+                    'hash_factura' => $hashFactura,
+                    'paid_at' => $paidAt,
+                    'metadata' => $metadata,
+                ])->save();
+            });
 
             $user->forceFill([
                 'pay' => 1,
@@ -290,6 +371,7 @@ class BancaOnlineController extends Controller
                 'total' => $total,
                 'total_label' => number_format($total, 0, ',', '.'),
                 'currency' => 'EUR',
+                'payment_plan' => $paymentPlan,
                 'items' => $paidItems,
             ],
         ]);
@@ -354,6 +436,7 @@ class BancaOnlineController extends Controller
         $subtotal = $this->catalog->packageSubtotal($package);
         $discount = $this->catalog->packageDiscount($package);
         $total = $this->catalog->packageTotal($package);
+        $paymentPlan = $this->paymentPlanForPackage($package, 'full');
 
         if ($items->isEmpty() || $total <= 0) {
             if ($request->expectsJson()) {
@@ -408,7 +491,7 @@ class BancaOnlineController extends Controller
         $token = Str::random(64);
         $serviceName = $this->catalog->serviceNameForCountry($countrySlug);
 
-        DB::transaction(function () use (&$user, &$generatedPassword, $newUserData, $email, $serviceName, $package, $items, $subtotal, $discount, $total, $planSlug, $plan, $countrySlug, $token) {
+        DB::transaction(function () use (&$user, &$generatedPassword, $newUserData, $email, $serviceName, $package, $items, $subtotal, $discount, $total, $paymentPlan, $planSlug, $plan, $countrySlug, $token) {
             if (! $user) {
                 $generatedPassword = Str::random(10);
                 $user = $this->createCheckoutUser($newUserData, $email, $serviceName, $generatedPassword);
@@ -424,9 +507,9 @@ class BancaOnlineController extends Controller
                 'servicio_id' => $package->id,
                 'source' => $this->catalog->source(),
                 'servicio_hs_id' => $package->id_hubspot,
-                'descripcion' => 'Banca Online 2026 - ' . ($plan['title'] ?? $planSlug) . ': ' . $package->nombre,
+                'descripcion' => 'Banca Online 2026 - ' . ($plan['title'] ?? $planSlug) . ': ' . $package->nombre . ($paymentPlan['mode'] === 'installments' ? ' - pago inicial' : ''),
                 'pagado' => 0,
-                'monto' => $total,
+                'monto' => $paymentPlan['amount_due_now'],
                 'metadata' => array_merge($metadata, [
                     'checkout_token' => $token,
                     'country_slug' => $countrySlug,
@@ -435,7 +518,9 @@ class BancaOnlineController extends Controller
                     'package_subtotal' => $subtotal,
                     'package_discount' => $discount,
                     'package_total' => $total,
+                    'package_id' => $package->id,
                     'components' => $componentRows,
+                    'payment_plan' => $paymentPlan,
                 ]),
             ]);
         });
@@ -447,14 +532,14 @@ class BancaOnlineController extends Controller
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'checkout' => $this->checkoutPayload($token, $package, $items, $subtotal, $discount, $total, $user, $plan, $countrySlug, $serviceName),
+                'checkout' => $this->checkoutPayload($token, $package, $items, $subtotal, $discount, $paymentPlan, $user, $plan, $countrySlug, $serviceName),
             ]);
         }
 
         return redirect()->route('banca-online.payment', $token);
     }
 
-    private function checkoutPayload(string $token, Servicio $package, Collection $items, float $subtotal, float $discount, float $total, User $user, array $plan, string $countrySlug, string $serviceName): array
+    private function checkoutPayload(string $token, Servicio $package, Collection $items, float $subtotal, float $discount, array $paymentPlan, User $user, array $plan, string $countrySlug, string $serviceName): array
     {
         return [
             'token' => $token,
@@ -471,12 +556,115 @@ class BancaOnlineController extends Controller
             'subtotal_label' => number_format($subtotal, 0, ',', '.'),
             'discount' => $discount,
             'discount_label' => number_format($discount, 0, ',', '.'),
-            'total' => $total,
-            'total_label' => number_format($total, 0, ',', '.'),
+            'total' => $paymentPlan['amount_due_now'],
+            'total_label' => number_format($paymentPlan['amount_due_now'], 0, ',', '.'),
+            'contract_total' => $paymentPlan['contract_total'],
+            'contract_total_label' => number_format($paymentPlan['contract_total'], 0, ',', '.'),
+            'payment_plan' => $paymentPlan,
+            'payment_options' => $this->checkoutPaymentOptions($package),
             'items' => $items->values(),
             'billing' => [
                 'email' => $user->email,
             ],
+        ];
+    }
+
+    private function paymentPlanForPackage(Servicio $package, string $mode, ?string $periodSlug = null, ?float $initialPercent = null, ?int $installments = null): array
+    {
+        $contractTotal = $this->catalog->packageTotal($package);
+
+        if ($mode !== 'installments') {
+            return [
+                'valid' => true,
+                'mode' => 'full',
+                'contract_total' => $contractTotal,
+                'amount_due_now' => $contractTotal,
+                'remaining_amount' => 0.0,
+                'installments_count' => 0,
+                'installment_amount' => 0.0,
+                'initial_amount' => $contractTotal,
+                'initial_percent' => 100.0,
+                'period' => null,
+                'period_label' => null,
+                'period_plural_label' => null,
+                'surcharge_percent' => 0.0,
+                'surcharge_amount' => 0.0,
+                'financed_amount' => 0.0,
+                'stripe_schedule_required' => false,
+            ];
+        }
+
+        $settings = $this->catalog->packageInstallmentSettings($package);
+
+        if (! $settings['enabled']) {
+            return [
+                'valid' => false,
+                'message' => 'Esta modalidad no tiene pago por cuotas disponible.',
+            ];
+        }
+
+        $periods = collect($settings['periods']);
+        $period = $periods->firstWhere('slug', $periodSlug);
+
+        if (! $period) {
+            return [
+                'valid' => false,
+                'message' => 'Selecciona una periodicidad de pago disponible.',
+            ];
+        }
+
+        $initialPercent = $initialPercent ?? (float) $settings['min_initial_percent'];
+
+        if ($initialPercent < (float) $settings['min_initial_percent'] || $initialPercent >= 100) {
+            return [
+                'valid' => false,
+                'message' => 'Selecciona una inicial valida para activar las cuotas.',
+            ];
+        }
+
+        $quote = $this->catalog->packageInstallmentQuote($package, $period['slug'], $initialPercent, $installments);
+
+        if ($installments !== null && ($installments < 1 || $installments > $quote['max_count'])) {
+            return [
+                'valid' => false,
+                'message' => "Con esta inicial puedes seleccionar hasta {$quote['max_count']} cuotas.",
+            ];
+        }
+
+        return [
+            'valid' => true,
+            'mode' => 'installments',
+            'contract_total' => $quote['contract_total'],
+            'base_total' => $quote['base_total'],
+            'amount_due_now' => $quote['amount_due_now'],
+            'remaining_amount' => $quote['remaining_amount'],
+            'financed_amount' => $quote['financed_amount'],
+            'installments_count' => $quote['selected_count'],
+            'installment_amount' => $quote['installment_amount'],
+            'initial_amount' => $quote['amount_due_now'],
+            'max_count' => $quote['max_count'],
+            'initial_percent' => $quote['initial_percent'],
+            'period' => $period['slug'],
+            'period_label' => $period['label'],
+            'period_plural_label' => $period['plural_label'],
+            'surcharge_percent' => $quote['surcharge_percent'],
+            'surcharge_amount' => $quote['surcharge_amount'],
+            'stripe_schedule_required' => true,
+        ];
+    }
+
+    private function checkoutPaymentOptions(Servicio $package): array
+    {
+        $settings = $this->catalog->packageInstallmentSettings($package);
+
+        return [
+            'base_total' => $this->catalog->packageTotal($package),
+            'installments_enabled' => (bool) ($settings['enabled'] ?? false),
+            'min_initial_percent' => (float) ($settings['min_initial_percent'] ?? 100),
+            'max_initial_percent' => (float) ($settings['max_initial_percent'] ?? 99),
+            'max_installments' => (int) ($settings['max_installments'] ?? 1),
+            'periods' => array_values($settings['periods'] ?? []),
+            'rules' => array_values($settings['rules'] ?? []),
         ];
     }
 
@@ -610,6 +798,125 @@ class BancaOnlineController extends Controller
         $user->forceFill(['stripe_cus_id' => $customer->id])->save();
 
         return $customer;
+    }
+
+    private function createStripeInstallmentSchedule(User $user, array $metadata, $customer, string $paymentMethodId): array
+    {
+        $paymentPlan = $metadata['payment_plan'] ?? [];
+        $installments = (int) ($paymentPlan['installments_count'] ?? 0);
+        $installmentAmount = (float) ($paymentPlan['installment_amount'] ?? 0);
+        $period = (string) ($paymentPlan['period'] ?? 'monthly');
+        $periodLabel = (string) ($paymentPlan['period_label'] ?? 'Mensual');
+        $periodPluralLabel = (string) ($paymentPlan['period_plural_label'] ?? 'mensuales');
+
+        if (($paymentPlan['mode'] ?? 'full') !== 'installments' || $installments < 1 || $installmentAmount <= 0) {
+            return [];
+        }
+
+        $package = Servicio::find((int) ($metadata['package_id'] ?? 0));
+        $periodSettings = $package
+            ? collect($this->catalog->enabledInstallmentPeriods($package))->firstWhere('slug', $period)
+            : null;
+        $interval = $periodSettings['stripe_interval'] ?? 'month';
+        $intervalCount = max(1, (int) ($periodSettings['stripe_interval_count'] ?? 1));
+        $startAfterDays = $periodSettings['start_after_days'] ?? null;
+        $checkoutToken = (string) ($metadata['checkout_token'] ?? '');
+        $packageTitle = (string) ($metadata['package_title'] ?? 'Banca Online 2026');
+        $startDate = $this->stripeInstallmentStartTimestamp($interval, $intervalCount, $startAfterDays);
+        $stripeMetadata = [
+            'checkout_token' => $checkoutToken,
+            'user_id' => (string) $user->id,
+            'user_email' => (string) $user->email,
+            'plan' => (string) ($metadata['plan_slug'] ?? ''),
+            'country' => (string) ($metadata['country_slug'] ?? ''),
+            'payment_mode' => 'installments',
+            'payment_period' => $period,
+            'installments_count' => (string) $installments,
+        ];
+
+        $product = \Stripe\Product::create([
+            'name' => 'Banca Online 2026 - ' . $packageTitle,
+            'metadata' => $stripeMetadata,
+        ]);
+
+        $price = \Stripe\Price::create([
+            'currency' => 'eur',
+            'unit_amount' => (int) round($installmentAmount * 100),
+            'recurring' => [
+                'interval' => $interval,
+                'interval_count' => $intervalCount,
+            ],
+            'product' => $product->id,
+            'metadata' => $stripeMetadata,
+        ]);
+
+        $installments = max(1, (int) $installments);
+
+        $schedule = \Stripe\SubscriptionSchedule::create([
+            'customer' => $customer->id,
+            'start_date' => $startDate,
+            'end_behavior' => 'cancel',
+            'default_settings' => [
+                'collection_method' => 'charge_automatically',
+                'default_payment_method' => $paymentMethodId,
+                'description' => 'Cuotas ' . $periodPluralLabel . ' Banca Online 2026 - ' . $packageTitle,
+            ],
+            'phases' => [
+                [
+                    'items' => [
+                        [
+                            'price' => $price->id,
+                            'quantity' => 1,
+                        ],
+                    ],
+                    'iterations' => $installments,
+                    'metadata' => $stripeMetadata,
+                ],
+            ],
+            'metadata' => $stripeMetadata,
+        ]);
+
+        return [
+            'schedule_id' => $schedule->id,
+            'product_id' => $product->id,
+            'price_id' => $price->id,
+            'start_date' => $startDate,
+            'installments_count' => $installments,
+            'installment_amount' => $installmentAmount,
+            'period' => $period,
+            'period_label' => $periodLabel,
+            'period_plural_label' => $periodPluralLabel,
+        ];
+    }
+
+    private function stripeInstallmentStartTimestamp(string $interval, int $intervalCount, ?int $startAfterDays): int
+    {
+        if ($startAfterDays !== null && $startAfterDays > 0) {
+            return now()->addDays($startAfterDays)->timestamp;
+        }
+
+        return match ($interval) {
+            'day' => now()->addDays($intervalCount)->timestamp,
+            'week' => now()->addWeeks($intervalCount)->timestamp,
+            'year' => now()->addYears($intervalCount)->timestamp,
+            default => now()->addMonthsNoOverflow($intervalCount)->timestamp,
+        };
+    }
+
+    private function cancelStripeInstallmentSchedule(?string $scheduleId): void
+    {
+        if (! $scheduleId) {
+            return;
+        }
+
+        try {
+            \Stripe\SubscriptionSchedule::retrieve($scheduleId)->cancel();
+        } catch (\Throwable $e) {
+            Log::warning('No se pudo cancelar el calendario de cuotas de Stripe.', [
+                'schedule_id' => $scheduleId,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     private function stripePublicKey(string $countrySlug): ?string

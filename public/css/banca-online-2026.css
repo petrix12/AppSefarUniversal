@@ -17,6 +17,10 @@
   --bo-shadow: var(--sefar-shadow, 0 10px 24px rgba(9, 49, 67, 0.08));
 }
 
+.bo-package-saving span {
+    color: var(--bo-surface)!important;
+}
+
 body.bo-page {
   min-height: 100vh;
   margin: 0;
@@ -957,6 +961,10 @@ body.bo-page {
   color: #ffffff;
 }
 
+.bo-package-card .bo-package-price .bo-package-saving{
+    color: white;
+}
+
 .bo-package-card .bo-package-tier,
 .bo-package-card .bo-package-card-head p,
 .bo-package-card .bo-package-price span,
@@ -1095,6 +1103,133 @@ body.bo-page {
   box-shadow: 0 16px 34px rgba(206, 143, 42, 0.22);
 }
 
+.bo-package-card,
+.bo-package-card.is-recommended {
+  border-color: rgba(206, 143, 42, 0.48);
+  background:
+    radial-gradient(circle at top right, rgba(206, 143, 42, 0.12), transparent 35%),
+    #ffffff;
+  color: var(--bo-text);
+  box-shadow: 0 26px 64px rgba(0, 47, 61, 0.13);
+  transform: none;
+}
+
+.bo-package-card:hover,
+.bo-package-card.is-recommended:hover {
+  border-color: rgba(206, 143, 42, 0.72);
+  box-shadow: 0 30px 72px rgba(0, 47, 61, 0.17), inset 0 0 0 1px rgba(206, 143, 42, 0.12);
+  transform: none;
+}
+
+.bo-package-card.selected,
+.bo-package-card.is-recommended.selected,
+.bo-package-card.selected:hover,
+.bo-package-card.is-recommended.selected:hover {
+  z-index: 2;
+  border-color: rgba(219, 186, 114, 0.9);
+  background:
+    radial-gradient(circle at top right, rgba(219, 186, 114, 0.18), transparent 36%),
+    linear-gradient(145deg, #064e3b 0%, #082f2b 54%, #06313c 100%);
+  color: #ffffff;
+  box-shadow: 0 36px 96px rgba(0, 47, 61, 0.32), inset 0 0 0 1px rgba(219, 186, 114, 0.18);
+  transform: scale(1.035);
+}
+
+.bo-package-card-head h3,
+.bo-package-card .bo-package-price,
+.bo-package-card .bo-package-components li,
+.bo-package-card .bo-package-component-copy strong,
+.bo-package-card.is-recommended .bo-package-card-head h3,
+.bo-package-card.is-recommended .bo-package-price,
+.bo-package-card.is-recommended .bo-package-components li,
+.bo-package-card.is-recommended .bo-package-component-copy strong {
+  color: var(--bo-text);
+}
+
+.bo-package-card .bo-package-tier,
+.bo-package-card .bo-package-card-head p,
+.bo-package-card .bo-package-price span,
+.bo-package-card .bo-package-component-copy small,
+.bo-package-card.is-recommended .bo-package-tier,
+.bo-package-card.is-recommended .bo-package-card-head p,
+.bo-package-card.is-recommended .bo-package-price span,
+.bo-package-card.is-recommended .bo-package-component-copy small {
+  color: var(--bo-muted);
+}
+
+.bo-package-card.selected .bo-package-card-head h3,
+.bo-package-card.selected .bo-package-price,
+.bo-package-card.selected .bo-package-components li,
+.bo-package-card.selected .bo-package-component-copy strong,
+.bo-package-card.is-recommended.selected .bo-package-card-head h3,
+.bo-package-card.is-recommended.selected .bo-package-price,
+.bo-package-card.is-recommended.selected .bo-package-components li,
+.bo-package-card.is-recommended.selected .bo-package-component-copy strong {
+  color: #ffffff;
+}
+
+.bo-package-card.selected .bo-package-tier,
+.bo-package-card.selected .bo-package-card-head p,
+.bo-package-card.selected .bo-package-price span,
+.bo-package-card.selected .bo-package-component-copy small,
+.bo-package-card.is-recommended.selected .bo-package-tier,
+.bo-package-card.is-recommended.selected .bo-package-card-head p,
+.bo-package-card.is-recommended.selected .bo-package-price span,
+.bo-package-card.is-recommended.selected .bo-package-component-copy small {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.bo-package-card .bo-package-price,
+.bo-package-card.is-recommended .bo-package-price {
+  border-color: var(--bo-border);
+}
+
+.bo-package-card.selected .bo-package-price,
+.bo-package-card.is-recommended.selected .bo-package-price {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.bo-package-card .bo-package-old-price,
+.bo-package-card.is-recommended .bo-package-old-price {
+  color: rgba(9, 49, 67, 0.46);
+}
+
+.bo-package-card.selected .bo-package-old-price,
+.bo-package-card.is-recommended.selected .bo-package-old-price {
+  color: rgba(255, 255, 255, 0.54);
+}
+
+.bo-package-card .bo-package-recommended,
+.bo-package-card.is-recommended .bo-package-recommended {
+  background: rgba(9, 49, 67, 0.08);
+  color: var(--bo-primary);
+}
+
+.bo-package-card.selected .bo-package-recommended,
+.bo-package-card.is-recommended.selected .bo-package-recommended {
+  background: rgba(255, 255, 255, 0.12);
+  color: #f3dfb9;
+}
+
+.bo-package-card .bo-package-select,
+.bo-package-card.is-recommended .bo-package-select {
+  border-color: rgba(9, 49, 67, 0.16);
+  background: var(--bo-primary-soft);
+  color: var(--bo-primary);
+}
+
+.bo-package-card.selected .bo-package-select,
+.bo-package-card.is-recommended.selected .bo-package-select {
+  border-color: #ce8f2a;
+  background: #ce8f2a;
+  color: var(--bo-primary-dark);
+}
+
+.bo-package-card.is-unavailable,
+.bo-package-card.is-unavailable:hover {
+  transform: none;
+}
+
 .bo-package-checkout {
   display: grid;
   grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
@@ -1110,6 +1245,62 @@ body.bo-page {
 
 .bo-package-summary h2 {
   margin: 0.35rem 0 0;
+}
+
+.bo-payment-plan {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.95rem;
+  border-top: 1px solid var(--bo-border);
+  padding-top: 0.9rem;
+}
+
+.bo-pay-choice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: start;
+  margin: 0;
+  border: 1px solid var(--bo-border);
+  border-radius: var(--bo-radius);
+  padding: 0.7rem;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.bo-pay-choice input {
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.18rem;
+  accent-color: var(--bo-success);
+}
+
+.bo-pay-choice strong,
+.bo-pay-choice small {
+  display: block;
+}
+
+.bo-pay-choice strong {
+  color: var(--bo-text);
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.bo-pay-choice small {
+  margin-top: 0.12rem;
+  color: var(--bo-muted);
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
+.bo-pay-choice.is-active {
+  border-color: rgba(15, 118, 110, 0.55);
+  background: #ecfdf5;
+  box-shadow: inset 3px 0 0 var(--bo-success);
+}
+
+.bo-installment-count-field select {
+  min-height: 2.35rem;
 }
 
 .bo-client-panel {
@@ -1348,6 +1539,159 @@ body.bo-page {
   display: none !important;
 }
 
+.bo-package-card,
+.bo-package-card:hover,
+.bo-package-card.selected,
+.bo-package-card.selected:hover {
+  border-color: #dbe4e8;
+  background: #ffffff;
+  color: var(--bo-text);
+  box-shadow: 0 14px 28px rgba(9, 49, 67, 0.08);
+  transform: none;
+}
+
+.bo-package-card::after {
+  background: linear-gradient(90deg, rgba(190, 132, 28, 0.25), rgba(15, 118, 110, 0.2));
+}
+
+.bo-package-card.is-recommended,
+.bo-package-card.is-recommended:hover,
+.bo-package-card.is-recommended.selected,
+.bo-package-card.is-recommended.selected:hover {
+  border-color: rgba(206, 143, 42, 0.72);
+  background:
+    radial-gradient(circle at top right, rgba(206, 143, 42, 0.28), transparent 35%),
+    linear-gradient(145deg, #003746 0%, #002635 100%);
+  color: #ffffff;
+  box-shadow: 0 18px 38px rgba(0, 38, 53, 0.26);
+  transform: none;
+}
+
+.bo-package-card-head h3,
+.bo-package-card .bo-package-price,
+.bo-package-card .bo-package-components li,
+.bo-package-card .bo-package-component-copy strong {
+  color: var(--bo-text);
+}
+
+.bo-package-card .bo-package-tier,
+.bo-package-card .bo-package-card-head p,
+.bo-package-card .bo-package-price span,
+.bo-package-card .bo-package-component-copy small {
+  color: var(--bo-muted);
+}
+
+.bo-package-card.selected .bo-package-card-head h3,
+.bo-package-card.selected .bo-package-price,
+.bo-package-card.selected .bo-package-components li,
+.bo-package-card.selected .bo-package-component-copy strong {
+  color: var(--bo-text);
+}
+
+.bo-package-card.selected .bo-package-tier,
+.bo-package-card.selected .bo-package-card-head p,
+.bo-package-card.selected .bo-package-price span,
+.bo-package-card.selected .bo-package-component-copy small {
+  color: var(--bo-muted);
+}
+
+.bo-package-card.is-recommended .bo-package-card-head h3,
+.bo-package-card.is-recommended .bo-package-price,
+.bo-package-card.is-recommended .bo-package-components li,
+.bo-package-card.is-recommended .bo-package-component-copy strong,
+.bo-package-card.is-recommended.selected .bo-package-card-head h3,
+.bo-package-card.is-recommended.selected .bo-package-price,
+.bo-package-card.is-recommended.selected .bo-package-components li,
+.bo-package-card.is-recommended.selected .bo-package-component-copy strong {
+  color: #ffffff;
+}
+
+.bo-package-card.is-recommended .bo-package-tier,
+.bo-package-card.is-recommended .bo-package-card-head p,
+.bo-package-card.is-recommended .bo-package-price span,
+.bo-package-card.is-recommended .bo-package-component-copy small,
+.bo-package-card.is-recommended.selected .bo-package-tier,
+.bo-package-card.is-recommended.selected .bo-package-card-head p,
+.bo-package-card.is-recommended.selected .bo-package-price span,
+.bo-package-card.is-recommended.selected .bo-package-component-copy small {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.bo-package-card.selected .bo-package-select,
+.bo-package-card.is-recommended.selected .bo-package-select {
+  border-color: #0f766e;
+  background: #e7f6f2;
+  color: #0f766e;
+}
+
+.bo-checkout-payment-options {
+  margin-bottom: 1rem;
+}
+
+.bo-installment-checkout {
+  display: grid;
+  gap: 0.85rem;
+  border: 1px solid var(--bo-border);
+  border-radius: var(--bo-radius);
+  padding: 0.85rem;
+  background: #f8fafb;
+}
+
+.bo-period-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.bo-period-choice {
+  margin: 0;
+}
+
+.bo-period-choice input {
+  position: absolute;
+  opacity: 0;
+}
+
+.bo-period-choice span {
+  display: block;
+  min-height: 4.2rem;
+  border: 1px solid #d6e0e5;
+  border-radius: var(--bo-radius);
+  padding: 0.7rem;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.bo-period-choice strong,
+.bo-period-choice small {
+  display: block;
+}
+
+.bo-period-choice strong {
+  color: var(--bo-text);
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.bo-period-choice small {
+  margin-top: 0.25rem;
+  color: var(--bo-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.bo-period-choice input:checked + span {
+  border-color: #0f766e;
+  background: #e7f6f2;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+}
+
+.bo-range-field input[type="range"] {
+  min-height: 1.5rem;
+  padding: 0;
+  accent-color: #0f766e;
+}
+
 @media (max-width: 1100px) {
   .bo-plan-grid,
   .bo-strategy-grid,
@@ -1397,7 +1741,8 @@ body.bo-page {
   .bo-plan-grid,
   .bo-strategy-grid,
   .bo-package-grid,
-  .bo-field-grid {
+  .bo-field-grid,
+  .bo-period-choice-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1414,7 +1759,9 @@ body.bo-page {
 
   .bo-package-card.is-recommended,
   .bo-package-card.is-recommended:hover,
-  .bo-package-card.is-recommended.selected {
+  .bo-package-card.is-recommended.selected,
+  .bo-package-card.selected,
+  .bo-package-card.selected:hover {
     transform: none;
   }
 

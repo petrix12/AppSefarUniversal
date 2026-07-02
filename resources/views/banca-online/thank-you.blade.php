@@ -1,6 +1,8 @@
 @php
     $purchaseMetadata = $compras->first()?->metadata ?? [];
     $packageComponents = collect($purchaseMetadata['components'] ?? []);
+    $paymentPlan = $purchaseMetadata['payment_plan'] ?? [];
+    $isInstallmentPayment = ($paymentPlan['mode'] ?? 'full') === 'installments';
 @endphp
 <!doctype html>
 <html lang="es">
@@ -16,9 +18,17 @@
     <main class="bo-confirm-wrap">
         <section class="bo-confirm-card">
             <img class="bo-confirm-logo" src="{{ asset('img/logo2.png') }}" alt="Sefar Universal">
-            <div class="bo-confirm-badge"><i class="fas fa-check-circle"></i> Pago recibido</div>
+            <div class="bo-confirm-badge"><i class="fas fa-check-circle"></i> {{ $isInstallmentPayment ? 'Inicial recibido' : 'Pago recibido' }}</div>
             <h1>Gracias.</h1>
             <p>Tu contratacion de Banca Online 2026 fue registrada correctamente. El equipo de Sefar Universal continuara el seguimiento operativo del servicio seleccionado.</p>
+
+            @if($isInstallmentPayment)
+                <div class="bo-payment-breakdown">
+                    <span>Total del plan <strong>{{ number_format((float) ($paymentPlan['contract_total'] ?? $purchaseMetadata['package_total'] ?? $total), 0, ',', '.') }} EUR</strong></span>
+                    <span>Inicial recibido <strong>{{ number_format((float) ($paymentPlan['amount_due_now'] ?? $total), 0, ',', '.') }} EUR</strong></span>
+                    <span>{{ (int) ($paymentPlan['installments_count'] ?? 0) }} cuotas {{ $paymentPlan['period_plural_label'] ?? 'mensuales' }} <strong>{{ number_format((float) ($paymentPlan['installment_amount'] ?? 0), 0, ',', '.') }} EUR</strong></span>
+                </div>
+            @endif
 
             <div class="bo-confirm-total">{{ number_format($total, 0, ',', '.') }} EUR</div>
             @if(!empty($purchaseMetadata['package_title']))

@@ -34,6 +34,16 @@ class BancaOnlineCatalog
         return config('banca_online.packages', []);
     }
 
+    public function installmentPeriodDefaults(): array
+    {
+        return config('banca_online.installments.periods', []);
+    }
+
+    public function installmentInitialRuleDefaults(): array
+    {
+        return config('banca_online.installments.initial_rules', []);
+    }
+
     public function packageDefaults(?string $planSlug, string $tierSlug): array
     {
         $tier = $this->packages()[$tierSlug] ?? [];
@@ -262,6 +272,115 @@ class BancaOnlineCatalog
         }
 
         return round(max(0, $this->packageSubtotal($package) - $this->packageDiscount($package)), 2);
+    }
+
+    public function packageInstallmentPeriods(Servicio $package): array
+    {
+        $metadataPeriods = $this->metadata($package)['installment_periods'] ?? [];
+
+        return collect($this->installmentPeriodDefaults())
+            ->map(function (array $defaults, string $slug) use ($metadataPeriods) {
+                $period = array_merge($defaults, $metadataPeriods[$slug] ?? []);
+
+                return [
+                    'slug' => $slug,
+                    'label' => $period['label'] ?? ucfirst($slug),
+                    'plural_label' => $period['plural_label'] ?? Str::lower($period['label'] ?? $slug),
+                    'enabled' => (bool) ($period['enabled'] ?? false),
+                    'surcharge_percent' => round(max(0, (float) ($period['surcharge_percent'] ?? 0)), 2),
+                    'stripe_interval' => $period['stripe_interval'] ?? ($defaults['stripe_interval'] ?? 'month'),
+                    'stripe_interval_count' => max(1, (int) ($period['stripe_interval_count'] ?? ($defaults['stripe_interval_count'] ?? 1))),
+                    'start_after_days' => isset($period['start_after_days']) ? (int) $period['start_after_days'] : null,
+                ];
+            })
+            ->all();
+    }
+
+    public function enabledInstallmentPeriods(Servicio $package): array
+    {
+        return array_filter(
+            $this->packageInstallmentPeriods($package),
+            fn (array $period) => (bool) ($period['enabled'] ?? false)
+        );
+    }
+
+    public function packageInstallmentRules(Servicio $package): array
+    {
+        $metadata = $this->metadata($package);
+        $rules = $metadata['installment_initial_rules'] ?? $this->installmentInitialRuleDefaults();
+
+        return collect($rules)
+            ->map(fn (array $rule) => [
+                'min_initial_percent' => round(max(0, min(100, (float) ($rule['min_initial_percent'] ?? 0))), 2),
+                'max_installments' => max(1, (int) ($rule['max_installments'] ?? 1)),
+            ])
+            ->filter(fn (array $rule) => $rule['min_initial_percent'] > 0 && $rule['max_installments'] > 0)
+            ->sortBy('min_initial_percent')
+            ->values()
+            ->all();
+    }
+
+    public function packageInstallmentSettings(Servicio $package): array
+    {
+        $total = $this->packageTotal($package);
+        $periods = $this->enabledInstallmentPeriods($package);
+        $rules = $this->packageInstallmentRules($package);
+        $minInitialPercent = collect($rules)->min('min_initial_percent') ?: 100;
+        $maxInstallments = collect($rules)->max('max_installments') ?: 1;
+
+        return [
+            'enabled' => $total > 0 && ! empty($periods) && ! empty($rules) && $minInitialPercent < 100,
+            'min_initial_percent' => (float) $minInitialPercent,
+            'max_initial_percent' => 99.0,
+            'max_installments' => (int) $maxInstallments,
+            'periods' => array_values($periods),
+            'rules' => $rules,
+        ];
+    }
+
+    public function maxInstallmentsForInitialPercent(Servicio $package, float $initialPercent): int
+    {
+        $matched = collect($this->packageInstallmentRules($package))
+            ->filter(fn (array $rule) => $initialPercent >= (float) $rule['min_initial_percent'])
+            ->sortByDesc('min_initial_percent')
+            ->first();
+
+        return max(1, (int) ($matched['max_installments'] ?? 1));
+    }
+
+    public function packageInstallmentQuote(Servicio $package, ?string $periodSlug = null, ?float $initialPercent = null, ?int $installments = null): array
+    {
+        $settings = $this->packageInstallmentSettings($package);
+        $total = $this->packageTotal($package);
+        $periods = collect($settings['periods']);
+        $period = $periods->firstWhere('slug', $periodSlug) ?? $periods->first();
+        $initialPercent = round(max(
+            (float) $settings['min_initial_percent'],
+            min(99, (float) ($initialPercent ?: $settings['min_initial_percent']))
+        ), 2);
+        $maxCount = $this->maxInstallmentsForInitialPercent($package, $initialPercent);
+        $count = max(1, min($maxCount, (int) ($installments ?: $maxCount)));
+        $initial = round($total * $initialPercent / 100, 2);
+        $remaining = round(max(0, $total - $initial), 2);
+        $surchargePercent = $period ? (float) ($period['surcharge_percent'] ?? 0) : 0.0;
+        $surchargeAmount = round($remaining * $surchargePercent / 100, 2);
+        $financedAmount = round($remaining + $surchargeAmount, 2);
+        $installmentAmount = $count > 0 ? round($financedAmount / $count, 2) : 0.0;
+
+        return array_merge($settings, [
+            'selected_count' => $count,
+            'max_count' => $maxCount,
+            'contract_total' => round($initial + $financedAmount, 2),
+            'base_total' => $total,
+            'amount_due_now' => $initial,
+            'remaining_amount' => $remaining,
+            'financed_amount' => $financedAmount,
+            'surcharge_percent' => $surchargePercent,
+            'surcharge_amount' => $surchargeAmount,
+            'installment_amount' => $installmentAmount,
+            'initial_percent' => $initialPercent,
+            'period' => $period,
+        ]);
     }
 
     public function packageIsReady(Servicio $package): bool

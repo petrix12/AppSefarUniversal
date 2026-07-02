@@ -9,6 +9,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AssistantController;
 use App\Http\Controllers\WhatsappController;
 use App\Http\Controllers\N8nTaskWebhookController;
+use App\Http\Controllers\BancaOnlineStripeWebhookController;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,6 +38,8 @@ Route::post('/chat/enviar', [ChatController::class, 'enviarMensaje']);
 Route::post('/user/check-email', [UserController::class, 'checkEmail']);
 
 Route::post('/n8n/tasks', [N8nTaskWebhookController::class, 'store']);
+
+Route::post('/stripe/banca-online/webhook', BancaOnlineStripeWebhookController::class);
 
 Route::get('/whatsapp-requests/pending', [WhatsappController::class, 'pending'])->withoutMiddleware('auth:sanctum');
 Route::post('/whatsapp-requests/{id}/success', [WhatsappController::class, 'success'])->withoutMiddleware('auth:sanctum');

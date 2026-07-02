@@ -46,6 +46,10 @@ return [
         'webhook_token' => env('N8N_WEBHOOK_TOKEN'),
     ],
 
+    'stripe' => [
+        'banca_online_webhook_secret' => env('STRIPE_BANCA_ONLINE_WEBHOOK_SECRET', env('STRIPE_WEBHOOK_SECRET')),
+    ],
+
     'jotform' => [
         'cron_token' => env('JOTFORM_CRON_TOKEN'),
     ],

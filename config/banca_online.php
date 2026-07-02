@@ -49,6 +49,53 @@ return [
         ],
     ],
 
+    'installments' => [
+        'periods' => [
+            'monthly' => [
+                'label' => 'Mensual',
+                'plural_label' => 'mensuales',
+                'enabled' => true,
+                'surcharge_percent' => 0,
+                'stripe_interval' => 'month',
+                'stripe_interval_count' => 1,
+                'start_after_days' => null,
+            ],
+            'quarterly' => [
+                'label' => 'Trimestral',
+                'plural_label' => 'trimestrales',
+                'enabled' => true,
+                'surcharge_percent' => 0,
+                'stripe_interval' => 'month',
+                'stripe_interval_count' => 3,
+                'start_after_days' => null,
+            ],
+            'semimonthly' => [
+                'label' => 'Cada medio mes',
+                'plural_label' => 'cada medio mes',
+                'enabled' => true,
+                'surcharge_percent' => 0,
+                'stripe_interval' => 'day',
+                'stripe_interval_count' => 15,
+                'start_after_days' => 15,
+            ],
+            'annual' => [
+                'label' => 'Anual',
+                'plural_label' => 'anuales',
+                'enabled' => true,
+                'surcharge_percent' => 0,
+                'stripe_interval' => 'year',
+                'stripe_interval_count' => 1,
+                'start_after_days' => null,
+            ],
+        ],
+        'initial_rules' => [
+            ['min_initial_percent' => 20, 'max_installments' => 12],
+            ['min_initial_percent' => 35, 'max_installments' => 9],
+            ['min_initial_percent' => 50, 'max_installments' => 6],
+            ['min_initial_percent' => 70, 'max_installments' => 3],
+        ],
+    ],
+
     'plans' => [
         'solicitud-estrategica' => [
             'enabled' => true,

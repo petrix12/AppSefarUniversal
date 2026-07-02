@@ -613,9 +613,23 @@
 
 .bo-package-settings-grid {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(300px, 1.1fr) 160px;
+  grid-template-columns: minmax(220px, 1fr) minmax(260px, 1.05fr) repeat(3, minmax(120px, 0.42fr));
   gap: 0.85rem;
   align-items: end;
+}
+
+.bo-package-name-field,
+.bo-discount-type {
+  grid-column: span 2;
+}
+
+.bo-installments-toggle {
+  align-self: end;
+}
+
+.bo-switch-line {
+  min-height: 2.35rem;
+  padding-top: 0.45rem;
 }
 
 .bo-package-description {
@@ -859,9 +873,77 @@
   color: #fff;
 }
 
+.bo-installment-admin {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 1rem;
+  border: 1px solid var(--sefar-border);
+  border-radius: var(--bo-admin-inner-radius);
+  padding: 1rem;
+  background: #fbfcfd;
+}
+
+.bo-installment-admin-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.bo-installment-admin-head h4 {
+  margin: 0.12rem 0 0;
+  color: var(--sefar-text);
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.bo-installment-admin-head small {
+  max-width: 320px;
+  color: var(--sefar-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.bo-period-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.bo-period-card {
+  display: grid;
+  gap: 0.65rem;
+  border: 1px solid var(--sefar-border);
+  border-radius: var(--bo-admin-inner-radius);
+  padding: 0.85rem;
+  background: #ffffff;
+}
+
+.bo-period-card .custom-control-label {
+  color: var(--sefar-text);
+  font-weight: 850;
+}
+
+.bo-installment-rules {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.bo-rule-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
 @media (max-width: 991px) {
   .bo-package-settings-grid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .bo-period-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .bo-package-description {
@@ -897,10 +979,21 @@
   }
 
   .bo-package-settings-head,
+  .bo-installment-admin-head,
   .bo-component-editor > header,
   .bo-package-savebar {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .bo-installment-admin-head small {
+    max-width: none;
+    text-align: left;
+  }
+
+  .bo-period-grid,
+  .bo-rule-row {
+    grid-template-columns: 1fr;
   }
 
   .bo-component-check {

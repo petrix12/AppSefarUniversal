@@ -9,6 +9,9 @@
         || $errors->has('referido')
         || $errors->has('tiene_hermanos');
     $readyPackages = $packages->filter(fn ($package) => $catalog->packageIsReady($package));
+    $defaultPackage = $readyPackages->first(fn ($package) => (bool) (($catalog->metadata($package)['recommended'] ?? false)))
+        ?? $readyPackages->first();
+    $selectedPackageId = $oldPackageId > 0 ? $oldPackageId : (int) ($defaultPackage?->id ?? 0);
 @endphp
 <!doctype html>
 <html lang="es">
@@ -80,7 +83,7 @@
                                 $discount = $catalog->packageDiscount($package);
                                 $total = $catalog->packageTotal($package);
                                 $ready = $catalog->packageIsReady($package);
-                                $selected = $ready && $oldPackageId === (int) $package->id;
+                                $selected = $ready && $selectedPackageId === (int) $package->id;
                                 $componentData = $items->values()->all();
                             @endphp
                             <label class="bo-package-card {{ ($metadata['recommended'] ?? false) ? 'is-recommended' : '' }} {{ $selected ? 'selected' : '' }} {{ $ready ? '' : 'is-unavailable' }}">

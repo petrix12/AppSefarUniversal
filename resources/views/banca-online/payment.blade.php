@@ -1,5 +1,8 @@
 @php
     $packageComponents = collect($metadata['components'] ?? []);
+    $paymentPlan = $metadata['payment_plan'] ?? [];
+    $isInstallmentPayment = ($paymentPlan['mode'] ?? 'full') === 'installments';
+    $installmentsAvailable = (bool) ($paymentOptions['installments_enabled'] ?? false);
 @endphp
 <!doctype html>
 <html lang="es">
@@ -56,15 +59,15 @@
                     <div class="bo-alert">No esta configurada la clave publica de Stripe para este servicio.</div>
                 @endif
 
-                @if((float) ($metadata['package_discount'] ?? 0) > 0)
-                    <div class="bo-payment-breakdown">
-                        <span>Subtotal <strong>{{ number_format((float) ($metadata['package_subtotal'] ?? $total), 0, ',', '.') }} EUR</strong></span>
-                        <span>Descuento <strong>-{{ number_format((float) $metadata['package_discount'], 0, ',', '.') }} EUR</strong></span>
-                    </div>
-                @endif
+                <div
+                    class="bo-payment-breakdown is-hidden"
+                    data-payment-breakdown
+                    data-subtotal-label="{{ number_format((float) ($metadata['package_subtotal'] ?? $total), 0, ',', '.') }}"
+                    data-discount="{{ (float) ($metadata['package_discount'] ?? 0) }}"
+                    data-discount-label="{{ number_format((float) ($metadata['package_discount'] ?? 0), 0, ',', '.') }}"></div>
 
-                <div class="bo-total-label">Total a pagar</div>
-                <div class="bo-total">{{ number_format($total, 0, ',', '.') }} <small>EUR</small></div>
+                <div class="bo-total-label" id="paymentTotalLabel">{{ $isInstallmentPayment ? 'Total a pagar hoy' : 'Total a pagar' }}</div>
+                <div class="bo-total"><span id="paymentTotalAmount">{{ number_format($total, 0, ',', '.') }}</span> <small>EUR</small></div>
 
                 <form
                     id="payment-form"
@@ -72,6 +75,57 @@
                     data-stripe-key="{{ $stripeKey }}"
                     data-process-url="{{ route('banca-online.payment.process', $token) }}"
                     data-success-url="{{ route('banca-online.thank-you', $token) }}">
+                    <div
+                        class="bo-payment-plan bo-checkout-payment-options"
+                        id="checkoutPaymentOptions"
+                        data-payment-options='@json($paymentOptions)'>
+                        <input type="hidden" name="payment_mode" id="checkoutPaymentMode" value="full">
+                        <input type="hidden" name="payment_period" id="checkoutPaymentPeriod" value="">
+                        <input type="hidden" name="initial_percent" id="checkoutInitialPercent" value="{{ $paymentOptions['min_initial_percent'] ?? 100 }}">
+
+                        <label class="bo-pay-choice is-active" data-checkout-payment-choice="full">
+                            <input type="radio" name="checkout_payment_choice" value="full" checked>
+                            <span>
+                                <strong>Pago unico</strong>
+                                <small id="checkoutFullPaymentLabel">{{ number_format($total, 0, ',', '.') }} EUR ahora</small>
+                            </span>
+                        </label>
+
+                        @if($installmentsAvailable)
+                            <label class="bo-pay-choice" data-checkout-payment-choice="installments">
+                                <input type="radio" name="checkout_payment_choice" value="installments">
+                                <span>
+                                    <strong>Pago por cuotas</strong>
+                                    <small id="checkoutInstallmentPaymentLabel">Define inicial, periodo y cuotas</small>
+                                </span>
+                            </label>
+
+                            <div class="bo-installment-checkout is-hidden" id="checkoutInstallmentControls">
+                                <div class="bo-period-choice-grid" id="checkoutPeriodChoices">
+                                    @foreach(($paymentOptions['periods'] ?? []) as $period)
+                                        <label class="bo-period-choice">
+                                            <input type="radio" name="checkout_period_choice" value="{{ $period['slug'] }}">
+                                            <span>
+                                                <strong>{{ $period['label'] }}</strong>
+                                                <small>{{ number_format((float) ($period['surcharge_percent'] ?? 0), 2, ',', '.') }}% recargo</small>
+                                            </span>
+                                        </label>
+                                    @endforeach
+                                </div>
+
+                                <label class="bo-field bo-range-field">
+                                    <span>Inicial: <strong id="checkoutInitialPercentLabel">{{ number_format((float) ($paymentOptions['min_initial_percent'] ?? 20), 0, ',', '.') }}%</strong></span>
+                                    <input type="range" id="checkoutInitialSlider" min="{{ $paymentOptions['min_initial_percent'] ?? 20 }}" max="{{ $paymentOptions['max_initial_percent'] ?? 99 }}" step="1" value="{{ $paymentOptions['min_initial_percent'] ?? 20 }}">
+                                </label>
+
+                                <label class="bo-field bo-installment-count-field" id="checkoutInstallmentCountField">
+                                    <span>Numero de cuotas</span>
+                                    <select name="installments_count" id="checkoutInstallmentsCount"></select>
+                                </label>
+                            </div>
+                        @endif
+                    </div>
+
                     <div class="bo-field-grid">
                         <label class="bo-field">
                             <span>Nombres</span>
@@ -129,7 +183,7 @@
                     <div class="bo-card-errors" id="card-errors"></div>
 
                     <button class="bo-button bo-button-primary" id="submit-button" type="submit" {{ !$stripeKey ? 'disabled' : '' }}>
-                        Pagar ahora <i class="fas fa-credit-card"></i>
+                        {{ $isInstallmentPayment ? 'Pagar inicial' : 'Pagar ahora' }} <i class="fas fa-credit-card"></i>
                     </button>
                 </form>
             </aside>
