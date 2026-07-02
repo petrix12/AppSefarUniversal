@@ -224,7 +224,26 @@
 
       options.forEach((input) => {
         const card = input.closest('.bo-package-card');
-        if (card) card.classList.toggle('selected', input.checked);
+        if (!card) return;
+
+        card.classList.toggle('selected', input.checked);
+
+        const selectLabel = card.querySelector('.bo-package-select');
+        if (!selectLabel) return;
+
+        const label = input.checked
+          ? (selectLabel.dataset.selectedLabel || 'Seleccionado')
+          : (selectLabel.dataset.selectLabel || 'Elegir modalidad');
+        const iconClass = input.checked ? 'fas fa-check' : 'fas fa-arrow-right';
+
+        selectLabel.replaceChildren(document.createTextNode(label + ' '));
+
+        if (!input.disabled) {
+          const icon = document.createElement('i');
+          icon.className = iconClass;
+          icon.setAttribute('aria-hidden', 'true');
+          selectLabel.appendChild(icon);
+        }
       });
 
       if (!selectedInput) {

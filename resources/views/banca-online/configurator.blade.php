@@ -142,7 +142,10 @@
                                     @endforelse
                                 </ul>
 
-                                <span class="bo-package-select">
+                                <span
+                                    class="bo-package-select"
+                                    data-select-label="{{ $ready ? 'Elegir modalidad' : 'Proximamente' }}"
+                                    data-selected-label="Seleccionado">
                                     {{ $ready ? 'Elegir modalidad' : 'Proximamente' }}
                                     @if($ready)<i class="fas fa-arrow-right" aria-hidden="true"></i>@endif
                                 </span>
