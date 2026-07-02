@@ -19,6 +19,9 @@
     $fallbackService = auth()->user()->roles->first()?->id === 1
         ? ($user->servicio ?: ($user->getRoleNames()->first() ?: 'Cliente'))
         : ($user->servicio ?: 'Usuario App');
+    $baseService = $user->servicio
+        ?: data_get($bankPurchases->first()?->metadata, 'requested_service')
+        ?: $fallbackService;
 @endphp
 
 <div class="services-summary">
@@ -31,9 +34,9 @@
         </div>
     @endforeach
 
-    @if ($purchases->isEmpty())
+    @if ($regularPurchases->isEmpty())
         <div class="service-row">
-            <span class="service-name">{{ $fallbackService }}</span>
+            <span class="service-name">{{ $baseService }}</span>
             <span class="{{ (int) $user->pay === 0 ? 'badge-unpaid' : 'badge-paid' }}">
                 {{ (int) $user->pay === 0 ? 'No pagó Registro' : ((int) $user->pay === 1 ? 'Pagó Registro' : 'Pagó Registro y completó información') }}
             </span>
@@ -56,7 +59,9 @@
             $planTitle = data_get($firstPurchase->metadata, 'plan_short_title')
                 ?: data_get($firstPurchase->metadata, 'plan_title');
             $packageTitle = data_get($firstPurchase->metadata, 'package_title');
-            $packageComponents = collect(data_get($firstPurchase->metadata, 'components', []));
+            $bankServiceTitle = $packageTitle
+                ?: $planTitle
+                ?: (Illuminate\Support\Str::after((string) $firstPurchase->descripcion, ': ') ?: $firstPurchase->servicio_hs_id);
             $statusTitle = $isPaid
                 ? 'Pago Banca Online'
                 : ($hasPaidItems ? 'Pago parcial Banca Online' : 'Banca Online pendiente');
@@ -76,41 +81,28 @@
                 <div class="bank-payment-plan">
                     {{ $planTitle }}
                     @if($packageTitle) · {{ $packageTitle }} @endif
-                    · {{ $packageComponents->isNotEmpty() ? $packageComponents->count() : $paymentPurchases->count() }}
-                    {{ Illuminate\Support\Str::plural('servicio', $packageComponents->isNotEmpty() ? $packageComponents->count() : $paymentPurchases->count()) }}
                 </div>
             @endif
 
             <ul class="bank-service-list">
-                @forelse ($packageComponents as $component)
-                    <li>
-                        <span>{{ $component['name'] ?? 'Servicio incluido' }}</span>
-                        @isset($component['price'])<strong>{{ number_format((float) $component['price'], 0, ',', '.') }} EUR</strong>@endisset
-                    </li>
-                @empty
-                    @foreach ($paymentPurchases as $purchase)
-                        <li>
-                            {{ $purchase->servicio?->nombre ?: (Illuminate\Support\Str::after((string) $purchase->descripcion, ': ') ?: $purchase->servicio_hs_id) }}
-                            @if ((int) $purchase->pagado === 0 && $hasPaidItems)
-                                <span class="badge-unpaid">Pendiente</span>
-                            @endif
-                        </li>
-                    @endforeach
-                @endforelse
+                <li>
+                    <span>{{ $bankServiceTitle }}</span>
+                    @if (! $isPaid && $hasPaidItems)
+                        <span class="badge-unpaid">Pendiente</span>
+                    @endif
+                </li>
             </ul>
         </section>
     @endforeach
 
-    @if ($regularPurchases->isNotEmpty() || $bankPurchases->isEmpty())
-        <div class="case-status">
-            <span class="case-status-item {{ (int) $user->pay === 2 ? 'is-complete' : '' }}">
-                <span class="case-status-dot"></span>
+    <div class="case-status">
+        <span class="case-status-item {{ (int) $user->pay === 2 ? 'is-complete' : '' }}">
+            <span class="case-status-dot"></span>
                 {{ (int) $user->pay === 2 ? 'Información completada' : 'Información pendiente' }}
-            </span>
-            <span class="case-status-item {{ $user->contrato ? 'is-complete' : '' }}">
-                <span class="case-status-dot"></span>
+        </span>
+        <span class="case-status-item {{ $user->contrato ? 'is-complete' : '' }}">
+            <span class="case-status-dot"></span>
                 {{ $user->contrato ? 'Contrato firmado' : 'Contrato pendiente' }}
-            </span>
-        </div>
-    @endif
+        </span>
+    </div>
 </div>

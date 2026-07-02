@@ -726,7 +726,9 @@ class BancaOnlineController extends Controller
 
     private function hasPaidSimilarPlan(User $user, string $countrySlug, string $planSlug): bool
     {
-        if ($planSlug === '') {
+        $requestedPlanFamily = $this->bancaOnlinePlanFamily($planSlug);
+
+        if ($requestedPlanFamily === '') {
             return false;
         }
 
@@ -736,17 +738,45 @@ class BancaOnlineController extends Controller
             ->where('source', $this->catalog->source())
             ->where('pagado', 1)
             ->get()
-            ->contains(function (Compras $compra) use ($countrySlug, $planSlug) {
+            ->contains(function (Compras $compra) use ($countrySlug, $requestedPlanFamily) {
                 $metadata = $compra->metadata ?? [];
+                $paidPlanFamily = $this->bancaOnlinePlanFamily(
+                    (string) ($metadata['plan_slug'] ?? ''),
+                    (string) ($metadata['plan_title'] ?? ''),
+                    (string) ($compra->descripcion ?? '')
+                );
 
-                return ($metadata['plan_slug'] ?? null) === $planSlug
+                return $paidPlanFamily === $requestedPlanFamily
                     && $this->catalog->normalizeCountry($metadata['country_slug'] ?? $countrySlug) === $countrySlug;
             });
     }
 
     private function paidSimilarPlanMessage(): string
     {
-        return 'Este correo ya tiene un pago registrado para un plan similar. Si quieres registrar a otro familiar, usa un correo diferente.';
+        return 'Este correo ya tiene un pago registrado para este tipo de plan. Puede pagar un plan estrategico, uno administrativo y uno judicial; para registrar a otro familiar, usa un correo diferente.';
+    }
+
+    private function bancaOnlinePlanFamily(string $planSlug, string $planTitle = '', string $description = ''): string
+    {
+        $value = Str::lower(Str::ascii(trim($planSlug . ' ' . $planTitle . ' ' . $description)));
+
+        if ($value === '') {
+            return '';
+        }
+
+        if (Str::contains($value, ['administrativo'])) {
+            return 'administrativo';
+        }
+
+        if (Str::contains($value, ['judicial', 'contencioso'])) {
+            return 'judicial';
+        }
+
+        if (Str::contains($value, ['solicitud-estrategica', 'solicitud estrategica', 'estrategic'])) {
+            return 'solicitud-estrategica';
+        }
+
+        return Str::slug($planSlug);
     }
 
     private function purchasesForToken(string $token, bool $pendingOnly = true): Collection

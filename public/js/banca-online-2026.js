@@ -301,7 +301,7 @@
         const data = await response.json();
 
         if (data.has_paid_similar_plan) {
-          const message = data.message || 'Este correo ya tiene un pago registrado para un plan similar. Si quieres registrar a otro familiar, usa un correo diferente.';
+          const message = data.message || 'Este correo ya tiene un pago registrado para este tipo de plan. Puede pagar un plan estrategico, uno administrativo y uno judicial; para registrar a otro familiar, usa un correo diferente.';
           emailInput.setCustomValidity(message);
           setLookupStatus(message, 'error');
           setNewClientMode(false);
