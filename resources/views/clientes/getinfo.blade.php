@@ -9,6 +9,12 @@
 
 @section('content')
 
+    @if(session('info'))
+        <div class="alert alert-info" role="alert">
+            {{ session('info') }}
+        </div>
+    @endif
+
     <div style="position: fixed; top: 0; left: 0; background-color:rgba(0, 0, 0, 0.5); z-index: 6000; width: 100%; height: 100%;" id="ajaxload"></div>
 
     <div style="position: fixed;top: 0;left: 0;background-color:rgba(0, 0, 0, 0.5);z-index: 6000;width: 100%;height: 100%; display: none;" id="ajaxload2">

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Country;
+use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
@@ -17,6 +18,20 @@ class Controller extends BaseController
     use HasRoles;
 
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
+
+    protected function clientHasPendingInitialPayment(?User $user = null): bool
+    {
+        $user = $user ?: Auth::user();
+
+        if (! $user) {
+            return false;
+        }
+
+        return $user->compras()
+            ->where('pagado', 0)
+            ->whereNull('deal_id')
+            ->exists();
+    }
 
     public function index(){
         if(Auth::user()->hasRole('Administrador')){
@@ -80,7 +95,7 @@ class Controller extends BaseController
 
         // Clientes corrientes
         if (Auth::user()->hasRole("Cliente")){
-            if(Auth::user()->pay==0){
+            if($this->clientHasPendingInitialPayment(Auth::user()) || Auth::user()->pay==0){
                 return redirect()->route('clientes.pay');
             } else if (Auth::user()->pay==1 || Auth::user()->pay==3){
                 return redirect()->route('clientes.getinfo');

@@ -1237,7 +1237,7 @@ class ClienteController extends Controller
 
     public function tree(){
         if (Auth::user()->roles->first()->name == "Cliente"){
-            if(Auth::user()->pay==0){
+            if($this->clientHasPendingInitialPayment(Auth::user()) || Auth::user()->pay==0){
                 return redirect()->route('clientes.pay');
             }
             if(Auth::user()->pay==1 || auth()->user()->pay == 3){
@@ -1256,7 +1256,8 @@ class ClienteController extends Controller
 
         if (empty($treeData['columnasparatabla'])) {
             return redirect()->route('clientes.getinfo')
-                ->with('info', 'No se pudo generar el arbol genealogico.');
+                ->with('force_getinfo', true)
+                ->with('info', 'No se pudo generar el arbol genealogico. Verifica o completa nuevamente la informacion del cliente.');
         }
 
         $columnasparatabla = $treeData['columnasparatabla'];
@@ -1601,7 +1602,7 @@ class ClienteController extends Controller
 
     public function hermanoscliente(){
         if (Auth::user()->roles->first()->name == "Cliente"){
-            if(Auth::user()->pay==0){
+            if($this->clientHasPendingInitialPayment(Auth::user()) || Auth::user()->pay==0){
                 return redirect()->route('clientes.pay');
             }
             if(Auth::user()->pay==1 || auth()->user()->pay == 3){
@@ -1620,7 +1621,7 @@ class ClienteController extends Controller
 
     public function contrato(){
         if (Auth::user()->roles->first()->name == "Cliente"){
-            if(Auth::user()->pay==0){
+            if($this->clientHasPendingInitialPayment(Auth::user()) || Auth::user()->pay==0){
                 return redirect()->route('clientes.pay');
             }
             if(Auth::user()->pay==1 || auth()->user()->pay == 3){
@@ -1721,10 +1722,10 @@ class ClienteController extends Controller
 
     public function getinfo(){
         if (Auth::user()->roles->first()->name == "Cliente"){
-            if(Auth::user()->pay==0){
+            if($this->clientHasPendingInitialPayment(Auth::user()) || Auth::user()->pay==0){
                 return redirect()->route('clientes.pay');
             }
-            if(Auth::user()->pay==2 || auth()->user()->cerocerouno == 1){
+            if((Auth::user()->pay==2 || auth()->user()->cerocerouno == 1) && !session('force_getinfo')){
                 return redirect('/tree');
             }
         }
@@ -1733,7 +1734,7 @@ class ClienteController extends Controller
 
     public function gracias(){
         if (Auth::user()->roles->first()->name == "Cliente"){
-            if(Auth::user()->pay==0){
+            if($this->clientHasPendingInitialPayment(Auth::user()) || Auth::user()->pay==0){
                 return redirect()->route('clientes.pay');
             }
         }
