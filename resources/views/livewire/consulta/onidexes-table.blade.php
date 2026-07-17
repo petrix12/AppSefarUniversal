@@ -5,37 +5,41 @@
                 <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
                     <div class="flex bg-white px-4 py-3 sm:px-6">
                         <input
-                            wire:model.live="search"
+                            wire:model.live.debounce.800ms="search"
                             type="text"
                             placeholder="Buscar..."
                             class="mr-2 mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                         >
                         <div class="col-span-6 sm:col-span-3">
                             <select wire:model.live="perPage" class="py-2 px-2 mt-1 mr-10 block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                <option value="5">5 por pág. </option>
-                                <option value="10">10 por pág.</option>
-                                <option value="15">15 por pág.</option>
-                                <option value="25">25 por pág.</option>
-                                <option value="50">50 por pág.</option>
-                                <option value="100">100 por pág.</option>
+                                <option value="5">5 por pag.</option>
+                                <option value="10">10 por pag.</option>
+                                <option value="15">15 por pag.</option>
+                                <option value="25">25 por pag.</option>
+                                <option value="50">50 por pag.</option>
+                                <option value="100">100 por pag.</option>
                             </select>
                         </div>
                         @if ($search !== '')
                         <button wire:click="clear" class="py-1 px-2 mt-1 ml-2 border border-transparent rounded-md border border-transparent rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"><i class="far fa-window-close"></i></button>
                         @endif
                     </div>
-                    @if ($onidexes->count())
+                    @if (! $hasSearchCriteria)
+                    <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6 text-gray-500">
+                        Ingresa al menos un criterio de busqueda para consultar Onidex.
+                    </div>
+                    @elseif ($onidexes->count())
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                         <tr>
                             <th scope="col" class="px-6 py-2 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                                Cédula
+                                Cedula
                             </th>
                             <th scope="col" class="px-6 py-2 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                                1er Apallido
+                                1er Apellido
                             </th>
                             <th scope="col" class="px-6 py-2 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                                2do Apallido
+                                2do Apellido
                             </th>
                             <th scope="col" class="px-6 py-2 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
                                 1er Nombre
@@ -44,7 +48,7 @@
                                 2do Nombre
                             </th>
                             <th scope="col" class="px-6 py-2 text-center text-xs font-bold text-gray-900 uppercase tracking-wider">
-                                Nación
+                                Nacion
                             </th>
                             <th scope="col" class="px-6 py-2 text-right text-xs font-bold text-gray-900 uppercase tracking-wider">
                                 Fecha de nacimiento
@@ -73,20 +77,20 @@
                                 {{ $onidex->nacion }}
                             </td>
                             <td class="px-6 py-2 text-right text-xs whitespace-nowrap">
-                                {{ date("d/m/Y", strtotime($onidex->fec_nac)) }}
+                                {{ $onidex->fec_nac ? date("d/m/Y", strtotime($onidex->fec_nac)) : '' }}
                             </td>
                         </tr>
                         @endforeach
                         </tbody>
                     </table>
                     <div class="text-xs bg-white px-4 py-3 border-t border-gray-200 sm:px-6 text-gray-100">
-                    {{ $onidexes->links() }}
+                        {{ $onidexes->links() }}
                     </div>
                     @else
-<div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6 text-gray-500">
-    No hay resultado para la búsqueda "{{ $search }}" en la página {{ $currentPage }} al mostrar {{ $perPage }} por página
-</div>
-@endif
+                    <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6 text-gray-500">
+                        No hay resultado para la busqueda "{{ $search }}" en la pagina {{ $currentPage }} al mostrar {{ $perPage }} por pagina
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -97,7 +101,7 @@
     <form action="{{ route('consultas.onidex.index')}}">
         @csrf
         <button type="submit" class="cfrSefar inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-            Ir a búsqueda avanzada
+            Ir a busqueda avanzada
         </button>
     </form>
 </div>
