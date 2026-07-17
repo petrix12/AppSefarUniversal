@@ -1,12 +1,18 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 return new class extends Migration
 {
     private const CONNECTION = 'onidex';
     private const TABLE = 'onidexes';
+    private const NON_BLOCKING_MYSQL_ERRORS = [
+        1030, // InnoDB/storage engine failed while rebuilding this large table.
+        1142, // ALTER denied for the configured database user.
+    ];
 
     public function up(): void
     {
@@ -23,11 +29,7 @@ return new class extends Migration
             }
         }
 
-        if ($clauses !== []) {
-            DB::connection(self::CONNECTION)->statement(
-                'ALTER TABLE `'.self::TABLE.'` '.implode(', ', $clauses)
-            );
-        }
+        $this->runAlterTable($clauses);
     }
 
     public function down(): void
@@ -45,11 +47,7 @@ return new class extends Migration
             $clauses[] = 'DROP PRIMARY KEY';
         }
 
-        if ($clauses !== []) {
-            DB::connection(self::CONNECTION)->statement(
-                'ALTER TABLE `'.self::TABLE.'` '.implode(', ', $clauses)
-            );
-        }
+        $this->runAlterTable($clauses);
     }
 
     private function existingIndexes(): array
@@ -72,5 +70,32 @@ return new class extends Migration
             'idx_onidexes_nacion' => 'nacion',
             'idx_onidexes_fec_nac' => 'fec_nac',
         ];
+    }
+
+    private function runAlterTable(array $clauses): void
+    {
+        if ($clauses === []) {
+            return;
+        }
+
+        try {
+            DB::connection(self::CONNECTION)->statement(
+                'ALTER TABLE `'.self::TABLE.'` '.implode(', ', $clauses)
+            );
+        } catch (QueryException $exception) {
+            $mysqlErrorCode = (int) ($exception->errorInfo[1] ?? 0);
+
+            if (! in_array($mysqlErrorCode, self::NON_BLOCKING_MYSQL_ERRORS, true)) {
+                throw $exception;
+            }
+
+            Log::warning('No se pudieron actualizar los indices de Onidex desde la migracion.', [
+                'connection' => self::CONNECTION,
+                'table' => self::TABLE,
+                'mysql_error_code' => $mysqlErrorCode,
+                'message' => $exception->getMessage(),
+                'sql' => 'ALTER TABLE `'.self::TABLE.'` '.implode(', ', $clauses),
+            ]);
+        }
     }
 };
