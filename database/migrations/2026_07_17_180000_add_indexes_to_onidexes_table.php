@@ -19,10 +19,6 @@ return new class extends Migration
         $existing = $this->existingIndexes();
         $clauses = [];
 
-        if (! in_array('PRIMARY', $existing, true)) {
-            $clauses[] = 'ADD PRIMARY KEY (`id`)';
-        }
-
         foreach ($this->indexes() as $name => $column) {
             if (! in_array($name, $existing, true)) {
                 $clauses[] = "ADD INDEX `{$name}` (`{$column}`)";
@@ -41,10 +37,6 @@ return new class extends Migration
             if (in_array($name, $existing, true)) {
                 $clauses[] = "DROP INDEX `{$name}`";
             }
-        }
-
-        if (in_array('PRIMARY', $existing, true)) {
-            $clauses[] = 'DROP PRIMARY KEY';
         }
 
         $this->runAlterTable($clauses);
