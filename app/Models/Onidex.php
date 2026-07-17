@@ -188,8 +188,9 @@ class Onidex extends Model
         return $query;
     }
 
-    private function whereText($query, array $columns, string $value, bool $exact)
+    private function whereText($query, array $columns, string $value, $exact)
     {
+        $exact = (bool) $exact;
         $operator = $exact ? '=' : 'like';
         $value = $exact ? trim($value) : $this->prefixLike($value);
 
