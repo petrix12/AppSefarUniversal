@@ -231,6 +231,9 @@ Route::middleware(['auth', 'can:tl.view'])
 
         Route::get('contacts',        [TlContactController::class, 'table'])->name('contacts.index');
         Route::get('contacts/{id}',   [TlContactController::class, 'show'])->name('contacts.show');
+        Route::post('contacts/{id}/documents/import', [TlContactController::class, 'importDocuments'])
+            ->middleware('can:administrador')
+            ->name('contacts.documents.import');
 
         Route::get('projects',        [TlProjectController::class, 'table'])->name('projects.index');
         Route::get('projects/{id}',   [TlProjectController::class, 'show'])->name('projects.show');

@@ -64,11 +64,16 @@ class SyncDocumentsJob implements ShouldQueue
             );
         } catch (TeamleaderRateLimitException $e) {
             Log::channel('teamleader')->warning("[TL Docs] rate limit listando {$this->entityType}/{$this->entityId}. Reintentando luego.");
+            if ($this->runInline()) {
+                TlSyncLog::find($this->syncLogId)?->fail('Teamleader rate limit. Intenta de nuevo mas tarde.');
+                return;
+            }
+
             $this->release($e->retryAfterSeconds());
             return;
         } catch (TeamleaderAuthenticationException $e) {
             Log::channel('teamleader')->warning("[TL Docs] sincronizacion detenida por autenticacion de Teamleader: {$e->getMessage()}");
-            TlSyncLog::find($this->syncLogId)?->incrementCounter('failed');
+            TlSyncLog::find($this->syncLogId)?->fail($e->getMessage());
             return;
         }
 
@@ -80,6 +85,11 @@ class SyncDocumentsJob implements ShouldQueue
                 $this->processFile($fileData, $service);
             } catch (TeamleaderRateLimitException $e) {
                 Log::channel('teamleader')->warning("[TL Docs] rate limit migrando {$this->entityType}/{$this->entityId}. Reintentando luego.");
+                if ($this->runInline()) {
+                    TlSyncLog::find($this->syncLogId)?->fail('Teamleader rate limit. Intenta de nuevo mas tarde.');
+                    return;
+                }
+
                 $this->release($e->retryAfterSeconds());
                 return;
             } catch (TeamleaderAuthenticationException $e) {

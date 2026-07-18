@@ -11,13 +11,36 @@
             </a>
             {{ $contact->full_name ?: '(Sin nombre)' }}
         </h1>
-        <a href="{{ $contact->raw_data['web_url'] ?? '#' }}" target="_blank" class="btn btn-sm btn-outline-info">
-            <i class="fas fa-external-link-alt mr-1"></i> Ver en Teamleader
-        </a>
+        <div class="d-flex flex-wrap" style="gap:.4rem">
+            @can('administrador')
+                <form method="POST"
+                      action="{{ route('teamleader.contacts.documents.import', $contact->id) }}"
+                      class="d-inline"
+                      onsubmit="return confirm('Importar archivos de este contacto desde Teamleader hacia S3?');">
+                    @csrf
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="fas fa-file-import mr-1"></i> Importar archivos
+                    </button>
+                </form>
+            @endcan
+
+            <a href="{{ $contact->raw_data['web_url'] ?? '#' }}" target="_blank" class="btn btn-sm btn-outline-info">
+                <i class="fas fa-external-link-alt mr-1"></i> Ver en Teamleader
+            </a>
+        </div>
     </div>
 @endsection
 
 @section('content')
+@foreach(['status' => 'success', 'error' => 'danger'] as $key => $class)
+    @if(session($key))
+        <div class="alert alert-{{ $class }} alert-dismissible fade show">
+            {!! session($key) !!}
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+    @endif
+@endforeach
+
 <div class="row">
 
     {{-- Columna izquierda: datos del contacto --}}
