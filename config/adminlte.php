@@ -122,14 +122,14 @@ return [
     */
 
     'classes_body' => '',
-    'classes_brand' => 'cbgSefar',
+    'classes_brand' => 'cbgSefar sefar-brand',
     'classes_brand_text' => 'ct_blanco',
     'classes_content_wrapper' => '',
     'classes_content_header' => '',
     'classes_content' => '',
-    'classes_sidebar' => 'sidebar-dark-secondary elevation-4',  // white
-    'classes_sidebar_nav' => '',
-    'classes_topnav' => 'navbar-white navbar-light',
+    'classes_sidebar' => 'sidebar-dark-primary elevation-4 sefar-sidebar',
+    'classes_sidebar_nav' => 'sefar-sidebar-nav',
+    'classes_topnav' => 'navbar-dark sefar-topbar',
     'classes_topnav_nav' => 'navbar-expand',
     'classes_topnav_container' => 'container',
 
@@ -255,26 +255,490 @@ return [
             'url'  => 'admin/blog',
             'can'  => 'no_definido',
         ],
-        /* *** ACCESOS *** */
+        /* *** MENÚ INTERNO ORGANIZADO *** */
         [
-            'text'        => 'Accesos',
-            'icon'        => 'fa-fw fas fa-key',
+            'text'        => 'Operación COS',
+            'icon'        => 'fa-fw fas fa-briefcase',
             'icon_color'  => 'white',
-            'can'  => 'administrador',
             'submenu' => [
                 [
-                    'text'          => 'Usuarios (COS)',
+                    'text'          => 'Clientes (COS)',
                     'icon'          => 'fa-fw fas fa-users',
                     'icon_color'    => 'white',
                     'url'           => 'users',
-                    'can'           => 'crud.users.index',
+                    'can'           => 'users.viewlist',
                 ],
+                [
+                    'text'    => 'Tareas',
+                    'icon'    => 'fas fa-fw fa-tasks',
+                    'can'     => 'tasks.view',
+                    'submenu' => [
+                        [
+                            'text' => 'Mis tareas',
+                            'url'  => 'tasks',
+                            'icon' => 'fas fa-fw fa-clipboard-list',
+                            'can'     => 'tasks.view',
+                        ],
+                        [
+                            'text'       => 'Panel admin',
+                            'url'        => 'tasks/admin',
+                            'icon'       => 'fas fa-fw fa-cogs',
+                            'can'        => 'administrador',
+                        ],
+                        [
+                            'text'       => 'Resumen',
+                            'url'        => 'tasks/admin/summary',
+                            'icon'       => 'fas fa-fw fa-chart-bar',
+                            'can'        => 'administrador',
+                        ],
+                        [
+                            'text'       => 'Reportes',
+                            'url'        => 'tasks/admin/reports',
+                            'icon'       => 'fas fa-fw fa-file-excel',
+                            'can'        => 'administrador',
+                        ],
+                    ],
+                ],
+                [
+                    'text'       => 'Ventas pendientes',
+                    'icon'       => 'fa-fw fas fa-list',
+                    'icon_color' => 'white',
+                    'url'        => 'crud/lists',
+                    'can'        => 'notCliente',
+                ],
+                [
+                    'text'       => 'Gestión de Propuestas',
+                    'icon'       => 'fa-fw fas fa-lightbulb',
+                    'icon_color' => 'white',
+                    'url'        => 'strategic-suggestions',
+                    'can'        => 'administrador',
+                ],
+                [
+                    'text'       => 'Canal Estratégico',
+                    'icon'       => 'fa-fw fas fa-comments',
+                    'icon_color' => 'white',
+                    'url'        => 'strategic-suggestions',
+                    'can'        => 'coordventas',
+                ],
+                [
+                    'text'          => 'Prompt Treena',
+                    'icon'          => 'fa-fw fas fa-comment',
+                    'icon_color'    => 'white',
+                    'url'           => 'prompttreena',
+                    'can'           => 'administrador',
+                ],
+                [
+                    'text'          => 'Alertas',
+                    'icon'          => 'fa-fw fa fa-exclamation-triangle',
+                    'icon_color'    => 'white',
+                    'can'           => 'alertasapp.index',
+                    'url'           => 'alerts',
+                ],
+            ],
+        ],
+
+        [
+            'text'        => 'Pagos y servicios',
+            'icon'        => 'fa-fw fas fa-credit-card',
+            'icon_color'  => 'white',
+            'submenu' => [
+                [
+                    'text'       => 'Facturas',
+                    'icon'       => 'fa-fw fas fa-file-invoice-dollar',
+                    'icon_color' => 'white',
+                    'url'        => 'invoices',
+                    'can'        => 'administrador',
+                ],
+                [
+                    'text'        => 'Admin. Pagos',
+                    'icon'        => 'fa-fw fa fa-credit-card',
+                    'icon_color'  => 'white',
+                    'can'  => 'admin.payments',
+                    'submenu' => [
+                        [
+                            'text'          => 'Comprobantes',
+                            'icon'          => 'fa-fw fas fa-file-invoice',
+                            'icon_color'    => 'white',
+                            'url'           => 'comprobantes',
+                            'can'           => 'crud.comprobantes.index',
+                        ],
+                        [
+                            'text'          => 'Verif. Pagos de Cliente',
+                            'icon'          => 'fa-fw fab fa-cc-stripe',
+                            'icon_color'    => 'white',
+                            'url'           => 'stripeverify',
+                            'can'           => 'crud.stripeverify.index',
+                        ],
+                        [
+                            'text'          => 'Hist. Pagos Stripe',
+                            'icon'          => 'fa-fw fab fa-cc-stripe',
+                            'icon_color'    => 'white',
+                            'url'           => 'listLatestStripeData',
+                            'can'           => 'crud.stripeverify.index',
+                        ],
+                    ],
+                ],
+                [
+                    'text'          => 'Servicios',
+                    'icon'          => 'fa-fw fa fa-server',
+                    'icon_color'    => 'white',
+                    'can'           => 'crud.servicios.index',
+                    'url'           => 'servicios',
+                ],
+                [
+                    'text'        => 'Cupones',
+                    'icon'        => 'fa-fw fa fa-gift',
+                    'icon_color'  => 'white',
+                    'can'  => 'crud.coupons.index',
+                    'submenu' => [
+                        [
+                            'text'          => 'Cupones Generales',
+                            'icon'          => 'fa-fw fas fa-tags',
+                            'icon_color'    => 'white',
+                            'url'           => 'generalcoupons',
+                            'can'           => 'generalcoupons.index',
+                        ],
+                        [
+                            'text'          => 'Solicitudes de Cupones',
+                            'icon'          => 'fa-fw fas fa-inbox',
+                            'icon_color'    => 'white',
+                            'url'           => 'solicitudcupones',
+                            'can'           => 'crud.solicitudcupones.index',
+                        ],
+                        [
+                            'text'          => 'Cupones Generados',
+                            'icon'          => 'fa-fw fas fa-ticket-alt',
+                            'icon_color'    => 'white',
+                            'url'           => 'coupons',
+                            'can'           => 'crud.coupons.index',
+                        ],
+                    ],
+                ],
+                [
+                    'text'          => 'Banca Online 2026',
+                    'icon'          => 'fa-fw fas fa-university',
+                    'icon_color'    => 'white',
+                    'can'           => 'administrador',
+                    'url'           => 'admin/banca-online-2026',
+                ],
+                [
+                    'text'          => 'Calendarios',
+                    'icon'          => 'fa-fw fas fa-calendar-alt',
+                    'icon_color'    => 'white',
+                    'can'           => 'administrador',
+                    'url'           => 'admin/consultation-calendars',
+                ],
+                [
+                    'text'          => 'Referidos',
+                    'icon'          => 'fa-fw fas fa-handshake',
+                    'icon_color'    => 'white',
+                    'can'           => 'administrador',
+                    'url'           => 'admin/referral-codes',
+                ],
+            ],
+        ],
+
+        [
+            'text'        => 'Integraciones',
+            'icon'        => 'fa-fw fas fa-plug',
+            'icon_color'  => 'white',
+            'submenu' => [
                 [
                     'text'          => 'Migrar clientes',
                     'icon'          => 'fa-fw fas fa-file-import',
                     'icon_color'    => 'white',
                     'url'           => 'client-import',
                     'can'           => 'administrador',
+                ],
+                [
+                    'text'        => 'Teamleader',
+                    'icon'        => 'fa-fw fas fa-database',
+                    'icon_color'  => 'white',
+                    'can'  => ['tl.view', 'administrador'],
+                    'submenu' => [
+                        [
+                            'text'          => 'Jobs',
+                            'icon'          => 'fa-fw fas fa-tasks',
+                            'icon_color'    => 'white',
+                            'url'           => 'teamleader/jobs',
+                            'can'           => 'administrador',
+                        ],
+                        [
+                            'text'          => 'Contactos',
+                            'icon'          => 'fa-fw fas fa-users',
+                            'icon_color'    => 'white',
+                            'url'           => 'teamleader/contacts',
+                            'can'           => 'tl.view',
+                        ],
+                        [
+                            'text'          => 'Proyectos',
+                            'icon'          => 'fa-fw fas fa-project-diagram',
+                            'icon_color'    => 'white',
+                            'url'           => 'teamleader/projects',
+                            'can'           => 'tl.view',
+                        ],
+                        [
+                            'text'          => 'Archivos',
+                            'icon'          => 'fa-fw fas fa-paperclip',
+                            'icon_color'    => 'white',
+                            'url'           => 'teamleader/documents',
+                            'can'           => 'tl.view',
+                        ],
+                        [
+                            'text'          => 'Facturas',
+                            'icon'          => 'fa-fw fas fa-file-invoice',
+                            'icon_color'    => 'white',
+                            'url'           => 'teamleader/invoices',
+                            'can'           => 'tl.view',
+                        ],
+                    ],
+                ],
+                [
+                    'text'       => 'HubSpot Owners',
+                    'icon'       => 'fa-fw fas fa-id-badge',
+                    'icon_color' => 'white',
+                    'url'        => 'hubspot-owners',
+                    'can'        => 'administrador',
+                ],
+                [
+                    'text'        => 'Monday',
+                    'icon'        => 'fa-fw fas fa-calendar-check',
+                    'icon_color'  => 'white',
+                    'can'  => 'administrador',
+                    'submenu' => [
+                        [
+                            'text'          => 'Registrar en Monday',
+                            'icon'          => 'fa-fw fas fa-calendar-check',
+                            'icon_color'    => 'white',
+                            'url'           => 'mondayregistrar',
+                            'can'           => 'crud.mondayreportes.index',
+                        ],
+                    ],
+                ],
+            ],
+        ],
+
+        [
+            'text'        => 'Documentos y contenido',
+            'icon'        => 'fa-fw fas fa-folder-open',
+            'icon_color'  => 'white',
+            'submenu' => [
+                [
+                    'text'          => 'Documentos',
+                    'icon'          => 'fa-fw fas fa-file',
+                    'icon_color'    => 'white',
+                    'url'           => 'docs',
+                    'can'           => 'verdocs.index',
+                ],
+                [
+                    'text'          => 'Subir Documentos',
+                    'icon'          => 'fa-fw fas fa-file-upload',
+                    'icon_color'    => 'white',
+                    'url'           => 'admin/docs',
+                    'can'           => 'docs.upload',
+                ],
+                [
+                    'text'          => 'Control de documentos',
+                    'icon'          => 'fa-fw fas fa-file-import',
+                    'icon_color'    => 'white',
+                    'can'           => 'documentalista',
+                    'submenu' => [
+                        [
+                            'text'          => 'Libros',
+                            'icon'          => 'fa-fw fas fa-book-reader',
+                            'icon_color'    => 'white',
+                            'route'         => 'crud.books.index',
+                            'can'           => 'crud.books.index',
+                        ],
+                        [
+                            'text'          => 'Misceláneos',
+                            'icon'          => 'fa-fw fas fa-file-alt',
+                            'icon_color'    => 'white',
+                            'route'         => 'crud.miscelaneos.index',
+                            'can'           => 'crud.miscelaneos.index',
+                        ],
+                    ],
+                ],
+                [
+                    'text'          => 'Cargar Noticias',
+                    'icon'          => 'fa-fw fas fa-newspaper',
+                    'icon_color'    => 'white',
+                    'url'           => 'news/admin',
+                    'can'           => 'news.admin',
+                ],
+                [
+                    'text'          => 'Pasaportes Incorrectos',
+                    'icon'          => 'fa-fw fas fa-passport',
+                    'icon_color'    => 'white',
+                    'url'           => 'fixpassport',
+                    'can'           => 'administrador',
+                ],
+            ],
+        ],
+
+        [
+            'text'        => 'Genealogía y datos',
+            'icon'        => 'fa-fw fas fa-seedling',
+            'icon_color'  => 'white',
+            'submenu' => [
+                [
+                    'text'        => 'Genealogistas',
+                    'icon'        => 'fa-fw fab fa-pagelines',
+                    'icon_color'  => 'white',
+                    'can'  => ['genealogista', 'produccion'],
+                    'submenu' => [
+                        [
+                            'text'          => 'Clientes',
+                            'icon'          => 'fa-fw fas fa-id-card',
+                            'icon_color'    => 'white',
+                            'url'           => 'users',
+                            'can'           => 'crud.clients.index',
+                        ],
+                        [
+                            'text'          => 'Clientes y ancestros',
+                            'icon'          => 'fa-fw fas fa-user-plus',
+                            'icon_color'    => 'white',
+                            'route'         => 'crud.agclientes.index',
+                            'can'           => 'crud.agclientes.index',
+                        ],
+                        [
+                            'text'          => 'Clientes y familiares',
+                            'icon'          => 'fa-fw fas fa-user-shield',
+                            'icon_color'    => 'white',
+                            'route'         => 'crud.families.index',
+                            'can'           => 'crud.families.index',
+                        ],
+                        [
+                            'text'          => 'Grupos familiares',
+                            'icon'          => 'fa-fw fas fa-people-arrows',
+                            'icon_color'    => 'white',
+                            'route'         => 'family-groups.index',
+                            'can'           => 'genealogista',
+                        ],
+                        [
+                            'text'          => 'Últimas modificaciones',
+                            'icon'          => 'fa-fw fas fa-portrait',
+                            'icon_color'    => 'white',
+                            'url'           => 'no_definido',
+                            'can'           => 'no_definido',
+                        ],
+                        [
+                            'text'          => 'Documentos clientes',
+                            'icon'          => 'fa-fw fas fa-passport',
+                            'icon_color'    => 'white',
+                            'route'         => 'crud.files.index',
+                            'can'           => 'crud.files.index',
+                        ],
+                    ],
+                ],
+                [
+                    'text'        => 'GEDCOM',
+                    'icon'        => 'fa-fw fas fa-project-diagram',
+                    'icon_color'  => 'white',
+                    'can'  => ['administrador'],
+                    'submenu' => [
+                        [
+                            'text'          => 'Importar / Exportar',
+                            'icon'          => 'fa-fw fas fa-file-import',
+                            'icon_color'    => 'white',
+                            'route'         => 'gedcomexport',
+                            'can'           => ['administrador'],
+                        ],
+                    ],
+                ],
+                [
+                    'text'        => 'Consultas',
+                    'icon'        => 'fa-fw fas fa-search',
+                    'icon_color'  => 'white',
+                    'can'  => 'consultas.onidex.index',
+                    'submenu' => [
+                        [
+                            'text'          => 'Registros Onidex',
+                            'icon'          => 'fa-fw fas fa-id-card',
+                            'icon_color'    => 'white',
+                            'route'         => 'consultas.onidex.index',
+                            'can'           => 'consultas.onidex.index',
+                        ],
+                        [
+                            'text'          => 'Diex',
+                            'icon'          => 'fa-fw fas fa-portrait',
+                            'icon_color'    => 'white',
+                            'url'           => 'roles',
+                            'can'           => 'no_definido',
+                        ],
+                        [
+                            'text'          => 'Maisanta',
+                            'icon'          => 'fa-fw fas fa-portrait',
+                            'icon_color'    => 'white',
+                            'url'           => 'permissions',
+                            'can'           => 'no_definido',
+                        ],
+                    ],
+                ],
+                [
+                    'text'        => 'Tablas Generales',
+                    'icon'        => 'fa-fw fas fa-table',
+                    'icon_color'  => 'white',
+                    'can'  => 'administrador',
+                    'submenu' => [
+                        [
+                            'text'          => 'Países',
+                            'icon'          => 'fa-fw fas fa-flag',
+                            'icon_color'    => 'white',
+                            'route'         => 'crud.countries.index',
+                            'can'           => 'administrador',
+                        ],
+                        [
+                            'text'          => 'Parentescos',
+                            'icon'          => 'fa-fw fab fa-first-order',
+                            'icon_color'    => 'white',
+                            'route'         => 'crud.parentescos.index',
+                            'can'           => 'administrador',
+                        ],
+                        [
+                            'text'          => 'Lado - Parentesco',
+                            'icon'          => 'fa-fw fas fa-fingerprint',
+                            'icon_color'    => 'white',
+                            'route'         => 'crud.lados.index',
+                            'can'           => 'administrador',
+                        ],
+                        [
+                            'text'          => 'Conexión - Parentesco',
+                            'icon'          => 'fa-fw fas fa-sitemap',
+                            'icon_color'    => 'white',
+                            'route'         => 'crud.connections.index',
+                            'can'           => 'administrador',
+                        ],
+                        [
+                            'text'          => 'Tipos de documentos',
+                            'icon'          => 'fa-fw fas fa-file-alt',
+                            'icon_color'    => 'white',
+                            'route'         => 'crud.t_files.index',
+                            'can'           => 'administrador',
+                        ],
+                        [
+                            'text'          => 'Tipos de formatos',
+                            'icon'          => 'fa-fw fas fa-print',
+                            'icon_color'    => 'white',
+                            'route'         => 'crud.formats.index',
+                            'can'           => 'administrador',
+                        ],
+                    ],
+                ],
+            ],
+        ],
+
+        [
+            'text'        => 'Administración',
+            'icon'        => 'fa-fw fas fa-sliders-h',
+            'icon_color'  => 'white',
+            'submenu' => [
+                [
+                    'text'          => 'Usuarios (COS)',
+                    'icon'          => 'fa-fw fas fa-users-cog',
+                    'icon_color'    => 'white',
+                    'url'           => 'users',
+                    'can'           => 'crud.users.index',
                 ],
                 [
                     'text'          => 'Roles',
@@ -291,11 +755,69 @@ return [
                     'can'           => 'crud.permissions.index',
                 ],
                 [
-                    'text'       => 'HubSpot Owners',
-                    'icon'       => 'fa-fw fas fa-id-badge',
-                    'icon_color' => 'white',
-                    'url'        => 'hubspot-owners',
-                    'can'        => 'administrador',
+                    'text'        => 'Herramientas del COS',
+                    'icon'        => 'fa-fw fas fa-cogs',
+                    'icon_color'  => 'white',
+                    'can'  => 'admin.payments',
+                    'submenu' => [
+                        [
+                            'text'          => 'Visitas a COS',
+                            'icon'          => 'fa-fw fas fa-chart-line',
+                            'icon_color'    => 'white',
+                            'url'           => 'cosvisitas',
+                            'can'           => 'cosvisitas.index',
+                        ],
+                        [
+                            'text'          => 'Textos del COS',
+                            'icon'          => 'fa-fw fas fa-edit',
+                            'icon_color'    => 'white',
+                            'url'           => 'admin/procesos',
+                            'can'           => 'cosvisitas.index',
+                        ],
+                    ],
+                ],
+                [
+                    'text'        => 'Reportes',
+                    'icon'        => 'fa-fw fa fa-file',
+                    'icon_color'  => 'white',
+                    'can'  => 'reportes.index',
+                    'submenu' => [
+                        [
+                            'text'          => 'Panel Estadístico',
+                            'icon'          => 'fa-fw fa fa-chart-line',
+                            'icon_color'    => 'white',
+                            'url'           => 'reportes/dashboard',
+                            'can'           => 'reportes.index',
+                        ],
+                        [
+                            'text'          => 'Reportes Diarios',
+                            'icon'          => 'fa-fw fa fa-file',
+                            'icon_color'    => 'white',
+                            'url'           => 'diarioindex',
+                            'can'           => 'reportes.index',
+                        ],
+                        [
+                            'text'          => 'Reportes Semanales',
+                            'icon'          => 'fa-fw fa fa-file',
+                            'icon_color'    => 'white',
+                            'url'           => 'semanalindex',
+                            'can'           => 'administrador',
+                        ],
+                        [
+                            'text'          => 'Reportes Mensuales',
+                            'icon'          => 'fa-fw fa fa-file',
+                            'icon_color'    => 'white',
+                            'url'           => 'mensualindex',
+                            'can'           => 'administrador',
+                        ],
+                        [
+                            'text'          => 'Reportes Anuales',
+                            'icon'          => 'fa-fw fa fa-file',
+                            'icon_color'    => 'white',
+                            'url'           => 'anualindex',
+                            'can'           => 'administrador',
+                        ],
+                    ],
                 ],
                 [
                     'text'       => 'Auditoría de accesos',
@@ -304,532 +826,48 @@ return [
                     'url'        => 'request-audits',
                     'can'        => 'administrador',
                 ],
-            ],
-        ],
-        [
-            'text'        => 'Migración Teamleader',
-            'icon'        => 'fa-fw fas fa-database',
-            'icon_color'  => 'white',
-            'can'  => ['tl.view', 'administrador'],
-            'submenu' => [
                 [
-                    'text'          => 'Jobs',
-                    'icon'          => 'fa-fw fas fa-tasks',
-                    'icon_color'    => 'white',
-                    'url'           => 'teamleader/jobs',
-                    'can'           => 'administrador',
-                ],
-                [
-                    'text'          => 'Contactos',
-                    'icon'          => 'fa-fw fas fa-users',
-                    'icon_color'    => 'white',
-                    'url'           => 'teamleader/contacts',
-                    'can'           => 'tl.view',
-                ],
-                [
-                    'text'          => 'Proyectos',
-                    'icon'          => 'fa-fw fas fa-user-tag',
-                    'icon_color'    => 'white',
-                    'url'           => 'teamleader/projects',
-                    'can'           => 'tl.view',
-                ],
-                [
-                    'text'          => 'Archivos',
-                    'icon'          => 'fa-fw fas fa-paperclip',
-                    'icon_color'    => 'white',
-                    'url'           => 'teamleader/documents',
-                    'can'           => 'tl.view',
-                ],
-                [
-                    'text'          => 'Facturas',
-                    'icon'          => 'fa-fw fas fa-user-tag',
-                    'icon_color'    => 'white',
-                    'url'           => 'teamleader/invoices',
-                    'can'           => 'tl.view',
-                ]
-            ],
-        ],
-        [
-            'text'    => 'Tareas',
-            'icon'    => 'fas fa-fw fa-tasks',
-            'can'     => 'tasks.view',
-            'submenu' => [
-                [
-                    'text' => 'Mis tareas',
-                    'url'  => 'tasks',
-                    'icon' => 'fas fa-fw fa-clipboard-list',
-                    'can'     => 'tasks.view',
-                ],
-                [
-                    'text'       => 'Panel admin',
-                    'url'        => 'tasks/admin',
-                    'icon'       => 'fas fa-fw fa-cogs',
-                    'can'        => 'administrador',   // ← solo admins lo ven
-                ],
-                [
-                    'text'       => 'Resumen',
-                    'url'        => 'tasks/admin/summary',
-                    'icon'       => 'fas fa-fw fa-chart-bar',
-                    'can'        => 'administrador',
-                ],
-                [
-                    'text'       => 'Reportes',
-                    'url'        => 'tasks/admin/reports',
-                    'icon'       => 'fas fa-fw fa-file-excel',
-                    'can'        => 'administrador',
-                ],
-            ],
-        ],
-        [
-            'text'       => 'Facturas',
-            'icon'       => 'fa-fw fas fa-file',
-            'icon_color' => 'white',
-            'url'        => 'invoices',
-            'can'        => 'administrador',
-        ],
-        [
-            'text'       => 'Gestión de Propuestas',
-            'icon'       => 'fa-fw fas fa-lightbulb',
-            'icon_color' => 'white',
-            'url'        => 'strategic-suggestions',
-            'can'        => 'administrador',
-        ],
-
-        [
-            'text'       => 'Canal Estratégico',
-            'icon'       => 'fa-fw fas fa-comments',
-            'icon_color' => 'white',
-            'url'        => 'strategic-suggestions',
-            'can'        => 'coordventas',
-        ],
-        [
-            'text'          => 'Clientes (COS)',
-            'icon'          => 'fa-fw fas fa-users',
-            'icon_color'    => 'white',
-            'url'           => 'users',
-            'can'           => 'users.viewlist',
-        ],
-        [
-            'text'       => 'Ventas pendientes',
-            'icon'       => 'fa-fw fas fa-list',
-            'icon_color' => 'white',
-            'url'        => 'crud/lists',
-            'can'        => 'notCliente', // 👈 clave
-        ],
-        /* *** Pasaportes Incorrectos *** */
-        [
-            'text'          => 'Pasaportes Incorrectos',
-            'icon'          => 'fa-fw fas fa-users',
-            'icon_color'    => 'white',
-            'url'           => 'fixpassport',
-            'can'           => 'administrador',
-        ],
-        [
-            'text'          => 'Documentos',
-            'icon'          => 'fa-fw fas fa-file',
-            'icon_color'    => 'white',
-            'url'           => 'docs',
-            'can'           => 'verdocs.index',
-        ],
-        [
-            'text'          => 'Subir Documentos',
-            'icon'          => 'fa-fw fas fa-file',
-            'icon_color'    => 'white',
-            'url'           => 'admin/docs',
-            'can'           => 'docs.upload',
-        ],
-        [
-            'text'          => 'Cargar Noticias',
-            'icon'          => 'fa-fw fas fa-file',
-            'icon_color'    => 'white',
-            'url'           => 'news/admin',
-            'can'           => 'news.admin',
-        ],
-        /* *** Visitas a COS *** */
-        [
-            'text'        => 'Herramientas del COS',
-            'icon'        => 'fa-fw fas fa-cogs',
-            'icon_color'  => 'white',
-            'can'  => 'admin.payments',
-            'submenu' => [
-                [
-                    'text'          => 'Visitas a COS',
-                    'icon'          => 'fa-fw fas fa-chart-line',
-                    'icon_color'    => 'white',
-                    'url'           => 'cosvisitas',
-                    'can'           => 'cosvisitas.index',
-                ],
-                [
-                    'text'          => 'Textos del COS',
-                    'icon'          => 'fa-fw fas fa-edit',
-                    'icon_color'    => 'white',
-                    'url'           => 'admin/procesos',
-                    'can'           => 'cosvisitas.index',
-                ],
-            ],
-        ],
-        [
-            'text'          => 'Prompt Treena',
-            'icon'          => 'fa-fw fas fa-comment',
-            'icon_color'    => 'white',
-            'url'           => 'prompttreena',
-            'can'           => 'administrador',
-        ],
-
-        /* *** Administracion de PAGOS *** */
-        [
-            'text'        => 'Admin. Pagos',
-            'icon'        => 'fa-fw fa fa-credit-card',
-            'icon_color'  => 'white',
-            'can'  => 'admin.payments',
-            'submenu' => [
-                /* *** COMPROBANTES DE PAGO *** */
-                [
-                    'text'          => 'Comprobantes',
-                    'icon'          => 'fa-fw fas fa-file-invoice',
-                    'icon_color'    => 'white',
-                    'url'           => 'comprobantes',
-                    'can'           => 'crud.comprobantes.index',
-                ],
-
-                /* *** UTILIDADES USANDO LA API DE STRIPE *** */
-                [
-                    'text'          => 'Verif. Pagos de Cliente',
-                    'icon'          => 'fa-fw fab fa-cc-stripe',
-                    'icon_color'    => 'white',
-                    'url'           => 'stripeverify',
-                    'can'           => 'crud.stripeverify.index',
-                ],
-
-                [
-                    'text'          => 'Hist. Pagos Stripe',
-                    'icon'          => 'fa-fw fab fa-cc-stripe',
-                    'icon_color'    => 'white',
-                    'url'           => 'listLatestStripeData',
-                    'can'           => 'crud.stripeverify.index',
-                ]
-            ],
-        ],
-
-        /* *** MONDAY Y SUS RESPECTIVAS MÉTRICAS *** */
-        [
-            'text'        => 'Monday',
-            'icon'        => 'fa-fw fas fa-calendar-check',
-            'icon_color'  => 'white',
-            'can'  => 'administrador',
-            'submenu' => [
-                /*[
-                    'text'          => 'Reportes',
-                    'icon'          => 'fa-fw fas fa-calendar-check',
-                    'icon_color'    => 'white',
-                    'url'           => 'mondayreportes',
-                    'can'           => 'crud.mondayreportes.index',
-                ],*/
-                [
-                    'text'          => 'Registrar en Monday',
-                    'icon'          => 'fa-fw fas fa-calendar-check',
-                    'icon_color'    => 'white',
-                    'url'           => 'mondayregistrar',
-                    'can'           => 'crud.mondayreportes.index',
-                ]
-            ],
-        ],
-
-        /* *** CUPONES *** */
-        [
-            'text'        => 'Cupones',
-            'icon'        => 'fa-fw fa fa-gift',
-            'icon_color'  => 'white',
-            'can'  => 'crud.coupons.index',
-            'submenu' => [
-                [
-                    'text'          => 'Cupones Generales',
-                    'icon'          => 'fa-fw fas fa-calendar-check',
-                    'icon_color'    => 'white',
-                    'url'           => 'generalcoupons',
-                    'can'           => 'generalcoupons.index',
-                ],
-                [
-                    'text'          => 'Solicitudes de Cupones',
-                    'icon'          => 'fa-fw fas fa-calendar-check',
-                    'icon_color'    => 'white',
-                    'url'           => 'solicitudcupones',
-                    'can'           => 'crud.solicitudcupones.index',
-                ],
-                [
-                    'text'          => 'Cupones Generados',
-                    'icon'          => 'fa-fw fas fa-calendar-check',
-                    'icon_color'    => 'white',
-                    'url'           => 'coupons',
-                    'can'           => 'crud.coupons.index',
-                ]
-            ],
-        ],
-
-        /* *** Servicios *** */
-        [
-            'text'          => 'Servicios',
-            'icon'          => 'fa-fw fa fa-server',
-            'icon_color'    => 'white',
-            'can'           => 'crud.servicios.index',
-            'url'           => 'servicios',
-        ],
-        [
-            'text'          => 'Banca Online 2026',
-            'icon'          => 'fa-fw fas fa-credit-card',
-            'icon_color'    => 'white',
-            'can'           => 'administrador',
-            'url'           => 'admin/banca-online-2026',
-        ],
-        [
-            'text'          => 'Calendarios',
-            'icon'          => 'fa-fw fas fa-calendar-alt',
-            'icon_color'    => 'white',
-            'can'           => 'administrador',
-            'url'           => 'admin/consultation-calendars',
-        ],
-        [
-            'text'          => 'Referidos',
-            'icon'          => 'fa-fw fas fa-handshake',
-            'icon_color'    => 'white',
-            'can'           => 'administrador',
-            'url'           => 'admin/referral-codes',
-        ],
-
-        /* *** Alertas *** */
-        [
-            'text'          => 'Alertas',
-            'icon'          => 'fa-fw fa fa-exclamation-triangle',
-            'icon_color'    => 'white',
-            'can'           => 'alertasapp.index',
-            'url'           => 'alerts',
-        ],
-
-
-        /* *** Reportes *** */
-        [
-            'text'        => 'Reportes',
-            'icon'        => 'fa-fw fa fa-file',
-            'icon_color'  => 'white',
-            'can'  => 'reportes.index',
-            'submenu' => [
-                [
-                    'text'          => 'Panel Estadistico',
-                    'icon'          => 'fa-fw fa fa-chart-line',
-                    'icon_color'    => 'white',
-                    'url'           => 'reportes/dashboard',
-                    'can'           => 'reportes.index',
-                ],
-                [
-                    'text'          => 'Reportes Diarios',
-                    'icon'          => 'fa-fw fa fa-file',
-                    'icon_color'    => 'white',
-                    'url'           => 'diarioindex',
-                    'can'           => 'reportes.index',
-                ],
-                [
-                    'text'          => 'Reportes Semanales',
-                    'icon'          => 'fa-fw fa fa-file',
-                    'icon_color'    => 'white',
-                    'url'           => 'semanalindex',
-                    'can'           => 'administrador',
-                ],
-                [
-                    'text'          => 'Reportes Mensuales',
-                    'icon'          => 'fa-fw fa fa-file',
-                    'icon_color'    => 'white',
-                    'url'           => 'mensualindex',
-                    'can'           => 'administrador',
-                ],
-                [
-                    'text'          => 'Reportes Anuales',
-                    'icon'          => 'fa-fw fa fa-file',
-                    'icon_color'    => 'white',
-                    'url'           => 'anualindex',
-                    'can'           => 'administrador',
-                ],
-            ],
-        ],
-
-        /* *** MENÚ PARA GENEALOGISTAS E INVESTIGADORES *** */
-        [
-            'text'        => 'Genealogistas',
-            'icon'        => 'fa-fw fab fa-pagelines',
-            'icon_color'  => 'white',
-            'can'  => ['genealogista', 'produccion'],
-            'submenu' => [
-                [
-                    'text'          => 'Clientes',
-                    'icon'          => 'fa-fw fas fa-id-card',
-                    'icon_color'    => 'white',
-                    'route'         => '',
-                    'can'           => 'crud.clients.index',
-                ],
-                [
-                    'text'          => 'Clientes y ancestros',
-                    'icon'          => 'fa-fw fas fa-user-plus',
-                    'icon_color'    => 'white',
-                    'route'         => 'crud.agclientes.index',
-                    'can'           => 'crud.agclientes.index',
-                ],
-                [
-                    'text'          => 'Clientes y familiares',
-                    'icon'          => 'fa-fw fas fa-user-shield',
-                    'icon_color'    => 'white',
-                    'route'         => 'crud.families.index',
-                    'can'           => 'crud.families.index',
-                ],
-                [
-                    'text'          => 'Grupos familiares',
-                    'icon'          => 'fa-fw fas fa-people-arrows',
-                    'icon_color'    => 'white',
-                    'route'         => 'family-groups.index',
-                    'can'           => 'genealogista',
-                ],
-                [
-                    'text'          => 'Últimas modificaciones',
-                    'icon'          => 'fa-fw fas fa-portrait',
-                    'icon_color'    => 'white',
-                    'url'           => 'no_definido',
-                    'can'           => 'no_definido',
-                ],
-                [
-                    'text'          => 'Documentos clientes',
-                    'icon'          => 'fa-fw fas fa-passport',
-                    'icon_color'    => 'white',
-                    'route'         => 'crud.files.index',
-                    'can'           => 'crud.files.index',
-                ],
-            ],
-        ],
-
-        [
-            'text'        => 'Herramientas GEDCOM',
-            'icon'        => 'fa-fw fab fa-pagelines',
-            'icon_color'  => 'white',
-            'can'  => ['administrador'],
-            'submenu' => [
-                [
-                    'text'          => 'Importar / Exportar',
-                    'icon'          => 'fa-fw fas fa-file-import',
-                    'icon_color'    => 'white',
-                    'route'         => 'gedcomexport',
-                    'can'           => ['administrador'],
-                ],
-            ],
-        ],
-
-        /* *** REGISTROS ONIDEX, DIEX Y MAISANTA *** */
-        [
-            'text'        => 'Consultas',
-            'icon'        => 'fa-fw fas fa-search',
-            'icon_color'  => 'white',
-            'can'  => 'consultas.onidex.index',
-            'submenu' => [
-                [
-                    'text'          => 'Registros Onidex',
-                    'icon'          => 'fa-fw fas fa-id-card',
-                    'icon_color'    => 'white',
-                    /* 'url'           => 'consultaodx', */
-                    'route'         => 'consultas.onidex.index',
-                    'can'           => 'consultas.onidex.index',
-                ],
-                [
-                    'text'          => 'Diex',
-                    'icon'          => 'fa-fw fas fa-portrait',
-                    'icon_color'    => 'white',
-                    'url'           => 'roles',
-                    'can'           => 'no_definido',
-                ],
-                [
-                    'text'          => 'Maisanta',
-                    'icon'          => 'fa-fw fas fa-portrait',
-                    'icon_color'    => 'white',
-                    'url'           => 'permissions',
-                    'can'           => 'no_definido',
-                ],
-            ],
-        ],
-
-        /* *** MENÚ PARA DOCUMENTALISTAS *** */
-        [
-            'text'        => 'Control de documentos',
-            'icon'        => 'fa-fw fas fa-file-import',
-            'icon_color'  => 'white',
-            'can'  => 'documentalista',
-            'submenu' => [
-                /* [
-                    'text'          => 'Biblioteca',
-                    'icon'          => 'fas fa-book-reader',
-                    'icon_color'    => 'white',
-                    'route'         => 'crud.libraries.index',
-                    'can'           => 'crud.libraries.index',
-                ], */
-                [
-                    'text'          => 'Libros',
-                    'icon'          => 'fa-fw fas fa-book-reader',
-                    'icon_color'    => 'white',
-                    'route'         => 'crud.books.index',
-                    'can'           => 'crud.books.index',
-                ],
-                [
-                    'text'          => 'Miscelaneos',
-                    'icon'          => 'fa-fw fas fa-file',
-                    'icon_color'    => 'white',
-                    'route'         => 'crud.miscelaneos.index',
-                    'can'           => 'crud.miscelaneos.index',
-                ],
-            ],
-        ],
-
-        /* *** TABLAS GENERALES *** */
-        [
-            'text'        => 'Tablas Generales',
-            'icon'        => 'fa-fw fas fa-table',
-            'icon_color'  => 'white',
-            'can'  => 'administrador',
-            'submenu' => [
-                [
-                    'text'          => 'Paises',
-                    'icon'          => 'fa-fw fas fa-flag',
-                    'icon_color'    => 'white',
-                    'route'         => 'crud.countries.index',
-                    'can'           => 'administrador',
-                ],
-                [
-                    'text'          => 'Parentescos',
-                    'icon'          => 'fa-fw fab fa-first-order',
-                    'icon_color'    => 'white',
-                    'route'         => 'crud.parentescos.index',
-                    'can'           => 'administrador',
-                ],
-                [
-                    'text'          => 'Lado - Parentesco',
-                    'icon'          => 'fa-fw fas fa-fingerprint',
-                    'icon_color'    => 'white',
-                    'route'         => 'crud.lados.index',
-                    'can'           => 'administrador',
-                ],
-                [
-                    'text'          => 'Conexión - Parentesco',
-                    'icon'          => 'fa-fw fas fa-sitemap',
-                    'icon_color'    => 'white',
-                    'route'         => 'crud.connections.index',
-                    'can'           => 'administrador',
-                ],
-                [
-                    'text'          => 'Tipos de documentos',
-                    'icon'          => 'fa-fw fas fa-file-alt',
-                    'icon_color'    => 'white',
-                    'route'         => 'crud.t_files.index',
-                    'can'           => 'administrador',
-                ],
-                [
-                    'text'          => 'Tipos de formatos',
-                    'icon'          => 'fa-fw fas fa-print',
-                    'icon_color'    => 'white',
-                    'route'         => 'crud.formats.index',
-                    'can'           => 'administrador',
+                    'text'        => 'Pruebas',
+                    'icon'        => 'fa-fw fas fa-flask',
+                    'icon_color'  => 'white',
+                    'can'  => 'administrador',
+                    'submenu' => [
+                        [
+                            'text'          => 'Flex Tailwind',
+                            'icon'          => 'fa-fw fab fa-buromobelexperte',
+                            'icon_color'    => 'white',
+                            'url'           => 'flex',
+                            'can'           => 'administrador',
+                        ],
+                        [
+                            'text'          => 'Pruebas de Correos',
+                            'icon'          => 'fa-fw fas fa-envelope',
+                            'icon_color'    => 'white',
+                            'url'           => 'testcorreos',
+                            'can'           => 'administrador',
+                        ],
+                        [
+                            'text'          => 'MVC Agclientes',
+                            'icon'          => 'fa-fw fab fa-intercom',
+                            'icon_color'    => 'white',
+                            'url'           => 'agclientesp',
+                            'can'           => 'administrador',
+                        ],
+                        [
+                            'text'          => 'Ventana Modal',
+                            'icon'          => 'fa-fw fas fa-window-restore',
+                            'icon_color'    => 'white',
+                            'url'           => 'vmodal',
+                            'can'           => 'administrador',
+                        ],
+                        [
+                            'text'          => 'Enlace para registro',
+                            'icon'          => 'fa-fw fas fa-user-circle',
+                            'icon_color'    => 'white',
+                            'url'           => 'registro',
+                            'can'           => 'administrador',
+                        ],
+                    ],
                 ],
             ],
         ],
@@ -905,52 +943,6 @@ return [
             'route'         => 'clientes.salir',
             'can'           => 'cliente',
         ],
-
-        /* *** PRUEBAS *** */
-        [
-            'text'        => 'Pruebas',
-            'icon'        => 'fa-fw fas fa-grimace',
-            'icon_color'  => 'yellow',
-            'can'  => 'administrador',
-            'submenu' => [
-                [
-                    'text'          => 'Flex Tailwind',
-                    'icon'          => 'fa-fw fab fa-buromobelexperte',
-                    'icon_color'    => 'yellow',
-                    'url'           => 'flex',
-                    'can'           => 'administrador',
-                ],
-                [
-                    'text'          => 'Pruebas de Correos',
-                    'icon'          => 'fa-fw fas fa-envelope',
-                    'icon_color'    => 'yellow',
-                    'url'           => 'testcorreos',
-                    'can'           => 'administrador',
-                ],
-                [
-                    'text'          => 'MVC Agclientes',
-                    'icon'          => 'fa-fw fab fa-intercom',
-                    'icon_color'    => 'blue',
-                    'url'           => 'agclientesp',
-                    'can'           => 'administrador',
-                ],
-                [
-                    'text'          => 'Ventana Modal',
-                    'icon'          => 'fa-fw fas fa-window-restore',
-                    'icon_color'    => 'red',
-                    'url'           => 'vmodal',
-                    'can'           => 'administrador',
-                ],
-                [
-                    'text'          => 'Enlace para registro',
-                    'icon'          => 'fa-fw fas fa-user-circle',
-                    'icon_color'    => 'green',
-                    'url'           => 'registro',
-                    'can'           => 'administrador',
-                ],
-            ],
-        ],
-
 
         [
             'header' => 'account_settings',

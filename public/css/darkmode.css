@@ -1,5 +1,6 @@
 body.dark-mode {
   --sefar-surface: #071522;
+  --sefar-surface-alt: #0b1d2b;
   --sefar-page: #000d1a;
   --sefar-primary-soft: #0c2230;
   --sefar-border: rgba(219, 234, 242, 0.16);
@@ -8,6 +9,45 @@ body.dark-mode {
   --sefar-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
   background-color: var(--sefar-page) !important;
   color: var(--sefar-text) !important;
+}
+
+body.dark-mode .main-header,
+body.dark-mode .sefar-topbar.main-header {
+  background: linear-gradient(90deg, #061f2d 0%, #0a3449 58%, #0c435c 100%) !important;
+  border-bottom-color: rgba(219, 234, 242, 0.14) !important;
+  color: var(--sefar-text) !important;
+}
+
+body.dark-mode .main-header .nav-link,
+body.dark-mode .sefar-topbar .nav-link {
+  color: var(--sefar-text) !important;
+}
+
+body.dark-mode .main-header .nav-link:hover,
+body.dark-mode .sefar-topbar .nav-link:hover {
+  background-color: rgba(219, 234, 242, 0.12) !important;
+}
+
+body.dark-mode .main-sidebar,
+body.dark-mode .sefar-sidebar.main-sidebar {
+  background: linear-gradient(180deg, #092b3d 0%, #061d2a 45%, #03131e 100%) !important;
+}
+
+body.dark-mode .sefar-brand.brand-link,
+body.dark-mode .brand-link,
+body.dark-mode .main-sidebar .user-panel {
+  border-color: rgba(219, 234, 242, 0.13) !important;
+}
+
+body.dark-mode .main-sidebar .nav-sidebar .nav-link {
+  color: rgba(238, 246, 248, 0.82) !important;
+}
+
+body.dark-mode .main-sidebar .nav-sidebar .nav-link:hover,
+body.dark-mode .main-sidebar .nav-sidebar .nav-link.active,
+body.dark-mode .main-sidebar .nav-sidebar .menu-open > .nav-link {
+  background-color: rgba(219, 234, 242, 0.12) !important;
+  color: #ffffff !important;
 }
 
 body.dark-mode .content,
@@ -19,7 +59,24 @@ body.dark-mode .content-wrapper {
 
 body.dark-mode .bg-white,
 body.dark-mode .card,
+body.dark-mode .card-header,
+body.dark-mode .card-footer,
 body.dark-mode .modal-content,
+body.dark-mode .modal-header,
+body.dark-mode .modal-footer,
+body.dark-mode .dropdown-menu,
+body.dark-mode .list-group-item,
+body.dark-mode .input-group-text,
+body.dark-mode .custom-file-label,
+body.dark-mode .select2-dropdown,
+body.dark-mode .select2-container--default .select2-selection--single,
+body.dark-mode .select2-container--default .select2-selection--multiple,
+body.dark-mode .daterangepicker,
+body.dark-mode .swal2-popup,
+body.dark-mode .toast,
+body.dark-mode .info-box,
+body.dark-mode .small-box,
+body.dark-mode .callout,
 body.dark-mode .sefar-card,
 body.dark-mode .gedcom-panel,
 body.dark-mode .gedcom-topbar,
@@ -32,6 +89,9 @@ body.dark-mode .contentmodaladdfamiliar {
 body.dark-mode input,
 body.dark-mode select,
 body.dark-mode textarea,
+body.dark-mode .form-control,
+body.dark-mode .custom-select,
+body.dark-mode .select2-container--default .select2-selection__rendered,
 body.dark-mode .paginate_button,
 body.dark-mode .page-link,
 body.dark-mode .sefar-form input[type='text'],
@@ -43,6 +103,19 @@ body.dark-mode .gedcom-field input[type='file'] {
   background-color: #05111c !important;
   color: var(--sefar-text) !important;
   border-color: rgba(219, 234, 242, 0.22) !important;
+}
+
+body.dark-mode .select2-container--default .select2-selection__choice,
+body.dark-mode .select2-results__option,
+body.dark-mode .dropdown-item {
+  background-color: var(--sefar-surface-alt) !important;
+  color: var(--sefar-text) !important;
+}
+
+body.dark-mode .dropdown-item:hover,
+body.dark-mode .select2-results__option--highlighted {
+  background-color: var(--sefar-primary-soft) !important;
+  color: #ffffff !important;
 }
 
 body.dark-mode input::placeholder,
@@ -74,6 +147,42 @@ body.dark-mode .sefar-table td,
 body.dark-mode .gedcom-table th,
 body.dark-mode .gedcom-table td {
   color: var(--sefar-text) !important;
+}
+
+body.dark-mode a:not(.nav-link):not(.brand-link):not(.btn) {
+  color: #8fd8ff;
+}
+
+body.dark-mode .table,
+body.dark-mode .table td,
+body.dark-mode .table th,
+body.dark-mode .dataTable,
+body.dark-mode .dataTable td,
+body.dark-mode .dataTable th,
+body.dark-mode .styled-table,
+body.dark-mode .styled-table td,
+body.dark-mode .styled-table th,
+body.dark-mode .users-table,
+body.dark-mode .users-table td,
+body.dark-mode .users-table th {
+  background-color: transparent !important;
+  border-color: var(--sefar-border) !important;
+  color: var(--sefar-text) !important;
+}
+
+body.dark-mode .table thead th,
+body.dark-mode .dataTable thead th,
+body.dark-mode .styled-table thead th,
+body.dark-mode .users-table thead th {
+  background-color: var(--sefar-primary-soft) !important;
+  color: var(--sefar-text) !important;
+}
+
+body.dark-mode .table-hover tbody tr:hover,
+body.dark-mode .dataTable tbody tr:hover,
+body.dark-mode .styled-table tbody tr:hover,
+body.dark-mode .users-table tbody tr:hover {
+  background-color: #0b2232 !important;
 }
 
 body.dark-mode .sefar-page-header p,
@@ -127,8 +236,33 @@ body.dark-mode .gedcom-table th,
 body.dark-mode .gedcom-table td,
 body.dark-mode .gedcom-export-row,
 body.dark-mode .gedcom-form-footer,
+body.dark-mode .card-header,
+body.dark-mode .card-footer,
+body.dark-mode .modal-header,
+body.dark-mode .modal-footer,
+body.dark-mode .dropdown-divider,
 body.dark-mode .addborderbottom {
   border-color: var(--sefar-border) !important;
+}
+
+body.dark-mode .btn-default,
+body.dark-mode .btn-light,
+body.dark-mode .btn-outline-secondary {
+  background-color: var(--sefar-primary-soft) !important;
+  border-color: var(--sefar-border) !important;
+  color: var(--sefar-text) !important;
+}
+
+body.dark-mode .page-item.disabled .page-link,
+body.dark-mode .dataTables_info,
+body.dark-mode .dataTables_length,
+body.dark-mode .dataTables_filter {
+  color: var(--sefar-muted) !important;
+}
+
+body.dark-mode .badge,
+body.dark-mode .badge span {
+  color: #ffffff !important;
 }
 
 body.dark-mode .badge-paid {
