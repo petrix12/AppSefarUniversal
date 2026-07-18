@@ -71,9 +71,33 @@
       sidebar.prepend(canvas);
     }
 
+    if (!sidebar.querySelector('.sefar-sidebar-scan')) {
+      const scan = document.createElement('span');
+      scan.className = 'sefar-sidebar-scan';
+      scan.setAttribute('aria-hidden', 'true');
+      sidebar.appendChild(scan);
+    }
+
     sidebar.querySelectorAll('.nav-sidebar .has-treeview').forEach((item) => {
       item.classList.add('sefar-menu-group');
     });
+
+    const nav = sidebar.querySelector('.nav-sidebar');
+
+    if (nav) {
+      const items = Array.from(nav.children);
+      const adminItem = items.find((item) => {
+        const link = item.children[0];
+        const label = link ? link.querySelector('p') : null;
+        const text = label ? label.textContent.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '';
+
+        return text === 'Administracion';
+      });
+
+      if (adminItem && nav.firstElementChild !== adminItem) {
+        nav.insertBefore(adminItem, nav.firstElementChild);
+      }
+    }
   };
 
   const animateNavigation = async (sidebar) => {
@@ -84,6 +108,7 @@
     }
 
     const mm = gsap.matchMedia();
+    sidebar.classList.add('sefar-gsap-active');
 
     mm.add(
       {
@@ -113,6 +138,17 @@
           ease: 'power2.out',
           clearProps: 'visibility,opacity,transform',
         });
+
+        gsap.fromTo('.sefar-sidebar-scan',
+          { y: -180, autoAlpha: 0 },
+          {
+            y: () => sidebar.getBoundingClientRect().height + 220,
+            autoAlpha: 1,
+            duration: 7.5,
+            ease: 'none',
+            repeat: -1,
+          }
+        );
 
         return undefined;
       }
@@ -163,12 +199,13 @@
     let frameId = null;
     let particles = [];
 
-    const createParticles = (width, height) => Array.from({ length: 72 }, () => ({
+    const createParticles = (width, height) => Array.from({ length: 120 }, () => ({
       x: Math.random() * width,
       y: Math.random() * height,
-      radius: 0.7 + Math.random() * 1.8,
-      speed: 0.12 + Math.random() * 0.28,
-      alpha: 0.16 + Math.random() * 0.28,
+      radius: 1 + Math.random() * 2.5,
+      speed: 0.25 + Math.random() * 0.55,
+      drift: -0.14 + Math.random() * 0.28,
+      alpha: 0.22 + Math.random() * 0.42,
     }));
 
     const resize = () => {
@@ -197,6 +234,23 @@
         context.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
         context.fill();
       });
+
+      context.beginPath();
+      context.strokeStyle = 'rgba(219, 186, 114, 0.18)';
+      context.lineWidth = 1;
+
+      for (let index = 0; index < particles.length - 1; index += 3) {
+        const current = particles[index];
+        const next = particles[index + 1];
+        const distance = Math.hypot(current.x - next.x, current.y - next.y);
+
+        if (distance < 46) {
+          context.moveTo(current.x, current.y);
+          context.lineTo(next.x, next.y);
+        }
+      }
+
+      context.stroke();
     };
 
     const render = () => {
@@ -204,10 +258,19 @@
         const height = canvas.height / Math.min(window.devicePixelRatio || 1, 2);
 
         particles.forEach((particle) => {
+          particle.x += particle.drift;
           particle.y += particle.speed;
 
           if (particle.y > height + 4) {
             particle.y = -4;
+          }
+
+          if (particle.x < -4) {
+            particle.x = canvas.width / Math.min(window.devicePixelRatio || 1, 2) + 4;
+          }
+
+          if (particle.x > canvas.width / Math.min(window.devicePixelRatio || 1, 2) + 4) {
+            particle.x = -4;
           }
         });
       }
@@ -278,7 +341,7 @@
         powerPreference: 'low-power',
       });
       const group = new THREE.Group();
-      const pointsCount = 90;
+      const pointsCount = 150;
       const positions = new Float32Array(pointsCount * 3);
 
       for (let i = 0; i < pointsCount; i += 1) {
@@ -292,9 +355,9 @@
 
       const material = new THREE.PointsMaterial({
         color: 0x8fd8ff,
-        size: 0.028,
+        size: 0.045,
         transparent: true,
-        opacity: 0.58,
+        opacity: 0.82,
         depthWrite: false,
       });
 
@@ -324,8 +387,8 @@
         }
 
         const delta = clock.getDelta();
-        group.rotation.y += delta * 0.045;
-        points.rotation.z += delta * 0.012;
+        group.rotation.y += delta * 0.09;
+        points.rotation.z += delta * 0.035;
         renderer.render(scene, camera);
         frameId = window.requestAnimationFrame(render);
       };

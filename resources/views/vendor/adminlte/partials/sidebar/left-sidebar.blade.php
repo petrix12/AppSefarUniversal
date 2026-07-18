@@ -18,12 +18,11 @@
         @php($u = auth()->user())
         @if($u)
             <div class="user-panel mt-3 pb-3 mb-2 d-flex align-items-center">
-                <div class="image">
+                <div class="image sefar-user-avatar-frame">
                     <img
                         src="{{ method_exists($u,'adminlte_image') ? $u->adminlte_image() : asset('img/default-avatar.png') }}"
-                        class="img-circle elevation-2"
+                        class="img-circle elevation-2 sefar-user-avatar"
                         alt="User Image"
-                        style="width:34px;height:34px;object-fit:cover;"
                     >
                 </div>
 
