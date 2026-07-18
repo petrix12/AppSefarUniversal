@@ -82,22 +82,6 @@
       item.classList.add('sefar-menu-group');
     });
 
-    const nav = sidebar.querySelector('.nav-sidebar');
-
-    if (nav) {
-      const items = Array.from(nav.children);
-      const adminItem = items.find((item) => {
-        const link = item.children[0];
-        const label = link ? link.querySelector('p') : null;
-        const text = label ? label.textContent.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '';
-
-        return text === 'Administracion';
-      });
-
-      if (adminItem && nav.firstElementChild !== adminItem) {
-        nav.insertBefore(adminItem, nav.firstElementChild);
-      }
-    }
   };
 
   const animateNavigation = async (sidebar) => {

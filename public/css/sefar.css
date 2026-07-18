@@ -174,27 +174,31 @@ textarea {
 
 .main-sidebar .user-panel {
   margin-inline: 0.5rem;
-  padding: 0.75rem 0.65rem;
+  padding: 0.85rem 0.65rem 0.95rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
 }
 
 .main-sidebar .user-panel .sefar-user-avatar-frame {
-  width: 38px;
-  height: 38px;
-  flex: 0 0 38px;
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
   overflow: hidden;
   border-radius: 50%;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.16);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18), 0 10px 22px rgba(0, 27, 39, 0.22);
 }
 
 .main-sidebar .user-panel .sefar-user-avatar,
 .main-sidebar .user-panel .sefar-user-avatar-frame img {
   display: block;
-  width: 38px !important;
-  height: 38px !important;
+  width: 52px !important;
+  height: 52px !important;
   max-width: none;
   object-fit: cover;
   border-radius: 50% !important;
+}
+
+.main-sidebar .user-panel .info {
+  padding-left: 0.55rem;
 }
 
 .main-sidebar .user-panel .info a {

@@ -257,6 +257,35 @@ return [
         ],
         /* *** MENÚ INTERNO ORGANIZADO *** */
         [
+            'text'        => 'Usuarios y permisos',
+            'icon'        => 'fa-fw fas fa-users-cog',
+            'icon_color'  => 'white',
+            'submenu' => [
+                [
+                    'text'          => 'Usuarios (COS)',
+                    'icon'          => 'fa-fw fas fa-users-cog',
+                    'icon_color'    => 'white',
+                    'url'           => 'users',
+                    'can'           => 'crud.users.index',
+                ],
+                [
+                    'text'          => 'Roles',
+                    'icon'          => 'fa-fw fas fa-user-tag',
+                    'icon_color'    => 'white',
+                    'url'           => 'roles',
+                    'can'           => 'crud.roles.index',
+                ],
+                [
+                    'text'          => 'Permisos',
+                    'icon'          => 'fa-fw fas fa-universal-access',
+                    'icon_color'    => 'white',
+                    'url'           => 'permissions',
+                    'can'           => 'crud.permissions.index',
+                ],
+            ],
+        ],
+
+        [
             'text'        => 'Operación COS',
             'icon'        => 'fa-fw fas fa-briefcase',
             'icon_color'  => 'white',
@@ -319,13 +348,6 @@ return [
                     'icon_color' => 'white',
                     'url'        => 'strategic-suggestions',
                     'can'        => 'coordventas',
-                ],
-                [
-                    'text'          => 'Prompt Treena',
-                    'icon'          => 'fa-fw fas fa-comment',
-                    'icon_color'    => 'white',
-                    'url'           => 'prompttreena',
-                    'can'           => 'administrador',
                 ],
                 [
                     'text'          => 'Alertas',
@@ -734,25 +756,11 @@ return [
             'icon_color'  => 'white',
             'submenu' => [
                 [
-                    'text'          => 'Usuarios (COS)',
-                    'icon'          => 'fa-fw fas fa-users-cog',
+                    'text'          => 'Prompt Treena',
+                    'icon'          => 'fa-fw fas fa-comment',
                     'icon_color'    => 'white',
-                    'url'           => 'users',
-                    'can'           => 'crud.users.index',
-                ],
-                [
-                    'text'          => 'Roles',
-                    'icon'          => 'fa-fw fas fa-user-tag',
-                    'icon_color'    => 'white',
-                    'url'           => 'roles',
-                    'can'           => 'crud.roles.index',
-                ],
-                [
-                    'text'          => 'Permisos',
-                    'icon'          => 'fa-fw fas fa-universal-access',
-                    'icon_color'    => 'white',
-                    'url'           => 'permissions',
-                    'can'           => 'crud.permissions.index',
+                    'url'           => 'prompttreena',
+                    'can'           => 'administrador',
                 ],
                 [
                     'text'        => 'Herramientas del COS',
