@@ -180,6 +180,64 @@ body.dark-mode a:not(.nav-link):not(.brand-link):not(.btn) {
   color: #8fd8ff;
 }
 
+body.dark-mode .users-table .bank-payment {
+  background: #062a28 !important;
+  border-left-color: #2dd4bf !important;
+  box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.18);
+}
+
+body.dark-mode .users-table .bank-payment.is-pending {
+  background: #2b2112 !important;
+  border-left-color: #f59e0b !important;
+  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.24);
+}
+
+body.dark-mode .users-table .bank-payment-title {
+  color: #5eead4 !important;
+}
+
+body.dark-mode .users-table .bank-payment.is-pending .bank-payment-title {
+  color: #fbbf24 !important;
+}
+
+body.dark-mode .users-table .bank-payment-date,
+body.dark-mode .users-table .bank-payment-plan,
+body.dark-mode .users-table .bank-service-list li,
+body.dark-mode .users-table .bank-service-list li span {
+  color: #d7e8ee !important;
+}
+
+body.dark-mode .users-table .bank-service-list li::before {
+  background: #2dd4bf !important;
+}
+
+body.dark-mode .users-table .bank-payment.is-pending .bank-service-list li::before {
+  background: #f59e0b !important;
+}
+
+body.dark-mode .users-table .case-status {
+  border-top-color: rgba(219, 234, 242, 0.16) !important;
+  color: var(--sefar-muted) !important;
+}
+
+body.dark-mode .users-table .case-status-item {
+  color: #fca5a5 !important;
+}
+
+body.dark-mode .users-table .case-status-item.is-complete {
+  color: #86efac !important;
+}
+
+body.dark-mode .users-table .badge-paid {
+  background-color: #065f46 !important;
+  color: #ecfdf5 !important;
+}
+
+body.dark-mode .users-table .badge-unpaid {
+  background-color: #991b1b !important;
+  color: #fee2e2 !important;
+}
+
 body.dark-mode .table,
 body.dark-mode .table td,
 body.dark-mode .table th,
