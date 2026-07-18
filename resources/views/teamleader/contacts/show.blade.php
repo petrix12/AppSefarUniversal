@@ -315,7 +315,9 @@
                         </div>
                         <div>
                             @if($doc->downloaded && $doc->s3_path)
-                                <a href="#" class="btn btn-xs btn-outline-primary">
+                                <a href="{{ route('teamleader.documents.download', $doc->id) }}"
+                                   target="_blank"
+                                   class="btn btn-xs btn-outline-primary">
                                     <i class="fas fa-download"></i>
                                 </a>
                             @else

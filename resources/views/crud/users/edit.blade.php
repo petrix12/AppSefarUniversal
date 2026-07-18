@@ -2403,7 +2403,15 @@
                                         <td>{{ $document->entity_type ?: '-' }}</td>
                                         <td>{{ $document->extension ?: ($document->mime_type ?: '-') }}</td>
                                         <td>{{ $document->readable_size }}</td>
-                                        <td>{{ $document->downloaded ? 'Si' : 'No' }}</td>
+                                        <td>
+                                            @if($document->downloaded && $document->s3_path && auth()->user()->can('tl.view'))
+                                                <a href="{{ route('teamleader.documents.download', $document->id) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-download me-1"></i> Ver
+                                                </a>
+                                            @else
+                                                {{ $document->downloaded ? 'Si' : 'No' }}
+                                            @endif
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>

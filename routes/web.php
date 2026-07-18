@@ -64,6 +64,7 @@ use App\Http\Controllers\HubspotOwnerController;
 use App\Http\Controllers\StrategicSuggestionAttachmentController;
 use App\Http\Controllers\StrategicSuggestionController;
 use App\Http\Controllers\Teamleader\TlProjectController;
+use App\Http\Controllers\Teamleader\DocumentDownloadController as TlDocumentDownloadController;
 use App\Http\Controllers\TlContactController;
 use App\Http\Controllers\TlInvoiceController;
 use App\Http\Controllers\Teamleader\InvoicePdfController as TlInvoicePdfController;
@@ -242,6 +243,7 @@ Route::middleware(['auth', 'can:tl.view'])
         Route::get('invoices/{id}',   [TlInvoiceController::class, 'show'])->name('invoices.show');
 
         Route::get('invoices/{id}/pdf', TlInvoicePdfController::class)->name('invoices.pdf');
+        Route::get('documents/{id}/download', TlDocumentDownloadController::class)->name('documents.download');
 
     });
 
