@@ -216,7 +216,7 @@ class TeamleaderService
     {
         $response = $this->teamleaderPost('files.list', [
                 'filter' => [
-                    'linked_to' => [
+                    'subject' => [
                         'type' => $entityType,
                         'id'   => $entityId,
                     ],
