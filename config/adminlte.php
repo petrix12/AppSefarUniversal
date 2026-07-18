@@ -334,6 +334,13 @@ return [
                     'can'           => 'tl.view',
                 ],
                 [
+                    'text'          => 'Archivos',
+                    'icon'          => 'fa-fw fas fa-paperclip',
+                    'icon_color'    => 'white',
+                    'url'           => 'teamleader/documents',
+                    'can'           => 'tl.view',
+                ],
+                [
                     'text'          => 'Facturas',
                     'icon'          => 'fa-fw fas fa-user-tag',
                     'icon_color'    => 'white',
