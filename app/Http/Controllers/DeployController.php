@@ -416,11 +416,158 @@ class DeployController extends Controller
             'sistemasccs@sefarvzla.com',
         ];
 
-        $body = $summary;
+        $data = [
+            'appName' => config('app.name', 'App Sefar Universal'),
+            'summary' => $summary,
+            'notes' => $this->formatReleaseNotesForMail($summary),
+            'version' => $version,
+            'modelUsed' => $modelUsed,
+            'generatedAt' => now(),
+        ];
 
-        Mail::raw($body, function ($message) use ($recipients, $version) {
+        Mail::send(['html' => 'mail.deploy-summary', 'text' => 'mail.deploy-summary-text'], $data, function ($message) use ($recipients, $version) {
             $message->to($recipients)
                     ->subject("Novedades App Sefar Universal - versión {$version}");
         });
+    }
+
+    private function formatReleaseNotesForMail(string $summary): array
+    {
+        $intro = [];
+        $sections = [];
+        $closing = [];
+        $currentSection = null;
+        $inClosing = false;
+
+        foreach (preg_split('/\r\n|\r|\n/', trim($summary)) ?: [] as $rawLine) {
+            $line = trim($rawLine);
+
+            if ($line === '' || $this->isReleaseSeparator($line)) {
+                continue;
+            }
+
+            if ($this->isReleaseClosingLine($line)) {
+                $inClosing = true;
+                $closing[] = $line;
+                continue;
+            }
+
+            if ($inClosing) {
+                $closing[] = $line;
+                continue;
+            }
+
+            if ($this->isReleaseSectionTitle($line)) {
+                if ($currentSection) {
+                    $sections[] = $currentSection;
+                }
+
+                $currentSection = [
+                    'title' => $this->cleanReleaseSectionTitle($line),
+                    'items' => [],
+                ];
+
+                continue;
+            }
+
+            if ($this->isReleaseBulletLine($line)) {
+                if (! $currentSection) {
+                    $currentSection = [
+                        'title' => 'General',
+                        'items' => [],
+                    ];
+                }
+
+                $currentSection['items'][] = [
+                    'title' => $this->cleanReleaseBulletTitle($line),
+                    'body' => '',
+                ];
+
+                continue;
+            }
+
+            if ($currentSection && ! empty($currentSection['items'])) {
+                $lastIndex = array_key_last($currentSection['items']);
+                $currentSection['items'][$lastIndex]['body'] = trim(
+                    $currentSection['items'][$lastIndex]['body'] . ' ' . $line
+                );
+
+                continue;
+            }
+
+            $intro[] = $line;
+        }
+
+        if ($currentSection) {
+            $sections[] = $currentSection;
+        }
+
+        if (empty($sections)) {
+            $sections[] = [
+                'title' => 'Resumen del despliegue',
+                'items' => [
+                    [
+                        'title' => 'Novedades de la version.',
+                        'body' => $summary,
+                    ],
+                ],
+            ];
+        }
+
+        return [
+            'intro' => $intro,
+            'sections' => $sections,
+            'closing' => $closing,
+        ];
+    }
+
+    private function isReleaseSeparator(string $line): bool
+    {
+        $compact = preg_replace('/\s+/', '', $line) ?? $line;
+
+        if (strlen($compact) < 12) {
+            return false;
+        }
+
+        return (bool) preg_match('/^[\-=*_\.]+$/', $compact)
+            || (bool) preg_match('/^[\x{2500}-\x{257F}]+$/u', $compact)
+            || str_contains($compact, 'â”');
+    }
+
+    private function isReleaseClosingLine(string $line): bool
+    {
+        return str_starts_with($line, 'Un saludo');
+    }
+
+    private function isReleaseSectionTitle(string $line): bool
+    {
+        if ($this->isReleaseBulletLine($line)) {
+            return false;
+        }
+
+        $cleanLine = $this->cleanReleaseSectionTitle($line);
+
+        return str_contains($line, '📌')
+            || str_contains($line, 'ðŸ“Œ')
+            || (bool) preg_match('/^[A-Z0-9ÁÉÍÓÚÜÑ\s]{3,}\s*(?:—|â€”|-)\s+\S/u', $cleanLine)
+            || (bool) preg_match('/^[A-Z0-9ÁÉÍÓÚÜÑ][A-Z0-9ÁÉÍÓÚÜÑ\s]{2,}$/u', $cleanLine);
+    }
+
+    private function isReleaseBulletLine(string $line): bool
+    {
+        return (bool) preg_match('/^(?:\x{2022}|â€¢|\-|\*)\s*/u', $line);
+    }
+
+    private function cleanReleaseSectionTitle(string $line): string
+    {
+        $line = str_replace(['📌', 'ðŸ“Œ'], '', $line);
+        $line = preg_replace('/^[^\p{L}\p{N}]+/u', '', $line) ?? $line;
+
+        return trim($line);
+    }
+
+    private function cleanReleaseBulletTitle(string $line): string
+    {
+        return trim(preg_replace('/^(?:\x{2022}|â€¢|\-|\*)\s*/u', '', $line) ?? $line);
     }
 }

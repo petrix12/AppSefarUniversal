@@ -13,7 +13,7 @@ body.dark-mode {
 
 body.dark-mode .main-header,
 body.dark-mode .sefar-topbar.main-header {
-  background: linear-gradient(90deg, #061f2d 0%, #0a3449 58%, #0c435c 100%) !important;
+  background: linear-gradient(90deg, rgba(6, 31, 45, 0.97) 0%, rgba(10, 52, 73, 0.97) 58%, rgba(12, 67, 92, 0.97) 100%) !important;
   border-bottom-color: rgba(219, 234, 242, 0.14) !important;
   color: var(--sefar-text) !important;
 }
@@ -30,7 +30,7 @@ body.dark-mode .sefar-topbar .nav-link:hover {
 
 body.dark-mode .main-sidebar,
 body.dark-mode .sefar-sidebar.main-sidebar {
-  background: linear-gradient(180deg, #092b3d 0%, #061d2a 45%, #03131e 100%) !important;
+  background: linear-gradient(180deg, #082c3e 0%, #061e2c 44%, #02111b 100%) !important;
 }
 
 body.dark-mode .sefar-brand.brand-link,
@@ -43,11 +43,21 @@ body.dark-mode .main-sidebar .nav-sidebar .nav-link {
   color: rgba(238, 246, 248, 0.82) !important;
 }
 
+body.dark-mode .main-sidebar .user-panel {
+  background: linear-gradient(135deg, rgba(219, 234, 242, 0.12), rgba(219, 234, 242, 0.045)) !important;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
+}
+
 body.dark-mode .main-sidebar .nav-sidebar .nav-link:hover,
 body.dark-mode .main-sidebar .nav-sidebar .nav-link.active,
 body.dark-mode .main-sidebar .nav-sidebar .menu-open > .nav-link {
-  background-color: rgba(219, 234, 242, 0.12) !important;
+  border-color: rgba(219, 186, 114, 0.32) !important;
+  background: linear-gradient(135deg, rgba(219, 234, 242, 0.13), rgba(219, 234, 242, 0.055)) !important;
   color: #ffffff !important;
+}
+
+body.dark-mode .main-sidebar .nav-sidebar .nav-link > i:first-child {
+  background-color: rgba(219, 234, 242, 0.08) !important;
 }
 
 body.dark-mode .content,
@@ -86,6 +96,21 @@ body.dark-mode .contentmodaladdfamiliar {
   border-color: var(--sefar-border) !important;
 }
 
+body.dark-mode .content-wrapper .card,
+body.dark-mode .modal-content,
+body.dark-mode .dropdown-menu,
+body.dark-mode .info-box,
+body.dark-mode .callout {
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
+}
+
+body.dark-mode .card-header,
+body.dark-mode .modal-header,
+body.dark-mode .card-footer,
+body.dark-mode .modal-footer {
+  background: linear-gradient(180deg, rgba(12, 34, 48, 0.92), rgba(7, 21, 34, 0.96)) !important;
+}
+
 body.dark-mode input,
 body.dark-mode select,
 body.dark-mode textarea,
@@ -103,6 +128,14 @@ body.dark-mode .gedcom-field input[type='file'] {
   background-color: #05111c !important;
   color: var(--sefar-text) !important;
   border-color: rgba(219, 234, 242, 0.22) !important;
+}
+
+body.dark-mode .form-control:focus,
+body.dark-mode .custom-select:focus,
+body.dark-mode .select2-container--default.select2-container--focus .select2-selection--multiple,
+body.dark-mode .select2-container--default .select2-selection--single:focus {
+  border-color: rgba(219, 186, 114, 0.72) !important;
+  box-shadow: 0 0 0 0.18rem rgba(219, 186, 114, 0.18) !important;
 }
 
 body.dark-mode .select2-container--default .select2-selection__choice,
@@ -174,7 +207,7 @@ body.dark-mode .table thead th,
 body.dark-mode .dataTable thead th,
 body.dark-mode .styled-table thead th,
 body.dark-mode .users-table thead th {
-  background-color: var(--sefar-primary-soft) !important;
+  background-color: rgba(12, 34, 48, 0.92) !important;
   color: var(--sefar-text) !important;
 }
 
@@ -251,6 +284,18 @@ body.dark-mode .btn-outline-secondary {
   background-color: var(--sefar-primary-soft) !important;
   border-color: var(--sefar-border) !important;
   color: var(--sefar-text) !important;
+}
+
+body.dark-mode .pagination .page-link {
+  background-color: #05111c !important;
+  border-color: var(--sefar-border) !important;
+  color: var(--sefar-text) !important;
+}
+
+body.dark-mode .pagination .page-item.active .page-link {
+  background-color: #0d5d78 !important;
+  border-color: #0d5d78 !important;
+  color: #ffffff !important;
 }
 
 body.dark-mode .page-item.disabled .page-link,
