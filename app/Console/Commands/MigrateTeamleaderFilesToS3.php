@@ -15,6 +15,8 @@ class MigrateTeamleaderFilesToS3 extends Command
 {
     protected $signature = 'teamleader:migrate-files-to-s3
                             {--entity=all : contacts|companies|deals|projects|all}
+                            {--teamleader-type= : contact|company|deal|project para probar una entidad especifica}
+                            {--teamleader-id= : UUID de la entidad en Teamleader para probar una entidad especifica}
                             {--limit=0 : Limite de entidades a procesar, 0 para todas}
                             {--sync : Ejecutar ahora en este proceso, sin cola}
                             {--queue=teamleader-documents : Cola donde se despachan los jobs}';
@@ -24,9 +26,15 @@ class MigrateTeamleaderFilesToS3 extends Command
     public function handle(TeamleaderService $teamleader): int
     {
         $entity = (string) $this->option('entity');
+        $teamleaderType = trim((string) $this->option('teamleader-type'));
+        $teamleaderId = trim((string) $this->option('teamleader-id'));
         $limit = max(0, (int) $this->option('limit'));
         $sync = (bool) $this->option('sync');
         $queue = (string) $this->option('queue');
+
+        if ($teamleaderType !== '' || $teamleaderId !== '') {
+            return $this->handleSpecificEntity($teamleader, $teamleaderType, $teamleaderId, $sync, $queue);
+        }
 
         if (!in_array($entity, ['contacts', 'companies', 'deals', 'projects', 'all'], true)) {
             $this->error('Entidad invalida. Usa contacts, companies, deals, projects o all.');
@@ -113,6 +121,42 @@ class MigrateTeamleaderFilesToS3 extends Command
 
         $this->info("Jobs despachados en la cola {$queue}.");
         $this->line("Ejecuta: php artisan queue:work --queue={$queue} --timeout=600");
+
+        return self::SUCCESS;
+    }
+
+    private function handleSpecificEntity(
+        TeamleaderService $teamleader,
+        string $teamleaderType,
+        string $teamleaderId,
+        bool $sync,
+        string $queue
+    ): int {
+        if (!in_array($teamleaderType, ['contact', 'company', 'deal', 'project'], true)) {
+            $this->error('Tipo invalido. Usa contact, company, deal o project.');
+            return self::FAILURE;
+        }
+
+        if ($teamleaderId === '') {
+            $this->error('Debes indicar --teamleader-id.');
+            return self::FAILURE;
+        }
+
+        $log = TlSyncLog::start('documents');
+        $log->update(['total' => 1]);
+
+        $job = new SyncDocumentsJob($teamleaderType, $teamleaderId, 1, $log->id, 100, true, $sync);
+
+        if ($sync) {
+            $this->line("Probando {$teamleaderType}:{$teamleaderId}");
+            $job->handle($teamleader);
+            $log->refresh();
+            $this->info("Prueba terminada. Procesadas: {$log->processed}. Fallidas: {$log->failed}.");
+            return $log->failed > 0 ? self::FAILURE : self::SUCCESS;
+        }
+
+        dispatch($job)->onQueue($queue);
+        $this->info("Job despachado en la cola {$queue} para {$teamleaderType}:{$teamleaderId}.");
 
         return self::SUCCESS;
     }

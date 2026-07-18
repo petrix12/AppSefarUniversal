@@ -3,6 +3,7 @@
 
 namespace App\Jobs\Teamleader;
 
+use App\Exceptions\TeamleaderAuthenticationException;
 use App\Exceptions\TeamleaderRateLimitException;
 use App\Models\TlCreditNote;
 use App\Models\TlSyncLog;
@@ -47,6 +48,10 @@ class ProcessCreditNoteChunkJob implements ShouldQueue
                 TlSyncLog::find($this->syncLogId)?->incrementCounter('processed');
             } catch (TeamleaderRateLimitException $e) {
                 $this->releaseRemaining($offset, $e);
+                return;
+            } catch (TeamleaderAuthenticationException $e) {
+                Log::channel('teamleader')->warning("[TL] CreditNotes - autenticacion de Teamleader detenida: {$e->getMessage()}");
+                TlSyncLog::find($this->syncLogId)?->fail($e->getMessage());
                 return;
             } catch (\Throwable $e) {
                 Log::channel('teamleader')->error("[TL] Error creditNote {$id}: " . $e->getMessage());

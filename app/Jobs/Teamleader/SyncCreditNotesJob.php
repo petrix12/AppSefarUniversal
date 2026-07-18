@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Teamleader;
 
+use App\Exceptions\TeamleaderAuthenticationException;
 use App\Exceptions\TeamleaderRateLimitException;
 use App\Models\TlSyncLog;
 use App\Services\TeamleaderService;
@@ -41,6 +42,10 @@ class SyncCreditNotesJob implements ShouldQueue
             } catch (TeamleaderRateLimitException $e) {
                 Log::channel('teamleader')->warning("[TL] CreditNotes - rate limit en pagina {$page}. Reintentando luego.");
                 $this->release($e->retryAfterSeconds());
+                return;
+            } catch (TeamleaderAuthenticationException $e) {
+                Log::channel('teamleader')->warning("[TL] CreditNotes - autenticacion de Teamleader detenida: {$e->getMessage()}");
+                TlSyncLog::find($this->syncLogId)?->fail($e->getMessage());
                 return;
             }
 

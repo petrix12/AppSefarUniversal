@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Teamleader;
 
+use App\Exceptions\TeamleaderAuthenticationException;
 use App\Exceptions\TeamleaderRateLimitException;
 use App\Models\TlSyncLog;
 use App\Services\TeamleaderService;
@@ -42,6 +43,10 @@ class SyncDealsJob implements ShouldQueue
             } catch (TeamleaderRateLimitException $e) {
                 Log::channel('teamleader')->warning("[TL] Deals - rate limit en pagina {$page}. Reintentando luego.");
                 $this->release($e->retryAfterSeconds());
+                return;
+            } catch (TeamleaderAuthenticationException $e) {
+                Log::channel('teamleader')->warning("[TL] Deals - autenticacion de Teamleader detenida: {$e->getMessage()}");
+                TlSyncLog::find($this->syncLogId)?->fail($e->getMessage());
                 return;
             }
 

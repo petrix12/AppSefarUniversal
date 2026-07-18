@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\TeamleaderAuthenticationException;
 use App\Exceptions\TeamleaderRateLimitException;
 use App\Models\TeamleaderToken;
 use App\Services\Teamleader\TeamleaderFocusProvider;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use GuzzleHttp\Promise;
+use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 
 class TeamleaderService
 {
@@ -241,8 +243,53 @@ class TeamleaderService
             throw new \Exception("Error descargando archivo {$fileId}: " . $response->body());
         }
 
-        // La API retorna el contenido binario directamente
-        return $response->body();
+        $location = $this->extractDownloadLocation($response->json());
+
+        if (!$location) {
+            $contentType = strtolower((string) $response->header('Content-Type'));
+
+            if (!str_contains($contentType, 'application/json') && $response->body() !== '') {
+                return $response->body();
+            }
+
+            throw new \Exception("Teamleader no devolvio URL de descarga para el archivo {$fileId}: " . $response->body());
+        }
+
+        $download = Http::timeout(120)
+            ->withOptions(['allow_redirects' => true])
+            ->get($location);
+
+        if (!$download->successful()) {
+            throw new \Exception("Error descargando contenido del archivo {$fileId}: HTTP {$download->status()}");
+        }
+
+        return $download->body();
+    }
+
+    private function extractDownloadLocation(?array $payload): ?string
+    {
+        if (!$payload) {
+            return null;
+        }
+
+        $candidates = [
+            data_get($payload, 'data.location'),
+            data_get($payload, 'data.url'),
+            data_get($payload, 'data.download_url'),
+            data_get($payload, 'data.download.location'),
+            data_get($payload, 'data.download.url'),
+            data_get($payload, 'location'),
+            data_get($payload, 'url'),
+            data_get($payload, 'download_url'),
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (is_string($candidate) && filter_var($candidate, FILTER_VALIDATE_URL)) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -376,14 +423,27 @@ class TeamleaderService
         }
 
         // ✅ Refrescar si expira en menos de 5 minutos (no solo cuando ya expiró)
+        if (Cache::get('teamleader:auth-invalid')) {
+            throw new TeamleaderAuthenticationException('Teamleader requiere reautenticacion antes de volver a sincronizar.');
+        }
+
         $expiresIn = $tokenRecord->expires - time();
 
         if ($expiresIn < 300) { // menos de 5 minutos → refrescar
             $refreshToken = Crypt::decryptString($tokenRecord->refresh_token);
 
-            $newAccessToken = $this->provider->getAccessToken('refresh_token', [
-                'refresh_token' => $refreshToken,
-            ]);
+            try {
+                $newAccessToken = $this->provider->getAccessToken('refresh_token', [
+                    'refresh_token' => $refreshToken,
+                ]);
+            } catch (IdentityProviderException $exception) {
+                Cache::put('teamleader:auth-invalid', true, now()->addHour());
+
+                throw new TeamleaderAuthenticationException(
+                    'Teamleader rechazo el refresh token. Hay que reautenticar la integracion.',
+                    previous: $exception
+                );
+            }
 
             $this->storeTokens($newAccessToken);
             return $newAccessToken->getToken();
@@ -397,6 +457,8 @@ class TeamleaderService
      */
     private function storeTokens($accessToken)
     {
+        Cache::forget('teamleader:auth-invalid');
+
         TeamleaderToken::updateOrCreate(
             ['id' => 1],
             [
@@ -479,6 +541,8 @@ public function getContactById($id)
         return null;
     } catch (TeamleaderRateLimitException $e) {
         throw $e;
+    } catch (TeamleaderAuthenticationException $e) {
+        throw $e;
     } catch (\Throwable $e) {
         \Log::channel('teamleader')->error('Teamleader: excepción al obtener contacto', [
             'tl_id' => $id,
@@ -520,7 +584,7 @@ public function getContactById($id)
                 $errorMessage = isset($error['errors'][0]['title']) ? $error['errors'][0]['title'] : 'Error desconocido';
                 throw new \Exception('Error al crear el contacto: ' . $errorMessage);
             }
-        } catch (TeamleaderRateLimitException $e) {
+        } catch (TeamleaderRateLimitException|TeamleaderAuthenticationException $e) {
             throw $e;
         } catch (\Exception $e) {
             throw new \Exception('Error: ' . $e->getMessage());
@@ -661,6 +725,8 @@ public function listProjectsByCustomerId(string $customerId)
                 $errorMessage = $error['errors'][0]['title'] ?? 'Error desconocido';
                 throw new \Exception('Error al obtener detalles del proyecto: ' . $errorMessage);
             }
+        } catch (TeamleaderRateLimitException|TeamleaderAuthenticationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             throw new \Exception('Error: ' . $e->getMessage());
         }

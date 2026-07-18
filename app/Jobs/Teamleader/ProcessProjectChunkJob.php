@@ -3,6 +3,7 @@
 
 namespace App\Jobs\Teamleader;
 
+use App\Exceptions\TeamleaderAuthenticationException;
 use App\Exceptions\TeamleaderRateLimitException;
 use App\Models\TlProject;
 use App\Models\TlSyncLog;
@@ -54,6 +55,10 @@ class ProcessProjectChunkJob implements ShouldQueue
 
             } catch (TeamleaderRateLimitException $e) {
                 $this->releaseRemaining($offset, $e);
+                return;
+            } catch (TeamleaderAuthenticationException $e) {
+                Log::channel('teamleader')->warning("[TL] Proyectos - autenticacion de Teamleader detenida: {$e->getMessage()}");
+                TlSyncLog::find($this->syncLogId)?->fail($e->getMessage());
                 return;
             } catch (\Throwable $e) {
                 Log::channel('teamleader')->error("[TL] Error proyecto {$id}: " . $e->getMessage());

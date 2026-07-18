@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Teamleader;
 
+use App\Exceptions\TeamleaderAuthenticationException;
 use App\Exceptions\TeamleaderRateLimitException;
 use App\Models\TlContact;
 use App\Models\TlDocument;
@@ -65,6 +66,10 @@ class SyncDocumentsJob implements ShouldQueue
             Log::channel('teamleader')->warning("[TL Docs] rate limit listando {$this->entityType}/{$this->entityId}. Reintentando luego.");
             $this->release($e->retryAfterSeconds());
             return;
+        } catch (TeamleaderAuthenticationException $e) {
+            Log::channel('teamleader')->warning("[TL Docs] sincronizacion detenida por autenticacion de Teamleader: {$e->getMessage()}");
+            TlSyncLog::find($this->syncLogId)?->incrementCounter('failed');
+            return;
         }
 
         $files = $response['data'] ?? [];
@@ -76,6 +81,10 @@ class SyncDocumentsJob implements ShouldQueue
             } catch (TeamleaderRateLimitException $e) {
                 Log::channel('teamleader')->warning("[TL Docs] rate limit migrando {$this->entityType}/{$this->entityId}. Reintentando luego.");
                 $this->release($e->retryAfterSeconds());
+                return;
+            } catch (TeamleaderAuthenticationException $e) {
+                Log::channel('teamleader')->warning("[TL Docs] sincronizacion detenida por autenticacion de Teamleader: {$e->getMessage()}");
+                TlSyncLog::find($this->syncLogId)?->fail($e->getMessage());
                 return;
             } catch (\Throwable $e) {
                 Log::channel('teamleader')->error('[TL Docs] Error migrando archivo', [

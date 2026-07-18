@@ -18,6 +18,7 @@ class SyncTeamleaderCommand extends Command
                             {--no-pdfs : No descargar PDFs de facturas}
                             {--with-pdfs : Descargar PDFs de facturas}
                             {--no-docs : No revisar/descargar documentos vinculados a entidades}
+                            {--with-docs : Revisar/descargar documentos vinculados a entidades}
                             {--force : Despachar aunque exista un sync activo reciente}';
 
     protected $description = 'Sincroniza Teamleader con la base local y S3, creando nuevos registros y actualizando existentes.';
@@ -35,7 +36,8 @@ class SyncTeamleaderCommand extends Command
     {
         $entity = (string) $this->option('entity');
         $downloadPdfs = (bool) $this->option('with-pdfs') && ! (bool) $this->option('no-pdfs');
-        $noDocs = (bool) $this->option('no-docs');
+        $syncDocuments = ((bool) config('services.teamleader.sync_documents', false) || (bool) $this->option('with-docs'))
+            && ! (bool) $this->option('no-docs');
         $force = (bool) $this->option('force');
 
         $entities = $entity === 'all'
@@ -62,7 +64,7 @@ class SyncTeamleaderCommand extends Command
             }
 
             $log = TlSyncLog::start($e);
-            $job = $this->makeJob($e, $log->id, $downloadPdfs, $noDocs);
+            $job = $this->makeJob($e, $log->id, $downloadPdfs, $syncDocuments);
 
             dispatch($job)->onQueue('teamleader-sync');
             $dispatched++;
@@ -85,13 +87,13 @@ class SyncTeamleaderCommand extends Command
         return self::SUCCESS;
     }
 
-    private function makeJob(string $entity, int $syncLogId, bool $downloadPdfs, bool $noDocs): object
+    private function makeJob(string $entity, int $syncLogId, bool $downloadPdfs, bool $syncDocuments): object
     {
         return match ($entity) {
-            'contacts' => new SyncContactsJob($syncLogId, !$noDocs),
-            'companies' => new SyncCompaniesJob($syncLogId, !$noDocs),
-            'deals' => new SyncDealsJob($syncLogId, !$noDocs),
-            'projects' => new SyncProjectsJob($syncLogId, !$noDocs),
+            'contacts' => new SyncContactsJob($syncLogId, $syncDocuments),
+            'companies' => new SyncCompaniesJob($syncLogId, $syncDocuments),
+            'deals' => new SyncDealsJob($syncLogId, $syncDocuments),
+            'projects' => new SyncProjectsJob($syncLogId, $syncDocuments),
             'invoices' => new SyncInvoicesJob($syncLogId, $downloadPdfs),
             'credit_notes' => new SyncCreditNotesJob($syncLogId),
         };

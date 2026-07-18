@@ -8,6 +8,7 @@ use App\Models\TeamleaderToken;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class TeamleaderController extends Controller
 {
@@ -58,6 +59,8 @@ class TeamleaderController extends Controller
     // Método para almacenar los tokens
     private function storeTokens($accessToken)
     {
+        Cache::forget('teamleader:auth-invalid');
+
         TeamleaderToken::updateOrCreate(
             ['id' => 1], // Asumimos que solo habrá un registro
             [

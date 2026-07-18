@@ -5,7 +5,9 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\TeamleaderToken;
 use App\Services\Teamleader\TeamleaderFocusProvider;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
+use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 
 class RefreshTeamleaderToken extends Command
 {
@@ -51,9 +53,15 @@ class RefreshTeamleaderToken extends Command
                     'expires' => $newAccessToken->getExpires(),
                 ]);
 
+                Cache::forget('teamleader:auth-invalid');
+
                 $this->info('Token de acceso de Teamleader actualizado exitosamente.');
                 return 0;
 
+            } catch (IdentityProviderException $e) {
+                Cache::put('teamleader:auth-invalid', true, now()->addHour());
+                $this->error('Teamleader rechazo el refresh token. Hay que reautenticar la integracion.');
+                return 1;
             } catch (\Exception $e) {
                 $this->error('Error al actualizar el token de acceso: ' . $e->getMessage());
                 return 1;

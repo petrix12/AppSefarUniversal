@@ -72,7 +72,7 @@ class TeamleaderJobController extends Controller
         $timeout = min(60, max(10, (int) $request->input('timeout', 45)));
 
         $exitCode = Artisan::call('queue:work', [
-            '--queue' => implode(',', $this->queues),
+            '--queue' => implode(',', $this->workerQueues()),
             '--stop-when-empty' => true,
             '--tries' => 3,
             '--timeout' => $timeout,
@@ -87,6 +87,13 @@ class TeamleaderJobController extends Controller
         }
 
         return back()->with('status', "Worker ejecutado. Jobs maximos: {$jobs}. " . ($output ?: 'Sin salida adicional.'));
+    }
+
+    private function workerQueues(): array
+    {
+        return (bool) config('services.teamleader.sync_documents', false)
+            ? $this->queues
+            : ['teamleader-sync'];
     }
 
     private function retryFailedJobs(?int $failedJobId = null): RedirectResponse

@@ -3,6 +3,7 @@
 
 namespace App\Jobs\Teamleader;
 
+use App\Exceptions\TeamleaderAuthenticationException;
 use App\Exceptions\TeamleaderRateLimitException;
 use App\Models\TlInvoice;
 use App\Models\TlSyncLog;
@@ -52,6 +53,8 @@ class ProcessInvoiceChunkJob implements ShouldQueue
                 if ($this->downloadPdfs() && $this->invoiceNeedsPdfDownload($existing, $detail)) {
                     try {
                         $this->downloadPdf($invoice, $service);
+                    } catch (TeamleaderAuthenticationException $e) {
+                        throw $e;
                     } catch (TeamleaderRateLimitException $e) {
                         throw $e;
                     } catch (\Throwable $pdfError) {
@@ -62,6 +65,10 @@ class ProcessInvoiceChunkJob implements ShouldQueue
                 TlSyncLog::find($this->syncLogId)?->incrementCounter('processed');
             } catch (TeamleaderRateLimitException $e) {
                 $this->releaseRemaining($offset, $e);
+                return;
+            } catch (TeamleaderAuthenticationException $e) {
+                Log::channel('teamleader')->warning("[TL] Facturas - autenticacion de Teamleader detenida: {$e->getMessage()}");
+                TlSyncLog::find($this->syncLogId)?->fail($e->getMessage());
                 return;
             } catch (\Throwable $e) {
                 Log::channel('teamleader')->error("[TL] Error factura {$id}: " . $e->getMessage());

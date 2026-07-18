@@ -3,6 +3,7 @@
 
 namespace App\Jobs\Teamleader;
 
+use App\Exceptions\TeamleaderAuthenticationException;
 use App\Exceptions\TeamleaderRateLimitException;
 use App\Models\TlDeal;
 use App\Models\TlSyncLog;
@@ -53,6 +54,10 @@ class ProcessDealChunkJob implements ShouldQueue
                 TlSyncLog::find($this->syncLogId)?->incrementCounter('processed');
             } catch (TeamleaderRateLimitException $e) {
                 $this->releaseRemaining($offset, $e);
+                return;
+            } catch (TeamleaderAuthenticationException $e) {
+                Log::channel('teamleader')->warning("[TL] Deals - autenticacion de Teamleader detenida: {$e->getMessage()}");
+                TlSyncLog::find($this->syncLogId)?->fail($e->getMessage());
                 return;
             } catch (\Throwable $e) {
                 Log::channel('teamleader')->error("[TL] Error deal {$id}: " . $e->getMessage());

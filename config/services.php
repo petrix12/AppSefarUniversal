@@ -39,6 +39,7 @@ return [
         'sync_pages_per_job' => env('TEAMLEADER_SYNC_PAGES_PER_JOB', 2),
         'sync_chunk_size' => env('TEAMLEADER_SYNC_CHUNK_SIZE', 5),
         'sync_chunk_delay_seconds' => env('TEAMLEADER_SYNC_CHUNK_DELAY_SECONDS', 12),
+        'sync_documents' => env('TEAMLEADER_SYNC_DOCUMENTS', false),
         'download_invoice_pdfs' => env('TEAMLEADER_DOWNLOAD_INVOICE_PDFS', false),
     ],
 
