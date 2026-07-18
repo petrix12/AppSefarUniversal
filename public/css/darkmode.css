@@ -34,18 +34,12 @@ body.dark-mode .sefar-sidebar.main-sidebar {
 }
 
 body.dark-mode .sefar-brand.brand-link,
-body.dark-mode .brand-link,
-body.dark-mode .main-sidebar .user-panel {
+body.dark-mode .brand-link {
   border-color: rgba(219, 234, 242, 0.13) !important;
 }
 
 body.dark-mode .main-sidebar .nav-sidebar .nav-link {
   color: rgba(238, 246, 248, 0.82) !important;
-}
-
-body.dark-mode .main-sidebar .user-panel {
-  background: linear-gradient(135deg, rgba(219, 234, 242, 0.12), rgba(219, 234, 242, 0.045)) !important;
-  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
 }
 
 body.dark-mode .main-sidebar .nav-sidebar .nav-link:hover,
