@@ -27,13 +27,13 @@
         <meta data-react-helmet="true" name="robots" content="noindex, nofollow" />
 
         <!-- Styles -->
-        <link rel="stylesheet" href="{{ asset('/css/app.css') }}">
-        <link rel="stylesheet" href="{{ asset('/css/sefar.css') }}">
-        <link rel="stylesheet" href="{{ asset('/css/auth-modern.css') }}">
+        <link rel="stylesheet" href="{{ asset('/css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}">
+        <link rel="stylesheet" href="{{ asset('/css/sefar.css') }}?v={{ filemtime(public_path('css/sefar.css')) }}">
+        <link rel="stylesheet" href="{{ asset('/css/auth-modern.css') }}?v={{ filemtime(public_path('css/auth-modern.css')) }}">
 
         <!-- Scripts -->
-        <script src="{{ asset('/js/app.js') }}" defer></script>
-        <script src="{{ asset('/js/auth-modern.js') }}" defer></script>
+        <script src="{{ asset('/js/app.js') }}?v={{ filemtime(public_path('js/app.js')) }}" defer></script>
+        <script src="{{ asset('/js/auth-modern.js') }}?v={{ filemtime(public_path('js/auth-modern.js')) }}" defer></script>
 
         <script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/20053496.js"></script>
 

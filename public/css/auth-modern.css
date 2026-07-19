@@ -47,10 +47,40 @@ body:has(.sefar-login-shell) {
 
 .sefar-login-overlay {
   z-index: 1;
+  overflow: hidden;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 24%),
     linear-gradient(90deg, rgba(219, 186, 114, 0.12), transparent 38%),
     linear-gradient(135deg, transparent 0%, rgba(13, 93, 120, 0.18) 52%, transparent 100%);
+}
+
+.sefar-login-overlay::before,
+.sefar-login-overlay::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.sefar-login-overlay::before {
+  inset: -24% -46%;
+  background:
+    linear-gradient(104deg, transparent 0%, transparent 42%, rgba(143, 216, 255, 0.14) 47%, rgba(219, 186, 114, 0.12) 50%, transparent 58%, transparent 100%);
+  opacity: 0.9;
+  transform: translate3d(-34%, 0, 0);
+  animation: sefarLoginSweep 7.6s linear infinite;
+}
+
+.sefar-login-overlay::after {
+  right: -18%;
+  bottom: 13%;
+  left: -18%;
+  height: 28%;
+  background:
+    linear-gradient(90deg, transparent 0%, rgba(143, 216, 255, 0.12) 35%, rgba(219, 186, 114, 0.1) 50%, rgba(143, 216, 255, 0.12) 65%, transparent 100%);
+  opacity: 0.52;
+  transform: translate3d(-7%, 0, 0) skewY(-5deg);
+  animation: sefarLoginHorizon 10.5s ease-in-out infinite alternate;
 }
 
 .sefar-login-layout {
@@ -367,7 +397,9 @@ body:has(.sefar-login-shell) {
   .sefar-login-shell.sefar-auth-native-motion .sefar-login-copy,
   .sefar-login-shell.sefar-auth-native-motion .sefar-login-pulse,
   .sefar-login-shell.sefar-auth-native-motion .sefar-login-card,
-  .sefar-login-pulse span {
+  .sefar-login-pulse span,
+  .sefar-login-overlay::before,
+  .sefar-login-overlay::after {
     animation: none;
   }
 
@@ -398,6 +430,28 @@ body:has(.sefar-login-shell) {
   to {
     transform: scaleX(0.58);
     opacity: 1;
+  }
+}
+
+@keyframes sefarLoginSweep {
+  from {
+    transform: translate3d(-34%, 0, 0);
+  }
+
+  to {
+    transform: translate3d(34%, 0, 0);
+  }
+}
+
+@keyframes sefarLoginHorizon {
+  from {
+    opacity: 0.36;
+    transform: translate3d(-7%, 0, 0) skewY(-5deg);
+  }
+
+  to {
+    opacity: 0.62;
+    transform: translate3d(7%, -5%, 0) skewY(-5deg);
   }
 }
 
