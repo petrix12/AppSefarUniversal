@@ -2,14 +2,19 @@
 
 namespace App\Livewire\Profile\Sales;
 
+use App\Livewire\Profile\Sales\Concerns\AuthorizesSalesProfile;
 use Livewire\Component;
 use App\Models\User;
 use App\Models\Document;
 
 class Kpis extends Component
 {
+    use AuthorizesSalesProfile;
+
     public function render()
     {
+        $this->authorizeSalesProfile();
+
         $user = auth()->user();
 
         // ✅ Clientes asignados por owner_id (igual que tu UsersTable)

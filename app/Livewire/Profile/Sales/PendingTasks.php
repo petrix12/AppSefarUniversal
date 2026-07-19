@@ -2,14 +2,19 @@
 
 namespace App\Livewire\Profile\Sales;
 
+use App\Livewire\Profile\Sales\Concerns\AuthorizesSalesProfile;
 use Livewire\Component;
 use App\Models\Task;
 use Carbon\Carbon;
 
 class PendingTasks extends Component
 {
+    use AuthorizesSalesProfile;
+
     public function render()
     {
+        $this->authorizeSalesProfile();
+
         $today = Carbon::today();
 
         $tasks = Task::query()

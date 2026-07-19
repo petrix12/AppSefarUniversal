@@ -47,6 +47,13 @@ class User extends Authenticatable
         'profile_photo_url',
     ];
 
+    public const SALES_PROFILE_ROLES = [
+        'Coord. de Nacionalidad y Genealogía',
+        'Ventas',
+        'Analista',
+        'ATC',
+    ];
+
     /**
      * Usar S3 como disco para fotos de perfil
      */
@@ -151,6 +158,11 @@ class User extends Authenticatable
     public function isCliente(): bool
     {
         return $this->hasRole('Cliente');
+    }
+
+    public function canViewSalesProfile(): bool
+    {
+        return $this->hasAnyRole(self::SALES_PROFILE_ROLES);
     }
 
     protected static function booted()

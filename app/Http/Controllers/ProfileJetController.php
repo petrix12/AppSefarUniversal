@@ -17,25 +17,23 @@ class ProfileJetController extends Controller
     {
         $user = $request->user();
 
-        return view('profile.show-ventas', [
-            'request' => $request,
-            'user' => $user,
-        ]);
-        /*
-        // 🔥 Spatie roles
-        if ($user->hasAnyRole(['Coord. de Nacionalidad y Genealogía', 'Ventas'])) {
+        if ($user->isCliente()) {
+            return view('profile.show-client', [
+                'request' => $request,
+                'user' => $user,
+            ]);
+        }
+
+        if ($user->canViewSalesProfile()) {
             return view('profile.show-ventas', [
                 'request' => $request,
                 'user' => $user,
             ]);
-
         }
 
         return view('profile.show', [
             'request' => $request,
             'user' => $user,
         ]);
-        */
     }
-
 }

@@ -2,13 +2,18 @@
 
 namespace App\Livewire\Profile\Sales;
 
+use App\Livewire\Profile\Sales\Concerns\AuthorizesSalesProfile;
 use Livewire\Component;
 use App\Models\Document;
 
 class SharedDocuments extends Component
 {
+    use AuthorizesSalesProfile;
+
     public function render()
     {
+        $this->authorizeSalesProfile();
+
         $user = auth()->user();
 
         $q = Document::query();

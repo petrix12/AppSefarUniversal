@@ -2,12 +2,17 @@
 
 namespace App\Livewire\Profile\Sales;
 
+use App\Livewire\Profile\Sales\Concerns\AuthorizesSalesProfile;
 use Livewire\Component;
 
 class ProfileHeader extends Component
 {
+    use AuthorizesSalesProfile;
+
     public function render()
     {
+        $this->authorizeSalesProfile();
+
         $user = auth()->user();
 
         // Spatie roles (primer rol si existe)

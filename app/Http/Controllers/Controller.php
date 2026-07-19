@@ -33,56 +33,57 @@ class Controller extends BaseController
             ->exists();
     }
 
-    public function index(){
-        if(Auth::user()->hasRole('Administrador')){
+    public function index()
+    {
+        if (Auth::user()->hasRole('Administrador')) {
             return view('crud.users.index');
         }
 
-        if(Auth::user()->hasRole('Genealogista')){
+        if (Auth::user()->hasRole('Genealogista')) {
             return view('crud.agclientes.index');
         }
 
-        if(Auth::user()->hasRole('Produccion')){
+        if (Auth::user()->hasRole('Produccion')) {
             return view('crud.agclientes.index');
         }
 
-        if(Auth::user()->hasRole('Documentalista')){
+        if (Auth::user()->hasRole('Documentalista')) {
             return view('crud.miscelaneos.index');
         }
 
-        if(Auth::user()->hasRole('Traviesoevans')){
+        if (Auth::user()->hasRole('Traviesoevans')) {
             return view('crud.agclientes.index');
         }
 
-        if(Auth::user()->hasRole('Vargassequera')){
+        if (Auth::user()->hasRole('Vargassequera')) {
             return view('crud.agclientes.index');
         }
 
-        if(Auth::user()->hasRole('BadellLaw')){
+        if (Auth::user()->hasRole('BadellLaw')) {
             return view('crud.agclientes.index');
         }
 
-        if(Auth::user()->hasRole('P&V-Abogados')){
+        if (Auth::user()->hasRole('P&V-Abogados')) {
             return view('crud.agclientes.index');
         }
 
-        if(Auth::user()->hasRole('Mujica-Coto')){
+        if (Auth::user()->hasRole('Mujica-Coto')) {
             return view('crud.agclientes.index');
         }
 
-        if(Auth::user()->hasRole('German-Fleitas')){
+        if (Auth::user()->hasRole('German-Fleitas')) {
             return view('crud.agclientes.index');
         }
 
-        if(Auth::user()->hasRole('Soma-Consultores')){
+        if (Auth::user()->hasRole('Soma-Consultores')) {
             return view('crud.agclientes.index');
         }
 
-        if(Auth::user()->hasRole('MG-Tours')){
+        if (Auth::user()->hasRole('MG-Tours')) {
             return view('crud.agclientes.index');
         }
 
-        if(Auth::user()->hasRole('Coord. de Nacionalidad y Genealogía') || Auth::user()->hasRole('Analista') || Auth::user()->hasRole('ATC')){
+        if (Auth::user()->canViewSalesProfile()) {
             return view('profile.show-ventas', [
                 'request' => request(),
                 'user' => Auth::user(),
@@ -93,20 +94,19 @@ class Controller extends BaseController
             return redirect()->route('docs.index');
         }
 
-        // Clientes corrientes
-        if (Auth::user()->hasRole("Cliente")){
-            if($this->clientHasPendingInitialPayment(Auth::user()) || Auth::user()->pay==0){
+        if (Auth::user()->hasRole('Cliente')) {
+            if ($this->clientHasPendingInitialPayment(Auth::user()) || Auth::user()->pay == 0) {
                 return redirect()->route('clientes.pay');
-            } else if (Auth::user()->pay==1 || Auth::user()->pay==3){
+            } elseif (Auth::user()->pay == 1 || Auth::user()->pay == 3) {
                 return redirect()->route('clientes.getinfo');
-            } else {
-                $IDCliente = Auth::user()->passport;
-                return redirect('/tree');
             }
+
+            return redirect('/tree');
         }
 
-        $countries = Country::where('pais','!=','aanull')
-                        ->orderBy('pais','ASC')->get();
+        $countries = Country::where('pais', '!=', 'aanull')
+            ->orderBy('pais', 'ASC')
+            ->get();
         $user = Auth()->user();
 
         return view('inicio', compact('countries', 'user'));
