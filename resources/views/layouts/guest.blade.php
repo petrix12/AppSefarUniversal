@@ -29,9 +29,11 @@
         <!-- Styles -->
         <link rel="stylesheet" href="{{ asset('/css/app.css') }}">
         <link rel="stylesheet" href="{{ asset('/css/sefar.css') }}">
+        <link rel="stylesheet" href="{{ asset('/css/auth-modern.css') }}">
 
         <!-- Scripts -->
         <script src="{{ asset('/js/app.js') }}" defer></script>
+        <script src="{{ asset('/js/auth-modern.js') }}" defer></script>
 
         <script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/20053496.js"></script>
 

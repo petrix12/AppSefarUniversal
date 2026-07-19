@@ -79,6 +79,8 @@ textarea {
     linear-gradient(180deg, rgba(13, 74, 99, 0.98) 0%, rgba(8, 43, 60, 0.99) 38%, rgba(3, 25, 37, 1) 100%) !important;
   color: rgba(255, 255, 255, 0.92);
   border-right: 1px solid rgba(255, 255, 255, 0.08);
+  border-top-right-radius: 18px;
+  border-bottom-right-radius: 18px;
 }
 
 .sefar-sidebar.main-sidebar::before {
@@ -89,8 +91,7 @@ textarea {
   pointer-events: none;
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.13), transparent 34%),
-    linear-gradient(90deg, rgba(219, 186, 114, 0.08), transparent 44%),
-    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.034) 0, rgba(255, 255, 255, 0.034) 1px, transparent 1px, transparent 52px);
+    linear-gradient(90deg, rgba(219, 186, 114, 0.08), transparent 44%);
 }
 
 .sefar-sidebar .sefar-sidebar-scan {
