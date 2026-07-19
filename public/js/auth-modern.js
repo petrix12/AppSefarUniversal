@@ -63,6 +63,7 @@
 
   const animateInterfaceNative = (shell) => {
     shell.classList.add('sefar-auth-native-motion');
+    shell.dataset.sefarAuthReducedMotion = prefersReducedMotion() ? 'true' : 'false';
 
     if (prefersReducedMotion()) {
       shell.dataset.sefarAuthMotion = 'native-reduced';
@@ -80,6 +81,11 @@
     const gsap = await loadScript(cdn.gsap, 'gsap');
 
     if (!gsap) {
+      return;
+    }
+
+    if (prefersReducedMotion()) {
+      shell.dataset.sefarAuthMotion = 'native-reduced';
       return;
     }
 
@@ -191,12 +197,13 @@
     let ratio = 1;
     let width = 1;
     let height = 1;
+    let lastTime = null;
 
     const buildSegments = () => Array.from({ length: 96 }, () => ({
       x: Math.random() * width,
       y: Math.random() * height,
       length: 42 + Math.random() * 112,
-      speed: 0.36 + Math.random() * 0.82,
+      speed: 0.82 + Math.random() * 1.55,
       alpha: 0.18 + Math.random() * 0.38,
       tilt: -0.25 + Math.random() * 0.5,
     }));
@@ -239,25 +246,34 @@
       context.globalCompositeOperation = 'source-over';
     };
 
-    const render = () => {
-      if (!prefersReducedMotion()) {
-        segments.forEach((segment) => {
-          segment.x += segment.speed;
-          segment.y -= segment.speed * 0.18;
+    const render = (timestamp = (window.performance ? window.performance.now() : Date.now())) => {
+      const delta = lastTime === null
+        ? 1
+        : Math.min(3, Math.max(0.25, (timestamp - lastTime) / 16.67));
+      const motionScale = prefersReducedMotion() ? 0.38 : 1;
 
-          if (segment.x > width + 90) {
-            segment.x = -90;
-            segment.y = Math.random() * height;
-          }
+      lastTime = timestamp;
 
-          if (segment.y < -40) {
-            segment.y = height + 40;
-          }
-        });
-      }
+      segments.forEach((segment) => {
+        segment.x += segment.speed * delta * motionScale;
+        segment.y -= segment.speed * 0.22 * delta * motionScale;
+
+        if (segment.x > width + 90) {
+          segment.x = -90;
+          segment.y = Math.random() * height;
+        }
+
+        if (segment.y < -40) {
+          segment.y = height + 40;
+        }
+      });
 
       draw();
       frameId = window.requestAnimationFrame(render);
+    };
+
+    const resume = () => {
+      lastTime = null;
     };
 
     const observer = window.ResizeObserver
@@ -273,6 +289,9 @@
       window.addEventListener('resize', resize);
     }
 
+    document.addEventListener('visibilitychange', resume);
+    window.addEventListener('pageshow', resume);
+
     const cleanup = () => {
       if (frameId) {
         window.cancelAnimationFrame(frameId);
@@ -284,6 +303,9 @@
       } else {
         window.removeEventListener('resize', resize);
       }
+
+      document.removeEventListener('visibilitychange', resume);
+      window.removeEventListener('pageshow', resume);
     };
 
     window.addEventListener('beforeunload', cleanup, { once: true });

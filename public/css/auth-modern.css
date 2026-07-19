@@ -396,11 +396,22 @@ body:has(.sefar-login-shell) {
   .sefar-login-shell.sefar-auth-native-motion .sefar-login-hero h1,
   .sefar-login-shell.sefar-auth-native-motion .sefar-login-copy,
   .sefar-login-shell.sefar-auth-native-motion .sefar-login-pulse,
-  .sefar-login-shell.sefar-auth-native-motion .sefar-login-card,
-  .sefar-login-pulse span,
-  .sefar-login-overlay::before,
-  .sefar-login-overlay::after {
+  .sefar-login-shell.sefar-auth-native-motion .sefar-login-card {
     animation: none;
+  }
+
+  .sefar-login-pulse span {
+    animation-duration: 4.8s;
+  }
+
+  .sefar-login-overlay::before {
+    opacity: 0.44;
+    animation-duration: 18s;
+  }
+
+  .sefar-login-overlay::after {
+    opacity: 0.32;
+    animation-duration: 24s;
   }
 
   .sefar-login-button,
