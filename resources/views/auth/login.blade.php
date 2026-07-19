@@ -10,7 +10,7 @@
                 <p class="sefar-login-kicker">App Sefar Universal</p>
                 <h1>Acceso seguro al ecosistema Sefar</h1>
                 <p class="sefar-login-copy">
-                    Gestiona tu cuenta, expedientes y operaciones desde un panel renovado para trabajar con mas claridad.
+                    Tu historia familiar puede abrirte las puertas de Europa. Sigue aqui cada expediente, documento y avance hacia tu pasaporte europeo.
                 </p>
 
                 <div class="sefar-login-pulse" aria-hidden="true">
@@ -91,7 +91,7 @@
                         </svg>
                     </button>
 
-                    @if (Route::has('register'))
+                    @if (!Route::has('register'))
                         <p class="sefar-login-register">
                             No tienes cuenta?
                             <a href="{{ route('register') }}">Crear registro</a>

@@ -34,7 +34,15 @@ body:has(.sefar-login-shell) {
   z-index: 0;
   width: 100%;
   height: 100%;
-  opacity: 0.72;
+  opacity: 0.86;
+}
+
+.sefar-login-three-canvas {
+  opacity: 0;
+}
+
+.sefar-login-shell[data-sefar-auth-renderer="three"] .sefar-login-three-canvas {
+  opacity: 0.86;
 }
 
 .sefar-login-overlay {
@@ -60,6 +68,7 @@ body:has(.sefar-login-shell) {
 
 .sefar-login-hero {
   max-width: 680px;
+  will-change: transform, opacity;
 }
 
 .sefar-login-hero-logo {
@@ -118,16 +127,20 @@ body:has(.sefar-login-shell) {
   border-radius: 8px;
   background: rgba(219, 186, 114, 0.78);
   box-shadow: 0 0 18px rgba(219, 186, 114, 0.28);
+  animation: sefarLoginPulse 1.85s ease-in-out infinite alternate;
+  transform-origin: left center;
 }
 
 .sefar-login-pulse span:nth-child(2) {
   width: clamp(22px, 5vw, 48px);
   background: rgba(143, 216, 255, 0.62);
+  animation-delay: 0.18s;
 }
 
 .sefar-login-pulse span:nth-child(3) {
   width: clamp(14px, 3vw, 28px);
   background: rgba(255, 255, 255, 0.52);
+  animation-delay: 0.36s;
 }
 
 .sefar-login-card {
@@ -140,6 +153,46 @@ body:has(.sefar-login-shell) {
   color: var(--sefar-auth-blue);
   box-shadow: 0 24px 58px rgba(0, 27, 39, 0.34);
   backdrop-filter: blur(18px);
+  will-change: transform, opacity;
+}
+
+.sefar-login-shell.sefar-auth-native-motion .sefar-login-hero-logo,
+.sefar-login-shell.sefar-auth-native-motion .sefar-login-kicker,
+.sefar-login-shell.sefar-auth-native-motion .sefar-login-hero h1,
+.sefar-login-shell.sefar-auth-native-motion .sefar-login-copy,
+.sefar-login-shell.sefar-auth-native-motion .sefar-login-pulse,
+.sefar-login-shell.sefar-auth-native-motion .sefar-login-card {
+  animation: sefarLoginEnter 0.78s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.sefar-login-shell.sefar-auth-native-motion .sefar-login-kicker {
+  animation-delay: 0.05s;
+}
+
+.sefar-login-shell.sefar-auth-native-motion .sefar-login-hero h1 {
+  animation-delay: 0.1s;
+}
+
+.sefar-login-shell.sefar-auth-native-motion .sefar-login-copy {
+  animation-delay: 0.15s;
+}
+
+.sefar-login-shell.sefar-auth-native-motion .sefar-login-pulse {
+  animation-delay: 0.2s;
+}
+
+.sefar-login-shell.sefar-auth-native-motion .sefar-login-card {
+  animation-delay: 0.16s;
+}
+
+.sefar-login-shell[data-sefar-auth-motion="gsap"] .sefar-login-hero-logo,
+.sefar-login-shell[data-sefar-auth-motion="gsap"] .sefar-login-kicker,
+.sefar-login-shell[data-sefar-auth-motion="gsap"] .sefar-login-hero h1,
+.sefar-login-shell[data-sefar-auth-motion="gsap"] .sefar-login-copy,
+.sefar-login-shell[data-sefar-auth-motion="gsap"] .sefar-login-pulse,
+.sefar-login-shell[data-sefar-auth-motion="gsap"] .sefar-login-card,
+.sefar-login-shell[data-sefar-auth-motion="gsap"] .sefar-login-pulse span {
+  animation: none;
 }
 
 .sefar-login-card-head {
@@ -308,9 +361,43 @@ body:has(.sefar-login-shell) {
     opacity: 0.42;
   }
 
+  .sefar-login-shell.sefar-auth-native-motion .sefar-login-hero-logo,
+  .sefar-login-shell.sefar-auth-native-motion .sefar-login-kicker,
+  .sefar-login-shell.sefar-auth-native-motion .sefar-login-hero h1,
+  .sefar-login-shell.sefar-auth-native-motion .sefar-login-copy,
+  .sefar-login-shell.sefar-auth-native-motion .sefar-login-pulse,
+  .sefar-login-shell.sefar-auth-native-motion .sefar-login-card,
+  .sefar-login-pulse span {
+    animation: none;
+  }
+
   .sefar-login-button,
   .sefar-login-field input {
     transition: none;
+  }
+}
+
+@keyframes sefarLoginEnter {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sefarLoginPulse {
+  from {
+    transform: scaleX(1);
+    opacity: 0.72;
+  }
+
+  to {
+    transform: scaleX(0.58);
+    opacity: 1;
   }
 }
 

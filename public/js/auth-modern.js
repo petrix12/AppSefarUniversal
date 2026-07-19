@@ -61,15 +61,30 @@
       });
   });
 
+  const animateInterfaceNative = (shell) => {
+    shell.classList.add('sefar-auth-native-motion');
+
+    if (prefersReducedMotion()) {
+      shell.dataset.sefarAuthMotion = 'native-reduced';
+      return;
+    }
+
+    shell.dataset.sefarAuthMotion = 'native';
+  };
+
   const animateInterface = async (shell) => {
+    const nativeStartedAt = window.performance ? window.performance.now() : Date.now();
+
+    animateInterfaceNative(shell);
+
     const gsap = await loadScript(cdn.gsap, 'gsap');
 
     if (!gsap) {
-      shell.dataset.sefarAuthMotion = 'css';
       return;
     }
 
     shell.dataset.sefarAuthMotion = 'gsap';
+    shell.classList.add('sefar-auth-gsap-motion');
 
     const mm = gsap.matchMedia();
     mm.add(
@@ -84,34 +99,38 @@
           return undefined;
         }
 
-        gsap.from('.sefar-login-hero-logo, .sefar-login-kicker, .sefar-login-hero h1, .sefar-login-copy, .sefar-login-pulse', {
-          autoAlpha: 0,
-          y: 18,
-          duration: 0.72,
-          stagger: 0.08,
-          ease: 'power3.out',
-          clearProps: 'visibility,opacity,transform',
-        });
+        const nativeHasSettled = ((window.performance ? window.performance.now() : Date.now()) - nativeStartedAt) > 1200;
 
-        gsap.from('.sefar-login-card', {
-          autoAlpha: 0,
-          x: isDesktop ? 28 : 0,
-          y: isDesktop ? 0 : 18,
-          duration: 0.82,
-          delay: 0.12,
-          ease: 'power3.out',
-          clearProps: 'visibility,opacity,transform',
-        });
+        if (!nativeHasSettled) {
+          gsap.from('.sefar-login-hero-logo, .sefar-login-kicker, .sefar-login-hero h1, .sefar-login-copy, .sefar-login-pulse', {
+            autoAlpha: 0,
+            y: 18,
+            duration: 0.72,
+            stagger: 0.08,
+            ease: 'power3.out',
+            clearProps: 'visibility,opacity,transform',
+          });
 
-        gsap.from('.sefar-login-field, .sefar-login-options, .sefar-login-button, .sefar-login-register', {
-          autoAlpha: 0,
-          y: 12,
-          duration: 0.46,
-          delay: 0.34,
-          stagger: 0.045,
-          ease: 'power2.out',
-          clearProps: 'visibility,opacity,transform',
-        });
+          gsap.from('.sefar-login-card', {
+            autoAlpha: 0,
+            x: isDesktop ? 28 : 0,
+            y: isDesktop ? 0 : 18,
+            duration: 0.82,
+            delay: 0.12,
+            ease: 'power3.out',
+            clearProps: 'visibility,opacity,transform',
+          });
+
+          gsap.from('.sefar-login-field, .sefar-login-options, .sefar-login-button, .sefar-login-register', {
+            autoAlpha: 0,
+            y: 12,
+            duration: 0.46,
+            delay: 0.34,
+            stagger: 0.045,
+            ease: 'power2.out',
+            clearProps: 'visibility,opacity,transform',
+          });
+        }
 
         gsap.to('.sefar-login-pulse span', {
           scaleX: 0.64,
@@ -162,7 +181,7 @@
     const context = canvas.getContext('2d');
 
     if (!context) {
-      return;
+      return () => {};
     }
 
     shell.dataset.sefarAuthRenderer = 'fallback';
@@ -173,12 +192,12 @@
     let width = 1;
     let height = 1;
 
-    const buildSegments = () => Array.from({ length: 58 }, () => ({
+    const buildSegments = () => Array.from({ length: 96 }, () => ({
       x: Math.random() * width,
       y: Math.random() * height,
-      length: 22 + Math.random() * 72,
-      speed: 0.16 + Math.random() * 0.34,
-      alpha: 0.12 + Math.random() * 0.28,
+      length: 42 + Math.random() * 112,
+      speed: 0.36 + Math.random() * 0.82,
+      alpha: 0.18 + Math.random() * 0.38,
       tilt: -0.25 + Math.random() * 0.5,
     }));
 
@@ -199,11 +218,12 @@
     const draw = () => {
       context.clearRect(0, 0, width, height);
       context.lineCap = 'round';
+      context.globalCompositeOperation = 'lighter';
 
       segments.forEach((segment) => {
         context.beginPath();
         context.strokeStyle = `rgba(143, 216, 255, ${segment.alpha})`;
-        context.lineWidth = 1;
+        context.lineWidth = 1.35;
         context.moveTo(segment.x, segment.y);
         context.lineTo(segment.x + segment.length, segment.y + (segment.length * segment.tilt));
         context.stroke();
@@ -215,6 +235,8 @@
         context.lineTo(segment.x + 9, segment.y + 4);
         context.stroke();
       });
+
+      context.globalCompositeOperation = 'source-over';
     };
 
     const render = () => {
@@ -251,9 +273,10 @@
       window.addEventListener('resize', resize);
     }
 
-    window.addEventListener('beforeunload', () => {
+    const cleanup = () => {
       if (frameId) {
         window.cancelAnimationFrame(frameId);
+        frameId = null;
       }
 
       if (observer) {
@@ -261,21 +284,27 @@
       } else {
         window.removeEventListener('resize', resize);
       }
-    }, { once: true });
+    };
+
+    window.addEventListener('beforeunload', cleanup, { once: true });
 
     resize();
     render();
+
+    return cleanup;
   };
 
-  const setupThreeScene = async (shell, canvas) => {
+  const setupThreeScene = async (shell, canvas, stopFallback, fallbackCanvas) => {
     try {
       const THREE = window.THREE || await withTimeout(import(cdn.three));
 
       if (!THREE || prefersReducedMotion()) {
-        setupCanvasFallback(shell, canvas);
+        canvas.remove();
         return;
       }
 
+      stopFallback();
+      fallbackCanvas.style.display = 'none';
       shell.dataset.sefarAuthRenderer = 'three';
 
       const scene = new THREE.Scene();
@@ -426,7 +455,8 @@
       resize();
       render();
     } catch (error) {
-      setupCanvasFallback(shell, canvas);
+      shell.dataset.sefarAuthRenderer = shell.dataset.sefarAuthRenderer || 'fallback';
+      canvas.remove();
     }
   };
 
@@ -443,7 +473,15 @@
       return;
     }
 
+    canvas.classList.add('sefar-login-fallback-canvas');
+
+    const threeCanvas = document.createElement('canvas');
+    threeCanvas.className = 'sefar-login-canvas sefar-login-three-canvas';
+    threeCanvas.setAttribute('aria-hidden', 'true');
+    canvas.after(threeCanvas);
+
     animateInterface(shell);
-    setupThreeScene(shell, canvas);
+    const stopFallback = setupCanvasFallback(shell, canvas);
+    setupThreeScene(shell, threeCanvas, stopFallback, canvas);
   });
 }());
