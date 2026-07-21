@@ -5,9 +5,9 @@
 
   window.__sefarAdminShellReady = true;
 
-  const cdn = {
-    gsap: 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js',
-    three: 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js',
+  const assets = {
+    gsap: '/js/gsap.js',
+    three: '/js/three.js',
   };
 
   const ready = (callback) => {
@@ -85,7 +85,7 @@
   };
 
   const animateNavigation = async (sidebar) => {
-    const gsap = await loadScript(cdn.gsap, 'gsap');
+    const gsap = await loadScript(assets.gsap, 'gsap');
 
     if (!gsap) {
       return;
@@ -304,7 +304,7 @@
     }
 
     try {
-      const THREE = window.THREE || await withTimeout(import(cdn.three));
+      const THREE = window.THREE || await withTimeout(import(assets.three));
 
       if (!THREE) {
         setupCanvasFallback(sidebar, canvas);

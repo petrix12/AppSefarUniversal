@@ -132,7 +132,7 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // Registro de clientes desactivado temporalmente.
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::updateProfileInformation(),

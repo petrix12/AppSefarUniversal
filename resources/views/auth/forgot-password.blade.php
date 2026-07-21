@@ -1,35 +1,42 @@
 <x-guest-layout>
-    <x-authentication-card>
-        <x-slot name="logo">
-            {{-- <x-authentication-card-logo /> --}}
-            @include('layouts.logos.logo')
-        </x-slot>
-
-        <div class="mb-4 text-sm text-gray-600">
-            {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
-        </div>
+    <x-sefar-auth-shell
+        title="Recupera el acceso a tu cuenta"
+        copy="Te enviaremos un enlace seguro para restablecer tu contrasena y volver a consultar tus procesos, documentos y avances."
+        card-id="sefar-forgot-title"
+        card-title="Contrasena olvidada"
+        card-eyebrow="Acceso seguro"
+    >
+        <p class="sefar-login-text">
+            Escribe el correo asociado a tu usuario. Si existe una cuenta, recibiras un enlace para crear una nueva contrasena.
+        </p>
 
         @if (session('status'))
-            <div class="mb-4 font-medium text-sm text-green-600">
+            <div class="sefar-login-status">
                 {{ session('status') }}
             </div>
         @endif
 
-        <x-validation-errors class="mb-4" />
+        <x-validation-errors class="sefar-login-errors" />
 
-        <form method="POST" action="{{ route('password.email') }}">
+        <form class="sefar-login-form" method="POST" action="{{ route('password.email') }}">
             @csrf
 
-            <div class="block">
-                <x-label for="email" value="{{ __('Email') }}" />
-                <x-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus />
-            </div>
+            <label for="email" class="sefar-login-field">
+                <span>Email</span>
+                <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username">
+            </label>
 
-            <div class="flex items-center justify-end mt-4">
-                <x-button class="cfrSefar">
-                    {{ __('Email Password Reset Link') }}
-                </x-button>
-            </div>
+            <button class="sefar-login-button" type="submit">
+                <span>Enviar enlace de recuperacion</span>
+                <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                    <path d="M11.2 4.7a.8.8 0 0 1 1.1 0l4.2 4.2a.8.8 0 0 1 0 1.2l-4.2 4.2a.8.8 0 1 1-1.1-1.2l2.8-2.8H4.1a.8.8 0 1 1 0-1.6H14l-2.8-2.8a.8.8 0 0 1 0-1.2Z" fill="currentColor"/>
+                </svg>
+            </button>
+
+            <p class="sefar-login-register">
+                Ya recordaste tu contrasena?
+                <a href="{{ route('login') }}">Volver al login</a>
+            </p>
         </form>
-    </x-authentication-card>
+    </x-sefar-auth-shell>
 </x-guest-layout>

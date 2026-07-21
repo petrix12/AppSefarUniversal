@@ -94,6 +94,8 @@
       gtag('config', 'UA-189067277-1');
     </script>
 
+    @include('layouts.partials.sefar-global-libraries')
+
     @if(auth()->user()->hasRole(['Cliente']))
         <script>
             $(document).ready(function(){

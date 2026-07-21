@@ -42,7 +42,11 @@ body:has(.sefar-login-shell) {
 }
 
 .sefar-login-shell[data-sefar-auth-renderer="three"] .sefar-login-three-canvas {
-  opacity: 0.86;
+  opacity: 1;
+}
+
+.sefar-login-shell[data-sefar-auth-renderer="three-tree"] .sefar-login-three-canvas {
+  opacity: 1;
 }
 
 .sefar-login-overlay {
@@ -334,14 +338,16 @@ body:has(.sefar-login-shell) {
 }
 
 .sefar-login-options a,
-.sefar-login-register a {
+.sefar-login-register a,
+.sefar-login-link-button {
   color: var(--sefar-auth-blue-soft);
   font-weight: 900;
   text-decoration: none;
 }
 
 .sefar-login-options a:hover,
-.sefar-login-register a:hover {
+.sefar-login-register a:hover,
+.sefar-login-link-button:hover {
   color: var(--sefar-auth-blue);
   text-decoration: underline;
 }
@@ -376,6 +382,51 @@ body:has(.sefar-login-shell) {
 .sefar-login-button:hover {
   transform: translateY(-1px);
   box-shadow: 0 18px 32px rgba(9, 49, 67, 0.3);
+}
+
+.sefar-login-button--compact {
+  width: auto;
+  min-width: 11rem;
+  padding-right: 1.2rem;
+  padding-left: 1.2rem;
+}
+
+.sefar-login-text {
+  margin: 0 0 1rem;
+  color: var(--sefar-auth-muted);
+  font-size: 0.94rem;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.sefar-login-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  margin-top: 0.2rem;
+}
+
+.sefar-login-actions--split {
+  align-items: stretch;
+  margin-top: 1.15rem;
+}
+
+.sefar-login-actions--split form {
+  display: flex;
+  min-width: 0;
+}
+
+.sefar-login-actions--split .sefar-login-button {
+  width: auto;
+}
+
+.sefar-login-link-button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
 }
 
 .sefar-login-register {
@@ -496,6 +547,10 @@ body:has(.sefar-login-shell) {
     min-height: 100svh;
   }
 
+  .sefar-login-shell[data-sefar-auth-renderer="three-tree"] .sefar-login-three-canvas {
+    opacity: 0.48;
+  }
+
   .sefar-login-layout {
     min-height: 100svh;
     padding: 1rem;
@@ -520,5 +575,16 @@ body:has(.sefar-login-shell) {
   .sefar-login-options {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .sefar-login-actions,
+  .sefar-login-actions--split {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sefar-login-button--compact,
+  .sefar-login-actions--split .sefar-login-button {
+    width: 100%;
   }
 }

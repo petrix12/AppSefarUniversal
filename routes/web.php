@@ -49,7 +49,6 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DocumentRequestController;
-use App\Http\Controllers\RegisterV2Controller;
 use App\Http\Controllers\CosVisitController;
 use App\Http\Controllers\WhatsappBotURLController;
 use App\Http\Controllers\WhatsappController;
@@ -323,9 +322,7 @@ Route::get('/crud/users/{user}/edit-basic', [UserController::class, 'editBasic']
 Route::put('/crud/users/{user}/update-basic', [UserController::class, 'updateBasic'])
     ->name('crud.users.updateBasic');
 
-Route::get('/registerv2', [RegisterV2Controller::class, 'index'])->name('register.v2.form');
-
-Route::post('/registerv2', [RegisterV2Controller::class, 'store'])->name('register.v2');
+// Registro de clientes desactivado temporalmente hasta nuevo aviso.
 
 Route::get('/registro-coordinador', [ProveedorRegisterController::class, 'create'])->name('proveedor.register');
 Route::post('/registro-coordinador', [ProveedorRegisterController::class, 'store'])->name('proveedor.register.store');

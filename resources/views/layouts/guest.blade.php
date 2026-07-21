@@ -33,6 +33,7 @@
 
         <!-- Scripts -->
         <script src="{{ asset('/js/app.js') }}?v={{ filemtime(public_path('js/app.js')) }}" defer></script>
+        @include('layouts.partials.sefar-global-libraries')
         <script src="{{ asset('/js/auth-modern.js') }}?v={{ filemtime(public_path('js/auth-modern.js')) }}" defer></script>
 
         <script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/20053496.js"></script>
