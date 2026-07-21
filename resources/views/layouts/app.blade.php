@@ -34,7 +34,7 @@
                 <title>{{ config('app.name', 'Laravel') }}</title>
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap">
 
         <!-- Styles -->
         <link rel="stylesheet" href="{{ asset('/css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}">

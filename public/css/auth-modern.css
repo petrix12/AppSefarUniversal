@@ -18,7 +18,8 @@ body:has(.sefar-login-shell) {
   overflow: hidden;
   background-color: #093649;
   background:
-    linear-gradient(110deg, rgba(9, 54, 73, 0.92) 0%, rgba(9, 54, 73, 0.76) 45%, rgba(9, 54, 73, 0.34) 100%),
+    linear-gradient(90deg, rgba(9, 54, 73, 0.18) 0%, rgba(9, 54, 73, 0.22) 45%, rgba(9, 54, 73, 0.72) 100%),
+    linear-gradient(110deg, rgba(9, 54, 73, 0.92) 0%, rgba(9, 54, 73, 0.76) 45%, rgba(9, 54, 73, 0.5) 100%),
     url("../img/bglogin.png") center / cover no-repeat;
   color: #ffffff;
   isolation: isolate;
@@ -55,7 +56,7 @@ body:has(.sefar-login-shell) {
   z-index: 1;
   overflow: hidden;
   background:
-    linear-gradient(90deg, rgba(9, 54, 73, 0.72) 0%, rgba(9, 54, 73, 0.56) 34%, rgba(9, 54, 73, 0.18) 58%, transparent 78%),
+    linear-gradient(90deg, rgba(9, 54, 73, 0.72) 0%, rgba(9, 54, 73, 0.56) 34%, rgba(9, 54, 73, 0.2) 58%, rgba(9, 54, 73, 0.48) 100%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 24%),
     linear-gradient(90deg, rgba(219, 186, 114, 0.11), transparent 42%),
     linear-gradient(135deg, transparent 0%, rgba(13, 93, 120, 0.16) 52%, transparent 100%);

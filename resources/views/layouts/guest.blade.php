@@ -10,7 +10,7 @@
         {{-- <link rel="shortcut icon" type="image/x-icon" href="{{ Storage::disk('s3')->url('imagenes/auxiliar/favicon.ico') }}"> --}}
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap">
 
         <meta property="fb:app_id" content="APPID">
         <meta data-react-helmet="true" property="og:url" content="https://app.sefaruniversal.com/"/>
