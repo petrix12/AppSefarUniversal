@@ -1,6 +1,6 @@
 :root {
-  --sefar-auth-ink: #001b27;
-  --sefar-auth-blue: #093143;
+  --sefar-auth-ink: #093649;
+  --sefar-auth-blue: #093649;
   --sefar-auth-blue-soft: #0d5d78;
   --sefar-auth-gold: #dbba72;
   --sefar-auth-muted: #6b7f89;
@@ -16,8 +16,9 @@ body:has(.sefar-login-shell) {
   position: relative;
   min-height: 100vh;
   overflow: hidden;
+  background-color: #093649;
   background:
-    linear-gradient(110deg, rgba(0, 27, 39, 0.96) 0%, rgba(0, 27, 39, 0.86) 42%, rgba(9, 49, 67, 0.62) 100%),
+    linear-gradient(110deg, rgba(9, 54, 73, 0.92) 0%, rgba(9, 54, 73, 0.76) 45%, rgba(9, 54, 73, 0.34) 100%),
     url("../img/bglogin.png") center / cover no-repeat;
   color: #ffffff;
   isolation: isolate;
@@ -47,16 +48,17 @@ body:has(.sefar-login-shell) {
 }
 
 .sefar-login-shell[data-sefar-auth-renderer="three-tree"] .sefar-login-three-canvas {
-  opacity: 1;
+  opacity: 0.82;
 }
 
 .sefar-login-overlay {
   z-index: 1;
   overflow: hidden;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 24%),
-    linear-gradient(90deg, rgba(219, 186, 114, 0.16), transparent 40%),
-    linear-gradient(135deg, transparent 0%, rgba(13, 93, 120, 0.2) 52%, transparent 100%);
+    linear-gradient(90deg, rgba(9, 54, 73, 0.72) 0%, rgba(9, 54, 73, 0.56) 34%, rgba(9, 54, 73, 0.18) 58%, transparent 78%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 24%),
+    linear-gradient(90deg, rgba(219, 186, 114, 0.11), transparent 42%),
+    linear-gradient(135deg, transparent 0%, rgba(13, 93, 120, 0.16) 52%, transparent 100%);
 }
 
 .sefar-login-overlay::before,
@@ -70,8 +72,8 @@ body:has(.sefar-login-shell) {
 .sefar-login-overlay::before {
   inset: -24% -46%;
   background:
-    linear-gradient(104deg, transparent 0%, transparent 39%, rgba(143, 216, 255, 0.2) 46%, rgba(219, 186, 114, 0.18) 50%, rgba(255, 255, 255, 0.11) 53%, transparent 61%, transparent 100%);
-  opacity: 1;
+    linear-gradient(104deg, transparent 0%, transparent 39%, rgba(143, 216, 255, 0.14) 46%, rgba(219, 186, 114, 0.13) 50%, rgba(255, 255, 255, 0.08) 53%, transparent 61%, transparent 100%);
+  opacity: 0.82;
   transform: translate3d(-34%, 0, 0);
   animation: sefarLoginSweep 6.4s linear infinite;
 }
@@ -82,8 +84,8 @@ body:has(.sefar-login-shell) {
   left: -18%;
   height: 28%;
   background:
-    linear-gradient(90deg, transparent 0%, rgba(143, 216, 255, 0.16) 35%, rgba(219, 186, 114, 0.14) 50%, rgba(143, 216, 255, 0.16) 65%, transparent 100%);
-  opacity: 0.68;
+    linear-gradient(90deg, transparent 0%, rgba(143, 216, 255, 0.12) 35%, rgba(219, 186, 114, 0.1) 50%, rgba(143, 216, 255, 0.12) 65%, transparent 100%);
+  opacity: 0.5;
   transform: translate3d(-7%, 0, 0) skewY(-5deg);
   animation: sefarLoginHorizon 8.4s ease-in-out infinite alternate;
 }
@@ -122,7 +124,7 @@ body:has(.sefar-login-shell) {
   border: 1px solid rgba(219, 186, 114, 0.38);
   border-radius: 8px;
   padding: 0.36rem 0.65rem;
-  background: rgba(0, 27, 39, 0.34);
+  background: rgba(9, 54, 73, 0.64);
   color: var(--sefar-auth-gold);
   font-size: 0.76rem;
   font-weight: 900;
@@ -139,17 +141,18 @@ body:has(.sefar-login-shell) {
   line-height: 0.98;
   letter-spacing: 0;
   text-shadow:
-    0 12px 34px rgba(0, 27, 39, 0.74),
-    0 2px 2px rgba(0, 27, 39, 0.35);
+    0 16px 38px rgba(9, 54, 73, 0.96),
+    0 4px 10px rgba(9, 54, 73, 0.82),
+    0 1px 2px rgba(0, 20, 31, 0.7);
 }
 
 .sefar-login-copy {
   max-width: 600px;
   margin: 1rem 0 0;
-  color: rgba(238, 246, 248, 0.82);
+  color: rgba(242, 248, 250, 0.9);
   font-size: clamp(1rem, 1.5vw, 1.14rem);
   line-height: 1.55;
-  text-shadow: 0 8px 22px rgba(0, 27, 39, 0.62);
+  text-shadow: 0 10px 26px rgba(9, 54, 73, 0.9);
 }
 
 .sefar-login-pulse {
@@ -553,7 +556,7 @@ body:has(.sefar-login-shell) {
   }
 
   .sefar-login-shell[data-sefar-auth-renderer="three-tree"] .sefar-login-three-canvas {
-    opacity: 0.68;
+    opacity: 0.5;
     filter: saturate(1.12) brightness(1.02);
   }
 

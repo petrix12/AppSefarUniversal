@@ -586,7 +586,7 @@
       const nodeFillMaterial = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         transparent: true,
-        opacity: 0.16,
+        opacity: 0.12,
         side: THREE.DoubleSide,
         depthWrite: false,
         depthTest: false,
@@ -594,7 +594,7 @@
       const nodeMaterial = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         transparent: true,
-        opacity: 0.94,
+        opacity: 0.78,
         side: THREE.DoubleSide,
         depthWrite: false,
         depthTest: false,
@@ -603,7 +603,7 @@
       const nodeAccentMaterial = new THREE.MeshBasicMaterial({
         color: 0xdbba72,
         transparent: true,
-        opacity: 0.88,
+        opacity: 0.76,
         side: THREE.DoubleSide,
         depthWrite: false,
         depthTest: false,
@@ -630,7 +630,7 @@
       const nodeCoreMaterial = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         transparent: true,
-        opacity: 0.9,
+        opacity: 0.66,
         side: THREE.DoubleSide,
         depthWrite: false,
         depthTest: false,
@@ -682,7 +682,7 @@
       const leafWhiteMaterial = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         transparent: true,
-        opacity: 0.42,
+        opacity: 0.26,
         side: THREE.DoubleSide,
         depthWrite: false,
         depthTest: false,
@@ -795,7 +795,7 @@
             nodeHaloAccentMaterial,
             nodeCoreMaterial,
           ], {
-            opacity: (index) => [0.82, 0.62, 0.66, 0.5, 0.26, 0.28, 0.16, 0.94, 0.88, 0.24, 0.28, 0.9][index],
+            opacity: (index) => [0.64, 0.5, 0.5, 0.38, 0.18, 0.2, 0.12, 0.78, 0.76, 0.18, 0.22, 0.66][index],
             duration: 1.05,
             stagger: 0.025,
           }, 0.04)
@@ -894,8 +894,8 @@
         camera.updateProjectionMatrix();
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         renderer.setSize(width, height, false);
-        treeGroup.position.set(isMobile ? 0.02 : -1.12, isMobile ? 0.86 : -0.04, -0.92);
-        treeGroup.scale.setScalar(isMobile ? 0.68 : 1.38);
+        treeGroup.position.set(isMobile ? 0.12 : -1.28, isMobile ? 1.08 : 0.32, -0.92);
+        treeGroup.scale.setScalar(isMobile ? 0.56 : 1.24);
       };
 
       const render = () => {
@@ -909,14 +909,14 @@
         shell.dataset.sefarAuthThreeFrames = String(Number(shell.dataset.sefarAuthThreeFrames || 0) + 1);
         treeGroup.rotation.y += ((targetX * 0.26) - treeGroup.rotation.y) * 0.04;
         treeGroup.rotation.x += ((targetY * 0.15) - treeGroup.rotation.x) * 0.04;
-        branchLines.material.opacity = 0.72 + (Math.sin(elapsed * 1.2) * 0.1);
-        branchTubeMaterial.opacity = 0.56 + (Math.sin(elapsed * 1.05) * 0.08);
-        trunkTubeMaterial.opacity = 0.44 + (Math.sin(elapsed * 1.16) * 0.06);
-        branchAuraMaterial.opacity = 0.2 + (Math.sin(elapsed * 1.35) * 0.06);
-        trunkAuraMaterial.opacity = 0.22 + (Math.sin(elapsed * 1.18) * 0.05);
-        leafBlueMaterial.opacity = 0.68 + (Math.sin(elapsed * 0.85) * 0.08);
-        leafGoldMaterial.opacity = 0.58 + (Math.sin(elapsed * 0.9) * 0.07);
-        leafWhiteMaterial.opacity = 0.38 + (Math.sin(elapsed * 1.05) * 0.06);
+        branchLines.material.opacity = 0.58 + (Math.sin(elapsed * 1.2) * 0.08);
+        branchTubeMaterial.opacity = 0.43 + (Math.sin(elapsed * 1.05) * 0.06);
+        trunkTubeMaterial.opacity = 0.36 + (Math.sin(elapsed * 1.16) * 0.05);
+        branchAuraMaterial.opacity = 0.15 + (Math.sin(elapsed * 1.35) * 0.04);
+        trunkAuraMaterial.opacity = 0.17 + (Math.sin(elapsed * 1.18) * 0.04);
+        leafBlueMaterial.opacity = 0.52 + (Math.sin(elapsed * 0.85) * 0.06);
+        leafGoldMaterial.opacity = 0.43 + (Math.sin(elapsed * 0.9) * 0.05);
+        leafWhiteMaterial.opacity = 0.28 + (Math.sin(elapsed * 1.05) * 0.04);
         leafGroup.rotation.z = Math.sin(elapsed * 0.34) * 0.038;
         sparkGroup.rotation.z = Math.sin(elapsed * 0.26) * 0.018;
         leafMeshes.forEach((leaf) => {
