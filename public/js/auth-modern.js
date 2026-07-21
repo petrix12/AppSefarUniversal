@@ -250,18 +250,19 @@
           delay: index * 0.09,
         };
       });
-      const leaves = Array.from({ length: width < 720 ? 42 : 72 }, (_, index) => {
-        const angle = (index / (width < 720 ? 42 : 72)) * Math.PI * 2;
+      const leavesCount = width < 720 ? 74 : 116;
+      const leaves = Array.from({ length: leavesCount }, (_, index) => {
+        const angle = (index / leavesCount) * Math.PI * 2;
         const radiusX = scale * (0.25 + (Math.random() * 0.2));
         const radiusY = scale * (0.14 + (Math.random() * 0.1));
 
         return {
           x: originX + (Math.cos(angle) * radiusX) + ((Math.random() - 0.5) * scale * 0.18),
           y: originY - (scale * 0.2) + (Math.sin(angle) * radiusY) + ((Math.random() - 0.5) * scale * 0.08),
-          size: 4 + Math.random() * 7,
+          size: 5 + Math.random() * 10,
           angle: angle + Math.random(),
           speed: 0.6 + Math.random() * 0.9,
-          alpha: 0.22 + Math.random() * 0.24,
+          alpha: 0.32 + Math.random() * 0.32,
         };
       });
 
@@ -287,18 +288,22 @@
       const x = branch.from.x + ((branch.to.x - branch.from.x) * eased);
       const y = branch.from.y + ((branch.to.y - branch.from.y) * eased);
 
+      context.save();
+      context.shadowBlur = 20;
+      context.shadowColor = 'rgba(219, 186, 114, 0.62)';
       context.beginPath();
       context.moveTo(branch.from.x, branch.from.y);
       context.lineTo(x, y);
-      context.lineWidth = branch.lineWidth;
-      context.strokeStyle = 'rgba(219, 186, 114, 0.48)';
+      context.lineWidth = branch.lineWidth * 1.18;
+      context.strokeStyle = 'rgba(219, 186, 114, 0.68)';
       context.stroke();
+      context.restore();
 
       context.beginPath();
       context.moveTo(branch.from.x, branch.from.y);
       context.lineTo(x, y);
-      context.lineWidth = Math.max(1, branch.lineWidth * 0.36);
-      context.strokeStyle = 'rgba(143, 216, 255, 0.2)';
+      context.lineWidth = Math.max(1, branch.lineWidth * 0.48);
+      context.strokeStyle = 'rgba(143, 216, 255, 0.34)';
       context.stroke();
     };
 
@@ -337,15 +342,18 @@
           : 1 + (Math.sin((elapsed * 1.1) + node.delay) * 0.045);
         context.beginPath();
         context.arc(node.x, node.y, node.radius * pulse, 0, Math.PI * 2);
-        context.fillStyle = 'rgba(255, 255, 255, 0.045)';
+        context.shadowBlur = 22;
+        context.shadowColor = 'rgba(143, 216, 255, 0.54)';
+        context.fillStyle = 'rgba(255, 255, 255, 0.08)';
         context.fill();
         context.lineWidth = Math.max(1.2, node.radius * 0.065);
-        context.strokeStyle = 'rgba(219, 186, 114, 0.46)';
+        context.strokeStyle = 'rgba(219, 186, 114, 0.7)';
         context.stroke();
+        context.shadowBlur = 0;
         context.beginPath();
         context.arc(node.x, node.y, node.radius * 0.78, 0, Math.PI * 2);
-        context.lineWidth = 1;
-        context.strokeStyle = 'rgba(143, 216, 255, 0.2)';
+        context.lineWidth = 1.3;
+        context.strokeStyle = 'rgba(143, 216, 255, 0.38)';
         context.stroke();
       });
     };
@@ -427,12 +435,17 @@
         canvas,
         alpha: true,
         antialias: true,
-        powerPreference: 'low-power',
+        powerPreference: 'high-performance',
       });
+      if (THREE.SRGBColorSpace) {
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+      }
+      const revealGroup = new THREE.Group();
       const treeGroup = new THREE.Group();
       const branchGroup = new THREE.Group();
       const nodeGroup = new THREE.Group();
       const leafGroup = new THREE.Group();
+      const sparkGroup = new THREE.Group();
       const clock = new THREE.Clock();
       let frameId = null;
       let running = true;
@@ -474,20 +487,42 @@
       const branchMaterial = new THREE.LineBasicMaterial({
         color: 0xdbba72,
         transparent: true,
-        opacity: 0.58,
+        opacity: 0.78,
         depthWrite: false,
+        depthTest: false,
+        blending: THREE.AdditiveBlending,
       });
       const branchTubeMaterial = new THREE.MeshBasicMaterial({
         color: 0xdbba72,
         transparent: true,
-        opacity: 0.42,
+        opacity: 0.64,
         depthWrite: false,
+        depthTest: false,
+        blending: THREE.AdditiveBlending,
       });
       const trunkTubeMaterial = new THREE.MeshBasicMaterial({
         color: 0x8fd8ff,
         transparent: true,
-        opacity: 0.28,
+        opacity: 0.5,
         depthWrite: false,
+        depthTest: false,
+        blending: THREE.AdditiveBlending,
+      });
+      const branchAuraMaterial = new THREE.MeshBasicMaterial({
+        color: 0xdbba72,
+        transparent: true,
+        opacity: 0.22,
+        depthWrite: false,
+        depthTest: false,
+        blending: THREE.AdditiveBlending,
+      });
+      const trunkAuraMaterial = new THREE.MeshBasicMaterial({
+        color: 0x8fd8ff,
+        transparent: true,
+        opacity: 0.24,
+        depthWrite: false,
+        depthTest: false,
+        blending: THREE.AdditiveBlending,
       });
       const branchLines = new THREE.LineSegments(branchGeometry, branchMaterial);
       branchGroup.add(branchLines);
@@ -498,13 +533,27 @@
           new THREE.Vector3(to[0], to[1], to[2]),
         ]);
         const tube = new THREE.Mesh(
-          new THREE.TubeGeometry(curve, 18, index < 2 ? 0.026 : 0.014, 7, false),
+          new THREE.TubeGeometry(curve, 20, index < 2 ? 0.044 : 0.024, 8, false),
           index < 2 ? trunkTubeMaterial : branchTubeMaterial
         );
 
         branchGroup.add(tube);
 
         return tube;
+      });
+      const auraTubeMeshes = branchSegments.map(([from, to], index) => {
+        const curve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(from[0], from[1], from[2]),
+          new THREE.Vector3(to[0], to[1], to[2]),
+        ]);
+        const auraTube = new THREE.Mesh(
+          new THREE.TubeGeometry(curve, 20, index < 2 ? 0.12 : 0.065, 10, false),
+          index < 2 ? trunkAuraMaterial : branchAuraMaterial
+        );
+
+        branchGroup.add(auraTube);
+
+        return auraTube;
       });
 
       const trunkGeometry = new THREE.BufferGeometry();
@@ -521,64 +570,132 @@
         new THREE.LineBasicMaterial({
           color: 0x8fd8ff,
           transparent: true,
-          opacity: 0.32,
+          opacity: 0.58,
           depthWrite: false,
+          depthTest: false,
+          blending: THREE.AdditiveBlending,
         })
       );
       branchGroup.add(trunk);
 
-      const nodeGeometry = new THREE.RingGeometry(0.19, 0.207, 52);
-      const nodeFillGeometry = new THREE.CircleGeometry(0.18, 52);
+      const nodeHaloGeometry = new THREE.RingGeometry(0.22, 0.34, 64);
+      const nodeGeometry = new THREE.RingGeometry(0.18, 0.22, 64);
+      const nodeInnerGeometry = new THREE.RingGeometry(0.115, 0.132, 52);
+      const nodeFillGeometry = new THREE.CircleGeometry(0.18, 64);
+      const nodeCoreGeometry = new THREE.CircleGeometry(0.045, 32);
       const nodeFillMaterial = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         transparent: true,
-        opacity: 0.08,
+        opacity: 0.16,
         side: THREE.DoubleSide,
         depthWrite: false,
+        depthTest: false,
       });
       const nodeMaterial = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         transparent: true,
-        opacity: 0.72,
+        opacity: 0.94,
         side: THREE.DoubleSide,
         depthWrite: false,
+        depthTest: false,
+        blending: THREE.AdditiveBlending,
       });
       const nodeAccentMaterial = new THREE.MeshBasicMaterial({
         color: 0xdbba72,
         transparent: true,
-        opacity: 0.58,
+        opacity: 0.88,
         side: THREE.DoubleSide,
         depthWrite: false,
+        depthTest: false,
+        blending: THREE.AdditiveBlending,
       });
+      const nodeHaloMaterial = new THREE.MeshBasicMaterial({
+        color: 0x8fd8ff,
+        transparent: true,
+        opacity: 0.22,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        depthTest: false,
+        blending: THREE.AdditiveBlending,
+      });
+      const nodeHaloAccentMaterial = new THREE.MeshBasicMaterial({
+        color: 0xdbba72,
+        transparent: true,
+        opacity: 0.26,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        depthTest: false,
+        blending: THREE.AdditiveBlending,
+      });
+      const nodeCoreMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.9,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        depthTest: false,
+        blending: THREE.AdditiveBlending,
+      });
+      const nodeHaloMeshes = [];
+      const nodeCoreMeshes = [];
       const nodeMeshes = nodePositions.map((position, index) => {
         const node = new THREE.Group();
+        const halo = new THREE.Mesh(nodeHaloGeometry, index % 2 ? nodeHaloMaterial : nodeHaloAccentMaterial);
         const fill = new THREE.Mesh(nodeFillGeometry, nodeFillMaterial);
         const outer = new THREE.Mesh(nodeGeometry, index % 2 ? nodeMaterial : nodeAccentMaterial);
         const inner = new THREE.Mesh(
-          new THREE.RingGeometry(0.13, 0.136, 44),
+          nodeInnerGeometry,
           index % 2 ? nodeAccentMaterial : nodeMaterial
         );
+        const core = new THREE.Mesh(nodeCoreGeometry, nodeCoreMaterial);
 
         node.position.set(position[0], position[1], position[2]);
-        node.add(fill, outer, inner);
+        node.add(halo, fill, outer, inner, core);
+        node.userData.halo = halo;
+        node.userData.core = core;
+        nodeHaloMeshes.push(halo);
+        nodeCoreMeshes.push(core);
         nodeGroup.add(node);
 
         return node;
       });
 
       const leafGeometry = new THREE.CircleGeometry(0.035, 10);
-      const leafMaterial = new THREE.MeshBasicMaterial({
+      const leafBlueMaterial = new THREE.MeshBasicMaterial({
         color: 0x8fd8ff,
         transparent: true,
-        opacity: 0.5,
+        opacity: 0.72,
         side: THREE.DoubleSide,
         depthWrite: false,
+        depthTest: false,
+        blending: THREE.AdditiveBlending,
       });
-      const leafMeshes = Array.from({ length: 64 }, (_, index) => {
-        const angle = (index / 64) * Math.PI * 2;
-        const radiusX = 1.7 + (Math.random() * 0.55);
-        const radiusY = 0.9 + (Math.random() * 0.32);
-        const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+      const leafGoldMaterial = new THREE.MeshBasicMaterial({
+        color: 0xdbba72,
+        transparent: true,
+        opacity: 0.62,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        depthTest: false,
+        blending: THREE.AdditiveBlending,
+      });
+      const leafWhiteMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.42,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        depthTest: false,
+        blending: THREE.AdditiveBlending,
+      });
+      const leafMaterials = [leafBlueMaterial, leafGoldMaterial, leafBlueMaterial, leafWhiteMaterial];
+      const leafCount = 92;
+      const leafMeshes = Array.from({ length: leafCount }, (_, index) => {
+        const angle = (index / leafCount) * Math.PI * 2;
+        const radiusX = 1.72 + (Math.random() * 0.72);
+        const radiusY = 0.92 + (Math.random() * 0.42);
+        const leaf = new THREE.Mesh(leafGeometry, leafMaterials[index % leafMaterials.length]);
+        const baseScale = 0.95 + Math.random() * 1.85;
 
         leaf.position.set(
           Math.cos(angle) * radiusX,
@@ -586,7 +703,8 @@
           -0.18 + ((Math.random() - 0.5) * 0.38)
         );
         leaf.rotation.z = angle;
-        leaf.scale.setScalar(0.75 + Math.random() * 1.3);
+        leaf.scale.setScalar(baseScale);
+        leaf.userData.baseScale = baseScale;
         leaf.userData.speed = 0.55 + Math.random() * 1.2;
         leaf.userData.offset = Math.random() * Math.PI * 2;
         leafGroup.add(leaf);
@@ -594,46 +712,172 @@
         return leaf;
       });
 
-      treeGroup.add(branchGroup, leafGroup, nodeGroup);
-      scene.add(treeGroup);
+      const sparkGeometry = new THREE.SphereGeometry(0.034, 8, 8);
+      const sparkColors = [0xffffff, 0xdbba72, 0x8fd8ff, 0xffffff, 0xdbba72];
+      const flowParticles = Array.from({ length: 38 }, (_, index) => {
+        const route = branchSegments[index % branchSegments.length];
+        const spark = new THREE.Mesh(
+          sparkGeometry,
+          new THREE.MeshBasicMaterial({
+            color: sparkColors[index % sparkColors.length],
+            transparent: true,
+            opacity: 0.7,
+            depthWrite: false,
+            depthTest: false,
+            blending: THREE.AdditiveBlending,
+          })
+        );
+
+        spark.userData.from = new THREE.Vector3(route[0][0], route[0][1], route[0][2]);
+        spark.userData.to = new THREE.Vector3(route[1][0], route[1][1], route[1][2]);
+        spark.userData.offset = Math.random();
+        spark.userData.speed = 0.18 + Math.random() * 0.22;
+        spark.userData.baseScale = 0.58 + Math.random() * 1.3;
+        spark.scale.setScalar(0.01);
+        sparkGroup.add(spark);
+
+        return spark;
+      });
+
+      treeGroup.add(branchGroup, leafGroup, nodeGroup, sparkGroup);
+      revealGroup.add(treeGroup);
+      scene.add(revealGroup);
       camera.position.z = 6.8;
 
       if (gsap && !prefersReducedMotion()) {
         shell.dataset.sefarAuthTreeMotion = 'gsap';
-        treeGroup.scale.set(0.9, 0.9, 0.9);
+        revealGroup.scale.set(0.72, 0.72, 0.72);
+        revealGroup.rotation.z = -0.035;
         branchLines.material.opacity = 0;
         trunk.material.opacity = 0;
         branchTubeMaterial.opacity = 0;
         trunkTubeMaterial.opacity = 0;
+        branchAuraMaterial.opacity = 0;
+        trunkAuraMaterial.opacity = 0;
+        nodeFillMaterial.opacity = 0;
+        nodeMaterial.opacity = 0;
+        nodeAccentMaterial.opacity = 0;
+        nodeHaloMaterial.opacity = 0;
+        nodeHaloAccentMaterial.opacity = 0;
+        nodeCoreMaterial.opacity = 0;
         nodeMeshes.forEach((node) => node.scale.setScalar(0.2));
+        nodeHaloMeshes.forEach((halo) => halo.scale.setScalar(0.35));
+        nodeCoreMeshes.forEach((core) => core.scale.setScalar(0.2));
         leafMeshes.forEach((leaf) => leaf.scale.multiplyScalar(0.2));
+        flowParticles.forEach((spark) => {
+          spark.userData.reveal = 0;
+        });
 
         gsap.timeline({ defaults: { ease: 'power3.out' } })
-          .to(treeGroup.scale, { x: 1, y: 1, z: 1, duration: 1.2 }, 0)
-          .to([branchLines.material, trunk.material, branchTubeMaterial, trunkTubeMaterial], { opacity: (index) => [0.58, 0.32, 0.42, 0.28][index], duration: 1 }, 0.05)
+          .to(revealGroup.scale, {
+            x: 1,
+            y: 1,
+            z: 1,
+            duration: 1.15,
+            ease: 'elastic.out(1, 0.62)',
+          }, 0)
+          .to(revealGroup.rotation, {
+            z: 0,
+            duration: 1.2,
+            ease: 'power4.out',
+          }, 0)
+          .to([
+            branchLines.material,
+            trunk.material,
+            branchTubeMaterial,
+            trunkTubeMaterial,
+            branchAuraMaterial,
+            trunkAuraMaterial,
+            nodeFillMaterial,
+            nodeMaterial,
+            nodeAccentMaterial,
+            nodeHaloMaterial,
+            nodeHaloAccentMaterial,
+            nodeCoreMaterial,
+          ], {
+            opacity: (index) => [0.82, 0.62, 0.66, 0.5, 0.26, 0.28, 0.16, 0.94, 0.88, 0.24, 0.28, 0.9][index],
+            duration: 1.05,
+            stagger: 0.025,
+          }, 0.04)
           .to(nodeMeshes.map((node) => node.scale), {
             x: 1,
             y: 1,
             z: 1,
             duration: 0.72,
             stagger: 0.055,
-            ease: 'back.out(1.7)',
+            ease: 'back.out(2.1)',
+          }, 0.22)
+          .to(nodeHaloMeshes.map((halo) => halo.scale), {
+            x: 1.16,
+            y: 1.16,
+            z: 1.16,
+            duration: 0.78,
+            stagger: 0.055,
+            ease: 'back.out(1.9)',
           }, 0.28)
+          .to(nodeCoreMeshes.map((core) => core.scale), {
+            x: 1,
+            y: 1,
+            z: 1,
+            duration: 0.58,
+            stagger: 0.04,
+            ease: 'power2.out',
+          }, 0.34)
           .to(leafMeshes.map((leaf) => leaf.scale), {
-            x: (index, target) => target.x * 5,
-            y: (index, target) => target.y * 5,
-            z: (index, target) => target.z * 5,
-            duration: 0.75,
+            x: (index, target) => target.x * 5.15,
+            y: (index, target) => target.y * 5.15,
+            z: (index, target) => target.z * 5.15,
+            duration: 0.82,
+            stagger: { amount: 0.42, from: 'random' },
+            ease: 'power2.out',
+          }, 0.42)
+          .to(flowParticles.map((spark) => spark.userData), {
+            reveal: 1,
+            duration: 0.76,
             stagger: { amount: 0.34, from: 'random' },
             ease: 'power2.out',
-          }, 0.44);
+          }, 0.64);
 
         gsap.to(nodeMeshes.map((node) => node.scale), {
           x: 1.06,
           y: 1.06,
           z: 1.06,
           duration: 1.9,
+          delay: 1.08,
           stagger: 0.12,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+        });
+
+        gsap.to(nodeHaloMeshes.map((halo) => halo.scale), {
+          x: 1.42,
+          y: 1.42,
+          z: 1.42,
+          duration: 1.65,
+          delay: 1.04,
+          stagger: 0.1,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+        });
+
+        gsap.to(nodeCoreMeshes.map((core) => core.scale), {
+          x: 1.55,
+          y: 1.55,
+          z: 1.55,
+          duration: 1.25,
+          delay: 1.12,
+          stagger: 0.08,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+        });
+
+        gsap.to(revealGroup.rotation, {
+          z: 0.016,
+          duration: 5.4,
+          delay: 1.1,
           repeat: -1,
           yoyo: true,
           ease: 'sine.inOut',
@@ -650,8 +894,8 @@
         camera.updateProjectionMatrix();
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         renderer.setSize(width, height, false);
-        treeGroup.position.set(isMobile ? 0.06 : -1.25, isMobile ? 0.98 : -0.12, -0.92);
-        treeGroup.scale.setScalar(isMobile ? 0.52 : 1.18);
+        treeGroup.position.set(isMobile ? 0.02 : -1.12, isMobile ? 0.86 : -0.04, -0.92);
+        treeGroup.scale.setScalar(isMobile ? 0.68 : 1.38);
       };
 
       const render = () => {
@@ -663,14 +907,34 @@
         const elapsed = clock.getElapsedTime();
 
         shell.dataset.sefarAuthThreeFrames = String(Number(shell.dataset.sefarAuthThreeFrames || 0) + 1);
-        treeGroup.rotation.y += ((targetX * 0.13) - treeGroup.rotation.y) * 0.035;
-        treeGroup.rotation.x += ((targetY * 0.08) - treeGroup.rotation.x) * 0.035;
-        branchLines.material.opacity = 0.52 + (Math.sin(elapsed * 1.2) * 0.06);
-        branchTubeMaterial.opacity = 0.38 + (Math.sin(elapsed * 1.05) * 0.04);
-        leafGroup.rotation.z = Math.sin(elapsed * 0.32) * 0.026;
+        treeGroup.rotation.y += ((targetX * 0.26) - treeGroup.rotation.y) * 0.04;
+        treeGroup.rotation.x += ((targetY * 0.15) - treeGroup.rotation.x) * 0.04;
+        branchLines.material.opacity = 0.72 + (Math.sin(elapsed * 1.2) * 0.1);
+        branchTubeMaterial.opacity = 0.56 + (Math.sin(elapsed * 1.05) * 0.08);
+        trunkTubeMaterial.opacity = 0.44 + (Math.sin(elapsed * 1.16) * 0.06);
+        branchAuraMaterial.opacity = 0.2 + (Math.sin(elapsed * 1.35) * 0.06);
+        trunkAuraMaterial.opacity = 0.22 + (Math.sin(elapsed * 1.18) * 0.05);
+        leafBlueMaterial.opacity = 0.68 + (Math.sin(elapsed * 0.85) * 0.08);
+        leafGoldMaterial.opacity = 0.58 + (Math.sin(elapsed * 0.9) * 0.07);
+        leafWhiteMaterial.opacity = 0.38 + (Math.sin(elapsed * 1.05) * 0.06);
+        leafGroup.rotation.z = Math.sin(elapsed * 0.34) * 0.038;
+        sparkGroup.rotation.z = Math.sin(elapsed * 0.26) * 0.018;
         leafMeshes.forEach((leaf) => {
           leaf.position.y += Math.sin((elapsed * leaf.userData.speed) + leaf.userData.offset) * delta * 0.025;
           leaf.rotation.z += delta * 0.18 * leaf.userData.speed;
+        });
+        nodeHaloMeshes.forEach((halo, index) => {
+          halo.rotation.z += delta * (index % 2 ? 0.26 : -0.22);
+        });
+        flowParticles.forEach((spark, index) => {
+          const progress = (spark.userData.offset + (elapsed * spark.userData.speed)) % 1;
+          const energy = Math.sin(progress * Math.PI);
+          const reveal = spark.userData.reveal ?? 1;
+
+          spark.position.lerpVectors(spark.userData.from, spark.userData.to, progress);
+          spark.position.z += Math.sin((elapsed * 1.8) + index) * 0.055;
+          spark.scale.setScalar(spark.userData.baseScale * (0.28 + (energy * 1.35)) * reveal);
+          spark.material.opacity = (0.16 + (energy * 0.82)) * reveal;
         });
         renderer.render(scene, camera);
         frameId = window.requestAnimationFrame(render);
@@ -686,17 +950,30 @@
         branchGeometry.dispose();
         trunkGeometry.dispose();
         tubeMeshes.forEach((mesh) => mesh.geometry.dispose());
+        auraTubeMeshes.forEach((mesh) => mesh.geometry.dispose());
+        sparkGeometry.dispose();
+        nodeHaloGeometry.dispose();
         nodeGeometry.dispose();
+        nodeInnerGeometry.dispose();
         nodeFillGeometry.dispose();
+        nodeCoreGeometry.dispose();
         leafGeometry.dispose();
         branchMaterial.dispose();
         branchTubeMaterial.dispose();
         trunkTubeMaterial.dispose();
+        branchAuraMaterial.dispose();
+        trunkAuraMaterial.dispose();
         trunk.material.dispose();
         nodeFillMaterial.dispose();
         nodeMaterial.dispose();
         nodeAccentMaterial.dispose();
-        leafMaterial.dispose();
+        nodeHaloMaterial.dispose();
+        nodeHaloAccentMaterial.dispose();
+        nodeCoreMaterial.dispose();
+        leafBlueMaterial.dispose();
+        leafGoldMaterial.dispose();
+        leafWhiteMaterial.dispose();
+        flowParticles.forEach((spark) => spark.material.dispose());
         renderer.dispose();
       };
 

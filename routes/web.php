@@ -56,6 +56,7 @@ use App\Http\Controllers\ReportPhoneNumbersController;
 use App\Http\Controllers\CosPasoEditorController;
 use App\Http\Controllers\DeployController;
 use App\Http\Controllers\ProveedorRegisterController;
+use App\Http\Controllers\RegisterV2Controller;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ListController;
@@ -322,7 +323,10 @@ Route::get('/crud/users/{user}/edit-basic', [UserController::class, 'editBasic']
 Route::put('/crud/users/{user}/update-basic', [UserController::class, 'updateBasic'])
     ->name('crud.users.updateBasic');
 
-// Registro de clientes desactivado temporalmente hasta nuevo aviso.
+Route::get('/registerv2', [RegisterV2Controller::class, 'index'])->name('register.v2.form');
+Route::post('/registerv2', [RegisterV2Controller::class, 'store'])->name('register.v2');
+
+// Registro estándar de clientes desactivado temporalmente hasta nuevo aviso.
 
 Route::get('/registro-coordinador', [ProveedorRegisterController::class, 'create'])->name('proveedor.register');
 Route::post('/registro-coordinador', [ProveedorRegisterController::class, 'store'])->name('proveedor.register.store');
