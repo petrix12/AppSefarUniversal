@@ -795,7 +795,7 @@
             nodeHaloAccentMaterial,
             nodeCoreMaterial,
           ], {
-            opacity: (index) => [0.64, 0.5, 0.5, 0.38, 0.18, 0.2, 0.12, 0.78, 0.76, 0.18, 0.22, 0.66][index],
+            opacity: (index) => [0.78, 0.58, 0.62, 0.48, 0.24, 0.26, 0.16, 0.88, 0.84, 0.24, 0.28, 0.74][index],
             duration: 1.05,
             stagger: 0.025,
           }, 0.04)
@@ -909,14 +909,14 @@
         shell.dataset.sefarAuthThreeFrames = String(Number(shell.dataset.sefarAuthThreeFrames || 0) + 1);
         treeGroup.rotation.y += ((targetX * 0.26) - treeGroup.rotation.y) * 0.04;
         treeGroup.rotation.x += ((targetY * 0.15) - treeGroup.rotation.x) * 0.04;
-        branchLines.material.opacity = 0.58 + (Math.sin(elapsed * 1.2) * 0.08);
-        branchTubeMaterial.opacity = 0.43 + (Math.sin(elapsed * 1.05) * 0.06);
-        trunkTubeMaterial.opacity = 0.36 + (Math.sin(elapsed * 1.16) * 0.05);
-        branchAuraMaterial.opacity = 0.15 + (Math.sin(elapsed * 1.35) * 0.04);
-        trunkAuraMaterial.opacity = 0.17 + (Math.sin(elapsed * 1.18) * 0.04);
-        leafBlueMaterial.opacity = 0.52 + (Math.sin(elapsed * 0.85) * 0.06);
-        leafGoldMaterial.opacity = 0.43 + (Math.sin(elapsed * 0.9) * 0.05);
-        leafWhiteMaterial.opacity = 0.28 + (Math.sin(elapsed * 1.05) * 0.04);
+        branchLines.material.opacity = 0.72 + (Math.sin(elapsed * 1.2) * 0.09);
+        branchTubeMaterial.opacity = 0.54 + (Math.sin(elapsed * 1.05) * 0.07);
+        trunkTubeMaterial.opacity = 0.45 + (Math.sin(elapsed * 1.16) * 0.06);
+        branchAuraMaterial.opacity = 0.22 + (Math.sin(elapsed * 1.35) * 0.05);
+        trunkAuraMaterial.opacity = 0.24 + (Math.sin(elapsed * 1.18) * 0.05);
+        leafBlueMaterial.opacity = 0.66 + (Math.sin(elapsed * 0.85) * 0.07);
+        leafGoldMaterial.opacity = 0.56 + (Math.sin(elapsed * 0.9) * 0.06);
+        leafWhiteMaterial.opacity = 0.36 + (Math.sin(elapsed * 1.05) * 0.05);
         leafGroup.rotation.z = Math.sin(elapsed * 0.34) * 0.038;
         sparkGroup.rotation.z = Math.sin(elapsed * 0.26) * 0.018;
         leafMeshes.forEach((leaf) => {
