@@ -49,7 +49,7 @@ body:has(.sefar-login-shell) {
 }
 
 .sefar-login-shell[data-sefar-auth-renderer="three-tree"] .sefar-login-three-canvas {
-  opacity: 0.94;
+  opacity: 0.88;
 }
 
 .sefar-login-overlay {
