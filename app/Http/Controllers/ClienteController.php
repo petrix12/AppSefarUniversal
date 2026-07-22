@@ -2396,7 +2396,8 @@ class ClienteController extends Controller
                     }
 
                     return response()->json([
-                        'status' => "true"
+                        'status' => "true",
+                        'next_url' => route('clientes.getinfo')
                     ]);
                 }
 
@@ -4300,7 +4301,10 @@ class ClienteController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Pago procesado exitosamente',
-                    'payment_intent_id' => $paymentIntent->id
+                    'payment_intent_id' => $paymentIntent->id,
+                    'next_url' => ($data['checkout_context'] ?? null) === 'registration'
+                        ? route('clientes.getinfo')
+                        : route('gracias')
                 ]);
 
             } else {

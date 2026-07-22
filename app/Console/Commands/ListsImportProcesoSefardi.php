@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
-class ListImportProcesoSefardi extends Command
+class ListsImportProcesoSefardi extends Command
 {
     protected $signature = 'lists:import-proceso-sefardi
         {--file= : Ruta absoluta del TXT (1 pasaporte por línea)}

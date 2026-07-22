@@ -2,9 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BancaOnlineEvent;
+use App\Models\BancaOnlineDocumentRule;
+use App\Models\Compras;
 use App\Models\Servicio;
 use App\Services\BancaOnlineCatalog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 class AdminBancaOnlineController extends Controller
@@ -53,6 +58,68 @@ class AdminBancaOnlineController extends Controller
         $expected = $this->catalog->expectedItemsForCountry($countrySlug);
         $current = (int) ($countryCounts[$countrySlug] ?? 0);
         $planCurrent = $services->flatten(1)->count();
+        $eventWindowDays = max(7, min(90, (int) $request->query('dias', 30)));
+        $hasEventTracking = Schema::hasTable('banca_online_events');
+        $hasDocumentRulesTable = Schema::hasTable('banca_online_document_rules');
+        $eventCounts = collect();
+        $recentEvents = collect();
+        $documentRules = collect();
+
+        if ($hasEventTracking) {
+            $eventBaseQuery = BancaOnlineEvent::query()
+                ->where('occurred_at', '>=', now()->subDays($eventWindowDays));
+
+            $eventCounts = (clone $eventBaseQuery)
+                ->select('event', DB::raw('count(*) as total'))
+                ->groupBy('event')
+                ->pluck('total', 'event');
+
+            $recentEvents = (clone $eventBaseQuery)
+                ->with('user')
+                ->latest('occurred_at')
+                ->limit(12)
+                ->get();
+        }
+
+        if ($hasDocumentRulesTable) {
+            $documentRules = BancaOnlineDocumentRule::query()
+                ->with('recommendedService')
+                ->where(function ($query) use ($countrySlug) {
+                    $query->whereNull('country_slug')
+                        ->orWhere('country_slug', $countrySlug);
+                })
+                ->where(function ($query) use ($planSlug) {
+                    $query->whereNull('plan_slug')
+                        ->orWhere('plan_slug', $planSlug);
+                })
+                ->orderBy('sort_order')
+                ->orderBy('priority')
+                ->orderBy('document_name')
+                ->get();
+        }
+
+        $documentServiceOptions = Servicio::query()
+            ->where('activo', true)
+            ->orderBy('categoria')
+            ->orderBy('nombre')
+            ->limit(500)
+            ->get(['id', 'nombre', 'categoria']);
+
+        $activationQuery = Compras::query()
+            ->where('source', $this->catalog->source());
+
+        $activationStats = [
+            'total' => (clone $activationQuery)->count(),
+            'paid' => (clone $activationQuery)->where('pagado', 1)->count(),
+            'pending' => (clone $activationQuery)->where('pagado', 0)->count(),
+            'revenue' => (float) (clone $activationQuery)->where('pagado', 1)->sum('monto'),
+        ];
+
+        $recentActivations = (clone $activationQuery)
+            ->with(['user', 'servicio'])
+            ->latest('updated_at')
+            ->limit(12)
+            ->get();
 
         return view('admin.banca-online.index', compact(
             'countries',
@@ -68,7 +135,16 @@ class AdminBancaOnlineController extends Controller
             'package',
             'expected',
             'current',
-            'planCurrent'
+            'planCurrent',
+            'eventWindowDays',
+            'hasEventTracking',
+            'eventCounts',
+            'recentEvents',
+            'activationStats',
+            'recentActivations',
+            'hasDocumentRulesTable',
+            'documentRules',
+            'documentServiceOptions'
         ));
     }
 
@@ -250,6 +326,58 @@ class AdminBancaOnlineController extends Controller
             ->with('success', 'Modalidad actualizada.');
     }
 
+    public function storeDocumentRule(Request $request)
+    {
+        abort_unless(Schema::hasTable('banca_online_document_rules'), 404);
+
+        $data = $this->validatedDocumentRule($request);
+        BancaOnlineDocumentRule::create($data);
+
+        return redirect()
+            ->route('admin.banca-online.index', [
+                'pais' => $data['country_slug'] ?? $this->catalog->normalizeCountry($request->input('pais')),
+                'plan' => $data['plan_slug'] ?? $request->input('plan', 'solicitud-estrategica'),
+                'modalidad' => $request->input('modalidad', 'regular'),
+            ])
+            ->with('success', 'Regla documental agregada.');
+    }
+
+    public function updateDocumentRule(Request $request, $documentRule)
+    {
+        abort_unless(Schema::hasTable('banca_online_document_rules'), 404);
+
+        $documentRule = BancaOnlineDocumentRule::findOrFail($documentRule);
+        $data = $this->validatedDocumentRule($request);
+        $documentRule->fill($data)->save();
+
+        return redirect()
+            ->route('admin.banca-online.index', [
+                'pais' => $data['country_slug'] ?? $this->catalog->normalizeCountry($request->input('pais')),
+                'plan' => $data['plan_slug'] ?? $request->input('plan', 'solicitud-estrategica'),
+                'modalidad' => $request->input('modalidad', 'regular'),
+            ])
+            ->with('success', 'Regla documental actualizada.');
+    }
+
+    public function destroyDocumentRule(Request $request, $documentRule)
+    {
+        abort_unless(Schema::hasTable('banca_online_document_rules'), 404);
+
+        $documentRule = BancaOnlineDocumentRule::findOrFail($documentRule);
+        $countrySlug = $documentRule->country_slug ?: $this->catalog->normalizeCountry($request->input('pais'));
+        $planSlug = $documentRule->plan_slug ?: (string) $request->input('plan', 'solicitud-estrategica');
+
+        $documentRule->delete();
+
+        return redirect()
+            ->route('admin.banca-online.index', [
+                'pais' => $countrySlug,
+                'plan' => $planSlug,
+                'modalidad' => $request->input('modalidad', 'regular'),
+            ])
+            ->with('success', 'Regla documental eliminada.');
+    }
+
     private function normalizedPublicFeatures(array $names, array $descriptions): array
     {
         return collect($names)
@@ -309,5 +437,59 @@ class AdminBancaOnlineController extends Controller
         return $rules->isNotEmpty()
             ? $rules->all()
             : $this->catalog->installmentInitialRuleDefaults();
+    }
+
+    private function validatedDocumentRule(Request $request): array
+    {
+        $countryKeys = array_keys($this->catalog->countries());
+        $countrySlug = $this->catalog->normalizeCountry($request->input('pais'));
+        $planKeys = array_keys($this->catalog->plansForCountry($countrySlug));
+
+        $data = $request->validate([
+            'pais' => ['required', Rule::in($countryKeys)],
+            'plan' => ['required', Rule::in($planKeys)],
+            'document_name' => ['required', 'string', 'max:255'],
+            'document_type' => ['required', Rule::in(['juridico', 'genealogico', 'otro'])],
+            'match_keywords' => ['nullable', 'string', 'max:2000'],
+            'recommended_service_id' => ['nullable', 'integer', 'exists:servicios,id'],
+            'recommended_plan_slug' => ['nullable', Rule::in($planKeys)],
+            'client_label' => ['nullable', 'string', 'max:255'],
+            'client_explanation' => ['nullable', 'string', 'max:4000'],
+            'internal_notes' => ['nullable', 'string', 'max:4000'],
+            'required' => ['nullable', 'boolean'],
+            'active' => ['nullable', 'boolean'],
+            'client_visible' => ['nullable', 'boolean'],
+            'priority' => ['nullable', 'integer', 'min:1', 'max:999'],
+            'sort_order' => ['nullable', 'integer', 'min:0', 'max:999'],
+            'modalidad' => ['nullable', 'string', 'max:80'],
+        ]);
+
+        return [
+            'country_slug' => $countrySlug,
+            'plan_slug' => $data['plan'],
+            'document_name' => trim($data['document_name']),
+            'document_type' => $data['document_type'],
+            'match_keywords' => $this->normalizedKeywords($data['match_keywords'] ?? ''),
+            'recommended_service_id' => filled($data['recommended_service_id'] ?? null) ? (int) $data['recommended_service_id'] : null,
+            'recommended_plan_slug' => filled($data['recommended_plan_slug'] ?? null) ? $data['recommended_plan_slug'] : null,
+            'client_label' => trim((string) ($data['client_label'] ?? '')) ?: null,
+            'client_explanation' => trim((string) ($data['client_explanation'] ?? '')) ?: null,
+            'internal_notes' => trim((string) ($data['internal_notes'] ?? '')) ?: null,
+            'required' => $request->boolean('required'),
+            'active' => $request->boolean('active'),
+            'client_visible' => $request->boolean('client_visible'),
+            'priority' => (int) ($data['priority'] ?? 50),
+            'sort_order' => (int) ($data['sort_order'] ?? 0),
+        ];
+    }
+
+    private function normalizedKeywords(?string $keywords): array
+    {
+        return collect(preg_split('/[\r\n,;]+/', (string) $keywords))
+            ->map(fn ($keyword) => trim((string) $keyword))
+            ->filter(fn ($keyword) => $keyword !== '')
+            ->unique()
+            ->values()
+            ->all();
     }
 }

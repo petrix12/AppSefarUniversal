@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class Servicio extends Model
 {
@@ -41,7 +42,19 @@ class Servicio extends Model
 
     public function scopeSellable($query)
     {
-        return $query->where('activo', true)->where('visible_cliente', true);
+        try {
+            if (Schema::hasColumn($this->getTable(), 'activo')) {
+                $query->where('activo', true);
+            }
+
+            if (Schema::hasColumn($this->getTable(), 'visible_cliente')) {
+                $query->where('visible_cliente', true);
+            }
+        } catch (\Throwable $e) {
+            // Ambientes sin migraciones nuevas deben seguir pudiendo leer servicios base.
+        }
+
+        return $query;
     }
 
     public function consultationCalendars()

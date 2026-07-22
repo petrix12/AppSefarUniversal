@@ -63,7 +63,7 @@
                 ?: $planTitle
                 ?: (Illuminate\Support\Str::after((string) $firstPurchase->descripcion, ': ') ?: $firstPurchase->servicio_hs_id);
             $statusTitle = $isPaid
-                ? 'Pago Banca Online'
+                ? (data_get($firstPurchase->metadata, 'activation_status_label') ?: 'Pago Banca Online')
                 : ($hasPaidItems ? 'Pago parcial Banca Online' : 'Banca Online pendiente');
         @endphp
 

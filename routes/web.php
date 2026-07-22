@@ -326,7 +326,7 @@ Route::put('/crud/users/{user}/update-basic', [UserController::class, 'updateBas
 Route::get('/registerv2', [RegisterV2Controller::class, 'index'])->name('register.v2.form');
 Route::post('/registerv2', [RegisterV2Controller::class, 'store'])->name('register.v2');
 
-// Registro estándar de clientes desactivado temporalmente hasta nuevo aviso.
+// Registro estandar de clientes desactivado temporalmente hasta nuevo aviso.
 
 Route::get('/registro-coordinador', [ProveedorRegisterController::class, 'create'])->name('proveedor.register');
 Route::post('/registro-coordinador', [ProveedorRegisterController::class, 'store'])->name('proveedor.register.store');
@@ -546,12 +546,14 @@ Route::prefix('banca-online-2026')
     ->group(function () {
         Route::get('/', [BancaOnlineController::class, 'landing'])->name('index');
         Route::get('/cliente', [BancaOnlineController::class, 'lookupClient'])->name('client.lookup');
+        Route::post('/eventos', [BancaOnlineController::class, 'trackEvent'])->name('events.track');
         Route::get('/pago/{token}', [BancaOnlineController::class, 'payment'])->name('payment');
         Route::post('/pago/{token}/stripe', [BancaOnlineController::class, 'processPayment'])->name('payment.process');
         Route::get('/gracias/{token}', [BancaOnlineController::class, 'thankYou'])->name('thank-you');
         Route::get('/{country}', [BancaOnlineController::class, 'landingForCountry'])
             ->whereIn('country', ['espana', 'portugal', 'italia'])
             ->name('country');
+        Route::get('/{country}/{plan}/recomendacion', [BancaOnlineController::class, 'rationaleForCountry'])->name('rationale.country');
         Route::get('/{country}/{plan}', [BancaOnlineController::class, 'configureForCountry'])->name('configure.country');
         Route::post('/{country}/{plan}', [BancaOnlineController::class, 'checkoutForCountry'])->name('checkout.country');
         Route::get('/{plan}', [BancaOnlineController::class, 'configure'])->name('configure');
@@ -567,6 +569,9 @@ Route::middleware(['auth', 'can:administrador'])
         Route::post('/items', [AdminBancaOnlineController::class, 'store'])->name('items.store');
         Route::put('/items/{servicio}', [AdminBancaOnlineController::class, 'update'])->name('items.update');
         Route::put('/packages/{servicio}', [AdminBancaOnlineController::class, 'updatePackage'])->name('packages.update');
+        Route::post('/document-rules', [AdminBancaOnlineController::class, 'storeDocumentRule'])->name('document-rules.store');
+        Route::put('/document-rules/{documentRule}', [AdminBancaOnlineController::class, 'updateDocumentRule'])->name('document-rules.update');
+        Route::delete('/document-rules/{documentRule}', [AdminBancaOnlineController::class, 'destroyDocumentRule'])->name('document-rules.destroy');
     });
 
 //panel produccion y ventas status

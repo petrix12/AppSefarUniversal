@@ -42,6 +42,7 @@
                     $isUnread = is_null($notification->read_at);
                     $icon = match($category) {
                         'cos_status' => 'fa-route',
+                        'banca_online' => 'fa-credit-card',
                         'internal_chat' => 'fa-comments',
                         'document_request' => 'fa-file-alt',
                         'tasks' => 'fa-tasks',

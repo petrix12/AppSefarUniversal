@@ -3,6 +3,10 @@
     $paymentPlan = $metadata['payment_plan'] ?? [];
     $isInstallmentPayment = ($paymentPlan['mode'] ?? 'full') === 'installments';
     $installmentsAvailable = (bool) ($paymentOptions['installments_enabled'] ?? false);
+    $boCssPath = public_path('css/banca-online-2026.css');
+    $boJsPath = public_path('js/banca-online-2026.js');
+    $boCssVersion = file_exists($boCssPath) ? filemtime($boCssPath) : time();
+    $boJsVersion = file_exists($boJsPath) ? filemtime($boJsPath) : time();
 @endphp
 <!doctype html>
 <html lang="es">
@@ -10,10 +14,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Pago | Banca Online 2026</title>
+    <title>Activacion | Banca Online 2026</title>
     <link rel="stylesheet" href="{{ asset('vendor/fontawesome-free/css/all.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/banca-online-2026.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/banca-online-2026.css') }}?v={{ $boCssVersion }}">
 </head>
 <body class="bo-page">
     <header class="bo-topbar">
@@ -28,14 +32,17 @@
 
     <main class="bo-container">
         <section class="bo-payment-title">
-            <span class="bo-eyebrow"><i class="fas fa-lock"></i> Pago seguro</span>
-            <h1>Completar contratacion</h1>
-            <p>{{ $metadata['plan_title'] ?? 'Plan estrategico' }} · {{ $metadata['package_title'] ?? 'Modalidad contratada' }}.</p>
+            <span class="bo-eyebrow"><i class="fas fa-lock"></i> Pago de activacion seguro</span>
+            <h1>Formalizar activacion</h1>
+            <p>{{ $metadata['plan_title'] ?? 'Estrategia' }} · {{ $metadata['package_title'] ?? 'Alcance contratado' }}.</p>
+            @if(!empty($metadata['recommendation']['reason']))
+                <p class="bo-muted-line">{{ $metadata['recommendation']['reason'] }}</p>
+            @endif
         </section>
 
         <div class="bo-payment-layout">
             <section class="bo-panel">
-                <h2>{{ $metadata['package_title'] ?? 'Modalidad contratada' }}</h2>
+                <h2>{{ $metadata['package_title'] ?? 'Alcance contratado' }}</h2>
                 <ul class="bo-payment-items">
                     @forelse($packageComponents as $component)
                         <li>
@@ -66,7 +73,7 @@
                     data-discount="{{ (float) ($metadata['package_discount'] ?? 0) }}"
                     data-discount-label="{{ number_format((float) ($metadata['package_discount'] ?? 0), 0, ',', '.') }}"></div>
 
-                <div class="bo-total-label" id="paymentTotalLabel">{{ $isInstallmentPayment ? 'Total a pagar hoy' : 'Total a pagar' }}</div>
+                <div class="bo-total-label" id="paymentTotalLabel">{{ $isInstallmentPayment ? 'Importe de activacion hoy' : 'Importe de activacion' }}</div>
                 <div class="bo-total"><span id="paymentTotalAmount">{{ number_format($total, 0, ',', '.') }}</span> <small>EUR</small></div>
 
                 <form
@@ -74,7 +81,13 @@
                     class="bo-form"
                     data-stripe-key="{{ $stripeKey }}"
                     data-process-url="{{ route('banca-online.payment.process', $token) }}"
-                    data-success-url="{{ route('banca-online.thank-you', $token) }}">
+                    data-success-url="{{ route('banca-online.thank-you', $token) }}"
+                    data-checkout-token="{{ $token }}"
+                    data-country="{{ $countrySlug }}"
+                    data-plan="{{ $metadata['plan_slug'] ?? '' }}"
+                    data-package-id="{{ $metadata['package_id'] ?? '' }}"
+                    data-entry-point="{{ $metadata['entry_point'] ?? '' }}"
+                    data-case-status="{{ $metadata['selected_case_status'] ?? '' }}">
                     <div
                         class="bo-payment-plan bo-checkout-payment-options"
                         id="checkoutPaymentOptions"
@@ -86,7 +99,7 @@
                         <label class="bo-pay-choice is-active" data-checkout-payment-choice="full">
                             <input type="radio" name="checkout_payment_choice" value="full" checked>
                             <span>
-                                <strong>Pago unico</strong>
+                                <strong>Activacion completa</strong>
                                 <small id="checkoutFullPaymentLabel">{{ number_format($total, 0, ',', '.') }} EUR ahora</small>
                             </span>
                         </label>
@@ -95,7 +108,7 @@
                             <label class="bo-pay-choice" data-checkout-payment-choice="installments">
                                 <input type="radio" name="checkout_payment_choice" value="installments">
                                 <span>
-                                    <strong>Pago por cuotas</strong>
+                                    <strong>Activacion con cuotas</strong>
                                     <small id="checkoutInstallmentPaymentLabel">Define inicial, periodo y cuotas</small>
                                 </span>
                             </label>
@@ -183,13 +196,13 @@
                     <div class="bo-card-errors" id="card-errors"></div>
 
                     <button class="bo-button bo-button-primary" id="submit-button" type="submit" {{ !$stripeKey ? 'disabled' : '' }}>
-                        {{ $isInstallmentPayment ? 'Pagar inicial' : 'Pagar ahora' }} <i class="fas fa-credit-card"></i>
+                        {{ $isInstallmentPayment ? 'Completar inicial' : 'Completar activacion' }} <i class="fas fa-credit-card"></i>
                     </button>
                 </form>
             </aside>
         </div>
     </main>
 
-    <script src="{{ asset('js/banca-online-2026.js') }}"></script>
+    <script src="{{ asset('js/banca-online-2026.js') }}?v={{ $boJsVersion }}"></script>
 </body>
 </html>

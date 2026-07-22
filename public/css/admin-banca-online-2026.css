@@ -162,6 +162,186 @@
   font-weight: 800;
 }
 
+.bo-admin-analytics {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--sefar-border);
+  background: #fff;
+}
+
+.bo-analytics-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.bo-analytics-head h2 {
+  margin: 0.12rem 0 0;
+  color: var(--sefar-text);
+  font-size: 1.16rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.bo-analytics-head p {
+  margin: 0.2rem 0 0;
+  color: var(--sefar-muted);
+  font-size: 0.82rem;
+}
+
+.bo-analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.bo-analytics-card {
+  min-width: 0;
+  border: 1px solid var(--sefar-border);
+  border-radius: 10px;
+  padding: 0.75rem;
+  background: #f8fafb;
+}
+
+.bo-analytics-card.is-paid {
+  border-color: rgba(30, 122, 87, 0.28);
+  background: #edf8f2;
+}
+
+.bo-analytics-card span {
+  display: block;
+  color: var(--sefar-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.bo-analytics-card strong {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--sefar-text);
+  font-size: 1.22rem;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.bo-admin-activity-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.bo-admin-activity {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  max-height: 360px;
+  overflow: hidden;
+  border: 1px solid var(--sefar-border);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.bo-admin-activity h3 {
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid var(--sefar-border);
+  color: var(--sefar-text);
+  font-size: 0.95rem;
+  font-weight: 850;
+  letter-spacing: 0;
+}
+
+.bo-admin-activity-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: rgba(13, 43, 57, 0.32) transparent;
+  scrollbar-width: thin;
+}
+
+.bo-admin-activity-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.bo-admin-activity-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.bo-admin-activity-list::-webkit-scrollbar-thumb {
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: rgba(13, 43, 57, 0.28);
+}
+
+.bo-activity-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  padding: 0.68rem 0.85rem;
+  border-bottom: 1px solid var(--sefar-border);
+}
+
+.bo-activity-row:last-child {
+  border-bottom: 0;
+}
+
+.bo-activity-row div {
+  min-width: 0;
+}
+
+.bo-activity-row strong,
+.bo-activity-row span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bo-activity-row strong {
+  color: var(--sefar-text);
+  font-size: 0.83rem;
+  font-weight: 850;
+}
+
+.bo-activity-row span {
+  margin-top: 0.12rem;
+  color: var(--sefar-muted);
+  font-size: 0.76rem;
+}
+
+.bo-activity-row em {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 0.22rem 0.48rem;
+  background: #eef3f5;
+  color: var(--sefar-muted);
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 850;
+}
+
+.bo-activity-row em.is-paid {
+  background: #e4f5eb;
+  color: #1e7a57;
+}
+
+.bo-activity-row em.is-pending {
+  background: #fff4d9;
+  color: #72541d;
+}
+
+.bo-empty-line {
+  margin: 0;
+  padding: 0.85rem;
+  color: var(--sefar-muted);
+  font-size: 0.82rem;
+}
+
 .bo-plan-switch {
   display: flex;
   gap: 0.45rem;
@@ -448,6 +628,109 @@
   margin: 0;
 }
 
+.bo-document-rules {
+  background: #fff;
+}
+
+.bo-document-rule-create-grid,
+.bo-document-rule-main,
+.bo-document-rule-options {
+  display: grid;
+  align-items: end;
+  gap: 0.75rem;
+}
+
+.bo-document-rule-create-grid {
+  grid-template-columns: minmax(220px, 1.2fr) 140px 180px minmax(220px, 1fr) 100px;
+}
+
+.bo-document-rule-main {
+  grid-template-columns: minmax(220px, 1.2fr) 130px 180px minmax(220px, 1fr) 90px 2.5rem;
+}
+
+.bo-document-rule-options {
+  grid-template-columns: minmax(220px, 0.85fr) minmax(260px, 1fr) minmax(260px, 1fr) auto;
+  margin-top: 0.65rem;
+}
+
+.bo-rule-document-name,
+.bo-rule-client-copy {
+  min-width: 0;
+}
+
+.bo-rule-keywords {
+  grid-column: auto;
+}
+
+.bo-rule-client-copy textarea {
+  resize: vertical;
+}
+
+.bo-document-rule-flags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.8rem;
+  padding-bottom: 0.42rem;
+}
+
+.bo-document-rule-flags label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  color: var(--sefar-text);
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+.bo-document-rule-list {
+  max-height: 620px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: rgba(13, 43, 57, 0.32) transparent;
+  scrollbar-width: thin;
+}
+
+.bo-document-rule-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.bo-document-rule-list::-webkit-scrollbar-thumb {
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: rgba(13, 43, 57, 0.28);
+}
+
+.bo-document-rule-item {
+  position: relative;
+  padding-right: 4.5rem;
+}
+
+.bo-delete-rule-form {
+  position: absolute;
+  right: 1.25rem;
+  top: 0.9rem;
+}
+
+.bo-delete-rule-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border-color: #f4ccd0;
+  background: #fff3f4;
+  color: #ac2630;
+}
+
+.bo-delete-rule-button:hover {
+  border-color: #ac2630;
+  background: #ac2630;
+  color: #fff;
+}
+
 @media (max-width: 991px) {
   .bo-country-option {
     grid-template-columns: 2.25rem minmax(0, 1fr);
@@ -463,6 +746,20 @@
 
   .bo-create-grid {
     grid-template-columns: minmax(220px, 1fr) 160px 120px;
+  }
+
+  .bo-document-rule-create-grid,
+  .bo-document-rule-main,
+  .bo-document-rule-options {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .bo-rule-document-name,
+  .bo-rule-service,
+  .bo-rule-keywords,
+  .bo-rule-client-copy,
+  .bo-document-rule-flags {
+    grid-column: 1 / -1;
   }
 
   .bo-create-name,
@@ -520,6 +817,25 @@
 
   .bo-create-grid {
     grid-template-columns: 1fr;
+  }
+
+  .bo-document-rule-create-grid,
+  .bo-document-rule-main,
+  .bo-document-rule-options {
+    grid-template-columns: 1fr;
+  }
+
+  .bo-document-rule-item {
+    padding-right: 1.25rem;
+  }
+
+  .bo-delete-rule-form {
+    position: static;
+    margin-top: 0.65rem;
+  }
+
+  .bo-delete-rule-button {
+    width: 100%;
   }
 
   .bo-add-button {
@@ -823,6 +1139,14 @@
 }
 
 @media (max-width: 991px) {
+  .bo-analytics-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .bo-admin-activity-grid {
+    grid-template-columns: 1fr;
+  }
+
   .bo-package-settings-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -838,6 +1162,16 @@
 }
 
 @media (max-width: 767px) {
+  .bo-analytics-head,
+  .bo-admin-context {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .bo-analytics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .bo-package-switch {
     grid-template-columns: 1fr;
   }

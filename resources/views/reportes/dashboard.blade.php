@@ -10,7 +10,7 @@
                 <i class="fas fa-chart-line mr-2 text-primary"></i>
                 Panel Estadistico
             </h1>
-            <small class="text-muted">Registros, pagos, tareas y ventas separados por seccion</small>
+            <small class="text-muted">Registros, pagos, Banca Online, COS, tareas y ventas separados por seccion</small>
         </div>
 
         <a href="{{ route('diarioindex') }}" class="btn btn-sm btn-outline-secondary mt-3 mt-md-0">
@@ -39,6 +39,11 @@
                         <input type="hidden" name="task_status" value="{{ $taskFilters['status'] }}">
                         <input type="hidden" name="pipeline_month" value="{{ $pipelineMonth }}">
                         <input type="hidden" name="pipeline_user_id" value="{{ $pipelineUserId }}">
+                        <input type="hidden" name="banca_start" value="{{ $bancaOnlineFilters['start'] }}">
+                        <input type="hidden" name="banca_end" value="{{ $bancaOnlineFilters['end'] }}">
+                        <input type="hidden" name="banca_country" value="{{ $bancaOnlineFilters['country'] }}">
+                        <input type="hidden" name="banca_plan" value="{{ $bancaOnlineFilters['plan'] }}">
+                        <input type="hidden" name="banca_case_status" value="{{ $bancaOnlineFilters['case_status'] }}">
 
                         <label class="dashboard-field">
                             <span>Mes</span>
@@ -125,6 +130,489 @@
         </section>
 
         <section class="dashboard-section">
+            <div class="card card-outline card-info">
+                <div class="card-header dashboard-section-header">
+                    <div>
+                        <h3 class="card-title mb-0">
+                            <i class="fas fa-university mr-1"></i>Banca Online
+                        </h3>
+                        <small class="text-muted">{{ $bancaOnlineStart->format('d/m/Y') }} - {{ $bancaOnlineEnd->format('d/m/Y') }}</small>
+                    </div>
+                    <a href="{{ route('admin.banca-online.index') }}" class="btn btn-sm btn-outline-info">
+                        <i class="fas fa-sliders-h mr-1"></i>Administrar Banca Online
+                    </a>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ route('reportes.dashboard') }}" class="dashboard-filter dashboard-filter-banca">
+                        <input type="hidden" name="registration_month" value="{{ $month }}">
+                        <input type="hidden" name="task_start" value="{{ $taskFilters['start'] }}">
+                        <input type="hidden" name="task_end" value="{{ $taskFilters['end'] }}">
+                        <input type="hidden" name="task_user_id" value="{{ $taskFilters['user_id'] }}">
+                        <input type="hidden" name="task_status" value="{{ $taskFilters['status'] }}">
+                        <input type="hidden" name="pipeline_month" value="{{ $pipelineMonth }}">
+                        <input type="hidden" name="pipeline_user_id" value="{{ $pipelineUserId }}">
+
+                        <label class="dashboard-field">
+                            <span>Desde</span>
+                            <input type="date" name="banca_start" value="{{ $bancaOnlineFilters['start'] }}" class="form-control">
+                        </label>
+
+                        <label class="dashboard-field">
+                            <span>Hasta</span>
+                            <input type="date" name="banca_end" value="{{ $bancaOnlineFilters['end'] }}" class="form-control">
+                        </label>
+
+                        <label class="dashboard-field">
+                            <span>Pais</span>
+                            <select name="banca_country" class="form-control">
+                                <option value="">Todos</option>
+                                @foreach($bancaOnlineDashboard['countries'] as $country)
+                                    <option value="{{ $country['slug'] }}" {{ $bancaOnlineFilters['country'] === $country['slug'] ? 'selected' : '' }}>
+                                        {{ $country['label'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </label>
+
+                        <label class="dashboard-field">
+                            <span>Plan</span>
+                            <select name="banca_plan" class="form-control">
+                                <option value="">Todos</option>
+                                @foreach($bancaOnlineDashboard['plans'] as $plan)
+                                    <option value="{{ $plan['slug'] }}" {{ $bancaOnlineFilters['plan'] === $plan['slug'] ? 'selected' : '' }}>
+                                        {{ $plan['label'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </label>
+
+                        <label class="dashboard-field">
+                            <span>Situacion</span>
+                            <select name="banca_case_status" class="form-control">
+                                <option value="">Todas</option>
+                                @foreach($bancaOnlineDashboard['case_statuses'] as $status)
+                                    <option value="{{ $status['key'] }}" {{ $bancaOnlineFilters['case_status'] === $status['key'] ? 'selected' : '' }}>
+                                        {{ $status['label'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </label>
+
+                        <button class="btn btn-info">
+                            <i class="fas fa-filter mr-1"></i>Filtrar Banca
+                        </button>
+                    </form>
+
+                    @unless($bancaOnlineDashboard['has_event_tracking'])
+                        <div class="alert alert-warning dashboard-note mt-3 mb-0">
+                            La tabla de eventos aun no existe en este ambiente. El panel muestra compras de Banca Online, pero el embudo queda completo al migrar <code>banca_online_events</code>.
+                        </div>
+                    @endunless
+                    @unless($bancaOnlineDashboard['has_sales_tracking'])
+                        <div class="alert alert-warning dashboard-note mt-3 mb-0">
+                            Faltan columnas de ventas de Banca Online en <code>compras</code>. Ejecuta las migraciones de Banca Online antes de validar ingresos y activaciones.
+                        </div>
+                    @endunless
+                </div>
+            </div>
+
+            <div class="row">
+                @php
+                    $bancaCards = [
+                        ['label' => 'Activaciones', 'value' => number_format($bancaOnlineDashboard['created_count']), 'color' => 'info', 'icon' => 'rocket'],
+                        ['label' => 'Pagos completados', 'value' => number_format($bancaOnlineDashboard['paid_count']), 'color' => 'success', 'icon' => 'check-circle'],
+                        ['label' => 'Pendientes', 'value' => number_format($bancaOnlineDashboard['pending_count']), 'color' => 'warning', 'icon' => 'clock'],
+                        ['label' => 'Ingresos Banca', 'value' => number_format($bancaOnlineDashboard['revenue'], 2) . ' EUR', 'color' => 'teal', 'icon' => 'euro-sign'],
+                        ['label' => 'Llegan a pago', 'value' => number_format($bancaOnlineDashboard['payment_started_count']), 'color' => 'primary', 'icon' => 'credit-card'],
+                        ['label' => 'Conversion pago', 'value' => number_format($bancaOnlineDashboard['payment_conversion'], 1) . '%', 'color' => 'dark', 'icon' => 'percentage'],
+                    ];
+                @endphp
+
+                @foreach($bancaCards as $card)
+                    <div class="col-12 col-sm-6 col-xl-2">
+                        <div class="info-box">
+                            <span class="info-box-icon bg-{{ $card['color'] }}"><i class="fas fa-{{ $card['icon'] }}"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">{{ $card['label'] }}</span>
+                                <span class="info-box-number">{{ $card['value'] }}</span>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="row">
+                <div class="col-lg-5">
+                    <div class="card card-outline card-info analytics-card">
+                        <div class="card-header">
+                            <h3 class="card-title">Embudo Banca Online</h3>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="bancaOnlineFunnelChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card card-outline card-success">
+                        <div class="card-header">
+                            <h3 class="card-title">Ingresos por plan</h3>
+                        </div>
+                        <div class="card-body p-0 dashboard-scroll-panel">
+                            <table class="table table-sm mb-0 dashboard-mini-table">
+                                <thead>
+                                    <tr>
+                                        <th>Plan</th>
+                                        <th class="text-right">Pagos</th>
+                                        <th class="text-right">EUR</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($bancaOnlineDashboard['plan_revenue'] as $row)
+                                        <tr>
+                                            <td>{{ $row['label'] }}</td>
+                                            <td class="text-right">{{ number_format($row['total']) }}</td>
+                                            <td class="text-right">{{ number_format($row['revenue'], 2) }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted py-4">Sin pagos en este filtro.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3">
+                    <div class="card card-outline card-secondary">
+                        <div class="card-header">
+                            <h3 class="card-title">Situaciones consultadas</h3>
+                        </div>
+                        <div class="card-body p-0 dashboard-scroll-panel">
+                            <table class="table table-sm mb-0 dashboard-mini-table">
+                                <tbody>
+                                    @forelse($bancaOnlineDashboard['case_status_breakdown'] as $row)
+                                        <tr>
+                                            <td>{{ $row['label'] }}</td>
+                                            <td class="text-right font-weight-bold">{{ number_format($row['total']) }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td class="text-center text-muted py-4">Sin eventos de situacion.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="card card-outline card-info">
+                        <div class="card-header">
+                            <h3 class="card-title">Activaciones recientes</h3>
+                        </div>
+                        <div class="card-body p-0 dashboard-scroll-panel dashboard-scroll-panel-lg">
+                            <table class="table table-hover mb-0">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Cliente</th>
+                                        <th>Alcance</th>
+                                        <th>Estado</th>
+                                        <th>Fecha</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($bancaOnlineDashboard['recent_activations'] as $activation)
+                                        @php
+                                            $metadata = $activation->metadata ?? [];
+                                            $planLabel = $metadata['plan_title'] ?? $metadata['plan_slug'] ?? 'Ruta estrategica';
+                                            $packageLabel = $metadata['package_title'] ?? $activation->servicio?->nombre ?? 'Alcance';
+                                            $activationDate = $activation->paid_at ?: $activation->updated_at ?: $activation->created_at;
+                                        @endphp
+                                        <tr>
+                                            <td>
+                                                <strong>{{ $activation->user?->email ?? 'Sin correo' }}</strong>
+                                                @if($activation->user?->name)
+                                                    <br><small class="text-muted">{{ $activation->user->name }}</small>
+                                                @endif
+                                            </td>
+                                            <td>{{ \Illuminate\Support\Str::limit($planLabel . ' - ' . $packageLabel, 55) }}</td>
+                                            <td>
+                                                <span class="badge badge-{{ (int) $activation->pagado === 1 ? 'success' : 'warning' }}">
+                                                    {{ (int) $activation->pagado === 1 ? 'Pagado' : 'Pendiente' }}
+                                                </span>
+                                            </td>
+                                            <td>{{ optional($activationDate)->format('d/m H:i') ?? '-' }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-4">Sin activaciones en este filtro.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="card card-outline card-primary">
+                        <div class="card-header">
+                            <h3 class="card-title">Eventos recientes</h3>
+                        </div>
+                        <div class="card-body p-0 dashboard-scroll-panel dashboard-scroll-panel-lg">
+                            <table class="table table-hover mb-0">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Evento</th>
+                                        <th>Contacto</th>
+                                        <th>Contexto</th>
+                                        <th>Fecha</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if(!$bancaOnlineDashboard['has_event_tracking'])
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-4">Migracion de eventos pendiente.</td>
+                                        </tr>
+                                    @else
+                                        @forelse($bancaOnlineDashboard['recent_events'] as $event)
+                                            @php
+                                                $context = collect([$event->country_slug, $event->plan_slug, $event->case_status])->filter()->implode(' - ');
+                                            @endphp
+                                            <tr>
+                                                <td>{{ $bancaOnlineDashboard['event_labels'][$event->event] ?? $event->event }}</td>
+                                                <td>{{ $event->email ?? $event->user?->email ?? 'Visitante' }}</td>
+                                                <td>{{ $context ?: '-' }}</td>
+                                                <td>{{ optional($event->occurred_at)->format('d/m H:i') ?? '-' }}</td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="4" class="text-center text-muted py-4">Sin eventos en este filtro.</td>
+                                            </tr>
+                                        @endforelse
+                                    @endif
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="dashboard-section">
+            <div class="card card-outline card-teal">
+                <div class="card-header dashboard-section-header">
+                    <div>
+                        <h3 class="card-title mb-0">
+                            <i class="fas fa-folder-open mr-1"></i>Documentos del expediente
+                        </h3>
+                        <small class="text-muted">Solicitudes pendientes, documentos no disponibles y bloqueos frecuentes</small>
+                    </div>
+                </div>
+                @unless($documentRequestMetrics['available'])
+                    <div class="card-body">
+                        <div class="alert alert-warning mb-0">
+                            La tabla <code>document_requests</code> no existe en este ambiente.
+                        </div>
+                    </div>
+                @endunless
+            </div>
+
+            <div class="row">
+                @php
+                    $documentCards = [
+                        ['label' => 'Pendientes cliente', 'value' => $documentRequestMetrics['pending'], 'color' => 'warning', 'icon' => 'file-upload'],
+                        ['label' => 'No disponibles', 'value' => $documentRequestMetrics['missing'], 'color' => 'danger', 'icon' => 'search'],
+                        ['label' => 'Recibidos/aprobados', 'value' => $documentRequestMetrics['received'], 'color' => 'success', 'icon' => 'check-circle'],
+                        ['label' => 'Clientes bloqueados', 'value' => $documentRequestMetrics['blocked_clients'], 'color' => 'teal', 'icon' => 'user-clock'],
+                    ];
+                @endphp
+
+                @foreach($documentCards as $card)
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <div class="info-box">
+                            <span class="info-box-icon bg-{{ $card['color'] }}"><i class="fas fa-{{ $card['icon'] }}"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">{{ $card['label'] }}</span>
+                                <span class="info-box-number">{{ number_format($card['value']) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="row">
+                <div class="col-lg-5">
+                    <div class="card card-outline card-teal analytics-card">
+                        <div class="card-header">
+                            <h3 class="card-title">Tipos de documentos pendientes</h3>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="documentRequestTypesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card card-outline card-warning">
+                        <div class="card-header">
+                            <h3 class="card-title">Faltantes frecuentes</h3>
+                        </div>
+                        <div class="card-body p-0 dashboard-scroll-panel">
+                            <table class="table table-sm mb-0 dashboard-mini-table">
+                                <tbody>
+                                    @forelse($documentRequestMetrics['frequent_missing'] as $row)
+                                        <tr>
+                                            <td>{{ \Illuminate\Support\Str::limit($row['document'], 54) }}</td>
+                                            <td class="text-right font-weight-bold">{{ number_format($row['total']) }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td class="text-center text-muted py-4">Sin documentos faltantes.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3">
+                    <div class="card card-outline card-secondary">
+                        <div class="card-header">
+                            <h3 class="card-title">Casos recientes</h3>
+                        </div>
+                        <div class="card-body p-0 dashboard-scroll-panel">
+                            <table class="table table-sm mb-0 dashboard-mini-table">
+                                <tbody>
+                                    @forelse($documentRequestMetrics['recent'] as $row)
+                                        <tr>
+                                            <td>
+                                                <strong>{{ \Illuminate\Support\Str::limit($row['document'], 34) }}</strong>
+                                                <br>
+                                                <small class="text-muted">{{ $row['client'] }} · {{ $row['status_label'] }}</small>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td class="text-center text-muted py-4">Sin casos recientes.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="dashboard-section">
+            <div class="card card-outline card-dark">
+                <div class="card-header dashboard-section-header">
+                    <div>
+                        <h3 class="card-title mb-0">
+                            <i class="fas fa-search-location mr-1"></i>COS
+                        </h3>
+                        <small class="text-muted">Canal de consulta y visibilidad interna de procesos</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                @php
+                    $cosCards = [
+                        ['label' => 'Clientes con COS', 'value' => $cosMetrics['with_data'], 'color' => 'dark', 'icon' => 'database'],
+                        ['label' => 'Listos para cliente', 'value' => $cosMetrics['ready'], 'color' => 'success', 'icon' => 'eye'],
+                        ['label' => 'COS vigentes', 'value' => $cosMetrics['fresh'], 'color' => 'info', 'icon' => 'sync-alt'],
+                        ['label' => 'COS vencidos', 'value' => $cosMetrics['expired'], 'color' => 'warning', 'icon' => 'hourglass-end'],
+                        ['label' => 'Alertas internas', 'value' => $cosMetrics['warnings'], 'color' => 'danger', 'icon' => 'exclamation-triangle'],
+                    ];
+                @endphp
+
+                @foreach($cosCards as $card)
+                    <div class="col-12 col-sm-6 col-xl">
+                        <div class="info-box">
+                            <span class="info-box-icon bg-{{ $card['color'] }}"><i class="fas fa-{{ $card['icon'] }}"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">{{ $card['label'] }}</span>
+                                <span class="info-box-number">{{ number_format($card['value']) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="row">
+                <div class="col-lg-4">
+                    <div class="card card-outline card-dark analytics-card">
+                        <div class="card-header">
+                            <h3 class="card-title">Procesos por etapa</h3>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="cosStagesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card card-outline card-secondary analytics-card">
+                        <div class="card-header">
+                            <h3 class="card-title">Procesos por servicio</h3>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="cosServicesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card card-outline card-secondary">
+                        <div class="card-header">
+                            <h3 class="card-title">Procesos recientes</h3>
+                        </div>
+                        <div class="card-body p-0 dashboard-scroll-panel dashboard-scroll-panel-lg">
+                            <table class="table table-sm table-hover mb-0 dashboard-mini-table">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Cliente</th>
+                                        <th>Etapa</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($cosMetrics['recent'] as $row)
+                                        <tr>
+                                            <td>
+                                                <strong>{{ $row['email'] }}</strong>
+                                                <br><small class="text-muted">{{ $row['service'] }}</small>
+                                            </td>
+                                            <td>{{ \Illuminate\Support\Str::limit($row['stage'], 42) }}</td>
+                                            <td>
+                                                <span class="badge badge-{{ $row['ready'] ? 'success' : 'secondary' }}">
+                                                    {{ $row['ready'] ? 'Visible' : 'Interno' }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted py-4">Sin datos COS sincronizados.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="dashboard-section">
             <div class="card card-outline card-warning">
                 <div class="card-header dashboard-section-header">
                     <div>
@@ -147,6 +635,11 @@
                         <input type="hidden" name="registration_month" value="{{ $month }}">
                         <input type="hidden" name="pipeline_month" value="{{ $pipelineMonth }}">
                         <input type="hidden" name="pipeline_user_id" value="{{ $pipelineUserId }}">
+                        <input type="hidden" name="banca_start" value="{{ $bancaOnlineFilters['start'] }}">
+                        <input type="hidden" name="banca_end" value="{{ $bancaOnlineFilters['end'] }}">
+                        <input type="hidden" name="banca_country" value="{{ $bancaOnlineFilters['country'] }}">
+                        <input type="hidden" name="banca_plan" value="{{ $bancaOnlineFilters['plan'] }}">
+                        <input type="hidden" name="banca_case_status" value="{{ $bancaOnlineFilters['case_status'] }}">
 
                         <label class="dashboard-field">
                             <span>Desde</span>
@@ -328,6 +821,11 @@
                         <input type="hidden" name="task_end" value="{{ $taskFilters['end'] }}">
                         <input type="hidden" name="task_user_id" value="{{ $taskFilters['user_id'] }}">
                         <input type="hidden" name="task_status" value="{{ $taskFilters['status'] }}">
+                        <input type="hidden" name="banca_start" value="{{ $bancaOnlineFilters['start'] }}">
+                        <input type="hidden" name="banca_end" value="{{ $bancaOnlineFilters['end'] }}">
+                        <input type="hidden" name="banca_country" value="{{ $bancaOnlineFilters['country'] }}">
+                        <input type="hidden" name="banca_plan" value="{{ $bancaOnlineFilters['plan'] }}">
+                        <input type="hidden" name="banca_case_status" value="{{ $bancaOnlineFilters['case_status'] }}">
 
                         <label class="dashboard-field">
                             <span>Mes</span>
@@ -427,6 +925,10 @@
             grid-template-columns: repeat(5, minmax(0, 1fr));
         }
 
+        .dashboard-filter-banca {
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+        }
+
         .dashboard-field {
             display: grid;
             gap: .3rem;
@@ -443,6 +945,29 @@
             height: 100% !important;
         }
 
+        .dashboard-note {
+            font-size: .9rem;
+        }
+
+        .dashboard-scroll-panel {
+            max-height: 280px;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+
+        .dashboard-scroll-panel-lg {
+            max-height: 360px;
+        }
+
+        .dashboard-mini-table td,
+        .dashboard-mini-table th {
+            vertical-align: middle;
+        }
+
+        .info-box-number {
+            white-space: normal;
+        }
+
         .small-box,
         .info-box,
         .card {
@@ -451,7 +976,8 @@
 
         @media (max-width: 991.98px) {
             .dashboard-filter,
-            .dashboard-filter-wide {
+            .dashboard-filter-wide,
+            .dashboard-filter-banca {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
         }
@@ -459,7 +985,8 @@
         @media (max-width: 767.98px) {
             .dashboard-section-header,
             .dashboard-filter,
-            .dashboard-filter-wide {
+            .dashboard-filter-wide,
+            .dashboard-filter-banca {
                 grid-template-columns: 1fr;
                 align-items: stretch;
                 flex-direction: column;
@@ -650,6 +1177,61 @@
                 }]
             },
             options: chartOptions()
+        });
+
+        makeChart('bancaOnlineFunnelChart', {
+            type: 'horizontalBar',
+            data: {
+                labels: chartData.banca_online_funnel.labels,
+                datasets: [{
+                    label: 'Eventos',
+                    data: chartData.banca_online_funnel.data,
+                    backgroundColor: ['#0EA5E9', '#6366F1', '#F59E0B', '#14B8A6', '#16A34A']
+                }]
+            },
+            options: chartOptions()
+        });
+
+        makeChart('cosStagesChart', {
+            type: 'horizontalBar',
+            data: {
+                labels: chartData.cos_stages.labels,
+                datasets: [{
+                    label: 'Procesos',
+                    data: chartData.cos_stages.data,
+                    backgroundColor: '#334155'
+                }]
+            },
+            options: chartOptions()
+        });
+
+        makeChart('cosServicesChart', {
+            type: 'horizontalBar',
+            data: {
+                labels: chartData.cos_services.labels,
+                datasets: [{
+                    label: 'Procesos',
+                    data: chartData.cos_services.data,
+                    backgroundColor: '#64748B'
+                }]
+            },
+            options: chartOptions()
+        });
+
+        makeChart('documentRequestTypesChart', {
+            type: 'doughnut',
+            data: {
+                labels: chartData.document_request_types.labels,
+                datasets: [{
+                    data: chartData.document_request_types.data,
+                    backgroundColor: ['#0F766E', '#DBBA72', '#334155']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                legend: { position: 'bottom' }
+            }
         });
     </script>
 @stop

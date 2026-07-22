@@ -2,13 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BancaOnlineEvent;
+use App\Models\Compras;
+use App\Models\DocumentRequest;
 use App\Models\Report;
 use App\Models\User;
 use App\Models\Factura;
 use App\Models\Task;
+use App\Services\BancaOnlineCatalog;
+use App\Services\BancaOnlineFlow;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 //use Webklex\PDFMerger\Facades\PDFMergerFacade as PDFMerger;
 use Telegram\Bot\Api;
@@ -45,6 +51,9 @@ class ReportController extends Controller
         $taskEnd = Carbon::parse($taskFilters['end'])->endOfDay();
         $advisors = $this->dashboardAdvisorOptions();
         $taskStatusLabels = $this->dashboardTaskStatusLabels();
+        $bancaOnlineFilters = $this->dashboardBancaOnlineFilters($request);
+        $bancaOnlineStart = Carbon::parse($bancaOnlineFilters['start'])->startOfDay();
+        $bancaOnlineEnd = Carbon::parse($bancaOnlineFilters['end'])->endOfDay();
 
         $labels = [];
         $dateKeys = [];
@@ -99,6 +108,9 @@ class ReportController extends Controller
         $recentTasks = $this->dashboardRecentTasks($taskStart, $taskEnd, $taskFilters);
         $pipelineUserId = $request->filled('pipeline_user_id') ? (int) $request->input('pipeline_user_id') : null;
         $salesPipeline = $this->salesPipeline($pipelineStart, $pipelineEnd, $pipelineUserId);
+        $bancaOnlineDashboard = $this->dashboardBancaOnlineMetrics($bancaOnlineStart, $bancaOnlineEnd, $bancaOnlineFilters);
+        $cosMetrics = $this->cosMetrics();
+        $documentRequestMetrics = $this->documentRequestMetrics();
 
         $kpis = [
             'registered_month' => $registeredThisMonth,
@@ -143,6 +155,22 @@ class ReportController extends Controller
                 'labels' => $salesPipeline->pluck('label')->values(),
                 'data' => $salesPipeline->pluck('total')->values(),
             ],
+            'banca_online_funnel' => [
+                'labels' => $bancaOnlineDashboard['funnel']->pluck('label')->values(),
+                'data' => $bancaOnlineDashboard['funnel']->pluck('total')->values(),
+            ],
+            'cos_stages' => [
+                'labels' => $cosMetrics['stages']->pluck('stage')->values(),
+                'data' => $cosMetrics['stages']->pluck('total')->values(),
+            ],
+            'cos_services' => [
+                'labels' => $cosMetrics['services']->pluck('service')->values(),
+                'data' => $cosMetrics['services']->pluck('total')->values(),
+            ],
+            'document_request_types' => [
+                'labels' => $documentRequestMetrics['types']->pluck('type')->values(),
+                'data' => $documentRequestMetrics['types']->pluck('total')->values(),
+            ],
         ];
 
         return view('reportes.dashboard', compact(
@@ -156,6 +184,10 @@ class ReportController extends Controller
             'taskFilters',
             'taskStart',
             'taskEnd',
+            'bancaOnlineFilters',
+            'bancaOnlineStart',
+            'bancaOnlineEnd',
+            'bancaOnlineDashboard',
             'advisors',
             'taskStatusLabels',
             'kpis',
@@ -164,7 +196,9 @@ class ReportController extends Controller
             'recentTasks',
             'serviceRevenue',
             'sellerTasks',
-            'salesPipeline'
+            'salesPipeline',
+            'cosMetrics',
+            'documentRequestMetrics'
         ));
     }
 
@@ -2093,16 +2127,422 @@ class ReportController extends Controller
             ->values();
     }
 
+    private function dashboardBancaOnlineFilters(Request $request): array
+    {
+        $defaultStart = today()->startOfMonth()->toDateString();
+        $defaultEnd = today()->toDateString();
+
+        $start = $request->input('banca_start', $defaultStart);
+        $end = $request->input('banca_end', $defaultEnd);
+
+        try {
+            $startDate = Carbon::parse($start)->toDateString();
+        } catch (\Throwable $e) {
+            $startDate = $defaultStart;
+        }
+
+        try {
+            $endDate = Carbon::parse($end)->toDateString();
+        } catch (\Throwable $e) {
+            $endDate = $defaultEnd;
+        }
+
+        if (Carbon::parse($startDate)->gt(Carbon::parse($endDate))) {
+            [$startDate, $endDate] = [$endDate, $startDate];
+        }
+
+        $catalog = app(BancaOnlineCatalog::class);
+        $flow = app(BancaOnlineFlow::class);
+
+        $country = $request->input('banca_country');
+        if ($country !== null && $country !== '') {
+            $country = $catalog->normalizeCountry($country);
+        }
+        if ($country === '' || ! array_key_exists((string) $country, $catalog->countries())) {
+            $country = null;
+        }
+
+        $plan = $request->input('banca_plan');
+        if ($plan === '' || ! array_key_exists((string) $plan, $catalog->plans())) {
+            $plan = null;
+        }
+
+        $caseStatus = $request->input('banca_case_status');
+        if ($caseStatus === '' || ! array_key_exists((string) $caseStatus, $flow->caseStatusOptions())) {
+            $caseStatus = null;
+        }
+
+        return [
+            'start' => $startDate,
+            'end' => $endDate,
+            'country' => $country,
+            'plan' => $plan,
+            'case_status' => $caseStatus,
+        ];
+    }
+
+    private function dashboardBancaOnlineMetrics(Carbon $start, Carbon $end, array $filters): array
+    {
+        $catalog = app(BancaOnlineCatalog::class);
+        $flow = app(BancaOnlineFlow::class);
+        $eventLabels = $this->bancaOnlineEventLabels();
+        $funnelKeys = [
+            'bo_case_status_selected',
+            'bo_strategy_rationale_viewed',
+            'bo_activation_requested',
+            'bo_activation_payment_started',
+            'bo_activation_payment_completed',
+        ];
+
+        $countryOptions = collect($catalog->countries())
+            ->map(fn (array $country, string $slug) => [
+                'slug' => $slug,
+                'label' => $country['label'] ?? ucfirst($slug),
+            ])
+            ->values();
+
+        $planOptions = collect($catalog->plans())
+            ->map(fn (array $plan, string $slug) => [
+                'slug' => $slug,
+                'label' => $plan['short_title'] ?? $plan['title'] ?? $slug,
+            ])
+            ->values();
+
+        $caseStatusOptions = collect($flow->caseStatusOptions())
+            ->map(fn (array $option, string $key) => [
+                'key' => $key,
+                'label' => $option['label'] ?? $key,
+            ])
+            ->values();
+
+        $hasSalesTracking = Schema::hasTable('compras') && Schema::hasColumn('compras', 'source');
+        $hasEventTracking = Schema::hasTable('banca_online_events');
+        $purchases = collect();
+
+        if ($hasSalesTracking) {
+            $purchases = Compras::query()
+                ->with(['user', 'servicio'])
+                ->where('source', $catalog->source())
+                ->where(function ($query) use ($start, $end) {
+                    $query->whereBetween('created_at', [$start, $end])
+                        ->orWhere(function ($inner) use ($start, $end) {
+                            $inner->where('pagado', 1)
+                                ->whereBetween('updated_at', [$start, $end]);
+                        });
+
+                    if (Schema::hasColumn('compras', 'paid_at')) {
+                        $query->orWhereBetween('paid_at', [$start, $end]);
+                    }
+                })
+                ->latest('updated_at')
+                ->limit(5000)
+                ->get()
+                ->filter(fn (Compras $purchase) => $this->bancaOnlinePurchaseMatchesFilters($purchase, $filters, $catalog))
+                ->values();
+        }
+
+        $createdPurchases = $purchases
+            ->filter(fn (Compras $purchase) => $this->dateFallsWithin($purchase->created_at, $start, $end))
+            ->values();
+
+        $paidPurchases = $purchases
+            ->filter(fn (Compras $purchase) => (int) $purchase->pagado === 1)
+            ->filter(fn (Compras $purchase) => $this->dateFallsWithin($this->bancaOnlinePaymentDate($purchase), $start, $end))
+            ->values();
+
+        $pendingPurchases = $createdPurchases
+            ->filter(fn (Compras $purchase) => (int) $purchase->pagado !== 1)
+            ->values();
+
+        $eventCounts = collect();
+        $recentEvents = collect();
+        $caseStatusBreakdown = collect();
+
+        if ($hasEventTracking) {
+            $eventBaseQuery = BancaOnlineEvent::query()
+                ->whereBetween('occurred_at', [$start, $end])
+                ->when($filters['country'], fn ($query, $country) => $query->where('country_slug', $country))
+                ->when($filters['plan'], fn ($query, $plan) => $query->where('plan_slug', $plan))
+                ->when($filters['case_status'], fn ($query, $caseStatus) => $query->where('case_status', $caseStatus));
+
+            $eventCounts = (clone $eventBaseQuery)
+                ->select('event', DB::raw('count(*) as total'))
+                ->groupBy('event')
+                ->pluck('total', 'event');
+
+            $recentEvents = (clone $eventBaseQuery)
+                ->with('user')
+                ->latest('occurred_at')
+                ->limit(10)
+                ->get();
+
+            $caseStatusLabels = $caseStatusOptions->pluck('label', 'key');
+            $caseStatusBreakdown = (clone $eventBaseQuery)
+                ->select('case_status', DB::raw('count(*) as total'))
+                ->whereNotNull('case_status')
+                ->groupBy('case_status')
+                ->orderByDesc('total')
+                ->limit(6)
+                ->get()
+                ->map(fn ($row) => [
+                    'label' => $caseStatusLabels[$row->case_status] ?? $row->case_status,
+                    'total' => (int) $row->total,
+                ]);
+        }
+
+        $funnel = collect($funnelKeys)
+            ->map(fn (string $key) => [
+                'key' => $key,
+                'label' => $eventLabels[$key] ?? $key,
+                'total' => (int) ($eventCounts[$key] ?? 0),
+            ]);
+
+        $rationaleViews = (int) ($eventCounts['bo_strategy_rationale_viewed'] ?? 0);
+        $activationRequests = max((int) ($eventCounts['bo_activation_requested'] ?? 0), $createdPurchases->count());
+        $paymentStarts = (int) ($eventCounts['bo_activation_payment_started'] ?? 0);
+        $completedPayments = max((int) ($eventCounts['bo_activation_payment_completed'] ?? 0), $paidPurchases->count());
+        $interestConversion = $rationaleViews > 0 ? round(($activationRequests / $rationaleViews) * 100, 1) : 0;
+        $paymentStartConversion = $activationRequests > 0 ? round(($paymentStarts / $activationRequests) * 100, 1) : 0;
+        $paymentConversion = $paymentStarts > 0
+            ? round(($completedPayments / $paymentStarts) * 100, 1)
+            : ($activationRequests > 0 ? round(($completedPayments / $activationRequests) * 100, 1) : 0);
+
+        $planRevenue = $paidPurchases
+            ->groupBy(function (Compras $purchase) {
+                $metadata = $purchase->metadata ?? [];
+
+                return $metadata['plan_title'] ?? $metadata['plan_slug'] ?? 'Sin plan';
+            })
+            ->map(fn ($items, string $label) => [
+                'label' => $label,
+                'total' => $items->count(),
+                'revenue' => (float) $items->sum('monto'),
+            ])
+            ->sortByDesc('revenue')
+            ->values()
+            ->take(6);
+
+        return [
+            'has_sales_tracking' => $hasSalesTracking,
+            'has_event_tracking' => $hasEventTracking,
+            'source' => $catalog->source(),
+            'countries' => $countryOptions,
+            'plans' => $planOptions,
+            'case_statuses' => $caseStatusOptions,
+            'event_labels' => $eventLabels,
+            'event_counts' => $eventCounts,
+            'event_total' => (int) $eventCounts->sum(),
+            'funnel' => $funnel,
+            'created_count' => $createdPurchases->count(),
+            'paid_count' => $paidPurchases->count(),
+            'pending_count' => $pendingPurchases->count(),
+            'revenue' => (float) $paidPurchases->sum('monto'),
+            'interest_conversion' => $interestConversion,
+            'payment_started_count' => $paymentStarts,
+            'payment_start_conversion' => $paymentStartConversion,
+            'payment_conversion' => $paymentConversion,
+            'recent_activations' => $purchases
+                ->sortByDesc(fn (Compras $purchase) => optional($purchase->updated_at)->timestamp ?? 0)
+                ->take(10)
+                ->values(),
+            'recent_events' => $recentEvents,
+            'case_status_breakdown' => $caseStatusBreakdown,
+            'plan_revenue' => $planRevenue,
+        ];
+    }
+
+    private function bancaOnlineEventLabels(): array
+    {
+        return [
+            'bo_case_status_selected' => 'Situacion elegida',
+            'bo_nationality_selected' => 'Nacionalidad elegida',
+            'bo_strategy_recommended' => 'Recomendacion generada',
+            'bo_strategy_rationale_viewed' => 'Explicacion vista',
+            'bo_activation_requested' => 'Activacion iniciada',
+            'bo_activation_payment_started' => 'Pago abierto',
+            'bo_activation_payment_completed' => 'Pago completado',
+            'bo_activation_existing_checkout_returned' => 'Pago pendiente retomado',
+        ];
+    }
+
+    private function bancaOnlinePurchaseMatchesFilters(Compras $purchase, array $filters, BancaOnlineCatalog $catalog): bool
+    {
+        $metadata = $purchase->metadata ?? [];
+
+        if ($filters['country']) {
+            $country = trim((string) ($metadata['country_slug'] ?? ''));
+
+            if ($country === '' || $catalog->normalizeCountry($country) !== $filters['country']) {
+                return false;
+            }
+        }
+
+        if ($filters['plan']) {
+            $plan = trim((string) ($metadata['plan_slug'] ?? ''));
+
+            if ($plan !== $filters['plan']) {
+                return false;
+            }
+        }
+
+        if ($filters['case_status']) {
+            $caseStatus = trim((string) ($metadata['selected_case_status'] ?? $metadata['case_status'] ?? ''));
+
+            if ($caseStatus !== $filters['case_status']) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function bancaOnlinePaymentDate(Compras $purchase): ?Carbon
+    {
+        if ($purchase->paid_at) {
+            return $purchase->paid_at;
+        }
+
+        if ((int) $purchase->pagado === 1) {
+            return $purchase->updated_at ?: $purchase->created_at;
+        }
+
+        return null;
+    }
+
+    private function dateFallsWithin($date, Carbon $start, Carbon $end): bool
+    {
+        if (! $date) {
+            return false;
+        }
+
+        try {
+            $value = $date instanceof Carbon ? $date : Carbon::parse($date);
+        } catch (\Throwable $e) {
+            return false;
+        }
+
+        return $value->between($start, $end, true);
+    }
+
+    private function documentRequestMetrics(): array
+    {
+        if (! Schema::hasTable('document_requests')) {
+            return [
+                'available' => false,
+                'pending' => 0,
+                'missing' => 0,
+                'received' => 0,
+                'rejected' => 0,
+                'blocked_clients' => 0,
+                'frequent_missing' => collect(),
+                'types' => collect(),
+                'recent' => collect(),
+            ];
+        }
+
+        $base = DocumentRequest::query();
+        $pendingStatuses = ['en_espera_cliente', 'rechazada'];
+        $missingStatuses = ['no_documento'];
+        $receivedStatuses = ['resuelto', 'aprobada'];
+
+        $frequentMissing = (clone $base)
+            ->select('document_name', DB::raw('count(*) as total'))
+            ->whereIn('status', array_merge($pendingStatuses, $missingStatuses))
+            ->groupBy('document_name')
+            ->orderByDesc('total')
+            ->limit(8)
+            ->get()
+            ->map(fn ($row) => [
+                'document' => $row->document_name ?: 'Documento sin nombre',
+                'total' => (int) $row->total,
+            ]);
+
+        $types = (clone $base)
+            ->select('document_type', DB::raw('count(*) as total'))
+            ->whereIn('status', array_merge($pendingStatuses, $missingStatuses))
+            ->groupBy('document_type')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn ($row) => [
+                'type' => $row->document_type === 'juridico' ? 'Juridicos' : 'Genealogicos',
+                'total' => (int) $row->total,
+            ]);
+
+        $recent = DocumentRequest::query()
+            ->with('client:id,name,email')
+            ->whereIn('status', array_merge($pendingStatuses, $missingStatuses))
+            ->latest('updated_at')
+            ->limit(8)
+            ->get()
+            ->map(fn (DocumentRequest $request) => [
+                'document' => $request->document_name,
+                'type' => $request->document_type === 'juridico' ? 'Juridico' : 'Genealogico',
+                'status' => $request->status,
+                'status_label' => match ($request->status) {
+                    'en_espera_cliente' => 'Pendiente cliente',
+                    'rechazada' => 'Requiere correccion',
+                    'no_documento' => 'No disponible',
+                    default => 'En revision',
+                },
+                'client' => $request->client?->name ?: $request->client?->email ?: 'Cliente',
+            ]);
+
+        return [
+            'available' => true,
+            'pending' => (clone $base)->whereIn('status', $pendingStatuses)->count(),
+            'missing' => (clone $base)->whereIn('status', $missingStatuses)->count(),
+            'received' => (clone $base)->whereIn('status', $receivedStatuses)->count(),
+            'rejected' => (clone $base)->where('status', 'rechazada')->count(),
+            'blocked_clients' => (clone $base)
+                ->whereIn('status', array_merge($pendingStatuses, $missingStatuses))
+                ->distinct()
+                ->count('user_id'),
+            'frequent_missing' => $frequentMissing,
+            'types' => $types,
+            'recent' => $recent,
+        ];
+    }
+
     private function cosMetrics(): array
     {
+        if (! Schema::hasTable('users') || ! Schema::hasColumn('users', 'arraycos')) {
+            return [
+                'with_data' => 0,
+                'ready' => 0,
+                'fresh' => 0,
+                'expired' => 0,
+                'warnings' => 0,
+                'stages' => collect(),
+                'services' => collect(),
+                'recent' => collect(),
+            ];
+        }
+
+        $hasCosReady = Schema::hasColumn('users', 'cosready');
+        $hasArrayCosExpire = Schema::hasColumn('users', 'arraycos_expire');
         $withDataQuery = $this->externalUsersQuery()->whereNotNull('arraycos');
         $withData = (clone $withDataQuery)->count();
+        $selectColumns = ['id', 'name', 'email', 'arraycos'];
 
-        $cosUsers = (clone $withDataQuery)
-            ->select('id', 'name', 'email', 'arraycos', 'arraycos_expire', 'cosready')
-            ->orderByDesc('arraycos_expire')
-            ->limit(3000)
-            ->get();
+        if ($hasArrayCosExpire) {
+            $selectColumns[] = 'arraycos_expire';
+        }
+
+        if ($hasCosReady) {
+            $selectColumns[] = 'cosready';
+        }
+
+        $cosUsersQuery = (clone $withDataQuery)
+            ->select($selectColumns)
+            ->limit(3000);
+
+        if ($hasArrayCosExpire) {
+            $cosUsersQuery->orderByDesc('arraycos_expire');
+        } else {
+            $cosUsersQuery->latest('updated_at');
+        }
+
+        $cosUsers = $cosUsersQuery->get();
 
         $stageCounts = [];
         $serviceCounts = [];
@@ -2135,8 +2575,8 @@ class ReportController extends Controller
                         'email' => $user->email,
                         'service' => $service,
                         'stage' => $stage,
-                        'expires_at' => $user->arraycos_expire,
-                        'ready' => (bool) $user->cosready,
+                        'expires_at' => $hasArrayCosExpire ? $user->arraycos_expire : null,
+                        'ready' => $hasCosReady ? (bool) $user->cosready : false,
                     ]);
                 }
             }
@@ -2156,9 +2596,9 @@ class ReportController extends Controller
 
         return [
             'with_data' => $withData,
-            'ready' => $this->externalUsersQuery()->where('cosready', 1)->count(),
-            'fresh' => (clone $withDataQuery)->where('arraycos_expire', '>=', now())->count(),
-            'expired' => (clone $withDataQuery)->where('arraycos_expire', '<', now())->count(),
+            'ready' => $hasCosReady ? $this->externalUsersQuery()->where('cosready', 1)->count() : 0,
+            'fresh' => $hasArrayCosExpire ? (clone $withDataQuery)->where('arraycos_expire', '>=', now())->count() : 0,
+            'expired' => $hasArrayCosExpire ? (clone $withDataQuery)->where('arraycos_expire', '<', now())->count() : 0,
             'warnings' => $warnings,
             'stages' => $stages,
             'services' => $services,

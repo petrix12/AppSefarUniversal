@@ -3,24 +3,29 @@
     $packageComponents = collect($purchaseMetadata['components'] ?? []);
     $paymentPlan = $purchaseMetadata['payment_plan'] ?? [];
     $isInstallmentPayment = ($paymentPlan['mode'] ?? 'full') === 'installments';
+    $boCssPath = public_path('css/banca-online-2026.css');
+    $boJsPath = public_path('js/banca-online-2026.js');
+    $boCssVersion = file_exists($boCssPath) ? filemtime($boCssPath) : time();
+    $boJsVersion = file_exists($boJsPath) ? filemtime($boJsPath) : time();
 @endphp
 <!doctype html>
 <html lang="es">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Pago recibido | Banca Online 2026</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Activacion recibida | Banca Online 2026</title>
     <link rel="stylesheet" href="{{ asset('vendor/fontawesome-free/css/all.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/banca-online-2026.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/banca-online-2026.css') }}?v={{ $boCssVersion }}">
 </head>
 <body class="bo-page">
     <main class="bo-confirm-wrap">
         <section class="bo-confirm-card">
             <img class="bo-confirm-logo" src="{{ asset('img/logo2.png') }}" alt="Sefar Universal">
-            <div class="bo-confirm-badge"><i class="fas fa-check-circle"></i> {{ $isInstallmentPayment ? 'Inicial recibido' : 'Pago recibido' }}</div>
+            <div class="bo-confirm-badge"><i class="fas fa-check-circle"></i> {{ $isInstallmentPayment ? 'Inicial recibida' : 'Activacion recibida' }}</div>
             <h1>Gracias.</h1>
-            <p>Tu contratacion de Banca Online 2026 fue registrada correctamente. El equipo de Sefar Universal continuara el seguimiento operativo del servicio seleccionado.</p>
+            <p>Tu activacion de Banca Online 2026 fue registrada correctamente. El equipo de Sefar Universal continuara el seguimiento operativo del servicio seleccionado.</p>
 
             @if($isInstallmentPayment)
                 <div class="bo-payment-breakdown">
@@ -50,7 +55,15 @@
                     @endforeach
                 @endforelse
             </ul>
+            @if(!empty($nextUrl))
+                <div class="bo-confirm-actions">
+                    <a class="bo-button bo-button-primary" href="{{ $nextUrl }}">
+                        {{ $nextLabel ?? 'Continuar en la plataforma' }} <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                    </a>
+                </div>
+            @endif
         </section>
     </main>
+    <script src="{{ asset('js/banca-online-2026.js') }}?v={{ $boJsVersion }}"></script>
 </body>
 </html>

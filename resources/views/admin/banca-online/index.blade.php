@@ -110,6 +110,104 @@
             @endif
         </section>
 
+        @php
+            $eventLabels = [
+                'bo_case_status_selected' => 'Situacion elegida',
+                'bo_nationality_selected' => 'Nacionalidad elegida',
+                'bo_strategy_recommended' => 'Recomendacion generada',
+                'bo_strategy_rationale_viewed' => 'Explicacion vista',
+                'bo_activation_requested' => 'Activacion iniciada',
+                'bo_activation_payment_completed' => 'Pago completado',
+            ];
+            $funnelKeys = [
+                'bo_case_status_selected',
+                'bo_strategy_rationale_viewed',
+                'bo_activation_requested',
+                'bo_activation_payment_completed',
+            ];
+        @endphp
+
+        <section class="bo-admin-analytics" aria-label="Conversiones Banca Online">
+            <div class="bo-analytics-head">
+                <div>
+                    <span class="bo-context-label">Sprint 1</span>
+                    <h2>Conversiones y activaciones</h2>
+                    <p>Ventana de {{ $eventWindowDays }} dias. Los pagos se leen desde compras de Banca Online.</p>
+                </div>
+                @unless($hasEventTracking)
+                    <span class="bo-preparation-label">
+                        <i class="fas fa-database mr-1" aria-hidden="true"></i> Migracion pendiente
+                    </span>
+                @endunless
+            </div>
+
+            <div class="bo-analytics-grid">
+                @foreach($funnelKeys as $eventKey)
+                    <div class="bo-analytics-card">
+                        <span>{{ $eventLabels[$eventKey] }}</span>
+                        <strong>{{ number_format((int) ($eventCounts[$eventKey] ?? 0), 0, ',', '.') }}</strong>
+                    </div>
+                @endforeach
+                <div class="bo-analytics-card is-paid">
+                    <span>Activaciones pagadas</span>
+                    <strong>{{ number_format((int) $activationStats['paid'], 0, ',', '.') }}</strong>
+                </div>
+                <div class="bo-analytics-card">
+                    <span>Ingresos Banca Online</span>
+                    <strong>{{ number_format((float) $activationStats['revenue'], 0, ',', '.') }} EUR</strong>
+                </div>
+            </div>
+
+            <div class="bo-admin-activity-grid">
+                <div class="bo-admin-activity">
+                    <h3>Activaciones recientes</h3>
+                    <div class="bo-admin-activity-list">
+                    @forelse($recentActivations as $activation)
+                        @php
+                            $metadata = $activation->metadata ?? [];
+                            $planLabel = $metadata['plan_title'] ?? $metadata['plan_slug'] ?? 'Ruta estrategica';
+                            $packageLabel = $metadata['package_title'] ?? $activation->servicio?->nombre ?? 'Alcance';
+                            $statusLabel = $metadata['activation_status_label']
+                                ?? ((int) $activation->pagado === 1 ? 'Pagado' : 'Pendiente');
+                        @endphp
+                        <div class="bo-activity-row">
+                            <div>
+                                <strong>{{ $activation->user?->email ?? 'Sin correo' }}</strong>
+                                <span>{{ $planLabel }} · {{ $packageLabel }}</span>
+                            </div>
+                            <em class="{{ (int) $activation->pagado === 1 ? 'is-paid' : 'is-pending' }}">
+                                {{ $statusLabel }}
+                            </em>
+                        </div>
+                    @empty
+                        <p class="bo-empty-line">Aun no hay activaciones de Banca Online.</p>
+                    @endforelse
+                    </div>
+                </div>
+
+                <div class="bo-admin-activity">
+                    <h3>Eventos recientes</h3>
+                    <div class="bo-admin-activity-list">
+                    @if(!$hasEventTracking)
+                        <p class="bo-empty-line">Aplica la migracion de eventos para comenzar a medir conversiones.</p>
+                    @else
+                        @forelse($recentEvents as $event)
+                            <div class="bo-activity-row">
+                                <div>
+                                    <strong>{{ $eventLabels[$event->event] ?? $event->event }}</strong>
+                                    <span>{{ $event->email ?? $event->user?->email ?? 'Visitante' }}</span>
+                                </div>
+                                <em>{{ optional($event->occurred_at)->format('d/m H:i') }}</em>
+                            </div>
+                        @empty
+                            <p class="bo-empty-line">Sin eventos en la ventana seleccionada.</p>
+                        @endforelse
+                    @endif
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <nav class="bo-plan-switch" aria-label="Ruta estrategica">
             @foreach($plans as $slug => $plan)
                 <a class="{{ $planSlug === $slug ? 'is-active' : '' }}"
@@ -127,6 +225,212 @@
             </div>
             <span>{{ $planCurrent }} {{ $planCurrent === 1 ? 'servicio' : 'servicios' }}</span>
         </header>
+
+        <section class="bo-admin-section bo-document-rules">
+            <header>
+                <div>
+                    <h3>Reglas documentales del expediente</h3>
+                    <span>Define que documento activa una recomendacion y que servicio conviene ofrecer.</span>
+                </div>
+                @if($hasDocumentRulesTable)
+                    <span>{{ $documentRules->count() }} regla(s)</span>
+                @else
+                    <span>Migracion pendiente</span>
+                @endif
+            </header>
+
+            @unless($hasDocumentRulesTable)
+                <div class="bo-admin-empty">
+                    <i class="fas fa-database" aria-hidden="true"></i>
+                    <p>Ejecuta la migracion de <code>banca_online_document_rules</code> para administrar documentos desde la app.</p>
+                </div>
+            @else
+                <details class="bo-create-service">
+                    <summary>
+                        <span><i class="fas fa-plus mr-1" aria-hidden="true"></i> Agregar regla documental</span>
+                        <i class="fas fa-chevron-down bo-details-arrow" aria-hidden="true"></i>
+                    </summary>
+                    <form method="POST" action="{{ route('admin.banca-online.document-rules.store') }}">
+                        @csrf
+                        <input type="hidden" name="pais" value="{{ $countrySlug }}">
+                        <input type="hidden" name="plan" value="{{ $planSlug }}">
+                        <input type="hidden" name="modalidad" value="{{ $packageSlug }}">
+
+                        <div class="bo-document-rule-create-grid">
+                            <label class="bo-field bo-rule-document-name">
+                                <span>Documento</span>
+                                <input class="form-control" type="text" name="document_name" placeholder="Ej. Partida de nacimiento apostillada" required>
+                            </label>
+
+                            <label class="bo-field">
+                                <span>Tipo</span>
+                                <select class="form-control" name="document_type" required>
+                                    <option value="genealogico">Genealogico</option>
+                                    <option value="juridico">Juridico</option>
+                                    <option value="otro">Otro</option>
+                                </select>
+                            </label>
+
+                            <label class="bo-field">
+                                <span>Plan recomendado</span>
+                                <select class="form-control" name="recommended_plan_slug">
+                                    <option value="">Usar plan actual</option>
+                                    @foreach($plans as $slug => $plan)
+                                        <option value="{{ $slug }}">{{ $plan['short_title'] ?? $plan['title'] ?? $slug }}</option>
+                                    @endforeach
+                                </select>
+                            </label>
+
+                            <label class="bo-field bo-rule-service">
+                                <span>Servicio recomendado</span>
+                                <select class="form-control" name="recommended_service_id">
+                                    <option value="">Sin servicio exacto</option>
+                                    @foreach($documentServiceOptions as $service)
+                                        <option value="{{ $service->id }}">{{ $service->nombre }} @if($service->categoria) · {{ $service->categoria }} @endif</option>
+                                    @endforeach
+                                </select>
+                            </label>
+
+                            <label class="bo-field">
+                                <span>Prioridad</span>
+                                <input class="form-control" type="number" name="priority" value="50" min="1" max="999">
+                            </label>
+
+                            <label class="bo-field bo-rule-keywords">
+                                <span>Palabras clave</span>
+                                <input class="form-control" type="text" name="match_keywords" placeholder="acta, nacimiento, apostilla">
+                            </label>
+
+                            <label class="bo-field bo-rule-client-copy">
+                                <span>Texto para el cliente</span>
+                                <textarea class="form-control" name="client_explanation" rows="2" placeholder="Explica por que recomendamos este apoyo documental."></textarea>
+                            </label>
+
+                            <div class="bo-document-rule-flags">
+                                <input type="hidden" name="required" value="0">
+                                <input type="hidden" name="active" value="0">
+                                <input type="hidden" name="client_visible" value="0">
+                                <label><input type="checkbox" name="required" value="1" checked> Requerido</label>
+                                <label><input type="checkbox" name="active" value="1" checked> Activo</label>
+                                <label><input type="checkbox" name="client_visible" value="1" checked> Visible cliente</label>
+                            </div>
+
+                            <button type="submit" class="btn bo-add-button">
+                                <i class="fas fa-save mr-1" aria-hidden="true"></i> Guardar regla
+                            </button>
+                        </div>
+                    </form>
+                </details>
+
+                <div class="bo-document-rule-list">
+                    @forelse($documentRules as $rule)
+                        @php
+                            $keywords = implode(', ', $rule->match_keywords ?? []);
+                        @endphp
+                        <div class="bo-admin-item bo-document-rule-item">
+                            <form method="POST" action="{{ route('admin.banca-online.document-rules.update', $rule) }}" class="bo-document-rule-form">
+                                @csrf
+                                @method('PUT')
+                                <input type="hidden" name="pais" value="{{ $countrySlug }}">
+                                <input type="hidden" name="plan" value="{{ $planSlug }}">
+                                <input type="hidden" name="modalidad" value="{{ $packageSlug }}">
+
+                                <div class="bo-document-rule-main">
+                                    <label class="bo-field bo-rule-document-name">
+                                        <span>Documento</span>
+                                        <input class="form-control" type="text" name="document_name" value="{{ old('document_name', $rule->document_name) }}" required>
+                                    </label>
+
+                                    <label class="bo-field">
+                                        <span>Tipo</span>
+                                        <select class="form-control" name="document_type" required>
+                                            @foreach(['genealogico' => 'Genealogico', 'juridico' => 'Juridico', 'otro' => 'Otro'] as $value => $label)
+                                                <option value="{{ $value }}" {{ $rule->document_type === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                            @endforeach
+                                        </select>
+                                    </label>
+
+                                    <label class="bo-field">
+                                        <span>Plan recomendado</span>
+                                        <select class="form-control" name="recommended_plan_slug">
+                                            <option value="">Usar plan de la regla</option>
+                                            @foreach($plans as $slug => $plan)
+                                                <option value="{{ $slug }}" {{ $rule->recommended_plan_slug === $slug ? 'selected' : '' }}>
+                                                    {{ $plan['short_title'] ?? $plan['title'] ?? $slug }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </label>
+
+                                    <label class="bo-field bo-rule-service">
+                                        <span>Servicio recomendado</span>
+                                        <select class="form-control" name="recommended_service_id">
+                                            <option value="">Sin servicio exacto</option>
+                                            @foreach($documentServiceOptions as $service)
+                                                <option value="{{ $service->id }}" {{ (int) $rule->recommended_service_id === (int) $service->id ? 'selected' : '' }}>
+                                                    {{ $service->nombre }} @if($service->categoria) · {{ $service->categoria }} @endif
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </label>
+
+                                    <label class="bo-field">
+                                        <span>Prioridad</span>
+                                        <input class="form-control" type="number" name="priority" value="{{ $rule->priority }}" min="1" max="999">
+                                    </label>
+
+                                    <button type="submit" class="btn bo-save-button" title="Guardar regla">
+                                        <i class="fas fa-save" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+
+                                <div class="bo-document-rule-options">
+                                    <label class="bo-field bo-rule-keywords">
+                                        <span>Palabras clave</span>
+                                        <input class="form-control" type="text" name="match_keywords" value="{{ $keywords }}" placeholder="Separadas por coma">
+                                    </label>
+
+                                    <label class="bo-field bo-rule-client-copy">
+                                        <span>Texto para el cliente</span>
+                                        <textarea class="form-control" name="client_explanation" rows="2">{{ $rule->client_explanation }}</textarea>
+                                    </label>
+
+                                    <label class="bo-field bo-rule-client-copy">
+                                        <span>Notas internas</span>
+                                        <textarea class="form-control" name="internal_notes" rows="2">{{ $rule->internal_notes }}</textarea>
+                                    </label>
+
+                                    <div class="bo-document-rule-flags">
+                                        <input type="hidden" name="required" value="0">
+                                        <input type="hidden" name="active" value="0">
+                                        <input type="hidden" name="client_visible" value="0">
+                                        <label><input type="checkbox" name="required" value="1" {{ $rule->required ? 'checked' : '' }}> Requerido</label>
+                                        <label><input type="checkbox" name="active" value="1" {{ $rule->active ? 'checked' : '' }}> Activo</label>
+                                        <label><input type="checkbox" name="client_visible" value="1" {{ $rule->client_visible ? 'checked' : '' }}> Visible cliente</label>
+                                    </div>
+                                </div>
+                            </form>
+
+                            <form method="POST" action="{{ route('admin.banca-online.document-rules.destroy', $rule) }}" class="bo-delete-rule-form">
+                                @csrf
+                                @method('DELETE')
+                                <input type="hidden" name="pais" value="{{ $countrySlug }}">
+                                <input type="hidden" name="plan" value="{{ $planSlug }}">
+                                <input type="hidden" name="modalidad" value="{{ $packageSlug }}">
+                                <button type="submit" class="btn bo-delete-rule-button" title="Eliminar regla" onclick="return confirm('Eliminar esta regla documental?')">
+                                    <i class="fas fa-trash" aria-hidden="true"></i>
+                                </button>
+                            </form>
+                        </div>
+                    @empty
+                        <div class="bo-admin-empty">
+                            <i class="fas fa-file-signature" aria-hidden="true"></i>
+                            <p>Aun no hay reglas documentales para este pais y plan.</p>
+                        </div>
+                    @endforelse
+                </div>
+            @endunless
+        </section>
 
         <nav class="bo-package-switch" aria-label="Modalidad">
             @foreach($tiers as $slug => $tier)

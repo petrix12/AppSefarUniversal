@@ -20,15 +20,15 @@
     }
 @endphp
 
-    <li class="nav-item dropdown" id="appNotificationsMenu">
-        <a class="nav-link text-white" data-toggle="dropdown" href="#" aria-label="Notificaciones" style="color:#fff !important;">
-            <i class="far fa-bell fa-lg"></i>
+    <li class="nav-item dropdown sefar-notifications-menu" id="appNotificationsMenu">
+        <a class="nav-link sefar-notification-trigger" data-toggle="dropdown" href="#" aria-label="Notificaciones">
+            <i class="far fa-bell sefar-notification-bell"></i>
             @if($unreadCount > 0)
-                <span class="badge badge-warning navbar-badge">{{ $unreadCount }}</span>
+                <span class="badge badge-warning navbar-badge sefar-notification-badge">{{ $unreadCount > 99 ? '99+' : $unreadCount }}</span>
             @endif
         </a>
 
-        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right sefar-notifications-dropdown">
             <span class="dropdown-item dropdown-header">
                 {{ $unreadCount }} notificacion(es) sin leer
             </span>
@@ -75,14 +75,3 @@
             </a>
         </div>
     </li>
-
-@once
-    <style>
-        #appNotificationsMenu > .nav-link,
-        #appNotificationsMenu > .nav-link:hover,
-        #appNotificationsMenu > .nav-link:focus,
-        #appNotificationsMenu > .nav-link:active {
-            color: #fff !important;
-        }
-    </style>
-@endonce

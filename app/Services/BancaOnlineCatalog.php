@@ -158,6 +158,10 @@ class BancaOnlineCatalog
 
     public function packageFeatures(Servicio $package): Collection
     {
+        if ($this->usesComponentCatalog($package)) {
+            return collect();
+        }
+
         return collect($this->metadata($package)['features'] ?? [])
             ->map(function ($feature) {
                 if (is_array($feature)) {
@@ -227,7 +231,7 @@ class BancaOnlineCatalog
     {
         $metadata = $this->metadata($package);
 
-        if (array_key_exists('list_price', $metadata)) {
+        if (! $this->usesComponentCatalog($package) && array_key_exists('list_price', $metadata)) {
             return round(max(0, (float) $metadata['list_price']), 2);
         }
 
@@ -240,11 +244,11 @@ class BancaOnlineCatalog
         $metadata = $this->metadata($package);
         $subtotal = $this->packageSubtotal($package);
 
-        if (array_key_exists('price', $metadata)) {
+        if (! $this->usesComponentCatalog($package) && array_key_exists('price', $metadata)) {
             return round(max(0, $subtotal - max(0, (float) $metadata['price'])), 2);
         }
 
-        if (array_key_exists('saving', $metadata)) {
+        if (! $this->usesComponentCatalog($package) && array_key_exists('saving', $metadata)) {
             return round(min($subtotal, max(0, (float) $metadata['saving'])), 2);
         }
 
@@ -261,7 +265,7 @@ class BancaOnlineCatalog
     {
         $metadata = $this->metadata($package);
 
-        if (array_key_exists('price', $metadata)) {
+        if (! $this->usesComponentCatalog($package) && array_key_exists('price', $metadata)) {
             return round(max(0, (float) $metadata['price']), 2);
         }
 

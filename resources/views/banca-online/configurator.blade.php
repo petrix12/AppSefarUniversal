@@ -1,17 +1,15 @@
 @php
     $catalog = app(\App\Services\BancaOnlineCatalog::class);
     $oldPackageId = (int) old('package_id');
-    $showNewClientFields = $errors->has('nombres')
-        || $errors->has('apellidos')
-        || $errors->has('phone')
-        || $errors->has('passport')
-        || $errors->has('pais_de_nacimiento')
-        || $errors->has('referido')
-        || $errors->has('tiene_hermanos');
     $readyPackages = $packages->filter(fn ($package) => $catalog->packageIsReady($package));
     $defaultPackage = $readyPackages->first(fn ($package) => (bool) (($catalog->metadata($package)['recommended'] ?? false)))
         ?? $readyPackages->first();
     $selectedPackageId = $oldPackageId > 0 ? $oldPackageId : (int) ($defaultPackage?->id ?? 0);
+    $selectedStatus = $caseStatusOptions[$selectedCaseStatus] ?? null;
+    $boCssPath = public_path('css/banca-online-2026.css');
+    $boJsPath = public_path('js/banca-online-2026.js');
+    $boCssVersion = file_exists($boCssPath) ? filemtime($boCssPath) : time();
+    $boJsVersion = file_exists($boJsPath) ? filemtime($boJsPath) : time();
 @endphp
 <!doctype html>
 <html lang="es">
@@ -22,7 +20,7 @@
     <title>{{ $plan['public_title'] ?? $plan['title'] }} | Banca Online 2026</title>
     <link rel="stylesheet" href="{{ asset('vendor/fontawesome-free/css/all.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/banca-online-2026.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/banca-online-2026.css') }}?v={{ $boCssVersion }}">
 </head>
 <body class="bo-page">
     <header class="bo-topbar">
@@ -33,7 +31,7 @@
             </a>
             <nav class="bo-country-tabs" aria-label="Servicio solicitado">
                 @foreach($countries as $slug => $item)
-                    <a class="{{ $countrySlug === $slug ? 'active' : '' }}" href="{{ route('banca-online.configure.country', [$slug, $planSlug]) }}">
+                    <a class="{{ $countrySlug === $slug ? 'active' : '' }}" href="{{ route('banca-online.configure.country', array_merge(['country' => $slug, 'plan' => $planSlug], $flowQuery)) }}">
                         {{ $item['label'] }}
                     </a>
                 @endforeach
@@ -47,8 +45,29 @@
                 <span class="bo-eyebrow"><i class="fas fa-route"></i> {{ $plan['eyebrow'] ?? 'Ruta estrategica' }}</span>
                 <h1>{{ $plan['public_title'] ?? $plan['title'] }}</h1>
                 <p>{{ $plan['intro'] ?? $plan['summary'] }}</p>
+                <div class="bo-help-steps" aria-label="Ayuda del alcance">
+                    <span><i class="fas fa-check-circle" aria-hidden="true"></i> Alcances claros</span>
+                    <span><i class="fas fa-receipt" aria-hidden="true"></i> Importe visible</span>
+                    <span><i class="fas fa-envelope-open-text" aria-hidden="true"></i> Seguimiento posterior</span>
+                </div>
             </div>
             <div class="bo-service-chip"><i class="fas fa-passport"></i> {{ $country['service_name'] ?? 'Servicio Sefar' }}</div>
+        </section>
+
+        @include('banca-online.partials.expediente-context', ['expedienteContext' => $expedienteContext ?? []])
+
+        <section class="bo-panel bo-rationale-panel">
+            <div>
+                <span class="bo-section-kicker">Por que recomendamos esta estrategia</span>
+                <h2>{{ $recommendation['plan_title'] ?? ($plan['public_title'] ?? $plan['title']) }}</h2>
+                <p>{{ $recommendation['reason'] ?? 'Esta estrategia corresponde al contexto indicado para tu expediente.' }}</p>
+            </div>
+            @if($selectedStatus)
+                <div class="bo-rationale-meta">
+                    <span><i class="fas fa-clipboard-check" aria-hidden="true"></i> {{ $selectedStatus['label'] }}</span>
+                    <span><i class="fas fa-door-open" aria-hidden="true"></i> {{ $entryPoint }}</span>
+                </div>
+            @endif
         </section>
 
         @if($errors->any())
@@ -64,14 +83,37 @@
             <form method="POST" action="{{ route('banca-online.checkout.country', [$countrySlug, $planSlug]) }}" id="bancaCheckoutForm">
                 @csrf
                 <input type="hidden" name="country" value="{{ $countrySlug }}">
+                <input type="hidden" name="entry_point" value="{{ $entryPoint }}">
+                <input type="hidden" name="selected_case_status" value="{{ $selectedCaseStatus }}">
+                @foreach($quoteContext as $key => $value)
+                    @if($key !== 'authenticated_user_id')
+                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                    @endif
+                @endforeach
+
+                <section class="bo-cart-resume is-hidden" id="boCartResume" aria-live="polite">
+                    <div class="bo-cart-resume-copy">
+                        <span><i class="fas fa-history" aria-hidden="true"></i> Activacion en progreso</span>
+                        <h2 id="boCartResumeTitle">Progreso guardado</h2>
+                        <p id="boCartResumeText">Tu seleccion queda guardada en este navegador.</p>
+                    </div>
+                    <div class="bo-cart-resume-actions">
+                        <a class="bo-button bo-button-primary is-hidden" id="boCartContinue" href="#">
+                            Continuar pago <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                        </a>
+                        <button class="bo-button bo-button-secondary" type="button" id="boCartClear">
+                            Descartar
+                        </button>
+                    </div>
+                </section>
 
                 <section class="bo-package-section" aria-labelledby="package-heading">
                     <div class="bo-package-heading">
                         <div>
-                            <span class="bo-section-kicker">Nivel de cobertura</span>
-                            <h2 id="package-heading">Elige tu modalidad</h2>
+                            <span class="bo-section-kicker">Alcance profesional</span>
+                            <h2 id="package-heading">Elige un alcance</h2>
                         </div>
-                        <p>Los servicios de cada modalidad son fijos.</p>
+                        <p>Veras el resumen completo al seleccionar.</p>
                     </div>
 
                     <div class="bo-package-grid">
@@ -85,6 +127,9 @@
                                 $ready = $catalog->packageIsReady($package);
                                 $selected = $ready && $selectedPackageId === (int) $package->id;
                                 $componentData = $items->values()->all();
+                                $visibleItems = $items->take(3);
+                                $hiddenItems = $items->slice(3);
+                                $hiddenItemCount = max(0, $items->count() - $visibleItems->count());
                             @endphp
                             <label class="bo-package-card {{ ($metadata['recommended'] ?? false) ? 'is-recommended' : '' }} {{ $selected ? 'selected' : '' }} {{ $ready ? '' : 'is-unavailable' }}">
                                 <input
@@ -103,7 +148,7 @@
                                 @endif
 
                                 <div class="bo-package-card-head">
-                                    <span class="bo-package-tier">Modalidad</span>
+                                    <span class="bo-package-tier">Alcance</span>
                                     <h3>{{ $package->nombre }}</h3>
                                     <p>{{ $package->descripcion_publica }}</p>
                                 </div>
@@ -128,7 +173,7 @@
                                 </div>
 
                                 <ul class="bo-package-components">
-                                    @forelse($items as $item)
+                                    @forelse($visibleItems as $item)
                                         <li>
                                             <i class="fas fa-check" aria-hidden="true"></i>
                                             <span class="bo-package-component-copy">
@@ -140,13 +185,36 @@
                                     @empty
                                         <li class="is-empty"><i class="fas fa-clock" aria-hidden="true"></i> Contenido en definicion</li>
                                     @endforelse
+                                    @foreach($hiddenItems as $item)
+                                        <li class="bo-reveal-target">
+                                            <i class="fas fa-check" aria-hidden="true"></i>
+                                            <span class="bo-package-component-copy">
+                                                <strong>{{ $item['name'] ?? 'Servicio incluido' }}</strong>
+                                                @if(!empty($item['description']))<small>{{ $item['description'] }}</small>@endif
+                                                @if(array_key_exists('price', $item))<span>{{ number_format((float) $item['price'], 0, ',', '.') }} EUR</span>@endif
+                                            </span>
+                                        </li>
+                                    @endforeach
                                 </ul>
+
+                                @if($hiddenItemCount > 0)
+                                    <button
+                                        type="button"
+                                        class="bo-reveal-button bo-reveal-button-small"
+                                        data-bo-reveal=".bo-package-components .bo-reveal-target"
+                                        data-bo-reveal-scope=".bo-package-card"
+                                        data-show-label="Ver todos los servicios"
+                                        data-hide-label="Ocultar servicios extra"
+                                        aria-expanded="false">
+                                        Ver todos los servicios <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                                    </button>
+                                @endif
 
                                 <span
                                     class="bo-package-select"
-                                    data-select-label="{{ $ready ? 'Elegir modalidad' : 'Proximamente' }}"
+                                    data-select-label="{{ $ready ? 'Seleccionar alcance' : 'Proximamente' }}"
                                     data-selected-label="Seleccionado">
-                                    {{ $ready ? 'Elegir modalidad' : 'Proximamente' }}
+                                    {{ $ready ? 'Seleccionar alcance' : 'Proximamente' }}
                                     @if($ready)<i class="fas fa-arrow-right" aria-hidden="true"></i>@endif
                                 </span>
                             </label>
@@ -157,9 +225,10 @@
 
                 <div class="bo-package-checkout">
                     <aside class="bo-panel bo-package-summary">
-                        <div class="bo-total-label">Modalidad seleccionada</div>
+                        <div class="bo-total-label">Alcance seleccionado</div>
                         <h2 id="selectedPackageName">Selecciona una opcion</h2>
                         <div class="bo-total"><span id="totalAmount">0</span> <small>EUR</small></div>
+                        <p class="bo-package-helper">Aqui veras todos los servicios incluidos antes de activar.</p>
                         <ul class="bo-selected-list" id="selectedList"></ul>
                     </aside>
 
@@ -173,84 +242,14 @@
                             </label>
 
                             <div class="bo-status" id="lookupStatus"></div>
+                            <div class="bo-lookup-expediente is-hidden" id="boLookupExpediente" aria-live="polite"></div>
 
-                            <div id="newClientFields" class="bo-form {{ $showNewClientFields ? '' : 'is-hidden' }}">
-                                <div class="bo-field-grid">
-                                    <label class="bo-field">
-                                        <span>Nombres</span>
-                                        <input data-required-when-new type="text" name="nombres" value="{{ old('nombres') }}" autocomplete="given-name">
-                                        @error('nombres') <div class="bo-error">{{ $message }}</div> @enderror
-                                    </label>
-                                    <label class="bo-field">
-                                        <span>Apellidos</span>
-                                        <input data-required-when-new type="text" name="apellidos" value="{{ old('apellidos') }}" autocomplete="family-name">
-                                        @error('apellidos') <div class="bo-error">{{ $message }}</div> @enderror
-                                    </label>
-                                </div>
-
-                                <div class="bo-field-grid">
-                                    <label class="bo-field">
-                                        <span>Telefono</span>
-                                        <input data-required-when-new type="tel" name="phone" value="{{ old('phone') }}" autocomplete="tel">
-                                        @error('phone') <div class="bo-error">{{ $message }}</div> @enderror
-                                    </label>
-                                    <label class="bo-field">
-                                        <span>Pasaporte</span>
-                                        <input data-required-when-new type="text" name="passport" value="{{ old('passport') }}">
-                                        @error('passport') <div class="bo-error">{{ $message }}</div> @enderror
-                                    </label>
-                                </div>
-
-                                <label class="bo-field">
-                                    <span>Pais de nacimiento</span>
-                                    <input data-required-when-new type="text" name="pais_de_nacimiento" value="{{ old('pais_de_nacimiento') }}">
-                                    @error('pais_de_nacimiento') <div class="bo-error">{{ $message }}</div> @enderror
-                                </label>
-
-                                <label class="bo-field">
-                                    <span>Referido por</span>
-                                    <select data-required-when-new name="referido">
-                                        <option value="">Selecciona</option>
-                                        <option value="soporteit+familiares@sefarvzla.com" {{ old('referido') === 'soporteit+familiares@sefarvzla.com' ? 'selected' : '' }}>Amigo, conocido o familiar</option>
-                                        <option value="soporteit+buscadores@sefarvzla.com" {{ old('referido') === 'soporteit+buscadores@sefarvzla.com' ? 'selected' : '' }}>Anuncio en buscadores</option>
-                                        <option value="soporteit+google@sefarvzla.com" {{ old('referido') === 'soporteit+google@sefarvzla.com' ? 'selected' : '' }}>Google</option>
-                                        <option value="soporteit+rrss@sefarvzla.com" {{ old('referido') === 'soporteit+rrss@sefarvzla.com' ? 'selected' : '' }}>Redes sociales</option>
-                                        <option value="soporteit+otros@sefarvzla.com" {{ old('referido') === 'soporteit+otros@sefarvzla.com' ? 'selected' : '' }}>Otros</option>
-                                    </select>
-                                    @error('referido') <div class="bo-error">{{ $message }}</div> @enderror
-                                </label>
-
-                                <label class="bo-field">
-                                    <span>Familiares en proceso</span>
-                                    <select data-required-when-new name="tiene_hermanos" id="tieneHermanos">
-                                        <option value="">Selecciona</option>
-                                        <option value="0" {{ old('tiene_hermanos') === '0' ? 'selected' : '' }}>No</option>
-                                        <option value="1" {{ old('tiene_hermanos') === '1' ? 'selected' : '' }}>Si</option>
-                                    </select>
-                                    @error('tiene_hermanos') <div class="bo-error">{{ $message }}</div> @enderror
-                                </label>
-
-                                <label class="bo-field {{ old('tiene_hermanos') === '1' ? '' : 'is-hidden' }}" id="familiarField">
-                                    <span>Nombre del familiar</span>
-                                    <input type="text" name="nombre_de_familiar_realizando_procesos" value="{{ old('nombre_de_familiar_realizando_procesos') }}">
-                                    @error('nombre_de_familiar_realizando_procesos') <div class="bo-error">{{ $message }}</div> @enderror
-                                </label>
-
-                                <label class="bo-checkline">
-                                    <input data-required-when-new type="checkbox" name="acepta_comunicaciones" value="1" {{ old('acepta_comunicaciones') ? 'checked' : '' }}>
-                                    <span>Acepto recibir comunicaciones de Sefar Universal.</span>
-                                </label>
-                                @error('acepta_comunicaciones') <div class="bo-error">{{ $message }}</div> @enderror
-
-                                <label class="bo-checkline">
-                                    <input data-required-when-new type="checkbox" name="acepta_datos" value="1" {{ old('acepta_datos') ? 'checked' : '' }}>
-                                    <span>Acepto el almacenamiento y procesamiento de mis datos personales.</span>
-                                </label>
-                                @error('acepta_datos') <div class="bo-error">{{ $message }}</div> @enderror
+                            <div class="bo-inline-note">
+                                Usa tu correo principal. Si aun no tienes cuenta Sefar, la crearemos para asociar esta activacion; el registro inicial puede pagarse y completarse despues.
                             </div>
 
                             <button class="bo-button bo-button-primary" type="submit" {{ $readyPackages->isEmpty() ? 'disabled' : '' }}>
-                                Continuar al pago <i class="fas fa-arrow-right"></i>
+                                Continuar con la activacion <i class="fas fa-arrow-right"></i>
                             </button>
                         </div>
                     </section>
@@ -259,6 +258,6 @@
         @endif
     </main>
 
-    <script src="{{ asset('js/banca-online-2026.js') }}"></script>
+    <script src="{{ asset('js/banca-online-2026.js') }}?v={{ $boJsVersion }}"></script>
 </body>
 </html>

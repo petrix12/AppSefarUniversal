@@ -275,6 +275,14 @@ body:has(.sefar-login-shell) {
   margin-bottom: 1rem;
 }
 
+.sefar-login-note {
+  margin: 0 0 1rem;
+  color: var(--sefar-auth-muted);
+  font-size: 0.94rem;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
 .sefar-login-status {
   margin-bottom: 1rem;
   border: 1px solid rgba(5, 150, 105, 0.2);
@@ -446,6 +454,10 @@ body:has(.sefar-login-shell) {
   text-align: center;
 }
 
+[x-cloak] {
+  display: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .sefar-login-canvas {
     opacity: 0.42;
@@ -475,7 +487,9 @@ body:has(.sefar-login-shell) {
   }
 
   .sefar-login-button,
-  .sefar-login-field input {
+  .sefar-login-field input,
+  .sefar-login-secondary-button,
+  .sefar-login-link-button {
     transition: none;
   }
 }

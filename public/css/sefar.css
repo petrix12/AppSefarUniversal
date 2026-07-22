@@ -213,9 +213,23 @@ textarea {
   white-space: nowrap;
 }
 
+.sefar-topbar .navbar-nav,
+.main-header .navbar-nav {
+  align-items: center;
+}
+
+.sefar-topbar .navbar-nav.ml-auto,
+.main-header .navbar-nav.ml-auto {
+  column-gap: 0.2rem;
+}
+
 .sefar-topbar .navbar-nav .nav-link,
 .main-header .navbar-nav .nav-link {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
   min-height: 2.55rem;
+  padding: 0.4rem 0.72rem !important;
   border-radius: var(--sefar-radius);
   color: rgba(255, 255, 255, 0.9) !important;
   transition: background-color 0.16s ease, color 0.16s ease;
@@ -253,10 +267,85 @@ textarea {
   white-space: normal;
 }
 
-.nav-link .fas.fa-bars,
-.nav-link .far.fa-moon,
-.nav-link span {
+.sefar-topbar .nav-link .fas.fa-bars,
+.sefar-topbar .nav-link .far.fa-moon,
+.sefar-topbar .nav-link .far.fa-bell,
+.sefar-topbar .nav-link span,
+.main-header .nav-link .fas.fa-bars,
+.main-header .nav-link .far.fa-moon,
+.main-header .nav-link .far.fa-bell,
+.main-header .nav-link span {
   color: #ffffff !important;
+}
+
+#appNotificationsMenu {
+  display: flex;
+  align-items: center;
+}
+
+.sefar-topbar #appNotificationsMenu > .sefar-notification-trigger,
+.main-header #appNotificationsMenu > .sefar-notification-trigger {
+  position: relative !important;
+  width: 2.55rem;
+  min-width: 2.55rem;
+  height: 2.55rem;
+  padding: 0 !important;
+  line-height: 1 !important;
+  overflow: visible !important;
+  color: #ffffff !important;
+}
+
+.sefar-topbar .navbar-nav > .user-menu > .nav-link,
+.main-header .navbar-nav > .user-menu > .nav-link {
+  gap: 0.5rem;
+  font-weight: 800;
+}
+
+.sefar-topbar #appNotificationsMenu .sefar-notification-bell,
+.main-header #appNotificationsMenu .sefar-notification-bell {
+  position: relative;
+  z-index: 1;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  color: #ffffff !important;
+  font-size: 1.14rem;
+  line-height: 1;
+}
+
+.sefar-topbar #appNotificationsMenu .sefar-notification-badge,
+.main-header #appNotificationsMenu .sefar-notification-badge {
+  position: absolute !important;
+  top: 0.2rem !important;
+  right: 0.08rem !important;
+  z-index: 2;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.05rem;
+  height: 1.05rem;
+  padding: 0 0.26rem !important;
+  border: 2px solid rgba(9, 49, 67, 0.96);
+  border-radius: 999px !important;
+  background: #f3b80d !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 14px rgba(0, 27, 39, 0.24);
+  font-size: 0.64rem !important;
+  font-weight: 900;
+  line-height: 1 !important;
+  transform: none !important;
+}
+
+.sefar-topbar #appNotificationsMenu .sefar-notifications-dropdown,
+.main-header #appNotificationsMenu .sefar-notifications-dropdown {
+  top: calc(100% + 0.45rem);
+  z-index: 1065;
+  border: 1px solid rgba(9, 49, 67, 0.14);
+  border-radius: var(--sefar-radius);
+  box-shadow: 0 18px 38px rgba(0, 27, 39, 0.2);
+  overflow: hidden;
 }
 
 .main-sidebar .user-panel {
@@ -1406,8 +1495,14 @@ center {
     width: 100%;
   }
 
+  .sefar-topbar .navbar-nav .nav-link,
   .main-header .navbar-nav .nav-link {
-    padding-inline: 0.55rem;
+    padding-inline: 0.55rem !important;
+  }
+
+  .sefar-topbar #appNotificationsMenu > .sefar-notification-trigger,
+  .main-header #appNotificationsMenu > .sefar-notification-trigger {
+    padding: 0 !important;
   }
 
   .brand-link .brand-text {
