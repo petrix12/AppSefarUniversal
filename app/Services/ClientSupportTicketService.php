@@ -30,8 +30,25 @@ class ClientSupportTicketService
         $contact = $this->resolveContact($client);
         $contactId = (string) ($contact['id'] ?? '');
         $contactProperties = $contact['properties'] ?? [];
-        $ownerId = trim((string) ($contactProperties['hubspot_owner_id'] ?? $client->hubspot_owner_id ?? ''));
-        $owner = $ownerId !== '' ? $this->resolveOwner($ownerId) : [];
+        $ownerId = $contactId !== ''
+            ? trim((string) ($contactProperties['hubspot_owner_id'] ?? ''))
+            : '';
+        $owner = [];
+
+        if ($ownerId !== '') {
+            try {
+                $owner = $this->resolveOwner($ownerId);
+            } catch (\Throwable $e) {
+                Log::warning('No se pudo resolver owner HubSpot para solicitud de soporte; se omitira copia al asesor.', [
+                    'client_id' => $client->id,
+                    'hubspot_owner_id' => $ownerId,
+                    'error' => $e->getMessage(),
+                ]);
+
+                $ownerId = '';
+            }
+        }
+
         $ownerEmail = strtolower(trim((string) ($owner['email'] ?? '')));
 
         if ($ownerId !== '') {
@@ -56,7 +73,18 @@ class ClientSupportTicketService
                 $ticketProperties['hubspot_owner_id'] = $ownerId;
             }
 
-            $ticket = $this->hubspot->createTicket($ticketProperties, $contactId);
+            try {
+                $ticket = $this->hubspot->createTicket($ticketProperties, $contactId);
+            } catch (\Throwable $e) {
+                Log::warning('No se pudo crear ticket HubSpot; se enviara solo correo de soporte.', [
+                    'client_id' => $client->id,
+                    'hubspot_contact_id' => $contactId,
+                    'hubspot_owner_id' => $ownerId,
+                    'error' => $e->getMessage(),
+                ]);
+
+                $ticket = null;
+            }
         }
 
         $recipients = $this->recipients($ownerEmail);
@@ -98,13 +126,29 @@ class ClientSupportTicketService
         }
 
         if (! $contact && ! empty($client->email)) {
-            $contact = $this->hubspot->searchContactOwnerByEmail($client->email);
+            try {
+                $contact = $this->hubspot->searchContactOwnerByEmail($client->email);
+            } catch (\Throwable $e) {
+                Log::warning('No se pudo buscar contacto HubSpot por email para solicitud de soporte.', [
+                    'client_id' => $client->id,
+                    'email' => $client->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
 
         if (! $contact && ! empty($client->passport)) {
-            $passportContact = $this->hubspot->searchContactByPassport($client->passport);
-            if (! empty($passportContact['id'])) {
-                $contact = $this->hubspot->getContactOwnerById((string) $passportContact['id']);
+            try {
+                $passportContact = $this->hubspot->searchContactByPassport($client->passport);
+                if (! empty($passportContact['id'])) {
+                    $contact = $this->hubspot->getContactOwnerById((string) $passportContact['id']);
+                }
+            } catch (\Throwable $e) {
+                Log::warning('No se pudo buscar contacto HubSpot por pasaporte para solicitud de soporte.', [
+                    'client_id' => $client->id,
+                    'passport' => $client->passport,
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
 

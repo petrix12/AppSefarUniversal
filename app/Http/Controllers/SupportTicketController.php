@@ -148,6 +148,10 @@ class SupportTicketController extends Controller
 
     private function safeErrorMessage(\Throwable $e): string
     {
+        if ($e instanceof \Symfony\Component\Mailer\Exception\TransportExceptionInterface) {
+            return 'No se pudo enviar el correo de soporte en este momento.';
+        }
+
         $message = $e->getMessage();
         $safeStarts = [
             'La solicitud',
