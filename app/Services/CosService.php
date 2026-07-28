@@ -267,6 +267,14 @@ class CosService
                 'warning' => "Tienes solicitudes de documentos pendientes. Para resolverlas, dirígete a la pestaña de 'Mis solicitudes de documentos'",
             ],
 
+            [
+                'name' => 'Enviado a Redacción de Informe',
+                'condition' => fn() => $this->hasEnviadoARedaccion(),
+                'stepGen' => 8,
+                'stepJur' => -1,
+                'warning' => null,
+            ],
+
             // PASO 8: FASE 1 PAGADA (alternativa)
             [
                 'name' => 'Fase 1 Pagada',
@@ -867,6 +875,11 @@ class CosService
     private function hasFase2Preestablecida(): bool
     {
         return isset($this->negocio->fase_2_preestab);
+    }
+
+    private function hasEnviadoARedaccion(): bool
+    {
+        return isset($this->negocio->n2__enviado_a_redaccion_informe);
     }
 
     private function hasFase1Pagada(): bool
