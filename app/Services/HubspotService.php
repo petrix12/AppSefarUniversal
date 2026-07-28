@@ -420,6 +420,73 @@ class HubspotService
         }
     }
 
+    public function getOwnerById(string $ownerId): ?array
+    {
+        $ownerId = trim($ownerId);
+
+        if ($ownerId === '') {
+            return null;
+        }
+
+        try {
+            $this->hubspotThrottle();
+
+            $response = $this->hubspot->apiRequest([
+                'method' => 'GET',
+                'path' => "/crm/v3/owners/{$ownerId}",
+            ]);
+
+            return json_decode((string) $response->getBody(), true) ?: null;
+        } catch (RequestException $e) {
+            if ((int) ($e->getResponse()?->getStatusCode() ?: 0) === 404) {
+                return null;
+            }
+
+            $statusCode = $e->getResponse()?->getStatusCode() ?: 0;
+            $body = $e->getResponse() ? (string) $e->getResponse()->getBody() : $e->getMessage();
+
+            throw new \RuntimeException("Error obteniendo owner en HubSpot ({$statusCode}): {$body}", $statusCode, $e);
+        }
+    }
+
+    public function createTicket(array $properties, ?string $contactId = null): array
+    {
+        try {
+            $this->hubspotThrottle();
+
+            $payload = [
+                'properties' => array_filter($properties, fn ($value) => $value !== null && $value !== ''),
+            ];
+
+            if ($contactId) {
+                $payload['associations'] = [
+                    [
+                        'to' => ['id' => $contactId],
+                        'types' => [
+                            [
+                                'associationCategory' => 'HUBSPOT_DEFINED',
+                                'associationTypeId' => 16,
+                            ],
+                        ],
+                    ],
+                ];
+            }
+
+            $response = $this->hubspot->apiRequest([
+                'method' => 'POST',
+                'path' => '/crm/v3/objects/tickets',
+                'body' => $payload,
+            ]);
+
+            return json_decode((string) $response->getBody(), true) ?: [];
+        } catch (RequestException $e) {
+            $statusCode = $e->getResponse()?->getStatusCode() ?: 0;
+            $body = $e->getResponse() ? (string) $e->getResponse()->getBody() : $e->getMessage();
+
+            throw new \RuntimeException("Error creando ticket en HubSpot ({$statusCode}): {$body}", $statusCode, $e);
+        }
+    }
+
     /**
      * Obtener un contacto por ID.
      */

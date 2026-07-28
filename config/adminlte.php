@@ -855,6 +855,13 @@ return [
                             'can'           => 'administrador',
                         ],
                         [
+                            'text'          => 'Prueba ticket soporte',
+                            'icon'          => 'fa-fw fas fa-ticket-alt',
+                            'icon_color'    => 'white',
+                            'route'         => 'admin.support-ticket-test.create',
+                            'can'           => 'administrador',
+                        ],
+                        [
                             'text'          => 'MVC Agclientes',
                             'icon'          => 'fa-fw fab fa-intercom',
                             'icon_color'    => 'white',
@@ -934,6 +941,14 @@ return [
                     'icon_color'    => 'rgba(255,255,255,0.8)',
                     'url'           => '/status',
                     'can'           => 'ver.mi.estatus',
+                ],
+                [
+                    'text'          => 'Solicitar soporte',
+                    'classes'       => 'btn_support_ticket',
+                    'icon'          => 'fa-fw fas fa-ticket-alt',
+                    'icon_color'    => 'rgba(255,255,255,0.8)',
+                    'route'         => 'clientes.support-ticket.create',
+                    'can'           => 'cliente',
                 ],
                 [
                     'text'          => 'Perfil de usuario',

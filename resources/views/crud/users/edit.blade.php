@@ -165,11 +165,14 @@
                     @php
                         $isClientRole = $rolId === 5;
                         $syncButtonLabel = $isClientRole
-                            ? 'Actualizar a estatus mas reciente'
+                            ? 'Actualizar a estatus más reciente'
                             : 'Sincronizar COS del cliente';
                         $syncLoadingLabel = $isClientRole
                             ? 'Actualizando... Puede tardar un poco.'
                             : 'Sincronizando... Puede tardar un tiempo dependiendo de la cantidad de datos del cliente.';
+                        $supportTicketButtonLabel = $isClientRole
+                            ? 'Solicitar soporte'
+                            : 'Crear ticket de soporte';
                     @endphp
                     <div style="
                         display: flex;
@@ -209,10 +212,9 @@
                                 <span id="labelSync">{{ $syncButtonLabel }}</span>
                             </button>
                         </form>
-                        @if($rolId !== 5)
                         <button
                             type="button"
-                            id="btnCosReviewTask"
+                            id="btnSupportTicket"
                             style="
                                 display: inline-flex;
                                 align-items: center;
@@ -230,9 +232,10 @@
                             onmouseover="this.style.background='#115e59'"
                             onmouseout="this.style.background='#0f766e'"
                         >
-                            <i class="fas fa-clipboard-check" id="iconCosReviewTask"></i>
-                            <span id="labelCosReviewTask">Solicitar revision del COS a Sistemas</span>
+                            <i class="fas fa-ticket-alt" id="iconSupportTicket"></i>
+                            <span id="labelSupportTicket">{{ $supportTicketButtonLabel }}</span>
                         </button>
+                        @if($rolId !== 5)
                         <button
                             type="button"
                             id="btnNotifyCosStatus"
@@ -3431,29 +3434,30 @@
             }
         });
 
-        $('#btnCosReviewTask').on('click', function () {
+        $('#btnSupportTicket').on('click', function () {
             const button = $(this);
-            const icon = $('#iconCosReviewTask');
-            const label = $('#labelCosReviewTask');
+            const icon = $('#iconSupportTicket');
+            const label = $('#labelSupportTicket');
             const originalLabel = label.text();
+            const supportTicketUrl = @json($isClientRole ? route('clientes.support-ticket.store') : route('crud.users.support-ticket', $user));
 
             Swal.fire({
-                title: 'Explica el problema del COS',
+                title: 'Solicitar soporte',
                 input: 'textarea',
-                inputLabel: 'Que esta pasando?',
-                inputPlaceholder: 'Ej: El servicio aparece duplicado, falta una fase, muestra datos que no corresponden, el boton no carga...',
+                inputLabel: 'Describe tu solicitud',
+                inputPlaceholder: 'Cuéntanos qué necesitas revisar o qué ayuda requieres...',
                 inputAttributes: {
-                    'aria-label': 'Descripcion del problema del COS',
+                    'aria-label': 'Descripcion de la solicitud de soporte',
                     maxlength: 3000
                 },
                 showCancelButton: true,
-                confirmButtonText: 'Crear tarea',
+                confirmButtonText: 'Enviar solicitud',
                 cancelButtonText: 'Cancelar',
                 inputValidator: function (value) {
                     const text = (value || '').trim();
 
                     if (text.length < 15) {
-                        return 'Describe el problema con al menos 15 caracteres.';
+                        return 'Describe tu solicitud con al menos 15 caracteres.';
                     }
 
                     return null;
@@ -3462,29 +3466,30 @@
                 if (!result.isConfirmed) return;
 
                 $.ajax({
-                    url: '{{ route("crud.users.cos-review-task", $user) }}',
+                    url: supportTicketUrl,
                     type: 'POST',
                     data: {
-                        issue_description: result.value
+                        request_description: result.value,
+                        source: 'Estatus del cliente - App Sefar'
                     },
                     headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
                     beforeSend: function () {
                         button.prop('disabled', true).css('opacity', '.75');
                         icon.addClass('fa-spin');
-                        label.text('Creando tarea...');
+                        label.text('Enviando solicitud...');
                     },
                     success: function (response) {
                         Swal.fire({
-                            icon: response.created ? 'success' : 'info',
-                            title: response.created ? 'Tarea creada' : 'Tarea actualizada',
+                            icon: 'success',
+                            title: 'Solicitud enviada',
                             text: response.message
                         });
                     },
                     error: function (xhr) {
                         const errors = xhr.responseJSON?.errors || {};
-                        const message = errors.issue_description?.[0]
+                        const message = errors.request_description?.[0]
                             || xhr.responseJSON?.message
-                            || 'No se pudo solicitar la revision del COS.';
+                            || 'No se pudo enviar la solicitud de soporte.';
 
                         Swal.fire({
                             icon: 'error',

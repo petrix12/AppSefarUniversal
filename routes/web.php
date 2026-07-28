@@ -76,6 +76,7 @@ use App\Http\Controllers\AdminTaskController;
 use App\Http\Controllers\ContratoCoordinadorController;
 use App\Http\Controllers\RequestAuditController;
 use App\Http\Controllers\UserSyncController;
+use App\Http\Controllers\SupportTicketController;
 use App\Http\Controllers\InternalTaskWorkflowController;
 use App\Http\Controllers\ClientChatController;
 use App\Http\Controllers\ClientNotificationController;
@@ -386,8 +387,8 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
 			->middleware('can:crud.roles.index');
     Route::resource('users', UserController::class)->names('users')
 			->middleware('can:crud.users.index');
-    Route::post('users/{user}/cos-review-task', [UserController::class, 'requestCosReviewTask'])
-            ->name('users.cos-review-task')
+    Route::post('users/{user}/support-ticket', [SupportTicketController::class, 'storeForUser'])
+            ->name('users.support-ticket')
             ->middleware('can:crud.users.index');
     Route::post('users/{user}/notify-cos-status', [UserController::class, 'notifyCosStatusUpdate'])
             ->name('users.notify-cos-status')
@@ -709,6 +710,10 @@ Route::group(['middleware' => ['auth'], 'as' => 'clientes.'], function(){
         ->middleware('can:cliente');
     Route::get('status', [ClienteController::class, 'status'])->name('status')
     ->middleware('can:cliente');
+    Route::get('support-ticket', [SupportTicketController::class, 'clientCreate'])->name('support-ticket.create')
+        ->middleware('can:cliente');
+    Route::post('support-ticket', [SupportTicketController::class, 'clientStore'])->name('support-ticket.store')
+        ->middleware('can:cliente');
 });
 
 Route::middleware(['auth', 'can:cliente'])
@@ -722,6 +727,13 @@ Route::middleware(['auth', 'can:cliente'])
 
 Route::get('testcorreos', [CorreoController::class, 'testcorreos'])->name('testcorreos');
 Route::post('testcorreos', [CorreoController::class, 'sendcorreo'])->name('sendcorreo');
+
+Route::middleware(['auth', 'can:administrador'])->group(function () {
+    Route::get('admin/support-ticket-test', [SupportTicketController::class, 'adminTestCreate'])
+        ->name('admin.support-ticket-test.create');
+    Route::post('admin/support-ticket-test', [SupportTicketController::class, 'adminTestStore'])
+        ->name('admin.support-ticket-test.store');
+});
 
 
 Route::post('getinfo', [ClienteController::class, 'procesargetinfo'])->name('procesargetinfo')
