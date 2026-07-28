@@ -162,7 +162,15 @@
 
                 <div class="tab-pane fade show active" id="mystatus" role="tabpanel" aria-labelledby="mystatus-tab">
                     {{-- ══ BOTÓN DE SINCRONIZACIÓN ══ --}}
-                    @if($rolId !== 5)
+                    @php
+                        $isClientRole = $rolId === 5;
+                        $syncButtonLabel = $isClientRole
+                            ? 'Actualizar a estatus mas reciente'
+                            : 'Sincronizar COS del cliente';
+                        $syncLoadingLabel = $isClientRole
+                            ? 'Actualizando... Puede tardar un poco.'
+                            : 'Sincronizando... Puede tardar un tiempo dependiendo de la cantidad de datos del cliente.';
+                    @endphp
                     <div style="
                         display: flex;
                         justify-content: flex-end;
@@ -198,9 +206,10 @@
                                 onmouseout="this.style.background='#4f46e5'"
                             >
                                 <i class="fas fa-sync-alt" id="iconSync"></i>
-                                <span id="labelSync">Sincronizar COS del cliente</span>
+                                <span id="labelSync">{{ $syncButtonLabel }}</span>
                             </button>
                         </form>
+                        @if($rolId !== 5)
                         <button
                             type="button"
                             id="btnCosReviewTask"
@@ -247,6 +256,7 @@
                             <i class="fas fa-bell" id="iconNotifyCosStatus"></i>
                             <span id="labelNotifyCosStatus">Notificar estatus al cliente</span>
                         </button>
+                        @endif
                     </div>
 
                     {{-- Flash de éxito --}}
@@ -283,10 +293,9 @@
                         btn.style.background = '#6366f1';
                         btn.style.cursor = 'not-allowed';
                         icon.classList.add('fa-spin');
-                        label.textContent = 'Sincronizando... Puede tardar un tiempo dependiendo de la cantidad de datos del cliente.';
+                        label.textContent = @json($syncLoadingLabel);
                     }
                     </script>
-                    @endif
 
                     @if($rolId !== 5)
                     <div style="

@@ -11,22 +11,26 @@ class UserSyncController extends Controller
 {
     public function sync(Request $request, User $user): \Illuminate\Http\RedirectResponse
     {
-        // Solo roles 1, 2, 3, 4 pueden sincronizar
+        // Solo roles autorizados pueden sincronizar/consultar el estatus.
         $rolId = auth()->user()->roles[0]->id;
-        abort_if(!in_array($rolId, [1, 2, 3, 4]), 403);
+        abort_if(!in_array($rolId, [1, 2, 3, 4, 5]), 403);
 
-        // Vendedores solo pueden sincronizar su propio usuario
-        if (in_array($rolId, [2, 3, 4])) {
+        // Vendedores y clientes solo pueden sincronizar su propio usuario.
+        if (in_array($rolId, [2, 3, 4, 5])) {
             abort_if(auth()->id() !== $user->id, 403);
         }
 
-        // Limpiar negocios previos
+        // Limpiar negocios previos.
         Negocio::where('user_id', $user->id)->delete();
 
-        // Sincronizar inmediatamente (sin cola)
+        // Sincronizar inmediatamente (sin cola).
         SyncUserDealsJob::dispatchSync($user);
 
+        $message = $rolId === 5
+            ? 'Tu estatus ya muestra la informacion mas reciente.'
+            : "Sincronizacion completada para {$user->name}";
+
         return back()
-            ->with('sync_success', "✅ Sincronización completada para {$user->name}");
+            ->with('sync_success', $message);
     }
 }
