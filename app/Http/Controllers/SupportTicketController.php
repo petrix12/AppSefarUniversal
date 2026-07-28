@@ -41,18 +41,14 @@ class SupportTicketController extends Controller
 
         if ($request->ajax() || $request->expectsJson()) {
             return response()->json([
-                'message' => $result['ticket_id']
-                    ? 'Solicitud enviada. Creamos un ticket de soporte para revisar tu caso.'
-                    : 'Solicitud enviada por correo al equipo de soporte.',
+                'message' => 'Solicitud enviada. HubSpot generara el ticket desde el correo enviado a info@sefarvzla.com.',
                 'ticket_id' => $result['ticket_id'],
             ], 201);
         }
 
         return back()->with(
             'support_success',
-            $result['ticket_id']
-                ? 'Solicitud enviada. Creamos un ticket de soporte para revisar tu caso.'
-                : 'Solicitud enviada por correo al equipo de soporte.'
+            'Solicitud enviada. HubSpot generara el ticket desde el correo enviado a info@sefarvzla.com.'
         );
     }
 
@@ -78,9 +74,7 @@ class SupportTicketController extends Controller
         }
 
         return response()->json([
-            'message' => $result['ticket_id']
-                ? 'Solicitud enviada. Se creo un ticket en HubSpot y se notifico por correo.'
-                : 'Solicitud enviada por correo. No se encontro contacto HubSpot para crear ticket.',
+            'message' => 'Solicitud enviada. HubSpot generara el ticket desde el correo enviado a info@sefarvzla.com.',
             'ticket_id' => $result['ticket_id'],
             'owner_email' => $result['owner_email'],
         ], 201);
@@ -125,9 +119,7 @@ class SupportTicketController extends Controller
         return back()
             ->with(
                 'support_success',
-                $result['ticket_id']
-                    ? 'Ticket de prueba creado y correos enviados.'
-                    : 'Correo de prueba enviado. No se encontro contacto HubSpot para crear ticket.'
+                'Correo de prueba enviado. HubSpot generara el ticket desde el correo enviado a info@sefarvzla.com.'
             )
             ->with('support_ticket_id', $result['ticket_id'])
             ->with('support_owner_email', $result['owner_email']);
@@ -158,6 +150,7 @@ class SupportTicketController extends Controller
             'No se pudo ubicar',
             'No se encontro',
             'El contacto no tiene',
+            'El cliente',
             'El propietario del contacto',
             'No se pudo obtener el propietario',
         ];
