@@ -41,12 +41,19 @@ class SupportTicketController extends Controller
 
         if ($request->ajax() || $request->expectsJson()) {
             return response()->json([
-                'message' => 'Solicitud enviada. Creamos un ticket de soporte para revisar tu caso.',
+                'message' => $result['ticket_id']
+                    ? 'Solicitud enviada. Creamos un ticket de soporte para revisar tu caso.'
+                    : 'Solicitud enviada por correo al equipo de soporte.',
                 'ticket_id' => $result['ticket_id'],
             ], 201);
         }
 
-        return back()->with('support_success', 'Solicitud enviada. Creamos un ticket de soporte para revisar tu caso.');
+        return back()->with(
+            'support_success',
+            $result['ticket_id']
+                ? 'Solicitud enviada. Creamos un ticket de soporte para revisar tu caso.'
+                : 'Solicitud enviada por correo al equipo de soporte.'
+        );
     }
 
     public function storeForUser(Request $request, User $user)
@@ -71,7 +78,9 @@ class SupportTicketController extends Controller
         }
 
         return response()->json([
-            'message' => 'Solicitud enviada. Se creo un ticket en HubSpot y se notifico por correo.',
+            'message' => $result['ticket_id']
+                ? 'Solicitud enviada. Se creo un ticket en HubSpot y se notifico por correo.'
+                : 'Solicitud enviada por correo. No se encontro contacto HubSpot para crear ticket.',
             'ticket_id' => $result['ticket_id'],
             'owner_email' => $result['owner_email'],
         ], 201);
@@ -114,7 +123,12 @@ class SupportTicketController extends Controller
         }
 
         return back()
-            ->with('support_success', 'Ticket de prueba creado y correos enviados.')
+            ->with(
+                'support_success',
+                $result['ticket_id']
+                    ? 'Ticket de prueba creado y correos enviados.'
+                    : 'Correo de prueba enviado. No se encontro contacto HubSpot para crear ticket.'
+            )
             ->with('support_ticket_id', $result['ticket_id'])
             ->with('support_owner_email', $result['owner_email']);
     }

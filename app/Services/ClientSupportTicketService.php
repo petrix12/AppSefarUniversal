@@ -31,38 +31,36 @@ class ClientSupportTicketService
         $contactId = (string) ($contact['id'] ?? '');
         $contactProperties = $contact['properties'] ?? [];
         $ownerId = trim((string) ($contactProperties['hubspot_owner_id'] ?? $client->hubspot_owner_id ?? ''));
-
-        if ($contactId === '') {
-            throw new \RuntimeException('No se pudo ubicar el contacto del cliente en HubSpot.');
-        }
-
-        if ($ownerId === '') {
-            throw new \RuntimeException('El contacto no tiene propietario asignado en HubSpot.');
-        }
-
-        $owner = $this->resolveOwner($ownerId);
+        $owner = $ownerId !== '' ? $this->resolveOwner($ownerId) : [];
         $ownerEmail = strtolower(trim((string) ($owner['email'] ?? '')));
 
-        if ($ownerEmail === '') {
-            throw new \RuntimeException('El propietario del contacto en HubSpot no tiene correo disponible.');
+        if ($ownerId !== '') {
+            $this->syncLocalOwnerData($client, $ownerId, $owner);
         }
 
-        $this->syncLocalOwnerData($client, $ownerId, $owner);
-
         $subject = ($isTest ? '[PRUEBA] ' : '') . 'Solicitud de soporte del cliente: ' . $this->clientLabel($client);
-        $content = $this->buildTicketContent($client, $requester, $description, $source, $owner, $isTest);
+        $content = $this->buildTicketContent($client, $requester, $description, $source, $owner, $isTest, $contactId);
 
-        $ticket = $this->hubspot->createTicket([
-            'subject' => $subject,
-            'content' => $content,
-            'hs_pipeline' => env('HUBSPOT_SUPPORT_TICKET_PIPELINE', '0'),
-            'hs_pipeline_stage' => env('HUBSPOT_SUPPORT_TICKET_STAGE', '1'),
-            'hs_ticket_priority' => env('HUBSPOT_SUPPORT_TICKET_PRIORITY', 'MEDIUM'),
-            'hubspot_owner_id' => $ownerId,
-        ], $contactId);
+        $ticket = null;
+
+        if ($contactId !== '') {
+            $ticketProperties = [
+                'subject' => $subject,
+                'content' => $content,
+                'hs_pipeline' => env('HUBSPOT_SUPPORT_TICKET_PIPELINE', '0'),
+                'hs_pipeline_stage' => env('HUBSPOT_SUPPORT_TICKET_STAGE', '1'),
+                'hs_ticket_priority' => env('HUBSPOT_SUPPORT_TICKET_PRIORITY', 'MEDIUM'),
+            ];
+
+            if ($ownerId !== '') {
+                $ticketProperties['hubspot_owner_id'] = $ownerId;
+            }
+
+            $ticket = $this->hubspot->createTicket($ticketProperties, $contactId);
+        }
 
         $recipients = $this->recipients($ownerEmail);
-        $this->sendEmail($recipients, $subject, $content, $ticket, $owner, $client);
+        $this->sendEmail($recipients, $subject, $content, $ticket ?? [], $owner, $client);
 
         Log::info('Solicitud de soporte creada desde App Sefar.', [
             'client_id' => $client->id,
@@ -77,8 +75,8 @@ class ClientSupportTicketService
 
         return [
             'ticket_id' => $ticket['id'] ?? null,
-            'owner_email' => $ownerEmail,
-            'owner_id' => $ownerId,
+            'owner_email' => $ownerEmail ?: null,
+            'owner_id' => $ownerId ?: null,
             'recipients' => $recipients,
         ];
     }
@@ -111,7 +109,7 @@ class ClientSupportTicketService
         }
 
         if (! $contact || empty($contact['id'])) {
-            throw new \RuntimeException('No se encontro el contacto del cliente en HubSpot.');
+            return [];
         }
 
         if ((string) $client->hs_id !== (string) $contact['id']) {
@@ -185,7 +183,7 @@ class ClientSupportTicketService
         });
     }
 
-    private function buildTicketContent(User $client, User $requester, string $description, string $source, array $owner, bool $isTest): string
+    private function buildTicketContent(User $client, User $requester, string $description, string $source, array $owner, bool $isTest, ?string $contactId): string
     {
         $lines = [
             $isTest ? 'MODO PRUEBA: solicitud generada desde el boton administrativo de demostracion.' : null,
@@ -197,12 +195,13 @@ class ClientSupportTicketService
             'Email cliente: ' . ($client->email ?: '-'),
             'Pasaporte cliente: ' . ($client->passport ?: '-'),
             'ID app cliente: ' . $client->id,
-            'ID contacto HubSpot: ' . ($client->hs_id ?: '-'),
+            'ID contacto HubSpot: ' . ($contactId ?: '-'),
             '',
             'Solicitante: ' . ($requester->name ?: "Usuario #{$requester->id}") . " (ID {$requester->id})",
             'Email solicitante: ' . ($requester->email ?: '-'),
             '',
             'Propietario HubSpot: ' . ($this->ownerName($owner) ?: '-') . ' <' . ($owner['email'] ?? '-') . '>',
+            $contactId ? null : 'Nota: no se encontro contacto asignado en HubSpot; se envio solo por correo a soporte.',
             '',
             'Detalle de la solicitud:',
             $description,
