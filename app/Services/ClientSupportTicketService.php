@@ -58,27 +58,86 @@ class ClientSupportTicketService
 
         $subject = ($isTest ? '[PRUEBA] ' : '') . 'Solicitud de soporte del cliente: ' . $this->clientLabel($client);
         $content = $this->buildTicketContent($client, $requester, $description, $source, $owner, $isTest, $contactId);
+        $ticket = null;
+        $ticketError = null;
+
+        if ($contactId !== '') {
+            try {
+                $ticket = $this->createHubspotTicket($subject, $content, $contactId);
+            } catch (\Throwable $e) {
+                $ticketError = $e->getMessage();
+
+                Log::warning('No se pudo crear ticket HubSpot por API; se usara correo a info como fallback.', [
+                    'client_id' => $client->id,
+                    'hubspot_contact_id' => $contactId,
+                    'error' => $ticketError,
+                ]);
+            }
+        } else {
+            $ticketError = 'No se encontro contacto HubSpot para asociar ticket.';
+        }
 
         $recipients = $this->recipients($ownerEmail);
-        $this->sendEmail($recipients, $subject, $content, $owner, $client);
+        $copyHubspotInbox = empty($ticket['id']);
+        $this->sendEmail(
+            $recipients,
+            $subject,
+            $content,
+            $owner,
+            $client,
+            $ticket ?? [],
+            $copyHubspotInbox,
+            $ticketError,
+            [
+                'requester' => $requester,
+                'description' => $description,
+                'source' => $source,
+                'is_test' => $isTest,
+                'contact_id' => $contactId,
+            ]
+        );
 
         Log::info('Solicitud de soporte enviada desde App Sefar.', [
             'client_id' => $client->id,
             'requester_id' => $requester->id,
             'hubspot_contact_id' => $contactId,
             'hubspot_owner_id' => $ownerId,
+            'hubspot_ticket_id' => $ticket['id'] ?? null,
+            'hubspot_ticket_error' => $ticketError,
             'recipients' => $recipients,
-            'hubspot_inbox_email' => self::HUBSPOT_INBOX_EMAIL,
+            'hubspot_inbox_email' => $copyHubspotInbox ? self::HUBSPOT_INBOX_EMAIL : null,
             'source' => $source,
             'is_test' => $isTest,
         ]);
 
         return [
-            'ticket_id' => null,
+            'ticket_id' => $ticket['id'] ?? null,
             'owner_email' => $ownerEmail ?: null,
             'owner_id' => $ownerId ?: null,
-            'recipients' => array_values(array_unique(array_merge([self::HUBSPOT_INBOX_EMAIL], $recipients))),
+            'recipients' => array_values(array_unique(array_merge($copyHubspotInbox ? [self::HUBSPOT_INBOX_EMAIL] : [], $recipients))),
+            'ticket_error' => $ticketError,
+            'used_hubspot_inbox_fallback' => $copyHubspotInbox,
         ];
+    }
+
+    private function createHubspotTicket(string $subject, string $content, string $contactId): array
+    {
+        $pipeline = [
+            'hs_pipeline' => env('HUBSPOT_SUPPORT_TICKET_PIPELINE'),
+            'hs_pipeline_stage' => env('HUBSPOT_SUPPORT_TICKET_STAGE'),
+        ];
+
+        if (empty($pipeline['hs_pipeline']) || empty($pipeline['hs_pipeline_stage'])) {
+            $pipeline = $this->hubspot->getDefaultTicketPipelineStage();
+        }
+
+        return $this->hubspot->createTicket([
+            'subject' => $subject,
+            'content' => $content,
+            'hs_pipeline' => $pipeline['hs_pipeline'] ?? null,
+            'hs_pipeline_stage' => $pipeline['hs_pipeline_stage'] ?? null,
+            'hs_ticket_priority' => env('HUBSPOT_SUPPORT_TICKET_PRIORITY', 'MEDIUM'),
+        ], $contactId);
     }
 
     private function resolveContact(User $client): array
@@ -178,7 +237,17 @@ class ClientSupportTicketService
         $client->forceFill(['hubspot_owner_id' => $ownerId])->save();
     }
 
-    private function sendEmail(array $recipients, string $subject, string $content, array $owner, User $client): void
+    private function sendEmail(
+        array $recipients,
+        string $subject,
+        string $content,
+        array $owner,
+        User $client,
+        array $ticket,
+        bool $copyHubspotInbox,
+        ?string $ticketError,
+        array $context
+    ): void
     {
         $clientEmail = strtolower(trim((string) $client->email));
 
@@ -186,21 +255,31 @@ class ClientSupportTicketService
             throw new \InvalidArgumentException('El cliente no tiene un correo valido para enviar la solicitud.');
         }
 
-        $ownerLabel = $this->ownerName($owner) ?: ($owner['email'] ?? 'N/A');
-        $body = implode("\n", [
-            $content,
-            '',
-            '---',
-            'Ticket HubSpot: creado por correo entrante a ' . self::HUBSPOT_INBOX_EMAIL,
-            'Propietario HubSpot: ' . $ownerLabel . ' <' . ($owner['email'] ?? 'sin correo') . '>',
-        ]);
+        $to = $copyHubspotInbox ? self::HUBSPOT_INBOX_EMAIL : self::SUPPORT_EMAILS[0];
+        $cc = $copyHubspotInbox ? $recipients : array_values(array_filter($recipients, fn ($email) => $email !== $to));
 
-        Mail::raw($body, function ($message) use ($recipients, $subject, $client, $clientEmail) {
+        Mail::send('emails.support_ticket_request', [
+            'client' => $client,
+            'clientName' => $this->clientLabel($client),
+            'clientEmail' => $clientEmail,
+            'owner' => $owner,
+            'ownerName' => $this->ownerName($owner),
+            'ticket' => $ticket,
+            'ticketError' => $ticketError,
+            'copyHubspotInbox' => $copyHubspotInbox,
+            'hubspotInboxEmail' => self::HUBSPOT_INBOX_EMAIL,
+            'content' => $content,
+            'requester' => $context['requester'] ?? null,
+            'description' => $context['description'] ?? '',
+            'source' => $context['source'] ?? '',
+            'isTest' => (bool) ($context['is_test'] ?? false),
+            'contactId' => $context['contact_id'] ?? null,
+        ], function ($message) use ($to, $cc, $subject, $client, $clientEmail) {
             $message
                 ->from($clientEmail, $this->clientLabel($client))
                 ->replyTo($clientEmail, $this->clientLabel($client))
-                ->to(self::HUBSPOT_INBOX_EMAIL)
-                ->cc($recipients)
+                ->to($to)
+                ->cc($cc)
                 ->subject($subject);
         });
     }

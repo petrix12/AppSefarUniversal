@@ -16,6 +16,14 @@
             @if(session('support_owner_email'))
                 <div>Correo del propietario: {{ session('support_owner_email') }}</div>
             @endif
+            @if(session('support_inbox_fallback'))
+                <div>Fallback usado: correo enviado a info@sefarvzla.com</div>
+            @endif
+            @if(session('support_ticket_error'))
+                <div style="margin-top: .35rem; font-size: .85rem;">
+                    Diagnostico HubSpot: {{ session('support_ticket_error') }}
+                </div>
+            @endif
         </div>
     @endif
 

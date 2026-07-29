@@ -41,14 +41,15 @@ class SupportTicketController extends Controller
 
         if ($request->ajax() || $request->expectsJson()) {
             return response()->json([
-                'message' => 'Solicitud enviada. HubSpot generara el ticket desde el correo enviado a info@sefarvzla.com.',
+                'message' => $this->supportSuccessMessage($result),
                 'ticket_id' => $result['ticket_id'],
+                'used_hubspot_inbox_fallback' => $result['used_hubspot_inbox_fallback'],
             ], 201);
         }
 
         return back()->with(
             'support_success',
-            'Solicitud enviada. HubSpot generara el ticket desde el correo enviado a info@sefarvzla.com.'
+            $this->supportSuccessMessage($result)
         );
     }
 
@@ -74,9 +75,11 @@ class SupportTicketController extends Controller
         }
 
         return response()->json([
-            'message' => 'Solicitud enviada. HubSpot generara el ticket desde el correo enviado a info@sefarvzla.com.',
+            'message' => $this->supportSuccessMessage($result),
             'ticket_id' => $result['ticket_id'],
             'owner_email' => $result['owner_email'],
+            'used_hubspot_inbox_fallback' => $result['used_hubspot_inbox_fallback'],
+            'ticket_error' => $result['ticket_error'],
         ], 201);
     }
 
@@ -119,10 +122,23 @@ class SupportTicketController extends Controller
         return back()
             ->with(
                 'support_success',
-                'Correo de prueba enviado. HubSpot generara el ticket desde el correo enviado a info@sefarvzla.com.'
+                $this->supportSuccessMessage($result, true)
             )
             ->with('support_ticket_id', $result['ticket_id'])
-            ->with('support_owner_email', $result['owner_email']);
+            ->with('support_owner_email', $result['owner_email'])
+            ->with('support_ticket_error', $result['ticket_error'])
+            ->with('support_inbox_fallback', $result['used_hubspot_inbox_fallback']);
+    }
+
+    private function supportSuccessMessage(array $result, bool $isTest = false): string
+    {
+        $prefix = $isTest ? 'Prueba enviada.' : 'Solicitud enviada.';
+
+        if (! empty($result['ticket_id'])) {
+            return "{$prefix} Ticket HubSpot creado: {$result['ticket_id']}.";
+        }
+
+        return "{$prefix} No se pudo crear el ticket por API, asi que se envio a info@sefarvzla.com para que ATC lo procese.";
     }
 
     private function supportTicketError(Request $request, \Throwable $e)

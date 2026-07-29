@@ -26,6 +26,7 @@ use HubSpot\Client\Crm\Contacts\Model\FilterGroup;
 use HubSpot\Client\Crm\Contacts\Model\PublicObjectSearchRequest;
 use HubSpot\Client\Settings\Users\ApiException as UsersApiException;
 use HubSpot\Client\Settings\Users\Model\UserProvisionRequest;
+use Illuminate\Support\Facades\Cache;
 
 use HubSpot\Client\Files\Model\FileUpdateInput;
 
@@ -251,7 +252,7 @@ class HubspotService
                 ->crm()
                 ->contacts()
                 ->basicApi()
-                ->getById((string) $id, 'email,hubspot_owner_id');
+                ->getById((string) $id, ['email', 'hubspot_owner_id']);
 
             return [
                 'id' => $contact->getId(),
@@ -485,6 +486,54 @@ class HubspotService
 
             throw new \RuntimeException("Error creando ticket en HubSpot ({$statusCode}): {$body}", $statusCode, $e);
         }
+    }
+
+    public function getDefaultTicketPipelineStage(): array
+    {
+        return Cache::remember('hubspot_default_ticket_pipeline_stage', 3600, function () {
+            try {
+                $this->hubspotThrottle();
+
+                $response = $this->hubspot->apiRequest([
+                    'method' => 'GET',
+                    'path' => '/crm/v3/pipelines/tickets',
+                ]);
+
+                $body = json_decode((string) $response->getBody(), true) ?: [];
+                $pipelines = collect($body['results'] ?? [])
+                    ->filter(fn ($pipeline) => ! ($pipeline['archived'] ?? false))
+                    ->sortBy('displayOrder')
+                    ->values();
+
+                $pipeline = $pipelines->first();
+                if (! $pipeline) {
+                    throw new \RuntimeException('HubSpot no devolvio pipelines activos de tickets.');
+                }
+
+                $stages = collect($pipeline['stages'] ?? [])
+                    ->filter(fn ($stage) => ! ($stage['archived'] ?? false))
+                    ->sortBy('displayOrder')
+                    ->values();
+
+                $stage = $stages->first(function ($stage) {
+                    return strtoupper((string) ($stage['metadata']['ticketState'] ?? '')) === 'OPEN';
+                }) ?: $stages->first();
+
+                if (! $stage) {
+                    throw new \RuntimeException('HubSpot no devolvio etapas activas para el pipeline de tickets.');
+                }
+
+                return [
+                    'hs_pipeline' => (string) $pipeline['id'],
+                    'hs_pipeline_stage' => (string) $stage['id'],
+                ];
+            } catch (RequestException $e) {
+                $statusCode = $e->getResponse()?->getStatusCode() ?: 0;
+                $body = $e->getResponse() ? (string) $e->getResponse()->getBody() : $e->getMessage();
+
+                throw new \RuntimeException("Error obteniendo pipeline de tickets en HubSpot ({$statusCode}): {$body}", $statusCode, $e);
+            }
+        });
     }
 
     /**
