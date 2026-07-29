@@ -100,6 +100,10 @@
                                     </td>
                                 </tr>
                                 <tr>
+                                    <td style="width:34%; padding:10px 14px; border-bottom:1px solid #f3f4f6; font-size:13px; color:#6b7280;">Tema</td>
+                                    <td style="padding:10px 14px; border-bottom:1px solid #f3f4f6; font-size:14px; color:#111827;">{{ $topic ?: '-' }}</td>
+                                </tr>
+                                <tr>
                                     <td style="width:34%; padding:10px 14px; font-size:13px; color:#6b7280;">Origen</td>
                                     <td style="padding:10px 14px; font-size:14px; color:#111827;">{{ $source ?: '-' }}</td>
                                 </tr>

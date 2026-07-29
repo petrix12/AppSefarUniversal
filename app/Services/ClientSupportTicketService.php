@@ -10,6 +10,15 @@ use Illuminate\Support\Facades\Schema;
 
 class ClientSupportTicketService
 {
+    public const TOPICS = [
+        'temas_administrativos' => 'Temas administrativos (Facturas y presupuestos)',
+        'solicitudes_legales' => 'Solicitudes legales',
+        'actualizacion_estatus' => 'Actualización de mi estatus',
+        'preguntas_proceso' => 'Preguntas sobre mi proceso',
+        'acuerdo_pago' => 'Solicitar un acuerdo de pago',
+        'otros' => 'Otros',
+    ];
+
     private const SUPPORT_EMAILS = [
         'sistemasccs@sefarvzla.com',
     ];
@@ -20,9 +29,15 @@ class ClientSupportTicketService
     {
     }
 
-    public function create(User $client, User $requester, string $description, string $source, bool $isTest = false): array
+    public static function topics(): array
+    {
+        return self::TOPICS;
+    }
+
+    public function create(User $client, User $requester, string $description, string $topic, string $source, bool $isTest = false): array
     {
         $description = trim($description);
+        $topicLabel = $this->topicLabel($topic);
 
         if ($description === '') {
             throw new \InvalidArgumentException('La solicitud no puede estar vacia.');
@@ -56,8 +71,8 @@ class ClientSupportTicketService
             $this->syncLocalOwnerData($client, $ownerId, $owner);
         }
 
-        $subject = ($isTest ? '[PRUEBA] ' : '') . 'Solicitud de soporte del cliente: ' . $this->clientLabel($client);
-        $content = $this->buildTicketContent($client, $requester, $description, $source, $owner, $isTest, $contactId);
+        $subject = ($isTest ? '[PRUEBA] ' : '') . '[' . $topicLabel . '] Solicitud de soporte del cliente: ' . $this->clientLabel($client);
+        $content = $this->buildTicketContent($client, $requester, $description, $topicLabel, $source, $owner, $isTest, $contactId);
         $ticket = null;
         $ticketError = null;
 
@@ -91,6 +106,7 @@ class ClientSupportTicketService
             [
                 'requester' => $requester,
                 'description' => $description,
+                'topic' => $topicLabel,
                 'source' => $source,
                 'is_test' => $isTest,
                 'contact_id' => $contactId,
@@ -104,6 +120,7 @@ class ClientSupportTicketService
             'hubspot_owner_id' => $ownerId,
             'hubspot_ticket_id' => $ticket['id'] ?? null,
             'hubspot_ticket_error' => $ticketError,
+            'support_topic' => $topicLabel,
             'recipients' => $recipients,
             'hubspot_inbox_email' => $copyHubspotInbox ? self::HUBSPOT_INBOX_EMAIL : null,
             'source' => $source,
@@ -117,18 +134,30 @@ class ClientSupportTicketService
             'recipients' => array_values(array_unique(array_merge($copyHubspotInbox ? [self::HUBSPOT_INBOX_EMAIL] : [], $recipients))),
             'ticket_error' => $ticketError,
             'used_hubspot_inbox_fallback' => $copyHubspotInbox,
+            'support_topic' => $topicLabel,
         ];
     }
 
     private function createHubspotTicket(string $subject, string $content, string $contactId): array
     {
-        $pipeline = [
-            'hs_pipeline' => env('HUBSPOT_SUPPORT_TICKET_PIPELINE'),
-            'hs_pipeline_stage' => env('HUBSPOT_SUPPORT_TICKET_STAGE'),
-        ];
+        $configuredPipeline = env('HUBSPOT_SUPPORT_TICKET_PIPELINE');
+        $configuredStage = env('HUBSPOT_SUPPORT_TICKET_STAGE');
+        $pipeline = $this->hubspot->getTicketPipelineStage($configuredPipeline, $configuredStage);
 
-        if (empty($pipeline['hs_pipeline']) || empty($pipeline['hs_pipeline_stage'])) {
-            $pipeline = $this->hubspot->getDefaultTicketPipelineStage();
+        if (
+            trim((string) $configuredPipeline) !== ''
+            && trim((string) $configuredStage) !== ''
+            && (
+                (string) $configuredPipeline !== (string) ($pipeline['hs_pipeline'] ?? '')
+                || (string) $configuredStage !== (string) ($pipeline['hs_pipeline_stage'] ?? '')
+            )
+        ) {
+            Log::warning('Configuracion de pipeline/etapa HubSpot invalida; se usara una etapa activa valida.', [
+                'configured_pipeline' => $configuredPipeline,
+                'configured_stage' => $configuredStage,
+                'used_pipeline' => $pipeline['hs_pipeline'] ?? null,
+                'used_stage' => $pipeline['hs_pipeline_stage'] ?? null,
+            ]);
         }
 
         return $this->hubspot->createTicket([
@@ -271,6 +300,7 @@ class ClientSupportTicketService
             'content' => $content,
             'requester' => $context['requester'] ?? null,
             'description' => $context['description'] ?? '',
+            'topic' => $context['topic'] ?? '',
             'source' => $context['source'] ?? '',
             'isTest' => (bool) ($context['is_test'] ?? false),
             'contactId' => $context['contact_id'] ?? null,
@@ -284,12 +314,13 @@ class ClientSupportTicketService
         });
     }
 
-    private function buildTicketContent(User $client, User $requester, string $description, string $source, array $owner, bool $isTest, ?string $contactId): string
+    private function buildTicketContent(User $client, User $requester, string $description, string $topic, string $source, array $owner, bool $isTest, ?string $contactId): string
     {
         $lines = [
             $isTest ? 'MODO PRUEBA: solicitud generada desde el boton administrativo de demostracion.' : null,
             'Solicitud cargada desde App Sefar.',
             'Origen: ' . $source,
+            'Tema: ' . $topic,
             'Fecha: ' . now()->format('Y-m-d H:i:s'),
             '',
             'Cliente: ' . $this->clientLabel($client),
@@ -333,5 +364,20 @@ class ClientSupportTicketService
         }
 
         return trim(((string) ($owner['firstName'] ?? '')) . ' ' . ((string) ($owner['lastName'] ?? '')));
+    }
+
+    private function topicLabel(string $topic): string
+    {
+        $topic = trim($topic);
+
+        if (isset(self::TOPICS[$topic])) {
+            return self::TOPICS[$topic];
+        }
+
+        if (in_array($topic, self::TOPICS, true)) {
+            return $topic;
+        }
+
+        throw new \InvalidArgumentException('Selecciona un tema valido para la solicitud.');
     }
 }

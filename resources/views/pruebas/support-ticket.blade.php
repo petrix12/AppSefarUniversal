@@ -67,6 +67,26 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="support_topic">Tema de la solicitud</label>
+                    <select
+                        id="support_topic"
+                        name="support_topic"
+                        class="form-control @error('support_topic') is-invalid @enderror"
+                        required
+                    >
+                        <option value="">Selecciona un tema...</option>
+                        @foreach($supportTopics as $topicValue => $topicLabel)
+                            <option value="{{ $topicValue }}" @selected(old('support_topic', 'otros') === $topicValue)>
+                                {{ $topicLabel }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('support_topic')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <div class="form-group">
                     <label for="request_description">Solicitud de prueba</label>
                     <textarea
                         id="request_description"

@@ -3440,27 +3440,61 @@
             const label = $('#labelSupportTicket');
             const originalLabel = label.text();
             const supportTicketUrl = @json($isClientRole ? route('clientes.support-ticket.store') : route('crud.users.support-ticket', $user));
+            const supportTicketTopics = @json(\App\Services\ClientSupportTicketService::topics());
+            const escapeSupportTicketHtml = function (value) {
+                return String(value)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            };
+            const supportTicketTopicOptions = Object.entries(supportTicketTopics)
+                .map(([value, text]) => `<option value="${escapeSupportTicketHtml(value)}">${escapeSupportTicketHtml(text)}</option>`)
+                .join('');
 
             Swal.fire({
                 title: 'Solicitar soporte',
-                input: 'textarea',
-                inputLabel: 'Describe tu solicitud',
-                inputPlaceholder: 'Cuéntanos qué necesitas revisar o qué ayuda requieres...',
-                inputAttributes: {
-                    'aria-label': 'Descripcion de la solicitud de soporte',
-                    maxlength: 3000
-                },
+                html: `
+                    <div style="text-align:left;">
+                        <label for="supportTicketTopic" style="display:block; font-weight:600; margin-bottom:.35rem;">Tema de la solicitud</label>
+                        <select id="supportTicketTopic" class="swal2-select" style="display:block; width:100%; margin:.25rem 0 1rem;">
+                            <option value="">Selecciona un tema...</option>
+                            ${supportTicketTopicOptions}
+                        </select>
+                        <label for="supportTicketDescription" style="display:block; font-weight:600; margin-bottom:.35rem;">Describe tu solicitud</label>
+                        <textarea
+                            id="supportTicketDescription"
+                            class="swal2-textarea"
+                            maxlength="3000"
+                            rows="7"
+                            style="display:block; width:100%; margin:.25rem 0 0;"
+                            placeholder="Cuéntanos qué necesitas revisar o qué ayuda requieres..."
+                        ></textarea>
+                    </div>
+                `,
+                focusConfirm: false,
                 showCancelButton: true,
                 confirmButtonText: 'Enviar solicitud',
                 cancelButtonText: 'Cancelar',
-                inputValidator: function (value) {
-                    const text = (value || '').trim();
+                preConfirm: function () {
+                    const topic = $('#supportTicketTopic').val();
+                    const text = ($('#supportTicketDescription').val() || '').trim();
 
-                    if (text.length < 15) {
-                        return 'Describe tu solicitud con al menos 15 caracteres.';
+                    if (!topic) {
+                        Swal.showValidationMessage('Selecciona un tema para la solicitud.');
+                        return false;
                     }
 
-                    return null;
+                    if (text.length < 15) {
+                        Swal.showValidationMessage('Describe tu solicitud con al menos 15 caracteres.');
+                        return false;
+                    }
+
+                    return {
+                        support_topic: topic,
+                        request_description: text
+                    };
                 }
             }).then(function (result) {
                 if (!result.isConfirmed) return;
@@ -3469,7 +3503,8 @@
                     url: supportTicketUrl,
                     type: 'POST',
                     data: {
-                        request_description: result.value,
+                        support_topic: result.value.support_topic,
+                        request_description: result.value.request_description,
                         source: 'Estatus del cliente - App Sefar'
                     },
                     headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
@@ -3487,7 +3522,8 @@
                     },
                     error: function (xhr) {
                         const errors = xhr.responseJSON?.errors || {};
-                        const message = errors.request_description?.[0]
+                        const message = errors.support_topic?.[0]
+                            || errors.request_description?.[0]
                             || xhr.responseJSON?.message
                             || 'No se pudo enviar la solicitud de soporte.';
 

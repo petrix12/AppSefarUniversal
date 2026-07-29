@@ -490,34 +490,28 @@ class HubspotService
 
     public function getDefaultTicketPipelineStage(): array
     {
-        return Cache::remember('hubspot_default_ticket_pipeline_stage', 3600, function () {
-            try {
-                $this->hubspotThrottle();
+        return $this->getTicketPipelineStage();
+    }
 
-                $response = $this->hubspot->apiRequest([
-                    'method' => 'GET',
-                    'path' => '/crm/v3/pipelines/tickets',
-                ]);
+    public function getTicketPipelineStage(?string $preferredPipelineId = null, ?string $preferredStageId = null): array
+    {
+        $preferredPipelineId = trim((string) $preferredPipelineId);
+        $preferredStageId = trim((string) $preferredStageId);
 
-                $body = json_decode((string) $response->getBody(), true) ?: [];
-                $pipelines = collect($body['results'] ?? [])
-                    ->filter(fn ($pipeline) => ! ($pipeline['archived'] ?? false))
-                    ->sortBy('displayOrder')
-                    ->values();
+        $pipelines = collect($this->getTicketPipelines())
+            ->filter(fn ($pipeline) => ! ($pipeline['archived'] ?? false))
+            ->sortBy('displayOrder')
+            ->values();
 
-                $pipeline = $pipelines->first();
-                if (! $pipeline) {
-                    throw new \RuntimeException('HubSpot no devolvio pipelines activos de tickets.');
-                }
+        if ($pipelines->isEmpty()) {
+            throw new \RuntimeException('HubSpot no devolvio pipelines activos de tickets.');
+        }
 
-                $stages = collect($pipeline['stages'] ?? [])
-                    ->filter(fn ($stage) => ! ($stage['archived'] ?? false))
-                    ->sortBy('displayOrder')
-                    ->values();
+        if ($preferredPipelineId !== '') {
+            $pipeline = $pipelines->first(fn ($pipeline) => (string) ($pipeline['id'] ?? '') === $preferredPipelineId);
 
-                $stage = $stages->first(function ($stage) {
-                    return strtoupper((string) ($stage['metadata']['ticketState'] ?? '')) === 'OPEN';
-                }) ?: $stages->first();
+            if ($pipeline) {
+                $stage = $this->chooseTicketStage($pipeline, $preferredStageId);
 
                 if (! $stage) {
                     throw new \RuntimeException('HubSpot no devolvio etapas activas para el pipeline de tickets.');
@@ -527,6 +521,36 @@ class HubspotService
                     'hs_pipeline' => (string) $pipeline['id'],
                     'hs_pipeline_stage' => (string) $stage['id'],
                 ];
+            }
+        }
+
+        $pipeline = $pipelines->first();
+        $stage = $this->chooseTicketStage($pipeline);
+
+        if (! $stage) {
+            throw new \RuntimeException('HubSpot no devolvio etapas activas para el pipeline de tickets.');
+        }
+
+        return [
+            'hs_pipeline' => (string) $pipeline['id'],
+            'hs_pipeline_stage' => (string) $stage['id'],
+        ];
+    }
+
+    private function getTicketPipelines(): array
+    {
+        return Cache::remember('hubspot_ticket_pipelines', 3600, function () {
+            try {
+                $this->hubspotThrottle();
+
+                $response = $this->hubspot->apiRequest([
+                    'method' => 'GET',
+                    'path' => '/crm/v3/pipelines/tickets',
+                ]);
+
+                $body = json_decode((string) $response->getBody(), true) ?: [];
+
+                return $body['results'] ?? [];
             } catch (RequestException $e) {
                 $statusCode = $e->getResponse()?->getStatusCode() ?: 0;
                 $body = $e->getResponse() ? (string) $e->getResponse()->getBody() : $e->getMessage();
@@ -534,6 +558,31 @@ class HubspotService
                 throw new \RuntimeException("Error obteniendo pipeline de tickets en HubSpot ({$statusCode}): {$body}", $statusCode, $e);
             }
         });
+    }
+
+    private function chooseTicketStage(array $pipeline, ?string $preferredStageId = null): ?array
+    {
+        $preferredStageId = trim((string) $preferredStageId);
+        $stages = collect($pipeline['stages'] ?? [])
+            ->filter(fn ($stage) => ! ($stage['archived'] ?? false))
+            ->sortBy('displayOrder')
+            ->values();
+
+        if ($stages->isEmpty()) {
+            return null;
+        }
+
+        if ($preferredStageId !== '') {
+            $stage = $stages->first(fn ($stage) => (string) ($stage['id'] ?? '') === $preferredStageId);
+
+            if ($stage) {
+                return $stage;
+            }
+        }
+
+        return $stages->first(function ($stage) {
+            return strtoupper((string) ($stage['metadata']['ticketState'] ?? '')) === 'OPEN';
+        }) ?: $stages->first();
     }
 
     /**

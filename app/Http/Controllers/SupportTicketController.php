@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Services\ClientSupportTicketService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class SupportTicketController extends Controller
 {
@@ -17,12 +18,14 @@ class SupportTicketController extends Controller
     {
         return view('clientes.support-ticket', [
             'user' => Auth::user(),
+            'supportTopics' => ClientSupportTicketService::topics(),
         ]);
     }
 
     public function clientStore(Request $request)
     {
         $data = $request->validate([
+            'support_topic' => ['required', 'string', Rule::in(array_keys(ClientSupportTicketService::topics()))],
             'request_description' => ['required', 'string', 'min:15', 'max:3000'],
         ]);
 
@@ -31,6 +34,7 @@ class SupportTicketController extends Controller
                 Auth::user(),
                 Auth::user(),
                 $data['request_description'],
+                $data['support_topic'],
                 $request->input('source', 'Menu AdminLTE - Solicitud de soporte')
             );
         } catch (\Throwable $e) {
@@ -56,6 +60,7 @@ class SupportTicketController extends Controller
     public function storeForUser(Request $request, User $user)
     {
         $data = $request->validate([
+            'support_topic' => ['required', 'string', Rule::in(array_keys(ClientSupportTicketService::topics()))],
             'request_description' => ['required', 'string', 'min:15', 'max:3000'],
         ]);
 
@@ -64,6 +69,7 @@ class SupportTicketController extends Controller
                 $user,
                 Auth::user(),
                 $data['request_description'],
+                $data['support_topic'],
                 $request->input('source', 'Perfil de cliente - Solicitud de soporte')
             );
         } catch (\Throwable $e) {
@@ -85,13 +91,16 @@ class SupportTicketController extends Controller
 
     public function adminTestCreate()
     {
-        return view('pruebas.support-ticket');
+        return view('pruebas.support-ticket', [
+            'supportTopics' => ClientSupportTicketService::topics(),
+        ]);
     }
 
     public function adminTestStore(Request $request)
     {
         $data = $request->validate([
             'client_id' => ['required', 'integer', 'exists:users,id'],
+            'support_topic' => ['required', 'string', Rule::in(array_keys(ClientSupportTicketService::topics()))],
             'request_description' => ['required', 'string', 'min:15', 'max:3000'],
         ]);
 
@@ -108,6 +117,7 @@ class SupportTicketController extends Controller
                 $client,
                 Auth::user(),
                 $data['request_description'],
+                $data['support_topic'],
                 'Prueba admin - Solicitud de soporte',
                 true
             );
@@ -169,6 +179,7 @@ class SupportTicketController extends Controller
             'El cliente',
             'El propietario del contacto',
             'No se pudo obtener el propietario',
+            'Selecciona',
         ];
 
         foreach ($safeStarts as $safeStart) {
