@@ -1066,6 +1066,11 @@ class CosService
         return $this->etiquetasContienen(fn (string $texto) => $this->stringContieneCartaNaturalezaSefardi($texto));
     }
 
+    private function hasEtiquetaCnHistoricoConstitucional(): bool
+    {
+        return $this->etiquetasContienen(fn (string $texto) => $this->stringContieneCnHistoricoConstitucional($texto));
+    }
+
     private function etiquetasContienen(callable $matcher): bool
     {
         $etiquetas = $this->mondayData['etiquetas'] ?? null;
@@ -1114,6 +1119,13 @@ class CosService
             && (bool) preg_match('/\b[pm]\b/', $normalized);
     }
 
+    private function stringContieneCnHistoricoConstitucional(string $texto): bool
+    {
+        $normalized = $this->normalizeSearchText($texto);
+
+        return (bool) preg_match('/\bcn\s+historico\s+constitucional\b/', $normalized);
+    }
+
     private function normalizeSearchText(string $texto): string
     {
         $texto = mb_strtolower($texto, 'UTF-8');
@@ -1153,7 +1165,11 @@ class CosService
         ]);
 
         // Cortocircuito por etiquetas que ya aprueban genealogia sefardi.
-        if ($this->hasEtiquetaAceptada() || $this->hasEtiquetaCartaNaturalezaSefardi()) {
+        if (
+            $this->hasEtiquetaAceptada()
+            || $this->hasEtiquetaCartaNaturalezaSefardi()
+            || $this->hasEtiquetaCnHistoricoConstitucional()
+        ) {
             Log::info("COS IA: etiqueta aprobatoria detectada, saltando IA", [
                 'negocio_id' => $this->negocio->hubspot_id ?? 'unknown',
             ]);
