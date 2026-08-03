@@ -18,6 +18,10 @@ use Illuminate\Support\Facades\Http;
  */
 class CosService
 {
+    private const SERVICE_ALIASES = [
+        'Española - Carta de Naturaleza General' => 'Nacionalidad por Carta de Naturaleza',
+    ];
+
     // ============ PROPIEDADES ============
 
     private $negocio;
@@ -974,8 +978,7 @@ class CosService
         return isset($this->negocio->n7__enviado_al_dto_juridico)
             || isset($this->negocio->fase_3_pagado)
             || isset($this->negocio->fase_3_pagado__teamleader_)
-            || $this->negocio->servicio_solicitado == "Española - Carta de Naturaleza General"
-            || $this->negocio->servicio_solicitado == "Nacionalidad por Carta de Naturaleza";
+            || $this->isCartaNaturaleza();
     }
 
     private function getLastGenStep($certificadoDescargado): int
@@ -1231,9 +1234,18 @@ class CosService
 
     private function getServiceName(): string
     {
-        return $this->negocio->servicio_solicitado2
+        $serviceName = $this->negocio->servicio_solicitado2
             ?? $this->negocio->servicio_solicitado
             ?? 'Española Sefardi';
+
+        return $this->normalizeServiceName((string) $serviceName);
+    }
+
+    private function normalizeServiceName(string $serviceName): string
+    {
+        $serviceName = trim(preg_replace('/\s+/u', ' ', $serviceName) ?? $serviceName);
+
+        return self::SERVICE_ALIASES[$serviceName] ?? $serviceName;
     }
 
     private function getServicioDisplay(): string
