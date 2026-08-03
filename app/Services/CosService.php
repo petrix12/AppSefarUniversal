@@ -45,6 +45,7 @@ class CosService
         $this->mondayData = $mondayData;
         $this->cos = array_cos();
         $this->negocio->servicio_solicitado2 = $this->getServiceName();
+        $this->serviceName = $this->resolveServiceName($this->negocio->servicio_solicitado2);
         $this->calculateTotalSteps();
         $this->logServiceInitialization();
     }
@@ -466,7 +467,7 @@ class CosService
         }
 
         // Verificar que existe el servicio en array_cos
-        if (!isset($this->cos[$this->negocio->servicio_solicitado2])) {
+        if (!isset($this->cos[$this->serviceName])) {
             Log::warning("COS: Servicio no encontrado en array_cos", [
                 'servicio' => $this->negocio->servicio_solicitado2
             ]);
@@ -484,8 +485,8 @@ class CosService
             ]);
 
             // Buscar en rama jurídica
-            if (isset($this->cos[$this->negocio->servicio_solicitado2]['juridico'])) {
-                foreach ($this->cos[$this->negocio->servicio_solicitado2]['juridico'] as $paso) {
+            if (isset($this->cos[$this->serviceName]['juridico'])) {
+                foreach ($this->cos[$this->serviceName]['juridico'] as $paso) {
                     if ($paso['paso'] == $pasoJuridicoBuscado) {
                         Log::info("COS: ✅ Paso jurídico encontrado", [
                             'paso_numero' => $pasoJuridicoBuscado,
@@ -500,7 +501,7 @@ class CosService
                 'paso_buscado' => $pasoJuridicoBuscado,
                 'jur' => $jur,
                 'servicio' => $this->negocio->servicio_solicitado2,
-                'pasos_disponibles' => array_column($this->cos[$this->negocio->servicio_solicitado2]['juridico'] ?? [], 'paso')
+                'pasos_disponibles' => array_column($this->cos[$this->serviceName]['juridico'] ?? [], 'paso')
             ]);
         }
 
@@ -514,8 +515,8 @@ class CosService
                 'servicio' => $this->negocio->servicio_solicitado2
             ]);
 
-            if (isset($this->cos[$this->negocio->servicio_solicitado2]['genealogico'])) {
-                foreach ($this->cos[$this->negocio->servicio_solicitado2]['genealogico'] as $paso) {
+            if (isset($this->cos[$this->serviceName]['genealogico'])) {
+                foreach ($this->cos[$this->serviceName]['genealogico'] as $paso) {
                     if ($paso['paso'] == $pasoGenealogicoBuscado) {
                         Log::info("COS: ✅ Paso genealógico encontrado", [
                             'paso_numero' => $pasoGenealogicoBuscado,
@@ -528,7 +529,7 @@ class CosService
 
             Log::warning("COS: ❌ Paso genealógico no encontrado", [
                 'paso_buscado' => $pasoGenealogicoBuscado,
-                'pasos_disponibles' => array_column($this->cos[$this->negocio->servicio_solicitado2]['genealogico'] ?? [], 'paso')
+                'pasos_disponibles' => array_column($this->cos[$this->serviceName]['genealogico'] ?? [], 'paso')
             ]);
         }
 
@@ -631,7 +632,7 @@ class CosService
 
     private function getRecursoAlzadaWarning(): ?string
     {
-        $serviceName = $this->negocio->servicio_solicitado2;
+        $serviceName = $this->serviceName;
 
         // ================= PORTUGUESA SEFARDÍ =================
         if ($this->isPortuguesaSefardi() || $serviceName == "Portuguesa Sefardi") {
@@ -762,7 +763,7 @@ class CosService
         }
 
         $currentStepNumber = $this->currentStepJur + 1;
-        $serviceName = $this->negocio->servicio_solicitado2;
+        $serviceName = $this->serviceName;
 
         // ========== SERVICIOS ESPAÑOLES (TODOS USAN RECURSO DE ALZADA) ==========
         $serviciosEspanoles = [
@@ -1243,7 +1244,12 @@ class CosService
 
     private function normalizeServiceName(string $serviceName): string
     {
-        $serviceName = trim(preg_replace('/\s+/u', ' ', $serviceName) ?? $serviceName);
+        return trim(preg_replace('/\s+/u', ' ', $serviceName) ?? $serviceName);
+    }
+
+    private function resolveServiceName(string $serviceName): string
+    {
+        $serviceName = $this->normalizeServiceName($serviceName);
 
         return self::SERVICE_ALIASES[$serviceName] ?? $serviceName;
     }
@@ -1255,9 +1261,9 @@ class CosService
 
     private function calculateTotalSteps(): void
     {
-        if (isset($this->cos[$this->negocio->servicio_solicitado2])) {
-            $this->totalStepsGen = count($this->cos[$this->negocio->servicio_solicitado2]['genealogico'] ?? []);
-            $this->totalStepsJur = count($this->cos[$this->negocio->servicio_solicitado2]['juridico'] ?? []);
+        if (isset($this->cos[$this->serviceName])) {
+            $this->totalStepsGen = count($this->cos[$this->serviceName]['genealogico'] ?? []);
+            $this->totalStepsJur = count($this->cos[$this->serviceName]['juridico'] ?? []);
         } else {
             $this->totalStepsGen = 18;
             $this->totalStepsJur = 9;

@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Cache;
 
 class CosHelperService
 {
+    private const SERVICE_ALIASES = [
+        'Española - Carta de Naturaleza General' => 'Nacionalidad por Carta de Naturaleza',
+    ];
+
     /**
      * Devuelve la estructura completa del COS desde BD.
      * Mantiene el orden por:
@@ -86,16 +90,30 @@ class CosHelperService
 
             return $out;
         };
+        $cos = $useCache
+            ? Cache::remember('cos.estructura', 3600, $builder)
+            : $builder();
 
-        if (! $useCache) {
-            return $builder();
-        }
-
-        return Cache::remember('cos.estructura', 3600, $builder);
+        return $this->withServiceAliases($cos);
     }
 
     public function clearCache(): void
     {
         Cache::forget('cos.estructura');
+    }
+
+    private function withServiceAliases(array $cos): array
+    {
+        foreach (self::SERVICE_ALIASES as $alias => $canonical) {
+            if (isset($cos[$canonical]) && ! isset($cos[$alias])) {
+                $cos[$alias] = $cos[$canonical];
+            }
+
+            if (isset($cos[$alias]) && ! isset($cos[$canonical])) {
+                $cos[$canonical] = $cos[$alias];
+            }
+        }
+
+        return $cos;
     }
 }
