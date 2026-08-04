@@ -301,7 +301,7 @@
         const data = await response.json();
 
         if (data.has_paid_similar_plan) {
-          const message = data.message || 'Este correo ya tiene un pago registrado para este tipo de plan. Puede pagar un plan estrategico, uno administrativo y uno judicial; para registrar a otro familiar, usa un correo diferente.';
+          const message = data.message || 'Este correo ya tiene una activación registrada para este tipo de plan. Puedes activar tu proceso con un plan estrategico, uno administrativo y uno judicial; para registrar a otro familiar, usa un correo diferente.';
           emailInput.setCustomValidity(message);
           setLookupStatus(message, 'error');
           setNewClientMode(false);
@@ -368,7 +368,7 @@
 
       if (!ok || !form.reportValidity()) return;
 
-      setBusy(submitButton, true, 'Preparando pago...');
+      setBusy(submitButton, true, 'Preparando activación...');
 
       try {
         const response = await fetch(form.action, {
@@ -392,7 +392,7 @@
             return;
           }
 
-          showAlert(form, payload.message || 'No se pudo preparar el pago.');
+          showAlert(form, payload.message || 'No se pudo preparar la activación.');
           setBusy(submitButton, false);
           return;
         }
@@ -497,7 +497,7 @@
         <label class="bo-pay-choice is-active" data-checkout-payment-choice="full">
           <input type="radio" name="checkout_payment_choice" value="full" checked>
           <span>
-            <strong>Pago unico</strong>
+            <strong>Activación única</strong>
             <small id="checkoutFullPaymentLabel">${escapeHtml(checkout.contract_total_label || checkout.total_label)} EUR ahora</small>
           </span>
         </label>
@@ -506,7 +506,7 @@
           <label class="bo-pay-choice" data-checkout-payment-choice="installments">
             <input type="radio" name="checkout_payment_choice" value="installments">
             <span>
-              <strong>Pago por cuotas</strong>
+              <strong>Activación por cuotas</strong>
               <small id="checkoutInstallmentPaymentLabel">Define inicial, periodo y cuotas</small>
             </span>
           </label>
@@ -649,10 +649,10 @@
       }
 
       const amountDueNow = mode === 'installments' ? quote.initialAmount : baseTotal;
-      if (totalLabel) totalLabel.textContent = mode === 'installments' ? 'Total a pagar hoy' : 'Total a pagar';
+      if (totalLabel) totalLabel.textContent = mode === 'installments' ? 'Total para activar tu proceso hoy' : 'Total de activación';
       if (totalAmount) totalAmount.textContent = money(amountDueNow);
       if (submitButton) {
-        submitButton.innerHTML = `${mode === 'installments' ? 'Pagar inicial' : 'Pagar ahora'} <i class="fas fa-credit-card"></i>`;
+        submitButton.innerHTML = 'Activar tu proceso <i class="fas fa-credit-card"></i>';
       }
       renderBreakdown(mode, quote, period);
     }
@@ -684,7 +684,7 @@
     main.className = 'bo-container';
     main.innerHTML = `
       <section class="bo-payment-title">
-        <span class="bo-eyebrow"><i class="fas fa-lock"></i> Pago seguro</span>
+        <span class="bo-eyebrow"><i class="fas fa-lock"></i> Activación segura</span>
         <h1>Completar contratacion</h1>
         <p>${escapeHtml(checkout.plan_title)}.</p>
       </section>
@@ -698,7 +698,7 @@
         <aside class="bo-panel">
           ${checkout.stripe_key ? '' : '<div class="bo-alert">No esta configurada la clave publica de Stripe para este servicio.</div>'}
           <div class="bo-payment-breakdown is-hidden" data-payment-breakdown data-subtotal-label="${escapeHtml(checkout.subtotal_label)}" data-discount="${escapeHtml(checkout.discount || 0)}" data-discount-label="${escapeHtml(checkout.discount_label)}"></div>
-          <div class="bo-total-label" id="paymentTotalLabel">Total a pagar</div>
+          <div class="bo-total-label" id="paymentTotalLabel">Total de activación</div>
           <div class="bo-total"><span id="paymentTotalAmount">${escapeHtml(checkout.contract_total_label || checkout.total_label)}</span> <small>${escapeHtml(checkout.currency || 'EUR')}</small></div>
 
           <form id="payment-form" class="bo-form" data-stripe-key="${escapeHtml(checkout.stripe_key)}" data-process-url="${escapeHtml(checkout.process_url)}" data-success-url="${escapeHtml(checkout.thank_you_url)}">
@@ -755,7 +755,7 @@
             </label>
             <div class="bo-card-errors" id="card-errors"></div>
             <button class="bo-button bo-button-primary" id="submit-button" type="submit" ${checkout.stripe_key ? '' : 'disabled'}>
-              Pagar ahora <i class="fas fa-credit-card"></i>
+              Activar tu proceso <i class="fas fa-credit-card"></i>
             </button>
           </form>
         </aside>
@@ -800,7 +800,7 @@
     try {
       await loadStripeJs();
     } catch (error) {
-      errorNode.textContent = 'No se pudo cargar la pasarela de pago.';
+      errorNode.textContent = 'No se pudo cargar la pasarela de activación.';
       submitButton.disabled = true;
       return;
     }
@@ -873,14 +873,14 @@
         const payload = await response.json();
 
         if (!response.ok || !payload.success) {
-          errorNode.textContent = payload.message || 'No se pudo procesar el pago.';
+          errorNode.textContent = payload.message || 'No se pudo procesar la activación.';
           setBusy(submitButton, false);
           return;
         }
 
         renderThankYou(payload.thank_you, payload.redirect_url);
       } catch (error) {
-        errorNode.textContent = 'No se pudo conectar con la pasarela de pago.';
+        errorNode.textContent = 'No se pudo conectar con la pasarela de activación.';
         setBusy(submitButton, false);
       }
     });
@@ -905,7 +905,7 @@
     main.innerHTML = `
       <section class="bo-confirm-card">
         <img class="bo-confirm-logo" src="/img/logo2.png" alt="Sefar Universal">
-        <div class="bo-confirm-badge"><i class="fas fa-check-circle"></i> ${isInstallmentPayment ? 'Inicial recibido' : 'Pago recibido'}</div>
+        <div class="bo-confirm-badge"><i class="fas fa-check-circle"></i> ${isInstallmentPayment ? 'Activación inicial recibida' : 'Activación recibida'}</div>
         <h1>Gracias${name}.</h1>
         <p>Tu contratacion de Banca Online 2026 fue registrada correctamente. El equipo de Sefar Universal continuara el seguimiento operativo del servicio seleccionado.</p>
         ${installmentSummary}

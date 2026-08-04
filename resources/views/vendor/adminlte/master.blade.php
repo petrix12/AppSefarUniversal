@@ -97,23 +97,31 @@
 
     @if(auth()->user()->hasRole(['Cliente']))
         <script>
-            $(document).ready(function(){
-                if (<?php echo(auth()->user()->pay) ?> == 0){
-                    $(".btn_pay").show();
-                    $(".btn_getinfo").hide();
-                    $(".btn_tree").hide();
+            document.addEventListener('DOMContentLoaded', function () {
+                const toggle = function (selector, visible) {
+                    document.querySelectorAll(selector).forEach(function (element) {
+                        element.style.display = visible ? '' : 'none';
+                    });
+                };
+
+                const payStatus = @json((int) auth()->user()->pay);
+
+                if (payStatus === 0) {
+                    toggle('.btn_pay', true);
+                    toggle('.btn_getinfo', false);
+                    toggle('.btn_tree', false);
                 }
 
-                if (<?php echo(auth()->user()->pay) ?> == 1 || <?php echo(auth()->user()->pay) ?> == 3){
-                    $(".btn_pay").hide();
-                    $(".btn_getinfo").show();
-                    $(".btn_tree").hide();
+                if (payStatus === 1 || payStatus === 3) {
+                    toggle('.btn_pay', false);
+                    toggle('.btn_getinfo', true);
+                    toggle('.btn_tree', false);
                 }
 
-                if (<?php echo(auth()->user()->pay) ?> == 2){
-                    $(".btn_pay").hide();
-                    $(".btn_getinfo").hide();
-                    $(".btn_tree").show();
+                if (payStatus === 2) {
+                    toggle('.btn_pay', false);
+                    toggle('.btn_getinfo', false);
+                    toggle('.btn_tree', true);
                 }
             });
         </script>

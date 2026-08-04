@@ -9,7 +9,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Pago recibido | Banca Online 2026</title>
+    <title>Activación recibida | Banca Online 2026</title>
     <link rel="stylesheet" href="{{ asset('vendor/fontawesome-free/css/all.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
     <link rel="stylesheet" href="{{ asset('css/banca-online-2026.css') }}">
@@ -18,7 +18,7 @@
     <main class="bo-confirm-wrap">
         <section class="bo-confirm-card">
             <img class="bo-confirm-logo" src="{{ asset('img/logo2.png') }}" alt="Sefar Universal">
-            <div class="bo-confirm-badge"><i class="fas fa-check-circle"></i> {{ $isInstallmentPayment ? 'Inicial recibido' : 'Pago recibido' }}</div>
+            <div class="bo-confirm-badge"><i class="fas fa-check-circle"></i> {{ $isInstallmentPayment ? 'Activación inicial recibida' : 'Activación recibida' }}</div>
             <h1>Gracias.</h1>
             <p>Tu contratacion de Banca Online 2026 fue registrada correctamente. El equipo de Sefar Universal continuara el seguimiento operativo del servicio seleccionado.</p>
 

@@ -115,7 +115,7 @@
                                         @endif
                                         <div class="bo-package-current-price">
                                             <strong>{{ number_format($total, 0, ',', '.') }}</strong>
-                                            <span>EUR pago unico</span>
+                                            <span>EUR activación única</span>
                                         </div>
                                         @if($discount > 0)
                                             <div class="bo-package-saving">
@@ -250,7 +250,7 @@
                             </div>
 
                             <button class="bo-button bo-button-primary" type="submit" {{ $readyPackages->isEmpty() ? 'disabled' : '' }}>
-                                Continuar al pago <i class="fas fa-arrow-right"></i>
+                                Continuar a la activación <i class="fas fa-arrow-right"></i>
                             </button>
                         </div>
                     </section>

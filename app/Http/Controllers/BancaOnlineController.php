@@ -271,14 +271,14 @@ class BancaOnlineController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error conectandose a la pasarela de pago. Por favor, intente mas tarde.',
+                'message' => 'Error conectandose a la pasarela de activación. Por favor, intente mas tarde.',
             ], 500);
         } catch (\Stripe\Exception\ApiErrorException $e) {
             $this->cancelStripeInstallmentSchedule($stripeInstallmentSchedule['schedule_id'] ?? null);
 
             return response()->json([
                 'success' => false,
-                'message' => 'La pasarela de pago esta en mantenimiento. Por favor, intente mas tarde.',
+                'message' => 'La pasarela de activación esta en mantenimiento. Por favor, intente mas tarde.',
             ], 503);
         } catch (\Throwable $e) {
             $this->cancelStripeInstallmentSchedule($stripeInstallmentSchedule['schedule_id'] ?? null);
@@ -286,7 +286,7 @@ class BancaOnlineController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Ha ocurrido un error desconocido al realizar el pago.',
+                'message' => 'Ha ocurrido un error desconocido al procesar la activación.',
             ], 500);
         }
 
@@ -295,7 +295,7 @@ class BancaOnlineController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'El pago no pudo ser completado. Estado: ' . ($paymentIntent->status ?? 'desconocido'),
+                'message' => 'La activación no pudo ser completada. Estado: ' . ($paymentIntent->status ?? 'desconocido'),
             ], 400);
         }
 
@@ -363,10 +363,10 @@ class BancaOnlineController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Pago procesado exitosamente.',
+            'message' => 'Activación procesada exitosamente.',
             'redirect_url' => route('banca-online.thank-you', $token),
             'thank_you' => [
-                'title' => 'Pago recibido',
+                'title' => 'Activación recibida',
                 'name' => trim($data['first_name']),
                 'total' => $total,
                 'total_label' => number_format($total, 0, ',', '.'),
@@ -507,7 +507,7 @@ class BancaOnlineController extends Controller
                 'servicio_id' => $package->id,
                 'source' => $this->catalog->source(),
                 'servicio_hs_id' => $package->id_hubspot,
-                'descripcion' => 'Banca Online 2026 - ' . ($plan['title'] ?? $planSlug) . ': ' . $package->nombre . ($paymentPlan['mode'] === 'installments' ? ' - pago inicial' : ''),
+                'descripcion' => 'Banca Online 2026 - ' . ($plan['title'] ?? $planSlug) . ': ' . $package->nombre . ($paymentPlan['mode'] === 'installments' ? ' - activación inicial' : ''),
                 'pagado' => 0,
                 'monto' => $paymentPlan['amount_due_now'],
                 'metadata' => array_merge($metadata, [
@@ -599,7 +599,7 @@ class BancaOnlineController extends Controller
         if (! $settings['enabled']) {
             return [
                 'valid' => false,
-                'message' => 'Esta modalidad no tiene pago por cuotas disponible.',
+                'message' => 'Esta modalidad no tiene activación por cuotas disponible.',
             ];
         }
 
@@ -609,7 +609,7 @@ class BancaOnlineController extends Controller
         if (! $period) {
             return [
                 'valid' => false,
-                'message' => 'Selecciona una periodicidad de pago disponible.',
+                'message' => 'Selecciona una periodicidad de activación disponible.',
             ];
         }
 
@@ -753,7 +753,7 @@ class BancaOnlineController extends Controller
 
     private function paidSimilarPlanMessage(): string
     {
-        return 'Este correo ya tiene un pago registrado para este tipo de plan. Puede pagar un plan estrategico, uno administrativo y uno judicial; para registrar a otro familiar, usa un correo diferente.';
+        return 'Este correo ya tiene una activación registrada para este tipo de plan. Puedes activar tu proceso con un plan estrategico, uno administrativo y uno judicial; para registrar a otro familiar, usa un correo diferente.';
     }
 
     private function bancaOnlinePlanFamily(string $planSlug, string $planTitle = '', string $description = ''): string

@@ -10,7 +10,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Pago | Banca Online 2026</title>
+    <title>Activación | Banca Online 2026</title>
     <link rel="stylesheet" href="{{ asset('vendor/fontawesome-free/css/all.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
     <link rel="stylesheet" href="{{ asset('css/banca-online-2026.css') }}">
@@ -28,7 +28,7 @@
 
     <main class="bo-container">
         <section class="bo-payment-title">
-            <span class="bo-eyebrow"><i class="fas fa-lock"></i> Pago seguro</span>
+            <span class="bo-eyebrow"><i class="fas fa-lock"></i> Activación segura</span>
             <h1>Completar contratacion</h1>
             <p>{{ $metadata['plan_title'] ?? 'Plan estrategico' }} · {{ $metadata['package_title'] ?? 'Modalidad contratada' }}.</p>
         </section>
@@ -66,7 +66,7 @@
                     data-discount="{{ (float) ($metadata['package_discount'] ?? 0) }}"
                     data-discount-label="{{ number_format((float) ($metadata['package_discount'] ?? 0), 0, ',', '.') }}"></div>
 
-                <div class="bo-total-label" id="paymentTotalLabel">{{ $isInstallmentPayment ? 'Total a pagar hoy' : 'Total a pagar' }}</div>
+                <div class="bo-total-label" id="paymentTotalLabel">{{ $isInstallmentPayment ? 'Total para activar tu proceso hoy' : 'Total de activación' }}</div>
                 <div class="bo-total"><span id="paymentTotalAmount">{{ number_format($total, 0, ',', '.') }}</span> <small>EUR</small></div>
 
                 <form
@@ -86,7 +86,7 @@
                         <label class="bo-pay-choice is-active" data-checkout-payment-choice="full">
                             <input type="radio" name="checkout_payment_choice" value="full" checked>
                             <span>
-                                <strong>Pago unico</strong>
+                                <strong>Activación única</strong>
                                 <small id="checkoutFullPaymentLabel">{{ number_format($total, 0, ',', '.') }} EUR ahora</small>
                             </span>
                         </label>
@@ -95,7 +95,7 @@
                             <label class="bo-pay-choice" data-checkout-payment-choice="installments">
                                 <input type="radio" name="checkout_payment_choice" value="installments">
                                 <span>
-                                    <strong>Pago por cuotas</strong>
+                                    <strong>Activación por cuotas</strong>
                                     <small id="checkoutInstallmentPaymentLabel">Define inicial, periodo y cuotas</small>
                                 </span>
                             </label>
@@ -183,7 +183,7 @@
                     <div class="bo-card-errors" id="card-errors"></div>
 
                     <button class="bo-button bo-button-primary" id="submit-button" type="submit" {{ !$stripeKey ? 'disabled' : '' }}>
-                        {{ $isInstallmentPayment ? 'Pagar inicial' : 'Pagar ahora' }} <i class="fas fa-credit-card"></i>
+                        Activar tu proceso <i class="fas fa-credit-card"></i>
                     </button>
                 </form>
             </aside>
