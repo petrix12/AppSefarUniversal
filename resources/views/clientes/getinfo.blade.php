@@ -112,6 +112,48 @@
     <div class="container m-3">
 
         <script>
+            function showGetInfoProgress(message) {
+                if (!window.Swal) return;
+
+                Swal.fire({
+                    title: 'Estamos procesando tu información',
+                    html: message || 'Guardando tus datos y verificando el formulario...',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: function () {
+                        Swal.showLoading();
+                    }
+                });
+            }
+
+            function updateGetInfoProgress(message) {
+                if (!window.Swal || !Swal.isVisible()) return;
+
+                Swal.update({
+                    title: 'Estamos procesando tu información',
+                    html: message
+                });
+                Swal.showLoading();
+            }
+
+            function redirectAfterGetInfo(response) {
+                var redirectUrl = (response && response.redirect_url) ? response.redirect_url : "{{ route('cliente.contrato') }}";
+
+                if (window.Swal && Swal.isVisible()) {
+                    Swal.update({
+                        icon: 'success',
+                        title: 'Información recibida',
+                        html: 'Todo listo. Ahora continuaremos con la firma del contrato.',
+                        showConfirmButton: false
+                    });
+                }
+
+                setTimeout(function () {
+                    window.location.href = redirectUrl;
+                }, 700);
+            }
+
             hbspt.forms.create({
                 region: "na1",
                 portalId: "20053496",
