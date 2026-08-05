@@ -1748,19 +1748,35 @@ class ClienteController extends Controller
 
         */
 
-        $contactData = $this->hubspotService->check001(auth()->user()->hs_id);
+        $contactData = $this->hubspotService->check001((string) auth()->user()->hs_id, 1, 0);
 
         if (!$contactData) {
-            return response()->json(['error' => 'El formulario no se ha completado en HubSpot aún'], 504);
+            return response()->json([
+                'success' => false,
+                'retry' => true,
+                'message' => 'HubSpot todavia esta procesando el formulario.',
+            ], 409);
         }
 
         if (auth()->user()->pay == 3){
             DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]); // no borrar esta linea
             auth()->user()->revokePermissionTo('finish.register');
+
+            return response()->json([
+                'success' => true,
+                'redirect_url' => auth()->user()->contrato == 0 ? route('cliente.contrato') : route('clientes.tree'),
+            ]);
         } else {
             $inputdata = json_decode(json_encode($request->all()),true);
 
-            $input_u = $inputdata["data"];
+            $input_u = $inputdata["data"] ?? [];
+
+            if (! is_array($input_u) || empty($input_u)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se recibieron los datos del formulario de HubSpot.',
+                ], 422);
+            }
 
             $input = array();
 
@@ -1946,7 +1962,11 @@ class ClienteController extends Controller
 
             $responseContent = json_decode($data,true);
 
-            echo json_encode($responseContent);
+            return response()->json([
+                'success' => true,
+                'redirect_url' => auth()->user()->contrato == 0 ? route('cliente.contrato') : route('clientes.tree'),
+                'monday' => $responseContent,
+            ]);
         }
 
 

@@ -159,35 +159,71 @@
                     }, 1000 );
                 },
                 onFormSubmit: function($form){
-                    setTimeout( function() {
+                    $("#ajaxload2").show();
+                    showGetInfoProgress('Recibimos el formulario. Estamos guardando tu información para continuar con el contrato.');
 
-                        var formData = $form;
+                    setTimeout(function() {
+                        var data = [];
 
-                        if($('input[name="firstname"]').val() == "" || $('input[name="lastname"]').val() == "" || $('input[name="email"]').val() == "" || $('input[name="numero_de_pasaporte"]').val() == "" || $('input[name="pais_de_nacimiento"]').val() == "" || $('input[name="nacionalidad_solicitada"]').val() == "" || $('#hs-form-iframe-0').contents().find('input[name="firstname"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="lastname"]').val() == "" || $('#hs-form-iframe-0').contents().find('input[name="email"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="numero_de_pasaporte"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="pais_de_nacimiento"]').val() == "" ||  $('#hs-form-iframe-0').contents().find('input[name="nacionalidad_solicitada"]').val() == ""){
-                            return false;
+                        if ($form && typeof $form.serializeArray === 'function') {
+                            data = $form.serializeArray();
                         }
 
-                        $("#ajaxload2").show();
-
-                        var data = formData.serializeArray();
-
-                        $.ajaxSetup({
-                            headers: {
-                                'X-CSRF-TOKEN': $("input[name='_token']").val()
+                        if (!data.length) {
+                            try {
+                                data = $('#hs-form-iframe-0').contents().find('form').serializeArray();
+                            } catch (error) {
+                                data = [];
                             }
-                        });
+                        }
 
+                        if (!data.length) {
+                            $("#ajaxload2").hide();
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'No se pudo leer el formulario',
+                                text: 'Por favor, recarga la página e intenta nuevamente.'
+                            });
+                            return;
+                        }
+
+                        submitGetInfo(data, 1);
+                    }, 1500);
+
+                    function submitGetInfo(data, attempt) {
                         $.ajax({
                             url: '{{ route("procesargetinfo") }}',
                             method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || $("input[name='_token']").val()
+                            },
                             data: {
-                                data
+                                data: data
                             },
                             success: function(response){
-                                window.location.href = "/tree";
+                                redirectAfterGetInfo(response);
+                            },
+                            error: function(xhr){
+                                var response = xhr.responseJSON || {};
+                                var shouldRetry = response.retry || xhr.status === 409 || xhr.status === 504;
+
+                                if (shouldRetry && attempt < 40) {
+                                    updateGetInfoProgress('HubSpot todavía está terminando de registrar el formulario. Seguimos verificando automáticamente...');
+                                    setTimeout(function() {
+                                        submitGetInfo(data, attempt + 1);
+                                    }, 3000);
+                                    return;
+                                }
+
+                                $("#ajaxload2").hide();
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'No se pudo completar la información',
+                                    text: response.message || response.error || 'Hubo un problema al verificar el formulario. Por favor, intenta nuevamente.'
+                                });
                             }
                         });
-                    }, 1500 );
+                    }
                 }
             });
         </script>
