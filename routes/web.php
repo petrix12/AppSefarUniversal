@@ -64,6 +64,7 @@ use App\Http\Controllers\HubspotOwnerController;
 use App\Http\Controllers\StrategicSuggestionAttachmentController;
 use App\Http\Controllers\StrategicSuggestionController;
 use App\Http\Controllers\Teamleader\TlProjectController;
+use App\Http\Controllers\Teamleader\TlDealController;
 use App\Http\Controllers\Teamleader\DocumentDownloadController as TlDocumentDownloadController;
 use App\Http\Controllers\Teamleader\TlDocumentController;
 use App\Http\Controllers\TlContactController;
@@ -241,6 +242,8 @@ Route::middleware(['auth', 'can:tl.view'])
         Route::get('projects',        [TlProjectController::class, 'table'])->name('projects.index');
         Route::get('projects/{id}',   [TlProjectController::class, 'show'])->name('projects.show');
 
+        Route::get('deals/{id}',      [TlDealController::class, 'show'])->name('deals.show');
+
         Route::get('invoices',        [TlInvoiceController::class, 'table'])->name('invoices.index');
         Route::get('invoices/{id}',   [TlInvoiceController::class, 'show'])->name('invoices.show');
 
@@ -392,6 +395,9 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
             ->middleware('can:crud.users.index');
     Route::post('users/{user}/notify-cos-status', [UserController::class, 'notifyCosStatusUpdate'])
             ->name('users.notify-cos-status')
+            ->middleware('can:crud.users.index');
+    Route::patch('users/{user}/owner', [UserController::class, 'updateOwner'])
+            ->name('users.update-owner')
             ->middleware('can:crud.users.index');
     Route::get('users/{user}/internal-chat', [ClientChatController::class, 'messages'])
             ->name('users.internal-chat.index')

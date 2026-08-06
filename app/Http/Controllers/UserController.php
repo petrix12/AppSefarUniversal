@@ -151,6 +151,47 @@ class UserController extends Controller
         ]);
     }
 
+    public function updateOwner(Request $request, User $user)
+    {
+        if (auth()->user()?->hasRole('Cliente')) {
+            abort(403, 'No tienes acceso para cambiar el owner de un contacto.');
+        }
+
+        if (! $user->hasRole('Cliente')) {
+            return back()->with('owner_error', 'Solo se puede cambiar owner de contactos/clientes.');
+        }
+
+        $data = $request->validate([
+            'owner_user_id' => ['required', 'integer', 'exists:users,id'],
+        ]);
+
+        $owner = $this->activeHubspotOwnerForUser((int) $data['owner_user_id']);
+
+        if (! $owner) {
+            return back()->with('owner_error', 'El owner seleccionado no esta activo o no tiene Owner de HubSpot asociado.');
+        }
+
+        $user->forceFill($this->appOwnerUpdateAttributes(
+            (int) $owner->user_id,
+            (string) $owner->hubspot_owner_id
+        ))->save();
+
+        if (Schema::hasColumn('negocios', 'hubspot_owner_id')) {
+            Negocio::where('user_id', $user->id)->update([
+                'hubspot_owner_id' => (string) $owner->hubspot_owner_id,
+            ]);
+        }
+
+        Log::info('Owner de contacto actualizado desde COS', [
+            'client_id' => $user->id,
+            'new_owner_user_id' => (int) $owner->user_id,
+            'new_hubspot_owner_id' => (string) $owner->hubspot_owner_id,
+            'changed_by_user_id' => auth()->id(),
+        ]);
+
+        return back()->with('owner_success', "Owner actualizado a {$owner->user_name} en la app.");
+    }
+
     /**
      * Show the form for creating a new resource.
      *
@@ -1861,6 +1902,8 @@ class UserController extends Controller
     $roles = Role::all();
     $permissions = Permission::all();
     $servicios = Servicio::all();
+    $ownerOptions = $this->ownerOptionsForCos();
+    $user->loadMissing('owner:id,name,email');
 
     // Procesar URLs de archivos (ya existente en tu código)
     $urls = $this->hubspotService->getEngagementsByContactId($user->hs_id);
@@ -1977,6 +2020,7 @@ class UserController extends Controller
         'teamleaderMigration',
         'teamleaderProjectPayments',
         'servicios',
+        'ownerOptions',
         'columnasparatabla'
     ))->render();
 
@@ -1986,6 +2030,68 @@ class UserController extends Controller
 // ==========================================
 // MÉTODOS AUXILIARES
 // ==========================================
+
+private function ownerOptionsForCos(): Collection
+{
+    try {
+        if (! Schema::hasTable('hubspot_owner_user') || ! Schema::hasTable('hubspot_owners')) {
+            return collect();
+        }
+    } catch (\Throwable) {
+        return collect();
+    }
+
+    return DB::table('hubspot_owner_user as hou')
+        ->join('hubspot_owners as ho', 'ho.id', '=', 'hou.hubspot_owner_id')
+        ->join('users as u', 'u.id', '=', 'hou.user_id')
+        ->where('ho.active', true)
+        ->whereNotNull('hou.hubspot_owner_id')
+        ->whereRaw("TRIM(hou.hubspot_owner_id) <> ''")
+        ->orderBy('u.name')
+        ->select([
+            'u.id as user_id',
+            'u.name as user_name',
+            'u.email as user_email',
+            'hou.hubspot_owner_id',
+            'ho.name as hubspot_owner_name',
+        ])
+        ->get();
+}
+
+private function activeHubspotOwnerForUser(int $userId): ?object
+{
+    return $this->ownerOptionsForCos()
+        ->first(fn ($owner) => (int) $owner->user_id === $userId);
+}
+
+private function appOwnerUpdateAttributes(int $ownerUserId, string $hubspotOwnerId): array
+{
+    $attributes = [
+        'owner_id' => $ownerUserId,
+    ];
+
+    if (Schema::hasColumn('users', 'hubspot_owner_id')) {
+        $attributes['hubspot_owner_id'] = $hubspotOwnerId;
+    }
+
+    if (Schema::hasColumn('users', 'last_task_reassigned_at')) {
+        $attributes['last_task_reassigned_at'] = now();
+    }
+
+    if (Schema::hasColumn('users', 'task_reassignment_locked_at')) {
+        $attributes['task_reassignment_locked_at'] = now();
+    }
+
+    if (Schema::hasColumn('users', 'task_reassignment_locked_owner_id')) {
+        $attributes['task_reassignment_locked_owner_id'] = $ownerUserId;
+    }
+
+    if (Schema::hasColumn('users', 'task_reassignment_locked_hubspot_owner_id')) {
+        $attributes['task_reassignment_locked_hubspot_owner_id'] = $hubspotOwnerId;
+    }
+
+    return $attributes;
+}
 
 private function getTeamleaderMigrationData(User $user): array
 {

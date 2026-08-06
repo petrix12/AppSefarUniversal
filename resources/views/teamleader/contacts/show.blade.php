@@ -24,9 +24,11 @@
                 </form>
             @endcan
 
-            <a href="{{ $contact->raw_data['web_url'] ?? '#' }}" target="_blank" class="btn btn-sm btn-outline-info">
-                <i class="fas fa-external-link-alt mr-1"></i> Ver en Teamleader
-            </a>
+            @if(!empty($contact->raw_data['web_url']))
+                <a href="{{ $contact->raw_data['web_url'] }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-info">
+                    <i class="fas fa-external-link-alt mr-1"></i> Ver en Teamleader
+                </a>
+            @endif
         </div>
     </div>
 @endsection
@@ -208,7 +210,7 @@
                 {{-- Proyectos --}}
                 <div class="tab-pane active" id="tab-projects">
                     @forelse($projects as $project)
-                    <a href="{{ route('teamleader.projects.show', $project) }}" class="d-flex justify-content-between align-items-center border-bottom py-2">
+                    <a href="{{ route('teamleader.projects.show', $project) }}" class="tl-contact-row d-flex justify-content-between align-items-center border-bottom py-2">
                         <div>
                             <strong>{{ $project->title ?? '(Sin título)' }}</strong><br>
                             <small class="text-muted">
@@ -241,7 +243,7 @@
                 {{-- Deals --}}
                 <div class="tab-pane" id="tab-deals">
                     @forelse($deals as $deal)
-                    <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                    <a href="{{ route('teamleader.deals.show', $deal->id) }}" class="tl-contact-row d-flex justify-content-between align-items-center border-bottom py-2">
                         <div>
                             <strong>{{ $deal->title ?? '(Sin título)' }}</strong><br>
                             <small class="text-muted">{{ $deal->tl_created_at?->format('d/m/Y') ?? '—' }}</small>
@@ -260,7 +262,7 @@
                                 <br><small>{{ number_format($deal->amount, 2) }} {{ $deal->currency }}</small>
                             @endif
                         </div>
-                    </div>
+                    </a>
                     @empty
                         <p class="text-muted text-center py-3">Sin deals registrados</p>
                     @endforelse
@@ -269,7 +271,7 @@
                 {{-- Facturas --}}
                 <div class="tab-pane" id="tab-invoices">
                     @forelse($invoices as $invoice)
-                    <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                    <a href="{{ route('teamleader.invoices.show', $invoice->id) }}" class="tl-contact-row d-flex justify-content-between align-items-center border-bottom py-2">
                         <div>
                             <strong>{{ $invoice->invoice_number ?? '(Sin número)' }}</strong><br>
                             <small class="text-muted">{{ $invoice->invoice_date?->format('d/m/Y') ?? '—' }}</small>
@@ -289,7 +291,7 @@
                                 <br><small>{{ number_format($invoice->total_price_incl_tax, 2) }} {{ $invoice->currency }}</small>
                             @endif
                         </div>
-                    </div>
+                    </a>
                     @empty
                         <p class="text-muted text-center py-3">Sin facturas registradas</p>
                     @endforelse
@@ -298,7 +300,12 @@
                 {{-- Documentos --}}
                 <div class="tab-pane" id="tab-docs">
                     @forelse($documents as $doc)
-                    <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                    @php
+                        $documentUrl = $doc->downloaded && $doc->s3_path
+                            ? route('teamleader.documents.download', $doc->id)
+                            : route('teamleader.documents.index', ['search' => $doc->id]);
+                    @endphp
+                    <a href="{{ $documentUrl }}" class="tl-contact-row d-flex justify-content-between align-items-center border-bottom py-2" @if($doc->downloaded && $doc->s3_path) target="_blank" rel="noopener" @endif>
                         <div>
                             <i class="fas fa-file mr-1 text-secondary"></i>
                             <strong>{{ $doc->name ?? 'Archivo' }}</strong>
@@ -313,18 +320,18 @@
                                 @endif
                             </small>
                         </div>
-                        <div>
+                        <div class="text-right">
                             @if($doc->downloaded && $doc->s3_path)
-                                <a href="{{ route('teamleader.documents.download', $doc->id) }}"
-                                   target="_blank"
-                                   class="btn btn-xs btn-outline-primary">
+                                <span class="btn btn-xs btn-outline-primary">
                                     <i class="fas fa-download"></i>
-                                </a>
+                                </span>
                             @else
-                                <span class="badge badge-warning">Pendiente</span>
+                                <span class="btn btn-xs btn-outline-secondary">
+                                    <i class="fas fa-search mr-1"></i> Ver registro
+                                </span>
                             @endif
                         </div>
-                    </div>
+                    </a>
                     @empty
                         <p class="text-muted text-center py-3">Sin documentos registrados</p>
                     @endforelse
@@ -363,6 +370,24 @@
 
 @section('css')
     <link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
+    <style>
+        .tl-contact-row {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .tl-contact-row:hover,
+        .tl-contact-row:focus {
+            color: inherit;
+            text-decoration: none;
+            background: #f8fafc;
+        }
+
+        .tl-contact-row:focus {
+            outline: 2px solid #80bdff;
+            outline-offset: -2px;
+        }
+    </style>
 @stop
 
 @section('js')

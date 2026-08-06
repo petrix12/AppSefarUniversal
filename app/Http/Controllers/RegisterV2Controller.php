@@ -62,11 +62,7 @@ class RegisterV2Controller extends Controller
                     $servicio = Servicio::where('id_hubspot', "like", $input['servicio'] . "%")->first();
                     $compras = Compras::where('id_user', $userCheck->id)->where('pagado', 0)->whereNull('deal_id')->get();
 
-                    if ($userCheck->tiene_hermanos == 1 || $userCheck->tiene_hermanos == "1" || $userCheck->tiene_hermanos == "Si") {
-                        $servicio = Servicio::where('id_hubspot', 'like', $userCheck->servicio . '% - Hermano')->get();
-                    } else {
-                        $servicio = Servicio::where('id_hubspot', "like", $userCheck->servicio . "%")->get();
-                    }
+                    $servicio = Servicio::where('id_hubspot', 'like', $userCheck->servicio . '%')->get();
 
                     $cps = json_decode(json_encode($compras), true);
 
@@ -140,7 +136,7 @@ class RegisterV2Controller extends Controller
                             'NPasaporte'  => trim($passport),
                             'PNacimiento' => trim($input['pais_de_nacimiento']),
                             'PaisNac'     => trim($input['pais_de_nacimiento']),
-                            'referido'    => trim($input['referido']),
+                            'referido'    => '',
                             'FRegistro'   => now(),
                             'FUpdate'     => now(),
                             'Usuario'     => trim($input['email']),
@@ -156,11 +152,6 @@ class RegisterV2Controller extends Controller
                     'phone'     => ['nullable', 'string', 'max:255'],
                     'pais_de_nacimiento' => ['required', 'string', 'max:255'],
                     'servicio'  => ['required', 'string'],
-                    'referido'  => ['nullable', 'string', 'max:255'],
-                    'tiene_hermanos' => ['required', 'in:0,1'],
-                    'nombre_de_familiar_realizando_procesos' => [
-                        'exclude_unless:tiene_hermanos,1', 'required', 'string', 'max:255'
-                    ],
                 ])->validate();
             } else {
                 Validator::make($input, [
@@ -201,12 +192,6 @@ class RegisterV2Controller extends Controller
                 'antepasados'      => (int)($input['antepasados'] ?? 0),
                 'vinculo_antepasados' => (int)($input['vinculo_antepasados'] ?? 0),
                 'estado_de_datos_y_documentos_de_los_antepasados' => $input['estado_de_datos_y_documentos_de_los_antepasados'] ?? null,
-
-                // referidos / familia
-                'referido_por' => $input['referido'] ?? null,
-                //'tiene_hermanos' => (int)($input['tiene_hermanos'] ?? 0),
-                //'tiene_algun_familiar_que_este_o_haya_realizado_algun_proceso_con_nosotros_' => (int)($input['tiene_hermanos'] ?? 0),
-                'nombre_de_familiar_realizando_procesos' => $input['nombre_de_familiar_realizando_procesos'] ?? null,
 
                 // contrato
                 'contrato'   => 0,
@@ -260,9 +245,6 @@ class RegisterV2Controller extends Controller
                     'pais_de_nacimiento'   => $user->pais_de_nacimiento,
                     'numero_de_pasaporte'  => $user->passport,
                     'servicio_solicitado'  => $user->servicio,
-                    'n000__referido_por__clonado_' => $user->referido_por ?? '',
-                    'tiene_algun_familiar_que_este_o_haya_realizado_algun_proceso_con_nosotros_' => $input['tiene_hermanos'] == '1' ? 'true' : 'false',
-                    'nombre_de_familiar_realizando_procesos' => $user->nombre_de_familiar_realizando_procesos ?? '',
                 ];
 
                 // Solo agregar si no es vacío o null

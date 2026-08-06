@@ -26,8 +26,6 @@
                                                     Lista de Servicios
                                                 </a>
                                             </div>
-
-                                            @include('crud.servicios.partials.catalog-fields', ['servicio' => $servicio])
                                         </div>
                                     </div>
                                 </div>
@@ -45,6 +43,8 @@
                                     
                                     <div class="shadow overflow-hidden sm:rounded-md">
                                         <div class="container">
+                                            @include('crud.servicios.partials.catalog-fields', ['servicio' => $servicio])
+
                                             <div class="md:flex ms:flex-wrap">
                                                 <div class="px-1 py-2 m-2 flex-1">    {{-- id_hubspot --}}
                                                     <div>

@@ -259,6 +259,31 @@
                             <i class="fas fa-bell" id="iconNotifyCosStatus"></i>
                             <span id="labelNotifyCosStatus">Notificar estatus al cliente</span>
                         </button>
+                        <button
+                            type="button"
+                            id="btnChangeOwner"
+                            data-bs-toggle="modal"
+                            data-bs-target="#changeOwnerModal"
+                            style="
+                                display: inline-flex;
+                                align-items: center;
+                                gap: .45rem;
+                                background: #0f172a;
+                                color: #fff;
+                                border: none;
+                                border-radius: .5rem;
+                                padding: .45rem 1rem;
+                                font-size: .83rem;
+                                font-weight: 600;
+                                cursor: pointer;
+                                transition: background .2s;
+                            "
+                            onmouseover="this.style.background='#1e293b'"
+                            onmouseout="this.style.background='#0f172a'"
+                        >
+                            <i class="fas fa-user-tag"></i>
+                            <span>Cambiar owner</span>
+                        </button>
                         @endif
                     </div>
 
@@ -285,6 +310,13 @@
                     </div>
                     @endif
 
+                    @if(session('owner_success') || session('owner_error'))
+                    <div class="alert alert-{{ session('owner_success') ? 'success' : 'danger' }} py-2 mb-3">
+                        <i class="fas {{ session('owner_success') ? 'fa-check-circle' : 'fa-exclamation-triangle' }} me-1"></i>
+                        {{ session('owner_success') ?: session('owner_error') }}
+                    </div>
+                    @endif
+
                     <script>
                     function onSyncSubmit(e) {
                         const btn   = document.getElementById('btnSync');
@@ -299,6 +331,56 @@
                         label.textContent = @json($syncLoadingLabel);
                     }
                     </script>
+
+                    @if($rolId !== 5)
+                    <div class="modal fade" id="changeOwnerModal" tabindex="-1" aria-labelledby="changeOwnerModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <form method="POST" action="{{ route('crud.users.update-owner', $user) }}" class="modal-content">
+                                @csrf
+                                @method('PATCH')
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="changeOwnerModalLabel">Cambiar owner del contacto</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label" for="owner_user_id">Owner actual</label>
+                                        <div class="form-control bg-light">
+                                            {{ $user->owner?->name ?? 'Sin owner asignado' }}
+                                            @if($user->owner?->email)
+                                                <small class="text-muted">({{ $user->owner->email }})</small>
+                                            @endif
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <label class="form-label" for="owner_user_id">Nuevo owner</label>
+                                        <select name="owner_user_id" id="owner_user_id" class="form-select" required>
+                                            <option value="">Selecciona un owner...</option>
+                                            @foreach($ownerOptions as $ownerOption)
+                                                <option value="{{ $ownerOption->user_id }}" @selected((int) ($user->owner_id ?? 0) === (int) $ownerOption->user_id)>
+                                                    {{ $ownerOption->user_name }} - {{ $ownerOption->hubspot_owner_name ?: $ownerOption->hubspot_owner_id }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    @if($ownerOptions->isEmpty())
+                                        <div class="alert alert-warning mb-0">
+                                            No hay owners activos mapeados a usuarios internos.
+                                        </div>
+                                    @endif
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-primary" @disabled($ownerOptions->isEmpty())>
+                                        <i class="fas fa-save me-1"></i> Guardar owner
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    @endif
 
                     @if($rolId !== 5)
                     <div style="
@@ -535,18 +617,20 @@
                                         'meta' => $project->custom_field_value ?: '-',
                                         'updated' => $project->tl_updated_at ?: $project->updated_at,
                                         'url' => $canViewTeamleader ? route('teamleader.projects.show', $project->id) : null,
+                                        'target' => '_blank',
                                     ];
                                 }))
-                                ->concat($tlDealsMain->map(function ($deal) {
+                                ->concat($tlDealsMain->map(function ($deal) use ($canViewTeamleader) {
                                     return [
-                                        'type' => 'Deal',
+                                        'type' => 'Negocio',
                                         'icon' => 'fa-handshake',
                                         'name' => $deal->title ?: $deal->id,
                                         'status' => $deal->status ?: '-',
                                         'amount' => $deal->amount ? number_format((float) $deal->amount, 2, ',', '.') . ' ' . ($deal->currency ?: 'EUR') : '-',
                                         'meta' => optional($deal->estimated_closing_date)->format('d/m/Y') ?: '-',
                                         'updated' => $deal->tl_updated_at ?: $deal->updated_at,
-                                        'url' => null,
+                                        'url' => $canViewTeamleader ? route('teamleader.deals.show', $deal->id) : null,
+                                        'target' => '_blank',
                                     ];
                                 }))
                                 ->concat($tlInvoicesMain->map(function ($invoice) use ($canViewTeamleader) {
@@ -559,9 +643,10 @@
                                         'meta' => optional($invoice->invoice_date)->format('d/m/Y') ?: '-',
                                         'updated' => $invoice->tl_updated_at ?: $invoice->updated_at,
                                         'url' => $canViewTeamleader ? route('teamleader.invoices.show', $invoice->id) : null,
+                                        'target' => '_blank',
                                     ];
                                 }))
-                                ->concat($tlDocumentsMain->map(function ($document) {
+                                ->concat($tlDocumentsMain->map(function ($document) use ($canViewTeamleader) {
                                     return [
                                         'type' => 'Documento',
                                         'icon' => 'fa-file-alt',
@@ -570,7 +655,12 @@
                                         'amount' => $document->readable_size,
                                         'meta' => $document->entity_type ?: '-',
                                         'updated' => $document->tl_updated_at ?: $document->updated_at,
-                                        'url' => null,
+                                        'url' => $canViewTeamleader
+                                            ? ($document->downloaded && $document->s3_path
+                                                ? route('teamleader.documents.download', $document->id)
+                                                : route('teamleader.documents.index', ['search' => $document->id]))
+                                            : null,
+                                        'target' => '_blank',
                                     ];
                                 }))
                                 ->sortByDesc(function ($row) {
@@ -607,9 +697,15 @@
                                     <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
                                         <div>
                                             <div class="small text-muted">Contacto Teamleader</div>
-                                            <div style="font-size:1rem; font-weight:800; color:#111827;">
-                                                {{ $tlContactMain->full_name ?: $tlContactMain->email ?: $tlContactMain->id }}
-                                            </div>
+                                            @if($canViewTeamleader)
+                                                <a href="{{ route('teamleader.contacts.show', $tlContactMain->id) }}" target="_blank" class="text-decoration-none" style="font-size:1rem; font-weight:800; color:#111827;">
+                                                    {{ $tlContactMain->full_name ?: $tlContactMain->email ?: $tlContactMain->id }}
+                                                </a>
+                                            @else
+                                                <div style="font-size:1rem; font-weight:800; color:#111827;">
+                                                    {{ $tlContactMain->full_name ?: $tlContactMain->email ?: $tlContactMain->id }}
+                                                </div>
+                                            @endif
                                             <div class="small text-muted">
                                                 {{ $tlContactMain->email ?: 'Sin email TL' }} | ID {{ $tlContactMain->id }}
                                             </div>
@@ -642,13 +738,21 @@
                                                 </thead>
                                                 <tbody>
                                                     @foreach($tlAssociatedRows->take(12) as $row)
-                                                        <tr>
+                                                        <tr class="{{ $row['url'] ? 'tl-associated-row is-clickable' : 'tl-associated-row' }}" @if($row['url']) data-href="{{ $row['url'] }}" data-target="{{ $row['target'] ?? '_blank' }}" tabindex="0" role="link" @endif>
                                                             <td>
                                                                 <span class="badge bg-light text-dark">
                                                                     <i class="fas {{ $row['icon'] }} me-1"></i>{{ $row['type'] }}
                                                                 </span>
                                                             </td>
-                                                            <td>{{ \Illuminate\Support\Str::limit($row['name'], 48) }}</td>
+                                                            <td>
+                                                                @if($row['url'])
+                                                                    <a href="{{ $row['url'] }}" target="{{ $row['target'] ?? '_blank' }}" class="fw-semibold text-decoration-none">
+                                                                        {{ \Illuminate\Support\Str::limit($row['name'], 48) }}
+                                                                    </a>
+                                                                @else
+                                                                    {{ \Illuminate\Support\Str::limit($row['name'], 48) }}
+                                                                @endif
+                                                            </td>
                                                             <td>{{ $row['status'] }}</td>
                                                             <td>{{ $row['amount'] }}</td>
                                                             <td class="small text-muted">{{ \Illuminate\Support\Str::limit($row['meta'], 42) }}</td>
@@ -657,7 +761,7 @@
                                                             </td>
                                                             <td class="text-end">
                                                                 @if($row['url'])
-                                                                    <a href="{{ $row['url'] }}" target="_blank" class="btn btn-xs btn-outline-secondary">
+                                                                    <a href="{{ $row['url'] }}" target="{{ $row['target'] ?? '_blank' }}" class="btn btn-xs btn-outline-secondary">
                                                                         <i class="fas fa-eye"></i>
                                                                     </a>
                                                                 @endif
@@ -2289,7 +2393,15 @@
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                                     <div>
-                                        <h4 class="mb-1">{{ $tlContact->full_name ?: '(Sin nombre en Teamleader)' }}</h4>
+                                        <h4 class="mb-1">
+                                            @if(auth()->user()->can('tl.view'))
+                                                <a href="{{ route('teamleader.contacts.show', $tlContact->id) }}" target="_blank" class="text-decoration-none">
+                                                    {{ $tlContact->full_name ?: '(Sin nombre en Teamleader)' }}
+                                                </a>
+                                            @else
+                                                {{ $tlContact->full_name ?: '(Sin nombre en Teamleader)' }}
+                                            @endif
+                                        </h4>
                                         <div class="text-muted small">
                                             ID TL: <code>{{ $tlContact->id }}</code>
                                         </div>
@@ -2338,8 +2450,15 @@
                             </thead>
                             <tbody>
                                 @foreach($tlDeals as $deal)
-                                    <tr>
-                                        <td>{{ $deal->title ?: '-' }}</td>
+                                    @php($dealUrl = auth()->user()->can('tl.view') ? route('teamleader.deals.show', $deal->id) : null)
+                                    <tr class="{{ $dealUrl ? 'tl-associated-row is-clickable' : 'tl-associated-row' }}" @if($dealUrl) data-href="{{ $dealUrl }}" data-target="_blank" tabindex="0" role="link" @endif>
+                                        <td>
+                                            @if($dealUrl)
+                                                <a href="{{ $dealUrl }}" target="_blank" class="fw-semibold text-decoration-none">{{ $deal->title ?: '-' }}</a>
+                                            @else
+                                                {{ $deal->title ?: '-' }}
+                                            @endif
+                                        </td>
                                         <td>{{ $deal->status ?: '-' }}</td>
                                         <td>{{ $deal->amount ? number_format((float) $deal->amount, 2) . ' ' . $deal->currency : '-' }}</td>
                                         <td>{{ optional($deal->estimated_closing_date)->format('d/m/Y') ?: '-' }}</td>
@@ -2362,8 +2481,15 @@
                             </thead>
                             <tbody>
                                 @foreach($tlProjects as $project)
-                                    <tr>
-                                        <td>{{ $project->title ?: '-' }}</td>
+                                    @php($projectUrl = auth()->user()->can('tl.view') ? route('teamleader.projects.show', $project->id) : null)
+                                    <tr class="{{ $projectUrl ? 'tl-associated-row is-clickable' : 'tl-associated-row' }}" @if($projectUrl) data-href="{{ $projectUrl }}" data-target="_blank" tabindex="0" role="link" @endif>
+                                        <td>
+                                            @if($projectUrl)
+                                                <a href="{{ $projectUrl }}" target="_blank" class="fw-semibold text-decoration-none">{{ $project->title ?: '-' }}</a>
+                                            @else
+                                                {{ $project->title ?: '-' }}
+                                            @endif
+                                        </td>
                                         <td>{{ $project->status ?: '-' }}</td>
                                         <td>{{ $project->custom_field_value ?: '-' }}</td>
                                         <td>{{ $project->budget_amount ? number_format((float) $project->budget_amount, 2) . ' ' . $project->budget_currency : '-' }}</td>
@@ -2386,8 +2512,15 @@
                             </thead>
                             <tbody>
                                 @foreach($tlInvoices as $invoice)
-                                    <tr>
-                                        <td>{{ $invoice->invoice_number ?: '-' }}</td>
+                                    @php($invoiceUrl = auth()->user()->can('tl.view') ? route('teamleader.invoices.show', $invoice->id) : null)
+                                    <tr class="{{ $invoiceUrl ? 'tl-associated-row is-clickable' : 'tl-associated-row' }}" @if($invoiceUrl) data-href="{{ $invoiceUrl }}" data-target="_blank" tabindex="0" role="link" @endif>
+                                        <td>
+                                            @if($invoiceUrl)
+                                                <a href="{{ $invoiceUrl }}" target="_blank" class="fw-semibold text-decoration-none">{{ $invoice->invoice_number ?: '-' }}</a>
+                                            @else
+                                                {{ $invoice->invoice_number ?: '-' }}
+                                            @endif
+                                        </td>
                                         <td>{{ $invoice->status ?: '-' }}</td>
                                         <td>{{ $invoice->total_price_incl_tax ? number_format((float) $invoice->total_price_incl_tax, 2) . ' ' . $invoice->currency : '-' }}</td>
                                         <td>{{ optional($invoice->invoice_date)->format('d/m/Y') ?: '-' }}</td>
@@ -2410,15 +2543,32 @@
                             </thead>
                             <tbody>
                                 @foreach($tlDocuments as $document)
-                                    <tr>
-                                        <td>{{ \Illuminate\Support\Str::limit($document->name ?: '-', 70) }}</td>
+                                    @php
+                                        $documentUrl = auth()->user()->can('tl.view')
+                                            ? ($document->downloaded && $document->s3_path
+                                                ? route('teamleader.documents.download', $document->id)
+                                                : route('teamleader.documents.index', ['search' => $document->id]))
+                                            : null;
+                                    @endphp
+                                    <tr class="{{ $documentUrl ? 'tl-associated-row is-clickable' : 'tl-associated-row' }}" @if($documentUrl) data-href="{{ $documentUrl }}" data-target="_blank" tabindex="0" role="link" @endif>
+                                        <td>
+                                            @if($documentUrl)
+                                                <a href="{{ $documentUrl }}" target="_blank" class="fw-semibold text-decoration-none">{{ \Illuminate\Support\Str::limit($document->name ?: '-', 70) }}</a>
+                                            @else
+                                                {{ \Illuminate\Support\Str::limit($document->name ?: '-', 70) }}
+                                            @endif
+                                        </td>
                                         <td>{{ $document->entity_type ?: '-' }}</td>
                                         <td>{{ $document->extension ?: ($document->mime_type ?: '-') }}</td>
                                         <td>{{ $document->readable_size }}</td>
                                         <td>
-                                            @if($document->downloaded && $document->s3_path && auth()->user()->can('tl.view'))
-                                                <a href="{{ route('teamleader.documents.download', $document->id) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            @if($documentUrl && $document->downloaded && $document->s3_path)
+                                                <a href="{{ $documentUrl }}" target="_blank" class="btn btn-sm btn-outline-primary">
                                                     <i class="fas fa-download me-1"></i> Ver
+                                                </a>
+                                            @elseif($documentUrl)
+                                                <a href="{{ $documentUrl }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                                    <i class="fas fa-search me-1"></i> Ver registro
                                                 </a>
                                             @else
                                                 {{ $document->downloaded ? 'Si' : 'No' }}
@@ -3127,6 +3277,12 @@
     div.dt-row {
         margin:10px 0px;
     }
+    .tl-associated-row.is-clickable {
+        cursor: pointer;
+    }
+    .tl-associated-row.is-clickable:hover {
+        background: #eef2ff;
+    }
 </style>
 @stop
 
@@ -3421,6 +3577,29 @@
                 "order": [[0, "desc"]]
             });
         }
+        const tlAssociatedOpen = function (row) {
+            const href = row.data('href');
+            if (!href) return;
+
+            const target = row.data('target') || '_blank';
+            if (target === '_self') {
+                window.location.href = href;
+                return;
+            }
+
+            window.open(href, target);
+        };
+
+        $(document).on('click', '.tl-associated-row.is-clickable', function (event) {
+            if ($(event.target).closest('a, button, input, select, textarea').length) return;
+            tlAssociatedOpen($(this));
+        });
+
+        $(document).on('keydown', '.tl-associated-row.is-clickable', function (event) {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            tlAssociatedOpen($(this));
+        });
         ['#tlDealsTable', '#tlProjectsTable', '#tlInvoicesTable', '#tlDocumentsTable'].forEach(function (selector) {
             if ($(selector).length) {
                 $(selector).DataTable({

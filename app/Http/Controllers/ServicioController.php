@@ -6,7 +6,7 @@ use App\Models\Servicio;
 use Illuminate\Http\Request;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Database\QueryException;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class ServicioController extends Controller
@@ -44,9 +44,9 @@ class ServicioController extends Controller
 
         try {
             Servicio::create($data);
-        } catch(\Illuminate\Database\QueryException $ex){
-            Alert::error('Error', 'El servicio ya existe');
-            return back();
+        } catch(QueryException $ex){
+            $this->handleQueryException($ex, 'El servicio ya existe');
+            return back()->withInput();
         }
 
         // Mensaje
@@ -92,9 +92,9 @@ class ServicioController extends Controller
 
         try {
             $servicio->save();
-        } catch(\Illuminate\Database\QueryException $ex){
-            Alert::error('Error', 'El servicio ya existe. No puedes duplicarlo.');
-            return back();
+        } catch(QueryException $ex){
+            $this->handleQueryException($ex, 'El servicio ya existe. No puedes duplicarlo.');
+            return back()->withInput();
         }
 
         // Mensaje
@@ -147,6 +147,18 @@ class ServicioController extends Controller
     {
         $id = $servicio?->id;
 
+        $request->merge([
+            'tipo' => $request->filled('tipo') ? $request->input('tipo') : 'servicio',
+            'categoria' => $request->filled('categoria') ? $request->input('categoria') : 'general',
+            'moneda' => $request->filled('moneda') ? strtoupper($request->input('moneda')) : 'EUR',
+            'tipov' => $request->filled('tipov') ? $request->input('tipov') : 0,
+            'duracion_minutos' => $request->filled('duracion_minutos') ? $request->input('duracion_minutos') : null,
+            'orden' => $request->filled('orden') ? $request->input('orden') : 0,
+            'descripcion_publica' => $request->filled('descripcion_publica') ? $request->input('descripcion_publica') : null,
+            'hubspot_pipeline_id' => $request->filled('hubspot_pipeline_id') ? $request->input('hubspot_pipeline_id') : null,
+            'hubspot_stage_id' => $request->filled('hubspot_stage_id') ? $request->input('hubspot_stage_id') : null,
+        ]);
+
         $data = $request->validate([
             'id_hubspot' => [
                 'required',
@@ -186,5 +198,21 @@ class ServicioController extends Controller
         }
 
         return $data;
+    }
+
+    private function handleQueryException(QueryException $exception, string $duplicateMessage): void
+    {
+        if (($exception->errorInfo[1] ?? null) === 1062) {
+            Alert::error('Error', $duplicateMessage);
+            return;
+        }
+
+        Log::error('No se pudo guardar el servicio', [
+            'message' => $exception->getMessage(),
+            'sql_state' => $exception->errorInfo[0] ?? null,
+            'driver_code' => $exception->errorInfo[1] ?? null,
+        ]);
+
+        Alert::error('Error', 'No se pudo guardar el servicio. Revisa los datos e intenta nuevamente.');
     }
 }
