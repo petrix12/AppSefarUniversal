@@ -2450,8 +2450,11 @@
                             </thead>
                             <tbody>
                                 @foreach($tlDeals as $deal)
-                                    @php($dealUrl = auth()->user()->can('tl.view') ? route('teamleader.deals.show', $deal->id) : null)
-                                    <tr class="{{ $dealUrl ? 'tl-associated-row is-clickable' : 'tl-associated-row' }}" @if($dealUrl) data-href="{{ $dealUrl }}" data-target="_blank" tabindex="0" role="link" @endif>
+                                    @php
+                                        $dealUrl = auth()->user()->can('tl.view') ? route('teamleader.deals.show', $deal->id) : null;
+                                        $dealRowClass = $dealUrl ? 'tl-associated-row is-clickable' : 'tl-associated-row';
+                                    @endphp
+                                    <tr class="{{ $dealRowClass }}" @if($dealUrl) data-href="{{ $dealUrl }}" data-target="_blank" tabindex="0" role="link" @endif>
                                         <td>
                                             @if($dealUrl)
                                                 <a href="{{ $dealUrl }}" target="_blank" class="fw-semibold text-decoration-none">{{ $deal->title ?: '-' }}</a>
@@ -2481,8 +2484,11 @@
                             </thead>
                             <tbody>
                                 @foreach($tlProjects as $project)
-                                    @php($projectUrl = auth()->user()->can('tl.view') ? route('teamleader.projects.show', $project->id) : null)
-                                    <tr class="{{ $projectUrl ? 'tl-associated-row is-clickable' : 'tl-associated-row' }}" @if($projectUrl) data-href="{{ $projectUrl }}" data-target="_blank" tabindex="0" role="link" @endif>
+                                    @php
+                                        $projectUrl = auth()->user()->can('tl.view') ? route('teamleader.projects.show', $project->id) : null;
+                                        $projectRowClass = $projectUrl ? 'tl-associated-row is-clickable' : 'tl-associated-row';
+                                    @endphp
+                                    <tr class="{{ $projectRowClass }}" @if($projectUrl) data-href="{{ $projectUrl }}" data-target="_blank" tabindex="0" role="link" @endif>
                                         <td>
                                             @if($projectUrl)
                                                 <a href="{{ $projectUrl }}" target="_blank" class="fw-semibold text-decoration-none">{{ $project->title ?: '-' }}</a>
@@ -2512,8 +2518,11 @@
                             </thead>
                             <tbody>
                                 @foreach($tlInvoices as $invoice)
-                                    @php($invoiceUrl = auth()->user()->can('tl.view') ? route('teamleader.invoices.show', $invoice->id) : null)
-                                    <tr class="{{ $invoiceUrl ? 'tl-associated-row is-clickable' : 'tl-associated-row' }}" @if($invoiceUrl) data-href="{{ $invoiceUrl }}" data-target="_blank" tabindex="0" role="link" @endif>
+                                    @php
+                                        $invoiceUrl = auth()->user()->can('tl.view') ? route('teamleader.invoices.show', $invoice->id) : null;
+                                        $invoiceRowClass = $invoiceUrl ? 'tl-associated-row is-clickable' : 'tl-associated-row';
+                                    @endphp
+                                    <tr class="{{ $invoiceRowClass }}" @if($invoiceUrl) data-href="{{ $invoiceUrl }}" data-target="_blank" tabindex="0" role="link" @endif>
                                         <td>
                                             @if($invoiceUrl)
                                                 <a href="{{ $invoiceUrl }}" target="_blank" class="fw-semibold text-decoration-none">{{ $invoice->invoice_number ?: '-' }}</a>
@@ -2549,8 +2558,9 @@
                                                 ? route('teamleader.documents.download', $document->id)
                                                 : route('teamleader.documents.index', ['search' => $document->id]))
                                             : null;
+                                        $documentRowClass = $documentUrl ? 'tl-associated-row is-clickable' : 'tl-associated-row';
                                     @endphp
-                                    <tr class="{{ $documentUrl ? 'tl-associated-row is-clickable' : 'tl-associated-row' }}" @if($documentUrl) data-href="{{ $documentUrl }}" data-target="_blank" tabindex="0" role="link" @endif>
+                                    <tr class="{{ $documentRowClass }}" @if($documentUrl) data-href="{{ $documentUrl }}" data-target="_blank" tabindex="0" role="link" @endif>
                                         <td>
                                             @if($documentUrl)
                                                 <a href="{{ $documentUrl }}" target="_blank" class="fw-semibold text-decoration-none">{{ \Illuminate\Support\Str::limit($document->name ?: '-', 70) }}</a>
@@ -2637,7 +2647,9 @@
                                                 <div class="col-md-4"><b>Seguimiento:</b><br>{{ $clientTask->follow_up_date ? $clientTask->follow_up_date->format('d/m/Y') : '-' }}</div>
                                                 <div class="col-md-6"><b>Etiquetas:</b><br>
                                                     @forelse($clientTask->sales_tags ?? [] as $tag)
-                                                        @php($tagMeta = \App\Models\Task::salesTagOptions()[$tag] ?? null)
+                                                        @php
+                                                            $tagMeta = \App\Models\Task::salesTagOptions()[$tag] ?? null;
+                                                        @endphp
                                                         @if($tagMeta)
                                                             <span class="badge bg-secondary">{{ $tagMeta['label'] }}</span>
                                                         @endif
