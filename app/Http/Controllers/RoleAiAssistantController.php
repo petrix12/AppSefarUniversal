@@ -49,6 +49,7 @@ class RoleAiAssistantController extends Controller
         $data = $request->validate([
             'session_id' => ['required', 'string'],
             'mensaje' => ['required', 'string', 'max:4000'],
+            'screen_context' => ['nullable', 'string', 'max:8000'],
         ]);
 
         $session = RoleAiChatSession::with('assistant.role')
@@ -69,7 +70,12 @@ class RoleAiAssistantController extends Controller
         }
 
         try {
-            $answer = $this->assistants->reply($session, $request->user(), $data['mensaje']);
+            $answer = $this->assistants->reply(
+                $session,
+                $request->user(),
+                $data['mensaje'],
+                $data['screen_context'] ?? null
+            );
         } catch (Throwable $exception) {
             report($exception);
 

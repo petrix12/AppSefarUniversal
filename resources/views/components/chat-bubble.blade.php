@@ -367,6 +367,91 @@
             messages.scrollTop = messages.scrollHeight;
         }
 
+        function normalizeVisibleText(value) {
+            return (value || '').replace(/\s+/g, ' ').trim();
+        }
+
+        function elementIsVisibleInViewport(element) {
+            if (!element || element.nodeType !== Node.ELEMENT_NODE) return false;
+            if (element.closest('#role-ai-chat')) return false;
+
+            const tagName = element.tagName.toLowerCase();
+            if (['script', 'style', 'noscript', 'template', 'meta', 'link'].includes(tagName)) return false;
+
+            const style = window.getComputedStyle(element);
+            if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+
+            const rect = element.getBoundingClientRect();
+            if (!rect.width || !rect.height) return false;
+
+            return rect.bottom >= 0
+                && rect.right >= 0
+                && rect.top <= (window.innerHeight || document.documentElement.clientHeight)
+                && rect.left <= (window.innerWidth || document.documentElement.clientWidth);
+        }
+
+        function collectVisibleScreenContext() {
+            const maxLength = 7000;
+            const lines = [];
+            const seen = new Set();
+
+            function pushLine(value) {
+                const text = normalizeVisibleText(value);
+                if (!text || seen.has(text)) return;
+
+                seen.add(text);
+                lines.push(text);
+            }
+
+            const walker = document.createTreeWalker(
+                document.body,
+                NodeFilter.SHOW_TEXT,
+                {
+                    acceptNode(node) {
+                        const parent = node.parentElement;
+                        const text = normalizeVisibleText(node.nodeValue);
+
+                        if (!text || text.length < 2 || !elementIsVisibleInViewport(parent)) {
+                            return NodeFilter.FILTER_REJECT;
+                        }
+
+                        return NodeFilter.FILTER_ACCEPT;
+                    },
+                }
+            );
+
+            while (walker.nextNode()) {
+                pushLine(walker.currentNode.nodeValue);
+
+                if (lines.join('\n').length >= maxLength) break;
+            }
+
+            document.querySelectorAll('input, textarea, select').forEach(field => {
+                if (!elementIsVisibleInViewport(field)) return;
+
+                const type = (field.getAttribute('type') || '').toLowerCase();
+                if (['password', 'hidden', 'file'].includes(type)) return;
+
+                const label = field.labels && field.labels.length
+                    ? Array.from(field.labels).map(item => item.textContent).join(' ')
+                    : field.getAttribute('aria-label') || field.getAttribute('name') || field.getAttribute('placeholder') || '';
+
+                let value = '';
+                if (field.tagName.toLowerCase() === 'select') {
+                    value = field.options[field.selectedIndex]?.text || '';
+                } else if (['checkbox', 'radio'].includes(type)) {
+                    value = field.checked ? 'seleccionado' : 'no seleccionado';
+                } else {
+                    value = field.value || '';
+                }
+
+                const line = [label, value].map(normalizeVisibleText).filter(Boolean).join(': ');
+                pushLine(line);
+            });
+
+            return lines.join('\n').slice(0, maxLength);
+        }
+
         function updateHeader() {
             if (!currentAssistant) return;
 
@@ -505,7 +590,11 @@
 
             request('{{ route('role-ai.messages.store') }}', {
                 method: 'POST',
-                body: JSON.stringify({ session_id: sessionId, mensaje: content }),
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    mensaje: content,
+                    screen_context: collectVisibleScreenContext(),
+                }),
             })
                 .then(data => appendMessage(data.mensaje_bot || 'Sin respuesta.', 'assistant'))
                 .catch(error => showAlert(error.message))
