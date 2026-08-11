@@ -763,6 +763,13 @@ return [
                     'can'           => 'administrador',
                 ],
                 [
+                    'text'          => 'Asistentes IA por rol',
+                    'icon'          => 'fa-fw fas fa-robot',
+                    'icon_color'    => 'white',
+                    'route'         => 'admin.role-ai-assistants.index',
+                    'can'           => 'administrador',
+                ],
+                [
                     'text'        => 'Herramientas del COS',
                     'icon'        => 'fa-fw fas fa-cogs',
                     'icon_color'  => 'white',

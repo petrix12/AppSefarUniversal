@@ -86,6 +86,8 @@ use App\Http\Controllers\TeamleaderCronController;
 use App\Http\Controllers\TeamleaderJobController;
 use App\Http\Controllers\TaskCronController;
 use App\Http\Controllers\JotformCouponCronController;
+use App\Http\Controllers\RoleAiAssistantController;
+use App\Http\Controllers\AdminRoleAiAssistantController;
 
 Route::get('/internal/tasks/daily-workflow', InternalTaskWorkflowController::class)
     ->name('internal.tasks.daily-workflow');
@@ -121,6 +123,28 @@ Route::middleware(['auth'])
         Route::get('/', [ClientNotificationController::class, 'index'])->name('index');
         Route::patch('/{notification}/read', [ClientNotificationController::class, 'markAsRead'])->name('read');
         Route::post('/read-all', [ClientNotificationController::class, 'markAllAsRead'])->name('read-all');
+    });
+
+Route::middleware(['auth', 'can:notCliente'])
+    ->prefix('role-ai')
+    ->name('role-ai.')
+    ->group(function () {
+        Route::get('/access', [RoleAiAssistantController::class, 'access'])->name('access');
+        Route::post('/sessions', [RoleAiAssistantController::class, 'start'])->name('sessions.store');
+        Route::post('/messages', [RoleAiAssistantController::class, 'message'])->name('messages.store');
+        Route::get('/knowledge', [RoleAiAssistantController::class, 'knowledge'])->name('knowledge.index');
+        Route::post('/knowledge', [RoleAiAssistantController::class, 'train'])->name('knowledge.store');
+    });
+
+Route::middleware(['auth', 'can:administrador'])
+    ->prefix('admin/role-ai-assistants')
+    ->name('admin.role-ai-assistants.')
+    ->group(function () {
+        Route::get('/', [AdminRoleAiAssistantController::class, 'index'])->name('index');
+        Route::get('/{assistant}', [AdminRoleAiAssistantController::class, 'show'])->name('show');
+        Route::put('/{assistant}', [AdminRoleAiAssistantController::class, 'update'])->name('update');
+        Route::patch('/{assistant}/knowledge/{knowledgeEntry}/archive', [AdminRoleAiAssistantController::class, 'archiveKnowledge'])->name('knowledge.archive');
+        Route::patch('/{assistant}/knowledge/{knowledgeEntry}/restore', [AdminRoleAiAssistantController::class, 'restoreKnowledge'])->name('knowledge.restore');
     });
 
 Route::get('/api/contacts/search', [App\Http\Controllers\Api\ContactSearchController::class, 'search'])

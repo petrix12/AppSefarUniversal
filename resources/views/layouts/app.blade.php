@@ -86,7 +86,7 @@
         <!-- Start of HubSpot Embed Code -->
         <script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/20053496.js"></script>
         <!-- End of HubSpot Embed Code -->
-        @if(auth()->user() && auth()->user()->hasRole('Administrador'))
+        @if(auth()->user() && ! auth()->user()->hasRole('Cliente'))
             <x-chat-bubble />
         @endif
 

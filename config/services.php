@@ -55,6 +55,16 @@ return [
         'cron_token' => env('JOTFORM_CRON_TOKEN'),
     ],
 
+    'openrouter' => [
+        'key' => env('OPENROUTER_API_KEY'),
+        'url' => 'https://openrouter.ai/api/v1/chat/completions',
+        'model' => 'openai/gpt-4o-mini',
+        'timeout' => 45,
+        'temperature' => 0.2,
+        'max_tokens' => 900,
+        'role_ai_session_minutes' => 120,
+    ],
+
     'tasks_daily_workflow' => [
         'token' => env('TASKS_DAILY_WORKFLOW_TOKEN'),
     ],

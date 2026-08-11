@@ -24,7 +24,7 @@ class ChatBubble extends Component
     public function render()
     {
         // Solo renderizar el componente si el usuario está autenticado
-        if (auth()->check()) {
+        if (auth()->check() && ! auth()->user()->hasRole('Cliente')) {
             return view('components.chat-bubble');
         }
 
