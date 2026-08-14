@@ -4070,6 +4070,10 @@ class ClienteController extends Controller
 
                 $this->registrarVentaEnMonday($customer, $paymentIntent, $monto, $compras);
 
+                if ($this->hasAuditoriaProcedimientosPurchase($compras)) {
+                    $this->registrarAuditoriaEtiquetadoVentasSefar($monto, $compras, 'Stripe', $customer->id, $paymentIntent->id);
+                }
+
                 // Actualizar HubSpot
                 try {
                     $filter = new \HubSpot\Client\Crm\Contacts\Model\Filter();
@@ -4541,7 +4545,10 @@ class ClienteController extends Controller
             return false;
         }
 
-        return $this->registrarVentaPostPagoEnMonday($monto, $compras, $formaPago, $clienteRef, $pagoRef);
+        $registradoEnVentas = $this->registrarVentaPostPagoEnMonday($monto, $compras, $formaPago, $clienteRef, $pagoRef);
+        $registradoEnEtiquetado = $this->registrarAuditoriaEtiquetadoVentasSefar($monto, $compras, $formaPago, $clienteRef, $pagoRef);
+
+        return $registradoEnVentas && $registradoEnEtiquetado;
     }
 
     private function registrarVentaPostPagoEnMonday($monto, $compras, string $formaPago, ?string $clienteRef = null, ?string $pagoRef = null): bool
@@ -4637,6 +4644,120 @@ class ClienteController extends Controller
             return true;
         } catch (\Throwable $e) {
             \Log::error('Error registrando venta post-pago en Monday.com: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'monto' => $monto,
+                'forma_pago' => $formaPago,
+                'servicios' => collect($compras)->pluck('servicio_hs_id')->all(),
+            ]);
+
+            return false;
+        }
+    }
+
+    private function registrarAuditoriaEtiquetadoVentasSefar($monto, $compras, string $formaPago, ?string $clienteRef = null, ?string $pagoRef = null): bool
+    {
+        try {
+            $token = env('MONDAY_TOKEN');
+
+            if (! $token) {
+                throw new \Exception('Falta MONDAY_TOKEN');
+            }
+
+            $user = auth()->user();
+            $comprasCollection = collect($compras)->values();
+            $serviceName = 'Auditoría de Procedimientos';
+            $serviciosFactura = $comprasCollection
+                ->map(function ($compra) {
+                    $servicioHsId = data_get($compra, 'servicio_hs_id');
+
+                    return $this->isAuditoriaProcedimientos($servicioHsId)
+                        ? 'Auditoría de Procedimientos'
+                        : $servicioHsId;
+                })
+                ->filter()
+                ->implode(', ');
+
+            $clientName = trim(($user->apellidos ?? '') . ' ' . ($user->nombres ?? '')) ?: $user->name;
+            $link = $user->passport ? 'https://app.sefaruniversal.com/tree/' . $user->passport : null;
+            $referencias = trim(
+                "Forma de pago: {$formaPago} | Monto: {$monto} | "
+                . ($clienteRef ? "ID Cliente: {$clienteRef} | " : '')
+                . ($pagoRef ? "ID Pago/Factura: {$pagoRef} | " : '')
+                . "Servicios: {$serviciosFactura}",
+                ' |'
+            );
+
+            $columnValues = [
+                'texto' => $user->passport ?? 'N/A',
+                'estado2' => 'SI',
+                'fecha' => Carbon::now()->format('Y-m-d'),
+                'status' => 'Ventas',
+                'texto_largo' => $referencias,
+                'servicio_solicitado' => $serviceName,
+                'servicio_solicitado35' => $serviceName,
+                'texto6' => $user->hs_id ?? '',
+            ];
+
+            if ($link) {
+                $columnValues['enlace'] = ['url' => $link, 'text' => $link];
+            }
+
+            if (! empty($user->nombre_de_familiar_realizando_procesos)) {
+                $columnValues['texto_largo2'] = $user->nombre_de_familiar_realizando_procesos;
+            }
+
+            if (! empty($user->date_of_birth)) {
+                $columnValues['fecha75'] = ['date' => Carbon::parse($user->date_of_birth)->format('Y-m-d')];
+            }
+
+            $query = 'mutation ($myItemName: String!, $columnVals: JSON!) {
+                create_item (
+                    board_id: 765394861,
+                    group_id: "grupo_nuevo_mkmvznae",
+                    item_name: $myItemName,
+                    column_values: $columnVals
+                ) {
+                    id
+                    name
+                }
+            }';
+
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'Authorization' => $token,
+            ])->post('https://api.monday.com/v2', [
+                'query' => $query,
+                'variables' => [
+                    'myItemName' => $clientName,
+                    'columnVals' => json_encode($columnValues),
+                ],
+            ]);
+
+            $responseData = $response->json();
+
+            if (! $response->successful() || ! empty($responseData['errors'])) {
+                throw new \Exception('Error de Monday.com: ' . json_encode($responseData['errors'] ?? $responseData));
+            }
+
+            $mondayItemId = data_get($responseData, 'data.create_item.id');
+
+            if ($mondayItemId && empty($user->monday_id)) {
+                User::where('id', $user->id)->update(['monday_id' => $mondayItemId]);
+            }
+
+            \Log::info('Auditoria de Procedimientos registrada en ETIQUETADO VENTAS SEFAR', [
+                'board_id' => 765394861,
+                'item_name' => $clientName,
+                'monday_item_id' => $mondayItemId,
+                'user_id' => $user->id,
+                'passport' => $user->passport,
+                'monto' => $monto,
+                'forma_pago' => $formaPago,
+            ]);
+
+            return true;
+        } catch (\Throwable $e) {
+            \Log::error('Error registrando Auditoria de Procedimientos en ETIQUETADO VENTAS SEFAR: ' . $e->getMessage(), [
                 'user_id' => auth()->id(),
                 'monto' => $monto,
                 'forma_pago' => $formaPago,

@@ -187,6 +187,8 @@ class RegisterV2Controller extends Controller
             // -------------------------
             // COMPRAS / FACTURAS
             // -------------------------
+            $registrarAuditoriaFormularioPostPagoEnMonday = false;
+
             if (($input['pay'] ?? '0') === '1') {
                 $descripcionCompra = $this->isAuditoriaProcedimientos($servicio->id_hubspot)
                     ? $servicio->nombre
@@ -218,9 +220,7 @@ class RegisterV2Controller extends Controller
                     'hash_factura' => $hash_factura,
                 ]);
 
-                if ($this->isAuditoriaProcedimientos($servicio->id_hubspot)) {
-                    $this->registrarAuditoriaFormularioEnMonday($user, $compra, $servicio, $hash_factura);
-                }
+                $registrarAuditoriaFormularioPostPagoEnMonday = $this->isAuditoriaProcedimientos($servicio->id_hubspot);
             }
 
             // -------------------------
@@ -256,6 +256,11 @@ class RegisterV2Controller extends Controller
             // Guardar el ID en el usuario
             $user->hs_id = $hsId;
             $user->save();
+
+            if ($registrarAuditoriaFormularioPostPagoEnMonday) {
+                $this->registrarAuditoriaFormularioEnMonday($user, $compra, $servicio, $hash_factura);
+                $this->registrarAuditoriaFormularioEtiquetadoVentasSefar($user, $compra, $servicio, $hash_factura);
+            }
 
             // -------------------------
             // NOTIFICACIONES
@@ -434,6 +439,102 @@ class RegisterV2Controller extends Controller
             ]);
         } catch (\Throwable $e) {
             \Log::error('Error conectando con Monday para Auditoria de Procedimientos', [
+                'user_id' => $user->id,
+                'hash_factura' => $hashFactura,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    private function registrarAuditoriaFormularioEtiquetadoVentasSefar(User $user, Compras $compra, Servicio $servicio, string $hashFactura): void
+    {
+        $token = env('MONDAY_TOKEN');
+
+        if (! $token) {
+            \Log::warning('No se registro Auditoria de Procedimientos en ETIQUETADO VENTAS SEFAR: falta MONDAY_TOKEN', [
+                'user_id' => $user->id,
+                'hash_factura' => $hashFactura,
+            ]);
+
+            return;
+        }
+
+        $serviceName = 'Auditoría de Procedimientos';
+        $clientName = trim(($user->apellidos ?? '') . ' ' . ($user->nombres ?? '')) ?: $user->name;
+        $link = $user->passport ? 'https://app.sefaruniversal.com/tree/' . $user->passport : null;
+        $columnValues = [
+            'texto' => $user->passport ?? 'N/A',
+            'estado2' => 'SI',
+            'fecha' => now()->format('Y-m-d'),
+            'status' => 'Ventas',
+            'texto_largo' => "Forma de pago: Formulario | Monto: {$compra->monto} | Factura: {$hashFactura} | Servicios: {$serviceName}",
+            'servicio_solicitado' => $serviceName,
+            'servicio_solicitado35' => $serviceName,
+            'texto6' => $user->hs_id ?? '',
+        ];
+
+        if ($link) {
+            $columnValues['enlace'] = ['url' => $link, 'text' => $link];
+        }
+
+        if (! empty($user->nombre_de_familiar_realizando_procesos)) {
+            $columnValues['texto_largo2'] = $user->nombre_de_familiar_realizando_procesos;
+        }
+
+        if (! empty($user->date_of_birth)) {
+            $columnValues['fecha75'] = ['date' => \Carbon\Carbon::parse($user->date_of_birth)->format('Y-m-d')];
+        }
+
+        $query = 'mutation ($myItemName: String!, $columnVals: JSON!) {
+            create_item (
+                board_id: 765394861,
+                group_id: "grupo_nuevo_mkmvznae",
+                item_name: $myItemName,
+                column_values: $columnVals
+            ) {
+                id
+                name
+            }
+        }';
+
+        try {
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'Authorization' => $token,
+            ])->post('https://api.monday.com/v2', [
+                'query' => $query,
+                'variables' => [
+                    'myItemName' => $clientName,
+                    'columnVals' => json_encode($columnValues),
+                ],
+            ]);
+
+            $responseData = $response->json();
+
+            if (! $response->successful() || ! empty($responseData['errors'])) {
+                \Log::error('Error registrando Auditoria de Procedimientos en ETIQUETADO VENTAS SEFAR', [
+                    'user_id' => $user->id,
+                    'hash_factura' => $hashFactura,
+                    'status' => $response->status(),
+                    'response' => $responseData,
+                ]);
+
+                return;
+            }
+
+            $mondayItemId = data_get($responseData, 'data.create_item.id');
+
+            if ($mondayItemId && empty($user->monday_id)) {
+                $user->forceFill(['monday_id' => $mondayItemId])->save();
+            }
+
+            \Log::info('Auditoria de Procedimientos registrada en ETIQUETADO VENTAS SEFAR', [
+                'user_id' => $user->id,
+                'hash_factura' => $hashFactura,
+                'monday_item_id' => $mondayItemId,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error conectando con ETIQUETADO VENTAS SEFAR para Auditoria de Procedimientos', [
                 'user_id' => $user->id,
                 'hash_factura' => $hashFactura,
                 'error' => $e->getMessage(),
