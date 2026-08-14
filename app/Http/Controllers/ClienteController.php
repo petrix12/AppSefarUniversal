@@ -1895,18 +1895,9 @@ class ClienteController extends Controller
 
             $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
 
-            $servicios = "";
+            $servicios = $this->mondayAnalysisServicesText($productos);
 
-            foreach ($productos as $key => $value) {
-                $servicios = $servicios . $value["servicio_hs_id"];
-                if ($key != count($productos)-1){
-                    $servicios = $servicios . ", ";
-                }
-            }
-
-            $hasLmdService = collect($productos)->contains(function ($compra) {
-                return $this->normalizeServiceName(data_get($compra, 'servicio_hs_id')) === 'espanola lmd';
-            });
+            $hasLmdService = $this->hasLmdService($productos);
 
             if (! $this->shouldCreateGenealogyMondayItem($productos) && ! $hasLmdService) {
                 return response()->json([
@@ -2033,7 +2024,7 @@ class ClienteController extends Controller
                         $desc = $desc . " + (Consulta Gratuita)";
                     }
                 }
-            } elseif ( auth()->user()->servicio == "Gestión Documental" ) {
+            } elseif ( auth()->user()->servicio == "Gestión Documental" || $this->isAuditoriaProcedimientos(auth()->user()->servicio) ) {
                 $desc = $hss[0]["nombre"];
             } elseif ($servicio[0]['tipov'] == 1) {
                 $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
@@ -2103,7 +2094,7 @@ class ClienteController extends Controller
                         $desc = $desc . " + (Consulta Gratuita)";
                     }
                 }
-            } elseif ( auth()->user()->servicio == "Gestión Documental" ) {
+            } elseif ( auth()->user()->servicio == "Gestión Documental" || $this->isAuditoriaProcedimientos(auth()->user()->servicio) ) {
                 $desc = $hss[0]["nombre"];
             } elseif ($servicio[0]['tipov'] == 1) {
                 $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
@@ -2221,6 +2212,7 @@ class ClienteController extends Controller
 
                     $this->finalizeCatalogPurchases($compras, $hash_factura);
                     $this->registerReferralSale($referralCode, $hash_factura, $compras, 0);
+                    $this->registrarAuditoriaPostPagoEnMonday($compras, 0, 'Cupón', null, $hash_factura);
 
                     if (isset($datos[0]["id_pago"])){
                         if(is_array(json_decode($datos[0]["id_pago"],true))) {
@@ -2384,14 +2376,7 @@ class ClienteController extends Controller
 
                         $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
 
-                        $servicios = "";
-
-                        foreach ($productos as $key => $value) {
-                            $servicios = $servicios . $value["servicio_hs_id"];
-                            if ($key != count($productos)-1){
-                                $servicios = $servicios . ", ";
-                            }
-                        }
+                        $servicios = $this->mondayAnalysisServicesText($productos);
 
                         $token = env('MONDAY_TOKEN');
                         $apiUrl = 'https://api.monday.com/v2';
@@ -2489,6 +2474,7 @@ class ClienteController extends Controller
 
         $this->finalizeCatalogPurchases($compras, $hash_factura);
         $this->registerReferralSale($referralCode, $hash_factura, $compras, $monto);
+        $this->registrarAuditoriaPostPagoEnMonday($compras, $monto, 'PayPal', null, $hash_factura);
 
         $cargostemp = [];
 
@@ -2674,14 +2660,7 @@ class ClienteController extends Controller
 
             $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
 
-            $servicios = "";
-
-            foreach ($productos as $key => $value) {
-                $servicios = $servicios . $value["servicio_hs_id"];
-                if ($key != count($productos)-1){
-                    $servicios = $servicios . ", ";
-                }
-            }
+            $servicios = $this->mondayAnalysisServicesText($productos);
 
             $token = env('MONDAY_TOKEN');
             $apiUrl = 'https://api.monday.com/v2';
@@ -3159,6 +3138,7 @@ class ClienteController extends Controller
 
                 $this->finalizeCatalogPurchases($compras, $hash_factura, $charged->id);
                 $this->registerReferralSale($referralCode, $hash_factura, $compras, $monto);
+                $this->registrarAuditoriaPostPagoEnMonday($compras, $monto, 'Stripe', $charged->customer, $charged->id);
 
                 $cargostemp = [];
 
@@ -3347,14 +3327,7 @@ class ClienteController extends Controller
 
                     $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
 
-                    $servicios = "";
-
-                    foreach ($productos as $key => $value) {
-                        $servicios = $servicios . $value["servicio_hs_id"];
-                        if ($key != count($productos)-1){
-                            $servicios = $servicios . ", ";
-                        }
-                    }
+                    $servicios = $this->mondayAnalysisServicesText($productos);
 
                     $token = env('MONDAY_TOKEN');
                     $apiUrl = 'https://api.monday.com/v2';
@@ -4249,13 +4222,7 @@ class ClienteController extends Controller
                         $datos_factura = DB::select($query);
                         $productos = Compras::where("hash_factura", $datos_factura[0]->hash_factura)->get();
 
-                        $servicios = "";
-                        foreach ($productos as $key => $value) {
-                            $servicios .= $value->servicio_hs_id;
-                            if ($key != count($productos) - 1) {
-                                $servicios .= ", ";
-                            }
-                        }
+                        $servicios = $this->mondayAnalysisServicesText($productos);
 
                         $token = env('MONDAY_TOKEN');
                         $apiUrl = 'https://api.monday.com/v2';
@@ -4423,8 +4390,21 @@ class ClienteController extends Controller
             && str_contains($normalized, 'procedimiento');
     }
 
-    private function shouldCreateGenealogyMondayItem($compras): bool
+    private function hasLmdService($compras): bool
     {
+        return collect($compras)->contains(function ($compra) {
+            return $this->normalizeServiceName(data_get($compra, 'servicio_hs_id')) === 'espanola lmd';
+        });
+    }
+
+    private function isGenealogyAnalysisService($compra): bool
+    {
+        $serviceId = data_get($compra, 'servicio_hs_id');
+
+        if (! filled($serviceId) || $this->isAuditoriaProcedimientos($serviceId)) {
+            return false;
+        }
+
         $genealogyServices = [
             'arbol genealogico de deslinde',
             'acumulacion de linajes',
@@ -4433,32 +4413,34 @@ class ClienteController extends Controller
             'gestion documental',
         ];
 
-        $items = collect($compras)->filter(fn ($compra) => filled(data_get($compra, 'servicio_hs_id')));
+        $servicio = $compra instanceof Compras
+            ? ($compra->servicio ?: Servicio::where('id_hubspot', $serviceId)->first())
+            : Servicio::where('id_hubspot', $serviceId)->first();
 
-        if ($items->isEmpty()) {
-            return false;
-        }
+        return in_array($this->normalizeServiceName($serviceId), $genealogyServices, true)
+            || (int) ($servicio->tipov ?? 0) === 1;
+    }
 
-        foreach ($items as $compra) {
-            $serviceId = data_get($compra, 'servicio_hs_id');
+    private function shouldCreateGenealogyMondayItem($compras): bool
+    {
+        return collect($compras)->contains(function ($compra) {
+            return $this->isGenealogyAnalysisService($compra);
+        });
+    }
 
-            if ($this->isAuditoriaProcedimientos($serviceId)) {
-                return false;
-            }
+    private function mondayAnalysisServicesText($compras): string
+    {
+        return collect($compras)
+            ->filter(function ($compra) {
+                $serviceId = data_get($compra, 'servicio_hs_id');
 
-            $servicio = $compra instanceof Compras
-                ? ($compra->servicio ?: Servicio::where('id_hubspot', $serviceId)->first())
-                : Servicio::where('id_hubspot', $serviceId)->first();
-
-            $isGenealogyService = in_array($this->normalizeServiceName($serviceId), $genealogyServices, true)
-                || (int) ($servicio->tipov ?? 0) === 1;
-
-            if (! $isGenealogyService) {
-                return false;
-            }
-        }
-
-        return true;
+                return $this->isGenealogyAnalysisService($compra)
+                    || $this->normalizeServiceName($serviceId) === 'espanola lmd';
+            })
+            ->map(fn ($compra) => data_get($compra, 'servicio_hs_id'))
+            ->filter()
+            ->values()
+            ->implode(', ');
     }
 
     /**
@@ -4467,7 +4449,7 @@ class ClienteController extends Controller
     protected function mapearServicioParaMonday($servicio)
     {
         if ($this->isAuditoriaProcedimientos($servicio)) {
-            return 'Auditoría de Procedimientos';
+            return 'Auditoría de Procesos';
         }
 
         // Mapeo completo de servicios
@@ -4546,6 +4528,125 @@ class ClienteController extends Controller
         return 'Registro';
     }
 
+    private function hasAuditoriaProcedimientosPurchase($compras): bool
+    {
+        return collect($compras)->contains(function ($compra) {
+            return $this->isAuditoriaProcedimientos(data_get($compra, 'servicio_hs_id'));
+        });
+    }
+
+    private function registrarAuditoriaPostPagoEnMonday($compras, float $monto, string $formaPago, ?string $clienteRef = null, ?string $pagoRef = null): bool
+    {
+        if (! $this->hasAuditoriaProcedimientosPurchase($compras)) {
+            return false;
+        }
+
+        return $this->registrarVentaPostPagoEnMonday($monto, $compras, $formaPago, $clienteRef, $pagoRef);
+    }
+
+    private function registrarVentaPostPagoEnMonday($monto, $compras, string $formaPago, ?string $clienteRef = null, ?string $pagoRef = null): bool
+    {
+        try {
+            $token = env('MONDAY_TOKEN');
+
+            if (! $token) {
+                throw new \Exception('Falta MONDAY_TOKEN');
+            }
+
+            $user = auth()->user();
+            $comprasCollection = collect($compras)->values();
+            $serviciosDescripcion = '';
+            $serviciosMapeados = [];
+
+            foreach ($comprasCollection as $key => $compra) {
+                $servicioHsId = data_get($compra, 'servicio_hs_id');
+                $servicioMapeado = $this->mapearServicioParaMonday($servicioHsId);
+                $serviciosMapeados[] = $servicioMapeado;
+
+                $serviciosDescripcion .= $this->isAuditoriaProcedimientos($servicioHsId)
+                    ? 'Auditoría de Procedimientos'
+                    : $servicioMapeado;
+
+                if ($key !== $comprasCollection->count() - 1) {
+                    $serviciosDescripcion .= ', ';
+                }
+            }
+
+            $itemName = $comprasCollection->count() > 1
+                ? 'Compra Múltiple - ' . $user->name
+                : $serviciosDescripcion;
+
+            $referencias = trim(
+                ($clienteRef ? "ID Cliente: {$clienteRef} | " : '')
+                . ($pagoRef ? "ID Pago: {$pagoRef} | " : '')
+                . "Servicios: {$serviciosDescripcion}",
+                ' |'
+            );
+
+            $columnValues = [
+                'text_mkqswz4p' => $user->name,
+                'text_mkzaptd3' => $user->passport ?? 'N/A',
+                'date' => Carbon::now()->format('Y-m-d'),
+                'text_mkrd13sa' => $formaPago,
+                'dropdown_mkt4dwyq' => $serviciosMapeados[0] ?? 'Registro',
+                'numeric_mkqsn730' => $monto,
+                'text_mkza4s9z' => $referencias,
+            ];
+
+            $query = 'mutation ($myItemName: String!, $columnVals: JSON!) {
+                create_item (
+                    board_id: 18393840903,
+                    group_id: "group_mkzadajd",
+                    item_name: $myItemName,
+                    column_values: $columnVals
+                ) {
+                    id
+                    name
+                }
+            }';
+
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'Authorization' => $token,
+            ])->post('https://api.monday.com/v2', [
+                'query' => $query,
+                'variables' => [
+                    'myItemName' => $itemName,
+                    'columnVals' => json_encode($columnValues),
+                ],
+            ]);
+
+            $responseData = $response->json();
+
+            if (! $response->successful() || ! empty($responseData['errors'])) {
+                throw new \Exception('Error de Monday.com: ' . json_encode($responseData['errors'] ?? $responseData));
+            }
+
+            \Log::info('Venta registrada en Monday.com post-pago', [
+                'board_id' => 18393840903,
+                'item_name' => $itemName,
+                'monday_item_id' => data_get($responseData, 'data.create_item.id'),
+                'user_id' => $user->id,
+                'passport' => $user->passport,
+                'monto' => $monto,
+                'forma_pago' => $formaPago,
+                'servicios_originales' => $comprasCollection->pluck('servicio_hs_id')->all(),
+                'servicios_mapeados' => $serviciosMapeados,
+            ]);
+
+            return true;
+        } catch (\Throwable $e) {
+            \Log::error('Error registrando venta post-pago en Monday.com: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'monto' => $monto,
+                'forma_pago' => $formaPago,
+                'servicios' => collect($compras)->pluck('servicio_hs_id')->all(),
+            ]);
+
+            return false;
+        }
+    }
+
     /**
      * Registra la venta en el tablero de Monday.com "Ventas 2026"
      *
@@ -4574,9 +4675,12 @@ class ClienteController extends Controller
             foreach ($compras as $key => $compra) {
                 // Mapear el servicio
                 $servicioMapeado = $this->mapearServicioParaMonday($compra->servicio_hs_id);
+                $servicioDescripcion = $this->isAuditoriaProcedimientos($compra->servicio_hs_id)
+                    ? 'Auditoría de Procedimientos'
+                    : $servicioMapeado;
                 $serviciosMapeados[] = $servicioMapeado;
 
-                $serviciosDescripcion .= $servicioMapeado;
+                $serviciosDescripcion .= $servicioDescripcion;
                 if ($key != count($compras) - 1) {
                     $serviciosDescripcion .= ", ";
                 }
@@ -4852,7 +4956,7 @@ class ClienteController extends Controller
                             $desc = $desc . " + (Consulta Gratuita)";
                         }
                     }
-                } elseif ( $userdata[0]["servicio"] == "Gestión Documental" ) {
+                } elseif ( $userdata[0]["servicio"] == "Gestión Documental" || $this->isAuditoriaProcedimientos($servicio_solicitado->id_hubspot ?? $userdata[0]["servicio"]) ) {
                     $desc = $hss[0]["nombre"];
                 } elseif ($servicio[0]['tipov']==1) {
                     $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];

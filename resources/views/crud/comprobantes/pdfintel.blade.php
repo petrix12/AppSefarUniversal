@@ -108,10 +108,17 @@
                     $total = 0;
 
                     foreach ($productos as $key => $compra) {
+                        $descripcion = $compra["descripcion"];
+                        $servicioHsId = $compra["servicio_hs_id"] ?? '';
+                        $servicioNormalizado = \Illuminate\Support\Str::lower(\Illuminate\Support\Str::ascii(trim((string) $servicioHsId)));
+
+                        if (str_contains($servicioNormalizado, 'auditoria') && str_contains($servicioNormalizado, 'procedimiento')) {
+                            $descripcion = $servicioHsId ?: 'Auditoría de Procedimientos';
+                        }
                     ?>
 
                         <tr>
-                            <td style="">{{$compra["descripcion"]}}</td>
+                            <td style="">{{$descripcion}}</td>
                             <td style="">{{$compra["monto"]}}€</td>
                         </tr>
 

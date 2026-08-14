@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use App\Mail\RegistroCliente;
 use App\Mail\RegistroSefar;
@@ -187,11 +188,15 @@ class RegisterV2Controller extends Controller
             // COMPRAS / FACTURAS
             // -------------------------
             if (($input['pay'] ?? '0') === '1') {
+                $descripcionCompra = $this->isAuditoriaProcedimientos($servicio->id_hubspot)
+                    ? $servicio->nombre
+                    : 'Pago desde www.sefaruniversal.com usando formulario';
+
                 $compra = Compras::create([
                     'id_user' => $user->id,
                     'servicio_id' => $servicio->id,
                     'servicio_hs_id' => $servicio?->id_hubspot,
-                    'descripcion' => 'Pago desde www.sefaruniversal.com usando formulario',
+                    'descripcion' => $descripcionCompra,
                     'pagado' => 0,
                     'monto' => $input['monto'] ?? 0,
                 ]);
@@ -207,6 +212,15 @@ class RegisterV2Controller extends Controller
                 DB::table('compras')
                     ->where('id', $compra->id)
                     ->update(['pagado' => 1, 'hash_factura' => $hash_factura]);
+
+                $compra->forceFill([
+                    'pagado' => 1,
+                    'hash_factura' => $hash_factura,
+                ]);
+
+                if ($this->isAuditoriaProcedimientos($servicio->id_hubspot)) {
+                    $this->registrarAuditoriaFormularioEnMonday($user, $compra, $servicio, $hash_factura);
+                }
             }
 
             // -------------------------
@@ -349,5 +363,81 @@ class RegisterV2Controller extends Controller
 
         return str_contains($normalized, 'auditoria')
             && str_contains($normalized, 'procedimiento');
+    }
+
+    private function registrarAuditoriaFormularioEnMonday(User $user, Compras $compra, Servicio $servicio, string $hashFactura): void
+    {
+        $token = env('MONDAY_TOKEN');
+
+        if (! $token) {
+            \Log::warning('No se registro Auditoria de Procedimientos en Monday: falta MONDAY_TOKEN', [
+                'user_id' => $user->id,
+                'hash_factura' => $hashFactura,
+            ]);
+
+            return;
+        }
+
+        $serviceName = 'Auditoría de Procedimientos';
+        $mondayDropdownServiceName = 'Auditoría de Procesos';
+        $columnValues = [
+            'text_mkqswz4p' => $user->name,
+            'text_mkzaptd3' => $user->passport ?? 'N/A',
+            'date' => now()->format('Y-m-d'),
+            'text_mkrd13sa' => 'Formulario',
+            'dropdown_mkt4dwyq' => $mondayDropdownServiceName,
+            'numeric_mkqsn730' => (float) $compra->monto,
+            'text_mkza4s9z' => "ID Usuario: {$user->id} | Factura: {$hashFactura} | Servicios: {$servicio->id_hubspot}",
+        ];
+
+        $query = 'mutation ($myItemName: String!, $columnVals: JSON!) {
+            create_item (
+                board_id: 18393840903,
+                group_id: "group_mkzadajd",
+                item_name: $myItemName,
+                column_values: $columnVals
+            ) {
+                id
+                name
+            }
+        }';
+
+        try {
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'Authorization' => $token,
+            ])->post('https://api.monday.com/v2', [
+                'query' => $query,
+                'variables' => [
+                    'myItemName' => $serviceName,
+                    'columnVals' => json_encode($columnValues),
+                ],
+            ]);
+
+            $responseData = $response->json();
+
+            if (! $response->successful() || ! empty($responseData['errors'])) {
+                \Log::error('Error registrando Auditoria de Procedimientos en Monday', [
+                    'user_id' => $user->id,
+                    'hash_factura' => $hashFactura,
+                    'status' => $response->status(),
+                    'response' => $responseData,
+                ]);
+
+                return;
+            }
+
+            \Log::info('Auditoria de Procedimientos registrada en Monday', [
+                'user_id' => $user->id,
+                'hash_factura' => $hashFactura,
+                'monday_item_id' => data_get($responseData, 'data.create_item.id'),
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error conectando con Monday para Auditoria de Procedimientos', [
+                'user_id' => $user->id,
+                'hash_factura' => $hashFactura,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }
