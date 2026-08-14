@@ -57,6 +57,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Promise;
 use App\Models\DocumentRequest;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use App\Services\UserSyncService;
 use App\Services\GenealogyService;
 use App\Jobs\SyncUserDealsJob;
@@ -1884,6 +1885,14 @@ class ClienteController extends Controller
 
             $datos_factura = json_decode(json_encode(DB::select($query)),true);
 
+            if (empty($datos_factura)) {
+                return response()->json([
+                    'success' => true,
+                    'redirect_url' => auth()->user()->contrato == 0 ? route('cliente.contrato') : route('clientes.tree'),
+                    'monday' => ['skipped' => true, 'reason' => 'sin_factura'],
+                ]);
+            }
+
             $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
 
             $servicios = "";
@@ -1893,6 +1902,18 @@ class ClienteController extends Controller
                 if ($key != count($productos)-1){
                     $servicios = $servicios . ", ";
                 }
+            }
+
+            $hasLmdService = collect($productos)->contains(function ($compra) {
+                return $this->normalizeServiceName(data_get($compra, 'servicio_hs_id')) === 'espanola lmd';
+            });
+
+            if (! $this->shouldCreateGenealogyMondayItem($productos) && ! $hasLmdService) {
+                return response()->json([
+                    'success' => true,
+                    'redirect_url' => auth()->user()->contrato == 0 ? route('cliente.contrato') : route('clientes.tree'),
+                    'monday' => ['skipped' => true, 'reason' => 'servicio_no_genealogico'],
+                ]);
             }
 
             $token = env('MONDAY_TOKEN');
@@ -2248,17 +2269,7 @@ class ClienteController extends Controller
 
                     DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro_hist' => $pago_registro, 'pago_registro' => 0, 'id_pago' => $cargos, 'pago_cupon' => $cupones, 'contrato' => 0 ]);
 
-                    $setto2 = 1;
-
-                    foreach ($compras as $key => $compra) {
-                        $servicio = Servicio::where('id_hubspot', $compra["servicio_hs_id"])->get();
-                        if ($compra["servicio_hs_id"] == 'Árbol genealógico de Deslinde' || $compra["servicio_hs_id"] == 'Acumulación de linajes' || $compra["servicio_hs_id"] == 'Procedimiento de Urgencia' || $compra["servicio_hs_id"] == 'Recurso de Alzada' || $compra["servicio_hs_id"] == 'Gestión Documental' || $servicio[0]['tipov']==1){
-                            $setto2 = 1;
-                        } else {
-                            $setto2 = 0;
-                            break;
-                        }
-                    }
+                    $setto2 = $this->shouldCreateGenealogyMondayItem($compras) ? 1 : 0;
 
                     if ($setto2==1) {
                         DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]);
@@ -2547,17 +2558,7 @@ class ClienteController extends Controller
 
         DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro_hist' => $pago_registro, 'pago_registro' => $monto, 'id_pago' => $cargos, 'pago_cupon' => $cupones, 'contrato' => 0]);
 
-        $setto2 = 1;
-
-        foreach ($compras as $key => $compra) {
-            $servicio = Servicio::where('id_hubspot', $compra["servicio_hs_id"])->get();
-            if ($compra["servicio_hs_id"] == 'Árbol genealógico de Deslinde' || $compra["servicio_hs_id"] == 'Acumulación de linajes' || $compra["servicio_hs_id"] == 'Procedimiento de Urgencia' || $compra["servicio_hs_id"] == 'Recurso de Alzada' || $compra["servicio_hs_id"] == 'Gestión Documental' || $servicio[0]['tipov']==1){
-                $setto2 = 1;
-            } else {
-                $setto2 = 0;
-                break;
-            }
-        }
+        $setto2 = $this->shouldCreateGenealogyMondayItem($compras) ? 1 : 0;
 
         if ($setto2==1) {
             DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]);
@@ -3230,17 +3231,7 @@ class ClienteController extends Controller
 
                 DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro_hist' => $pago_registro, 'pago_registro' => $monto, 'id_pago' => $cargos, 'pago_cupon' => $cupones, 'stripe_cus_id' => $charged->customer, 'contrato' => 0]);
 
-                $setto2 = 1;
-
-                foreach ($compras as $key => $compra) {
-                    $servicio = Servicio::where('id_hubspot', $compra["servicio_hs_id"])->get();
-                    if ($compra["servicio_hs_id"] == 'Árbol genealógico de Deslinde' || $compra["servicio_hs_id"] == 'Acumulación de linajes' || $compra["servicio_hs_id"] == 'Procedimiento de Urgencia' || $compra["servicio_hs_id"] == 'Recurso de Alzada' || $compra["servicio_hs_id"] == 'Gestión Documental' || $servicio[0]['tipov']==1){
-                        $setto2 = 1;
-                    } else {
-                        $setto2 = 0;
-                        break;
-                    }
-                }
+                $setto2 = $this->shouldCreateGenealogyMondayItem($compras) ? 1 : 0;
 
                 if ($setto2==1) {
                     DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]);
@@ -4092,22 +4083,7 @@ class ClienteController extends Controller
                     ]);
 
                 // Verificar si debe setear pay = 2
-                $setto2 = 1;
-                foreach ($compras as $compra) {
-                    $servicio = Servicio::where('id_hubspot', $compra->servicio_hs_id)->first();
-
-                    if ($compra->servicio_hs_id == 'Árbol genealógico de Deslinde' ||
-                        $compra->servicio_hs_id == 'Acumulación de linajes' ||
-                        $compra->servicio_hs_id == 'Procedimiento de Urgencia' ||
-                        $compra->servicio_hs_id == 'Recurso de Alzada' ||
-                        $compra->servicio_hs_id == 'Gestión Documental' ||
-                        ($servicio && $servicio->tipov == 1)) {
-                        $setto2 = 1;
-                    } else {
-                        $setto2 = 0;
-                        break;
-                    }
-                }
+                $setto2 = $this->shouldCreateGenealogyMondayItem($compras) ? 1 : 0;
 
                 if ($setto2 == 1) {
                     DB::table('users')
@@ -4432,11 +4408,68 @@ class ClienteController extends Controller
             ->first();
     }
 
+    private function normalizeServiceName(?string $servicio): string
+    {
+        $normalized = Str::lower(Str::ascii(trim((string) $servicio)));
+
+        return preg_replace('/\s+/', ' ', $normalized) ?? '';
+    }
+
+    private function isAuditoriaProcedimientos(?string $servicio): bool
+    {
+        $normalized = $this->normalizeServiceName($servicio);
+
+        return str_contains($normalized, 'auditoria')
+            && str_contains($normalized, 'procedimiento');
+    }
+
+    private function shouldCreateGenealogyMondayItem($compras): bool
+    {
+        $genealogyServices = [
+            'arbol genealogico de deslinde',
+            'acumulacion de linajes',
+            'procedimiento de urgencia',
+            'recurso de alzada',
+            'gestion documental',
+        ];
+
+        $items = collect($compras)->filter(fn ($compra) => filled(data_get($compra, 'servicio_hs_id')));
+
+        if ($items->isEmpty()) {
+            return false;
+        }
+
+        foreach ($items as $compra) {
+            $serviceId = data_get($compra, 'servicio_hs_id');
+
+            if ($this->isAuditoriaProcedimientos($serviceId)) {
+                return false;
+            }
+
+            $servicio = $compra instanceof Compras
+                ? ($compra->servicio ?: Servicio::where('id_hubspot', $serviceId)->first())
+                : Servicio::where('id_hubspot', $serviceId)->first();
+
+            $isGenealogyService = in_array($this->normalizeServiceName($serviceId), $genealogyServices, true)
+                || (int) ($servicio->tipov ?? 0) === 1;
+
+            if (! $isGenealogyService) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     /**
      * Mapea los nombres de servicios de la base de datos a los valores del dropdown de Monday.
      */
     protected function mapearServicioParaMonday($servicio)
     {
+        if ($this->isAuditoriaProcedimientos($servicio)) {
+            return 'Auditoría de Procedimientos';
+        }
+
         // Mapeo completo de servicios
         $mapa = [
             // Servicios principales

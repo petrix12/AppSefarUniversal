@@ -49,59 +49,30 @@ class RegisterV2Controller extends Controller
                     ->first();
 
                 if ($userCheck) {
-                    if ($userCheck->servicio == null){
-                        $userCheck->servicio = $input['servicio'];
-                        $userCheck->save();
+                    $servicioSolicitado = $this->resolveServicioSolicitado((string) ($input['servicio'] ?? ''));
+
+                    if (! $servicioSolicitado) {
+                        throw ValidationException::withMessages([
+                            'servicio' => 'El servicio solicitado no existe.',
+                        ]);
                     }
+
+                    $userCheck->servicio = $servicioSolicitado->id_hubspot;
+                    $userCheck->save();
+
                     // Actualizar datos del usuario existente
                     $userCheck->update([
                         'pay' => 0,
                     ]);
 
-                    // Crear registro en Compras
-                    $servicio = Servicio::where('id_hubspot', "like", $input['servicio'] . "%")->first();
-                    $compras = Compras::where('id_user', $userCheck->id)->where('pagado', 0)->whereNull('deal_id')->get();
+                    $compraPendiente = Compras::where('id_user', $userCheck->id)
+                        ->where('pagado', 0)
+                        ->whereNull('deal_id')
+                        ->where('servicio_hs_id', $servicioSolicitado->id_hubspot)
+                        ->exists();
 
-                    $servicio = Servicio::where('id_hubspot', 'like', $userCheck->servicio . '%')->get();
-
-                    $cps = json_decode(json_encode($compras), true);
-
-                    if (count($cps) == 0) {
-                        $hss = json_decode(json_encode($servicio), true);
-
-                        if ($userCheck->servicio == "Recurso de Alzada") {
-                            $monto = $hss[0]["precio"] * $userCheck->cantidad_alzada;
-                        } else {
-                            $monto = $hss[0]["precio"];
-                        }
-
-                        if ($userCheck->servicio == "Española LMD" || $userCheck->servicio == "Italiana") {
-                            $desc = "Pago Fase Inicial: Investigación Preliminar y Preparatoria: " . $hss[0]["nombre"];
-                            if ($userCheck->servicio == "Española LMD") {
-                                if ($userCheck->antepasados == 0) {
-                                    $monto = 99;
-                                }
-                            }
-                            if ($userCheck->servicio == "Italiana") {
-                                if ($userCheck->antepasados == 1) {
-                                    $desc = $desc . " + (Consulta Gratuita)";
-                                }
-                            }
-                        } elseif ($request->servicio == "Gestión Documental") {
-                            $desc = $hss[0]["nombre"];
-                        } elseif ($servicio[0]['tipov'] == 1) {
-                            $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
-                        } else {
-                            $desc = "Análisis genealógico: " . $hss[0]["nombre"];
-                        }
-
-                        Compras::create([
-                            'id_user' => $userCheck->id,
-                            'servicio_hs_id' => $request->servicio,
-                            'descripcion' => $desc,
-                            'pagado' => 0,
-                            'monto' => $monto
-                        ]);
+                    if (! $compraPendiente) {
+                        Compras::create($this->initialPurchaseData($userCheck, $servicioSolicitado, $input));
                     }
 
                     Mail::to([
@@ -167,7 +138,13 @@ class RegisterV2Controller extends Controller
             // -------------------------
             // CREAR USER
             // -------------------------
-            $servicio = Servicio::where('id_hubspot', "like", $input['servicio'] . "%")->first();
+            $servicio = $this->resolveServicioSolicitado((string) ($input['servicio'] ?? ''));
+
+            if (! $servicio) {
+                throw ValidationException::withMessages([
+                    'servicio' => 'El servicio solicitado no existe.',
+                ]);
+            }
 
             $user = User::create([
                 // básicos
@@ -212,6 +189,7 @@ class RegisterV2Controller extends Controller
             if (($input['pay'] ?? '0') === '1') {
                 $compra = Compras::create([
                     'id_user' => $user->id,
+                    'servicio_id' => $servicio->id,
                     'servicio_hs_id' => $servicio?->id_hubspot,
                     'descripcion' => 'Pago desde www.sefaruniversal.com usando formulario',
                     'pagado' => 0,
@@ -308,5 +286,68 @@ class RegisterV2Controller extends Controller
             ]);
             throw $e;
         }
+    }
+
+    private function resolveServicioSolicitado(string $servicio): ?Servicio
+    {
+        $servicio = trim($servicio);
+
+        if ($servicio === '') {
+            return null;
+        }
+
+        return Servicio::where('id_hubspot', $servicio)
+            ->orWhere('nombre', $servicio)
+            ->first()
+            ?? Servicio::where('id_hubspot', 'like', $servicio . '%')
+                ->orWhere('nombre', 'like', $servicio . '%')
+                ->first();
+    }
+
+    private function initialPurchaseData(User $user, Servicio $servicio, array $input): array
+    {
+        $serviceCode = $servicio->id_hubspot;
+        $monto = (float) $servicio->precio;
+
+        if ($serviceCode === 'Recurso de Alzada') {
+            $cantidadAlzada = (int) ($input['cantidad_alzada'] ?? $user->cantidad_alzada ?? 1);
+            $monto = $monto * max(1, $cantidadAlzada);
+        }
+
+        if ($serviceCode === 'Española LMD' || $serviceCode === 'Italiana') {
+            $desc = 'Pago Fase Inicial: Investigación Preliminar y Preparatoria: ' . $servicio->nombre;
+
+            if ($serviceCode === 'Española LMD' && (int) $user->antepasados === 0) {
+                $monto = 99;
+            }
+
+            if ($serviceCode === 'Italiana' && (int) $user->antepasados === 1) {
+                $desc .= ' + (Consulta Gratuita)';
+            }
+        } elseif ($serviceCode === 'Gestión Documental' || $this->isAuditoriaProcedimientos($serviceCode)) {
+            $desc = $servicio->nombre;
+        } elseif ((int) $servicio->tipov === 1) {
+            $desc = 'Servicios para Vinculaciones: ' . $servicio->nombre;
+        } else {
+            $desc = 'Análisis genealógico: ' . $servicio->nombre;
+        }
+
+        return [
+            'id_user' => $user->id,
+            'servicio_id' => $servicio->id,
+            'servicio_hs_id' => $serviceCode,
+            'descripcion' => $desc,
+            'pagado' => 0,
+            'monto' => $monto,
+        ];
+    }
+
+    private function isAuditoriaProcedimientos(?string $servicio): bool
+    {
+        $normalized = Str::lower(Str::ascii(trim((string) $servicio)));
+        $normalized = preg_replace('/\s+/', ' ', $normalized) ?? '';
+
+        return str_contains($normalized, 'auditoria')
+            && str_contains($normalized, 'procedimiento');
     }
 }
