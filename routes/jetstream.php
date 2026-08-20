@@ -23,7 +23,9 @@ Route::group(['middleware' => config('jetstream.middleware', ['web'])], function
 
         // API...
         if (Jetstream::hasApiFeatures()) {
-            Route::get('/user/api-tokens', [ApiTokenController::class, 'index'])->name('api-tokens.index');
+            Route::get('/user/api-tokens', [ApiTokenController::class, 'index'])
+                ->middleware('can:notCliente')
+                ->name('api-tokens.index');
         }
 
         // Teams...

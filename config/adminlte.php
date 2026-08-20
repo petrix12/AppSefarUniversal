@@ -282,6 +282,13 @@ return [
                     'url'           => 'permissions',
                     'can'           => 'crud.permissions.index',
                 ],
+                [
+                    'text'          => 'Tokens API / MCP',
+                    'icon'          => 'fa-fw fas fa-key',
+                    'icon_color'    => 'white',
+                    'route'         => 'api-tokens.index',
+                    'can'           => 'notCliente',
+                ],
             ],
         ],
 
@@ -553,7 +560,7 @@ return [
                     'can'           => 'verdocs.index',
                 ],
                 [
-                    'text'          => 'Subir Documentos',
+                    'text'          => 'Material de apoyo para Vendedores',
                     'icon'          => 'fa-fw fas fa-file-upload',
                     'icon_color'    => 'white',
                     'url'           => 'admin/docs',
