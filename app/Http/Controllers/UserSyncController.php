@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\SyncUserDealsJob;
-use App\Models\Negocio;
 use App\Models\User;
+use App\Services\ClientCosSnapshotService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class UserSyncController extends Controller
 {
-    public function sync(Request $request, User $user): \Illuminate\Http\RedirectResponse
+    public function sync(Request $request, User $user, ClientCosSnapshotService $snapshots): RedirectResponse
     {
         // Solo roles autorizados pueden sincronizar/consultar el estatus.
         $rolId = auth()->user()->roles[0]->id;
@@ -20,11 +20,7 @@ class UserSyncController extends Controller
             abort_if(auth()->id() !== $user->id, 403);
         }
 
-        // Limpiar negocios previos.
-        Negocio::where('user_id', $user->id)->delete();
-
-        // Sincronizar inmediatamente (sin cola).
-        SyncUserDealsJob::dispatchSync($user);
+        $snapshots->get($user, true, true);
 
         $message = $rolId === 5
             ? 'Tu estatus ya muestra la informacion mas reciente.'

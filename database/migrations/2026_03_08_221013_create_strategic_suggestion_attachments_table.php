@@ -15,10 +15,7 @@ return new class extends Migration
                 ->constrained('strategic_suggestions')
                 ->cascadeOnDelete();
 
-            $table->foreignId('reply_id')
-                ->nullable()
-                ->constrained('strategic_suggestion_replies')
-                ->cascadeOnDelete();
+            $table->foreignId('reply_id')->nullable();
 
             $table->foreignId('uploaded_by')
                 ->constrained('users')

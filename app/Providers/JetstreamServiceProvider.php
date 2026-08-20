@@ -42,6 +42,7 @@ class JetstreamServiceProvider extends ServiceProvider
         Jetstream::permissions([
             'create',
             'read',
+            'mcp:read',
             'update',
             'delete',
         ]);

@@ -10,6 +10,9 @@ use App\Http\Controllers\AssistantController;
 use App\Http\Controllers\WhatsappController;
 use App\Http\Controllers\N8nTaskWebhookController;
 use App\Http\Controllers\BancaOnlineStripeWebhookController;
+use App\Http\Controllers\Api\Mcp\ClientController as McpClientController;
+use App\Http\Middleware\AuditMcpRequests;
+use App\Http\Middleware\EnsureMcpReadToken;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,6 +28,15 @@ use App\Http\Controllers\BancaOnlineStripeWebhookController;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+Route::middleware(['auth:sanctum', AuditMcpRequests::class, EnsureMcpReadToken::class])
+    ->prefix('mcp/v1')
+    ->name('api.mcp.')
+    ->group(function () {
+        Route::get('/clientes', [McpClientController::class, 'search'])->name('clientes.index');
+        Route::get('/clientes/{cliente}', [McpClientController::class, 'show'])->name('clientes.show');
+        Route::post('/clientes/{cliente}/cos', [McpClientController::class, 'cos'])->name('clientes.cos');
+    });
 
 Route::get('/getservicio', [ServicioController::class, 'getservicio']);
 
