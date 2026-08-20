@@ -5,14 +5,7 @@
 @section('content_header')
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
         <h1>Tokens API</h1>
-        <div class="btn-group mt-2 mt-md-0">
-            <a href="{{ route('admin.integrations.api-tokens.index') }}" class="btn btn-primary">
-                <i class="fas fa-key mr-1"></i> Tokens API
-            </a>
-            <a href="{{ route('admin.integrations.mcp.index') }}" class="btn btn-outline-primary">
-                <i class="fas fa-shield-alt mr-1"></i> MCP privado
-            </a>
-        </div>
+        @include('admin.integrations._tabs')
     </div>
 @stop
 

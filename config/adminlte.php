@@ -286,29 +286,6 @@ return [
         ],
 
         [
-            'text'        => 'Integraciones',
-            'icon'        => 'fa-fw fas fa-plug',
-            'icon_color'  => 'white',
-            'can'         => 'integrations.manage',
-            'submenu' => [
-                [
-                    'text'          => 'Tokens API',
-                    'icon'          => 'fa-fw fas fa-key',
-                    'icon_color'    => 'white',
-                    'route'         => 'admin.integrations.api-tokens.index',
-                    'can'           => 'integrations.manage',
-                ],
-                [
-                    'text'          => 'MCP privado',
-                    'icon'          => 'fa-fw fas fa-shield-alt',
-                    'icon_color'    => 'white',
-                    'route'         => 'admin.integrations.mcp.index',
-                    'can'           => 'integrations.manage',
-                ],
-            ],
-        ],
-
-        [
             'text'        => 'Operación COS',
             'icon'        => 'fa-fw fas fa-briefcase',
             'icon_color'  => 'white',
@@ -488,6 +465,27 @@ return [
             'icon'        => 'fa-fw fas fa-plug',
             'icon_color'  => 'white',
             'submenu' => [
+                [
+                    'text'          => 'Tokens API',
+                    'icon'          => 'fa-fw fas fa-key',
+                    'icon_color'    => 'white',
+                    'route'         => 'admin.integrations.api-tokens.index',
+                    'can'           => 'integrations.manage',
+                ],
+                [
+                    'text'          => 'MCP privado',
+                    'icon'          => 'fa-fw fas fa-shield-alt',
+                    'icon_color'    => 'white',
+                    'route'         => 'admin.integrations.mcp.index',
+                    'can'           => 'integrations.manage',
+                ],
+                [
+                    'text'          => 'Auditoria MCP/API',
+                    'icon'          => 'fa-fw fas fa-clipboard-list',
+                    'icon_color'    => 'white',
+                    'route'         => 'admin.integrations.audit.index',
+                    'can'           => 'integrations.manage',
+                ],
                 [
                     'text'          => 'Migrar clientes',
                     'icon'          => 'fa-fw fas fa-file-import',

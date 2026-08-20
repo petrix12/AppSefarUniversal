@@ -156,6 +156,7 @@ Route::middleware(['auth', 'can:integrations.manage'])
         Route::post('/api-tokens', [AdminIntegrationTokenController::class, 'storeApiToken'])->name('api-tokens.store');
         Route::get('/mcp', [AdminIntegrationTokenController::class, 'mcp'])->name('mcp.index');
         Route::post('/mcp/tokens', [AdminIntegrationTokenController::class, 'storeMcpToken'])->name('mcp.tokens.store');
+        Route::get('/audit', [AdminIntegrationTokenController::class, 'audit'])->name('audit.index');
         Route::delete('/tokens/{token}', [AdminIntegrationTokenController::class, 'destroy'])->name('tokens.destroy');
     });
 
