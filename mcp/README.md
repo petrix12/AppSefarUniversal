@@ -2,7 +2,43 @@
 
 MCP privado de App Sefar ejecutado dentro del ambiente PHP/Laravel. No usa Node, npm ni scraping web.
 
-El deploy activa el soporte porque el servidor queda registrado como comando Artisan:
+El deploy activa dos transportes:
+
+- HTTP remoto para Codex: `https://app.sefaruniversal.com/mcp`
+- Stdio local/Artisan para entornos donde se pueda ejecutar consola.
+
+## Configuracion rapida para Codex
+
+La forma recomendada es desde AdminLTE:
+
+```text
+Integraciones > MCP privado
+```
+
+La ventana permite:
+
+- crear tokens MCP con permiso `mcp:read`;
+- probar el endpoint `/mcp` desde el navegador;
+- copiar la configuracion TOML;
+- descargar un instalador Windows `instalar-sefar-mcp-codex.cmd` que configura `~/.codex/config.toml` y la variable de usuario `SEFAR_MCP_TOKEN`.
+
+Codex debe quedar con una configuracion equivalente a:
+
+```toml
+[mcp_servers.sefar]
+url = "https://app.sefaruniversal.com/mcp"
+bearer_token_env_var = "SEFAR_MCP_TOKEN"
+tool_timeout_sec = 120
+
+[mcp_servers.sefar.tools.refrescar_cos_cliente]
+approval_mode = "prompt"
+```
+
+Despues de ejecutar el instalador local, hay que cerrar y abrir Codex Desktop para que lea la variable `SEFAR_MCP_TOKEN`.
+
+## Stdio / Artisan
+
+El servidor tambien queda registrado como comando Artisan:
 
 ```powershell
 php artisan sefar:mcp
@@ -60,7 +96,7 @@ Tambien se puede apuntar al wrapper:
 
 ## Autenticacion
 
-No hay token fijo en la configuracion MCP.
+No hay token fijo en el codigo fuente.
 
 Para el transporte HTTP privado, un administrador genera tokens desde AdminLTE:
 
@@ -68,7 +104,7 @@ Para el transporte HTTP privado, un administrador genera tokens desde AdminLTE:
 Integraciones > MCP privado
 ```
 
-Los tokens MCP se crean con el permiso `mcp:read` y solo pueden asignarse a usuarios internos, nunca a usuarios con rol `Cliente`.
+Los tokens MCP se crean con el permiso `mcp:read` y solo pueden asignarse a usuarios internos, nunca a usuarios con rol `Cliente`. En HTTP, Codex envia ese valor como Bearer Token.
 
 La auditoria de tokens y consultas MCP se revisa desde:
 
@@ -76,7 +112,7 @@ La auditoria de tokens y consultas MCP se revisa desde:
 Integraciones > Auditoria MCP/API
 ```
 
-El usuario llama `iniciar_sesion` con credenciales Laravel. El servidor valida:
+En stdio, el usuario llama `iniciar_sesion` con credenciales Laravel. El servidor valida:
 
 - email y password con la tabla `users`;
 - codigo `two_factor_code` si el usuario tiene 2FA activo;
@@ -85,6 +121,16 @@ El usuario llama `iniciar_sesion` con credenciales Laravel. El servidor valida:
 Si el usuario tiene rol `Cliente`, la sesion MCP se rechaza.
 
 ## Herramientas
+
+HTTP remoto:
+
+- `estado_mcp`: verifica token, usuario y endpoint.
+- `buscar_cliente`: busca clientes por nombre, email, pasaporte, telefono o ID.
+- `ver_cliente`: lee informacion basica de un cliente.
+- `ver_cos_cliente`: lee `users.arraycos` si `users.arraycos_expire` sigue vigente. Si no hay cache o pasaron 5 dias, recalcula mediante `ClientCosSnapshotService`.
+- `refrescar_cos_cliente`: fuerza el flujo Laravel de COS mediante `ClientCosSnapshotService`; puede actualizar `users.arraycos`, `users.arraycos_expire`, `users.cosready` y sincronizaciones necesarias.
+
+Stdio / Artisan:
 
 - `iniciar_sesion`: crea una sesion MCP dinamica en memoria del proceso.
 - `estado_sesion`: muestra el estado de la sesion MCP actual.
@@ -110,4 +156,4 @@ Cada evento incluye:
 
 No se registran passwords, codigos 2FA, tokens, cookies, CSRF, secretos ni headers de autorizacion; esos campos se escriben como `[REDACTED]`.
 
-Las rutas HTTP `/api/mcp/v1` tambien usan auditoria MCP JSONL y rechazan usuarios con rol `Cliente`.
+El endpoint MCP HTTP `/mcp` y las rutas REST `/api/mcp/v1` tambien usan auditoria MCP JSONL y rechazan usuarios con rol `Cliente`.

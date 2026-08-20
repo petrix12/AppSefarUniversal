@@ -43,6 +43,48 @@ class McpClientApiTest extends TestCase
             ->assertJsonPath('message', 'El MCP no esta disponible para usuarios con rol Cliente.');
     }
 
+    public function test_streamable_mcp_lists_tools_with_mcp_read_token(): void
+    {
+        Sanctum::actingAs($this->internalUser(), ['mcp:read']);
+
+        $this->postJson('/mcp', $this->mcpRequest('tools/list'), $this->mcpHeaders('tools/list'))
+            ->assertOk()
+            ->assertJsonPath('result.resultType', 'complete')
+            ->assertJsonPath('result.tools.0.name', 'estado_mcp');
+    }
+
+    public function test_streamable_mcp_rejects_users_with_cliente_role(): void
+    {
+        Sanctum::actingAs(User::factory()->create(), ['mcp:read']);
+
+        $this->postJson('/mcp', $this->mcpRequest('tools/list'), $this->mcpHeaders('tools/list'))
+            ->assertForbidden()
+            ->assertJsonPath('message', 'El MCP no esta disponible para usuarios con rol Cliente.');
+    }
+
+    public function test_streamable_mcp_can_call_client_search_tool(): void
+    {
+        Sanctum::actingAs($this->internalUser(), ['mcp:read']);
+
+        $client = User::factory()->create([
+            'name' => 'Cliente MCP Remoto',
+            'email' => 'mcp-remoto@example.test',
+            'passport' => 'MCP456',
+        ]);
+
+        $this->postJson('/mcp', $this->mcpRequest('tools/call', [
+            'name' => 'buscar_cliente',
+            'arguments' => [
+                'query' => 'MCP456',
+                'limit' => 5,
+            ],
+        ]), $this->mcpHeaders('tools/call', 'buscar_cliente'))
+            ->assertOk()
+            ->assertJsonPath('result.isError', false)
+            ->assertJsonPath('result.structuredContent.data.0.id', $client->id)
+            ->assertJsonPath('result.structuredContent.data.0.email', 'mcp-remoto@example.test');
+    }
+
     public function test_mcp_client_search_returns_matching_clients(): void
     {
         Sanctum::actingAs($this->internalUser(), ['mcp:read']);
@@ -163,5 +205,39 @@ class McpClientApiTest extends TestCase
         $user->syncRoles(['Administrador']);
 
         return $user;
+    }
+
+    private function mcpRequest(string $method, array $params = []): array
+    {
+        return [
+            'jsonrpc' => '2.0',
+            'id' => 1,
+            'method' => $method,
+            'params' => array_merge($params, [
+                '_meta' => [
+                    'io.modelcontextprotocol/protocolVersion' => '2026-07-28',
+                    'io.modelcontextprotocol/clientInfo' => [
+                        'name' => 'phpunit',
+                        'version' => '1.0.0',
+                    ],
+                    'io.modelcontextprotocol/clientCapabilities' => [],
+                ],
+            ]),
+        ];
+    }
+
+    private function mcpHeaders(string $method, ?string $name = null): array
+    {
+        $headers = [
+            'Accept' => 'application/json, text/event-stream',
+            'MCP-Protocol-Version' => '2026-07-28',
+            'Mcp-Method' => $method,
+        ];
+
+        if ($name !== null) {
+            $headers['Mcp-Name'] = $name;
+        }
+
+        return $headers;
     }
 }

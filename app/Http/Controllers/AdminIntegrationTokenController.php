@@ -337,7 +337,7 @@ class AdminIntegrationTokenController extends Controller
             return 'tokens';
         }
 
-        if (($event['transport'] ?? null) === 'http' || str_starts_with($eventName, 'http_')) {
+        if (in_array(($event['transport'] ?? null), ['http', 'streamable_http'], true) || str_starts_with($eventName, 'http_')) {
             return 'mcp_http';
         }
 
