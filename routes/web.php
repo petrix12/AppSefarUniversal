@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AgclienteController;
 use App\Http\Controllers\AdminConsultationCalendarController;
+use App\Http\Controllers\AdminIntegrationTokenController;
 use App\Http\Controllers\AlberoController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\ClienteController;
@@ -145,6 +146,17 @@ Route::middleware(['auth', 'can:administrador'])
         Route::put('/{assistant}', [AdminRoleAiAssistantController::class, 'update'])->name('update');
         Route::patch('/{assistant}/knowledge/{knowledgeEntry}/archive', [AdminRoleAiAssistantController::class, 'archiveKnowledge'])->name('knowledge.archive');
         Route::patch('/{assistant}/knowledge/{knowledgeEntry}/restore', [AdminRoleAiAssistantController::class, 'restoreKnowledge'])->name('knowledge.restore');
+    });
+
+Route::middleware(['auth', 'can:integrations.manage'])
+    ->prefix('admin/integrations')
+    ->name('admin.integrations.')
+    ->group(function () {
+        Route::get('/api-tokens', [AdminIntegrationTokenController::class, 'apiTokens'])->name('api-tokens.index');
+        Route::post('/api-tokens', [AdminIntegrationTokenController::class, 'storeApiToken'])->name('api-tokens.store');
+        Route::get('/mcp', [AdminIntegrationTokenController::class, 'mcp'])->name('mcp.index');
+        Route::post('/mcp/tokens', [AdminIntegrationTokenController::class, 'storeMcpToken'])->name('mcp.tokens.store');
+        Route::delete('/tokens/{token}', [AdminIntegrationTokenController::class, 'destroy'])->name('tokens.destroy');
     });
 
 Route::get('/api/contacts/search', [App\Http\Controllers\Api\ContactSearchController::class, 'search'])

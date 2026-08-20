@@ -62,6 +62,14 @@ Tambien se puede apuntar al wrapper:
 
 No hay token fijo en la configuracion MCP.
 
+Para el transporte HTTP privado, un administrador genera tokens desde AdminLTE:
+
+```text
+Integraciones > MCP privado
+```
+
+Los tokens MCP se crean con el permiso `mcp:read` y solo pueden asignarse a usuarios internos, nunca a usuarios con rol `Cliente`.
+
 El usuario llama `iniciar_sesion` con credenciales Laravel. El servidor valida:
 
 - email y password con la tabla `users`;

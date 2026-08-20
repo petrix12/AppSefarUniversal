@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 use Laravel\Jetstream\Http\Controllers\CurrentTeamController;
-use Laravel\Jetstream\Http\Controllers\Livewire\ApiTokenController;
 use Laravel\Jetstream\Http\Controllers\Livewire\PrivacyPolicyController;
 use Laravel\Jetstream\Http\Controllers\Livewire\TeamController;
 use Laravel\Jetstream\Http\Controllers\Livewire\TermsOfServiceController;
@@ -23,8 +22,8 @@ Route::group(['middleware' => config('jetstream.middleware', ['web'])], function
 
         // API...
         if (Jetstream::hasApiFeatures()) {
-            Route::get('/user/api-tokens', [ApiTokenController::class, 'index'])
-                ->middleware('can:notCliente')
+            Route::get('/user/api-tokens', fn () => redirect()->route('admin.integrations.api-tokens.index'))
+                ->middleware('can:integrations.manage')
                 ->name('api-tokens.index');
         }
 

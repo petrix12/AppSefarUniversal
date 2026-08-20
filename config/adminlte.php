@@ -282,12 +282,28 @@ return [
                     'url'           => 'permissions',
                     'can'           => 'crud.permissions.index',
                 ],
+            ],
+        ],
+
+        [
+            'text'        => 'Integraciones',
+            'icon'        => 'fa-fw fas fa-plug',
+            'icon_color'  => 'white',
+            'can'         => 'integrations.manage',
+            'submenu' => [
                 [
-                    'text'          => 'Tokens API / MCP',
+                    'text'          => 'Tokens API',
                     'icon'          => 'fa-fw fas fa-key',
                     'icon_color'    => 'white',
-                    'route'         => 'api-tokens.index',
-                    'can'           => 'notCliente',
+                    'route'         => 'admin.integrations.api-tokens.index',
+                    'can'           => 'integrations.manage',
+                ],
+                [
+                    'text'          => 'MCP privado',
+                    'icon'          => 'fa-fw fas fa-shield-alt',
+                    'icon_color'    => 'white',
+                    'route'         => 'admin.integrations.mcp.index',
+                    'can'           => 'integrations.manage',
                 ],
             ],
         ],
