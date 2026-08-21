@@ -2,6 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\Compras;
+use App\Models\DocumentRequest;
+use App\Models\Factura;
+use App\Models\File as ClientFile;
+use App\Models\Negocio;
+use App\Models\Servicio;
+use App\Models\Task;
 use App\Models\User;
 use App\Services\ClientCosSnapshotService;
 use Carbon\Carbon;
@@ -47,10 +54,20 @@ class McpClientApiTest extends TestCase
     {
         Sanctum::actingAs($this->internalUser(), ['mcp:read']);
 
-        $this->postJson('/mcp', $this->mcpRequest('tools/list'), $this->mcpHeaders('tools/list'))
+        $response = $this->postJson('/mcp', $this->mcpRequest('tools/list'), $this->mcpHeaders('tools/list'))
             ->assertOk()
             ->assertJsonPath('result.resultType', 'complete')
             ->assertJsonPath('result.tools.0.name', 'estado_mcp');
+
+        $toolNames = collect($response->json('result.tools'))->pluck('name');
+
+        $this->assertContains('resumen_cliente', $toolNames);
+        $this->assertContains('listar_negocios_cliente', $toolNames);
+        $this->assertContains('listar_compras_cliente', $toolNames);
+        $this->assertContains('listar_facturas_cliente', $toolNames);
+        $this->assertContains('listar_documentos_cliente', $toolNames);
+        $this->assertContains('listar_tareas_cliente', $toolNames);
+        $this->assertContains('buscar_servicios', $toolNames);
     }
 
     public function test_streamable_mcp_rejects_users_with_cliente_role(): void
@@ -83,6 +100,136 @@ class McpClientApiTest extends TestCase
             ->assertJsonPath('result.isError', false)
             ->assertJsonPath('result.structuredContent.data.0.id', $client->id)
             ->assertJsonPath('result.structuredContent.data.0.email', 'mcp-remoto@example.test');
+    }
+
+    public function test_streamable_mcp_can_return_client_operational_summary(): void
+    {
+        $admin = $this->internalUser();
+        Sanctum::actingAs($admin, ['mcp:read']);
+
+        $client = User::factory()->create([
+            'name' => 'Cliente Operativo MCP',
+            'email' => 'operativo-mcp@example.test',
+            'passport' => 'OPMCP123',
+            'arraycos' => [
+                [
+                    'servicio' => 'Espanola Sefardi',
+                    'currentStepName' => 'Certificado aprobado',
+                    'currentStepGen' => 4,
+                    'progressPercentageGen' => 94,
+                ],
+            ],
+            'arraycos_expire' => now()->addDays(3),
+            'cosready' => 1,
+        ]);
+
+        Negocio::create([
+            'user_id' => $client->id,
+            'hubspot_id' => 'deal-1',
+            'nombre_cliente' => $client->name,
+            'no__pasaporte' => $client->passport,
+            'servicio_solicitado' => 'Espanola Sefardi',
+            'estatus_proceso' => 'Activo',
+        ]);
+
+        Factura::create([
+            'id_cliente' => $client->id,
+            'hash_factura' => 'factura-op-1',
+            'met' => 'stripe',
+        ]);
+
+        Compras::create([
+            'id_user' => $client->id,
+            'servicio_hs_id' => 'svc-hs-1',
+            'descripcion' => 'Compra de prueba MCP',
+            'pagado' => 1,
+            'monto' => 100,
+            'hash_factura' => 'factura-op-1',
+        ]);
+
+        ClientFile::create([
+            'file' => 'pasaporte.pdf',
+            'location' => 'clientes/pasaporte.pdf',
+            'tipo' => 'Pasaporte',
+            'propietario' => $client->name,
+            'IDCliente' => $client->passport,
+            'IDPersona' => 1,
+            'user_id' => $client->id,
+        ]);
+
+        DocumentRequest::create([
+            'user_id' => $client->id,
+            'requested_by' => $admin->id,
+            'document_name' => 'Partida',
+            'document_type' => 'juridico',
+            'status' => 'en_espera_cliente',
+        ]);
+
+        Task::create([
+            'user_id' => $admin->id,
+            'contact_id' => $client->id,
+            'title' => 'Seguimiento MCP',
+            'due_date' => now()->toDateString(),
+            'status' => Task::STATUS_PENDING,
+        ]);
+
+        $this->postJson('/mcp', $this->mcpRequest('tools/call', [
+            'name' => 'resumen_cliente',
+            'arguments' => [
+                'id' => $client->id,
+            ],
+        ]), $this->mcpHeaders('tools/call', 'resumen_cliente'))
+            ->assertOk()
+            ->assertJsonPath('result.isError', false)
+            ->assertJsonPath('result.structuredContent.data.client.id', $client->id)
+            ->assertJsonPath('result.structuredContent.data.cos_cache.ready', true)
+            ->assertJsonPath('result.structuredContent.data.cos_cache.items_count', 1)
+            ->assertJsonPath('result.structuredContent.data.counts.negocios', 1)
+            ->assertJsonPath('result.structuredContent.data.counts.compras', 1)
+            ->assertJsonPath('result.structuredContent.data.counts.facturas', 1)
+            ->assertJsonPath('result.structuredContent.data.counts.documentos', 1)
+            ->assertJsonPath('result.structuredContent.data.counts.solicitudes_documentos', 1)
+            ->assertJsonPath('result.structuredContent.data.counts.tareas_abiertas', 1)
+            ->assertJsonPath('result.structuredContent.meta.read_only', true)
+            ->assertJsonPath('result.structuredContent.meta.cos_recalculated', false);
+    }
+
+    public function test_streamable_mcp_can_search_services(): void
+    {
+        Sanctum::actingAs($this->internalUser(), ['mcp:read']);
+
+        Servicio::create([
+            'id_hubspot' => 'svc-es-1',
+            'nombre' => 'Nacionalidad Espanola Sefardi',
+            'precio' => 1200,
+            'categoria' => 'nacionalidad',
+            'tipo' => 'servicio',
+            'activo' => true,
+        ]);
+
+        Servicio::create([
+            'id_hubspot' => 'svc-off-1',
+            'nombre' => 'Servicio inactivo',
+            'precio' => 25,
+            'categoria' => 'otros',
+            'tipo' => 'servicio',
+            'activo' => false,
+        ]);
+
+        $this->postJson('/mcp', $this->mcpRequest('tools/call', [
+            'name' => 'buscar_servicios',
+            'arguments' => [
+                'query' => 'sefardi',
+                'solo_activos' => true,
+                'limit' => 5,
+            ],
+        ]), $this->mcpHeaders('tools/call', 'buscar_servicios'))
+            ->assertOk()
+            ->assertJsonPath('result.isError', false)
+            ->assertJsonPath('result.structuredContent.data.0.id_hubspot', 'svc-es-1')
+            ->assertJsonPath('result.structuredContent.data.0.nombre', 'Nacionalidad Espanola Sefardi')
+            ->assertJsonPath('result.structuredContent.meta.query', 'sefardi')
+            ->assertJsonPath('result.structuredContent.meta.solo_activos', true);
     }
 
     public function test_mcp_client_search_returns_matching_clients(): void

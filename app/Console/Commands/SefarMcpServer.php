@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\User;
 use App\Services\ClientCosSnapshotService;
 use App\Services\Mcp\McpAuditLogger;
+use App\Services\Mcp\SefarMcpReadToolService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
@@ -20,13 +21,15 @@ class SefarMcpServer extends Command
 
     private ClientCosSnapshotService $snapshots;
     private McpAuditLogger $audit;
+    private SefarMcpReadToolService $readTools;
     private ?User $actor = null;
     private ?string $sessionId = null;
     private string $processId;
 
-    public function handle(ClientCosSnapshotService $snapshots): int
+    public function handle(ClientCosSnapshotService $snapshots, SefarMcpReadToolService $readTools): int
     {
         $this->snapshots = $snapshots;
+        $this->readTools = $readTools;
         $this->processId = implode(':', [
             gethostname() ?: 'unknown-host',
             (string) getmypid(),
@@ -88,7 +91,7 @@ class SefarMcpServer extends Command
 
     private function tools(): array
     {
-        return [
+        return array_merge([
             [
                 'name' => 'iniciar_sesion',
                 'description' => 'Inicia una sesion MCP dinamica con credenciales Laravel. Rechaza usuarios con rol Cliente.',
@@ -193,7 +196,7 @@ class SefarMcpServer extends Command
                     'required' => ['id'],
                 ],
             ],
-        ];
+        ], $this->readTools->tools());
     }
 
     private function handleToolCall(mixed $id, array $params): array
@@ -252,6 +255,12 @@ class SefarMcpServer extends Command
 
     private function callTool(string $name, array $arguments): array
     {
+        if ($this->readTools->supports($name)) {
+            $this->requireActor();
+
+            return $this->readTools->call($name, $arguments);
+        }
+
         return match ($name) {
             'iniciar_sesion' => $this->iniciarSesion($arguments),
             'estado_sesion' => $this->estadoSesion(),
@@ -524,6 +533,10 @@ class SefarMcpServer extends Command
 
     private function auditTarget(string $tool, array $arguments): array
     {
+        if ($this->readTools->supports($tool)) {
+            return $this->readTools->auditTarget($tool, $arguments);
+        }
+
         return match ($tool) {
             'buscar_cliente' => [
                 'type' => 'client_search',
@@ -562,6 +575,10 @@ class SefarMcpServer extends Command
             'result_hash' => hash('sha256', $json),
             'result_bytes' => strlen($json),
         ];
+
+        if ($this->readTools->supports($tool)) {
+            return array_merge($summary, $this->readTools->summarizeResult($tool, $result));
+        }
 
         return array_merge($summary, match ($tool) {
             'iniciar_sesion', 'estado_sesion' => [

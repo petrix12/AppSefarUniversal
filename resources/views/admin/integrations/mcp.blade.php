@@ -12,7 +12,6 @@
 @section('content')
     @php
         $mcpEndpoint = url('/mcp');
-        $restEndpoint = url('/api/mcp/v1');
         $createdToken = session('created_token');
     @endphp
 
@@ -54,9 +53,8 @@
                             <input type="text" name="name" id="name" class="form-control" maxlength="80" value="{{ old('name') }}" placeholder="MCP privado - integracion">
                         </div>
 
-                        <div class="callout callout-info mb-0">
-                            <strong>Permiso:</strong> <code>mcp:read</code>
-                            <div class="small mt-1">Solo usuarios internos. Los usuarios con rol Cliente quedan excluidos.</div>
+                        <div class="integration-note">
+                            <i class="fas fa-shield-alt mr-1"></i> Permiso <code>mcp:read</code>. Solo usuarios internos.
                         </div>
                     </div>
                     <div class="card-footer text-right">
@@ -68,21 +66,14 @@
             </div>
 
             <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title mb-0">
-                        <i class="fas fa-link mr-1"></i> Endpoint
-                    </h3>
-                </div>
                 <div class="card-body">
-                    <label class="small text-muted mb-1">MCP remoto para Codex</label>
-                    <div class="integration-endpoint mb-3" data-mcp-endpoint>{{ $mcpEndpoint }}</div>
-                    <button type="button" class="btn btn-sm btn-outline-primary" data-copy-value="{{ $mcpEndpoint }}">
-                        <i class="fas fa-copy mr-1"></i> Copiar endpoint MCP
-                    </button>
-                    <hr>
-                    <label class="small text-muted mb-1">API REST privada</label>
-                    <div class="integration-endpoint integration-endpoint-muted">{{ $restEndpoint }}</div>
-                    <div class="small text-muted mt-2">La API REST se mantiene para integraciones internas; Codex usa el endpoint MCP.</div>
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <strong><i class="fas fa-link mr-1"></i> Endpoint MCP</strong>
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-copy-value="{{ $mcpEndpoint }}" title="Copiar endpoint">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <div class="integration-endpoint" data-mcp-endpoint>{{ $mcpEndpoint }}</div>
                 </div>
             </div>
         </div>
@@ -91,7 +82,7 @@
             <div class="card card-outline card-primary">
                 <div class="card-header">
                     <h3 class="card-title mb-0">
-                        <i class="fas fa-desktop mr-1"></i> Configurar Codex Desktop
+                        <i class="fas fa-desktop mr-1"></i> Configurar clientes IA
                     </h3>
                 </div>
                 <div class="card-body">
@@ -99,37 +90,107 @@
                         <div class="col-md-7">
                             <div class="form-group">
                                 <label for="codex_mcp_token">Token MCP</label>
-                                <textarea id="codex_mcp_token" class="form-control integration-token-input" rows="3" autocomplete="off" spellcheck="false" data-codex-token placeholder="Pega aqui el token MCP que acabas de crear">{{ $createdToken }}</textarea>
-                                <div class="small text-muted mt-1">El token se usa solo en tu navegador para probar o generar el instalador. No se envia al servidor salvo cuando presionas Probar conexion.</div>
+                                <textarea id="codex_mcp_token" class="form-control integration-token-input" rows="2" autocomplete="off" spellcheck="false" data-codex-token data-mcp-token placeholder="Pega aqui el token MCP">{{ $createdToken }}</textarea>
                             </div>
 
                             <div class="d-flex flex-wrap align-items-center integration-actions">
                                 <button type="button" class="btn btn-primary" data-download-codex-installer>
-                                    <i class="fas fa-download mr-1"></i> Descargar instalador Windows
+                                    <i class="fas fa-download mr-1"></i> Codex Windows
                                 </button>
                                 <button type="button" class="btn btn-outline-primary" data-test-mcp>
-                                    <i class="fas fa-plug mr-1"></i> Probar conexion
+                                    <i class="fas fa-plug mr-1"></i> Probar
                                 </button>
                                 <button type="button" class="btn btn-outline-secondary" data-copy-toml>
-                                    <i class="fas fa-copy mr-1"></i> Copiar TOML
+                                    <i class="fas fa-copy mr-1"></i> TOML
                                 </button>
+                            </div>
+
+                            <div class="integration-section-label mt-4 mb-2">Descargar configuracion</div>
+
+                            <div class="integration-ai-grid">
+                                <button type="button" class="integration-ai-tile" data-download-ai-config="vscode" style="--app-color: #007acc;">
+                                    <span class="integration-app-logo"><i class="fas fa-code"></i></span>
+                                    <span>
+                                        <span class="integration-app-name">VS Code</span>
+                                        <span class="integration-app-meta">Copilot</span>
+                                    </span>
+                                </button>
+                                <button type="button" class="integration-ai-tile" data-download-ai-config="copilot-cli" style="--app-color: #24292f;">
+                                    <span class="integration-app-logo"><i class="fab fa-github"></i></span>
+                                    <span>
+                                        <span class="integration-app-name">Copilot</span>
+                                        <span class="integration-app-meta">CLI</span>
+                                    </span>
+                                </button>
+                                <button type="button" class="integration-ai-tile" data-download-ai-config="cursor" style="--app-color: #111111;">
+                                    <span class="integration-app-logo"><i class="fas fa-mouse-pointer"></i></span>
+                                    <span>
+                                        <span class="integration-app-name">Cursor</span>
+                                        <span class="integration-app-meta">mcp.json</span>
+                                    </span>
+                                </button>
+                                <button type="button" class="integration-ai-tile" data-download-ai-config="claude" style="--app-color: #d97757;">
+                                    <span class="integration-app-logo"><i class="fas fa-terminal"></i></span>
+                                    <span>
+                                        <span class="integration-app-name">Claude</span>
+                                        <span class="integration-app-meta">Code</span>
+                                    </span>
+                                </button>
+                                <button type="button" class="integration-ai-tile" data-download-ai-config="windsurf" style="--app-color: #00a7c8;">
+                                    <span class="integration-app-logo"><i class="fas fa-wind"></i></span>
+                                    <span>
+                                        <span class="integration-app-name">Windsurf</span>
+                                        <span class="integration-app-meta">MCP</span>
+                                    </span>
+                                </button>
+                                <button type="button" class="integration-ai-tile" data-download-ai-config="opencode" style="--app-color: #111827;">
+                                    <span class="integration-app-logo">&lt;/&gt;</span>
+                                    <span>
+                                        <span class="integration-app-name">OpenCode</span>
+                                        <span class="integration-app-meta">remote</span>
+                                    </span>
+                                </button>
+                                <button type="button" class="integration-ai-tile" data-download-ai-config="openclaw" style="--app-color: #7c3aed;">
+                                    <span class="integration-app-logo">OC</span>
+                                    <span>
+                                        <span class="integration-app-name">OpenClaw</span>
+                                        <span class="integration-app-meta">HTTP</span>
+                                    </span>
+                                </button>
+                                <button type="button" class="integration-ai-tile" data-download-ai-config="generic" style="--app-color: #6c757d;">
+                                    <span class="integration-app-logo"><i class="fas fa-plug"></i></span>
+                                    <span>
+                                        <span class="integration-app-name">Generico</span>
+                                        <span class="integration-app-meta">MCP HTTP</span>
+                                    </span>
+                                </button>
+                            </div>
+
+                            <div class="integration-note mt-3">
+                                <i class="fas fa-lock mr-1"></i> Los archivos incluyen el token. No los subas a Git.
                             </div>
 
                             <div class="integration-status mt-3 d-none" data-mcp-status></div>
                         </div>
 
                         <div class="col-md-5">
-                            <div class="integration-codex-preview">
-                                <div class="integration-preview-header">
-                                    <span>config.toml</span>
-                                    <span class="badge badge-primary">Codex</span>
-                                </div>
-                                <pre data-codex-toml>[mcp_servers.sefar]
+                            <button class="integration-preview-toggle" type="button" data-toggle="collapse" data-target="#mcp_config_preview" aria-expanded="false" aria-controls="mcp_config_preview">
+                                <span><i class="fas fa-file-code mr-1"></i> Vista previa</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+
+                            <div class="collapse mt-2" id="mcp_config_preview">
+                                <div class="integration-codex-preview">
+                                    <div class="integration-preview-header">
+                                        <span data-preview-title>config.toml</span>
+                                        <span class="badge badge-primary" data-preview-badge>Codex</span>
+                                    </div>
+                                    <pre data-codex-toml>[mcp_servers.sefar]
 url = "{{ $mcpEndpoint }}"
 bearer_token_env_var = "SEFAR_MCP_TOKEN"
 tool_timeout_sec = 120</pre>
+                                </div>
                             </div>
-                            <div class="small text-muted mt-2">Despues de ejecutar el instalador, cierra y abre Codex Desktop para que lea la variable del token.</div>
                         </div>
                     </div>
                 </div>
@@ -145,15 +206,12 @@ tool_timeout_sec = 120</pre>
         .integration-endpoint {
             border: 1px solid var(--sefar-border);
             border-radius: var(--sefar-radius);
-            background: var(--sefar-primary-soft);
+            background: var(--sefar-surface);
             color: var(--sefar-text);
             font-family: monospace;
-            padding: .75rem;
+            font-size: .86rem;
+            padding: .6rem .7rem;
             word-break: break-word;
-        }
-
-        .integration-endpoint-muted {
-            background: var(--sefar-surface);
         }
 
         .integration-token-input,
@@ -165,7 +223,7 @@ tool_timeout_sec = 120</pre>
         }
 
         .integration-token-input {
-            min-height: 92px;
+            min-height: 68px;
             resize: vertical;
         }
 
@@ -173,11 +231,108 @@ tool_timeout_sec = 120</pre>
             gap: .5rem;
         }
 
+        .integration-note {
+            border: 1px solid var(--sefar-border);
+            border-radius: var(--sefar-radius);
+            background: var(--sefar-surface);
+            color: var(--sefar-muted);
+            font-size: .86rem;
+            padding: .55rem .65rem;
+        }
+
+        .integration-section-label {
+            color: var(--sefar-muted);
+            font-size: .78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .integration-ai-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+            gap: .65rem;
+        }
+
+        .integration-ai-tile {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            min-height: 64px;
+            border: 1px solid var(--sefar-border);
+            border-radius: var(--sefar-radius);
+            background: var(--sefar-surface);
+            color: var(--sefar-text);
+            padding: .65rem;
+            text-align: left;
+            transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+        }
+
+        .integration-ai-tile:hover,
+        .integration-ai-tile:focus {
+            border-color: var(--app-color);
+            box-shadow: inset 3px 0 0 var(--app-color), 0 6px 14px rgba(0, 0, 0, .08);
+            color: var(--sefar-text);
+            outline: 0;
+            transform: translateY(-1px);
+        }
+
+        .integration-app-logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 36px;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: var(--app-color);
+            color: #fff;
+            font-size: .85rem;
+            font-weight: 700;
+            margin-right: .65rem;
+        }
+
+        .integration-app-name,
+        .integration-app-meta {
+            display: block;
+            line-height: 1.15;
+        }
+
+        .integration-app-name {
+            font-weight: 700;
+        }
+
+        .integration-app-meta {
+            color: var(--sefar-muted);
+            font-size: .76rem;
+            margin-top: .15rem;
+        }
+
         .integration-codex-preview {
             border: 1px solid var(--sefar-border);
             border-radius: var(--sefar-radius);
             background: var(--sefar-surface);
             overflow: hidden;
+        }
+
+        .integration-preview-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            min-height: 42px;
+            border: 1px solid var(--sefar-border);
+            border-radius: var(--sefar-radius);
+            background: var(--sefar-surface);
+            color: var(--sefar-text);
+            padding: .6rem .75rem;
+            font-weight: 600;
+        }
+
+        .integration-preview-toggle:hover,
+        .integration-preview-toggle:focus {
+            border-color: var(--sefar-primary);
+            color: var(--sefar-text);
+            outline: 0;
         }
 
         .integration-preview-header {
@@ -226,6 +381,8 @@ tool_timeout_sec = 120</pre>
             const tokenInput = document.querySelector('[data-codex-token]');
             const statusBox = document.querySelector('[data-mcp-status]');
             const tomlPreview = document.querySelector('[data-codex-toml]');
+            const previewTitle = document.querySelector('[data-preview-title]');
+            const previewBadge = document.querySelector('[data-preview-badge]');
 
             function token() {
                 return (tokenInput?.value || '').trim();
@@ -241,6 +398,41 @@ tool_timeout_sec = 120</pre>
                     '[mcp_servers.sefar.tools.refrescar_cos_cliente]',
                     'approval_mode = "prompt"',
                 ].join('\n');
+            }
+
+            function configToken() {
+                const currentToken = token();
+
+                if (! currentToken) {
+                    throw new Error('Pega el token MCP antes de generar la configuracion.');
+                }
+
+                if (/[\r\n]/.test(currentToken)) {
+                    throw new Error('El token no debe tener saltos de linea.');
+                }
+
+                return currentToken;
+            }
+
+            function authHeaders() {
+                return {
+                    Authorization: 'Bearer ' + configToken(),
+                };
+            }
+
+            function prettyJson(value) {
+                return JSON.stringify(value, null, 2);
+            }
+
+            function setPreview(title, badge, color) {
+                if (previewTitle) {
+                    previewTitle.textContent = title;
+                }
+
+                if (previewBadge) {
+                    previewBadge.textContent = badge;
+                    previewBadge.style.backgroundColor = color || '';
+                }
             }
 
             function setStatus(kind, message) {
@@ -277,6 +469,149 @@ tool_timeout_sec = 120</pre>
                 document.execCommand('copy');
                 document.body.removeChild(textarea);
                 setStatus('ok', okMessage || 'Copiado.');
+            }
+
+            function downloadText(filename, content, type) {
+                const blob = new Blob([content], { type: type || 'text/plain' });
+                const link = document.createElement('a');
+
+                link.href = URL.createObjectURL(blob);
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
+            }
+
+            function aiConfig(kind) {
+                const headers = authHeaders();
+                const configs = {
+                    'vscode': {
+                        label: 'VS Code / Copilot',
+                        color: '#007acc',
+                        filename: 'sefar-vscode-copilot-mcp.json',
+                        content: prettyJson({
+                            servers: {
+                                sefar: {
+                                    type: 'http',
+                                    url: endpoint,
+                                    headers: headers,
+                                },
+                            },
+                        }),
+                        message: 'Configuracion VS Code / Copilot descargada.',
+                    },
+                    'copilot-cli': {
+                        label: 'Copilot CLI',
+                        color: '#24292f',
+                        filename: 'sefar-copilot-mcp-config.json',
+                        content: prettyJson({
+                            mcpServers: {
+                                sefar: {
+                                    type: 'http',
+                                    url: endpoint,
+                                    headers: headers,
+                                    tools: ['*'],
+                                },
+                            },
+                        }),
+                        message: 'Configuracion Copilot CLI descargada.',
+                    },
+                    'cursor': {
+                        label: 'Cursor',
+                        color: '#111111',
+                        filename: 'sefar-cursor-mcp.json',
+                        content: prettyJson({
+                            mcpServers: {
+                                sefar: {
+                                    url: endpoint,
+                                    headers: headers,
+                                },
+                            },
+                        }),
+                        message: 'Configuracion Cursor descargada.',
+                    },
+                    'claude': {
+                        label: 'Claude Code',
+                        color: '#d97757',
+                        filename: 'sefar-claude-code.mcp.json',
+                        content: prettyJson({
+                            mcpServers: {
+                                sefar: {
+                                    type: 'http',
+                                    url: endpoint,
+                                    headers: headers,
+                                },
+                            },
+                        }),
+                        message: 'Configuracion Claude Code descargada.',
+                    },
+                    'windsurf': {
+                        label: 'Windsurf',
+                        color: '#00a7c8',
+                        filename: 'sefar-windsurf-mcp_config.json',
+                        content: prettyJson({
+                            mcpServers: {
+                                sefar: {
+                                    serverUrl: endpoint,
+                                    headers: headers,
+                                },
+                            },
+                        }),
+                        message: 'Configuracion Windsurf descargada.',
+                    },
+                    'opencode': {
+                        label: 'OpenCode',
+                        color: '#111827',
+                        filename: 'sefar-opencode.json',
+                        content: prettyJson({
+                            '$schema': 'https://opencode.ai/config.json',
+                            mcp: {
+                                sefar: {
+                                    type: 'remote',
+                                    url: endpoint,
+                                    enabled: true,
+                                    headers: headers,
+                                },
+                            },
+                        }),
+                        message: 'Configuracion OpenCode descargada.',
+                    },
+                    'openclaw': {
+                        label: 'OpenClaw',
+                        color: '#7c3aed',
+                        filename: 'sefar-openclaw-mcp.json',
+                        content: prettyJson({
+                            url: endpoint,
+                            transport: 'streamable-http',
+                            headers: headers,
+                            requestTimeoutMs: 120000,
+                            connectionTimeoutMs: 20000,
+                        }),
+                        message: 'Configuracion OpenClaw descargada.',
+                    },
+                    'generic': {
+                        label: 'MCP HTTP generico',
+                        color: '#6c757d',
+                        filename: 'sefar-mcp-http-generico.json',
+                        content: prettyJson({
+                            mcpServers: {
+                                sefar: {
+                                    type: 'http',
+                                    url: endpoint,
+                                    headers: headers,
+                                },
+                            },
+                        }),
+                        message: 'Configuracion generica MCP descargada.',
+                    },
+                };
+
+                if (! configs[kind]) {
+                    throw new Error('Cliente IA no soportado.');
+                }
+
+                return configs[kind];
             }
 
             function encodeUtf16LeBase64(value) {
@@ -366,23 +701,42 @@ tool_timeout_sec = 120</pre>
             });
 
             document.querySelector('[data-copy-toml]')?.addEventListener('click', function () {
+                if (tomlPreview) {
+                    tomlPreview.textContent = toml();
+                }
+
+                setPreview('config.toml', 'Codex', '');
+
                 copyText(toml(), 'Configuracion TOML copiada.');
             });
 
             document.querySelector('[data-download-codex-installer]')?.addEventListener('click', function () {
                 try {
-                    const blob = new Blob([windowsInstaller()], { type: 'application/x-msdownload' });
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(blob);
-                    link.download = 'instalar-sefar-mcp-codex.cmd';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    URL.revokeObjectURL(link.href);
+                    downloadText('instalar-sefar-mcp-codex.cmd', windowsInstaller(), 'application/x-msdownload');
                     setStatus('ok', 'Instalador descargado. Ejecutalo una vez y reinicia Codex Desktop.');
                 } catch (error) {
                     setStatus('error', error.message || 'No se pudo generar el instalador.');
                 }
+            });
+
+            document.querySelectorAll('[data-download-ai-config]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    try {
+                        const config = aiConfig(button.getAttribute('data-download-ai-config'));
+
+                        downloadText(config.filename, config.content, 'application/json');
+
+                        if (tomlPreview) {
+                            tomlPreview.textContent = config.content;
+                        }
+
+                        setPreview(config.filename, config.label, config.color);
+
+                        setStatus('ok', config.message);
+                    } catch (error) {
+                        setStatus('error', error.message || 'No se pudo generar la configuracion.');
+                    }
+                });
             });
 
             document.querySelector('[data-test-mcp]')?.addEventListener('click', async function () {

@@ -20,7 +20,8 @@ La ventana permite:
 - crear tokens MCP con permiso `mcp:read`;
 - probar el endpoint `/mcp` desde el navegador;
 - copiar la configuracion TOML;
-- descargar un instalador Windows `instalar-sefar-mcp-codex.cmd` que configura `~/.codex/config.toml` y la variable de usuario `SEFAR_MCP_TOKEN`.
+- descargar un instalador Windows `instalar-sefar-mcp-codex.cmd` que configura `~/.codex/config.toml` y la variable de usuario `SEFAR_MCP_TOKEN`;
+- descargar archivos de configuracion para VS Code/Copilot, Copilot CLI, Cursor, Claude Code, Windsurf, OpenCode, OpenClaw y clientes MCP HTTP genericos.
 
 Codex debe quedar con una configuracion equivalente a:
 
@@ -129,6 +130,13 @@ HTTP remoto:
 - `ver_cliente`: lee informacion basica de un cliente.
 - `ver_cos_cliente`: lee `users.arraycos` si `users.arraycos_expire` sigue vigente. Si no hay cache o pasaron 5 dias, recalcula mediante `ClientCosSnapshotService`.
 - `refrescar_cos_cliente`: fuerza el flujo Laravel de COS mediante `ClientCosSnapshotService`; puede actualizar `users.arraycos`, `users.arraycos_expire`, `users.cosready` y sincronizaciones necesarias.
+- `resumen_cliente`: resume ficha, cache COS local, conteos y ultimos registros operativos sin recalcular COS.
+- `listar_negocios_cliente`: lista negocios locales asociados al cliente.
+- `listar_compras_cliente`: lista compras y servicios comprados por el cliente.
+- `listar_facturas_cliente`: lista facturas locales y sus compras asociadas.
+- `listar_documentos_cliente`: lista documentos cargados y solicitudes documentales.
+- `listar_tareas_cliente`: lista tareas comerciales u operativas asociadas al cliente.
+- `buscar_servicios`: busca servicios/productos configurados en la plataforma.
 
 Stdio / Artisan:
 
@@ -139,6 +147,13 @@ Stdio / Artisan:
 - `ver_cliente`: lee informacion basica de un cliente.
 - `ver_cos_cliente`: lee `users.arraycos` si `users.arraycos_expire` sigue vigente. Si no hay cache o pasaron 5 dias, recalcula mediante `ClientCosSnapshotService`.
 - `refrescar_cos_cliente`: fuerza el flujo Laravel de COS mediante `ClientCosSnapshotService`; puede actualizar `users.arraycos`, `users.arraycos_expire`, `users.cosready` y sincronizaciones necesarias.
+- `resumen_cliente`: resume ficha, cache COS local, conteos y ultimos registros operativos sin recalcular COS.
+- `listar_negocios_cliente`: lista negocios locales asociados al cliente.
+- `listar_compras_cliente`: lista compras y servicios comprados por el cliente.
+- `listar_facturas_cliente`: lista facturas locales y sus compras asociadas.
+- `listar_documentos_cliente`: lista documentos cargados y solicitudes documentales.
+- `listar_tareas_cliente`: lista tareas comerciales u operativas asociadas al cliente.
+- `buscar_servicios`: busca servicios/productos configurados en la plataforma.
 
 El primer calculo tambien intenta vincular un contacto existente de HubSpot por email o pasaporte y trae sus negocios a la tabla local si el cliente no tenia negocios registrados. No crea contactos nuevos en HubSpot durante una consulta COS.
 

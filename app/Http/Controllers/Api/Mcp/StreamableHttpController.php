@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\ClientCosSnapshotService;
 use App\Services\Mcp\McpAuditLogger;
-use Illuminate\Http\JsonResponse;
+use App\Services\Mcp\SefarMcpReadToolService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use RuntimeException;
@@ -28,10 +28,16 @@ class StreamableHttpController extends Controller
 
     private ClientCosSnapshotService $snapshots;
     private McpAuditLogger $audit;
+    private SefarMcpReadToolService $readTools;
 
-    public function __invoke(Request $request, ClientCosSnapshotService $snapshots): Response
+    public function __invoke(
+        Request $request,
+        ClientCosSnapshotService $snapshots,
+        SefarMcpReadToolService $readTools
+    ): Response
     {
         $this->snapshots = $snapshots;
+        $this->readTools = $readTools;
         $this->audit = $this->auditLogger();
 
         if (! $this->originAllowed($request)) {
@@ -157,7 +163,7 @@ class StreamableHttpController extends Controller
 
     private function tools(): array
     {
-        return [
+        return array_merge([
             [
                 'name' => 'estado_mcp',
                 'description' => 'Verifica que el token MCP esta autenticado y muestra el usuario interno asociado.',
@@ -237,7 +243,7 @@ class StreamableHttpController extends Controller
                     'additionalProperties' => false,
                 ],
             ],
-        ];
+        ], $this->readTools->tools());
     }
 
     private function handleToolCall(Request $request, mixed $id, array $params): array
@@ -302,6 +308,10 @@ class StreamableHttpController extends Controller
 
     private function callTool(Request $request, string $name, array $arguments): array
     {
+        if ($this->readTools->supports($name)) {
+            return $this->readTools->call($name, $arguments);
+        }
+
         return match ($name) {
             'estado_mcp' => $this->estadoMcp($request),
             'buscar_cliente' => $this->buscarCliente($arguments),
@@ -602,6 +612,10 @@ class StreamableHttpController extends Controller
 
     private function auditTarget(string $tool, array $arguments): array
     {
+        if ($this->readTools->supports($tool)) {
+            return $this->readTools->auditTarget($tool, $arguments);
+        }
+
         return match ($tool) {
             'buscar_cliente' => [
                 'type' => 'client_search',
@@ -640,6 +654,10 @@ class StreamableHttpController extends Controller
             'result_hash' => hash('sha256', $json),
             'result_bytes' => strlen($json),
         ];
+
+        if ($this->readTools->supports($tool)) {
+            return array_merge($summary, $this->readTools->summarizeResult($tool, $result));
+        }
 
         return array_merge($summary, match ($tool) {
             'estado_mcp' => [
