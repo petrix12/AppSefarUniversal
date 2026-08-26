@@ -13,20 +13,30 @@ class MondayCatalogService
     public function boards(): array
     {
         return Cache::remember('monday.catalog.boards', now()->addMinutes(10), function (): array {
-            $data = $this->query(<<<'GRAPHQL'
-                query {
-                    boards(limit: 1000) {
-                        id
-                        name
-                    }
-                }
-                GRAPHQL);
+            $boards = collect();
+            $page = 1;
 
-            return collect(data_get($data, 'boards', []))
+            do {
+                $data = $this->query(<<<'GRAPHQL'
+                    query ($page: Int!) {
+                        boards(limit: 100, page: $page) {
+                            id
+                            name
+                        }
+                    }
+                    GRAPHQL, ['page' => $page]);
+
+                $pageBoards = collect(data_get($data, 'boards', []));
+                $boards = $boards->concat($pageBoards);
+                $page++;
+            } while ($pageBoards->count() === 100 && $page <= 100);
+
+            return $boards
                 ->map(fn (array $board): array => [
                     'id' => (string) $board['id'],
                     'name' => (string) $board['name'],
                 ])
+                ->unique('id')
                 ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
                 ->values()
                 ->all();
@@ -79,12 +89,23 @@ class MondayCatalogService
 
         $data = $response->json();
 
-        if (! $response->successful()) {
-            throw new RuntimeException("Monday respondió HTTP {$response->status()}.");
+        if (! empty($data['errors'])) {
+            $messages = collect($data['errors'])
+                ->pluck('message')
+                ->filter()
+                ->implode(' | ');
+
+            throw new RuntimeException(
+                "Monday rechazó la consulta (HTTP {$response->status()}): ".($messages ?: 'error GraphQL sin detalle.')
+            );
         }
 
-        if (! empty($data['errors'])) {
-            throw new RuntimeException((string) data_get($data, 'errors.0.message', 'Monday devolvió un error.'));
+        if (! $response->successful()) {
+            $message = data_get($data, 'error_message')
+                ?? data_get($data, 'message')
+                ?? 'respuesta sin detalle.';
+
+            throw new RuntimeException("Monday respondió HTTP {$response->status()}: {$message}");
         }
 
         return (array) data_get($data, 'data', []);

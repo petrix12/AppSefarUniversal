@@ -24,7 +24,7 @@ class MondayCatalogServiceTest extends TestCase
         Http::fake(function ($request) {
             $query = $request->data()['query'];
 
-            if (str_contains($query, 'boards(limit: 1000)')) {
+            if (str_contains($query, 'boards(limit: 100, page: $page)')) {
                 return Http::response([
                     'data' => [
                         'boards' => [
@@ -78,5 +78,27 @@ class MondayCatalogServiceTest extends TestCase
         }
 
         Http::assertNothingSent();
+    }
+
+    public function test_it_exposes_the_graphql_message_returned_with_an_http_error(): void
+    {
+        Cache::flush();
+        Http::fake([
+            'api.monday.com/v2' => Http::response([
+                'errors' => [[
+                    'message' => 'Invalid value for argument limit.',
+                ]],
+            ], 400),
+        ]);
+
+        try {
+            app(MondayCatalogService::class)->boards();
+            $this->fail('Se esperaba el error GraphQL de Monday.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame(
+                'Monday rechazó la consulta (HTTP 400): Invalid value for argument limit.',
+                $exception->getMessage()
+            );
+        }
     }
 }
