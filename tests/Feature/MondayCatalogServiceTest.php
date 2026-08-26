@@ -1,0 +1,82 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Services\MondayCatalogService;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
+use RuntimeException;
+use Tests\TestCase;
+
+class MondayCatalogServiceTest extends TestCase
+{
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config()->set('cache.default', 'array');
+        config()->set('services.monday.token', 'monday-test-token');
+        Cache::flush();
+    }
+
+    public function test_it_loads_and_caches_boards_and_groups_from_monday(): void
+    {
+        Http::fake(function ($request) {
+            $query = $request->data()['query'];
+
+            if (str_contains($query, 'boards(limit: 1000)')) {
+                return Http::response([
+                    'data' => [
+                        'boards' => [
+                            ['id' => '20', 'name' => 'Ventas'],
+                            ['id' => '10', 'name' => 'Análisis'],
+                        ],
+                    ],
+                ]);
+            }
+
+            return Http::response([
+                'data' => [
+                    'boards' => [[
+                        'groups' => [
+                            ['id' => 'en_proceso', 'title' => 'En proceso'],
+                            ['id' => 'nuevos', 'title' => 'Nuevos'],
+                        ],
+                    ]],
+                ],
+            ]);
+        });
+
+        $catalog = app(MondayCatalogService::class);
+
+        $this->assertSame([
+            ['id' => '10', 'name' => 'Análisis'],
+            ['id' => '20', 'name' => 'Ventas'],
+        ], $catalog->boards());
+        $this->assertSame([
+            ['id' => 'en_proceso', 'name' => 'En proceso'],
+            ['id' => 'nuevos', 'name' => 'Nuevos'],
+        ], $catalog->groups('10'));
+
+        $catalog->boards();
+        $catalog->groups('10');
+
+        Http::assertSentCount(2);
+        Http::assertSent(fn ($request): bool => $request->hasHeader('Authorization', 'monday-test-token'));
+    }
+
+    public function test_it_reports_a_missing_token_without_calling_monday(): void
+    {
+        config()->set('services.monday.token');
+        Http::fake();
+
+        try {
+            app(MondayCatalogService::class)->boards();
+            $this->fail('Se esperaba una excepción por falta de MONDAY_TOKEN.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('Falta configurar MONDAY_TOKEN.', $exception->getMessage());
+        }
+
+        Http::assertNothingSent();
+    }
+}

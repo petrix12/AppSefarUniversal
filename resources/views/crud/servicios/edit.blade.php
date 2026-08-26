@@ -36,6 +36,7 @@
                         <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                             <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
                                 {{-- Diseñar formulario - Inicio --}}
+                                @include('crud.servicios.partials.errors')
                                 <form action="{{ route('crud.servicios.update', $servicio) }}" method="POST">
 
                                     @csrf
@@ -114,6 +115,8 @@
     <link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
 @stop
 
+@section('plugins.Select2', true)
+
 @section('js')
-    
+    @include('crud.servicios.partials.monday-selects-script')
 @stop

@@ -483,6 +483,12 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
             ->middleware('can:crud.miscelaneos.index');
     Route::resource('coupons', CouponController::class)->names('coupons')
             ->middleware('can:crud.coupons.index');
+    Route::get('servicios/monday/boards', [ServicioController::class, 'mondayBoards'])
+            ->name('servicios.monday.boards')
+            ->middleware('can:crud.servicios.index');
+    Route::get('servicios/monday/groups', [ServicioController::class, 'mondayGroups'])
+            ->name('servicios.monday.groups')
+            ->middleware('can:crud.servicios.index');
     Route::resource('servicios', ServicioController::class)->names('servicios')
             ->middleware('can:crud.servicios.index');
     Route::resource('reports', ReportController::class)->names('reports')

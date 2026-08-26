@@ -3,14 +3,35 @@
 namespace App\Http\Controllers;
 
 use App\Models\Servicio;
+use App\Services\MondayCatalogService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Throwable;
 
 class ServicioController extends Controller
 {
+    public function mondayBoards(MondayCatalogService $catalog): JsonResponse
+    {
+        return $this->mondayOptionsResponse(fn (): array => $catalog->boards());
+    }
+
+    public function mondayGroups(Request $request, MondayCatalogService $catalog): JsonResponse
+    {
+        $data = $request->validate([
+            'board_id' => ['required', 'regex:/^\d+$/'],
+        ]);
+
+        return $this->mondayOptionsResponse(
+            fn (): array => $catalog->groups($data['board_id'])
+        );
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -44,9 +65,8 @@ class ServicioController extends Controller
 
         try {
             Servicio::create($data);
-        } catch(QueryException $ex){
-            $this->handleQueryException($ex, 'El servicio ya existe');
-            return back()->withInput();
+        } catch (Throwable $exception) {
+            return $this->serviceSaveFailure($request, $exception, 'crear');
         }
 
         // Mensaje
@@ -92,9 +112,8 @@ class ServicioController extends Controller
 
         try {
             $servicio->save();
-        } catch(QueryException $ex){
-            $this->handleQueryException($ex, 'El servicio ya existe. No puedes duplicarlo.');
-            return back()->withInput();
+        } catch (Throwable $exception) {
+            return $this->serviceSaveFailure($request, $exception, 'actualizar', $servicio);
         }
 
         // Mensaje
@@ -185,6 +204,34 @@ class ServicioController extends Controller
             'monday_sync_enabled' => ['nullable', 'boolean'],
             'monday_board_id' => ['nullable', 'regex:/^\d+$/', 'max:255', 'required_if:monday_sync_enabled,1'],
             'monday_group_id' => ['nullable', 'string', 'max:255', 'required_if:monday_sync_enabled,1'],
+        ], [
+            'required' => 'El campo :attribute es obligatorio.',
+            'required_if' => 'El campo :attribute es obligatorio cuando el envío a Monday está activo.',
+            'unique' => 'Ya existe un servicio con el mismo :attribute.',
+            'integer' => 'El campo :attribute debe ser un número entero.',
+            'boolean' => 'El campo :attribute debe ser sí o no.',
+            'size' => 'El campo :attribute debe tener exactamente :size caracteres.',
+            'in' => 'El valor seleccionado para :attribute no es válido.',
+            'regex' => 'El Board ID de Monday debe contener solamente números.',
+        ], [
+            'id_hubspot' => 'ID de HubSpot',
+            'nombre' => 'nombre del servicio',
+            'precio' => 'precio',
+            'tipov' => 'servicio de vinculación',
+            'categoria' => 'categoría',
+            'tipo' => 'tipo',
+            'descripcion_publica' => 'descripción pública',
+            'activo' => 'estado activo',
+            'visible_cliente' => 'visibilidad para clientes',
+            'moneda' => 'moneda',
+            'duracion_minutos' => 'duración',
+            'requiere_agenda' => 'requerimiento de agenda',
+            'orden' => 'orden',
+            'hubspot_pipeline_id' => 'HubSpot Pipeline ID',
+            'hubspot_stage_id' => 'HubSpot Stage ID',
+            'monday_sync_enabled' => 'envío a Monday',
+            'monday_board_id' => 'tablero de Monday',
+            'monday_group_id' => 'grupo/subtablero de Monday',
         ]);
 
         $data['id_hubspot'] = trim($data['id_hubspot']);
@@ -206,19 +253,86 @@ class ServicioController extends Controller
         return $data;
     }
 
-    private function handleQueryException(QueryException $exception, string $duplicateMessage): void
+    private function serviceSaveFailure(
+        Request $request,
+        Throwable $exception,
+        string $operation,
+        ?Servicio $servicio = null
+    ): RedirectResponse
     {
-        if (($exception->errorInfo[1] ?? null) === 1062) {
-            Alert::error('Error', $duplicateMessage);
-            return;
-        }
+        $reference = Str::upper(Str::random(8));
+        $message = $exception instanceof QueryException
+            ? $this->databaseErrorMessage($exception, $reference)
+            : "No se pudo {$operation} el servicio. Referencia: {$reference}.";
 
-        Log::error('No se pudo guardar el servicio', [
+        Log::error("No se pudo {$operation} el servicio", [
+            'reference' => $reference,
+            'operation' => $operation,
+            'service_id' => $servicio?->id,
+            'submitted_fields' => array_keys($request->except([
+                '_token',
+                '_method',
+            ])),
+            'exception' => get_class($exception),
             'message' => $exception->getMessage(),
-            'sql_state' => $exception->errorInfo[0] ?? null,
-            'driver_code' => $exception->errorInfo[1] ?? null,
+            'sql_state' => $exception instanceof QueryException ? ($exception->errorInfo[0] ?? null) : null,
+            'driver_code' => $exception instanceof QueryException ? ($exception->errorInfo[1] ?? null) : null,
         ]);
 
-        Alert::error('Error', 'No se pudo guardar el servicio. Revisa los datos e intenta nuevamente.');
+        Alert::error('No se pudo guardar el servicio', $message);
+
+        return back()
+            ->withInput()
+            ->withErrors(['service_save' => $message]);
+    }
+
+    private function databaseErrorMessage(QueryException $exception, string $reference): string
+    {
+        $driverCode = (int) ($exception->errorInfo[1] ?? 0);
+        $driverMessage = (string) ($exception->errorInfo[2] ?? '');
+        $field = $this->databaseFieldFromMessage($driverMessage);
+
+        $message = match ($driverCode) {
+            1048 => 'Falta un valor obligatorio'.($field ? " en {$field}" : '').'.',
+            1054 => 'La estructura de la base de datos está desactualizada'.($field ? ": no existe {$field}" : '').'. Ejecuta las migraciones.',
+            1062 => str_contains($driverMessage, 'servicios_id_hubspot_unique')
+                ? 'Ya existe otro servicio con el mismo ID de HubSpot.'
+                : 'Ya existe un registro con uno de esos valores únicos.',
+            1264 => 'Uno de los valores numéricos está fuera del rango permitido'.($field ? " ({$field})" : '').'.',
+            1366 => 'Un valor tiene un formato incompatible con la base de datos'.($field ? " ({$field})" : '').'.',
+            1406 => 'El contenido supera el tamaño permitido'.($field ? " en {$field}" : '').'.',
+            1451, 1452 => 'El servicio está relacionado con otros datos y la operación viola esa relación.',
+            default => 'Error de base de datos'.($driverCode ? " (código {$driverCode})" : '').'.',
+        };
+
+        if (config('app.debug') && $driverMessage !== '') {
+            $message .= ' Detalle técnico: '.Str::limit($driverMessage, 500);
+        }
+
+        return $message." Referencia: {$reference}.";
+    }
+
+    private function databaseFieldFromMessage(string $message): ?string
+    {
+        if (preg_match("/(?:column|field) ['`]([^'`]+)['`]/i", $message, $matches)) {
+            return "el campo «{$matches[1]}»";
+        }
+
+        return null;
+    }
+
+    private function mondayOptionsResponse(callable $options): JsonResponse
+    {
+        try {
+            return response()->json(['data' => $options()]);
+        } catch (\Throwable $exception) {
+            Log::error('No se pudo cargar el catálogo de Monday', [
+                'message' => $exception->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => $exception->getMessage(),
+            ], 502);
+        }
     }
 }

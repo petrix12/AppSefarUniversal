@@ -48,16 +48,38 @@
     </div>
 
     <div class="col-md-4 py-2">
-        <label class="block text-sm font-medium text-gray-700">Monday Board ID</label>
-        <input value="{{ old('monday_board_id', $current->monday_board_id ?? '878831315') }}" type="text" name="monday_board_id" class="form-control" inputmode="numeric">
+        <label class="block text-sm font-medium text-gray-700">Tablero de Monday</label>
+        @php($selectedMondayBoard = (string) old('monday_board_id', $current->monday_board_id ?? '878831315'))
+        <select
+            id="monday_board_id"
+            name="monday_board_id"
+            class="form-control"
+            data-selected="{{ $selectedMondayBoard }}"
+            data-options-url="{{ route('crud.servicios.monday.boards') }}"
+        >
+            @if($selectedMondayBoard !== '')
+                <option value="{{ $selectedMondayBoard }}" selected>Tablero guardado ({{ $selectedMondayBoard }})</option>
+            @endif
+        </select>
         @error('monday_board_id')
             <small style="color:red">*{{ $message }}*</small>
         @enderror
     </div>
 
     <div class="col-md-5 py-2">
-        <label class="block text-sm font-medium text-gray-700">Monday Grupo/Subtablero ID</label>
-        <input value="{{ old('monday_group_id', $current->monday_group_id ?? 'duplicate_of_en_proceso') }}" type="text" name="monday_group_id" class="form-control">
+        <label class="block text-sm font-medium text-gray-700">Monday Grupo/Subtablero</label>
+        @php($selectedMondayGroup = (string) old('monday_group_id', $current->monday_group_id ?? 'duplicate_of_en_proceso'))
+        <select
+            id="monday_group_id"
+            name="monday_group_id"
+            class="form-control"
+            data-selected="{{ $selectedMondayGroup }}"
+            data-options-url="{{ route('crud.servicios.monday.groups') }}"
+        >
+            @if($selectedMondayGroup !== '')
+                <option value="{{ $selectedMondayGroup }}" selected>Grupo guardado ({{ $selectedMondayGroup }})</option>
+            @endif
+        </select>
         @error('monday_group_id')
             <small style="color:red">*{{ $message }}*</small>
         @enderror
@@ -65,7 +87,7 @@
 </div>
 
 <p class="text-muted px-1">
-    Estos valores determinan el destino de los clientes que se registren por este servicio.
+    <span id="monday-catalog-status">Los nombres se cargan automáticamente desde Monday.</span>
 </p>
 
 <div class="row">
