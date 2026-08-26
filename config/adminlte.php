@@ -494,6 +494,13 @@ return [
                     'can'           => 'administrador',
                 ],
                 [
+                    'text'          => 'Actualizaciones de la app',
+                    'icon'          => 'fa-fw fas fa-history',
+                    'icon_color'    => 'white',
+                    'route'         => 'deployment-histories.index',
+                    'can'           => 'administrador',
+                ],
+                [
                     'text'        => 'Teamleader',
                     'icon'        => 'fa-fw fas fa-database',
                     'icon_color'  => 'white',

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DeploymentHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
@@ -43,6 +44,7 @@ class DeployController extends Controller
         $migrateExitCode = null;
         $optimizeClearOut = null;
         $optimizeClearExitCode = null;
+        $historyId = null;
 
         if ($pulledNewChanges) {
             $releaseVersion = $this->releaseVersion($afterHead);
@@ -66,6 +68,36 @@ class DeployController extends Controller
                 $mailError = $e->getMessage();
                 Log::error('Error Mail', ['msg' => $mailError]);
             }
+
+            $deployStatus = match (true) {
+                $migrateExitCode !== 0 || $optimizeClearExitCode !== 0 => 'failed',
+                ! $mailSent => 'warning',
+                default => 'success',
+            };
+
+            try {
+                $historyId = DeploymentHistory::create([
+                    'version' => $releaseVersion,
+                    'status' => $deployStatus,
+                    'before_commit' => $beforeHead,
+                    'after_commit' => $afterHead,
+                    'git_output' => $gitOut,
+                    'summary' => $summary,
+                    'model_used' => $modelUsed,
+                    'migrate_exit_code' => $migrateExitCode,
+                    'migrate_output' => $migrateOut,
+                    'optimize_exit_code' => $optimizeClearExitCode,
+                    'optimize_output' => $optimizeClearOut,
+                    'mail_sent' => $mailSent,
+                    'mail_error' => $mailError,
+                    'deployed_at' => now(),
+                ])->id;
+            } catch (\Throwable $exception) {
+                Log::error('No se pudo guardar el histórico del deploy', [
+                    'version' => $releaseVersion,
+                    'message' => $exception->getMessage(),
+                ]);
+            }
         }
 
         return response()->json([
@@ -77,6 +109,7 @@ class DeployController extends Controller
             'summary'          => $summary,
             'mail_sent'        => $mailSent,
             'mail_error'       => $mailError,
+            'history_id'       => $historyId,
             'migrate_exit_code' => $migrateExitCode,
             'migrate_output'   => $migrateOut,
             'optimize_exit_code' => $optimizeClearExitCode,

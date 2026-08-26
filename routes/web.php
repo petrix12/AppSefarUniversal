@@ -56,6 +56,7 @@ use App\Http\Controllers\WhatsappController;
 use App\Http\Controllers\ReportPhoneNumbersController;
 use App\Http\Controllers\CosPasoEditorController;
 use App\Http\Controllers\DeployController;
+use App\Http\Controllers\DeploymentHistoryController;
 use App\Http\Controllers\ProveedorRegisterController;
 use App\Http\Controllers\RegisterV2Controller;
 use App\Http\Controllers\DocumentController;
@@ -941,6 +942,13 @@ Route::get('/cron/followups-registration-payment', function () {
 });
 
 Route::get('/deploy', [DeployController::class, 'deploy'])->name('deploy.run');
+
+Route::middleware(['auth', 'can:administrador'])->group(function () {
+    Route::get('/actualizaciones', [DeploymentHistoryController::class, 'history'])
+        ->name('deployment-histories.index');
+    Route::get('/actualizaciones/{deploymentHistory}', [DeploymentHistoryController::class, 'show'])
+        ->name('deployment-histories.show');
+});
 
 Route::get('/hubspot/sync-client-owners', function () {
 
