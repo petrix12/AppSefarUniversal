@@ -28,6 +28,7 @@ class Servicio extends Model
         'monday_sync_enabled',
         'monday_board_id',
         'monday_group_id',
+        'monday_registration_timing',
         'metadata',
     ];
 

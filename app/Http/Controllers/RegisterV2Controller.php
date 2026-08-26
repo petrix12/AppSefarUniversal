@@ -95,10 +95,6 @@ class RegisterV2Controller extends Controller
                     // asigna rol y permisos
                     $userCheck->assignRole('Cliente')->givePermissionTo(['pay.services', 'finish.register']);
 
-                    if (! $this->isAuditoriaProcedimientos($servicioSolicitado->id_hubspot)) {
-                        $mondayRegistrationService->sync($userCheck, $servicioSolicitado);
-                    }
-
                     // Siempre redirigir a app.sefaruniversal.com
                     return view('redirect', ['redirect_url' => 'https://app.sefaruniversal.com/login?alert=existe']);
                 }
@@ -266,8 +262,8 @@ class RegisterV2Controller extends Controller
             $user->hs_id = $hsId;
             $user->save();
 
-            if (! $this->isAuditoriaProcedimientos($servicio->id_hubspot)) {
-                $mondayRegistrationService->sync($user, $servicio);
+            if (($input['pay'] ?? '0') === '1' && ! $this->isAuditoriaProcedimientos($servicio->id_hubspot)) {
+                $mondayRegistrationService->syncAfterPayment($user, [$servicio]);
             }
 
             if ($registrarAuditoriaFormularioPostPagoEnMonday) {

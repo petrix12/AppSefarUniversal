@@ -207,6 +207,7 @@
                     @if($servicio->monday_sync_enabled)
                         <span class="badge badge-success">Activo</span><br>
                         <small>{{ $servicio->monday_board_id }} / {{ $servicio->monday_group_id }}</small>
+                        <br><small>{{ ($servicio->monday_registration_timing ?? 'after_payment') === 'after_getinfo' ? 'Después de GetInfo' : 'Después de pagar' }}</small>
                     @else
                         <span class="badge badge-secondary">No enviar</span>
                     @endif

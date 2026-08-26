@@ -10,6 +10,7 @@ use App\Models\Factura;
 use App\Models\Servicio;
 use App\Models\User;
 use App\Services\BancaOnlineCatalog;
+use App\Services\MondayRegistrationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -21,7 +22,10 @@ use Illuminate\Support\Str;
 
 class BancaOnlineController extends Controller
 {
-    public function __construct(private BancaOnlineCatalog $catalog)
+    public function __construct(
+        private BancaOnlineCatalog $catalog,
+        private MondayRegistrationService $mondayRegistrationService
+    )
     {
     }
 
@@ -341,6 +345,12 @@ class BancaOnlineController extends Controller
                 'contrato' => 0,
             ])->save();
         });
+
+        $this->mondayRegistrationService->syncPurchasedServices(
+            $user->fresh(),
+            $compras,
+            MondayRegistrationService::TIMING_AFTER_PAYMENT
+        );
 
         $paidItems = collect($metadata['components'] ?? [])->map(function (array $component) {
             $item = [

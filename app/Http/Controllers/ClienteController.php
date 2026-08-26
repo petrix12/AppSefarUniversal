@@ -50,6 +50,7 @@ use Illuminate\Support\Facades\Mail as Mail2;
 use Carbon\Carbon;
 use App\Services\TeamleaderService;
 use App\Services\HubspotService;
+use App\Services\MondayRegistrationService;
 use Illuminate\Support\Facades\Schema;
 use App\Models\MondayData;
 use App\Models\MondayFormBuilder;
@@ -67,11 +68,17 @@ class ClienteController extends Controller
 {
     protected $teamleaderService;
     protected $hubspotService;
+    protected $mondayRegistrationService;
 
-    public function __construct(TeamleaderService $teamleaderService, HubspotService $hubspotService)
+    public function __construct(
+        TeamleaderService $teamleaderService,
+        HubspotService $hubspotService,
+        MondayRegistrationService $mondayRegistrationService
+    )
     {
         $this->teamleaderService = $teamleaderService;
         $this->hubspotService = $hubspotService;
+        $this->mondayRegistrationService = $mondayRegistrationService;
     }
 
     public function pagospendientes(){
@@ -1880,104 +1887,25 @@ class ClienteController extends Controller
 
             /* Fin de la actualización en Base de Datos */
 
-            /* Añade info a Monday */
-            $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND b.passport='".$user->passport."' ORDER BY a.id DESC LIMIT 1;";
+            // El servicio decide si debe registrarse tras GetInfo; no se usan destinos rígidos aquí.
+            $factura = Factura::where('id_cliente', $user->id)->latest('id')->first();
+            $productos = $factura
+                ? Compras::with('servicio')->where('hash_factura', $factura->hash_factura)->get()
+                : collect();
 
-            $datos_factura = json_decode(json_encode(DB::select($query)),true);
-
-            if (empty($datos_factura)) {
-                return response()->json([
-                    'success' => true,
-                    'redirect_url' => auth()->user()->contrato == 0 ? route('cliente.contrato') : route('clientes.tree'),
-                    'monday' => ['skipped' => true, 'reason' => 'sin_factura'],
-                ]);
-            }
-
-            $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
-
-            $servicios = $this->mondayAnalysisServicesText($productos);
-
-            $hasLmdService = $this->hasLmdService($productos);
-
-            if (! $this->shouldCreateGenealogyMondayItem($productos) && ! $hasLmdService) {
-                return response()->json([
-                    'success' => true,
-                    'redirect_url' => auth()->user()->contrato == 0 ? route('cliente.contrato') : route('clientes.tree'),
-                    'monday' => ['skipped' => true, 'reason' => 'servicio_no_genealogico'],
-                ]);
-            }
-
-            $token = env('MONDAY_TOKEN');
-            $apiUrl = 'https://api.monday.com/v2';
-            $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
-
-            $link = 'https://app.sefaruniversal.com/tree/' . auth()->user()->passport;
-
-            $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
-
-            if (is_null(auth()->user()->apellidos) || is_null(auth()->user()->nombres)){
-                $clientname = auth()->user()->name;
-            } else {
-                $clientname = auth()->user()->apellidos." ".auth()->user()->nombres;
-            }
-
-            $vars = [
-                'myItemName' => $clientname,
-                'columnVals' => json_encode([
-                    'texto' => auth()->user()->passport,
-                    'fecha75' => ['date' => date("Y-m-d", strtotime($input['fecha_nac']))],
-                    'texto_largo8' => $nombres_y_apellidos_del_padre,
-                    'texto_largo75' => $nombres_y_apellidos_de_madre,
-                    'enlace' => $link . " " . $link,
-                    'estado54' => 'Arbol Incompleto',
-                    'texto1' => $servicios,
-                    'texto4' => auth()->user()->hs_id,
-                    'texto_largo88' => auth()->user()->nombre_de_familiar_realizando_procesos
-                ])
-            ];
-
-            foreach ($productos as $key => $value) {
-                if (isset($value)) {
-                    $servicio_hs_id = $value['servicio_hs_id'];
-
-                    if (isset($servicio_hs_id) && ($servicio_hs_id === "Española LMD" || $servicio_hs_id == "Española LMD")) {
-                        $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 765394861, group_id: "grupo_nuevo97011", item_name:$myItemName, column_values:$columnVals) { id } }';
-
-                        $vars = [
-                            'myItemName' => $clientname,
-                            'columnVals' => json_encode([
-                                'texto' => auth()->user()->passport,
-                                'fecha75' => ['date' => date("Y-m-d", strtotime($input['fecha_nac']))],
-                                'texto_largo4' => $nombres_y_apellidos_del_padre,
-                                'texto_largo75' => $nombres_y_apellidos_de_madre,
-                                'enlace' => $link . " " . $link,
-                                'estado54' => 'Arbol Incompleto',
-                                'texto1' => $servicios,
-                                'texto6' => auth()->user()->hs_id,
-                                'texto_largo2' => auth()->user()->nombre_de_familiar_realizando_procesos,
-                                'color' => trim($input['tengo_certeza_de_mi_antepasado_espanol_']),
-                                'text' => trim($input['vinculo_antepasados'])
-                            ])
-                        ];
-                    }
-                }
-            }
-
-            $data = @file_get_contents($apiUrl, false, stream_context_create([
-                    'http' => [
-                        'method' => 'POST',
-                        'header' => $headers,
-                        'content' => json_encode(['query' => $query, 'variables' => $vars]),
-                    ]
-                ]
-            ));
-
-            $responseContent = json_decode($data,true);
+            $responseContent = $this->mondayRegistrationService->syncPurchasedServices(
+                $user->fresh(),
+                $productos,
+                MondayRegistrationService::TIMING_AFTER_GETINFO
+            );
 
             return response()->json([
                 'success' => true,
                 'redirect_url' => auth()->user()->contrato == 0 ? route('cliente.contrato') : route('clientes.tree'),
-                'monday' => $responseContent,
+                'monday' => [
+                    'timing' => MondayRegistrationService::TIMING_AFTER_GETINFO,
+                    'results' => $responseContent,
+                ],
             ]);
         }
 
@@ -2261,7 +2189,8 @@ class ClienteController extends Controller
 
                     DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro_hist' => $pago_registro, 'pago_registro' => 0, 'id_pago' => $cargos, 'pago_cupon' => $cupones, 'contrato' => 0 ]);
 
-                    $setto2 = $this->shouldCreateGenealogyMondayItem($compras) ? 1 : 0;
+                    // El registro ahora lo controla cada servicio; no crear ítems heredados aquí.
+                    $setto2 = 0;
 
                     if ($setto2==1) {
                         DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]);
@@ -2544,7 +2473,8 @@ class ClienteController extends Controller
 
         DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro_hist' => $pago_registro, 'pago_registro' => $monto, 'id_pago' => $cargos, 'pago_cupon' => $cupones, 'contrato' => 0]);
 
-        $setto2 = $this->shouldCreateGenealogyMondayItem($compras) ? 1 : 0;
+        // El registro ahora lo controla cada servicio; no crear ítems heredados aquí.
+        $setto2 = 0;
 
         if ($setto2==1) {
             DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]);
@@ -3211,7 +3141,8 @@ class ClienteController extends Controller
 
                 DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 1, 'pago_registro_hist' => $pago_registro, 'pago_registro' => $monto, 'id_pago' => $cargos, 'pago_cupon' => $cupones, 'stripe_cus_id' => $charged->customer, 'contrato' => 0]);
 
-                $setto2 = $this->shouldCreateGenealogyMondayItem($compras) ? 1 : 0;
+                // El registro ahora lo controla cada servicio; no crear ítems heredados aquí.
+                $setto2 = 0;
 
                 if ($setto2==1) {
                     DB::table('users')->where('id', auth()->user()->id)->update(['pay' => 2]);
@@ -4056,7 +3987,8 @@ class ClienteController extends Controller
                     ]);
 
                 // Verificar si debe setear pay = 2
-                $setto2 = $this->shouldCreateGenealogyMondayItem($compras) ? 1 : 0;
+                // El registro ahora lo controla cada servicio; no crear ítems heredados aquí.
+                $setto2 = 0;
 
                 if ($setto2 == 1) {
                     DB::table('users')
@@ -4304,6 +4236,16 @@ class ClienteController extends Controller
                 'status' => ConsultationBooking::STATUS_PAID,
                 'paid_at' => now(),
             ]);
+
+        $user = Auth::user();
+
+        if ($user) {
+            $this->mondayRegistrationService->syncPurchasedServices(
+                $user->fresh(),
+                $compras,
+                MondayRegistrationService::TIMING_AFTER_PAYMENT
+            );
+        }
     }
 
     private function attachHubspotDealToCatalogPurchase($compra, string $hubspotDealId): void

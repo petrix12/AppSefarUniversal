@@ -52,6 +52,7 @@ class MondayRegistrationServiceTest extends TestCase
             $table->boolean('monday_sync_enabled')->default(false);
             $table->string('monday_board_id')->nullable();
             $table->string('monday_group_id')->nullable();
+            $table->string('monday_registration_timing')->default('after_payment');
             $table->timestamps();
         });
 
@@ -107,8 +108,14 @@ class MondayRegistrationServiceTest extends TestCase
 
         $service = app(MondayRegistrationService::class);
 
-        $this->assertTrue($service->sync($user, $servicio));
-        $this->assertTrue($service->sync($user->fresh(), $servicio));
+        $this->assertSame(
+            [$servicio->id => true],
+            $service->syncAfterPayment($user, [$servicio])
+        );
+        $this->assertSame(
+            [$servicio->id => true],
+            $service->syncAfterPayment($user->fresh(), [$servicio])
+        );
 
         Http::assertSentCount(1);
         Http::assertSent(function ($request): bool {
@@ -157,5 +164,39 @@ class MondayRegistrationServiceTest extends TestCase
 
         Http::assertNothingSent();
         $this->assertSame(0, MondayServiceRegistration::count());
+    }
+
+    public function test_it_waits_until_the_service_configured_moment(): void
+    {
+        Http::fake([
+            'api.monday.com/v2' => Http::response([
+                'data' => ['create_item' => ['id' => 'getinfo-987', 'name' => 'Perez Ana']],
+            ]),
+        ]);
+
+        $user = User::withoutEvents(fn () => User::create([
+            'name' => 'Ana Perez',
+            'passport' => 'GETINFO123',
+        ]));
+        $servicio = Servicio::create([
+            'id_hubspot' => 'ANALISIS-GENEALOGICO',
+            'nombre' => 'Análisis genealógico',
+            'precio' => 100,
+            'monday_sync_enabled' => true,
+            'monday_board_id' => '878831315',
+            'monday_group_id' => 'duplicate_of_en_proceso',
+            'monday_registration_timing' => MondayRegistrationService::TIMING_AFTER_GETINFO,
+        ]);
+
+        $registration = app(MondayRegistrationService::class);
+
+        $this->assertSame([], $registration->syncAfterPayment($user, [$servicio]));
+        Http::assertNothingSent();
+
+        $this->assertSame(
+            [$servicio->id => true],
+            $registration->syncAfterGetInfo($user, [$servicio])
+        );
+        Http::assertSentCount(1);
     }
 }

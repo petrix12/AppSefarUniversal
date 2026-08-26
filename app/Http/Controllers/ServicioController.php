@@ -178,6 +178,7 @@ class ServicioController extends Controller
             'hubspot_stage_id' => $request->filled('hubspot_stage_id') ? $request->input('hubspot_stage_id') : null,
             'monday_board_id' => $request->filled('monday_board_id') ? $request->input('monday_board_id') : null,
             'monday_group_id' => $request->filled('monday_group_id') ? $request->input('monday_group_id') : null,
+            'monday_registration_timing' => $request->input('monday_registration_timing', 'after_payment'),
         ]);
 
         $data = $request->validate([
@@ -204,6 +205,7 @@ class ServicioController extends Controller
             'monday_sync_enabled' => ['nullable', 'boolean'],
             'monday_board_id' => ['nullable', 'regex:/^\d+$/', 'max:255', 'required_if:monday_sync_enabled,1'],
             'monday_group_id' => ['nullable', 'string', 'max:255', 'required_if:monday_sync_enabled,1'],
+            'monday_registration_timing' => ['required', 'string', Rule::in(['after_payment', 'after_getinfo'])],
         ], [
             'required' => 'El campo :attribute es obligatorio.',
             'required_if' => 'El campo :attribute es obligatorio cuando el envío a Monday está activo.',
@@ -232,6 +234,7 @@ class ServicioController extends Controller
             'monday_sync_enabled' => 'envío a Monday',
             'monday_board_id' => 'tablero de Monday',
             'monday_group_id' => 'grupo/subtablero de Monday',
+            'monday_registration_timing' => 'momento de registro en Monday',
         ]);
 
         $data['id_hubspot'] = trim($data['id_hubspot']);

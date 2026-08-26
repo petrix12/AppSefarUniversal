@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\MondayServiceRegistration;
+use App\Models\Compras;
 use App\Models\Servicio;
 use App\Models\User;
 use Carbon\Carbon;
@@ -14,6 +15,90 @@ use Throwable;
 class MondayRegistrationService
 {
     private const API_URL = 'https://api.monday.com/v2';
+
+    public const TIMING_AFTER_PAYMENT = 'after_payment';
+
+    public const TIMING_AFTER_GETINFO = 'after_getinfo';
+
+    /**
+     * Synchronize all configured services from a confirmed payment.
+     *
+     * @return array<int, bool>
+     */
+    public function syncAfterPayment(User $user, iterable $servicios): array
+    {
+        return $this->syncForTiming($user, $servicios, self::TIMING_AFTER_PAYMENT);
+    }
+
+    /**
+     * Synchronize all configured services after the client completes GetInfo.
+     *
+     * @return array<int, bool>
+     */
+    public function syncAfterGetInfo(User $user, iterable $servicios): array
+    {
+        return $this->syncForTiming($user, $servicios, self::TIMING_AFTER_GETINFO);
+    }
+
+    /**
+     * Resolve the purchased services and synchronize only those configured for the given moment.
+     *
+     * @return array<int, bool>
+     */
+    public function syncPurchasedServices(User $user, iterable $compras, string $timing): array
+    {
+        $servicios = collect($compras)
+            ->map(function ($compra): ?Servicio {
+                if ($compra instanceof Compras) {
+                    return $compra->servicio
+                        ?: Servicio::find($compra->servicio_id)
+                        ?: Servicio::where('id_hubspot', $compra->servicio_hs_id)->first();
+                }
+
+                $servicioId = data_get($compra, 'servicio_id');
+                $serviceCode = data_get($compra, 'servicio_hs_id');
+
+                return ($servicioId ? Servicio::find($servicioId) : null)
+                    ?: ($serviceCode ? Servicio::where('id_hubspot', $serviceCode)->first() : null);
+            })
+            ->filter()
+            ->unique('id')
+            ->values();
+
+        return $this->syncForTiming($user, $servicios, $timing);
+    }
+
+    /**
+     * @param iterable<int, Servicio> $servicios
+     * @return array<int, bool>
+     */
+    private function syncForTiming(User $user, iterable $servicios, string $timing): array
+    {
+        if (! in_array($timing, [self::TIMING_AFTER_PAYMENT, self::TIMING_AFTER_GETINFO], true)) {
+            throw new \InvalidArgumentException("Momento de registro en Monday no válido: {$timing}");
+        }
+
+        return collect($servicios)
+            ->filter(fn ($servicio): bool => $servicio instanceof Servicio)
+            ->unique('id')
+            ->filter(function (Servicio $servicio) use ($timing): bool {
+                $configuredTiming = $servicio->monday_registration_timing ?: self::TIMING_AFTER_PAYMENT;
+
+                if ($configuredTiming === $timing) {
+                    return true;
+                }
+
+                Log::info('Registro en Monday aplazado hasta el momento configurado para el servicio', [
+                    'servicio_id' => $servicio->id,
+                    'configured_timing' => $configuredTiming,
+                    'current_timing' => $timing,
+                ]);
+
+                return false;
+            })
+            ->mapWithKeys(fn (Servicio $servicio): array => [$servicio->id => $this->sync($user, $servicio)])
+            ->all();
+    }
 
     public function sync(User $user, Servicio $servicio): bool
     {

@@ -47,6 +47,7 @@ class ServicioPersistenceTest extends TestCase
             $table->boolean('monday_sync_enabled')->default(false);
             $table->string('monday_board_id')->nullable();
             $table->string('monday_group_id')->nullable();
+            $table->string('monday_registration_timing')->default('after_payment');
             $table->integer('tipov')->nullable();
             $table->timestamps();
         });
@@ -65,6 +66,7 @@ class ServicioPersistenceTest extends TestCase
         $servicio = Servicio::create($this->validPayload());
 
         $this->assertTrue($servicio->monday_sync_enabled);
+        $this->assertSame('after_payment', $servicio->monday_registration_timing);
         $this->assertDatabaseHas('servicios', [
             'id_hubspot' => 'SERVICIO-PRUEBA',
             'monday_board_id' => '878831315',
@@ -132,6 +134,7 @@ class ServicioPersistenceTest extends TestCase
             'monday_sync_enabled' => 1,
             'monday_board_id' => '878831315',
             'monday_group_id' => 'duplicate_of_en_proceso',
+            'monday_registration_timing' => 'after_payment',
         ];
     }
 }

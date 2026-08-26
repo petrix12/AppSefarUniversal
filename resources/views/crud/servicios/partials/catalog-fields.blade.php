@@ -47,7 +47,19 @@
         </div>
     </div>
 
-    <div class="col-md-4 py-2">
+    <div class="col-md-3 py-2">
+        <label class="block text-sm font-medium text-gray-700" for="monday_registration_timing">Registrar en Monday</label>
+        <select id="monday_registration_timing" name="monday_registration_timing" class="form-control">
+            <option value="after_payment" {{ old('monday_registration_timing', $current->monday_registration_timing ?? 'after_payment') === 'after_payment' ? 'selected' : '' }}>Después de pagar</option>
+            <option value="after_getinfo" {{ old('monday_registration_timing', $current->monday_registration_timing ?? 'after_payment') === 'after_getinfo' ? 'selected' : '' }}>Después de completar GetInfo</option>
+        </select>
+        <small class="text-muted">Por defecto se registra cuando el pago queda confirmado.</small>
+        @error('monday_registration_timing')
+            <small style="color:red">*{{ $message }}*</small>
+        @enderror
+    </div>
+
+    <div class="col-md-3 py-2">
         <label class="block text-sm font-medium text-gray-700">Tablero de Monday</label>
         @php($selectedMondayBoard = (string) old('monday_board_id', $current->monday_board_id ?? '878831315'))
         <select
@@ -66,7 +78,7 @@
         @enderror
     </div>
 
-    <div class="col-md-5 py-2">
+    <div class="col-md-3 py-2">
         <label class="block text-sm font-medium text-gray-700">Monday Grupo/Subtablero</label>
         @php($selectedMondayGroup = (string) old('monday_group_id', $current->monday_group_id ?? 'duplicate_of_en_proceso'))
         <select
