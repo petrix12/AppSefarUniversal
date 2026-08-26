@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
@@ -39,18 +40,15 @@ class DeployController extends Controller
         $modelUsed = null;
         $releaseVersion = null;
         $migrateOut = null;
+        $migrateExitCode = null;
         $optimizeClearOut = null;
-
-        $migrateOut = trim(shell_exec(
-            "cd " . escapeshellarg($projectPath) . " && php artisan migrate 2>&1"
-        ) ?: '');
+        $optimizeClearExitCode = null;
 
         if ($pulledNewChanges) {
             $releaseVersion = $this->releaseVersion($afterHead);
 
-            $optimizeClearOut = trim(shell_exec(
-                "cd " . escapeshellarg($projectPath) . " && php artisan optimize:clear 2>&1"
-            ) ?: '');
+            [$migrateExitCode, $migrateOut] = $this->runArtisanCommand('migrate');
+            [$optimizeClearExitCode, $optimizeClearOut] = $this->runArtisanCommand('optimize:clear');
 
             $changes = $this->getCodeChangesSummary($projectPath, $beforeHead, $afterHead);
 
@@ -71,16 +69,35 @@ class DeployController extends Controller
         }
 
         return response()->json([
-            'ok'               => true,
+            'ok'               => ! $pulledNewChanges
+                || ($migrateExitCode === 0 && $optimizeClearExitCode === 0),
             'changes_detected' => $pulledNewChanges,
             'model_used'       => $modelUsed,
             'version'          => $releaseVersion,
             'summary'          => $summary,
             'mail_sent'        => $mailSent,
             'mail_error'       => $mailError,
+            'migrate_exit_code' => $migrateExitCode,
             'migrate_output'   => $migrateOut,
+            'optimize_exit_code' => $optimizeClearExitCode,
             'optimize_output'  => $optimizeClearOut,
         ]);
+    }
+
+    private function runArtisanCommand(string $command): array
+    {
+        try {
+            $exitCode = Artisan::call($command);
+
+            return [$exitCode, trim(Artisan::output())];
+        } catch (\Throwable $exception) {
+            Log::error('Error ejecutando comando de despliegue', [
+                'command' => "php artisan {$command}",
+                'message' => $exception->getMessage(),
+            ]);
+
+            return [1, $exception->getMessage()];
+        }
     }
 
     // ── Solo commits, sin ruido ───────────────────────────────
