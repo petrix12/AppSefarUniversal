@@ -11,6 +11,7 @@
 
         const selectedBoard = boardSelect.dataset.selected || '';
         const selectedGroup = groupSelect.dataset.selected || '';
+        let groupsRequestSequence = 0;
 
         function setStatus(message, isError = false) {
             status.textContent = message;
@@ -48,12 +49,15 @@
         }
 
         async function loadGroups(boardId, selected = '') {
+            const requestSequence = ++groupsRequestSequence;
+
             if (!boardId) {
                 replaceOptions(groupSelect, [], '', 'Selecciona primero un tablero');
                 groupSelect.disabled = true;
                 return;
             }
 
+            replaceOptions(groupSelect, [], '', 'Cargando grupos…');
             groupSelect.disabled = true;
             setStatus('Cargando grupos de Monday…');
 
@@ -61,10 +65,19 @@
                 const url = new URL(groupSelect.dataset.optionsUrl, window.location.origin);
                 url.searchParams.set('board_id', boardId);
                 const groups = await fetchOptions(url);
+
+                if (requestSequence !== groupsRequestSequence) {
+                    return;
+                }
+
                 replaceOptions(groupSelect, groups, selected, 'Selecciona un grupo/subtablero');
                 groupSelect.disabled = false;
                 setStatus(groups.length ? 'Destino cargado desde Monday.' : 'Este tablero no tiene grupos disponibles.');
             } catch (error) {
+                if (requestSequence !== groupsRequestSequence) {
+                    return;
+                }
+
                 replaceOptions(groupSelect, [], selected, 'No se pudieron cargar los grupos');
                 groupSelect.disabled = false;
                 setStatus(error.message, true);
@@ -89,9 +102,9 @@
             }
         }
 
-        boardSelect.addEventListener('change', function () {
+        function handleBoardChange() {
             loadGroups(boardSelect.value);
-        });
+        }
 
         if (window.jQuery && window.jQuery.fn.select2) {
             window.jQuery(boardSelect).select2({
@@ -104,6 +117,10 @@
                 width: '100%',
                 placeholder: 'Selecciona un grupo/subtablero'
             });
+
+            window.jQuery(boardSelect).on('change.monday-groups', handleBoardChange);
+        } else {
+            boardSelect.addEventListener('change', handleBoardChange);
         }
 
         enabledInput.addEventListener('change', function () {

@@ -41,12 +41,12 @@ class DeployController extends Controller
         $migrateOut = null;
         $optimizeClearOut = null;
 
+        $migrateOut = trim(shell_exec(
+            "cd " . escapeshellarg($projectPath) . " && php artisan migrate 2>&1"
+        ) ?: '');
+
         if ($pulledNewChanges) {
             $releaseVersion = $this->releaseVersion($afterHead);
-
-            $migrateOut = trim(shell_exec(
-                "cd " . escapeshellarg($projectPath) . " && php artisan migrate 2>&1"
-            ) ?: '');
 
             $optimizeClearOut = trim(shell_exec(
                 "cd " . escapeshellarg($projectPath) . " && php artisan optimize:clear 2>&1"
