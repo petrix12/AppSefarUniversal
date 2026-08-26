@@ -145,6 +145,9 @@
                 <th scope="col" class="">
                     Estado
                 </th>
+                <th scope="col" class="">
+                    Destino Monday
+                </th>
                 @can('crud.servicios.edit')
                 <th scope="col" class="">
                     {{ __('Edit') }}
@@ -198,6 +201,14 @@
                         <span class="badge badge-success">Activo</span>
                     @else
                         <span class="badge badge-danger">Inactivo</span>
+                    @endif
+                </td>
+                <td>
+                    @if($servicio->monday_sync_enabled)
+                        <span class="badge badge-success">Activo</span><br>
+                        <small>{{ $servicio->monday_board_id }} / {{ $servicio->monday_group_id }}</small>
+                    @else
+                        <span class="badge badge-secondary">No enviar</span>
                     @endif
                 </td>
                 @can('crud.servicios.edit')

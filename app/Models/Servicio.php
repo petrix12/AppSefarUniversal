@@ -25,6 +25,9 @@ class Servicio extends Model
         'orden',
         'hubspot_pipeline_id',
         'hubspot_stage_id',
+        'monday_sync_enabled',
+        'monday_board_id',
+        'monday_group_id',
         'metadata',
     ];
 
@@ -32,6 +35,7 @@ class Servicio extends Model
         'activo' => 'boolean',
         'visible_cliente' => 'boolean',
         'requiere_agenda' => 'boolean',
+        'monday_sync_enabled' => 'boolean',
         'metadata' => 'array',
         'precio' => 'integer',
         'duracion_minutos' => 'integer',

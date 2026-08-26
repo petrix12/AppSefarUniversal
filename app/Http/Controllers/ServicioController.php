@@ -157,6 +157,8 @@ class ServicioController extends Controller
             'descripcion_publica' => $request->filled('descripcion_publica') ? $request->input('descripcion_publica') : null,
             'hubspot_pipeline_id' => $request->filled('hubspot_pipeline_id') ? $request->input('hubspot_pipeline_id') : null,
             'hubspot_stage_id' => $request->filled('hubspot_stage_id') ? $request->input('hubspot_stage_id') : null,
+            'monday_board_id' => $request->filled('monday_board_id') ? $request->input('monday_board_id') : null,
+            'monday_group_id' => $request->filled('monday_group_id') ? $request->input('monday_group_id') : null,
         ]);
 
         $data = $request->validate([
@@ -180,6 +182,9 @@ class ServicioController extends Controller
             'orden' => ['nullable', 'integer', 'min:0'],
             'hubspot_pipeline_id' => ['nullable', 'string', 'max:255'],
             'hubspot_stage_id' => ['nullable', 'string', 'max:255'],
+            'monday_sync_enabled' => ['nullable', 'boolean'],
+            'monday_board_id' => ['nullable', 'regex:/^\d+$/', 'max:255', 'required_if:monday_sync_enabled,1'],
+            'monday_group_id' => ['nullable', 'string', 'max:255', 'required_if:monday_sync_enabled,1'],
         ]);
 
         $data['id_hubspot'] = trim($data['id_hubspot']);
@@ -190,6 +195,7 @@ class ServicioController extends Controller
         $data['activo'] = $request->boolean('activo');
         $data['visible_cliente'] = $request->boolean('visible_cliente');
         $data['requiere_agenda'] = $request->boolean('requiere_agenda');
+        $data['monday_sync_enabled'] = $request->boolean('monday_sync_enabled');
         $data['orden'] = (int) ($data['orden'] ?? 0);
 
         if ($data['tipo'] === 'consulta') {

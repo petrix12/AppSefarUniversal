@@ -47,6 +47,10 @@ return [
         'webhook_token' => env('N8N_WEBHOOK_TOKEN'),
     ],
 
+    'monday' => [
+        'token' => env('MONDAY_TOKEN'),
+    ],
+
     'stripe' => [
         'banca_online_webhook_secret' => env('STRIPE_BANCA_ONLINE_WEBHOOK_SECRET', env('STRIPE_WEBHOOK_SECRET')),
     ],

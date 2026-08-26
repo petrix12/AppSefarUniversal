@@ -21,6 +21,7 @@ use App\Mail\RegistroSefar;
 use App\Mail\ClaveGeneradaMail;
 use Laravel\Jetstream\Jetstream;
 use App\Services\HubspotService;
+use App\Services\MondayRegistrationService;
 
 class RegisterV2Controller extends Controller
 {
@@ -33,7 +34,11 @@ class RegisterV2Controller extends Controller
         return view('auth.registerv2');
     }
 
-    public function store(Request $request, HubspotService $hubspotService)
+    public function store(
+        Request $request,
+        HubspotService $hubspotService,
+        MondayRegistrationService $mondayRegistrationService
+    )
     {
         $input = $request->all();
         $rol = $input['rol'] ?? 'cliente';
@@ -89,6 +94,10 @@ class RegisterV2Controller extends Controller
 
                     // asigna rol y permisos
                     $userCheck->assignRole('Cliente')->givePermissionTo(['pay.services', 'finish.register']);
+
+                    if (! $this->isAuditoriaProcedimientos($servicioSolicitado->id_hubspot)) {
+                        $mondayRegistrationService->sync($userCheck, $servicioSolicitado);
+                    }
 
                     // Siempre redirigir a app.sefaruniversal.com
                     return view('redirect', ['redirect_url' => 'https://app.sefaruniversal.com/login?alert=existe']);
@@ -256,6 +265,10 @@ class RegisterV2Controller extends Controller
             // Guardar el ID en el usuario
             $user->hs_id = $hsId;
             $user->save();
+
+            if (! $this->isAuditoriaProcedimientos($servicio->id_hubspot)) {
+                $mondayRegistrationService->sync($user, $servicio);
+            }
 
             if ($registrarAuditoriaFormularioPostPagoEnMonday) {
                 $this->registrarAuditoriaFormularioEnMonday($user, $compra, $servicio, $hash_factura);

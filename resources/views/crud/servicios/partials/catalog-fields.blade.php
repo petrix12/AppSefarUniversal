@@ -36,6 +36,38 @@
     </div>
 </div>
 
+<hr>
+
+<div class="row">
+    <div class="col-md-3 py-2">
+        <div class="form-check mt-4">
+            <input type="hidden" name="monday_sync_enabled" value="0">
+            <input class="form-check-input" type="checkbox" name="monday_sync_enabled" value="1" id="monday_sync_enabled" {{ old('monday_sync_enabled', $current->monday_sync_enabled ?? true) ? 'checked' : '' }}>
+            <label class="form-check-label" for="monday_sync_enabled">Enviar nuevos registros a Monday</label>
+        </div>
+    </div>
+
+    <div class="col-md-4 py-2">
+        <label class="block text-sm font-medium text-gray-700">Monday Board ID</label>
+        <input value="{{ old('monday_board_id', $current->monday_board_id ?? '878831315') }}" type="text" name="monday_board_id" class="form-control" inputmode="numeric">
+        @error('monday_board_id')
+            <small style="color:red">*{{ $message }}*</small>
+        @enderror
+    </div>
+
+    <div class="col-md-5 py-2">
+        <label class="block text-sm font-medium text-gray-700">Monday Grupo/Subtablero ID</label>
+        <input value="{{ old('monday_group_id', $current->monday_group_id ?? 'duplicate_of_en_proceso') }}" type="text" name="monday_group_id" class="form-control">
+        @error('monday_group_id')
+            <small style="color:red">*{{ $message }}*</small>
+        @enderror
+    </div>
+</div>
+
+<p class="text-muted px-1">
+    Estos valores determinan el destino de los clientes que se registren por este servicio.
+</p>
+
 <div class="row">
     <div class="col-md-4 py-2">
         <div class="form-check mt-4">
