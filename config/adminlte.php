@@ -315,6 +315,18 @@ return [
                             'can'        => 'administrador',
                         ],
                         [
+                            'text'       => 'Automatizaciones',
+                            'route'      => 'automations.index',
+                            'icon'       => 'fas fa-fw fa-bolt',
+                            'can'        => 'administrador',
+                        ],
+                        [
+                            'text'       => 'Mapa de unificación',
+                            'route'      => 'unification-map.index',
+                            'icon'       => 'fas fa-fw fa-project-diagram',
+                            'can'        => 'administrador',
+                        ],
+                        [
                             'text'       => 'Resumen',
                             'url'        => 'tasks/admin/summary',
                             'icon'       => 'fas fa-fw fa-chart-bar',

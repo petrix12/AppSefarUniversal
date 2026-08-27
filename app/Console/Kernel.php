@@ -34,6 +34,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('followups:registration-payment')
         ->dailyAt('09:00')
         ->withoutOverlapping();
+        $schedule->command('automations:run --limit=100')
+            ->everyMinute()
+            ->withoutOverlapping();
         // Ejecutar flujo diario de tareas en secuencia: primero reasignaciones, luego nuevas tareas.
        /* $schedule->command('tasks:daily-workflow --force-reassign')
                  ->weekdays()

@@ -6,6 +6,7 @@ use App\Models\TlContact;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class TeamleaderContactResolver
 {
@@ -101,6 +102,19 @@ class TeamleaderContactResolver
 
     private function linkUser(User $user, string $teamleaderId, string $source): string
     {
+        // Validate the canonical external identity before changing users.tl_id.
+        // A duplicate match must be reviewed instead of silently linking two
+        // app clients to the same Teamleader contact.
+        if (config('unification.canonical_writes_enabled') && Schema::hasTable('external_entity_links')) {
+            app(UnifiedClientProfileService::class)->linkExternalEntity(
+                $user,
+                'teamleader',
+                'contact',
+                $teamleaderId,
+                ['linked_by' => $source],
+            );
+        }
+
         if ((string) $user->tl_id !== $teamleaderId) {
             $user->forceFill(['tl_id' => $teamleaderId])->save();
             Cache::forget("teamleader_data_{$user->id}");

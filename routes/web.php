@@ -90,6 +90,8 @@ use App\Http\Controllers\TaskCronController;
 use App\Http\Controllers\JotformCouponCronController;
 use App\Http\Controllers\RoleAiAssistantController;
 use App\Http\Controllers\AdminRoleAiAssistantController;
+use App\Http\Controllers\AutomationRuleController;
+use App\Http\Controllers\UnificationMapController;
 
 Route::get('/internal/tasks/daily-workflow', InternalTaskWorkflowController::class)
     ->name('internal.tasks.daily-workflow');
@@ -175,6 +177,29 @@ Route::middleware(['auth', 'can:administrador'])
     ->group(function () {
         Route::get('/', [ExternalClientImportController::class, 'showImportForm'])->name('index');
         Route::post('/', [ExternalClientImportController::class, 'importClient'])->name('store');
+    });
+
+Route::middleware(['auth', 'can:administrador'])
+    ->prefix('admin/automations')
+    ->name('automations.')
+    ->group(function () {
+        Route::get('/', [AutomationRuleController::class, 'index'])->name('index');
+        Route::get('/create', [AutomationRuleController::class, 'create'])->name('create');
+        Route::post('/', [AutomationRuleController::class, 'store'])->name('store');
+        Route::post('/run-due', [AutomationRuleController::class, 'runDue'])->name('run-due');
+        Route::patch('/{automation}/toggle', [AutomationRuleController::class, 'toggle'])->name('toggle');
+        Route::get('/{automation}/edit', [AutomationRuleController::class, 'edit'])->name('edit');
+        Route::put('/{automation}', [AutomationRuleController::class, 'update'])->name('update');
+        Route::delete('/{automation}', [AutomationRuleController::class, 'destroy'])->name('destroy');
+    });
+
+Route::middleware(['auth', 'can:administrador'])
+    ->prefix('admin/unification-map')
+    ->name('unification-map.')
+    ->group(function () {
+        Route::get('/', [UnificationMapController::class, 'map'])->name('index');
+        Route::post('/', [UnificationMapController::class, 'store'])->name('store');
+        Route::patch('/{auditLink}', [UnificationMapController::class, 'review'])->name('review');
     });
 
 Route::middleware(['auth'])->group(function () {

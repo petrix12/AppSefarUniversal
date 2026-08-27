@@ -9,6 +9,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -192,6 +193,32 @@ class MondayRegistrationService
 
             if (blank($user->monday_id)) {
                 $user->forceFill(['monday_id' => (string) $itemId])->save();
+            }
+
+            // Projecting a successful Monday registration into the new
+            // canonical workflow is opt-in after the process audit. The old
+            // Monday registration remains untouched while the gate is off.
+            if (config('unification.canonical_writes_enabled') && Schema::hasTable('workflow_boards')) {
+                try {
+                    app(UnifiedClientProfileService::class)->recordMondayItem(
+                        $user,
+                        (string) $servicio->monday_board_id,
+                        'Monday '.$servicio->monday_board_id,
+                        (string) $servicio->monday_group_id,
+                        (string) $servicio->monday_group_id,
+                        (string) $itemId,
+                        ['servicio_id' => $servicio->id],
+                    );
+                } catch (Throwable $exception) {
+                    // The item already exists in Monday. Keep the successful
+                    // registration and surface this repairable local mismatch.
+                    Log::error('No se pudo registrar el item de Monday en el flujo unificado', [
+                        'user_id' => $user->id,
+                        'servicio_id' => $servicio->id,
+                        'monday_item_id' => $itemId,
+                        'error' => $exception->getMessage(),
+                    ]);
+                }
             }
 
             Log::info('Cliente registrado en Monday según la configuración del servicio', [

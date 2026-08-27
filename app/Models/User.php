@@ -135,6 +135,28 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    /**
+     * Extensible client fields. New HubSpot, Monday and Teamleader properties
+     * must be stored here instead of adding columns to users.
+     */
+    public function customFieldValues()
+    {
+        return $this->hasMany(\App\Models\CustomFieldValue::class, 'entity_id')
+            ->where('entity_type', \App\Models\CustomFieldDefinition::ENTITY_CLIENT);
+    }
+
+    public function externalEntityLinks()
+    {
+        return $this->hasMany(\App\Models\ExternalEntityLink::class, 'entity_id')
+            ->where('entity_type', \App\Models\CustomFieldDefinition::ENTITY_CLIENT);
+    }
+
+    public function workflowMemberships()
+    {
+        return $this->hasMany(\App\Models\WorkflowMembership::class, 'entity_id')
+            ->where('entity_type', \App\Models\CustomFieldDefinition::ENTITY_CLIENT);
+    }
+
     public function hubspotOwnerLink()
     {
         return $this->hasOne(\App\Models\HubspotOwnerUser::class);
