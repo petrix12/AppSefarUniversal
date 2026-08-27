@@ -653,6 +653,8 @@ class HubspotService
         try {
             $this->hubspotThrottle();
 
+            $properties = HubspotContactPropertyNormalizer::normalize($properties);
+
             $input = new SimplePublicObjectInput([
                 'properties' => $properties,
             ]);

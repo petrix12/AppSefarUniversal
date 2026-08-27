@@ -2887,6 +2887,10 @@ private function removeDuplicatesAndSort(array $cosuser): array
             $filteredRequest['vinculo_antepasados'] = implode(';', $filteredRequest->get('vinculo_antepasados'));
         }
 
+        if ($filteredRequest->has('conyuge_interesado_en_proceso')) {
+            $filteredRequest['conyuge_interesado_en_proceso'] = $request->boolean('conyuge_interesado_en_proceso') ? 1 : 0;
+        }
+
         $hubspotData = [];
 
         foreach ($filteredRequest as $key=>$data){
@@ -2894,7 +2898,9 @@ private function removeDuplicatesAndSort(array $cosuser): array
                 if (isset($hubspotFields[$key])){
                     $hubspotData[$hubspotFields[$key]] = $data;
                 } else {
-                    $hubspotData[$key] = $data;
+                    $hubspotData[$key] = $key === 'conyuge_interesado_en_proceso'
+                        ? ($data ? 'true' : 'false')
+                        : $data;
                 }
             }
         }

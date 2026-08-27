@@ -1602,14 +1602,15 @@
                             <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
                                 <div style="flex: 1;" class="mb-3">
                                     <label for="conyuge_interesado_en_proceso" class="block text-sm font-medium text-gray-700">Conyuge Interesado</label>
+                                    <input type="hidden" name="conyuge_interesado_en_proceso" value="false">
                                     <input
                                         type="checkbox"
                                         class="mt-1 py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                         id="conyuge_interesado_en_proceso"
                                         name="conyuge_interesado_en_proceso"
                                         style="width: 33.6px!important; height: 33.6px!important;"
-                                        value="1"
-                                        {{ old('conyuge_interesado_en_proceso', $user->conyuge_interesado_en_proceso ? 'checked' : '') }}
+                                        value="true"
+                                        {{ filter_var(old('conyuge_interesado_en_proceso', $user->conyuge_interesado_en_proceso), FILTER_VALIDATE_BOOLEAN) ? 'checked' : '' }}
                                     />
                                 </div>
                                 <div style="flex: 1;" class="mb-3">
