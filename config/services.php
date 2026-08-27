@@ -63,7 +63,7 @@ return [
         'key' => env('OPENROUTER_API_KEY'),
         'url' => 'https://openrouter.ai/api/v1/chat/completions',
         'model' => 'openai/gpt-4o-mini',
-        'unification_model' => env('OPENROUTER_UNIFICATION_MODEL', 'qwen/qwen3.5-flash-02-23'),
+        'unification_model' => env('OPENROUTER_UNIFICATION_MODEL', 'mistralai/mistral-small-24b-instruct-2501'),
         'unification_timeout' => env('OPENROUTER_UNIFICATION_TIMEOUT', 30),
         'unification_max_candidates' => env('OPENROUTER_UNIFICATION_MAX_CANDIDATES', 40),
         'unification_response_format' => env('OPENROUTER_UNIFICATION_RESPONSE_FORMAT', 'json_object'),

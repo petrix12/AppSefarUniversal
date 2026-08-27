@@ -37,7 +37,7 @@ class UnificationAiSuggestionService
         if ($candidates === []) {
             return [
                 'suggestions' => [],
-                'model' => config('services.openrouter.unification_model', 'qwen/qwen3.5-flash-02-23'),
+                'model' => config('services.openrouter.unification_model', 'mistralai/mistral-small-24b-instruct-2501'),
                 'candidate_limit' => $candidateLimit,
                 'used_ai' => false,
             ];
@@ -53,7 +53,7 @@ class UnificationAiSuggestionService
                 'X-OpenRouter-Metadata' => 'enabled',
             ])
             ->post(config('services.openrouter.url'), [
-                'model' => config('services.openrouter.unification_model', 'qwen/qwen3.5-flash-02-23'),
+                'model' => config('services.openrouter.unification_model', 'mistralai/mistral-small-24b-instruct-2501'),
                 'messages' => $this->pairMessages($leftProvider, $rightProvider, $candidates),
                 'temperature' => 0.1,
                 'max_tokens' => 700,
@@ -211,7 +211,7 @@ class UnificationAiSuggestionService
                 ->unique('identity')
                 ->values()
                 ->all(),
-            'model' => config('services.openrouter.unification_model', 'qwen/qwen3.5-flash-02-23'),
+            'model' => config('services.openrouter.unification_model', 'mistralai/mistral-small-24b-instruct-2501'),
             'candidate_limit' => $candidateLimit,
             'used_ai' => true,
         ];
@@ -227,7 +227,7 @@ class UnificationAiSuggestionService
         $providerMessage = preg_replace('/Bearer\s+\S+/i', 'Bearer [clave oculta]', $providerMessage) ?: '';
         $providerMessage = Str::limit(trim($providerMessage), 900, '');
 
-        $model = config('services.openrouter.unification_model', 'qwen/qwen3.5-flash-02-23');
+        $model = config('services.openrouter.unification_model', 'mistralai/mistral-small-24b-instruct-2501');
 
         return "OpenRouter HTTP {$status} con {$model}: ".($providerMessage ?: 'sin detalle adicional del proveedor.');
     }
