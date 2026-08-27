@@ -45,7 +45,7 @@ class UnificationAiSuggestionServiceTest extends TestCase
             return $request->url() === 'https://openrouter.test/chat'
                 && $request['model'] === 'qwen/qwen3.5-flash-02-23'
                 && data_get($request->data(), 'provider.require_parameters') === true
-                && data_get($request->data(), 'response_format.type') === 'json_schema'
+                && data_get($request->data(), 'response_format.type') === 'json_object'
                 && data_get($prompt, 'left_platform') === 'app'
                 && data_get($prompt, 'right_platform') === 'monday'
                 && count(data_get($prompt, 'candidate_pairs', [])) === 1;

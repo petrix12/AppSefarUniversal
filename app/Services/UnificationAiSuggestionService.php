@@ -50,13 +50,14 @@ class UnificationAiSuggestionService
                 'Content-Type' => 'application/json',
                 'HTTP-Referer' => config('app.url'),
                 'X-Title' => config('app.name').' · Mapa de unificación',
+                'X-OpenRouter-Metadata' => 'enabled',
             ])
             ->post(config('services.openrouter.url'), [
                 'model' => config('services.openrouter.unification_model', 'qwen/qwen3.5-flash-02-23'),
                 'messages' => $this->pairMessages($leftProvider, $rightProvider, $candidates),
                 'temperature' => 0.1,
                 'max_tokens' => 700,
-                // This rejects providers that cannot honor the JSON Schema.
+                // This rejects providers that cannot honor the requested JSON mode.
                 'provider' => ['require_parameters' => true],
                 'response_format' => $this->responseFormat(),
             ]);
@@ -88,7 +89,7 @@ class UnificationAiSuggestionService
         return [
             [
                 'role' => 'system',
-                'content' => 'Eres un asistente de gobierno de datos. Evalúas pares candidatos de campos entre dos plataformas. Tu salida es exclusivamente una recomendación para auditoría humana: nunca afirmes que se ejecutó una sincronización ni que se debe activar un proceso. Solo puedes aprobar índices de la lista recibida; no inventes campos, valores, tipos ni reglas de negocio. Descarta pares si la evidencia semántica no basta. Las claves técnicas crípticas de Monday por sí solas no son evidencia suficiente.',
+                'content' => 'Eres un asistente de gobierno de datos. Evalúas pares candidatos de campos entre dos plataformas. Tu salida es exclusivamente una recomendación para auditoría humana: nunca afirmes que se ejecutó una sincronización ni que se debe activar un proceso. Solo puedes aprobar índices de la lista recibida; no inventes campos, valores, tipos ni reglas de negocio. Descarta pares si la evidencia semántica no basta. Las claves técnicas crípticas de Monday por sí solas no son evidencia suficiente. Responde únicamente con un objeto JSON válido, sin Markdown ni texto adicional.',
             ],
             [
                 'role' => 'user',
@@ -110,6 +111,13 @@ class UnificationAiSuggestionService
 
     private function responseFormat(): array
     {
+        // Some low-cost routes accept JSON mode but reject a strict JSON
+        // Schema even when the model catalogue advertises structured output.
+        // Application-side validation still checks every returned index.
+        if (config('services.openrouter.unification_response_format', 'json_object') !== 'json_schema') {
+            return ['type' => 'json_object'];
+        }
+
         return [
             'type' => 'json_schema',
             'json_schema' => [
@@ -144,6 +152,7 @@ class UnificationAiSuggestionService
     {
         return [
             'suggestions' => collect($suggestion['suggestions'] ?? [])
+                ->filter(fn (mixed $item) => is_array($item))
                 ->map(function (array $item) use ($candidates): ?array {
                     $index = (int) ($item['candidate_index'] ?? -1);
                     if (! isset($candidates[$index])) {
