@@ -62,9 +62,6 @@
         <div class="card-header">
             <h3 class="card-title"><i class="fas fa-sitemap mr-1"></i>Diagrama de la relación seleccionada</h3>
             <div class="card-tools">
-                <button type="button" id="ai-suggest-map" class="btn btn-xs btn-outline-info mr-2" disabled @if(! $summary['ai_suggestions_available']) title="Configura OPENROUTER_API_KEY para habilitarlo" @endif>
-                    <i class="fas fa-magic mr-1"></i>IA: sugerir
-                </button>
                 <span id="selected-map-status" class="badge badge-secondary">Selecciona una fila</span>
             </div>
         </div>
@@ -82,7 +79,6 @@
                 <div class="entity-card entity-monday"><div class="entity-title"><i class="fab fa-trello"></i> Monday</div><div id="node-monday" class="entity-content">—</div></div>
             </div>
             <div class="mt-3 small text-muted"><i class="fas fa-circle text-success"></i> Catálogo legado o decisión aprobada &nbsp; <i class="fas fa-circle text-warning"></i> Coincidencia por revisar &nbsp; <i class="fas fa-circle text-secondary"></i> Sin relación conocida</div>
-            <div id="ai-suggestion" class="alert alert-info mt-3 mb-0 d-none" role="status"></div>
         </div>
     </div>
 
@@ -156,7 +152,7 @@
     <div class="card card-outline card-warning">
         <div class="card-header">
             <h3 class="card-title"><i class="fas fa-link mr-1"></i>Relaciones directas y derivadas</h3>
-            <div class="card-tools"><span class="badge badge-warning">{{ $summary['derived_relations'] }} derivadas para revisar</span></div>
+            <div class="card-tools"><span class="badge badge-info mr-1">{{ $summary['automatic_relations'] }} automáticas</span><span class="badge badge-warning">{{ $summary['derived_relations'] }} derivadas</span></div>
         </div>
         <div class="card-body">
             <p class="mb-2">Puedes relacionar cualquier par de plataformas. Cuando haya relaciones directas aprobadas o históricas, el mapa propone cadenas del tipo <code>A ↔ B ↔ C</code>; la relación <code>A ↔ C</code> siempre queda como sugerencia y requiere revisión independiente.</p>
@@ -184,6 +180,30 @@
                     </tr>
                 @empty
                     <tr><td colspan="5" class="text-center text-muted py-3">Aún no hay cadenas entre plataformas para proponer.</td></tr>
+                @endforelse
+                </tbody>
+            </table>
+        </div>
+        <div class="card-body border-top p-0 table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead><tr><th colspan="5" class="bg-light">Coincidencias automáticas entre todos los campos locales conocidos</th></tr><tr><th>Primera plataforma</th><th>Segunda plataforma</th><th>Confianza</th><th>Motivo</th><th></th></tr></thead>
+                <tbody>
+                @forelse($automatic_relations as $index => $relation)
+                    <tr>
+                        <td><strong>{{ ucfirst($relation['left']['provider']) }}</strong><br><small>{{ $relation['left']['label'] }} · <code>{{ $relation['left']['key'] }}</code></small>@if($relation['left_source'])<br><small class="text-muted">{{ $relation['left_source'] }}</small>@endif</td>
+                        <td><strong>{{ ucfirst($relation['right']['provider']) }}</strong><br><small>{{ $relation['right']['label'] }} · <code>{{ $relation['right']['key'] }}</code></small>@if($relation['right_source'])<br><small class="text-muted">{{ $relation['right_source'] }}</small>@endif</td>
+                        <td><span class="badge badge-{{ $relation['confidence'] === 100 ? 'success' : 'warning' }}">{{ $relation['confidence'] }}%</span><br><small>{{ $relation['match_method'] }}</small></td>
+                        <td><small>{{ $relation['reason'] }}</small></td>
+                        <td class="text-right">
+                            @if($summary['relation_storage_ready'])
+                                <button type="button" class="btn btn-xs btn-outline-primary use-automatic-relation" data-index="{{ $index }}">Convertir en propuesta</button>
+                            @else
+                                <span class="text-muted small">Solo lectura</span>
+                            @endif
+                        </td>
+                    </tr>
+                @empty
+                    <tr><td colspan="5" class="text-center text-muted py-3">No hay coincidencias automáticas por encima del umbral de revisión.</td></tr>
                 @endforelse
                 </tbody>
             </table>
@@ -270,11 +290,19 @@
                 <div class="modal-header"><h5 class="modal-title" id="newAuditRelationTitle">Relacionar dos plataformas para auditoría</h5><button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button></div>
                 <div class="modal-body">
                     <div class="alert alert-info small">Selecciona dos extremos. Esta conexión es de diseño: no copia datos, no crea campos y no activa ninguna sincronización. Solo las conexiones aprobadas pueden servir de puente para sugerencias derivadas.</div>
+                    <div class="mb-3">
+                        <button type="button" id="ai-suggest-platform-pair" class="btn btn-sm btn-outline-info" disabled @if(! $summary['ai_suggestions_available']) title="Configura OPENROUTER_API_KEY para habilitarlo" @endif>
+                            <i class="fas fa-magic mr-1"></i>IA: revisar este par
+                        </button>
+                        <small class="d-block text-muted mt-1">Solo analiza coincidencias locales de las dos plataformas seleccionadas (máximo 40); no envía datos de clientes ni guarda una relación.</small>
+                        <div id="ai-platform-suggestions" class="alert alert-info small mt-2 mb-0 d-none" role="status"></div>
+                    </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label>Primera plataforma</label>
                             <select id="relation-left-provider" name="left_provider" class="form-control relation-provider"><option value="app">App</option><option value="hubspot">HubSpot</option><option value="teamleader">Teamleader</option><option value="monday">Monday</option></select>
                             <label class="mt-2">Campo</label>
+                            <input type="search" id="relation-left-field-search" class="form-control form-control-sm mb-1 relation-field-search" data-side="left" placeholder="Filtrar por nombre o clave">
                             <select id="relation-left-field-picker" class="form-control relation-field-picker" data-side="left"></select>
                             <input type="hidden" name="left_entity_type" id="relation-left-entity-type">
                             <input type="hidden" name="left_scope_key" id="relation-left-scope-key">
@@ -285,6 +313,7 @@
                             <label>Segunda plataforma</label>
                             <select id="relation-right-provider" name="right_provider" class="form-control relation-provider"><option value="hubspot">HubSpot</option><option value="app">App</option><option value="teamleader">Teamleader</option><option value="monday">Monday</option></select>
                             <label class="mt-2">Campo</label>
+                            <input type="search" id="relation-right-field-search" class="form-control form-control-sm mb-1 relation-field-search" data-side="right" placeholder="Filtrar por nombre o clave">
                             <select id="relation-right-field-picker" class="form-control relation-field-picker" data-side="right"></select>
                             <input type="hidden" name="right_entity_type" id="relation-right-entity-type">
                             <input type="hidden" name="right_scope_key" id="relation-right-scope-key">
@@ -331,7 +360,7 @@
         const csrfToken = @json(csrf_token());
         const platformFields = {{ \Illuminate\Support\Js::from($field_options) }};
         const derivedRelations = {{ \Illuminate\Support\Js::from($derived_relations) }};
-        let selectedIndex = null;
+        const automaticRelations = {{ \Illuminate\Support\Js::from($automatic_relations) }};
         const text = (field) => field ? `<strong>${escapeHtml(field.label || field.key || '—')}</strong><br><code>${escapeHtml(field.key || '')}</code>${field.scope_key ? `<br><small>Ámbito: ${escapeHtml(field.scope_key)}</small>` : ''}` : '—';
         const many = (fields, empty) => fields && fields.length ? fields.map(text).join('<hr class="my-1">') : `<span class="text-muted">${empty}</span>`;
         const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[character]));
@@ -339,7 +368,6 @@
         window.selectMap = function (index) {
             const row = rows[index];
             if (!row) return;
-            selectedIndex = index;
             document.getElementById('node-app').innerHTML = text(row.app);
             document.getElementById('node-hubspot').innerHTML = many(row.hubspot, 'No asociado');
             document.getElementById('node-teamleader').innerHTML = many(row.teamleader, 'No asociado');
@@ -354,8 +382,6 @@
             setLine('line-teamleader-app', hasTeamleader, row.match_method === 'legacy_catalog' ? 'connected' : 'suggested');
             setLine('line-monday-app', hasMonday, 'suggested');
             document.querySelectorAll('#map-table tbody tr').forEach((element) => element.classList.toggle('table-primary', Number(element.dataset.mapRow) === index));
-            document.getElementById('ai-suggest-map').disabled = !aiAvailable;
-            document.getElementById('ai-suggestion').classList.add('d-none');
         };
 
         function setLine(id, present, className) {
@@ -365,41 +391,6 @@
         }
 
         document.querySelectorAll('.select-map').forEach((button) => button.addEventListener('click', () => window.selectMap(Number(button.dataset.index))));
-        document.getElementById('ai-suggest-map')?.addEventListener('click', async function () {
-            if (!aiAvailable || selectedIndex === null || !rows[selectedIndex]) return;
-
-            const button = this;
-            const target = document.getElementById('ai-suggestion');
-            button.disabled = true;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Analizando';
-            target.className = 'alert alert-info mt-3 mb-0';
-            target.textContent = 'Analizando nombres y claves de campos; no se envían datos de clientes.';
-
-            try {
-                const response = await fetch(suggestUrl, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken},
-                    body: JSON.stringify({map_identity: rows[selectedIndex].identity}),
-                });
-                const payload = await response.json();
-                if (!response.ok) throw new Error(payload.message || 'No se pudo generar la sugerencia.');
-
-                const item = payload.suggestion;
-                const label = item.recommendation === 'review_match'
-                    ? 'Revisar coincidencia'
-                    : (item.recommendation === 'no_match' ? 'No parece corresponder' : 'Falta información');
-                const proposed = item.suggested_app_field_key
-                    ? `<br><strong>Campo App sugerido:</strong> ${escapeHtml(item.suggested_app_field_label || item.suggested_app_field_key)} <code>${escapeHtml(item.suggested_app_field_key)}</code>`
-                    : '';
-                target.innerHTML = `<strong>IA · ${escapeHtml(label)} (${escapeHtml(item.confidence)}%)</strong><br>${escapeHtml(item.reason || 'Sin explicación adicional.')}${proposed}<br><small>Modelo: ${escapeHtml(item.model)}. Es una sugerencia; no se ha guardado ni activado ningún mapeo.</small>`;
-            } catch (error) {
-                target.className = 'alert alert-warning mt-3 mb-0';
-                target.textContent = error.message || 'No se pudo generar la sugerencia.';
-            } finally {
-                button.disabled = !aiAvailable;
-                button.innerHTML = '<i class="fas fa-magic mr-1"></i>IA: sugerir';
-            }
-        });
 
         function populateRelationPicker(side) {
             const provider = document.getElementById(`relation-${side}-provider`);
@@ -407,21 +398,26 @@
             if (!provider || !picker) return;
 
             const fields = platformFields[provider.value] || [];
+            const search = document.getElementById(`relation-${side}-field-search`);
+            const term = (search?.value || '').toLowerCase().trim();
             picker.innerHTML = '';
             fields.forEach((field, index) => {
+                const searchable = `${field.label || ''} ${field.key || ''} ${field.source || ''}`.toLowerCase();
+                if (term && !searchable.includes(term)) return;
                 const option = document.createElement('option');
                 option.value = String(index);
-                option.textContent = `${field.label || field.key} · ${field.key}${field.scope_key && field.scope_key !== '*' ? ` · tablero ${field.scope_key}` : ''}`;
+                option.textContent = `${field.label || field.key} · ${field.key}${field.scope_key && field.scope_key !== '*' ? ` · tablero ${field.scope_key}` : ''}${field.source ? ` · ${field.source}` : ''}`;
                 picker.appendChild(option);
             });
-            picker.disabled = fields.length === 0;
-            if (!fields.length) {
+            picker.disabled = picker.options.length === 0;
+            if (!picker.options.length) {
                 const option = document.createElement('option');
                 option.value = '';
                 option.textContent = 'No hay campos locales disponibles';
                 picker.appendChild(option);
             }
             syncRelationEndpoint(side);
+            updatePairAiButton();
         }
 
         function syncRelationEndpoint(side) {
@@ -435,9 +431,75 @@
             document.getElementById(`relation-${side}-field-label`).value = field?.label || '';
         }
 
+        function selectedPlatformPair() {
+            return {
+                left: document.getElementById('relation-left-provider')?.value || '',
+                right: document.getElementById('relation-right-provider')?.value || '',
+            };
+        }
+
+        function updatePairAiButton() {
+            const button = document.getElementById('ai-suggest-platform-pair');
+            const {left, right} = selectedPlatformPair();
+            if (button) button.disabled = !aiAvailable || !left || !right || left === right;
+        }
+
+        function clearPlatformAiSuggestions() {
+            const target = document.getElementById('ai-platform-suggestions');
+            if (target) target.classList.add('d-none');
+        }
+
+        document.getElementById('ai-suggest-platform-pair')?.addEventListener('click', async function () {
+            const {left, right} = selectedPlatformPair();
+            if (!aiAvailable || !left || !right || left === right) return;
+
+            const button = this;
+            const target = document.getElementById('ai-platform-suggestions');
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Analizando este par';
+            target.className = 'alert alert-info small mt-2 mb-0';
+            target.textContent = `Analizando solo coincidencias locales de ${left} ↔ ${right}; no se envían datos de clientes.`;
+
+            try {
+                const response = await fetch(suggestUrl, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken},
+                    body: JSON.stringify({left_provider: left, right_provider: right}),
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(payload.message || `No se pudo generar la sugerencia (HTTP ${response.status}).`);
+
+                const suggestion = payload.suggestion || {};
+                const items = suggestion.suggestions || [];
+                if (!items.length) {
+                    target.className = 'alert alert-secondary small mt-2 mb-0';
+                    target.textContent = suggestion.used_ai
+                        ? 'La IA no recomendó convertir ninguna coincidencia de este par en propuesta. No se guardó ni activó nada.'
+                        : 'No hay coincidencias locales suficientes para este par; OpenRouter no fue consultado y no se consumieron créditos.';
+                    return;
+                }
+
+                target.className = 'alert alert-info small mt-2 mb-0';
+                target.innerHTML = `<strong>IA · ${items.length} sugerencia(s) para revisar</strong><ul class="mb-1 pl-3 mt-2">${items.map((item, index) => `<li class="mb-2"><strong>${escapeHtml(item.left.label)} ↔ ${escapeHtml(item.right.label)}</strong> <span class="badge badge-info">${escapeHtml(item.confidence)}%</span><br>${escapeHtml(item.reason || 'Sin explicación adicional.')}<br><button type="button" class="btn btn-xs btn-outline-primary mt-1 use-ai-relation" data-ai-index="${index}">Usar como propuesta</button></li>`).join('')}</ul><small>Modelo: ${escapeHtml(suggestion.model)}. Requiere guardado y revisión humana; no se activó ningún mapeo.</small>`;
+                target.querySelectorAll('.use-ai-relation').forEach((item) => item.addEventListener('click', () => {
+                    openSuggestedRelation(items[Number(item.dataset.aiIndex)]);
+                }));
+            } catch (error) {
+                target.className = 'alert alert-warning small mt-2 mb-0';
+                target.textContent = error.message || 'No se pudo generar la sugerencia.';
+            } finally {
+                updatePairAiButton();
+                button.innerHTML = '<i class="fas fa-magic mr-1"></i>IA: revisar este par';
+            }
+        });
+
         ['left', 'right'].forEach((side) => {
-            document.getElementById(`relation-${side}-provider`)?.addEventListener('change', () => populateRelationPicker(side));
+            document.getElementById(`relation-${side}-provider`)?.addEventListener('change', () => {
+                clearPlatformAiSuggestions();
+                populateRelationPicker(side);
+            });
             document.getElementById(`relation-${side}-field-picker`)?.addEventListener('change', () => syncRelationEndpoint(side));
+            document.getElementById(`relation-${side}-field-search`)?.addEventListener('input', () => populateRelationPicker(side));
             populateRelationPicker(side);
         });
         document.getElementById('audit-relation-form')?.addEventListener('submit', function (event) {
@@ -450,19 +512,26 @@
         });
         document.querySelectorAll('.use-derived-relation').forEach((button) => button.addEventListener('click', () => {
             const relation = derivedRelations[Number(button.dataset.index)];
+            openSuggestedRelation(relation);
+        }));
+        document.querySelectorAll('.use-automatic-relation').forEach((button) => button.addEventListener('click', () => {
+            openSuggestedRelation(automaticRelations[Number(button.dataset.index)]);
+        }));
+
+        function openSuggestedRelation(relation) {
             if (!relation) return;
             applyDerivedEndpoint('left', relation.left);
             applyDerivedEndpoint('right', relation.right);
-            if (window.jQuery) {
-                window.jQuery('#newAuditRelationModal').modal('show');
-            }
-        }));
+            if (window.jQuery) window.jQuery('#newAuditRelationModal').modal('show');
+        }
 
         function applyDerivedEndpoint(side, endpoint) {
             const provider = document.getElementById(`relation-${side}-provider`);
             const picker = document.getElementById(`relation-${side}-field-picker`);
             if (!provider || !picker) return;
             provider.value = endpoint.provider;
+            const search = document.getElementById(`relation-${side}-field-search`);
+            if (search) search.value = '';
             populateRelationPicker(side);
             const fields = platformFields[endpoint.provider] || [];
             const index = fields.findIndex((field) => field.key === endpoint.key

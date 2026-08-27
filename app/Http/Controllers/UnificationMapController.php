@@ -100,8 +100,9 @@ class UnificationMapController extends Controller
     }
 
     /**
-     * An administrator explicitly invokes this endpoint from the selected map
-     * row. The suggestion is returned to the browser and is never persisted.
+     * An administrator explicitly invokes this endpoint for a selected pair
+     * of platforms. The suggestion is returned to the browser and is never
+     * persisted.
      */
     public function suggest(
         Request $request,
@@ -109,7 +110,8 @@ class UnificationMapController extends Controller
         UnificationAiSuggestionService $suggestions,
     ): JsonResponse {
         $data = $request->validate([
-            'map_identity' => ['required', 'string', 'max:255'],
+            'left_provider' => ['required', Rule::in(UnificationAuditRelation::PROVIDERS)],
+            'right_provider' => ['required', Rule::in(UnificationAuditRelation::PROVIDERS), 'different:left_provider'],
         ]);
 
         if (! $suggestions->available()) {
@@ -119,22 +121,49 @@ class UnificationMapController extends Controller
         }
 
         $inventory = $map->inventory();
-        $row = collect($inventory['map_rows'])->firstWhere('identity', $data['map_identity']);
+        $candidates = collect($inventory['automatic_relations'])
+            ->filter(fn (array $relation) => (
+                $relation['left']['provider'] === $data['left_provider']
+                && $relation['right']['provider'] === $data['right_provider']
+            ) || (
+                $relation['left']['provider'] === $data['right_provider']
+                && $relation['right']['provider'] === $data['left_provider']
+            ))
+            ->map(function (array $relation) use ($data): array {
+                if ($relation['left']['provider'] === $data['left_provider']) {
+                    return $relation;
+                }
 
-        if (! $row) {
-            return response()->json(['message' => 'No se encontró el campo seleccionado.'], 404);
-        }
+                return array_merge($relation, [
+                    'left' => $relation['right'],
+                    'right' => $relation['left'],
+                    'left_source' => $relation['right_source'] ?? null,
+                    'right_source' => $relation['left_source'] ?? null,
+                ]);
+            })
+            ->values()
+            ->all();
 
         try {
             return response()->json([
-                'suggestion' => $suggestions->suggest($row, $inventory['field_options']['app']),
+                'suggestion' => $suggestions->suggestPlatformPair(
+                    $data['left_provider'],
+                    $data['right_provider'],
+                    $candidates,
+                ),
             ]);
+        } catch (\RuntimeException $exception) {
+            report($exception);
+
+            return response()->json([
+                'message' => $exception->getMessage(),
+            ], 502);
         } catch (\Throwable $exception) {
             report($exception);
 
             return response()->json([
-                'message' => 'No fue posible generar la sugerencia. Intenta de nuevo o revisa la configuración de OpenRouter.',
-            ], 502);
+                'message' => 'Error local al preparar la sugerencia IA. Revisa el log de Laravel para el detalle técnico.',
+            ], 500);
         }
     }
 

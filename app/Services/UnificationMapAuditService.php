@@ -135,26 +135,29 @@ class UnificationMapAuditService
             $auditedLinks,
             $auditedRelations,
         );
+        $automaticRelations = $this->automaticRelations($platformFields, $legacyLinks, $auditedRelations);
 
         return [
             'summary' => [
                 'legacy_associations' => count($legacyLinks),
-                'hubspot_fields' => collect($legacyLinks)->pluck('hubspot_key')->unique()->count(),
-                'teamleader_fields' => collect($legacyLinks)->pluck('teamleader_key')->filter()->unique()->count(),
-                'app_fields' => count($appFields),
+                'hubspot_fields' => count($platformFields['hubspot']),
+                'teamleader_fields' => count($platformFields['teamleader']),
+                'app_fields' => count($platformFields['app']),
                 'app_legacy_columns' => collect($legacyLinks)->filter(fn (array $link) => $link['app_field']['storage'] === 'users')->pluck('hubspot_key')->unique()->count(),
-                'monday_fields' => count($mondayFields),
+                'monday_fields' => count($platformFields['monday']),
                 'audit_storage_ready' => Schema::hasTable('unification_audit_links'),
                 'relation_storage_ready' => Schema::hasTable('unification_audit_relations'),
                 'active_mappings' => $this->activeMappingCount(),
                 'ai_suggestions_available' => filled(config('services.openrouter.key')),
                 'direct_audit_relations' => count($auditedRelations),
                 'derived_relations' => count($derivedRelations),
+                'automatic_relations' => count($automaticRelations),
             ],
             'map_rows' => $mapRows,
             'audited_links' => $auditedLinks,
             'audited_relations' => $auditedRelations,
             'derived_relations' => $derivedRelations,
+            'automatic_relations' => $automaticRelations,
             'field_options' => $platformFields,
         ];
     }
@@ -202,6 +205,20 @@ class UnificationMapAuditService
         $fields = [];
         foreach ($legacyLinks as $link) {
             $fields[$link['app_field']['key']] = $link['app_field'];
+        }
+
+        // The selector must expose every currently known App attribute, not
+        // only the subset that appears in the historical HubSpot catalogue.
+        if (Schema::hasTable('users')) {
+            foreach (Schema::getColumnListing('users') as $column) {
+                $existing = $fields[$column] ?? [];
+                $fields[$column] = array_merge($existing, [
+                    'key' => $column,
+                    'label' => $existing['label'] ?? $this->labelFor($column),
+                    'storage' => 'users',
+                    'source' => $existing ? 'Columna histórica + catálogo legado' : 'Columna de users',
+                ]);
+            }
         }
 
         if (Schema::hasTable('custom_field_definitions')) {
@@ -358,36 +375,77 @@ class UnificationMapAuditService
 
     private function platformFields(array $legacyLinks, array $appFields, array $mondayFields): array
     {
+        $hubspot = collect($legacyLinks)
+            ->groupBy('hubspot_key')
+            ->map(fn ($links, string $key) => [
+                'key' => $key,
+                'label' => $links->first()['hubspot_label'],
+                'provider' => 'hubspot',
+                'entity_type' => 'contact',
+                'scope_key' => '*',
+                'source' => 'Catálogo legado',
+            ])
+            ->keyBy('key');
+
+        // Existing direct users columns are already used by the legacy
+        // HubSpot reader as candidate property names. Show them all, but mark
+        // the ones outside the historical catalogue as inferred until a live
+        // HubSpot catalogue refresh confirms them.
+        foreach ($appFields as $field) {
+            if (($field['storage'] ?? null) !== 'users' || $hubspot->has($field['key'])) {
+                continue;
+            }
+
+            $hubspot->put($field['key'], [
+                'key' => $field['key'],
+                'label' => $field['label'],
+                'provider' => 'hubspot',
+                'entity_type' => 'contact',
+                'scope_key' => '*',
+                'source' => 'Inferido desde columna de users; confirmar en HubSpot',
+            ]);
+        }
+
+        $teamleader = collect($legacyLinks)
+            ->groupBy('teamleader_key')
+            ->map(fn ($links, string $key) => [
+                'key' => $key,
+                'label' => $links->first()['teamleader_label'],
+                'provider' => 'teamleader',
+                'entity_type' => $links->first()['teamleader_context'],
+                'scope_key' => '*',
+                'type' => $links->first()['teamleader_type'],
+                'source' => 'Catálogo legado',
+            ])
+            ->keyBy('key');
+
+        foreach ($this->teamleaderDefinitions() as $key => $field) {
+            if ($teamleader->has($key)) {
+                continue;
+            }
+
+            $teamleader->put($key, [
+                'key' => $key,
+                'label' => $field['label'],
+                'provider' => 'teamleader',
+                'entity_type' => $field['context'],
+                'scope_key' => '*',
+                'type' => $field['type'],
+                'source' => 'Definición Teamleader local',
+            ]);
+        }
+
         return [
             'app' => collect($appFields)->map(fn (array $field) => array_merge($field, [
                 'provider' => 'app',
                 'entity_type' => 'client',
                 'scope_key' => '*',
             ]))->values()->all(),
-            'hubspot' => collect($legacyLinks)
-                ->groupBy('hubspot_key')
-                ->map(fn ($links, string $key) => [
-                    'key' => $key,
-                    'label' => $links->first()['hubspot_label'],
-                    'provider' => 'hubspot',
-                    'entity_type' => 'contact',
-                    'scope_key' => '*',
-                    'source' => 'Catálogo legado',
-                ])
+            'hubspot' => $hubspot
                 ->sortBy('label')
                 ->values()
                 ->all(),
-            'teamleader' => collect($legacyLinks)
-                ->groupBy('teamleader_key')
-                ->map(fn ($links, string $key) => [
-                    'key' => $key,
-                    'label' => $links->first()['teamleader_label'],
-                    'provider' => 'teamleader',
-                    'entity_type' => $links->first()['teamleader_context'],
-                    'scope_key' => '*',
-                    'type' => $links->first()['teamleader_type'],
-                    'source' => 'Catálogo legado',
-                ])
+            'teamleader' => $teamleader
                 ->sortBy('label')
                 ->values()
                 ->all(),
@@ -477,6 +535,106 @@ class UnificationMapAuditService
             ->take(250)
             ->values()
             ->all();
+    }
+
+    /**
+     * Builds deterministic suggestions across every locally known field. They
+     * remain display-only until an administrator turns one into an audit
+     * proposal. Exact label/key matches rank first; close semantic names are
+     * presented with a lower confidence for human review.
+     */
+    private function automaticRelations(array $platformFields, array $legacyLinks, array $auditedRelations): array
+    {
+        $directKeys = [];
+        foreach ($legacyLinks as $link) {
+            $app = $this->endpoint('app', 'client', '*', $link['app_field']['key'], $link['app_field']['label']);
+            $hubspot = $this->endpoint('hubspot', 'contact', '*', $link['hubspot_key'], $link['hubspot_label']);
+            $teamleader = $this->endpoint('teamleader', $link['teamleader_context'], '*', $link['teamleader_key'], $link['teamleader_label']);
+            $directKeys[$this->edgeKey($app['identity'], $hubspot['identity'])] = true;
+            $directKeys[$this->edgeKey($hubspot['identity'], $teamleader['identity'])] = true;
+        }
+        foreach ($auditedRelations as $relation) {
+            $directKeys[$this->edgeKey($relation['left']['identity'], $relation['right']['identity'])] = true;
+        }
+
+        $providers = array_keys($platformFields);
+        $candidates = [];
+        for ($leftProviderIndex = 0; $leftProviderIndex < count($providers); $leftProviderIndex++) {
+            $leftProvider = $providers[$leftProviderIndex];
+            $leftFields = collect($platformFields[$leftProvider])->filter(fn (array $field) => $this->isAutomaticCandidate($field));
+
+            for ($rightProviderIndex = $leftProviderIndex + 1; $rightProviderIndex < count($providers); $rightProviderIndex++) {
+                $rightProvider = $providers[$rightProviderIndex];
+                $rightFields = collect($platformFields[$rightProvider])->filter(fn (array $field) => $this->isAutomaticCandidate($field));
+
+                foreach ($leftFields as $leftField) {
+                    foreach ($rightFields as $rightField) {
+                        $score = max(
+                            $this->similarity($leftField['label'], $rightField['label']),
+                            $this->similarity($leftField['key'], $rightField['key']),
+                            $this->similarity($leftField['label'], $rightField['key']),
+                            $this->similarity($leftField['key'], $rightField['label']),
+                        );
+                        if ($score < 86) {
+                            continue;
+                        }
+
+                        $left = $this->endpoint(
+                            $leftProvider,
+                            $leftField['entity_type'],
+                            $leftField['scope_key'],
+                            $leftField['key'],
+                            $leftField['label'],
+                        );
+                        $right = $this->endpoint(
+                            $rightProvider,
+                            $rightField['entity_type'],
+                            $rightField['scope_key'],
+                            $rightField['key'],
+                            $rightField['label'],
+                        );
+                        $edgeKey = $this->edgeKey($left['identity'], $right['identity']);
+                        if (isset($directKeys[$edgeKey])) {
+                            continue;
+                        }
+
+                        $candidates[$edgeKey] = [
+                            'identity' => $edgeKey,
+                            'left' => $left,
+                            'right' => $right,
+                            'confidence' => $score,
+                            'match_method' => $score === 100 ? 'exact_name' : 'similar_name',
+                            'reason' => $score === 100
+                                ? 'La clave o etiqueta coincide exactamente en ambos catálogos locales.'
+                                : 'Las claves o etiquetas son muy similares; confirmar semántica, tipo y alcance.',
+                            'left_source' => $leftField['source'] ?? null,
+                            'right_source' => $rightField['source'] ?? null,
+                        ];
+                    }
+                }
+            }
+        }
+
+        return collect($candidates)
+            ->sortByDesc('confidence')
+            ->take(250)
+            ->values()
+            ->all();
+    }
+
+    private function isAutomaticCandidate(array $field): bool
+    {
+        $key = Str::lower((string) ($field['key'] ?? ''));
+        if ($key === '' || in_array($key, [
+            'id', 'created_at', 'updated_at', 'deleted_at', 'remember_token',
+            'password', 'password_md5', 'two_factor_secret', 'two_factor_recovery_codes',
+        ], true)) {
+            return false;
+        }
+
+        return ! str_contains($key, 'token')
+            && ! str_contains($key, 'secret')
+            && ! str_contains($key, 'session');
     }
 
     private function addEdge(array &$edges, array &$nodes, array $left, array $right, string $basis): void

@@ -134,12 +134,13 @@ class UnificationMapAuditServiceTest extends TestCase
         $inventory = app(UnificationMapAuditService::class)->inventory();
 
         $this->assertSame(3, $inventory['summary']['legacy_associations']);
-        $this->assertSame(2, $inventory['summary']['hubspot_fields']);
+        $this->assertSame(6, $inventory['summary']['hubspot_fields']);
         $this->assertSame(3, $inventory['summary']['teamleader_fields']);
         $this->assertSame(1, $inventory['summary']['app_legacy_columns']);
         $this->assertSame(2, $inventory['summary']['monday_fields']);
         $this->assertTrue($inventory['summary']['audit_storage_ready']);
         $this->assertTrue($inventory['summary']['relation_storage_ready']);
+        $this->assertGreaterThanOrEqual(1, $inventory['summary']['automatic_relations']);
 
         $legacyRow = collect($inventory['map_rows'])->firstWhere('identity', 'legacy:estado_documental');
         $this->assertCount(2, $legacyRow['teamleader']);

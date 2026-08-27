@@ -18,12 +18,29 @@ class UnificationAiSuggestionService
         return filled(config('services.openrouter.key'));
     }
 
-    public function suggest(array $mapRow, array $appFields): array
+    /**
+     * Evaluates only the candidate pairs for two administrator-selected
+     * platforms. It never receives the complete cross-platform catalogue.
+     */
+    public function suggestPlatformPair(string $leftProvider, string $rightProvider, array $candidates): array
     {
         $apiKey = config('services.openrouter.key');
 
         if (blank($apiKey)) {
             throw new RuntimeException('Falta configurar OPENROUTER_API_KEY para solicitar una sugerencia.');
+        }
+
+        // The environment may reduce this threshold, but never increase it.
+        // This cap keeps an accidental broad request from consuming credits.
+        $candidateLimit = max(1, min(40, (int) config('services.openrouter.unification_max_candidates', 40)));
+        $candidates = array_values(array_slice($candidates, 0, $candidateLimit));
+        if ($candidates === []) {
+            return [
+                'suggestions' => [],
+                'model' => config('services.openrouter.unification_model', 'qwen/qwen3.5-flash-02-23'),
+                'candidate_limit' => $candidateLimit,
+                'used_ai' => false,
+            ];
         }
 
         $response = Http::timeout((int) config('services.openrouter.unification_timeout', 30))
@@ -36,7 +53,7 @@ class UnificationAiSuggestionService
             ])
             ->post(config('services.openrouter.url'), [
                 'model' => config('services.openrouter.unification_model', 'qwen/qwen3.5-flash-02-23'),
-                'messages' => $this->messages($mapRow, $appFields),
+                'messages' => $this->pairMessages($leftProvider, $rightProvider, $candidates),
                 'temperature' => 0.1,
                 'max_tokens' => 700,
                 // This rejects providers that cannot honor the JSON Schema.
@@ -45,7 +62,7 @@ class UnificationAiSuggestionService
             ]);
 
         if (! $response->successful()) {
-            throw new RuntimeException('OpenRouter respondió con error '.$response->status().'.');
+            throw new RuntimeException($this->apiErrorMessage($response->status(), $response->json(), $response->body(), $apiKey));
         }
 
         $content = trim((string) data_get($response->json(), 'choices.0.message.content', ''));
@@ -63,63 +80,32 @@ class UnificationAiSuggestionService
             throw new RuntimeException('OpenRouter devolvió una sugerencia inválida.');
         }
 
-        return $this->normaliseSuggestion($suggestion);
+        return $this->normalisePairSuggestions($suggestion, $candidates, $candidateLimit);
     }
 
-    private function messages(array $mapRow, array $appFields): array
+    private function pairMessages(string $leftProvider, string $rightProvider, array $candidates): array
     {
-        $catalogue = collect($appFields)
-            ->take(150)
-            ->map(fn (array $field) => [
-                'key' => $field['key'],
-                'label' => $field['label'],
-                'storage' => $field['storage'],
-                'data_type' => $field['data_type'] ?? null,
-            ])
-            ->values()
-            ->all();
-
-        $selected = [
-            'app' => $mapRow['app'] ? [
-                'key' => $mapRow['app']['key'],
-                'label' => $mapRow['app']['label'],
-                'storage' => $mapRow['app']['storage'],
-            ] : null,
-            'hubspot' => $this->fieldsForPrompt($mapRow['hubspot'] ?? []),
-            'teamleader' => $this->fieldsForPrompt($mapRow['teamleader'] ?? []),
-            'monday' => $this->fieldsForPrompt($mapRow['monday_matches'] ?? []),
-            'current_match_method' => $mapRow['match_method'] ?? 'unknown',
-        ];
-
         return [
             [
                 'role' => 'system',
-                'content' => 'Eres un asistente de gobierno de datos. Evalúas posibles correspondencias de campos entre una App, HubSpot, Teamleader y Monday. Tu salida es exclusivamente una recomendación para auditoría humana: nunca afirmes que se ejecutó una sincronización ni que se debe activar un proceso. Usa únicamente las claves y etiquetas proporcionadas; no inventes campos, valores, tipos ni reglas de negocio. Si la evidencia semántica no basta, responde needs_information o no_match. Las claves técnicas crípticas de Monday por sí solas no son evidencia suficiente.',
+                'content' => 'Eres un asistente de gobierno de datos. Evalúas pares candidatos de campos entre dos plataformas. Tu salida es exclusivamente una recomendación para auditoría humana: nunca afirmes que se ejecutó una sincronización ni que se debe activar un proceso. Solo puedes aprobar índices de la lista recibida; no inventes campos, valores, tipos ni reglas de negocio. Descarta pares si la evidencia semántica no basta. Las claves técnicas crípticas de Monday por sí solas no son evidencia suficiente.',
             ],
             [
                 'role' => 'user',
                 'content' => json_encode([
-                    'selected_relation' => $selected,
-                    'app_field_catalogue' => $catalogue,
-                    'task' => 'Indica si la relación seleccionada merece revisión, no coincide o requiere más información. Si falta un campo App, sugiere como máximo uno del catálogo. Explica brevemente qué etiquetas sustentan la decisión.',
+                    'left_platform' => $leftProvider,
+                    'right_platform' => $rightProvider,
+                    'candidate_pairs' => collect($candidates)->values()->map(fn (array $candidate, int $index) => [
+                        'candidate_index' => $index,
+                        'left' => $candidate['left'],
+                        'right' => $candidate['right'],
+                        'deterministic_confidence' => $candidate['confidence'],
+                        'deterministic_reason' => $candidate['reason'],
+                    ])->all(),
+                    'task' => 'Devuelve como máximo 20 índices que merecen convertirse en propuesta de auditoría. Omite los que no correspondan.',
                 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
             ],
         ];
-    }
-
-    private function fieldsForPrompt(array $fields): array
-    {
-        return collect($fields)
-            ->take(10)
-            ->map(fn (array $field) => [
-                'key' => $field['key'] ?? null,
-                'label' => $field['label'] ?? null,
-                'scope_key' => $field['scope_key'] ?? null,
-                'type' => $field['type'] ?? null,
-                'confidence_from_name' => $field['confidence'] ?? null,
-            ])
-            ->values()
-            ->all();
     }
 
     private function responseFormat(): array
@@ -132,33 +118,66 @@ class UnificationAiSuggestionService
                 'schema' => [
                     'type' => 'object',
                     'additionalProperties' => false,
-                    'required' => ['recommendation', 'confidence', 'reason', 'suggested_app_field_key', 'suggested_app_field_label'],
+                    'required' => ['suggestions'],
                     'properties' => [
-                        'recommendation' => ['type' => 'string', 'enum' => ['review_match', 'no_match', 'needs_information']],
-                        'confidence' => ['type' => 'integer', 'minimum' => 0, 'maximum' => 100],
-                        'reason' => ['type' => 'string', 'maxLength' => 500],
-                        'suggested_app_field_key' => ['type' => 'string', 'maxLength' => 191],
-                        'suggested_app_field_label' => ['type' => 'string', 'maxLength' => 255],
+                        'suggestions' => [
+                            'type' => 'array',
+                            'maxItems' => 20,
+                            'items' => [
+                                'type' => 'object',
+                                'additionalProperties' => false,
+                                'required' => ['candidate_index', 'confidence', 'reason'],
+                                'properties' => [
+                                    'candidate_index' => ['type' => 'integer', 'minimum' => 0],
+                                    'confidence' => ['type' => 'integer', 'minimum' => 0, 'maximum' => 100],
+                                    'reason' => ['type' => 'string', 'maxLength' => 500],
+                                ],
+                            ],
+                        ],
                     ],
                 ],
             ],
         ];
     }
 
-    private function normaliseSuggestion(array $suggestion): array
+    private function normalisePairSuggestions(array $suggestion, array $candidates, int $candidateLimit): array
     {
-        $recommendation = $suggestion['recommendation'] ?? 'needs_information';
-        if (! in_array($recommendation, ['review_match', 'no_match', 'needs_information'], true)) {
-            $recommendation = 'needs_information';
-        }
-
         return [
-            'recommendation' => $recommendation,
-            'confidence' => max(0, min(100, (int) ($suggestion['confidence'] ?? 0))),
-            'reason' => Str::limit(trim((string) ($suggestion['reason'] ?? '')), 500, ''),
-            'suggested_app_field_key' => Str::limit(trim((string) ($suggestion['suggested_app_field_key'] ?? '')), 191, ''),
-            'suggested_app_field_label' => Str::limit(trim((string) ($suggestion['suggested_app_field_label'] ?? '')), 255, ''),
+            'suggestions' => collect($suggestion['suggestions'] ?? [])
+                ->map(function (array $item) use ($candidates): ?array {
+                    $index = (int) ($item['candidate_index'] ?? -1);
+                    if (! isset($candidates[$index])) {
+                        return null;
+                    }
+
+                    return array_merge($candidates[$index], [
+                        'confidence' => max(0, min(100, (int) ($item['confidence'] ?? 0))),
+                        'reason' => Str::limit(trim((string) ($item['reason'] ?? '')), 500, ''),
+                        'source' => 'openrouter',
+                    ]);
+                })
+                ->filter()
+                ->unique('identity')
+                ->values()
+                ->all(),
             'model' => config('services.openrouter.unification_model', 'qwen/qwen3.5-flash-02-23'),
+            'candidate_limit' => $candidateLimit,
+            'used_ai' => true,
         ];
+    }
+
+    private function apiErrorMessage(int $status, mixed $payload, string $body, string $apiKey): string
+    {
+        $providerMessage = is_array($payload)
+            ? (string) (data_get($payload, 'error.message') ?: data_get($payload, 'message') ?: '')
+            : '';
+        $providerMessage = $providerMessage ?: $body;
+        $providerMessage = str_ireplace($apiKey, '[clave oculta]', $providerMessage);
+        $providerMessage = preg_replace('/Bearer\s+\S+/i', 'Bearer [clave oculta]', $providerMessage) ?: '';
+        $providerMessage = Str::limit(trim($providerMessage), 900, '');
+
+        $model = config('services.openrouter.unification_model', 'qwen/qwen3.5-flash-02-23');
+
+        return "OpenRouter HTTP {$status} con {$model}: ".($providerMessage ?: 'sin detalle adicional del proveedor.');
     }
 }
