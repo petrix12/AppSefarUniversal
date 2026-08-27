@@ -47,6 +47,8 @@ La secuencia obligatoria es:
 
 No hay ningún comando ni pantalla que convierta una propuesta de auditoría en una sincronización activa automáticamente.
 
+El mapa puede pedir una **sugerencia IA** para el campo seleccionado cuando exista `OPENROUTER_API_KEY`. El modelo configurado por defecto es `qwen/qwen3.5-flash-02-23` mediante `OPENROUTER_UNIFICATION_MODEL`; recibe solo metadatos de campos (claves, etiquetas, tipos y ámbito de tablero), devuelve JSON estructurado y su resultado no se guarda ni activa una relación. Siempre requiere la revisión humana del administrador.
+
 Incluso después de desplegar las tablas, las proyecciones automáticas de operaciones existentes hacia la capa canónica quedan apagadas por defecto. Solo se pueden habilitar después de la auditoría mediante `UNIFICATION_CANONICAL_WRITES_ENABLED=true`, con un despliegue aprobado. Mientras esté apagado, el registro actual de Monday y la resolución de contactos Teamleader continúan por sus rutas existentes, sin escribir en las tablas nuevas.
 
 ## Operación segura tras la aprobación de auditoría

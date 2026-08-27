@@ -63,6 +63,8 @@ return [
         'key' => env('OPENROUTER_API_KEY'),
         'url' => 'https://openrouter.ai/api/v1/chat/completions',
         'model' => 'openai/gpt-4o-mini',
+        'unification_model' => env('OPENROUTER_UNIFICATION_MODEL', 'qwen/qwen3.5-flash-02-23'),
+        'unification_timeout' => env('OPENROUTER_UNIFICATION_TIMEOUT', 30),
         'timeout' => 45,
         'temperature' => 0.2,
         'max_tokens' => 900,

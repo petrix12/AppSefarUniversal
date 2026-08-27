@@ -137,6 +137,7 @@ class UnificationMapAuditService
                 'monday_fields' => count($mondayFields),
                 'audit_storage_ready' => Schema::hasTable('unification_audit_links'),
                 'active_mappings' => $this->activeMappingCount(),
+                'ai_suggestions_available' => filled(config('services.openrouter.key')),
             ],
             'map_rows' => $mapRows,
             'audited_links' => $auditedLinks,

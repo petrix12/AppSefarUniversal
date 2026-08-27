@@ -61,7 +61,12 @@
     <div class="card card-outline card-primary">
         <div class="card-header">
             <h3 class="card-title"><i class="fas fa-sitemap mr-1"></i>Diagrama de la relación seleccionada</h3>
-            <div class="card-tools"><span id="selected-map-status" class="badge badge-secondary">Selecciona una fila</span></div>
+            <div class="card-tools">
+                <button type="button" id="ai-suggest-map" class="btn btn-xs btn-outline-info mr-2" disabled @if(! $summary['ai_suggestions_available']) title="Configura OPENROUTER_API_KEY para habilitarlo" @endif>
+                    <i class="fas fa-magic mr-1"></i>IA: sugerir
+                </button>
+                <span id="selected-map-status" class="badge badge-secondary">Selecciona una fila</span>
+            </div>
         </div>
         <div class="card-body">
             <p id="selected-map-hint" class="text-muted mb-3">Elige un campo abajo para ver sus conexiones propuestas. Las líneas punteadas son coincidencias sugeridas, no integraciones activas.</p>
@@ -77,6 +82,7 @@
                 <div class="entity-card entity-monday"><div class="entity-title"><i class="fab fa-trello"></i> Monday</div><div id="node-monday" class="entity-content">—</div></div>
             </div>
             <div class="mt-3 small text-muted"><i class="fas fa-circle text-success"></i> Catálogo legado o decisión aprobada &nbsp; <i class="fas fa-circle text-warning"></i> Coincidencia por revisar &nbsp; <i class="fas fa-circle text-secondary"></i> Sin relación conocida</div>
+            <div id="ai-suggestion" class="alert alert-info mt-3 mb-0 d-none" role="status"></div>
         </div>
     </div>
 
@@ -118,7 +124,7 @@
                             @forelse($teamleader as $field)<div title="{{ $field['key'] }}"><strong>{{ $field['label'] }}</strong><br><small class="text-muted">{{ $field['context'] }} · {{ $field['type'] ?: 'tipo sin catalogar' }}</small></div>@empty<span class="text-muted">—</span>@endforelse
                         </td>
                         <td>
-                            @forelse($monday as $field)<div><strong>{{ $field['label'] }}</strong><br><small class="text-muted">Tablero {{ $field['scope_key'] }} · {{ $field['key'] }} · {{ $field['confidence'] }}%</small></div>@empty<span class="text-muted">Sin coincidencia automática</span>@endforelse
+                            @forelse($monday as $field)<div><strong>{{ $field['label'] }}</strong><br><small class="text-muted">Tablero {{ $field['scope_key'] }} · {{ $field['key'] }} · {{ isset($field['confidence']) && $field['confidence'] !== null ? $field['confidence'].'%' : 'pendiente de asociar' }}</small></div>@empty<span class="text-muted">Sin coincidencia automática</span>@endforelse
                         </td>
                         <td>
                             @if($row['match_method'] === 'legacy_catalog')<span class="badge badge-success">Catálogo legado</span>
@@ -228,6 +234,10 @@
 <script>
     (function () {
         const rows = {{ \Illuminate\Support\Js::from($map_rows) }};
+        const aiAvailable = {{ $summary['ai_suggestions_available'] ? 'true' : 'false' }};
+        const suggestUrl = @json(route('unification-map.suggest'));
+        const csrfToken = @json(csrf_token());
+        let selectedIndex = null;
         const text = (field) => field ? `<strong>${escapeHtml(field.label || field.key || '—')}</strong><br><code>${escapeHtml(field.key || '')}</code>${field.scope_key ? `<br><small>Ámbito: ${escapeHtml(field.scope_key)}</small>` : ''}` : '—';
         const many = (fields, empty) => fields && fields.length ? fields.map(text).join('<hr class="my-1">') : `<span class="text-muted">${empty}</span>`;
         const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[character]));
@@ -235,6 +245,7 @@
         window.selectMap = function (index) {
             const row = rows[index];
             if (!row) return;
+            selectedIndex = index;
             document.getElementById('node-app').innerHTML = text(row.app);
             document.getElementById('node-hubspot').innerHTML = many(row.hubspot, 'No asociado');
             document.getElementById('node-teamleader').innerHTML = many(row.teamleader, 'No asociado');
@@ -249,6 +260,8 @@
             setLine('line-teamleader-app', hasTeamleader, row.match_method === 'legacy_catalog' ? 'connected' : 'suggested');
             setLine('line-monday-app', hasMonday, 'suggested');
             document.querySelectorAll('#map-table tbody tr').forEach((element) => element.classList.toggle('table-primary', Number(element.dataset.mapRow) === index));
+            document.getElementById('ai-suggest-map').disabled = !aiAvailable;
+            document.getElementById('ai-suggestion').classList.add('d-none');
         };
 
         function setLine(id, present, className) {
@@ -258,6 +271,41 @@
         }
 
         document.querySelectorAll('.select-map').forEach((button) => button.addEventListener('click', () => window.selectMap(Number(button.dataset.index))));
+        document.getElementById('ai-suggest-map')?.addEventListener('click', async function () {
+            if (!aiAvailable || selectedIndex === null || !rows[selectedIndex]) return;
+
+            const button = this;
+            const target = document.getElementById('ai-suggestion');
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Analizando';
+            target.className = 'alert alert-info mt-3 mb-0';
+            target.textContent = 'Analizando nombres y claves de campos; no se envían datos de clientes.';
+
+            try {
+                const response = await fetch(suggestUrl, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken},
+                    body: JSON.stringify({map_identity: rows[selectedIndex].identity}),
+                });
+                const payload = await response.json();
+                if (!response.ok) throw new Error(payload.message || 'No se pudo generar la sugerencia.');
+
+                const item = payload.suggestion;
+                const label = item.recommendation === 'review_match'
+                    ? 'Revisar coincidencia'
+                    : (item.recommendation === 'no_match' ? 'No parece corresponder' : 'Falta información');
+                const proposed = item.suggested_app_field_key
+                    ? `<br><strong>Campo App sugerido:</strong> ${escapeHtml(item.suggested_app_field_label || item.suggested_app_field_key)} <code>${escapeHtml(item.suggested_app_field_key)}</code>`
+                    : '';
+                target.innerHTML = `<strong>IA · ${escapeHtml(label)} (${escapeHtml(item.confidence)}%)</strong><br>${escapeHtml(item.reason || 'Sin explicación adicional.')}${proposed}<br><small>Modelo: ${escapeHtml(item.model)}. Es una sugerencia; no se ha guardado ni activado ningún mapeo.</small>`;
+            } catch (error) {
+                target.className = 'alert alert-warning mt-3 mb-0';
+                target.textContent = error.message || 'No se pudo generar la sugerencia.';
+            } finally {
+                button.disabled = !aiAvailable;
+                button.innerHTML = '<i class="fas fa-magic mr-1"></i>IA: sugerir';
+            }
+        });
         document.getElementById('map-search')?.addEventListener('input', function () {
             const term = this.value.toLowerCase().trim();
             document.querySelectorAll('#map-table tbody tr[data-search]').forEach((row) => { row.style.display = !term || row.dataset.search.includes(term) ? '' : 'none'; });

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\UnificationAuditLink;
+use App\Services\UnificationAiSuggestionService;
 use App\Services\UnificationMapAuditService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -94,5 +96,44 @@ class UnificationMapController extends Controller
         ]);
 
         return back()->with('success', 'Decisión de auditoría actualizada. Sigue sin existir ningún mapeo activo a partir de esta decisión.');
+    }
+
+    /**
+     * An administrator explicitly invokes this endpoint from the selected map
+     * row. The suggestion is returned to the browser and is never persisted.
+     */
+    public function suggest(
+        Request $request,
+        UnificationMapAuditService $map,
+        UnificationAiSuggestionService $suggestions,
+    ): JsonResponse {
+        $data = $request->validate([
+            'map_identity' => ['required', 'string', 'max:255'],
+        ]);
+
+        if (! $suggestions->available()) {
+            return response()->json([
+                'message' => 'Configura OPENROUTER_API_KEY para usar sugerencias IA.',
+            ], 422);
+        }
+
+        $inventory = $map->inventory();
+        $row = collect($inventory['map_rows'])->firstWhere('identity', $data['map_identity']);
+
+        if (! $row) {
+            return response()->json(['message' => 'No se encontró el campo seleccionado.'], 404);
+        }
+
+        try {
+            return response()->json([
+                'suggestion' => $suggestions->suggest($row, $inventory['field_options']['app']),
+            ]);
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return response()->json([
+                'message' => 'No fue posible generar la sugerencia. Intenta de nuevo o revisa la configuración de OpenRouter.',
+            ], 502);
+        }
     }
 }
