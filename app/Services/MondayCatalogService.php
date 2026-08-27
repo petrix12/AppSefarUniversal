@@ -71,6 +71,37 @@ class MondayCatalogService
         });
     }
 
+    public function columns(string $boardId): array
+    {
+        return Cache::remember("monday.catalog.board.{$boardId}.columns", now()->addMinutes(10), function () use ($boardId): array {
+            $data = $this->query(<<<'GRAPHQL'
+                query ($boardId: ID!) {
+                    boards(ids: [$boardId]) {
+                        columns {
+                            id
+                            title
+                            type
+                        }
+                    }
+                }
+                GRAPHQL, ['boardId' => $boardId]);
+
+            if (empty(data_get($data, 'boards.0'))) {
+                throw new RuntimeException('Monday no devolvió el tablero solicitado.');
+            }
+
+            return collect(data_get($data, 'boards.0.columns', []))
+                ->map(fn (array $column): array => [
+                    'id' => (string) $column['id'],
+                    'name' => (string) $column['title'],
+                    'type' => (string) $column['type'],
+                ])
+                ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
+                ->values()
+                ->all();
+        });
+    }
+
     private function query(string $query, array $variables = []): array
     {
         $token = config('services.monday.token');

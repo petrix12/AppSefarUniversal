@@ -8,15 +8,18 @@
             <h1 class="mb-0"><i class="fas fa-project-diagram mr-2 text-primary"></i>Mapa de unificación</h1>
             <small class="text-muted">Inventario y decisiones de diseño: App, HubSpot, Teamleader y Monday.</small>
         </div>
-        @if($summary['relation_storage_ready'])
-            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#newAuditRelationModal">
-                <i class="fas fa-plus mr-1"></i>Relacionar dos plataformas
-            </button>
-        @else
-            <button type="button" class="btn btn-outline-secondary" disabled title="La tabla de auditoría aún no está desplegada">
-                <i class="fas fa-lock mr-1"></i>Modo lectura
-            </button>
-        @endif
+        <div class="btn-group">
+            <a href="{{ route('unification-map.diagram') }}" class="btn btn-outline-primary"><i class="fas fa-project-diagram mr-1"></i>Diagrama ER</a>
+            @if($summary['relation_storage_ready'])
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#newAuditRelationModal">
+                    <i class="fas fa-plus mr-1"></i>Relacionar dos plataformas
+                </button>
+            @else
+                <button type="button" class="btn btn-outline-secondary" disabled title="La tabla de auditoría aún no está desplegada">
+                    <i class="fas fa-lock mr-1"></i>Modo lectura
+                </button>
+            @endif
+        </div>
     </div>
 @stop
 
@@ -34,7 +37,7 @@
     <div class="alert alert-warning border-warning audit-notice">
         <i class="fas fa-shield-alt mr-1"></i>
         <strong>Auditoría primero.</strong> Este mapa solo lee los catálogos locales y guarda, si se habilita, decisiones de auditoría.
-        No consulta APIs externas, no crea campos en <code>users</code>, no crea <code>integration_field_mappings</code>, no activa automatizaciones y no mueve clientes entre tableros.
+        El catálogo de Monday se consulta únicamente al elegir un tablero en el selector. No crea campos en <code>users</code>, no crea <code>integration_field_mappings</code>, no activa automatizaciones y no mueve clientes entre tableros.
         <br><strong>Entidades separadas:</strong> contacto/cliente no equivale a negocio. El mapa distingue <code>users ↔ HubSpot Contacts ↔ Teamleader Contacts</code> de <code>negocios ↔ HubSpot Deals ↔ Teamleader Projects</code> y no propone cruces entre ambos.
     </div>
 
@@ -86,7 +89,13 @@
     <div class="card card-outline card-secondary">
         <div class="card-header">
             <h3 class="card-title">Inventario de relaciones</h3>
-            <div class="card-tools"><input id="map-search" type="search" class="form-control form-control-sm" placeholder="Buscar campo, etiqueta o tablero"></div>
+            <form method="GET" action="{{ route('unification-map.index') }}" class="card-tools d-flex align-items-center">
+                <input name="q" type="search" class="form-control form-control-sm mr-1" value="{{ request('q') }}" placeholder="Buscar campo, etiqueta o tablero">
+                <select name="per_page" class="form-control form-control-sm mr-1" aria-label="Filas por página">
+                    @foreach([25, 50, 100] as $pageSize)<option value="{{ $pageSize }}" @selected((int) request('per_page', 25) === $pageSize)>{{ $pageSize }}</option>@endforeach
+                </select>
+                <button class="btn btn-sm btn-outline-primary" title="Buscar"><i class="fas fa-search"></i></button>
+            </form>
         </div>
         <div class="card-body p-0 table-responsive">
             <table class="table table-hover table-sm mb-0" id="map-table">
@@ -99,15 +108,8 @@
                         $teamleader = $row['teamleader'];
                         $monday = $row['monday_matches'];
                         $audit = $row['audit_links'];
-                        $searchText = strtolower(implode(' ', array_filter([
-                            $app['key'] ?? null, $app['label'] ?? null,
-                            $row['entity_type'] ?? ($app['entity_type'] ?? null),
-                            collect($hubspot)->pluck('key')->implode(' '), collect($hubspot)->pluck('label')->implode(' '),
-                            collect($teamleader)->pluck('label')->implode(' '), collect($teamleader)->pluck('key')->implode(' '),
-                            collect($monday)->pluck('label')->implode(' '), collect($monday)->pluck('scope_key')->implode(' '),
-                        ])));
                     @endphp
-                    <tr data-map-row="{{ $index }}" data-search="{{ $searchText }}">
+                    <tr data-map-row="{{ $index }}">
                         <td>
                             @if($app)
                                 <strong>{{ $app['label'] }}</strong><br><code>{{ $app['key'] }}</code><br><small class="text-muted">{{ $app['source'] }}</small>
@@ -131,7 +133,7 @@
                             @forelse($teamleader as $field)<div title="{{ $field['key'] }}"><strong>{{ $field['label'] }}</strong><br><small class="text-muted">{{ $field['context'] }} · {{ $field['type'] ?: 'tipo sin catalogar' }}</small></div>@empty<span class="text-muted">—</span>@endforelse
                         </td>
                         <td>
-                            @forelse($monday as $field)<div><strong>{{ $field['label'] }}</strong><br><small class="text-muted">Tablero {{ $field['scope_key'] }} · {{ $field['key'] }} · {{ isset($field['confidence']) && $field['confidence'] !== null ? $field['confidence'].'%' : 'pendiente de asociar' }}</small></div>@empty<span class="text-muted">Sin coincidencia automática</span>@endforelse
+                            @forelse($monday as $field)<div><strong>{{ $field['label'] }}</strong><br><small class="text-muted">{{ $field['scope_label'] ?? 'Tablero '.$field['scope_key'] }} · {{ $field['key'] }} · {{ isset($field['confidence']) && $field['confidence'] !== null ? $field['confidence'].'%' : 'pendiente de asociar' }}</small></div>@empty<span class="text-muted">Sin coincidencia automática</span>@endforelse
                         </td>
                         <td>
                             @if($row['match_method'] === 'legacy_catalog')<span class="badge badge-success">Catálogo legado</span>
@@ -151,13 +153,17 @@
                 </tbody>
             </table>
         </div>
-        <div class="card-footer text-muted small">
-            {{ $summary['legacy_associations'] }} asociaciones históricas; {{ $summary['app_legacy_columns'] }} tienen columna física detectada en <code>users</code>.
-            @if($summary['active_mappings'])
-                Hay {{ $summary['active_mappings'] }} mapeos operativos ya existentes: se muestran como contexto, pero este módulo no los modifica.
-            @else
-                No se detectaron mapeos operativos activos en la nueva capa.
-            @endif
+        <div class="card-footer">
+            <div class="text-muted small mb-2">
+                Mostrando {{ $map_rows_pagination->firstItem() ?? 0 }}-{{ $map_rows_pagination->lastItem() ?? 0 }} de {{ $map_rows_pagination->total() }} relaciones.
+                {{ $summary['legacy_associations'] }} asociaciones históricas; {{ $summary['app_legacy_columns'] }} tienen columna física detectada en <code>users</code>.
+                @if($summary['active_mappings'])
+                    Hay {{ $summary['active_mappings'] }} mapeos operativos ya existentes: se muestran como contexto, pero este módulo no los modifica.
+                @else
+                    No se detectaron mapeos operativos activos en la nueva capa.
+                @endif
+            </div>
+            {{ $map_rows_pagination->onEachSide(1)->links('pagination::bootstrap-4') }}
         </div>
     </div>
 
@@ -196,30 +202,34 @@
                 @endforelse
                 </tbody>
             </table>
+            <div class="px-3 py-2">{{ $derived_relations_pagination->onEachSide(1)->links('pagination::bootstrap-4') }}</div>
         </div>
         <div class="card-body border-top p-0 table-responsive">
             <table class="table table-sm table-hover mb-0">
-                <thead><tr><th colspan="5" class="bg-light">Coincidencias automáticas entre todos los campos locales conocidos</th></tr><tr><th>Primera plataforma</th><th>Segunda plataforma</th><th>Confianza</th><th>Motivo</th><th></th></tr></thead>
-                <tbody>
-                @forelse($automatic_relations as $index => $relation)
-                    <tr>
-                        <td><strong>{{ ucfirst($relation['left']['provider']) }}</strong><br><small>{{ $relation['left']['label'] }} · <code>{{ $relation['left']['key'] }}</code></small><br><small class="text-muted">{{ $relation['left']['entity_type'] }}</small>@if($relation['left_source'])<br><small class="text-muted">{{ $relation['left_source'] }}</small>@endif</td>
-                        <td><strong>{{ ucfirst($relation['right']['provider']) }}</strong><br><small>{{ $relation['right']['label'] }} · <code>{{ $relation['right']['key'] }}</code></small><br><small class="text-muted">{{ $relation['right']['entity_type'] }}</small>@if($relation['right_source'])<br><small class="text-muted">{{ $relation['right_source'] }}</small>@endif</td>
-                        <td><span class="badge badge-{{ $relation['confidence'] === 100 ? 'success' : 'warning' }}">{{ $relation['confidence'] }}%</span><br><small>{{ $relation['match_method'] }}</small></td>
-                        <td><small>{{ $relation['reason'] }}</small></td>
-                        <td class="text-right">
-                            @if($summary['relation_storage_ready'])
-                                <button type="button" class="btn btn-xs btn-outline-primary use-automatic-relation" data-index="{{ $index }}">Convertir en propuesta</button>
-                            @else
-                                <span class="text-muted small">Solo lectura</span>
-                            @endif
-                        </td>
-                    </tr>
-                @empty
-                    <tr><td colspan="5" class="text-center text-muted py-3">No hay coincidencias automáticas por encima del umbral de revisión.</td></tr>
-                @endforelse
+                <thead>
+                    <tr><th colspan="5" class="bg-light">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between">
+                            <span>Coincidencias automáticas entre catálogos locales</span>
+                            <div class="d-flex align-items-center mt-1 mt-sm-0">
+                                <select id="automatic-left-provider" class="form-control form-control-sm mr-1" aria-label="Primera plataforma"><option value="">Todas</option><option value="app">App</option><option value="hubspot">HubSpot</option><option value="teamleader">Teamleader</option></select>
+                                <select id="automatic-right-provider" class="form-control form-control-sm mr-1" aria-label="Segunda plataforma"><option value="">Todas</option><option value="app">App</option><option value="hubspot">HubSpot</option><option value="teamleader">Teamleader</option></select>
+                                <button type="button" id="load-automatic-relations" class="btn btn-sm btn-outline-secondary"><i class="fas fa-sync-alt mr-1"></i>Cargar</button>
+                            </div>
+                        </div>
+                    </th></tr>
+                    <tr><th>Primera plataforma</th><th>Segunda plataforma</th><th>Confianza</th><th>Motivo</th><th></th></tr>
+                </thead>
+                <tbody id="automatic-relations-body">
+                    <tr><td colspan="5" class="text-center text-muted py-3">Carga las coincidencias cuando las necesites.</td></tr>
                 </tbody>
             </table>
+            <div class="px-3 py-2 d-flex justify-content-between align-items-center">
+                <small id="automatic-relations-meta" class="text-muted"></small>
+                <div class="btn-group">
+                    <button type="button" id="automatic-relations-prev" class="btn btn-xs btn-outline-secondary" disabled><i class="fas fa-chevron-left"></i></button>
+                    <button type="button" id="automatic-relations-next" class="btn btn-xs btn-outline-secondary" disabled><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
         </div>
         @if($summary['relation_storage_ready'])
             <div class="card-body border-top p-0 table-responsive">
@@ -239,6 +249,7 @@
                     <tr><td colspan="4" class="text-center text-muted py-3">Aún no has registrado conexiones manuales entre plataformas.</td></tr>
                 @endforelse
                 </tbody></table>
+                <div class="px-3 py-2">{{ $audited_relations_pagination->onEachSide(1)->links('pagination::bootstrap-4') }}</div>
             </div>
         @endif
     </div>
@@ -267,6 +278,7 @@
                     <tr><td colspan="5" class="text-center text-muted py-3">Aún no hay propuestas manuales.</td></tr>
                 @endforelse
                 </tbody></table>
+                <div class="px-3 py-2">{{ $audited_links_pagination->onEachSide(1)->links('pagination::bootstrap-4') }}</div>
             </div>
         </div>
     @endif
@@ -302,7 +314,7 @@
             <div class="modal-dialog modal-lg" role="document"><form method="POST" action="{{ route('unification-map.relations.store') }}" class="modal-content" id="audit-relation-form">@csrf
                 <div class="modal-header"><h5 class="modal-title" id="newAuditRelationTitle">Relacionar dos plataformas para auditoría</h5><button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button></div>
                 <div class="modal-body">
-                    <div class="alert alert-info small">Selecciona dos extremos de la misma entidad: Contacto/cliente ↔ Contacto, o Negocio ↔ Deal/Proyecto. Monday se relaciona manualmente por tablero. Esta conexión es de diseño: no copia datos, no crea campos y no activa ninguna sincronización.</div>
+                    <div class="alert alert-info small">Selecciona dos extremos de la misma entidad: Contacto/cliente ↔ Contacto, o Negocio ↔ Deal/Proyecto. Para Monday, escoge un tablero por cada extremo; puedes asociar columnas de tableros distintos. Esta conexión es de diseño: no copia datos, no crea campos y no activa ninguna sincronización.</div>
                     <div class="mb-3">
                         <button type="button" id="ai-suggest-platform-pair" class="btn btn-sm btn-outline-info" disabled @if(! $summary['ai_suggestions_available']) title="Configura OPENROUTER_API_KEY para habilitarlo" @endif>
                             <i class="fas fa-magic mr-1"></i>IA: revisar este par
@@ -325,9 +337,11 @@
                         <div class="form-group col-md-6">
                             <label>Primera plataforma</label>
                             <select id="relation-left-provider" name="left_provider" class="form-control relation-provider"><option value="app">App</option><option value="hubspot">HubSpot</option><option value="teamleader">Teamleader</option><option value="monday">Monday</option></select>
+                            <div id="relation-left-monday-board-wrap" class="d-none mt-2"><label>Tablero Monday</label><select id="relation-left-monday-board" class="form-control relation-monday-board"><option value="">Selecciona un tablero</option></select></div>
                             <label class="mt-2">Campo</label>
                             <input type="search" id="relation-left-field-search" class="form-control form-control-sm mb-1 relation-field-search" data-side="left" placeholder="Filtrar por nombre o clave">
                             <select id="relation-left-field-picker" class="form-control relation-field-picker" data-side="left"></select>
+                            <button type="button" id="relation-left-field-more" class="btn btn-xs btn-outline-secondary mt-1 d-none">Mostrar más</button>
                             <input type="hidden" name="left_entity_type" id="relation-left-entity-type">
                             <input type="hidden" name="left_scope_key" id="relation-left-scope-key">
                             <input type="hidden" name="left_field_key" id="relation-left-field-key">
@@ -336,9 +350,11 @@
                         <div class="form-group col-md-6">
                             <label>Segunda plataforma</label>
                             <select id="relation-right-provider" name="right_provider" class="form-control relation-provider"><option value="hubspot">HubSpot</option><option value="app">App</option><option value="teamleader">Teamleader</option><option value="monday">Monday</option></select>
+                            <div id="relation-right-monday-board-wrap" class="d-none mt-2"><label>Tablero Monday</label><select id="relation-right-monday-board" class="form-control relation-monday-board"><option value="">Selecciona un tablero</option></select></div>
                             <label class="mt-2">Campo</label>
                             <input type="search" id="relation-right-field-search" class="form-control form-control-sm mb-1 relation-field-search" data-side="right" placeholder="Filtrar por nombre o clave">
                             <select id="relation-right-field-picker" class="form-control relation-field-picker" data-side="right"></select>
+                            <button type="button" id="relation-right-field-more" class="btn btn-xs btn-outline-secondary mt-1 d-none">Mostrar más</button>
                             <input type="hidden" name="right_entity_type" id="relation-right-entity-type">
                             <input type="hidden" name="right_scope_key" id="relation-right-scope-key">
                             <input type="hidden" name="right_field_key" id="relation-right-field-key">
@@ -382,11 +398,14 @@
         const aiAvailable = {{ $summary['ai_suggestions_available'] ? 'true' : 'false' }};
         const suggestUrl = @json(route('unification-map.suggest'));
         const bulkStoreUrl = @json(route('unification-map.relations.bulk'));
+        const fieldsUrl = @json(route('unification-map.fields'));
+        const mondayBoardsUrl = @json(route('unification-map.monday.boards'));
+        const mondayFieldsUrl = @json(route('unification-map.monday.fields'));
+        const automaticRelationsUrl = @json(route('unification-map.relations.automatic'));
         const aiBatchCandidateLimit = Number(@json($summary['ai_batch_candidate_limit']));
         const csrfToken = @json(csrf_token());
-        const platformFields = {{ \Illuminate\Support\Js::from($field_options) }};
+        const relationStorageReady = {{ $summary['relation_storage_ready'] ? 'true' : 'false' }};
         const derivedRelations = {{ \Illuminate\Support\Js::from($derived_relations) }};
-        const automaticRelations = {{ \Illuminate\Support\Js::from($automatic_relations) }};
         const entityLabel = (entityType) => ({
             client: 'Contacto / cliente', contact: 'Contacto',
             business: 'Negocio', deal: 'Deal', project: 'Proyecto',
@@ -396,6 +415,14 @@
         const many = (fields, empty) => fields && fields.length ? fields.map(text).join('<hr class="my-1">') : `<span class="text-muted">${empty}</span>`;
         const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[character]));
         let aiBatchPairs = [];
+        let mondayBoards = null;
+        let mondayBoardsRequest = null;
+        let automaticRelations = [];
+        const automaticState = {page: 1, hasMore: false, total: 0};
+        const relationFieldState = {
+            left: {fields: [], page: 0, hasMore: false, selectedIdentity: null, requestId: 0},
+            right: {fields: [], page: 0, hasMore: false, selectedIdentity: null, requestId: 0},
+        };
 
         window.selectMap = function (index) {
             const row = rows[index];
@@ -428,43 +455,152 @@
 
         document.querySelectorAll('.select-map').forEach((button) => button.addEventListener('click', () => window.selectMap(Number(button.dataset.index))));
 
-        function populateRelationPicker(side) {
-            const provider = document.getElementById(`relation-${side}-provider`);
-            const picker = document.getElementById(`relation-${side}-field-picker`);
-            if (!provider || !picker) return;
+        const fieldIdentity = (field) => `${field.entity_type || ''}|${field.scope_key || '*'}|${field.key || ''}`;
+        const providersCanBeCompared = (left, right) => left && right && (left !== right || left === 'monday');
 
-            const fields = platformFields[provider.value] || [];
-            const search = document.getElementById(`relation-${side}-field-search`);
-            const term = (search?.value || '').toLowerCase().trim();
-            picker.innerHTML = '';
-            fields.forEach((field, index) => {
-                const searchable = `${field.label || ''} ${field.key || ''} ${field.source || ''}`.toLowerCase();
-                if (term && !searchable.includes(term)) return;
+        async function fetchJson(url) {
+            const response = await fetch(url, {headers: {'Accept': 'application/json'}});
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(payload.message || `No se pudo cargar el catálogo (HTTP ${response.status}).`);
+            return payload;
+        }
+
+        async function ensureMondayBoards() {
+            if (mondayBoards) return mondayBoards;
+            if (!mondayBoardsRequest) {
+                mondayBoardsRequest = fetchJson(mondayBoardsUrl)
+                    .then((payload) => {
+                        mondayBoards = payload.data || [];
+                        return mondayBoards;
+                    })
+                    .finally(() => { mondayBoardsRequest = null; });
+            }
+
+            return mondayBoardsRequest;
+        }
+
+        function renderMondayBoardPicker(side) {
+            const provider = document.getElementById(`relation-${side}-provider`);
+            const wrap = document.getElementById(`relation-${side}-monday-board-wrap`);
+            const picker = document.getElementById(`relation-${side}-monday-board`);
+            if (!provider || !wrap || !picker) return;
+
+            const isMonday = provider.value === 'monday';
+            wrap.classList.toggle('d-none', !isMonday);
+            if (!isMonday || !mondayBoards) return;
+
+            const selected = picker.value;
+            picker.innerHTML = '<option value="">Selecciona un tablero</option>';
+            mondayBoards.forEach((board) => {
                 const option = document.createElement('option');
-                option.value = String(index);
-                option.textContent = `${field.label || field.key} · ${field.key} · ${entityLabel(field.entity_type)}${field.scope_key && field.scope_key !== '*' ? ` · tablero ${field.scope_key}` : ''}${field.source ? ` · ${field.source}` : ''}`;
+                option.value = board.id;
+                option.textContent = board.name;
                 picker.appendChild(option);
             });
-            picker.disabled = picker.options.length === 0;
-            if (!picker.options.length) {
+            picker.value = selected;
+        }
+
+        function renderRelationPicker(side, message = null) {
+            const picker = document.getElementById(`relation-${side}-field-picker`);
+            const more = document.getElementById(`relation-${side}-field-more`);
+            const state = relationFieldState[side];
+            if (!picker || !more) return;
+
+            picker.innerHTML = '';
+            if (message || !state.fields.length) {
                 const option = document.createElement('option');
                 option.value = '';
-                option.textContent = 'No hay campos locales disponibles';
+                option.textContent = message || 'No se encontraron campos';
                 picker.appendChild(option);
+                picker.disabled = true;
+                more.classList.add('d-none');
+                syncRelationEndpoint(side);
+                return;
             }
+
+            state.fields.forEach((field) => {
+                const option = document.createElement('option');
+                option.value = fieldIdentity(field);
+                option.textContent = `${field.label || field.key} · ${field.key} · ${entityLabel(field.entity_type)}${field.scope_key && field.scope_key !== '*' ? ` · tablero ${field.scope_key}` : ''}`;
+                picker.appendChild(option);
+            });
+            picker.disabled = false;
+            const selected = state.fields.some((field) => fieldIdentity(field) === state.selectedIdentity)
+                ? state.selectedIdentity
+                : fieldIdentity(state.fields[0]);
+            picker.value = selected;
+            state.selectedIdentity = selected;
+            more.classList.toggle('d-none', !state.hasMore);
+            more.disabled = !state.hasMore;
             syncRelationEndpoint(side);
-            updatePairAiButton();
+        }
+
+        async function loadRelationFields(side, {append = false} = {}) {
+            const provider = document.getElementById(`relation-${side}-provider`);
+            const search = document.getElementById(`relation-${side}-field-search`);
+            const mondayBoard = document.getElementById(`relation-${side}-monday-board`);
+            const state = relationFieldState[side];
+            if (!provider) return;
+
+            const requestId = ++state.requestId;
+            if (!append) {
+                state.fields = [];
+                state.page = 0;
+                state.hasMore = false;
+                state.selectedIdentity = null;
+            }
+
+            if (provider.value === 'monday') {
+                try {
+                    await ensureMondayBoards();
+                    renderMondayBoardPicker(side);
+                } catch (error) {
+                    renderRelationPicker(side, error.message || 'No se pudo cargar los tableros de Monday');
+                    return;
+                }
+                if (!mondayBoard?.value) {
+                    renderRelationPicker(side, 'Selecciona un tablero de Monday');
+                    return;
+                }
+            } else {
+                document.getElementById(`relation-${side}-monday-board-wrap`)?.classList.add('d-none');
+            }
+
+            renderRelationPicker(side, 'Cargando campos...');
+            const params = new URLSearchParams({
+                search: search?.value || '',
+                page: String(append ? state.page + 1 : 1),
+                per_page: '50',
+            });
+            if (provider.value === 'monday') params.set('board_id', mondayBoard.value);
+            else params.set('provider', provider.value);
+
+            try {
+                const payload = await fetchJson(`${provider.value === 'monday' ? mondayFieldsUrl : fieldsUrl}?${params.toString()}`);
+                if (requestId !== state.requestId) return;
+                const fields = payload.data || [];
+                state.fields = append
+                    ? [...state.fields, ...fields.filter((field) => !state.fields.some((current) => fieldIdentity(current) === fieldIdentity(field)))]
+                    : fields;
+                state.page = Number(payload.meta?.page || 1);
+                state.hasMore = Boolean(payload.meta?.has_more);
+                renderRelationPicker(side);
+            } catch (error) {
+                if (requestId === state.requestId) renderRelationPicker(side, error.message || 'No se pudo cargar los campos');
+            }
         }
 
         function syncRelationEndpoint(side) {
-            const provider = document.getElementById(`relation-${side}-provider`);
             const picker = document.getElementById(`relation-${side}-field-picker`);
-            if (!provider || !picker) return;
-            const field = (platformFields[provider.value] || [])[Number(picker.value)];
+            const state = relationFieldState[side];
+            if (!picker) return;
+            state.selectedIdentity = picker.value || null;
+            const field = state.fields.find((item) => fieldIdentity(item) === state.selectedIdentity);
             document.getElementById(`relation-${side}-entity-type`).value = field?.entity_type || '';
             document.getElementById(`relation-${side}-scope-key`).value = field?.scope_key || '';
             document.getElementById(`relation-${side}-field-key`).value = field?.key || '';
             document.getElementById(`relation-${side}-field-label`).value = field?.label || '';
+            updatePairAiButton();
         }
 
         function selectedPlatformPair() {
@@ -483,15 +619,17 @@
                 left_entity_type: document.getElementById('relation-left-entity-type')?.value || '',
                 left_scope_key: document.getElementById('relation-left-scope-key')?.value || '',
                 left_field_key: document.getElementById('relation-left-field-key')?.value || '',
+                left_field_label: document.getElementById('relation-left-field-label')?.value || '',
                 right_entity_type: document.getElementById('relation-right-entity-type')?.value || '',
                 right_scope_key: document.getElementById('relation-right-scope-key')?.value || '',
                 right_field_key: document.getElementById('relation-right-field-key')?.value || '',
+                right_field_label: document.getElementById('relation-right-field-label')?.value || '',
             };
         }
 
         function selectedBatchPair() {
             const selection = selectedPairPayload();
-            if (!selection.left_provider || !selection.right_provider || selection.left_provider === selection.right_provider
+            if (!providersCanBeCompared(selection.left_provider, selection.right_provider)
                 || !selection.left_field_key || !selection.right_field_key) {
                 return null;
             }
@@ -501,11 +639,13 @@
                     entity_type: selection.left_entity_type,
                     scope_key: selection.left_scope_key || '*',
                     field_key: selection.left_field_key,
+                    field_label: document.getElementById('relation-left-field-label')?.value || selection.left_field_key,
                 },
                 right: {
                     entity_type: selection.right_entity_type,
                     scope_key: selection.right_scope_key || '*',
                     field_key: selection.right_field_key,
+                    field_label: document.getElementById('relation-right-field-label')?.value || selection.right_field_key,
                 },
             };
         }
@@ -516,11 +656,7 @@
         }
 
         function batchFieldLabel(provider, endpoint) {
-            const field = (platformFields[provider] || []).find((item) => item.entity_type === endpoint.entity_type
-                && (item.scope_key || '*') === endpoint.scope_key
-                && item.key === endpoint.field_key);
-
-            return field?.label || endpoint.field_key;
+            return endpoint.field_label || endpoint.field_key;
         }
 
         function renderAiBatch() {
@@ -530,7 +666,7 @@
             const clear = document.getElementById('clear-ai-batch');
             const {left, right} = selectedPlatformPair();
             if (count) count.textContent = `${aiBatchPairs.length} pareja(s)`;
-            if (review) review.disabled = !aiAvailable || !aiBatchPairs.length || !left || !right || left === right;
+            if (review) review.disabled = !aiAvailable || !aiBatchPairs.length || !providersCanBeCompared(left, right);
             if (clear) clear.disabled = !aiBatchPairs.length;
             if (!target) return;
             if (!aiBatchPairs.length) {
@@ -570,7 +706,7 @@
             const button = document.getElementById('ai-suggest-platform-pair');
             const selection = selectedPairPayload();
             const {left, right} = selection;
-            if (button) button.disabled = !aiAvailable || !left || !right || left === right;
+            if (button) button.disabled = !aiAvailable || !providersCanBeCompared(left, right);
         }
 
         function clearPlatformAiSuggestions() {
@@ -584,10 +720,12 @@
                 left_entity_type: item.left.entity_type,
                 left_scope_key: item.left.scope_key,
                 left_field_key: item.left.key,
+                left_field_label: item.left.label,
                 right_provider: item.right.provider,
                 right_entity_type: item.right.entity_type,
                 right_scope_key: item.right.scope_key,
                 right_field_key: item.right.key,
+                right_field_label: item.right.label,
                 confidence: item.confidence,
                 reason: item.reason || '',
             };
@@ -647,7 +785,7 @@
 
         async function requestAiSuggestion(payload, button, busyText, contextLabel, idleHtml) {
             const {left, right} = selectedPlatformPair();
-            if (!aiAvailable || !left || !right || left === right) return;
+            if (!aiAvailable || !providersCanBeCompared(left, right)) return;
 
             const target = document.getElementById('ai-platform-suggestions');
             button.disabled = true;
@@ -685,24 +823,34 @@
         });
         document.getElementById('ai-suggest-batch')?.addEventListener('click', function () {
             const {left, right} = selectedPlatformPair();
-            if (!aiBatchPairs.length || !left || !right || left === right) return;
+            if (!aiBatchPairs.length || !providersCanBeCompared(left, right)) return;
             requestAiSuggestion({left_provider: left, right_provider: right, batch_pairs: aiBatchPairs}, this, 'Analizando lote', `el lote de ${aiBatchPairs.length} pareja(s)`, '<i class="fas fa-magic mr-1"></i>IA: revisar lote');
         });
 
+        const fieldSearchTimers = {};
         ['left', 'right'].forEach((side) => {
             document.getElementById(`relation-${side}-provider`)?.addEventListener('change', () => {
                 aiBatchPairs = [];
                 clearPlatformAiSuggestions();
-                populateRelationPicker(side);
+                loadRelationFields(side);
+                renderAiBatch();
+            });
+            document.getElementById(`relation-${side}-monday-board`)?.addEventListener('change', () => {
+                aiBatchPairs = [];
+                clearPlatformAiSuggestions();
+                loadRelationFields(side);
                 renderAiBatch();
             });
             document.getElementById(`relation-${side}-field-picker`)?.addEventListener('change', () => {
                 clearPlatformAiSuggestions();
                 syncRelationEndpoint(side);
-                updatePairAiButton();
             });
-            document.getElementById(`relation-${side}-field-search`)?.addEventListener('input', () => populateRelationPicker(side));
-            populateRelationPicker(side);
+            document.getElementById(`relation-${side}-field-search`)?.addEventListener('input', () => {
+                window.clearTimeout(fieldSearchTimers[side]);
+                fieldSearchTimers[side] = window.setTimeout(() => loadRelationFields(side), 250);
+            });
+            document.getElementById(`relation-${side}-field-more`)?.addEventListener('click', () => loadRelationFields(side, {append: true}));
+            loadRelationFields(side);
         });
         renderAiBatch();
         document.getElementById('audit-relation-form')?.addEventListener('submit', function (event) {
@@ -717,35 +865,101 @@
             const relation = derivedRelations[Number(button.dataset.index)];
             openSuggestedRelation(relation);
         }));
-        document.querySelectorAll('.use-automatic-relation').forEach((button) => button.addEventListener('click', () => {
-            openSuggestedRelation(automaticRelations[Number(button.dataset.index)]);
-        }));
 
-        function openSuggestedRelation(relation) {
+        async function openSuggestedRelation(relation) {
             if (!relation) return;
-            applyDerivedEndpoint('left', relation.left);
-            applyDerivedEndpoint('right', relation.right);
+            await Promise.all([
+                applyDerivedEndpoint('left', relation.left),
+                applyDerivedEndpoint('right', relation.right),
+            ]);
             if (window.jQuery) window.jQuery('#newAuditRelationModal').modal('show');
         }
 
-        function applyDerivedEndpoint(side, endpoint) {
+        async function applyDerivedEndpoint(side, endpoint) {
             const provider = document.getElementById(`relation-${side}-provider`);
             const picker = document.getElementById(`relation-${side}-field-picker`);
             if (!provider || !picker) return;
             provider.value = endpoint.provider;
             const search = document.getElementById(`relation-${side}-field-search`);
-            if (search) search.value = '';
-            populateRelationPicker(side);
-            const fields = platformFields[endpoint.provider] || [];
-            const index = fields.findIndex((field) => field.key === endpoint.key
-                && field.scope_key === endpoint.scope_key
+            if (search) search.value = endpoint.key;
+            if (endpoint.provider === 'monday') {
+                try {
+                    await ensureMondayBoards();
+                    renderMondayBoardPicker(side);
+                    document.getElementById(`relation-${side}-monday-board`).value = endpoint.scope_key;
+                } catch (error) {
+                    return;
+                }
+            }
+            await loadRelationFields(side);
+            const state = relationFieldState[side];
+            const selected = state.fields.find((field) => field.key === endpoint.key
+                && (field.scope_key || '*') === (endpoint.scope_key || '*')
                 && field.entity_type === endpoint.entity_type);
-            if (index >= 0) picker.value = String(index);
+            if (selected) {
+                state.selectedIdentity = fieldIdentity(selected);
+                renderRelationPicker(side);
+            }
             syncRelationEndpoint(side);
         }
-        document.getElementById('map-search')?.addEventListener('input', function () {
-            const term = this.value.toLowerCase().trim();
-            document.querySelectorAll('#map-table tbody tr[data-search]').forEach((row) => { row.style.display = !term || row.dataset.search.includes(term) ? '' : 'none'; });
+
+        function automaticRow(relation, index) {
+            const action = relationStorageReady
+                ? `<button type="button" class="btn btn-xs btn-outline-primary use-automatic-relation" data-index="${index}">Convertir en propuesta</button>`
+                : '<span class="text-muted small">Solo lectura</span>';
+            const leftSource = relation.left_source ? `<br><small class="text-muted">${escapeHtml(relation.left_source)}</small>` : '';
+            const rightSource = relation.right_source ? `<br><small class="text-muted">${escapeHtml(relation.right_source)}</small>` : '';
+            const badge = Number(relation.confidence) === 100 ? 'success' : 'warning';
+
+            return `<tr><td><strong>${escapeHtml(relation.left.provider)}</strong><br><small>${escapeHtml(relation.left.label)} · <code>${escapeHtml(relation.left.key)}</code></small><br><small class="text-muted">${escapeHtml(relation.left.entity_type)}</small>${leftSource}</td><td><strong>${escapeHtml(relation.right.provider)}</strong><br><small>${escapeHtml(relation.right.label)} · <code>${escapeHtml(relation.right.key)}</code></small><br><small class="text-muted">${escapeHtml(relation.right.entity_type)}</small>${rightSource}</td><td><span class="badge badge-${badge}">${escapeHtml(relation.confidence)}%</span><br><small>${escapeHtml(relation.match_method)}</small></td><td><small>${escapeHtml(relation.reason)}</small></td><td class="text-right">${action}</td></tr>`;
+        }
+
+        function renderAutomaticRelations() {
+            const body = document.getElementById('automatic-relations-body');
+            const meta = document.getElementById('automatic-relations-meta');
+            const previous = document.getElementById('automatic-relations-prev');
+            const next = document.getElementById('automatic-relations-next');
+            if (!body || !meta || !previous || !next) return;
+
+            body.innerHTML = automaticRelations.length
+                ? automaticRelations.map(automaticRow).join('')
+                : '<tr><td colspan="5" class="text-center text-muted py-3">No hay coincidencias automáticas por encima del umbral de revisión.</td></tr>';
+            meta.textContent = automaticState.total ? `Página ${automaticState.page} · ${automaticState.total} coincidencia(s)` : '';
+            previous.disabled = automaticState.page <= 1;
+            next.disabled = !automaticState.hasMore;
+        }
+
+        async function loadAutomaticRelations(page = 1) {
+            const left = document.getElementById('automatic-left-provider')?.value || '';
+            const right = document.getElementById('automatic-right-provider')?.value || '';
+            const button = document.getElementById('load-automatic-relations');
+            const body = document.getElementById('automatic-relations-body');
+            const params = new URLSearchParams({page: String(page), per_page: '25'});
+            if (left) params.set('left_provider', left);
+            if (right) params.set('right_provider', right);
+            if (button) button.disabled = true;
+            if (body) body.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Calculando coincidencias...</td></tr>';
+
+            try {
+                const payload = await fetchJson(`${automaticRelationsUrl}?${params.toString()}`);
+                automaticRelations = payload.data || [];
+                automaticState.page = Number(payload.meta?.page || 1);
+                automaticState.total = Number(payload.meta?.total || 0);
+                automaticState.hasMore = Boolean(payload.meta?.has_more);
+                renderAutomaticRelations();
+            } catch (error) {
+                if (body) body.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-3">${escapeHtml(error.message || 'No se pudieron cargar las coincidencias.')}</td></tr>`;
+            } finally {
+                if (button) button.disabled = false;
+            }
+        }
+
+        document.getElementById('load-automatic-relations')?.addEventListener('click', () => loadAutomaticRelations(1));
+        document.getElementById('automatic-relations-prev')?.addEventListener('click', () => loadAutomaticRelations(Math.max(1, automaticState.page - 1)));
+        document.getElementById('automatic-relations-next')?.addEventListener('click', () => loadAutomaticRelations(automaticState.page + 1));
+        document.getElementById('automatic-relations-body')?.addEventListener('click', (event) => {
+            const button = event.target.closest('.use-automatic-relation');
+            if (button) openSuggestedRelation(automaticRelations[Number(button.dataset.index)]);
         });
         if (rows.length) window.selectMap(0);
     })();

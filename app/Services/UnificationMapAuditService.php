@@ -17,7 +17,7 @@ use Illuminate\Support\Str;
  */
 class UnificationMapAuditService
 {
-    public function inventory(): array
+    public function inventory(bool $includeAutomaticRelations = true): array
     {
         $legacyLinks = $this->legacyLinks();
         $clientFields = $this->appFields($legacyLinks);
@@ -149,7 +149,9 @@ class UnificationMapAuditService
             $auditedLinks,
             $auditedRelations,
         );
-        $automaticRelations = $this->automaticRelations($platformFields, $legacyLinks, $auditedRelations);
+        $automaticRelations = $includeAutomaticRelations
+            ? $this->automaticRelations($platformFields, $legacyLinks, $auditedRelations)
+            : [];
 
         return [
             'summary' => [
@@ -172,7 +174,8 @@ class UnificationMapAuditService
                 'ai_suggestions_available' => filled(config('services.openrouter.key')),
                 'direct_audit_relations' => count($auditedRelations),
                 'derived_relations' => count($derivedRelations),
-                'automatic_relations' => count($automaticRelations),
+                'automatic_relations' => $includeAutomaticRelations ? count($automaticRelations) : null,
+                'automatic_relations_loaded' => $includeAutomaticRelations,
             ],
             'map_rows' => $mapRows,
             'audited_links' => $auditedLinks,
@@ -181,6 +184,220 @@ class UnificationMapAuditService
             'automatic_relations' => $automaticRelations,
             'field_options' => $platformFields,
         ];
+    }
+
+    /**
+     * Computes automatic suggestions only when an administrator requests them.
+     * The main map deliberately skips this potentially expensive comparison.
+     */
+    public function paginatedAutomaticRelations(?string $leftProvider, ?string $rightProvider, int $page, int $perPage): array
+    {
+        $legacyLinks = $this->legacyLinks();
+        $platformFields = $this->fieldOptions();
+        $relations = collect($this->automaticRelations(
+            $platformFields,
+            $legacyLinks,
+            $this->auditedRelations(),
+        ))->filter(function (array $relation) use ($leftProvider, $rightProvider): bool {
+            if (blank($leftProvider) || blank($rightProvider)) {
+                return true;
+            }
+
+            return ($relation['left']['provider'] === $leftProvider && $relation['right']['provider'] === $rightProvider)
+                || ($relation['left']['provider'] === $rightProvider && $relation['right']['provider'] === $leftProvider);
+        })->values();
+
+        $perPage = max(10, min(100, $perPage));
+        $total = $relations->count();
+        $lastPage = max(1, (int) ceil($total / $perPage));
+        $page = max(1, min($page, $lastPage));
+
+        return [
+            'data' => $relations->forPage($page, $perPage)->values()->all(),
+            'meta' => [
+                'page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'has_more' => $page < $lastPage,
+            ],
+        ];
+    }
+
+    /**
+     * Returns the selectable local catalog without building map rows or
+     * automatic suggestions. Controllers use this for validation and the
+     * field picker endpoint so a large catalog is never sent to the browser.
+     */
+    public function fieldOptions(): array
+    {
+        $legacyLinks = $this->legacyLinks();
+        $clientFields = $this->appFields($legacyLinks);
+        $businessFields = $this->businessFields();
+        $projectFields = $this->projectFields();
+        $mondayFields = $this->mondayFields();
+
+        return $this->platformFields(
+            $legacyLinks,
+            $clientFields,
+            $businessFields,
+            $projectFields,
+            $mondayFields,
+        );
+    }
+
+    /**
+     * Keeps the relation builder responsive even when a provider has many
+     * hundreds of fields or Monday boards.
+     */
+    public function paginatedFieldOptions(string $provider, ?string $search, int $page, int $perPage): array
+    {
+        $options = $this->fieldOptions();
+        $term = $this->normalise((string) $search);
+        $fields = collect($options[$provider] ?? [])
+            ->filter(function (array $field) use ($term): bool {
+                if ($term === '') {
+                    return true;
+                }
+
+                return str_contains($this->normalise(implode(' ', [
+                    $field['label'] ?? '',
+                    $field['key'] ?? '',
+                    $field['scope_key'] ?? '',
+                    $field['scope_label'] ?? '',
+                    $field['source'] ?? '',
+                ])), $term);
+            })
+            ->sortBy(fn (array $field) => implode('|', [
+                $field['scope_label'] ?? $field['scope_key'] ?? '',
+                Str::lower((string) ($field['label'] ?? '')),
+                $field['key'] ?? '',
+            ]))
+            ->values();
+
+        $total = $fields->count();
+        $perPage = max(10, min(100, $perPage));
+        $lastPage = max(1, (int) ceil($total / $perPage));
+        $page = max(1, min($page, $lastPage));
+
+        return [
+            'data' => $fields->forPage($page, $perPage)->values()->all(),
+            'meta' => [
+                'page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'has_more' => $page < $lastPage,
+            ],
+        ];
+    }
+
+    /**
+     * The ER view is deliberately based on the canonical local model and on
+     * approved design relations only. Proposed links remain audit work, not
+     * structural facts in the diagram.
+     */
+    public function erDiagram(): array
+    {
+        $fieldOptions = $this->fieldOptions();
+        $approvedRelations = collect($this->auditedRelations())
+            ->where('status', 'approved')
+            ->values();
+        $providerRelationCounts = [];
+
+        foreach (['hubspot', 'teamleader', 'monday'] as $provider) {
+            $providerRelationCounts[$provider] = $approvedRelations
+                ->filter(fn (array $relation) => $relation['left']['provider'] === $provider
+                    || $relation['right']['provider'] === $provider)
+                ->count();
+        }
+
+        $crossBoardMondayRelations = $approvedRelations
+            ->filter(fn (array $relation) => $relation['left']['provider'] === 'monday'
+                && $relation['right']['provider'] === 'monday'
+                && $relation['left']['scope_key'] !== $relation['right']['scope_key'])
+            ->count();
+
+        $nodes = [
+            'users' => ['x' => 35, 'y' => 75, 'title' => 'users', 'lines' => ['Cliente canónico', 'id']],
+            'negocios' => ['x' => 35, 'y' => 255, 'title' => 'negocios', 'lines' => ['Operación comercial', 'user_id']],
+            'custom_definitions' => ['x' => 285, 'y' => 35, 'title' => 'custom_field_definitions', 'lines' => ['Definición de campo', 'entity_type, key']],
+            'custom_values' => ['x' => 285, 'y' => 205, 'title' => 'custom_field_values', 'lines' => ['Valor flexible', 'entity_id, definition_id']],
+            'external_links' => ['x' => 535, 'y' => 35, 'title' => 'external_entity_links', 'lines' => ['Identidad externa', 'provider, entity_id']],
+            'workflow_boards' => ['x' => 535, 'y' => 205, 'title' => 'workflow_boards', 'lines' => ['Tablero local', 'provider, external_board_id']],
+            'workflow_memberships' => ['x' => 535, 'y' => 375, 'title' => 'workflow_memberships', 'lines' => ['Cliente en tablero', 'entity_id, workflow_board_id']],
+            'audit_relations' => ['x' => 785, 'y' => 145, 'title' => 'unification_audit_relations', 'lines' => ['Diseño aprobado', $approvedRelations->count().' relaciones']],
+            'mappings' => ['x' => 785, 'y' => 345, 'title' => 'integration_field_mappings', 'lines' => ['Mapeo operativo', 'No se activa desde auditoría']],
+            'hubspot' => ['x' => 1040, 'y' => 35, 'title' => 'HubSpot', 'lines' => [count($fieldOptions['hubspot']).' campos locales', $providerRelationCounts['hubspot'].' asociaciones aprobadas']],
+            'teamleader' => ['x' => 1040, 'y' => 215, 'title' => 'Teamleader', 'lines' => [count($fieldOptions['teamleader']).' campos locales', $providerRelationCounts['teamleader'].' asociaciones aprobadas']],
+            'monday' => ['x' => 1040, 'y' => 395, 'title' => 'Monday', 'lines' => [count($fieldOptions['monday']).' campos en tableros', $crossBoardMondayRelations.' asociaciones entre tableros']],
+        ];
+
+        $edges = [
+            ['from' => 'users', 'to' => 'custom_values', 'label' => 'tiene valores'],
+            ['from' => 'custom_definitions', 'to' => 'custom_values', 'label' => 'define'],
+            ['from' => 'users', 'to' => 'external_links', 'label' => 'identidad'],
+            ['from' => 'users', 'to' => 'workflow_memberships', 'label' => 'participa'],
+            ['from' => 'workflow_boards', 'to' => 'workflow_memberships', 'label' => 'contiene'],
+            ['from' => 'audit_relations', 'to' => 'mappings', 'label' => 'revisión previa'],
+            ['from' => 'audit_relations', 'to' => 'hubspot', 'label' => $providerRelationCounts['hubspot'].' aprobadas'],
+            ['from' => 'audit_relations', 'to' => 'teamleader', 'label' => $providerRelationCounts['teamleader'].' aprobadas'],
+            ['from' => 'audit_relations', 'to' => 'monday', 'label' => $providerRelationCounts['monday'].' aprobadas'],
+        ];
+
+        return [
+            'nodes' => $nodes,
+            'edges' => $edges,
+            'approved_relations' => $approvedRelations->count(),
+            'cross_board_monday_relations' => $crossBoardMondayRelations,
+            'generated_at' => now()->format('Y-m-d H:i'),
+        ];
+    }
+
+    public function renderErDiagramSvg(): string
+    {
+        $diagram = $this->erDiagram();
+        $nodes = $diagram['nodes'];
+        $edgeMarkup = '';
+
+        foreach ($diagram['edges'] as $edge) {
+            $from = $nodes[$edge['from']];
+            $to = $nodes[$edge['to']];
+            $fromX = $from['x'] + 205;
+            $fromY = $from['y'] + 43;
+            $toX = $to['x'];
+            $toY = $to['y'] + 43;
+            if ($toX < $fromX) {
+                $fromX = $from['x'];
+                $toX = $to['x'] + 205;
+            }
+            $labelX = (int) (($fromX + $toX) / 2);
+            $labelY = (int) (($fromY + $toY) / 2) - 6;
+            $label = $this->escapeXml($edge['label']);
+
+            $edgeMarkup .= '<line x1="'.$fromX.'" y1="'.$fromY.'" x2="'.$toX.'" y2="'.$toY.'" class="edge" marker-end="url(#arrow)" />';
+            $edgeMarkup .= '<text x="'.$labelX.'" y="'.$labelY.'" class="edge-label" text-anchor="middle">'.$label.'</text>';
+        }
+
+        $nodeMarkup = '';
+        foreach ($nodes as $node) {
+            $title = $this->escapeXml($node['title']);
+            $firstLine = $this->escapeXml($node['lines'][0]);
+            $secondLine = $this->escapeXml($node['lines'][1]);
+            $nodeMarkup .= '<g class="node"><rect x="'.$node['x'].'" y="'.$node['y'].'" width="205" height="86" rx="5" />';
+            $nodeMarkup .= '<text x="'.($node['x'] + 12).'" y="'.($node['y'] + 24).'" class="node-title">'.$title.'</text>';
+            $nodeMarkup .= '<text x="'.($node['x'] + 12).'" y="'.($node['y'] + 49).'" class="node-line">'.$firstLine.'</text>';
+            $nodeMarkup .= '<text x="'.($node['x'] + 12).'" y="'.($node['y'] + 69).'" class="node-line muted">'.$secondLine.'</text></g>';
+        }
+
+        $generatedAt = $this->escapeXml($diagram['generated_at']);
+
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1285 500" width="1285" height="500" role="img" aria-label="Diagrama ER de unificación">'
+            .'<style>.background{fill:#f8fafc}.edge{stroke:#64748b;stroke-width:2;fill:none}.edge-label{font:11px Arial,sans-serif;fill:#475569}.node rect{fill:#fff;stroke:#cbd5e1;stroke-width:1.5}.node-title{font:700 13px Arial,sans-serif;fill:#1e3a5f}.node-line{font:12px Arial,sans-serif;fill:#334155}.muted{fill:#64748b}.footer{font:11px Arial,sans-serif;fill:#64748b}</style>'
+            .'<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#64748b" /></marker></defs>'
+            .'<rect class="background" width="1285" height="500" />'
+            .'<text x="35" y="25" class="node-title">Modelo de datos unificado</text>'
+            .$edgeMarkup.$nodeMarkup
+            .'<text x="35" y="485" class="footer">Generado '.$generatedAt.' · Las relaciones de auditoría aprobadas no activan sincronizaciones por sí solas.</text>'
+            .'</svg>';
     }
 
     private function legacyLinks(): array
@@ -337,6 +554,7 @@ class UnificationMapAuditService
     private function mondayFields(): array
     {
         $fields = [];
+        $boardLabels = $this->mondayBoardLabels();
 
         if (Schema::hasTable('monday_form_builder')) {
             DB::table('monday_form_builder')
@@ -353,6 +571,7 @@ class UnificationMapAuditService
                         'key' => $key,
                         'label' => (string) $field->title,
                         'scope_key' => $scopeKey,
+                        'scope_label' => $boardLabels[$scopeKey] ?? 'Tablero '.$scopeKey,
                         'type' => (string) $field->type,
                         'source' => 'Constructor de formularios',
                     ];
@@ -378,6 +597,7 @@ class UnificationMapAuditService
                         'key' => $key,
                         'label' => $existing['label'] ?? $label,
                         'scope_key' => $scopeKey,
+                        'scope_label' => $existing['scope_label'] ?? ($boardLabels[$scopeKey] ?? 'Tablero '.$scopeKey),
                         'type' => $existing['type'] ?? null,
                         'source' => $existing ? 'Formulario + mapeo histórico' : 'Mapeo histórico',
                         'local_field_key' => (string) $field->local_field_key,
@@ -389,6 +609,36 @@ class UnificationMapAuditService
             ->sortBy(fn (array $field) => $field['scope_key'].'|'.Str::lower($field['label']))
             ->values()
             ->all();
+    }
+
+    private function mondayBoardLabels(): array
+    {
+        $labels = [];
+
+        if (Schema::hasTable('workflow_boards')) {
+            DB::table('workflow_boards')
+                ->where('provider', 'monday')
+                ->select(['external_board_id', 'name'])
+                ->get()
+                ->each(function ($board) use (&$labels): void {
+                    $labels[(string) $board->external_board_id] = (string) $board->name;
+                });
+        }
+
+        if (Schema::hasTable('servicios') && Schema::hasColumn('servicios', 'monday_board_id')) {
+            DB::table('servicios')
+                ->whereNotNull('monday_board_id')
+                ->select(['monday_board_id', 'nombre'])
+                ->get()
+                ->each(function ($service) use (&$labels): void {
+                    $boardId = (string) $service->monday_board_id;
+                    if ($boardId !== '' && ! isset($labels[$boardId]) && filled($service->nombre)) {
+                        $labels[$boardId] = (string) $service->nombre;
+                    }
+                });
+        }
+
+        return $labels;
     }
 
     private function auditedLinks(): array
@@ -744,7 +994,8 @@ class UnificationMapAuditService
     private function preparedAutomaticFields(array $fields): mixed
     {
         return collect($fields)
-            ->filter(fn (array $field) => $this->isAutomaticCandidate($field))
+            ->filter(fn (array $field) => $this->isAutomaticCandidate($field)
+                && in_array($this->entityFamily((string) ($field['entity_type'] ?? '')), ['contact', 'commercial'], true))
             ->map(fn (array $field) => array_merge($field, [
                 '_normalised_label' => $this->normalise((string) $field['label']),
                 '_normalised_key' => $this->normalise((string) $field['key']),
@@ -797,7 +1048,8 @@ class UnificationMapAuditService
         $leftFamily = $this->entityFamily($leftType);
         $rightFamily = $this->entityFamily($rightType);
 
-        return ($leftFamily === 'workflow' && in_array($rightFamily, ['contact', 'commercial'], true))
+        return ($leftFamily === 'workflow' && $rightFamily === 'workflow')
+            || ($leftFamily === 'workflow' && in_array($rightFamily, ['contact', 'commercial'], true))
             || ($rightFamily === 'workflow' && in_array($leftFamily, ['contact', 'commercial'], true));
     }
 
@@ -996,6 +1248,11 @@ class UnificationMapAuditService
             ->replaceMatches('/[^a-z0-9]+/', ' ')
             ->squish()
             ->toString();
+    }
+
+    private function escapeXml(string $value): string
+    {
+        return htmlspecialchars($value, ENT_QUOTES | ENT_XML1, 'UTF-8');
     }
 
     private function labelFor(string $key): string

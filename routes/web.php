@@ -198,6 +198,11 @@ Route::middleware(['auth', 'can:administrador'])
     ->name('unification-map.')
     ->group(function () {
         Route::get('/', [UnificationMapController::class, 'map'])->name('index');
+        Route::get('/fields', [UnificationMapController::class, 'fields'])->name('fields');
+        Route::get('/monday/boards', [UnificationMapController::class, 'mondayBoards'])->name('monday.boards');
+        Route::get('/monday/fields', [UnificationMapController::class, 'mondayFields'])->name('monday.fields');
+        Route::get('/diagram', [UnificationMapController::class, 'diagram'])->name('diagram');
+        Route::get('/relations/automatic', [UnificationMapController::class, 'automaticRelations'])->name('relations.automatic');
         Route::post('/suggest', [UnificationMapController::class, 'suggest'])->name('suggest');
         Route::post('/relations', [UnificationMapController::class, 'storeRelation'])->name('relations.store');
         Route::post('/relations/bulk', [UnificationMapController::class, 'storeRelationsBulk'])->name('relations.bulk');

@@ -80,6 +80,37 @@ class MondayCatalogServiceTest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_it_loads_and_caches_columns_for_a_selected_board(): void
+    {
+        Http::fake(function ($request) {
+            $query = $request->data()['query'];
+
+            $this->assertStringContainsString('columns {', $query);
+
+            return Http::response([
+                'data' => [
+                    'boards' => [[
+                        'columns' => [
+                            ['id' => 'text_1', 'title' => 'Nombre', 'type' => 'text'],
+                            ['id' => 'status', 'title' => 'Estado', 'type' => 'status'],
+                        ],
+                    ]],
+                ],
+            ]);
+        });
+
+        $catalog = app(MondayCatalogService::class);
+
+        $this->assertSame([
+            ['id' => 'status', 'name' => 'Estado', 'type' => 'status'],
+            ['id' => 'text_1', 'name' => 'Nombre', 'type' => 'text'],
+        ], $catalog->columns('10'));
+
+        $catalog->columns('10');
+
+        Http::assertSentCount(1);
+    }
+
     public function test_it_exposes_the_graphql_message_returned_with_an_http_error(): void
     {
         Cache::flush();

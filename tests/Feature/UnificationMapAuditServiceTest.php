@@ -10,6 +10,7 @@ use App\Services\UnificationMapAuditService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Client\Request as ClientRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
@@ -173,6 +174,138 @@ class UnificationMapAuditServiceTest extends TestCase
 
         $this->assertDatabaseCount('integration_field_mappings', 0);
         $this->assertDatabaseCount('custom_field_definitions', 0);
+    }
+
+    public function test_fast_inventory_skips_automatic_comparisons_until_requested(): void
+    {
+        $inventory = app(UnificationMapAuditService::class)->inventory(false);
+
+        $this->assertFalse($inventory['summary']['automatic_relations_loaded']);
+        $this->assertNull($inventory['summary']['automatic_relations']);
+        $this->assertSame([], $inventory['automatic_relations']);
+    }
+
+    public function test_paginated_map_page_only_passes_the_current_page_and_not_the_full_field_catalog(): void
+    {
+        $response = app(UnificationMapController::class)->map(
+            Request::create('/admin/unification-map', 'GET', ['per_page' => 25]),
+            app(UnificationMapAuditService::class),
+        );
+        $data = $response->getData();
+
+        $this->assertLessThanOrEqual(25, count($data['map_rows']));
+        $this->assertArrayNotHasKey('field_options', $data);
+        $this->assertSame([], $data['automatic_relations']);
+    }
+
+    public function test_it_records_a_monday_relation_between_two_different_boards(): void
+    {
+        $user = new \App\Models\User;
+        $user->id = 999;
+        $request = Request::create('/admin/unification-map/relations', 'POST', [
+            'left_provider' => 'monday',
+            'left_entity_type' => 'item',
+            'left_scope_key' => '10',
+            'left_field_key' => 'status',
+            'left_field_label' => 'Estado',
+            'right_provider' => 'monday',
+            'right_entity_type' => 'item',
+            'right_scope_key' => '20',
+            'right_field_key' => 'status',
+            'right_field_label' => 'Estado',
+        ]);
+        $request->setUserResolver(fn () => $user);
+
+        $response = app(UnificationMapController::class)->storeRelation($request);
+
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertDatabaseHas('unification_audit_relations', [
+            'left_provider' => 'monday',
+            'left_scope_key' => '10',
+            'left_field_key' => 'status',
+            'right_provider' => 'monday',
+            'right_scope_key' => '20',
+            'right_field_key' => 'status',
+            'status' => 'proposed',
+        ]);
+    }
+
+    public function test_monday_field_endpoint_loads_columns_for_the_selected_board(): void
+    {
+        Cache::flush();
+        config()->set('services.monday.token', 'monday-test-token');
+        Http::fake(function (ClientRequest $request) {
+            $this->assertStringContainsString('columns {', $request->data()['query']);
+
+            return Http::response([
+                'data' => ['boards' => [[
+                    'columns' => [
+                        ['id' => 'status', 'title' => 'Estado', 'type' => 'status'],
+                        ['id' => 'text', 'title' => 'Nombre', 'type' => 'text'],
+                    ],
+                ]]],
+            ]);
+        });
+
+        $response = app(UnificationMapController::class)->mondayFields(
+            Request::create('/admin/unification-map/monday/fields', 'GET', [
+                'board_id' => '10',
+                'search' => 'estado',
+            ]),
+            app(\App\Services\MondayCatalogService::class),
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame([
+            'identity' => '10:status',
+            'provider' => 'monday',
+            'entity_type' => 'item',
+            'scope_key' => '10',
+            'key' => 'status',
+            'label' => 'Estado',
+            'type' => 'status',
+            'source' => 'Catálogo de Monday',
+        ], $response->getData(true)['data'][0]);
+    }
+
+    public function test_er_diagram_includes_approved_cross_board_monday_relations(): void
+    {
+        UnificationAuditRelation::create([
+            'left_provider' => 'monday',
+            'left_entity_type' => 'item',
+            'left_scope_key' => '10',
+            'left_field_key' => 'status',
+            'left_field_label' => 'Estado',
+            'right_provider' => 'monday',
+            'right_entity_type' => 'item',
+            'right_scope_key' => '20',
+            'right_field_key' => 'status',
+            'right_field_label' => 'Estado',
+            'status' => 'approved',
+        ]);
+
+        $service = app(UnificationMapAuditService::class);
+        $diagram = $service->erDiagram();
+
+        $this->assertSame(1, $diagram['approved_relations']);
+        $this->assertSame(1, $diagram['cross_board_monday_relations']);
+        $this->assertStringContainsString('<svg', $service->renderErDiagramSvg());
+    }
+
+    public function test_er_diagram_can_be_downloaded_as_svg(): void
+    {
+        $response = app(UnificationMapController::class)->diagram(
+            Request::create('/admin/unification-map/diagram', 'GET', [
+                'format' => 'svg',
+                'download' => '1',
+            ]),
+            app(UnificationMapAuditService::class),
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame('image/svg+xml; charset=UTF-8', $response->headers->get('Content-Type'));
+        $this->assertSame('attachment; filename="diagrama-er-unificacion.svg"', $response->headers->get('Content-Disposition'));
+        $this->assertStringContainsString('<svg', $response->getContent());
     }
 
     public function test_it_separates_contact_fields_from_deal_and_project_fields(): void
