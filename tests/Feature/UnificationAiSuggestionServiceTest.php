@@ -87,6 +87,57 @@ class UnificationAiSuggestionServiceTest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_it_accepts_a_double_encoded_json_object_from_a_low_cost_provider(): void
+    {
+        config()->set('services.openrouter.key', 'test-key');
+        config()->set('services.openrouter.url', 'https://openrouter.test/chat');
+
+        Http::fake([
+            'https://openrouter.test/chat' => Http::response([
+                'choices' => [[
+                    'message' => [
+                        'content' => json_encode(json_encode([
+                            'suggestions' => [[
+                                'candidate_index' => 0,
+                                'confidence' => 91,
+                                'reason' => 'Coincidencia confirmada para revisión.',
+                            ]],
+                        ])),
+                    ],
+                ]],
+            ]),
+        ]);
+
+        $suggestion = app(UnificationAiSuggestionService::class)->suggestPlatformPair('app', 'monday', [$this->candidate()]);
+
+        $this->assertSame(91, $suggestion['suggestions'][0]['confidence']);
+    }
+
+    public function test_it_returns_a_sanitised_preview_when_the_model_returns_a_json_primitive(): void
+    {
+        config()->set('services.openrouter.key', 'test-key');
+        config()->set('services.openrouter.url', 'https://openrouter.test/chat');
+
+        Http::fake([
+            'https://openrouter.test/chat' => Http::response([
+                'choices' => [[
+                    'message' => [
+                        'content' => json_encode('No puedo producir el objeto solicitado. Bearer test-key'),
+                    ],
+                ]],
+            ]),
+        ]);
+
+        try {
+            app(UnificationAiSuggestionService::class)->suggestPlatformPair('app', 'monday', [$this->candidate()]);
+            $this->fail('Expected the invalid JSON shape to be reported.');
+        } catch (\RuntimeException $exception) {
+            $this->assertStringContainsString('JSON de tipo string', $exception->getMessage());
+            $this->assertStringContainsString('Vista previa:', $exception->getMessage());
+            $this->assertStringNotContainsString('test-key', $exception->getMessage());
+        }
+    }
+
     public function test_it_never_sends_more_than_forty_candidates_even_if_the_environment_requests_more(): void
     {
         config()->set('services.openrouter.key', 'test-key');

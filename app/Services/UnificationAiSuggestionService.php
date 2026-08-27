@@ -68,18 +68,13 @@ class UnificationAiSuggestionService
 
         $content = trim((string) data_get($response->json(), 'choices.0.message.content', ''));
         if ($content === '') {
-            throw new RuntimeException('OpenRouter no devolvió una sugerencia.');
+            $refusal = trim((string) data_get($response->json(), 'choices.0.message.refusal', ''));
+
+            throw new RuntimeException('OpenRouter no devolvió contenido en choices[0].message.content.'
+                .($refusal !== '' ? ' Motivo indicado: '.$this->contentPreview($refusal) : ''));
         }
 
-        try {
-            $suggestion = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
-        } catch (JsonException) {
-            throw new RuntimeException('OpenRouter devolvió una respuesta que no cumple el formato esperado.');
-        }
-
-        if (! is_array($suggestion)) {
-            throw new RuntimeException('OpenRouter devolvió una sugerencia inválida.');
-        }
+        $suggestion = $this->decodeSuggestion($content);
 
         return $this->normalisePairSuggestions($suggestion, $candidates, $candidateLimit);
     }
@@ -103,10 +98,57 @@ class UnificationAiSuggestionService
                         'deterministic_confidence' => $candidate['confidence'],
                         'deterministic_reason' => $candidate['reason'],
                     ])->all(),
-                    'task' => 'Devuelve como máximo 20 índices que merecen convertirse en propuesta de auditoría. Omite los que no correspondan.',
+                    'output_contract' => [
+                        'required_object' => '{"suggestions":[{"candidate_index":0,"confidence":86,"reason":"motivo breve"}]}',
+                        'empty_result' => '{"suggestions":[]}',
+                        'rules' => 'suggestions debe ser una lista; cada candidate_index debe pertenecer a candidate_pairs.',
+                    ],
+                    'task' => 'Devuelve como máximo 20 índices que merecen convertirse en propuesta de auditoría. Omite los que no correspondan y usa empty_result si ninguno aplica.',
                 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
             ],
         ];
+    }
+
+    /**
+     * Low-cost providers occasionally wrap valid JSON in a JSON string or
+     * return the suggestions array directly. Both variants remain safe once
+     * candidate indexes are validated by normalisePairSuggestions().
+     */
+    private function decodeSuggestion(string $content): array
+    {
+        $content = preg_replace('/^```(?:json)?\s*|\s*```$/iu', '', trim($content)) ?: '';
+        $wasWrappedString = false;
+
+        for ($attempt = 0; $attempt < 2; $attempt++) {
+            try {
+                $decoded = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
+            } catch (JsonException) {
+                if ($wasWrappedString) {
+                    throw new RuntimeException('OpenRouter devolvió JSON de tipo string; su contenido no era un objeto JSON con la clave suggestions. Vista previa: '
+                        .$this->contentPreview($content));
+                }
+
+                throw new RuntimeException('OpenRouter devolvió contenido que no es JSON válido. Vista previa: '
+                    .$this->contentPreview($content));
+            }
+
+            if (is_string($decoded)) {
+                $wasWrappedString = true;
+                $content = trim($decoded);
+                continue;
+            }
+
+            if (is_array($decoded)) {
+                return array_is_list($decoded) ? ['suggestions' => $decoded] : $decoded;
+            }
+
+            throw new RuntimeException('OpenRouter devolvió JSON de tipo '.get_debug_type($decoded)
+                .'; se esperaba un objeto con la clave suggestions. Vista previa: '
+                .$this->contentPreview($content));
+        }
+
+        throw new RuntimeException('OpenRouter devolvió una cadena JSON doblemente codificada pero incompleta. Vista previa: '
+            .$this->contentPreview($content));
     }
 
     private function responseFormat(): array
@@ -188,5 +230,22 @@ class UnificationAiSuggestionService
         $model = config('services.openrouter.unification_model', 'qwen/qwen3.5-flash-02-23');
 
         return "OpenRouter HTTP {$status} con {$model}: ".($providerMessage ?: 'sin detalle adicional del proveedor.');
+    }
+
+    /**
+     * The endpoint is administrator-only and the prompt contains field
+     * metadata, not client values. Still, limit and redact the diagnostic
+     * preview before returning it to the browser.
+     */
+    private function contentPreview(string $content): string
+    {
+        $apiKey = (string) config('services.openrouter.key');
+        $content = preg_replace('/Bearer\s+\S+/i', 'Bearer [clave oculta]', $content) ?: '';
+        if ($apiKey !== '') {
+            $content = str_ireplace($apiKey, '[clave oculta]', $content);
+        }
+        $content = preg_replace('/[\x00-\x1F\x7F]/u', ' ', $content) ?: '';
+
+        return Str::limit(trim($content), 1200, '…');
     }
 }
