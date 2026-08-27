@@ -35,6 +35,7 @@
         <i class="fas fa-shield-alt mr-1"></i>
         <strong>Auditoría primero.</strong> Este mapa solo lee los catálogos locales y guarda, si se habilita, decisiones de auditoría.
         No consulta APIs externas, no crea campos en <code>users</code>, no crea <code>integration_field_mappings</code>, no activa automatizaciones y no mueve clientes entre tableros.
+        <br><strong>Entidades separadas:</strong> contacto/cliente no equivale a negocio. El mapa distingue <code>users ↔ HubSpot Contacts ↔ Teamleader Contacts</code> de <code>negocios ↔ HubSpot Deals ↔ Teamleader Projects</code> y no propone cruces entre ambos.
     </div>
 
     @if(! $summary['relation_storage_ready'])
@@ -45,13 +46,13 @@
 
     <div class="row">
         <div class="col-lg-3 col-sm-6">
-            <div class="small-box bg-info"><div class="inner"><h3>{{ $summary['hubspot_fields'] }}</h3><p>Campos HubSpot del catálogo</p></div><div class="icon"><i class="fab fa-hubspot"></i></div></div>
+            <div class="small-box bg-info"><div class="inner"><h3>{{ $summary['hubspot_fields'] }}</h3><p>{{ $summary['hubspot_contact_fields'] }} Contacts · {{ $summary['hubspot_deal_fields'] }} Deals</p></div><div class="icon"><i class="fab fa-hubspot"></i></div></div>
         </div>
         <div class="col-lg-3 col-sm-6">
-            <div class="small-box bg-success"><div class="inner"><h3>{{ $summary['teamleader_fields'] }}</h3><p>Campos Teamleader asociados</p></div><div class="icon"><i class="fas fa-people-arrows"></i></div></div>
+            <div class="small-box bg-success"><div class="inner"><h3>{{ $summary['teamleader_fields'] }}</h3><p>{{ $summary['teamleader_contact_fields'] }} contactos · {{ $summary['teamleader_project_fields'] }} proyectos</p></div><div class="icon"><i class="fas fa-people-arrows"></i></div></div>
         </div>
         <div class="col-lg-3 col-sm-6">
-            <div class="small-box bg-primary"><div class="inner"><h3>{{ $summary['app_fields'] }}</h3><p>Campos de referencia en App</p></div><div class="icon"><i class="fas fa-database"></i></div></div>
+            <div class="small-box bg-primary"><div class="inner"><h3>{{ $summary['app_fields'] }}</h3><p>{{ $summary['client_app_fields'] }} clientes · {{ $summary['business_app_fields'] }} negocios</p></div><div class="icon"><i class="fas fa-database"></i></div></div>
         </div>
         <div class="col-lg-3 col-sm-6">
             <div class="small-box bg-warning"><div class="inner"><h3>{{ $summary['monday_fields'] }}</h3><p>Columnas Monday detectadas</p></div><div class="icon"><i class="fab fa-trello"></i></div></div>
@@ -89,7 +90,7 @@
         </div>
         <div class="card-body p-0 table-responsive">
             <table class="table table-hover table-sm mb-0" id="map-table">
-                <thead><tr><th>Campo App</th><th>HubSpot</th><th>Teamleader</th><th>Monday</th><th>Base de coincidencia</th><th>Auditoría</th><th></th></tr></thead>
+                <thead><tr><th>Campo App</th><th>Entidad</th><th>HubSpot</th><th>Teamleader</th><th>Monday</th><th>Base de coincidencia</th><th>Auditoría</th><th></th></tr></thead>
                 <tbody>
                 @forelse($map_rows as $index => $row)
                     @php
@@ -100,6 +101,7 @@
                         $audit = $row['audit_links'];
                         $searchText = strtolower(implode(' ', array_filter([
                             $app['key'] ?? null, $app['label'] ?? null,
+                            $row['entity_type'] ?? ($app['entity_type'] ?? null),
                             collect($hubspot)->pluck('key')->implode(' '), collect($hubspot)->pluck('label')->implode(' '),
                             collect($teamleader)->pluck('label')->implode(' '), collect($teamleader)->pluck('key')->implode(' '),
                             collect($monday)->pluck('label')->implode(' '), collect($monday)->pluck('scope_key')->implode(' '),
@@ -114,6 +116,15 @@
                             @endif
                         </td>
                         <td>
+                            @php
+                                $entityType = $row['entity_type'] ?? ($app['entity_type'] ?? 'item');
+                            @endphp
+                            @if(in_array($entityType, ['client', 'contact']))<span class="badge badge-primary">Contacto / cliente</span>
+                            @elseif(in_array($entityType, ['business', 'deal', 'project']))<span class="badge badge-success">Negocio / proyecto</span>
+                            @elseif($entityType === 'item')<span class="badge badge-warning">Item por clasificar</span>
+                            @else<span class="badge badge-secondary">{{ $entityType }}</span>@endif
+                        </td>
+                        <td>
                             @forelse($hubspot as $field)<div><code>{{ $field['key'] }}</code></div>@empty<span class="text-muted">—</span>@endforelse
                         </td>
                         <td>
@@ -125,6 +136,7 @@
                         <td>
                             @if($row['match_method'] === 'legacy_catalog')<span class="badge badge-success">Catálogo legado</span>
                             @elseif($row['match_method'] === 'app_only')<span class="badge badge-secondary">Solo App</span>
+                            @elseif($row['match_method'] === 'commercial_catalogue')<span class="badge badge-info">Catálogo comercial local</span>
                             @elseif($row['match_method'] === 'unmatched')<span class="badge badge-warning">Pendiente de asociar</span>
                             @else<span class="badge badge-secondary">{{ $row['match_method'] }}</span>@endif
                         </td>
@@ -134,7 +146,7 @@
                         <td class="text-right"><button type="button" class="btn btn-sm btn-outline-primary select-map" data-index="{{ $index }}">Ver</button></td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="text-center text-muted py-4">No se encontraron catálogos locales para auditar todavía.</td></tr>
+                    <tr><td colspan="8" class="text-center text-muted py-4">No se encontraron catálogos locales para auditar todavía.</td></tr>
                 @endforelse
                 </tbody>
             </table>
@@ -156,6 +168,7 @@
         </div>
         <div class="card-body">
             <p class="mb-2">Puedes relacionar cualquier par de plataformas. Cuando haya relaciones directas aprobadas o históricas, el mapa propone cadenas del tipo <code>A ↔ B ↔ C</code>; la relación <code>A ↔ C</code> siempre queda como sugerencia y requiere revisión independiente.</p>
+            <p class="small text-muted mb-0">Para retirar una propuesta de este mapa usa <em>Desasociar</em>: queda rechazada con su historial de auditoría. Las asociaciones heredadas siguen siendo solo de lectura y no se eliminan desde aquí.</p>
             @if($summary['direct_audit_relations'])
                 <p class="small text-muted mb-0">{{ $summary['direct_audit_relations'] }} relación(es) directa(s) guardada(s) en auditoría.</p>
             @endif
@@ -190,8 +203,8 @@
                 <tbody>
                 @forelse($automatic_relations as $index => $relation)
                     <tr>
-                        <td><strong>{{ ucfirst($relation['left']['provider']) }}</strong><br><small>{{ $relation['left']['label'] }} · <code>{{ $relation['left']['key'] }}</code></small>@if($relation['left_source'])<br><small class="text-muted">{{ $relation['left_source'] }}</small>@endif</td>
-                        <td><strong>{{ ucfirst($relation['right']['provider']) }}</strong><br><small>{{ $relation['right']['label'] }} · <code>{{ $relation['right']['key'] }}</code></small>@if($relation['right_source'])<br><small class="text-muted">{{ $relation['right_source'] }}</small>@endif</td>
+                        <td><strong>{{ ucfirst($relation['left']['provider']) }}</strong><br><small>{{ $relation['left']['label'] }} · <code>{{ $relation['left']['key'] }}</code></small><br><small class="text-muted">{{ $relation['left']['entity_type'] }}</small>@if($relation['left_source'])<br><small class="text-muted">{{ $relation['left_source'] }}</small>@endif</td>
+                        <td><strong>{{ ucfirst($relation['right']['provider']) }}</strong><br><small>{{ $relation['right']['label'] }} · <code>{{ $relation['right']['key'] }}</code></small><br><small class="text-muted">{{ $relation['right']['entity_type'] }}</small>@if($relation['right_source'])<br><small class="text-muted">{{ $relation['right_source'] }}</small>@endif</td>
                         <td><span class="badge badge-{{ $relation['confidence'] === 100 ? 'success' : 'warning' }}">{{ $relation['confidence'] }}%</span><br><small>{{ $relation['match_method'] }}</small></td>
                         <td><small>{{ $relation['reason'] }}</small></td>
                         <td class="text-right">
@@ -219,7 +232,7 @@
                         <td class="text-right">
                             <form action="{{ route('unification-map.relations.review', $relation['id']) }}" method="POST" class="d-inline">@csrf @method('PATCH')<input type="hidden" name="status" value="approved"><input type="hidden" name="notes" value="{{ $relation['notes'] }}"><button class="btn btn-xs btn-outline-success">Aprobar diseño</button></form>
                             <form action="{{ route('unification-map.relations.review', $relation['id']) }}" method="POST" class="d-inline">@csrf @method('PATCH')<input type="hidden" name="status" value="needs_information"><input type="hidden" name="notes" value="{{ $relation['notes'] }}"><button class="btn btn-xs btn-outline-warning">Pedir info</button></form>
-                            <form action="{{ route('unification-map.relations.review', $relation['id']) }}" method="POST" class="d-inline">@csrf @method('PATCH')<input type="hidden" name="status" value="rejected"><input type="hidden" name="notes" value="{{ $relation['notes'] }}"><button class="btn btn-xs btn-outline-danger">Rechazar</button></form>
+                            <form action="{{ route('unification-map.relations.review', $relation['id']) }}" method="POST" class="d-inline">@csrf @method('PATCH')<input type="hidden" name="status" value="rejected"><input type="hidden" name="notes" value="{{ $relation['notes'] }}"><button class="btn btn-xs btn-outline-danger" title="No borra el historial de auditoría">Desasociar</button></form>
                         </td>
                     </tr>
                 @empty
@@ -247,7 +260,7 @@
                         <td class="text-right">
                             <form action="{{ route('unification-map.review', $decision['id']) }}" method="POST" class="d-inline">@csrf @method('PATCH')<input type="hidden" name="status" value="approved"><input type="hidden" name="notes" value="{{ $decision['notes'] }}"><button class="btn btn-xs btn-outline-success">Aprobar diseño</button></form>
                             <form action="{{ route('unification-map.review', $decision['id']) }}" method="POST" class="d-inline">@csrf @method('PATCH')<input type="hidden" name="status" value="needs_information"><input type="hidden" name="notes" value="{{ $decision['notes'] }}"><button class="btn btn-xs btn-outline-warning">Pedir info</button></form>
-                            <form action="{{ route('unification-map.review', $decision['id']) }}" method="POST" class="d-inline">@csrf @method('PATCH')<input type="hidden" name="status" value="rejected"><input type="hidden" name="notes" value="{{ $decision['notes'] }}"><button class="btn btn-xs btn-outline-danger">Rechazar</button></form>
+                            <form action="{{ route('unification-map.review', $decision['id']) }}" method="POST" class="d-inline">@csrf @method('PATCH')<input type="hidden" name="status" value="rejected"><input type="hidden" name="notes" value="{{ $decision['notes'] }}"><button class="btn btn-xs btn-outline-danger" title="No borra el historial de auditoría">Desasociar</button></form>
                         </td>
                     </tr>
                 @empty
@@ -289,13 +302,24 @@
             <div class="modal-dialog modal-lg" role="document"><form method="POST" action="{{ route('unification-map.relations.store') }}" class="modal-content" id="audit-relation-form">@csrf
                 <div class="modal-header"><h5 class="modal-title" id="newAuditRelationTitle">Relacionar dos plataformas para auditoría</h5><button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button></div>
                 <div class="modal-body">
-                    <div class="alert alert-info small">Selecciona dos extremos. Esta conexión es de diseño: no copia datos, no crea campos y no activa ninguna sincronización. Solo las conexiones aprobadas pueden servir de puente para sugerencias derivadas.</div>
+                    <div class="alert alert-info small">Selecciona dos extremos de la misma entidad: Contacto/cliente ↔ Contacto, o Negocio ↔ Deal/Proyecto. Monday se relaciona manualmente por tablero. Esta conexión es de diseño: no copia datos, no crea campos y no activa ninguna sincronización.</div>
                     <div class="mb-3">
                         <button type="button" id="ai-suggest-platform-pair" class="btn btn-sm btn-outline-info" disabled @if(! $summary['ai_suggestions_available']) title="Configura OPENROUTER_API_KEY para habilitarlo" @endif>
                             <i class="fas fa-magic mr-1"></i>IA: revisar este par
                         </button>
-                        <small class="d-block text-muted mt-1">Solo analiza coincidencias locales de las dos plataformas seleccionadas (máximo 40); no envía datos de clientes ni guarda una relación.</small>
+                        <small class="d-block text-muted mt-1">Con ambos campos seleccionados, analiza solo esa pareja; si no hay selección, revisa como máximo 40 coincidencias locales. No envía datos de clientes ni guarda una relación.</small>
                         <div id="ai-platform-suggestions" class="alert alert-info small mt-2 mb-0 d-none" role="status"></div>
+                        <div class="border rounded bg-light p-2 mt-2" id="ai-batch-builder">
+                            <div class="d-flex flex-wrap align-items-center">
+                                <strong class="mr-2">Lote de asociaciones</strong>
+                                <span class="badge badge-secondary mr-2" id="ai-batch-count">0 parejas</span>
+                                <button type="button" class="btn btn-xs btn-outline-secondary mr-1" id="add-ai-batch-pair">Añadir esta pareja</button>
+                                <button type="button" class="btn btn-xs btn-outline-info mr-1" id="ai-suggest-batch" disabled>IA: revisar lote</button>
+                                <button type="button" class="btn btn-xs btn-outline-danger" id="clear-ai-batch" disabled>Vaciar lote</button>
+                            </div>
+                            <small class="d-block text-muted mt-1">Añade las parejas que quieras revisar. El lote admite hasta {{ $summary['ai_batch_candidate_limit'] }} parejas y la IA las procesa internamente por grupos de 40; no se limita la revisión a la primera llamada.</small>
+                            <div id="ai-batch-pairs" class="small mt-2 text-muted">Aún no hay parejas añadidas.</div>
+                        </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
@@ -357,13 +381,21 @@
         const rows = {{ \Illuminate\Support\Js::from($map_rows) }};
         const aiAvailable = {{ $summary['ai_suggestions_available'] ? 'true' : 'false' }};
         const suggestUrl = @json(route('unification-map.suggest'));
+        const bulkStoreUrl = @json(route('unification-map.relations.bulk'));
+        const aiBatchCandidateLimit = Number(@json($summary['ai_batch_candidate_limit']));
         const csrfToken = @json(csrf_token());
         const platformFields = {{ \Illuminate\Support\Js::from($field_options) }};
         const derivedRelations = {{ \Illuminate\Support\Js::from($derived_relations) }};
         const automaticRelations = {{ \Illuminate\Support\Js::from($automatic_relations) }};
-        const text = (field) => field ? `<strong>${escapeHtml(field.label || field.key || '—')}</strong><br><code>${escapeHtml(field.key || '')}</code>${field.scope_key ? `<br><small>Ámbito: ${escapeHtml(field.scope_key)}</small>` : ''}` : '—';
+        const entityLabel = (entityType) => ({
+            client: 'Contacto / cliente', contact: 'Contacto',
+            business: 'Negocio', deal: 'Deal', project: 'Proyecto',
+            item: 'Item por clasificar',
+        }[entityType] || entityType || 'Sin clasificar');
+        const text = (field) => field ? `<strong>${escapeHtml(field.label || field.key || '—')}</strong><br><code>${escapeHtml(field.key || '')}</code><br><small class="text-muted">${escapeHtml(entityLabel(field.entity_type))}</small>${field.scope_key ? `<br><small>Ámbito: ${escapeHtml(field.scope_key)}</small>` : ''}` : '—';
         const many = (fields, empty) => fields && fields.length ? fields.map(text).join('<hr class="my-1">') : `<span class="text-muted">${empty}</span>`;
         const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[character]));
+        let aiBatchPairs = [];
 
         window.selectMap = function (index) {
             const row = rows[index];
@@ -375,7 +407,11 @@
             const hasHubspot = row.hubspot && row.hubspot.length;
             const hasTeamleader = row.teamleader && row.teamleader.length;
             const hasMonday = row.monday_matches && row.monday_matches.length;
-            const status = row.match_method === 'legacy_catalog' ? 'Catálogo legado: revisar y decidir' : (row.match_method === 'unmatched' ? 'Campo pendiente de asociar' : 'Diseño por revisar');
+            const status = row.match_method === 'legacy_catalog'
+                ? 'Catálogo legado: revisar y decidir'
+                : (row.match_method === 'commercial_catalogue'
+                    ? 'Catálogo local de negocios/proyectos: revisar'
+                    : (row.match_method === 'unmatched' ? 'Campo pendiente de asociar' : 'Diseño por revisar'));
             document.getElementById('selected-map-status').textContent = status;
             document.getElementById('selected-map-hint').textContent = 'La visualización muestra relaciones conocidas o sugeridas. Ninguna línea representa una sincronización activa.';
             setLine('line-hubspot-app', hasHubspot, row.match_method === 'legacy_catalog' ? 'connected' : 'suggested');
@@ -406,7 +442,7 @@
                 if (term && !searchable.includes(term)) return;
                 const option = document.createElement('option');
                 option.value = String(index);
-                option.textContent = `${field.label || field.key} · ${field.key}${field.scope_key && field.scope_key !== '*' ? ` · tablero ${field.scope_key}` : ''}${field.source ? ` · ${field.source}` : ''}`;
+                option.textContent = `${field.label || field.key} · ${field.key} · ${entityLabel(field.entity_type)}${field.scope_key && field.scope_key !== '*' ? ` · tablero ${field.scope_key}` : ''}${field.source ? ` · ${field.source}` : ''}`;
                 picker.appendChild(option);
             });
             picker.disabled = picker.options.length === 0;
@@ -438,9 +474,102 @@
             };
         }
 
+        function selectedPairPayload() {
+            const {left, right} = selectedPlatformPair();
+
+            return {
+                left_provider: left,
+                right_provider: right,
+                left_entity_type: document.getElementById('relation-left-entity-type')?.value || '',
+                left_scope_key: document.getElementById('relation-left-scope-key')?.value || '',
+                left_field_key: document.getElementById('relation-left-field-key')?.value || '',
+                right_entity_type: document.getElementById('relation-right-entity-type')?.value || '',
+                right_scope_key: document.getElementById('relation-right-scope-key')?.value || '',
+                right_field_key: document.getElementById('relation-right-field-key')?.value || '',
+            };
+        }
+
+        function selectedBatchPair() {
+            const selection = selectedPairPayload();
+            if (!selection.left_provider || !selection.right_provider || selection.left_provider === selection.right_provider
+                || !selection.left_field_key || !selection.right_field_key) {
+                return null;
+            }
+
+            return {
+                left: {
+                    entity_type: selection.left_entity_type,
+                    scope_key: selection.left_scope_key || '*',
+                    field_key: selection.left_field_key,
+                },
+                right: {
+                    entity_type: selection.right_entity_type,
+                    scope_key: selection.right_scope_key || '*',
+                    field_key: selection.right_field_key,
+                },
+            };
+        }
+
+        function batchPairIdentity(pair) {
+            const {left, right} = selectedPlatformPair();
+            return `${left}|${pair.left.entity_type}|${pair.left.scope_key}|${pair.left.field_key}↔${right}|${pair.right.entity_type}|${pair.right.scope_key}|${pair.right.field_key}`;
+        }
+
+        function batchFieldLabel(provider, endpoint) {
+            const field = (platformFields[provider] || []).find((item) => item.entity_type === endpoint.entity_type
+                && (item.scope_key || '*') === endpoint.scope_key
+                && item.key === endpoint.field_key);
+
+            return field?.label || endpoint.field_key;
+        }
+
+        function renderAiBatch() {
+            const target = document.getElementById('ai-batch-pairs');
+            const count = document.getElementById('ai-batch-count');
+            const review = document.getElementById('ai-suggest-batch');
+            const clear = document.getElementById('clear-ai-batch');
+            const {left, right} = selectedPlatformPair();
+            if (count) count.textContent = `${aiBatchPairs.length} pareja(s)`;
+            if (review) review.disabled = !aiAvailable || !aiBatchPairs.length || !left || !right || left === right;
+            if (clear) clear.disabled = !aiBatchPairs.length;
+            if (!target) return;
+            if (!aiBatchPairs.length) {
+                target.className = 'small mt-2 text-muted';
+                target.textContent = 'Aún no hay parejas añadidas.';
+                return;
+            }
+
+            target.className = 'small mt-2';
+            target.innerHTML = aiBatchPairs.map((pair, index) => `<div class="d-flex align-items-start mb-1"><span class="flex-grow-1"><strong>${escapeHtml(batchFieldLabel(left, pair.left))}</strong> <i class="fas fa-arrows-alt-h text-muted mx-1"></i> <strong>${escapeHtml(batchFieldLabel(right, pair.right))}</strong></span><button type="button" class="btn btn-xs btn-outline-danger remove-ai-batch-pair" data-index="${index}" title="Quitar del lote">×</button></div>`).join('')
+                + (aiBatchPairs.length >= aiBatchCandidateLimit ? `<div class="text-warning mt-1">Se alcanzó el máximo configurado de ${aiBatchCandidateLimit} parejas.</div>` : '');
+            target.querySelectorAll('.remove-ai-batch-pair').forEach((button) => button.addEventListener('click', () => {
+                aiBatchPairs.splice(Number(button.dataset.index), 1);
+                renderAiBatch();
+            }));
+        }
+
+        function addSelectedPairToAiBatch() {
+            const pair = selectedBatchPair();
+            if (!pair) {
+                window.alert('Selecciona un campo disponible en ambas plataformas antes de añadirlo al lote.');
+                return;
+            }
+            if (aiBatchPairs.length >= aiBatchCandidateLimit) {
+                window.alert(`El lote ya alcanzó el máximo configurado de ${aiBatchCandidateLimit} parejas.`);
+                return;
+            }
+            const identity = batchPairIdentity(pair);
+            if (!aiBatchPairs.some((item) => batchPairIdentity(item) === identity)) {
+                aiBatchPairs.push(pair);
+            }
+            clearPlatformAiSuggestions();
+            renderAiBatch();
+        }
+
         function updatePairAiButton() {
             const button = document.getElementById('ai-suggest-platform-pair');
-            const {left, right} = selectedPlatformPair();
+            const selection = selectedPairPayload();
+            const {left, right} = selection;
             if (button) button.disabled = !aiAvailable || !left || !right || left === right;
         }
 
@@ -449,59 +578,133 @@
             if (target) target.classList.add('d-none');
         }
 
-        document.getElementById('ai-suggest-platform-pair')?.addEventListener('click', async function () {
+        function serialiseAiRelation(item) {
+            return {
+                left_provider: item.left.provider,
+                left_entity_type: item.left.entity_type,
+                left_scope_key: item.left.scope_key,
+                left_field_key: item.left.key,
+                right_provider: item.right.provider,
+                right_entity_type: item.right.entity_type,
+                right_scope_key: item.right.scope_key,
+                right_field_key: item.right.key,
+                confidence: item.confidence,
+                reason: item.reason || '',
+            };
+        }
+
+        async function storeSelectedAiSuggestions(items) {
+            const target = document.getElementById('ai-platform-suggestions');
+            const selected = [...target.querySelectorAll('.ai-relation-selection:checked')]
+                .map((checkbox) => items[Number(checkbox.dataset.aiIndex)])
+                .filter(Boolean);
+            if (!selected.length) {
+                window.alert('Selecciona al menos una sugerencia para guardarla como propuesta de auditoría.');
+                return;
+            }
+            if (!window.confirm(`¿Guardar ${selected.length} propuesta(s) para auditoría? No se activará ningún mapeo ni sincronización.`)) return;
+
+            const button = target.querySelector('.store-ai-suggestions');
+            if (button) button.disabled = true;
+            try {
+                const response = await fetch(bulkStoreUrl, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken},
+                    body: JSON.stringify({relations: selected.map(serialiseAiRelation)}),
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(payload.message || `No se pudieron guardar las propuestas (HTTP ${response.status}).`);
+                target.className = 'alert alert-success small mt-2 mb-0';
+                target.textContent = `${payload.message || 'Propuestas guardadas para auditoría.'} Recarga el mapa para verlas en la cola de revisión.`;
+            } catch (error) {
+                if (button) button.disabled = false;
+                target.className = 'alert alert-warning small mt-2 mb-0';
+                target.textContent = error.message || 'No se pudieron guardar las propuestas de auditoría.';
+            }
+        }
+
+        function renderAiSuggestions(suggestion, contextLabel) {
+            const target = document.getElementById('ai-platform-suggestions');
+            const items = suggestion.suggestions || [];
+            if (!items.length) {
+                target.className = 'alert alert-secondary small mt-2 mb-0';
+                target.textContent = suggestion.used_ai
+                    ? `La IA no recomendó convertir ninguna pareja de ${contextLabel} en propuesta. No se guardó ni activó nada.`
+                    : `No hay parejas locales suficientes en ${contextLabel}; OpenRouter no fue consultado y no se consumieron créditos.`;
+                return;
+            }
+
+            const batchInfo = suggestion.candidate_count
+                ? ` · ${suggestion.candidate_count} pareja(s) evaluada(s) en ${suggestion.batch_count} llamada(s)`
+                : '';
+            target.className = 'alert alert-info small mt-2 mb-0';
+            target.innerHTML = `<strong>IA · ${items.length} sugerencia(s) para revisar${batchInfo}</strong><ul class="mb-1 pl-3 mt-2">${items.map((item, index) => `<li class="mb-2"><label class="mb-0"><input type="checkbox" class="ai-relation-selection mr-1" data-ai-index="${index}" checked><strong>${escapeHtml(item.left.label)} ↔ ${escapeHtml(item.right.label)}</strong></label> <span class="badge badge-info">${escapeHtml(item.confidence)}%</span><br>${escapeHtml(item.reason || 'Sin explicación adicional.')}<br><button type="button" class="btn btn-xs btn-outline-primary mt-1 use-ai-relation" data-ai-index="${index}">Editar individualmente</button></li>`).join('')}</ul><button type="button" class="btn btn-sm btn-outline-success store-ai-suggestions">Guardar seleccionadas para auditoría</button><br><small>Modelo: ${escapeHtml(suggestion.model)}. Requiere revisión humana; no se activó ningún mapeo.</small>`;
+            target.querySelectorAll('.use-ai-relation').forEach((item) => item.addEventListener('click', () => {
+                openSuggestedRelation(items[Number(item.dataset.aiIndex)]);
+            }));
+            target.querySelector('.store-ai-suggestions')?.addEventListener('click', () => storeSelectedAiSuggestions(items));
+        }
+
+        async function requestAiSuggestion(payload, button, busyText, contextLabel, idleHtml) {
             const {left, right} = selectedPlatformPair();
             if (!aiAvailable || !left || !right || left === right) return;
 
-            const button = this;
             const target = document.getElementById('ai-platform-suggestions');
             button.disabled = true;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Analizando este par';
+            button.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i>${busyText}`;
             target.className = 'alert alert-info small mt-2 mb-0';
-            target.textContent = `Analizando solo coincidencias locales de ${left} ↔ ${right}; no se envían datos de clientes.`;
+            target.textContent = `Analizando ${contextLabel} entre ${left} ↔ ${right}; no se envían datos de clientes.`;
 
             try {
                 const response = await fetch(suggestUrl, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken},
-                    body: JSON.stringify({left_provider: left, right_provider: right}),
+                    body: JSON.stringify(payload),
                 });
-                const payload = await response.json().catch(() => ({}));
-                if (!response.ok) throw new Error(payload.message || `No se pudo generar la sugerencia (HTTP ${response.status}).`);
-
-                const suggestion = payload.suggestion || {};
-                const items = suggestion.suggestions || [];
-                if (!items.length) {
-                    target.className = 'alert alert-secondary small mt-2 mb-0';
-                    target.textContent = suggestion.used_ai
-                        ? 'La IA no recomendó convertir ninguna coincidencia de este par en propuesta. No se guardó ni activó nada.'
-                        : 'No hay coincidencias locales suficientes para este par; OpenRouter no fue consultado y no se consumieron créditos.';
-                    return;
-                }
-
-                target.className = 'alert alert-info small mt-2 mb-0';
-                target.innerHTML = `<strong>IA · ${items.length} sugerencia(s) para revisar</strong><ul class="mb-1 pl-3 mt-2">${items.map((item, index) => `<li class="mb-2"><strong>${escapeHtml(item.left.label)} ↔ ${escapeHtml(item.right.label)}</strong> <span class="badge badge-info">${escapeHtml(item.confidence)}%</span><br>${escapeHtml(item.reason || 'Sin explicación adicional.')}<br><button type="button" class="btn btn-xs btn-outline-primary mt-1 use-ai-relation" data-ai-index="${index}">Usar como propuesta</button></li>`).join('')}</ul><small>Modelo: ${escapeHtml(suggestion.model)}. Requiere guardado y revisión humana; no se activó ningún mapeo.</small>`;
-                target.querySelectorAll('.use-ai-relation').forEach((item) => item.addEventListener('click', () => {
-                    openSuggestedRelation(items[Number(item.dataset.aiIndex)]);
-                }));
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(result.message || `No se pudo generar la sugerencia (HTTP ${response.status}).`);
+                renderAiSuggestions(result.suggestion || {}, contextLabel);
             } catch (error) {
                 target.className = 'alert alert-warning small mt-2 mb-0';
                 target.textContent = error.message || 'No se pudo generar la sugerencia.';
             } finally {
                 updatePairAiButton();
-                button.innerHTML = '<i class="fas fa-magic mr-1"></i>IA: revisar este par';
+                renderAiBatch();
+                button.innerHTML = idleHtml;
             }
+        }
+
+        document.getElementById('ai-suggest-platform-pair')?.addEventListener('click', function () {
+            requestAiSuggestion(selectedPairPayload(), this, 'Analizando este par', 'el par de campos seleccionado', '<i class="fas fa-magic mr-1"></i>IA: revisar este par');
+        });
+        document.getElementById('add-ai-batch-pair')?.addEventListener('click', addSelectedPairToAiBatch);
+        document.getElementById('clear-ai-batch')?.addEventListener('click', () => {
+            aiBatchPairs = [];
+            clearPlatformAiSuggestions();
+            renderAiBatch();
+        });
+        document.getElementById('ai-suggest-batch')?.addEventListener('click', function () {
+            const {left, right} = selectedPlatformPair();
+            if (!aiBatchPairs.length || !left || !right || left === right) return;
+            requestAiSuggestion({left_provider: left, right_provider: right, batch_pairs: aiBatchPairs}, this, 'Analizando lote', `el lote de ${aiBatchPairs.length} pareja(s)`, '<i class="fas fa-magic mr-1"></i>IA: revisar lote');
         });
 
         ['left', 'right'].forEach((side) => {
             document.getElementById(`relation-${side}-provider`)?.addEventListener('change', () => {
+                aiBatchPairs = [];
                 clearPlatformAiSuggestions();
                 populateRelationPicker(side);
+                renderAiBatch();
             });
-            document.getElementById(`relation-${side}-field-picker`)?.addEventListener('change', () => syncRelationEndpoint(side));
+            document.getElementById(`relation-${side}-field-picker`)?.addEventListener('change', () => {
+                clearPlatformAiSuggestions();
+                syncRelationEndpoint(side);
+                updatePairAiButton();
+            });
             document.getElementById(`relation-${side}-field-search`)?.addEventListener('input', () => populateRelationPicker(side));
             populateRelationPicker(side);
         });
+        renderAiBatch();
         document.getElementById('audit-relation-form')?.addEventListener('submit', function (event) {
             const left = document.getElementById('relation-left-field-key').value;
             const right = document.getElementById('relation-right-field-key').value;

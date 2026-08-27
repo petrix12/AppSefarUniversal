@@ -65,7 +65,10 @@ return [
         'model' => 'openai/gpt-4o-mini',
         'unification_model' => env('OPENROUTER_UNIFICATION_MODEL', 'mistralai/mistral-small-24b-instruct-2501'),
         'unification_timeout' => env('OPENROUTER_UNIFICATION_TIMEOUT', 30),
+        // Per-request size. Larger selected batches are split into these
+        // chunks so a user can review more than one model request safely.
         'unification_max_candidates' => env('OPENROUTER_UNIFICATION_MAX_CANDIDATES', 40),
+        'unification_max_batch_candidates' => env('OPENROUTER_UNIFICATION_MAX_BATCH_CANDIDATES', 200),
         'unification_response_format' => env('OPENROUTER_UNIFICATION_RESPONSE_FORMAT', 'json_object'),
         'timeout' => 45,
         'temperature' => 0.2,

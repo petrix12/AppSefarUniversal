@@ -6,6 +6,15 @@ La aplicación es la fuente canónica. Durante la transición, el cliente sigue 
 
 No deben añadirse más campos de negocio a `users`. Los campos nuevos se administran mediante `custom_field_definitions` y `custom_field_values`.
 
+## Entidades que no se mezclan
+
+El mapa audita dos carriles independientes:
+
+- **Contacto/cliente:** `users` ↔ HubSpot Contacts ↔ Teamleader Contacts.
+- **Negocio/operación:** `negocios` ↔ HubSpot Deals ↔ Teamleader Projects.
+
+Una coincidencia de nombre no habilita un cruce entre ambos carriles. Los campos de `negocios` y los atributos estructurales de `tl_projects` se muestran como catálogo comercial local, no como una migración ni una sincronización. Monday se mantiene sin inferencia automática hasta que cada tablero sea clasificado explícitamente como tablero de contactos, negocios u otra entidad.
+
 ## Modelo implementado
 
 | Necesidad | Tablas | Regla |
@@ -41,19 +50,19 @@ La primera herramienta operativa es el panel **Mapa de unificación** (`/admin/u
 La secuencia obligatoria es:
 
 1. Inventariar y revisar los campos y tableros en el mapa.
-2. Registrar por campo la decisión: aprobar diseño, pedir información o rechazarlo.
+2. Registrar por campo la decisión: aprobar diseño, pedir información o desasociarlo (rechazado, conservando el historial de auditoría).
 3. Aprobar un acta de migración con responsable, alcance, respaldo y plan de reversión.
 4. Solo entonces autorizar una carga controlada.
 
 No hay ningún comando ni pantalla que convierta una propuesta de auditoría en una sincronización activa automáticamente.
 
-OpenRouter se usa únicamente dentro del constructor **Relacionar dos plataformas**, después de que el administrador elige el par, por ejemplo HubSpot ↔ Monday. El valor por defecto es `mistralai/mistral-small-24b-instruct-2501`, elegido para este caso de JSON pequeño y revisión semántica; puede cambiarse con `OPENROUTER_UNIFICATION_MODEL`. Al pulsar **IA: revisar este par**, recibe solo metadatos de hasta 40 coincidencias deterministas locales de ese par (el límite puede bajarse con `OPENROUTER_UNIFICATION_MAX_CANDIDATES`, pero no aumentarse). Por compatibilidad con rutas económicas usa `response_format=json_object` por defecto y valida la respuesta en la aplicación; `OPENROUTER_UNIFICATION_RESPONSE_FORMAT=json_schema` queda disponible solo si el modelo/proveedor elegido admite el esquema estricto. No analiza el mapa completo, no recibe datos de clientes, no escribe ni activa una relación y el resultado siempre requiere revisión humana.
+OpenRouter se usa únicamente dentro del constructor **Relacionar dos plataformas**, después de que el administrador elige el par, por ejemplo HubSpot ↔ Monday. El valor por defecto es `mistralai/mistral-small-24b-instruct-2501`, elegido para este caso de JSON pequeño y revisión semántica; puede cambiarse con `OPENROUTER_UNIFICATION_MODEL`. Al pulsar **IA: revisar este par**, recibe solo los metadatos de los dos campos seleccionados, aunque no sean una coincidencia determinista local. El constructor también permite añadir muchas parejas a un lote: por defecto revisa hasta 200 (`OPENROUTER_UNIFICATION_MAX_BATCH_CANDIDATES`) y lo divide internamente en llamadas de hasta 40 (`OPENROUTER_UNIFICATION_MAX_CANDIDATES`) para no sobrecargar una única petición. Si el endpoint se usa sin campos concretos, revisa como máximo 40 coincidencias deterministas locales. Por compatibilidad con rutas económicas usa `response_format=json_object` por defecto y valida la respuesta en la aplicación; `OPENROUTER_UNIFICATION_RESPONSE_FORMAT=json_schema` queda disponible solo si el modelo/proveedor elegido admite el esquema estricto. No analiza el mapa completo, no recibe datos de clientes, no escribe ni activa una relación y el resultado siempre requiere revisión humana.
 
-Las relaciones manuales se crean seleccionando ambos extremos: App, HubSpot, Teamleader o Monday, y después un campo local de cada plataforma. El selector muestra todos los campos conocidos localmente: las columnas existentes de `users`, los campos flexibles, el catálogo histórico HubSpot, todas las definiciones Teamleader respaldadas y las columnas Monday disponibles localmente. Los campos HubSpot inferidos desde una columna de `users` se marcan para confirmación.
+Las relaciones manuales se crean seleccionando ambos extremos: App, HubSpot, Teamleader o Monday, y después un campo local de cada plataforma. El selector muestra todos los campos conocidos localmente: las columnas existentes de `users`, los campos flexibles, el catálogo histórico HubSpot, todas las definiciones Teamleader respaldadas y las columnas Monday disponibles localmente. Los campos HubSpot inferidos desde una columna de `users` se marcan para confirmación. Tras una revisión IA, el administrador puede guardar varias recomendaciones seleccionadas de una vez, pero siempre como propuestas `proposed` en `unification_audit_relations`; no se convierten en mapeos activos.
 
 El mapa además genera coincidencias automáticas por clave/etiqueta exacta o muy similar, sin llamar a una API ni escribir datos. Puede mostrar una relación derivada `A ↔ C` si existen `A ↔ B` y `B ↔ C`; ambas clases de sugerencia se pueden convertir en una propuesta de auditoría con un clic, pero incluso entonces no son mapeos operativos. Requieren revisión y una futura promoción explícita por campo.
 
-Incluso después de desplegar las tablas, las proyecciones automáticas de operaciones existentes hacia la capa canónica quedan apagadas por defecto. Solo se pueden habilitar después de la auditoría mediante `UNIFICATION_CANONICAL_WRITES_ENABLED=true`, con un despliegue aprobado. Mientras esté apagado, el registro actual de Monday y la resolución de contactos Teamleader continúan por sus rutas existentes, sin escribir en las tablas nuevas.
+Incluso después de desplegar las tablas, las proyecciones automáticas de operaciones existentes hacia la capa canónica quedan apagadas por defecto. Solo se pueden habilitar después de la auditoría mediante `UNIFICATION_CANONICAL_WRITES_ENABLED=true`, con un despliegue aprobado. Mientras esté apagado, el registro actual de Monday y la resolución de contactos Teamleader continúan por sus rutas existentes, sin escribir en las tablas nuevas. Desasociar desde el mapa solo marca una propuesta de auditoría como rechazada; no borra ni altera las asociaciones heredadas.
 
 ## Operación segura tras la aprobación de auditoría
 

@@ -13,6 +13,8 @@ use RuntimeException;
  */
 class UnificationAiSuggestionService
 {
+    private const ABSOLUTE_BATCH_CANDIDATE_LIMIT = 1000;
+
     public function available(): bool
     {
         return filled(config('services.openrouter.key'));
@@ -30,9 +32,7 @@ class UnificationAiSuggestionService
             throw new RuntimeException('Falta configurar OPENROUTER_API_KEY para solicitar una sugerencia.');
         }
 
-        // The environment may reduce this threshold, but never increase it.
-        // This cap keeps an accidental broad request from consuming credits.
-        $candidateLimit = max(1, min(40, (int) config('services.openrouter.unification_max_candidates', 40)));
+        $candidateLimit = $this->perRequestCandidateLimit();
         $candidates = array_values(array_slice($candidates, 0, $candidateLimit));
         if ($candidates === []) {
             return [
@@ -77,6 +77,65 @@ class UnificationAiSuggestionService
         $suggestion = $this->decodeSuggestion($content);
 
         return $this->normalisePairSuggestions($suggestion, $candidates, $candidateLimit);
+    }
+
+    /**
+     * Evaluates every explicitly selected pair in bounded model requests. The
+     * per-request limit protects prompt size; it is not a limit on the batch
+     * the administrator deliberately selected.
+     */
+    public function suggestPlatformPairBatch(string $leftProvider, string $rightProvider, array $candidates): array
+    {
+        $candidates = collect($candidates)
+            ->filter(fn (mixed $candidate) => is_array($candidate))
+            ->unique('identity')
+            ->values()
+            ->all();
+        $candidateCount = count($candidates);
+        $batchLimit = $this->batchCandidateLimit();
+
+        if ($candidateCount > $batchLimit) {
+            throw new RuntimeException("El lote contiene {$candidateCount} parejas y supera el máximo configurado de {$batchLimit}. Divide la revisión en lotes más pequeños o aumenta OPENROUTER_UNIFICATION_MAX_BATCH_CANDIDATES.");
+        }
+        if ($candidates === []) {
+            return [
+                'suggestions' => [],
+                'model' => config('services.openrouter.unification_model', 'mistralai/mistral-small-24b-instruct-2501'),
+                'candidate_limit' => $this->perRequestCandidateLimit(),
+                'candidate_count' => 0,
+                'batch_count' => 0,
+                'used_ai' => false,
+            ];
+        }
+
+        $suggestions = [];
+        $chunks = array_chunk($candidates, $this->perRequestCandidateLimit());
+        foreach ($chunks as $chunk) {
+            $result = $this->suggestPlatformPair($leftProvider, $rightProvider, $chunk);
+            $suggestions = array_merge($suggestions, $result['suggestions']);
+        }
+
+        return [
+            'suggestions' => collect($suggestions)->unique('identity')->values()->all(),
+            'model' => config('services.openrouter.unification_model', 'mistralai/mistral-small-24b-instruct-2501'),
+            'candidate_limit' => $this->perRequestCandidateLimit(),
+            'candidate_count' => $candidateCount,
+            'batch_count' => count($chunks),
+            'used_ai' => true,
+        ];
+    }
+
+    public function batchCandidateLimit(): int
+    {
+        return max(
+            $this->perRequestCandidateLimit(),
+            min(self::ABSOLUTE_BATCH_CANDIDATE_LIMIT, (int) config('services.openrouter.unification_max_batch_candidates', 200)),
+        );
+    }
+
+    private function perRequestCandidateLimit(): int
+    {
+        return max(1, min(40, (int) config('services.openrouter.unification_max_candidates', 40)));
     }
 
     private function pairMessages(string $leftProvider, string $rightProvider, array $candidates): array

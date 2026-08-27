@@ -20,13 +20,21 @@ class UnificationMapAuditService
     public function inventory(): array
     {
         $legacyLinks = $this->legacyLinks();
-        $appFields = $this->appFields($legacyLinks);
+        $clientFields = $this->appFields($legacyLinks);
+        $businessFields = $this->businessFields();
+        $projectFields = $this->projectFields();
         $mondayFields = $this->mondayFields();
         $auditedLinks = $this->auditedLinks();
         $auditedRelations = $this->auditedRelations();
-        $platformFields = $this->platformFields($legacyLinks, $appFields, $mondayFields);
+        $platformFields = $this->platformFields(
+            $legacyLinks,
+            $clientFields,
+            $businessFields,
+            $projectFields,
+            $mondayFields,
+        );
 
-        $mapRows = $this->buildMapRows($legacyLinks, $appFields, $mondayFields, $auditedLinks);
+        $mapRows = $this->buildMapRows($legacyLinks, $clientFields, $mondayFields, $auditedLinks);
         $coveredMondayFields = collect($mapRows)
             ->pluck('monday_matches')
             ->flatten(1)
@@ -52,14 +60,14 @@ class UnificationMapAuditService
         }
 
         $legacyAppKeys = collect($legacyLinks)->pluck('hubspot_key')->unique()->flip();
-        foreach ($appFields as $appField) {
+        foreach ($clientFields as $appField) {
             if ($legacyAppKeys->has($appField['key'])) {
                 continue;
             }
 
             $mapRows[] = [
                 'identity' => 'app:'.$appField['key'],
-                'app' => $appField,
+                'app' => array_merge($appField, ['entity_type' => 'client']),
                 'hubspot' => [],
                 'teamleader' => [],
                 'monday_matches' => [],
@@ -68,6 +76,11 @@ class UnificationMapAuditService
                 'audit_links' => $this->auditLinksFor($auditedLinks, 'app', $appField['key'], '*'),
             ];
         }
+
+        $mapRows = array_merge(
+            $mapRows,
+            $this->buildCommercialMapRows($businessFields, $platformFields),
+        );
 
         // A proposal may introduce a future App field that does not exist in
         // users or custom_field_definitions yet. It must still be visible in
@@ -98,6 +111,7 @@ class UnificationMapAuditService
                     'label' => $first['app_field_label'],
                     'storage' => 'proposed',
                     'source' => 'Propuesta de auditoría',
+                    'entity_type' => 'client',
                 ],
                 'hubspot' => $links->where('provider', 'hubspot')->map(fn (array $link) => [
                     'key' => $link['external_field_key'],
@@ -143,11 +157,18 @@ class UnificationMapAuditService
                 'hubspot_fields' => count($platformFields['hubspot']),
                 'teamleader_fields' => count($platformFields['teamleader']),
                 'app_fields' => count($platformFields['app']),
+                'client_app_fields' => count($clientFields),
+                'business_app_fields' => count($businessFields),
+                'hubspot_contact_fields' => collect($platformFields['hubspot'])->where('entity_type', 'contact')->count(),
+                'hubspot_deal_fields' => collect($platformFields['hubspot'])->where('entity_type', 'deal')->count(),
+                'teamleader_contact_fields' => collect($platformFields['teamleader'])->where('entity_type', 'contact')->count(),
+                'teamleader_project_fields' => collect($platformFields['teamleader'])->where('entity_type', 'project')->count(),
                 'app_legacy_columns' => collect($legacyLinks)->filter(fn (array $link) => $link['app_field']['storage'] === 'users')->pluck('hubspot_key')->unique()->count(),
                 'monday_fields' => count($platformFields['monday']),
                 'audit_storage_ready' => Schema::hasTable('unification_audit_links'),
                 'relation_storage_ready' => Schema::hasTable('unification_audit_relations'),
                 'active_mappings' => $this->activeMappingCount(),
+                'ai_batch_candidate_limit' => max(40, min(1000, (int) config('services.openrouter.unification_max_batch_candidates', 200))),
                 'ai_suggestions_available' => filled(config('services.openrouter.key')),
                 'direct_audit_relations' => count($auditedRelations),
                 'derived_relations' => count($derivedRelations),
@@ -180,14 +201,15 @@ class UnificationMapAuditService
             ->map(function ($row) use ($teamleaderDefinitions, $userColumns): array {
                 $hubspotKey = (string) $row->hs_id;
                 $teamleaderKey = (string) $row->tl_id;
+                $teamleaderDefinition = $teamleaderDefinitions[$teamleaderKey] ?? [];
 
                 return [
                     'hubspot_key' => $hubspotKey,
                     'hubspot_label' => $this->labelFor($hubspotKey),
                     'teamleader_key' => $teamleaderKey,
-                    'teamleader_label' => $teamleaderDefinitions[$teamleaderKey]['label'] ?? $teamleaderKey,
-                    'teamleader_type' => $teamleaderDefinitions[$teamleaderKey]['type'] ?? null,
-                    'teamleader_context' => $teamleaderDefinitions[$teamleaderKey]['context'] ?? 'contact',
+                    'teamleader_label' => $teamleaderDefinition['label'] ?? $teamleaderKey,
+                    'teamleader_type' => $teamleaderDefinition['type'] ?? null,
+                    'teamleader_context' => ($teamleaderDefinition['context'] ?? null) ?: 'contact',
                     'module' => $row->modulo,
                     'app_field' => [
                         'key' => $hubspotKey,
@@ -238,6 +260,61 @@ class UnificationMapAuditService
         }
 
         return collect($fields)->sortBy('label')->values()->all();
+    }
+
+    /**
+     * The legacy negocios table is the local representation of a commercial
+     * record. It is intentionally catalogued separately from users so a deal
+     * is never presented as a client/contact field.
+     */
+    private function businessFields(): array
+    {
+        if (! Schema::hasTable('negocios')) {
+            return [];
+        }
+
+        return collect(Schema::getColumnListing('negocios'))
+            ->reject(fn (string $column) => $this->isBusinessIdentityColumn($column))
+            ->map(fn (string $column) => [
+                'key' => $column,
+                'label' => $this->labelFor($column),
+                'storage' => 'negocios',
+                'source' => 'Columna local de negocios (catálogo de Deals por confirmar)',
+                'entity_type' => 'business',
+            ])
+            ->sortBy('label')
+            ->values()
+            ->all();
+    }
+
+    /**
+     * These are the stable, local Project attributes. Project custom fields
+     * are added independently from tl_custom_field_definitions when their
+     * context is project.
+     */
+    private function projectFields(): array
+    {
+        if (! Schema::hasTable('tl_projects')) {
+            return [];
+        }
+
+        return collect(Schema::getColumnListing('tl_projects'))
+            ->reject(fn (string $column) => in_array($column, [
+                'id', 'customer_id', 'responsible_user_id', 'participants',
+                'milestones', 'custom_fields', 'tags', 'raw_data',
+                'tl_created_at', 'tl_updated_at', 'created_at', 'updated_at',
+            ], true))
+            ->map(fn (string $column) => [
+                'key' => $column,
+                'label' => $this->labelFor($column),
+                'type' => null,
+                'entity_type' => 'project',
+                'scope_key' => '*',
+                'source' => 'Campo estructural de proyecto Teamleader',
+            ])
+            ->sortBy('label')
+            ->values()
+            ->all();
     }
 
     private function teamleaderDefinitions(): array
@@ -373,7 +450,13 @@ class UnificationMapAuditService
             ->all();
     }
 
-    private function platformFields(array $legacyLinks, array $appFields, array $mondayFields): array
+    private function platformFields(
+        array $legacyLinks,
+        array $clientFields,
+        array $businessFields,
+        array $projectFields,
+        array $mondayFields,
+    ): array
     {
         $hubspot = collect($legacyLinks)
             ->groupBy('hubspot_key')
@@ -385,24 +468,38 @@ class UnificationMapAuditService
                 'scope_key' => '*',
                 'source' => 'Catálogo legado',
             ])
-            ->keyBy('key');
+            ->keyBy(fn (array $field) => 'contact|'.$field['key']);
 
         // Existing direct users columns are already used by the legacy
         // HubSpot reader as candidate property names. Show them all, but mark
         // the ones outside the historical catalogue as inferred until a live
         // HubSpot catalogue refresh confirms them.
-        foreach ($appFields as $field) {
-            if (($field['storage'] ?? null) !== 'users' || $hubspot->has($field['key'])) {
+        foreach ($clientFields as $field) {
+            $identity = 'contact|'.$field['key'];
+            if (($field['storage'] ?? null) !== 'users' || $hubspot->has($identity)) {
                 continue;
             }
 
-            $hubspot->put($field['key'], [
+            $hubspot->put($identity, [
                 'key' => $field['key'],
                 'label' => $field['label'],
                 'provider' => 'hubspot',
                 'entity_type' => 'contact',
                 'scope_key' => '*',
                 'source' => 'Inferido desde columna de users; confirmar en HubSpot',
+            ]);
+        }
+
+        // negocios is the local deal catalogue. Its fields are deliberately
+        // recorded under HubSpot's deal entity, never under contact.
+        foreach ($businessFields as $field) {
+            $hubspot->put('deal|'.$field['key'], [
+                'key' => $field['key'],
+                'label' => $field['label'],
+                'provider' => 'hubspot',
+                'entity_type' => 'deal',
+                'scope_key' => '*',
+                'source' => 'Inferido desde catálogo local de negocios; confirmar en HubSpot Deals',
             ]);
         }
 
@@ -417,30 +514,43 @@ class UnificationMapAuditService
                 'type' => $links->first()['teamleader_type'],
                 'source' => 'Catálogo legado',
             ])
-            ->keyBy('key');
+            ->keyBy(fn (array $field) => ($field['entity_type'] ?: 'contact').'|'.$field['key']);
 
         foreach ($this->teamleaderDefinitions() as $key => $field) {
-            if ($teamleader->has($key)) {
+            $context = $field['context'] ?: 'contact';
+            $identity = $context.'|'.$key;
+            if ($teamleader->has($identity)) {
                 continue;
             }
 
-            $teamleader->put($key, [
+            $teamleader->put($identity, [
                 'key' => $key,
                 'label' => $field['label'],
                 'provider' => 'teamleader',
-                'entity_type' => $field['context'],
+                'entity_type' => $context,
                 'scope_key' => '*',
                 'type' => $field['type'],
                 'source' => 'Definición Teamleader local',
             ]);
         }
 
+        foreach ($projectFields as $field) {
+            $teamleader->put('project|'.$field['key'], array_merge($field, [
+                'provider' => 'teamleader',
+                'entity_type' => 'project',
+            ]));
+        }
+
         return [
-            'app' => collect($appFields)->map(fn (array $field) => array_merge($field, [
+            'app' => collect($clientFields)->map(fn (array $field) => array_merge($field, [
                 'provider' => 'app',
                 'entity_type' => 'client',
                 'scope_key' => '*',
-            ]))->values()->all(),
+            ]))->merge(collect($businessFields)->map(fn (array $field) => array_merge($field, [
+                'provider' => 'app',
+                'entity_type' => 'business',
+                'scope_key' => '*',
+            ])))->sortBy(fn (array $field) => $field['entity_type'].'|'.$field['label'])->values()->all(),
             'hubspot' => $hubspot
                 ->sortBy('label')
                 ->values()
@@ -474,7 +584,9 @@ class UnificationMapAuditService
             $teamleader = $this->endpoint('teamleader', $link['teamleader_context'], '*', $link['teamleader_key'], $link['teamleader_label']);
 
             $this->addEdge($edges, $nodes, $app, $hubspot, 'Catálogo histórico App ↔ HubSpot');
-            $this->addEdge($edges, $nodes, $hubspot, $teamleader, 'Catálogo histórico HubSpot ↔ Teamleader');
+            if ($this->areAutomaticEntityTypesCompatible($hubspot['entity_type'], $teamleader['entity_type'])) {
+                $this->addEdge($edges, $nodes, $hubspot, $teamleader, 'Catálogo histórico HubSpot ↔ Teamleader');
+            }
         }
 
         foreach ($auditedLinks as $link) {
@@ -492,7 +604,8 @@ class UnificationMapAuditService
         }
 
         foreach ($auditedRelations as $relation) {
-            if ($relation['status'] === 'approved') {
+            if ($relation['status'] === 'approved'
+                && $this->areApprovedAuditEntityTypesCompatible($relation['left']['entity_type'], $relation['right']['entity_type'])) {
                 $this->addEdge($edges, $nodes, $relation['left'], $relation['right'], 'Decisión de auditoría aprobada');
             }
         }
@@ -551,7 +664,9 @@ class UnificationMapAuditService
             $hubspot = $this->endpoint('hubspot', 'contact', '*', $link['hubspot_key'], $link['hubspot_label']);
             $teamleader = $this->endpoint('teamleader', $link['teamleader_context'], '*', $link['teamleader_key'], $link['teamleader_label']);
             $directKeys[$this->edgeKey($app['identity'], $hubspot['identity'])] = true;
-            $directKeys[$this->edgeKey($hubspot['identity'], $teamleader['identity'])] = true;
+            if ($this->areAutomaticEntityTypesCompatible($hubspot['entity_type'], $teamleader['entity_type'])) {
+                $directKeys[$this->edgeKey($hubspot['identity'], $teamleader['identity'])] = true;
+            }
         }
         foreach ($auditedRelations as $relation) {
             $directKeys[$this->edgeKey($relation['left']['identity'], $relation['right']['identity'])] = true;
@@ -561,19 +676,23 @@ class UnificationMapAuditService
         $candidates = [];
         for ($leftProviderIndex = 0; $leftProviderIndex < count($providers); $leftProviderIndex++) {
             $leftProvider = $providers[$leftProviderIndex];
-            $leftFields = collect($platformFields[$leftProvider])->filter(fn (array $field) => $this->isAutomaticCandidate($field));
+            $leftFields = $this->preparedAutomaticFields($platformFields[$leftProvider]);
 
             for ($rightProviderIndex = $leftProviderIndex + 1; $rightProviderIndex < count($providers); $rightProviderIndex++) {
                 $rightProvider = $providers[$rightProviderIndex];
-                $rightFields = collect($platformFields[$rightProvider])->filter(fn (array $field) => $this->isAutomaticCandidate($field));
+                $rightFields = $this->preparedAutomaticFields($platformFields[$rightProvider]);
 
                 foreach ($leftFields as $leftField) {
                     foreach ($rightFields as $rightField) {
+                        if (! $this->areAutomaticEntityTypesCompatible($leftField['entity_type'], $rightField['entity_type'])) {
+                            continue;
+                        }
+
                         $score = max(
-                            $this->similarity($leftField['label'], $rightField['label']),
-                            $this->similarity($leftField['key'], $rightField['key']),
-                            $this->similarity($leftField['label'], $rightField['key']),
-                            $this->similarity($leftField['key'], $rightField['label']),
+                            $this->normalisedSimilarity($leftField['_normalised_label'], $rightField['_normalised_label']),
+                            $this->normalisedSimilarity($leftField['_normalised_key'], $rightField['_normalised_key']),
+                            $this->normalisedSimilarity($leftField['_normalised_label'], $rightField['_normalised_key']),
+                            $this->normalisedSimilarity($leftField['_normalised_key'], $rightField['_normalised_label']),
                         );
                         if ($score < 86) {
                             continue;
@@ -622,6 +741,16 @@ class UnificationMapAuditService
             ->all();
     }
 
+    private function preparedAutomaticFields(array $fields): mixed
+    {
+        return collect($fields)
+            ->filter(fn (array $field) => $this->isAutomaticCandidate($field))
+            ->map(fn (array $field) => array_merge($field, [
+                '_normalised_label' => $this->normalise((string) $field['label']),
+                '_normalised_key' => $this->normalise((string) $field['key']),
+            ]));
+    }
+
     private function isAutomaticCandidate(array $field): bool
     {
         $key = Str::lower((string) ($field['key'] ?? ''));
@@ -635,6 +764,51 @@ class UnificationMapAuditService
         return ! str_contains($key, 'token')
             && ! str_contains($key, 'secret')
             && ! str_contains($key, 'session');
+    }
+
+    private function isBusinessIdentityColumn(string $column): bool
+    {
+        return in_array($column, [
+            'id', 'hubspot_id', 'teamleader_id', 'user_id',
+            'created_at', 'updated_at',
+        ], true);
+    }
+
+    /**
+     * A mapping can be suggested only within its semantic entity family. A
+     * Monday item is intentionally not inferred: its meaning depends on the
+     * board and must first be classified by an administrator.
+     */
+    private function areAutomaticEntityTypesCompatible(string $leftType, string $rightType): bool
+    {
+        $leftFamily = $this->entityFamily($leftType);
+        $rightFamily = $this->entityFamily($rightType);
+
+        return $leftFamily === $rightFamily
+            && in_array($leftFamily, ['contact', 'commercial'], true);
+    }
+
+    private function areApprovedAuditEntityTypesCompatible(string $leftType, string $rightType): bool
+    {
+        if ($this->areAutomaticEntityTypesCompatible($leftType, $rightType)) {
+            return true;
+        }
+
+        $leftFamily = $this->entityFamily($leftType);
+        $rightFamily = $this->entityFamily($rightType);
+
+        return ($leftFamily === 'workflow' && in_array($rightFamily, ['contact', 'commercial'], true))
+            || ($rightFamily === 'workflow' && in_array($leftFamily, ['contact', 'commercial'], true));
+    }
+
+    private function entityFamily(string $entityType): string
+    {
+        return match (Str::lower($entityType)) {
+            'client', 'contact' => 'contact',
+            'business', 'deal', 'project' => 'commercial',
+            'item', 'workflow_item' => 'workflow',
+            default => Str::lower($entityType),
+        };
     }
 
     private function addEdge(array &$edges, array &$nodes, array $left, array $right, string $basis): void
@@ -677,28 +851,16 @@ class UnificationMapAuditService
 
         return collect($legacyLinks)
             ->groupBy('hubspot_key')
-            ->map(function ($links, string $hubspotKey) use ($appFieldsByKey, $mondayFields, $auditedLinks): array {
+            ->map(function ($links, string $hubspotKey) use ($appFieldsByKey, $auditedLinks): array {
                 $appField = $appFieldsByKey->get($hubspotKey, $links->first()['app_field']);
-                $mondayMatches = collect($mondayFields)
-                    ->map(function (array $mondayField) use ($hubspotKey, $appField): array {
-                        $score = max(
-                            $this->similarity($hubspotKey, $mondayField['key']),
-                            $this->similarity($hubspotKey, $mondayField['label']),
-                            $this->similarity($appField['label'], $mondayField['label']),
-                            $this->similarity($appField['key'], $mondayField['local_field_key'] ?? '')
-                        );
-
-                        return array_merge($mondayField, ['confidence' => $score]);
-                    })
-                    ->filter(fn (array $field) => $field['confidence'] >= 60)
-                    ->sortByDesc('confidence')
-                    ->take(3)
-                    ->values()
-                    ->all();
+                // A Monday item can represent a contact, a deal or a
+                // workflow task depending on its board. Do not infer that
+                // semantic type from a matching label alone.
+                $mondayMatches = [];
 
                 return [
                     'identity' => 'legacy:'.$hubspotKey,
-                    'app' => $appField,
+                    'app' => array_merge($appField, ['entity_type' => 'client']),
                     'hubspot' => [[
                         'key' => $hubspotKey,
                         'label' => $links->first()['hubspot_label'],
@@ -714,6 +876,66 @@ class UnificationMapAuditService
                     'match_method' => 'legacy_catalog',
                     'confidence' => 100,
                     'audit_links' => array_values(array_filter($auditedLinks, fn (array $audit) => $audit['app_field_key'] === $hubspotKey)),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Presents the operational/business catalogue separately. It only reads
+     * existing local negocio, HubSpot Deal and Teamleader Project metadata;
+     * no Deal or Project record is copied or linked by this map.
+     */
+    private function buildCommercialMapRows(array $businessFields, array $platformFields): array
+    {
+        $hubspotDeals = collect($platformFields['hubspot'])
+            ->where('entity_type', 'deal')
+            ->keyBy('key');
+        $teamleaderProjects = collect($platformFields['teamleader'])
+            ->where('entity_type', 'project');
+
+        return collect($businessFields)
+            ->map(function (array $businessField) use ($hubspotDeals, $teamleaderProjects): array {
+                $deal = $hubspotDeals->get($businessField['key']);
+                $projectMatches = $teamleaderProjects
+                    ->map(function (array $projectField) use ($businessField): array {
+                        $score = max(
+                            $this->similarity($businessField['key'], $projectField['key']),
+                            $this->similarity($businessField['label'], $projectField['label']),
+                        );
+
+                        return array_merge($projectField, ['confidence' => $score]);
+                    })
+                    ->filter(fn (array $projectField) => $projectField['confidence'] >= 60)
+                    ->sortByDesc('confidence')
+                    ->take(3)
+                    ->map(fn (array $projectField) => [
+                        'key' => $projectField['key'],
+                        'label' => $projectField['label'],
+                        'type' => $projectField['type'] ?? null,
+                        'context' => 'project',
+                        'entity_type' => 'project',
+                        'confidence' => $projectField['confidence'],
+                    ])
+                    ->values()
+                    ->all();
+
+                return [
+                    'identity' => 'business:'.$businessField['key'],
+                    'entity_type' => 'business',
+                    'app' => $businessField,
+                    'hubspot' => $deal ? [[
+                        'key' => $deal['key'],
+                        'label' => $deal['label'],
+                        'scope_key' => '*',
+                        'entity_type' => 'deal',
+                    ]] : [],
+                    'teamleader' => $projectMatches,
+                    'monday_matches' => [],
+                    'match_method' => 'commercial_catalogue',
+                    'confidence' => $deal ? 100 : null,
+                    'audit_links' => [],
                 ];
             })
             ->values()
@@ -738,8 +960,11 @@ class UnificationMapAuditService
 
     private function similarity(string $left, string $right): int
     {
-        $left = $this->normalise($left);
-        $right = $this->normalise($right);
+        return $this->normalisedSimilarity($this->normalise($left), $this->normalise($right));
+    }
+
+    private function normalisedSimilarity(string $left, string $right): int
+    {
 
         if ($left === '' || $right === '') {
             return 0;

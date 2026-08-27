@@ -168,6 +168,45 @@ class UnificationAiSuggestionServiceTest extends TestCase
         });
     }
 
+    public function test_it_processes_an_explicit_batch_larger_than_forty_in_multiple_bounded_requests(): void
+    {
+        config()->set('services.openrouter.key', 'test-key');
+        config()->set('services.openrouter.url', 'https://openrouter.test/chat');
+        config()->set('services.openrouter.unification_max_candidates', 40);
+        config()->set('services.openrouter.unification_max_batch_candidates', 200);
+
+        Http::fake([
+            'https://openrouter.test/chat' => Http::response([
+                'choices' => [[
+                    'message' => [
+                        'content' => json_encode(['suggestions' => [[
+                            'candidate_index' => 0,
+                            'confidence' => 80,
+                            'reason' => 'Propuesta para revisión humana.',
+                        ]]]),
+                    ],
+                ]],
+            ]),
+        ]);
+        $candidates = collect(range(0, 40))->map(function (int $index): array {
+            $candidate = $this->candidate();
+            $candidate['identity'] = "app|client|*|estado_{$index}↔monday|item|ventas|status_{$index}";
+            $candidate['left']['key'] = "estado_{$index}";
+            $candidate['right']['key'] = "status_{$index}";
+
+            return $candidate;
+        })->all();
+
+        $suggestion = app(UnificationAiSuggestionService::class)->suggestPlatformPairBatch('app', 'monday', $candidates);
+
+        $this->assertTrue($suggestion['used_ai']);
+        $this->assertSame(41, $suggestion['candidate_count']);
+        $this->assertSame(2, $suggestion['batch_count']);
+        $this->assertCount(2, $suggestion['suggestions']);
+        $this->assertSame('estado_40', $suggestion['suggestions'][1]['left']['key']);
+        $this->assertCount(2, Http::recorded());
+    }
+
     private function candidate(): array
     {
         return [

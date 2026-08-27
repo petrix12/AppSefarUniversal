@@ -200,11 +200,11 @@ class CosService
                 'warning'   => null,
             ],
 
-            // PASO 17: INFORME CARGADO (< 1 MES)
+            // PASO 16: INFORME CARGADO (< 1 MES)
             [
                 'name' => 'Informe Cargado Recientemente',
                 'condition' => fn() => $this->isInformeCargadoReciente(),
-                'stepGen' => 17,
+                'stepGen' => 15,
                 'stepJur' => -1,
                 'warning' => null,
             ],

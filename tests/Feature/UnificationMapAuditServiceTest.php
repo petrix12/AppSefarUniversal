@@ -2,11 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\UnificationMapController;
 use App\Models\UnificationAuditLink;
 use App\Models\UnificationAuditRelation;
+use App\Services\UnificationAiSuggestionService;
 use App\Services\UnificationMapAuditService;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Http\Client\Request as ClientRequest;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -78,6 +83,8 @@ class UnificationMapAuditServiceTest extends TestCase
         $this->foundationMigration->down();
         Schema::dropIfExists('monday_field_mappings');
         Schema::dropIfExists('monday_form_builder');
+        Schema::dropIfExists('tl_projects');
+        Schema::dropIfExists('negocios');
         Schema::dropIfExists('tl_custom_field_definitions');
         Schema::dropIfExists('assoc_tl_hs');
         Schema::dropIfExists('users');
@@ -144,8 +151,13 @@ class UnificationMapAuditServiceTest extends TestCase
 
         $legacyRow = collect($inventory['map_rows'])->firstWhere('identity', 'legacy:estado_documental');
         $this->assertCount(2, $legacyRow['teamleader']);
-        $this->assertSame('Estado documental', $legacyRow['monday_matches'][0]['label']);
-        $this->assertSame(100, $legacyRow['monday_matches'][0]['confidence']);
+        $this->assertSame([], $legacyRow['monday_matches']);
+        $mondayRow = collect($inventory['map_rows'])->firstWhere('identity', 'monday:ventas:status');
+        $this->assertSame('Estado documental', $mondayRow['monday_matches'][0]['label']);
+        $this->assertFalse(collect($inventory['automatic_relations'])->contains(
+            fn (array $relation) => $relation['left']['provider'] === 'monday'
+                || $relation['right']['provider'] === 'monday'
+        ));
 
         $manualRow = collect($inventory['map_rows'])->firstWhere('identity', 'audit:fecha_de_ingreso');
         $this->assertSame('Propuesta de auditoría', $manualRow['app']['source']);
@@ -161,5 +173,254 @@ class UnificationMapAuditServiceTest extends TestCase
 
         $this->assertDatabaseCount('integration_field_mappings', 0);
         $this->assertDatabaseCount('custom_field_definitions', 0);
+    }
+
+    public function test_it_separates_contact_fields_from_deal_and_project_fields(): void
+    {
+        Schema::create('negocios', function (Blueprint $table) {
+            $table->id();
+            $table->string('estado_operativo')->nullable();
+            $table->string('hubspot_id')->nullable();
+            $table->string('teamleader_id')->nullable();
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('tl_projects', function (Blueprint $table) {
+            $table->string('id')->primary();
+            $table->string('estado_operativo')->nullable();
+            $table->json('raw_data')->nullable();
+            $table->timestamps();
+        });
+
+        $inventory = app(UnificationMapAuditService::class)->inventory();
+
+        $this->assertSame(1, $inventory['summary']['business_app_fields']);
+        $this->assertSame(1, $inventory['summary']['hubspot_deal_fields']);
+        $this->assertSame(1, $inventory['summary']['teamleader_project_fields']);
+
+        $businessRow = collect($inventory['map_rows'])->firstWhere('identity', 'business:estado_operativo');
+        $this->assertSame('business', $businessRow['app']['entity_type']);
+        $this->assertSame('deal', $businessRow['hubspot'][0]['entity_type']);
+        $this->assertSame('project', $businessRow['teamleader'][0]['entity_type']);
+
+        $this->assertFalse(collect($inventory['automatic_relations'])->contains(
+            fn (array $relation) => in_array($relation['left']['entity_type'], ['client', 'contact'], true)
+                && in_array($relation['right']['entity_type'], ['business', 'deal', 'project'], true)
+        ));
+    }
+
+    public function test_ai_evaluates_the_two_explicitly_selected_fields_even_when_they_are_not_an_automatic_match(): void
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('aacs_madre')->nullable();
+        });
+        DB::table('assoc_tl_hs')->insert([
+            'tl_id' => 'tl-enviada',
+            'hs_id' => 'estado_documental',
+            'modulo' => null,
+        ]);
+        DB::table('tl_custom_field_definitions')->insert([
+            'id' => 'tl-enviada',
+            'label' => 'Enviada al cliente',
+            'type' => 'single_select',
+            'context' => 'contact',
+        ]);
+        config()->set('services.openrouter.key', 'test-key');
+        config()->set('services.openrouter.url', 'https://openrouter.test/chat');
+        config()->set('services.openrouter.unification_model', 'test-model');
+        Http::fake([
+            'https://openrouter.test/chat' => Http::response([
+                'choices' => [[
+                    'message' => [
+                        'content' => json_encode(['suggestions' => [[
+                            'candidate_index' => 0,
+                            'confidence' => 12,
+                            'reason' => 'Los campos no parecen representar el mismo dato.',
+                        ]]]),
+                    ],
+                ]],
+            ]),
+        ]);
+
+        $response = app(UnificationMapController::class)->suggest(
+            Request::create('/admin/unification-map/suggest', 'POST', [
+                'left_provider' => 'teamleader',
+                'left_entity_type' => 'contact',
+                'left_scope_key' => '*',
+                'left_field_key' => 'tl-enviada',
+                'right_provider' => 'hubspot',
+                'right_entity_type' => 'contact',
+                'right_scope_key' => '*',
+                'right_field_key' => 'aacs_madre',
+            ]),
+            app(UnificationMapAuditService::class),
+            app(UnificationAiSuggestionService::class),
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertTrue($response->getData(true)['suggestion']['used_ai']);
+        Http::assertSent(function (ClientRequest $request): bool {
+            $prompt = json_decode((string) data_get($request->data(), 'messages.1.content'), true);
+            $candidate = data_get($prompt, 'candidate_pairs.0');
+
+            return count(data_get($prompt, 'candidate_pairs', [])) === 1
+                && data_get($candidate, 'left.key') === 'tl-enviada'
+                && data_get($candidate, 'right.key') === 'aacs_madre';
+        });
+        $this->assertDatabaseCount('unification_audit_relations', 0);
+        $this->assertDatabaseCount('integration_field_mappings', 0);
+    }
+
+    public function test_it_saves_multiple_ai_recommendations_only_as_audit_proposals(): void
+    {
+        DB::table('assoc_tl_hs')->insert([
+            [
+                'tl_id' => 'tl-estado-1',
+                'hs_id' => 'estado_documental',
+                'modulo' => null,
+            ],
+            [
+                'tl_id' => 'tl-origen',
+                'hs_id' => 'name',
+                'modulo' => null,
+            ],
+        ]);
+        DB::table('tl_custom_field_definitions')->insert([
+            [
+                'id' => 'tl-estado-1',
+                'label' => 'Estado documental',
+                'type' => 'single_select',
+                'context' => 'contact',
+            ],
+            [
+                'id' => 'tl-origen',
+                'label' => 'Origen',
+                'type' => 'text',
+                'context' => 'contact',
+            ],
+        ]);
+        $user = new \App\Models\User;
+        $user->id = 999;
+        $request = Request::create('/admin/unification-map/relations/bulk', 'POST', [
+            'relations' => [[
+                'left_provider' => 'teamleader',
+                'left_entity_type' => 'contact',
+                'left_scope_key' => '*',
+                'left_field_key' => 'tl-estado-1',
+                'right_provider' => 'hubspot',
+                'right_entity_type' => 'contact',
+                'right_scope_key' => '*',
+                'right_field_key' => 'estado_documental',
+                'confidence' => 91,
+                'reason' => 'Las etiquetas coinciden.',
+            ], [
+                'left_provider' => 'teamleader',
+                'left_entity_type' => 'contact',
+                'left_scope_key' => '*',
+                'left_field_key' => 'tl-origen',
+                'right_provider' => 'hubspot',
+                'right_entity_type' => 'contact',
+                'right_scope_key' => '*',
+                'right_field_key' => 'name',
+                'confidence' => 75,
+                'reason' => 'Propuesta independiente para auditoría.',
+            ]],
+        ]);
+        $request->setUserResolver(fn () => $user);
+
+        $response = app(UnificationMapController::class)->storeRelationsBulk(
+            $request,
+            app(UnificationMapAuditService::class),
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame(2, $response->getData(true)['created']);
+        $this->assertDatabaseHas('unification_audit_relations', [
+            'left_provider' => 'teamleader',
+            'left_field_key' => 'tl-estado-1',
+            'right_provider' => 'hubspot',
+            'right_field_key' => 'estado_documental',
+            'match_method' => 'ai_batch',
+            'status' => 'proposed',
+        ]);
+        $this->assertDatabaseHas('unification_audit_relations', [
+            'left_provider' => 'teamleader',
+            'left_field_key' => 'tl-origen',
+            'right_provider' => 'hubspot',
+            'right_field_key' => 'name',
+            'match_method' => 'ai_batch',
+            'status' => 'proposed',
+        ]);
+        $this->assertDatabaseCount('integration_field_mappings', 0);
+    }
+
+    public function test_ai_accepts_multiple_explicit_pairs_in_one_batch_without_creating_mappings(): void
+    {
+        DB::table('assoc_tl_hs')->insert([
+            [
+                'tl_id' => 'tl-estado-1',
+                'hs_id' => 'estado_documental',
+                'modulo' => null,
+            ],
+            [
+                'tl_id' => 'tl-origen',
+                'hs_id' => 'name',
+                'modulo' => null,
+            ],
+        ]);
+        DB::table('tl_custom_field_definitions')->insert([
+            [
+                'id' => 'tl-estado-1',
+                'label' => 'Estado documental',
+                'type' => 'single_select',
+                'context' => 'contact',
+            ],
+            [
+                'id' => 'tl-origen',
+                'label' => 'Origen',
+                'type' => 'text',
+                'context' => 'contact',
+            ],
+        ]);
+        config()->set('services.openrouter.key', 'test-key');
+        config()->set('services.openrouter.url', 'https://openrouter.test/chat');
+        Http::fake([
+            'https://openrouter.test/chat' => Http::response([
+                'choices' => [[
+                    'message' => [
+                        'content' => json_encode(['suggestions' => [[
+                            'candidate_index' => 0,
+                            'confidence' => 89,
+                            'reason' => 'Propuesta de auditoría.',
+                        ]]]),
+                    ],
+                ]],
+            ]),
+        ]);
+
+        $response = app(UnificationMapController::class)->suggest(
+            Request::create('/admin/unification-map/suggest', 'POST', [
+                'left_provider' => 'teamleader',
+                'right_provider' => 'hubspot',
+                'batch_pairs' => [
+                    [
+                        'left' => ['entity_type' => 'contact', 'scope_key' => '*', 'field_key' => 'tl-estado-1'],
+                        'right' => ['entity_type' => 'contact', 'scope_key' => '*', 'field_key' => 'estado_documental'],
+                    ],
+                    [
+                        'left' => ['entity_type' => 'contact', 'scope_key' => '*', 'field_key' => 'tl-origen'],
+                        'right' => ['entity_type' => 'contact', 'scope_key' => '*', 'field_key' => 'name'],
+                    ],
+                ],
+            ]),
+            app(UnificationMapAuditService::class),
+            app(UnificationAiSuggestionService::class),
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame(2, $response->getData(true)['suggestion']['candidate_count']);
+        $this->assertSame(1, $response->getData(true)['suggestion']['batch_count']);
+        $this->assertDatabaseCount('unification_audit_relations', 0);
+        $this->assertDatabaseCount('integration_field_mappings', 0);
     }
 }
