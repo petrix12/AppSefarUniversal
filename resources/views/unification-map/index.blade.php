@@ -8,9 +8,9 @@
             <h1 class="mb-0"><i class="fas fa-project-diagram mr-2 text-primary"></i>Mapa de unificación</h1>
             <small class="text-muted">Inventario y decisiones de diseño: App, HubSpot, Teamleader y Monday.</small>
         </div>
-        @if($summary['audit_storage_ready'])
-            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#newAuditLinkModal">
-                <i class="fas fa-plus mr-1"></i>Proponer relación
+        @if($summary['relation_storage_ready'])
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#newAuditRelationModal">
+                <i class="fas fa-plus mr-1"></i>Relacionar dos plataformas
             </button>
         @else
             <button type="button" class="btn btn-outline-secondary" disabled title="La tabla de auditoría aún no está desplegada">
@@ -37,9 +37,9 @@
         No consulta APIs externas, no crea campos en <code>users</code>, no crea <code>integration_field_mappings</code>, no activa automatizaciones y no mueve clientes entre tableros.
     </div>
 
-    @if(! $summary['audit_storage_ready'])
+    @if(! $summary['relation_storage_ready'])
         <div class="alert alert-info">
-            El registro para guardar propuestas está preparado en código, pero su migración no se ha ejecutado. Por ahora este mapa es estrictamente de lectura.
+            El registro para guardar relaciones está preparado en código, pero su migración no se ha ejecutado. Por ahora este mapa es estrictamente de lectura.
         </div>
     @endif
 
@@ -153,6 +153,63 @@
         </div>
     </div>
 
+    <div class="card card-outline card-warning">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-link mr-1"></i>Relaciones directas y derivadas</h3>
+            <div class="card-tools"><span class="badge badge-warning">{{ $summary['derived_relations'] }} derivadas para revisar</span></div>
+        </div>
+        <div class="card-body">
+            <p class="mb-2">Puedes relacionar cualquier par de plataformas. Cuando haya relaciones directas aprobadas o históricas, el mapa propone cadenas del tipo <code>A ↔ B ↔ C</code>; la relación <code>A ↔ C</code> siempre queda como sugerencia y requiere revisión independiente.</p>
+            @if($summary['direct_audit_relations'])
+                <p class="small text-muted mb-0">{{ $summary['direct_audit_relations'] }} relación(es) directa(s) guardada(s) en auditoría.</p>
+            @endif
+        </div>
+        <div class="card-body border-top p-0 table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead><tr><th>Origen</th><th>Puente</th><th>Destino sugerido</th><th>Base</th><th></th></tr></thead>
+                <tbody>
+                @forelse($derived_relations as $index => $relation)
+                    <tr>
+                        <td><strong>{{ ucfirst($relation['left']['provider']) }}</strong><br><small>{{ $relation['left']['label'] }} · <code>{{ $relation['left']['key'] }}</code></small></td>
+                        <td><strong>{{ ucfirst($relation['through']['provider']) }}</strong><br><small>{{ $relation['through']['label'] }} · <code>{{ $relation['through']['key'] }}</code></small></td>
+                        <td><strong>{{ ucfirst($relation['right']['provider']) }}</strong><br><small>{{ $relation['right']['label'] }} · <code>{{ $relation['right']['key'] }}</code></small></td>
+                        <td><small>{{ implode(' + ', $relation['basis']) }}</small></td>
+                        <td class="text-right">
+                            @if($summary['relation_storage_ready'])
+                                <button type="button" class="btn btn-xs btn-outline-primary use-derived-relation" data-index="{{ $index }}">Convertir en propuesta</button>
+                            @else
+                                <span class="text-muted small">Solo lectura</span>
+                            @endif
+                        </td>
+                    </tr>
+                @empty
+                    <tr><td colspan="5" class="text-center text-muted py-3">Aún no hay cadenas entre plataformas para proponer.</td></tr>
+                @endforelse
+                </tbody>
+            </table>
+        </div>
+        @if($summary['relation_storage_ready'])
+            <div class="card-body border-top p-0 table-responsive">
+                <table class="table table-sm mb-0"><thead><tr><th>Relación directa registrada</th><th>Estado</th><th>Notas</th><th class="text-right">Decidir</th></tr></thead><tbody>
+                @forelse($audited_relations as $relation)
+                    <tr>
+                        <td><strong>{{ ucfirst($relation['left']['provider']) }}</strong> · {{ $relation['left']['label'] }} <code>{{ $relation['left']['key'] }}</code><br><i class="fas fa-arrows-alt-h text-muted mx-1"></i><strong>{{ ucfirst($relation['right']['provider']) }}</strong> · {{ $relation['right']['label'] }} <code>{{ $relation['right']['key'] }}</code></td>
+                        <td><span class="badge badge-{{ $relation['status'] === 'approved' ? 'success' : ($relation['status'] === 'rejected' ? 'danger' : ($relation['status'] === 'needs_information' ? 'warning' : 'secondary')) }}">{{ $relation['status'] }}</span></td>
+                        <td><small>{{ $relation['notes'] ?: '—' }}</small></td>
+                        <td class="text-right">
+                            <form action="{{ route('unification-map.relations.review', $relation['id']) }}" method="POST" class="d-inline">@csrf @method('PATCH')<input type="hidden" name="status" value="approved"><input type="hidden" name="notes" value="{{ $relation['notes'] }}"><button class="btn btn-xs btn-outline-success">Aprobar diseño</button></form>
+                            <form action="{{ route('unification-map.relations.review', $relation['id']) }}" method="POST" class="d-inline">@csrf @method('PATCH')<input type="hidden" name="status" value="needs_information"><input type="hidden" name="notes" value="{{ $relation['notes'] }}"><button class="btn btn-xs btn-outline-warning">Pedir info</button></form>
+                            <form action="{{ route('unification-map.relations.review', $relation['id']) }}" method="POST" class="d-inline">@csrf @method('PATCH')<input type="hidden" name="status" value="rejected"><input type="hidden" name="notes" value="{{ $relation['notes'] }}"><button class="btn btn-xs btn-outline-danger">Rechazar</button></form>
+                        </td>
+                    </tr>
+                @empty
+                    <tr><td colspan="4" class="text-center text-muted py-3">Aún no has registrado conexiones manuales entre plataformas.</td></tr>
+                @endforelse
+                </tbody></table>
+            </div>
+        @endif
+    </div>
+
     @if($summary['audit_storage_ready'])
         <div class="card card-outline card-info">
             <div class="card-header"><h3 class="card-title">Decisiones pendientes de revisión</h3></div>
@@ -206,6 +263,41 @@
             </form></div>
         </div>
     @endif
+
+    @if($summary['relation_storage_ready'])
+        <div class="modal fade" id="newAuditRelationModal" tabindex="-1" role="dialog" aria-labelledby="newAuditRelationTitle" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document"><form method="POST" action="{{ route('unification-map.relations.store') }}" class="modal-content" id="audit-relation-form">@csrf
+                <div class="modal-header"><h5 class="modal-title" id="newAuditRelationTitle">Relacionar dos plataformas para auditoría</h5><button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button></div>
+                <div class="modal-body">
+                    <div class="alert alert-info small">Selecciona dos extremos. Esta conexión es de diseño: no copia datos, no crea campos y no activa ninguna sincronización. Solo las conexiones aprobadas pueden servir de puente para sugerencias derivadas.</div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Primera plataforma</label>
+                            <select id="relation-left-provider" name="left_provider" class="form-control relation-provider"><option value="app">App</option><option value="hubspot">HubSpot</option><option value="teamleader">Teamleader</option><option value="monday">Monday</option></select>
+                            <label class="mt-2">Campo</label>
+                            <select id="relation-left-field-picker" class="form-control relation-field-picker" data-side="left"></select>
+                            <input type="hidden" name="left_entity_type" id="relation-left-entity-type">
+                            <input type="hidden" name="left_scope_key" id="relation-left-scope-key">
+                            <input type="hidden" name="left_field_key" id="relation-left-field-key">
+                            <input type="hidden" name="left_field_label" id="relation-left-field-label">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>Segunda plataforma</label>
+                            <select id="relation-right-provider" name="right_provider" class="form-control relation-provider"><option value="hubspot">HubSpot</option><option value="app">App</option><option value="teamleader">Teamleader</option><option value="monday">Monday</option></select>
+                            <label class="mt-2">Campo</label>
+                            <select id="relation-right-field-picker" class="form-control relation-field-picker" data-side="right"></select>
+                            <input type="hidden" name="right_entity_type" id="relation-right-entity-type">
+                            <input type="hidden" name="right_scope_key" id="relation-right-scope-key">
+                            <input type="hidden" name="right_field_key" id="relation-right-field-key">
+                            <input type="hidden" name="right_field_label" id="relation-right-field-label">
+                        </div>
+                    </div>
+                    <div class="form-group mb-0"><label>Notas de auditoría</label><textarea name="notes" rows="3" class="form-control" placeholder="Por qué se relacionan, dudas, responsable y reglas de conflicto…"></textarea></div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button><button class="btn btn-primary">Guardar relación para auditoría</button></div>
+            </form></div>
+        </div>
+    @endif
 @stop
 
 @section('css')
@@ -237,6 +329,8 @@
         const aiAvailable = {{ $summary['ai_suggestions_available'] ? 'true' : 'false' }};
         const suggestUrl = @json(route('unification-map.suggest'));
         const csrfToken = @json(csrf_token());
+        const platformFields = {{ \Illuminate\Support\Js::from($field_options) }};
+        const derivedRelations = {{ \Illuminate\Support\Js::from($derived_relations) }};
         let selectedIndex = null;
         const text = (field) => field ? `<strong>${escapeHtml(field.label || field.key || '—')}</strong><br><code>${escapeHtml(field.key || '')}</code>${field.scope_key ? `<br><small>Ámbito: ${escapeHtml(field.scope_key)}</small>` : ''}` : '—';
         const many = (fields, empty) => fields && fields.length ? fields.map(text).join('<hr class="my-1">') : `<span class="text-muted">${empty}</span>`;
@@ -306,6 +400,77 @@
                 button.innerHTML = '<i class="fas fa-magic mr-1"></i>IA: sugerir';
             }
         });
+
+        function populateRelationPicker(side) {
+            const provider = document.getElementById(`relation-${side}-provider`);
+            const picker = document.getElementById(`relation-${side}-field-picker`);
+            if (!provider || !picker) return;
+
+            const fields = platformFields[provider.value] || [];
+            picker.innerHTML = '';
+            fields.forEach((field, index) => {
+                const option = document.createElement('option');
+                option.value = String(index);
+                option.textContent = `${field.label || field.key} · ${field.key}${field.scope_key && field.scope_key !== '*' ? ` · tablero ${field.scope_key}` : ''}`;
+                picker.appendChild(option);
+            });
+            picker.disabled = fields.length === 0;
+            if (!fields.length) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No hay campos locales disponibles';
+                picker.appendChild(option);
+            }
+            syncRelationEndpoint(side);
+        }
+
+        function syncRelationEndpoint(side) {
+            const provider = document.getElementById(`relation-${side}-provider`);
+            const picker = document.getElementById(`relation-${side}-field-picker`);
+            if (!provider || !picker) return;
+            const field = (platformFields[provider.value] || [])[Number(picker.value)];
+            document.getElementById(`relation-${side}-entity-type`).value = field?.entity_type || '';
+            document.getElementById(`relation-${side}-scope-key`).value = field?.scope_key || '';
+            document.getElementById(`relation-${side}-field-key`).value = field?.key || '';
+            document.getElementById(`relation-${side}-field-label`).value = field?.label || '';
+        }
+
+        ['left', 'right'].forEach((side) => {
+            document.getElementById(`relation-${side}-provider`)?.addEventListener('change', () => populateRelationPicker(side));
+            document.getElementById(`relation-${side}-field-picker`)?.addEventListener('change', () => syncRelationEndpoint(side));
+            populateRelationPicker(side);
+        });
+        document.getElementById('audit-relation-form')?.addEventListener('submit', function (event) {
+            const left = document.getElementById('relation-left-field-key').value;
+            const right = document.getElementById('relation-right-field-key').value;
+            if (!left || !right) {
+                event.preventDefault();
+                window.alert('Selecciona un campo disponible en ambas plataformas.');
+            }
+        });
+        document.querySelectorAll('.use-derived-relation').forEach((button) => button.addEventListener('click', () => {
+            const relation = derivedRelations[Number(button.dataset.index)];
+            if (!relation) return;
+            applyDerivedEndpoint('left', relation.left);
+            applyDerivedEndpoint('right', relation.right);
+            if (window.jQuery) {
+                window.jQuery('#newAuditRelationModal').modal('show');
+            }
+        }));
+
+        function applyDerivedEndpoint(side, endpoint) {
+            const provider = document.getElementById(`relation-${side}-provider`);
+            const picker = document.getElementById(`relation-${side}-field-picker`);
+            if (!provider || !picker) return;
+            provider.value = endpoint.provider;
+            populateRelationPicker(side);
+            const fields = platformFields[endpoint.provider] || [];
+            const index = fields.findIndex((field) => field.key === endpoint.key
+                && field.scope_key === endpoint.scope_key
+                && field.entity_type === endpoint.entity_type);
+            if (index >= 0) picker.value = String(index);
+            syncRelationEndpoint(side);
+        }
         document.getElementById('map-search')?.addEventListener('input', function () {
             const term = this.value.toLowerCase().trim();
             document.querySelectorAll('#map-table tbody tr[data-search]').forEach((row) => { row.style.display = !term || row.dataset.search.includes(term) ? '' : 'none'; });

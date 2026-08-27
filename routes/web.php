@@ -199,7 +199,9 @@ Route::middleware(['auth', 'can:administrador'])
     ->group(function () {
         Route::get('/', [UnificationMapController::class, 'map'])->name('index');
         Route::post('/suggest', [UnificationMapController::class, 'suggest'])->name('suggest');
+        Route::post('/relations', [UnificationMapController::class, 'storeRelation'])->name('relations.store');
         Route::post('/', [UnificationMapController::class, 'store'])->name('store');
+        Route::patch('/relations/{auditRelation}', [UnificationMapController::class, 'reviewRelation'])->name('relations.review');
         Route::patch('/{auditLink}', [UnificationMapController::class, 'review'])->name('review');
     });
 

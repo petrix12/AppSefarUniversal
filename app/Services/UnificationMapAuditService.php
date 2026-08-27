@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\CustomFieldDefinition;
 use App\Models\UnificationAuditLink;
+use App\Models\UnificationAuditRelation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -22,6 +23,8 @@ class UnificationMapAuditService
         $appFields = $this->appFields($legacyLinks);
         $mondayFields = $this->mondayFields();
         $auditedLinks = $this->auditedLinks();
+        $auditedRelations = $this->auditedRelations();
+        $platformFields = $this->platformFields($legacyLinks, $appFields, $mondayFields);
 
         $mapRows = $this->buildMapRows($legacyLinks, $appFields, $mondayFields, $auditedLinks);
         $coveredMondayFields = collect($mapRows)
@@ -127,6 +130,12 @@ class UnificationMapAuditService
             ->values()
             ->all();
 
+        $derivedRelations = $this->derivedRelations(
+            $legacyLinks,
+            $auditedLinks,
+            $auditedRelations,
+        );
+
         return [
             'summary' => [
                 'legacy_associations' => count($legacyLinks),
@@ -136,15 +145,17 @@ class UnificationMapAuditService
                 'app_legacy_columns' => collect($legacyLinks)->filter(fn (array $link) => $link['app_field']['storage'] === 'users')->pluck('hubspot_key')->unique()->count(),
                 'monday_fields' => count($mondayFields),
                 'audit_storage_ready' => Schema::hasTable('unification_audit_links'),
+                'relation_storage_ready' => Schema::hasTable('unification_audit_relations'),
                 'active_mappings' => $this->activeMappingCount(),
                 'ai_suggestions_available' => filled(config('services.openrouter.key')),
+                'direct_audit_relations' => count($auditedRelations),
+                'derived_relations' => count($derivedRelations),
             ],
             'map_rows' => $mapRows,
             'audited_links' => $auditedLinks,
-            'field_options' => [
-                'app' => $appFields,
-                'monday' => $mondayFields,
-            ],
+            'audited_relations' => $auditedRelations,
+            'derived_relations' => $derivedRelations,
+            'field_options' => $platformFields,
         ];
     }
 
@@ -310,6 +321,196 @@ class UnificationMapAuditService
                 'notes' => $link->notes,
             ])
             ->all();
+    }
+
+    private function auditedRelations(): array
+    {
+        if (! Schema::hasTable('unification_audit_relations')) {
+            return [];
+        }
+
+        return UnificationAuditRelation::query()
+            ->latest('updated_at')
+            ->get()
+            ->map(fn (UnificationAuditRelation $relation) => [
+                'id' => $relation->id,
+                'left' => $this->endpoint(
+                    $relation->left_provider,
+                    $relation->left_entity_type,
+                    $relation->left_scope_key,
+                    $relation->left_field_key,
+                    $relation->left_field_label,
+                ),
+                'right' => $this->endpoint(
+                    $relation->right_provider,
+                    $relation->right_entity_type,
+                    $relation->right_scope_key,
+                    $relation->right_field_key,
+                    $relation->right_field_label,
+                ),
+                'match_method' => $relation->match_method,
+                'confidence' => $relation->confidence,
+                'status' => $relation->status,
+                'notes' => $relation->notes,
+            ])
+            ->all();
+    }
+
+    private function platformFields(array $legacyLinks, array $appFields, array $mondayFields): array
+    {
+        return [
+            'app' => collect($appFields)->map(fn (array $field) => array_merge($field, [
+                'provider' => 'app',
+                'entity_type' => 'client',
+                'scope_key' => '*',
+            ]))->values()->all(),
+            'hubspot' => collect($legacyLinks)
+                ->groupBy('hubspot_key')
+                ->map(fn ($links, string $key) => [
+                    'key' => $key,
+                    'label' => $links->first()['hubspot_label'],
+                    'provider' => 'hubspot',
+                    'entity_type' => 'contact',
+                    'scope_key' => '*',
+                    'source' => 'Catálogo legado',
+                ])
+                ->sortBy('label')
+                ->values()
+                ->all(),
+            'teamleader' => collect($legacyLinks)
+                ->groupBy('teamleader_key')
+                ->map(fn ($links, string $key) => [
+                    'key' => $key,
+                    'label' => $links->first()['teamleader_label'],
+                    'provider' => 'teamleader',
+                    'entity_type' => $links->first()['teamleader_context'],
+                    'scope_key' => '*',
+                    'type' => $links->first()['teamleader_type'],
+                    'source' => 'Catálogo legado',
+                ])
+                ->sortBy('label')
+                ->values()
+                ->all(),
+            'monday' => collect($mondayFields)->map(fn (array $field) => array_merge($field, [
+                'provider' => 'monday',
+                'entity_type' => 'item',
+            ]))->values()->all(),
+        ];
+    }
+
+    /**
+     * Finds A↔C candidates when two existing reference/approved relations form
+     * A↔B↔C. The derived relation is a display-only audit suggestion.
+     */
+    private function derivedRelations(
+        array $legacyLinks,
+        array $auditedLinks,
+        array $auditedRelations,
+    ): array {
+        $edges = [];
+        $nodes = [];
+
+        foreach ($legacyLinks as $link) {
+            $app = $this->endpoint('app', 'client', '*', $link['app_field']['key'], $link['app_field']['label']);
+            $hubspot = $this->endpoint('hubspot', 'contact', '*', $link['hubspot_key'], $link['hubspot_label']);
+            $teamleader = $this->endpoint('teamleader', $link['teamleader_context'], '*', $link['teamleader_key'], $link['teamleader_label']);
+
+            $this->addEdge($edges, $nodes, $app, $hubspot, 'Catálogo histórico App ↔ HubSpot');
+            $this->addEdge($edges, $nodes, $hubspot, $teamleader, 'Catálogo histórico HubSpot ↔ Teamleader');
+        }
+
+        foreach ($auditedLinks as $link) {
+            if ($link['status'] !== 'approved') {
+                continue;
+            }
+
+            $this->addEdge(
+                $edges,
+                $nodes,
+                $this->endpoint('app', 'client', '*', $link['app_field_key'], $link['app_field_label']),
+                $this->endpoint($link['provider'], $link['external_entity_type'], $link['scope_key'], $link['external_field_key'], $link['external_field_label']),
+                'Decisión de auditoría aprobada',
+            );
+        }
+
+        foreach ($auditedRelations as $relation) {
+            if ($relation['status'] === 'approved') {
+                $this->addEdge($edges, $nodes, $relation['left'], $relation['right'], 'Decisión de auditoría aprobada');
+            }
+        }
+
+        $adjacency = [];
+        foreach ($edges as $edgeKey => $edge) {
+            $adjacency[$edge['left']['identity']][] = ['node' => $edge['right']['identity'], 'edge' => $edgeKey];
+            $adjacency[$edge['right']['identity']][] = ['node' => $edge['left']['identity'], 'edge' => $edgeKey];
+        }
+
+        $derived = [];
+        foreach ($adjacency as $throughId => $neighbours) {
+            for ($leftIndex = 0; $leftIndex < count($neighbours); $leftIndex++) {
+                for ($rightIndex = $leftIndex + 1; $rightIndex < count($neighbours); $rightIndex++) {
+                    $leftId = $neighbours[$leftIndex]['node'];
+                    $rightId = $neighbours[$rightIndex]['node'];
+                    $directKey = $this->edgeKey($leftId, $rightId);
+
+                    if ($leftId === $rightId || isset($edges[$directKey])) {
+                        continue;
+                    }
+
+                    $candidateKey = $directKey.'|via|'.$throughId;
+                    $derived[$candidateKey] = [
+                        'identity' => $candidateKey,
+                        'left' => $nodes[$leftId],
+                        'through' => $nodes[$throughId],
+                        'right' => $nodes[$rightId],
+                        'basis' => array_values(array_unique(array_merge(
+                            $edges[$neighbours[$leftIndex]['edge']]['basis'],
+                            $edges[$neighbours[$rightIndex]['edge']]['basis'],
+                        ))),
+                    ];
+                }
+            }
+        }
+
+        return collect($derived)
+            ->sortBy(fn (array $relation) => $relation['left']['provider'].'|'.$relation['right']['provider'].'|'.$relation['left']['label'])
+            ->take(250)
+            ->values()
+            ->all();
+    }
+
+    private function addEdge(array &$edges, array &$nodes, array $left, array $right, string $basis): void
+    {
+        $nodes[$left['identity']] = $left;
+        $nodes[$right['identity']] = $right;
+        $key = $this->edgeKey($left['identity'], $right['identity']);
+
+        if (! isset($edges[$key])) {
+            $edges[$key] = ['left' => $left, 'right' => $right, 'basis' => []];
+        }
+
+        $edges[$key]['basis'][] = $basis;
+        $edges[$key]['basis'] = array_values(array_unique($edges[$key]['basis']));
+    }
+
+    private function endpoint(string $provider, string $entityType, string $scopeKey, string $fieldKey, ?string $label): array
+    {
+        $scopeKey = $scopeKey ?: '*';
+        $fieldKey = (string) $fieldKey;
+
+        return [
+            'identity' => implode('|', [$provider, $entityType, $scopeKey, $fieldKey]),
+            'provider' => $provider,
+            'entity_type' => $entityType,
+            'scope_key' => $scopeKey,
+            'key' => $fieldKey,
+            'label' => $label ?: $fieldKey,
+        ];
+    }
+
+    private function edgeKey(string $leftIdentity, string $rightIdentity): string
+    {
+        return collect([$leftIdentity, $rightIdentity])->sort()->implode('↔');
     }
 
     private function buildMapRows(array $legacyLinks, array $appFields, array $mondayFields, array $auditedLinks): array

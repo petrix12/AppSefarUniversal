@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\UnificationAuditLink;
+use App\Models\UnificationAuditRelation;
 use App\Services\UnificationMapAuditService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,8 @@ class UnificationMapAuditServiceTest extends TestCase
     private object $foundationMigration;
 
     private object $auditMigration;
+
+    private object $relationMigration;
 
     protected function setUp(): void
     {
@@ -64,10 +67,13 @@ class UnificationMapAuditServiceTest extends TestCase
         $this->foundationMigration->up();
         $this->auditMigration = require database_path('migrations/2026_08_27_110000_create_unification_audit_links_table.php');
         $this->auditMigration->up();
+        $this->relationMigration = require database_path('migrations/2026_08_27_120000_create_unification_audit_relations_table.php');
+        $this->relationMigration->up();
     }
 
     protected function tearDown(): void
     {
+        $this->relationMigration->down();
         $this->auditMigration->down();
         $this->foundationMigration->down();
         Schema::dropIfExists('monday_field_mappings');
@@ -111,6 +117,19 @@ class UnificationMapAuditServiceTest extends TestCase
             'match_method' => 'manual',
             'status' => 'proposed',
         ]);
+        UnificationAuditRelation::create([
+            'left_provider' => 'app',
+            'left_entity_type' => 'client',
+            'left_scope_key' => '*',
+            'left_field_key' => 'estado_documental',
+            'left_field_label' => 'Estado documental',
+            'right_provider' => 'monday',
+            'right_entity_type' => 'item',
+            'right_scope_key' => 'ventas',
+            'right_field_key' => 'status',
+            'right_field_label' => 'Estado documental',
+            'status' => 'approved',
+        ]);
 
         $inventory = app(UnificationMapAuditService::class)->inventory();
 
@@ -120,6 +139,7 @@ class UnificationMapAuditServiceTest extends TestCase
         $this->assertSame(1, $inventory['summary']['app_legacy_columns']);
         $this->assertSame(2, $inventory['summary']['monday_fields']);
         $this->assertTrue($inventory['summary']['audit_storage_ready']);
+        $this->assertTrue($inventory['summary']['relation_storage_ready']);
 
         $legacyRow = collect($inventory['map_rows'])->firstWhere('identity', 'legacy:estado_documental');
         $this->assertCount(2, $legacyRow['teamleader']);
@@ -130,6 +150,13 @@ class UnificationMapAuditServiceTest extends TestCase
         $this->assertSame('Propuesta de auditoría', $manualRow['app']['source']);
         $this->assertSame('date_1', $manualRow['monday_matches'][0]['key']);
         $this->assertSame('proposed', $manualRow['audit_links'][0]['status']);
+
+        $this->assertCount(1, $inventory['audited_relations']);
+        $this->assertGreaterThanOrEqual(3, $inventory['summary']['derived_relations']);
+        $this->assertTrue(collect($inventory['derived_relations'])->contains(
+            fn (array $relation) => $relation['left']['provider'] === 'monday'
+                || $relation['right']['provider'] === 'monday'
+        ));
 
         $this->assertDatabaseCount('integration_field_mappings', 0);
         $this->assertDatabaseCount('custom_field_definitions', 0);
