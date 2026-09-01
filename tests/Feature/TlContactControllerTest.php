@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Http\Controllers\TlContactController;
 use App\Exceptions\TeamleaderAuthenticationException;
+use App\Models\TlCompany;
 use App\Models\TlContact;
 use App\Models\TlDeal;
 use App\Services\TeamleaderService;
@@ -121,6 +122,35 @@ class TlContactControllerTest extends TestCase
         $this->assertSame(302, $response->getStatusCode());
         $this->assertStringContainsString('Reconectar Teamleader', session('error'));
         $this->assertStringContainsString(route('teamleader.redirect'), session('error'));
+    }
+
+    public function test_a_deal_resolves_its_contact_or_company_without_filtering_the_related_table(): void
+    {
+        $contact = TlContact::create([
+            'id' => '5d5a0466-b4ce-0bb6-b375-f26c92de7d78',
+            'first_name' => 'Contacto',
+            'raw_data' => [],
+        ]);
+        $company = TlCompany::create([
+            'id' => '8d5a0466-b4ce-0bb6-b375-f26c92de7d79',
+            'name' => 'Empresa',
+            'raw_data' => [],
+        ]);
+        $contactDeal = TlDeal::create([
+            'id' => '7d5a0466-b4ce-0bb6-b375-f26c92de7d70',
+            'customer_id' => $contact->id,
+            'customer_type' => 'contact',
+            'raw_data' => [],
+        ]);
+        $companyDeal = TlDeal::create([
+            'id' => '6d5a0466-b4ce-0bb6-b375-f26c92de7d71',
+            'customer_id' => $company->id,
+            'customer_type' => 'company',
+            'raw_data' => [],
+        ]);
+
+        $this->assertSame($contact->id, $contactDeal->contact->id);
+        $this->assertSame($company->id, $companyDeal->company->id);
     }
 
     private function contactPayload(string $id): array

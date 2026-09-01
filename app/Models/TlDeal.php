@@ -41,14 +41,12 @@ class TlDeal extends Model
 
     public function contact(): BelongsTo
     {
-        return $this->belongsTo(TlContact::class, 'customer_id')
-            ->where('customer_type', 'contact');
+        return $this->belongsTo(TlContact::class, 'customer_id');
     }
 
     public function company(): BelongsTo
     {
-        return $this->belongsTo(TlCompany::class, 'customer_id')
-            ->where('customer_type', 'company');
+        return $this->belongsTo(TlCompany::class, 'customer_id');
     }
 
     // ─── Scopes ───────────────────────────────────
