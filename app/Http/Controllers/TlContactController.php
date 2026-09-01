@@ -117,7 +117,14 @@ class TlContactController extends Controller
         } catch (TeamleaderRateLimitException $exception) {
             return back()->with('error', 'Teamleader aplicó un límite temporal. Espera '.max(1, $exception->retryAfterSeconds()).' segundos e inténtalo de nuevo.');
         } catch (TeamleaderAuthenticationException $exception) {
-            return back()->with('error', 'Teamleader requiere reautenticar la integración antes de actualizar.');
+            $reconnectUrl = route('teamleader.redirect', [
+                'return_to' => route('teamleader.contacts.show', $contact->id),
+            ]);
+
+            return back()->with(
+                'error',
+                'Teamleader requiere reautenticar la integración antes de actualizar. <a href="'.$reconnectUrl.'" class="alert-link">Reconectar Teamleader</a>'
+            );
         } catch (\Throwable $exception) {
             Log::channel('teamleader')->error('Teamleader: error actualizando la ficha de contacto', [
                 'contact_id' => $contact->id,

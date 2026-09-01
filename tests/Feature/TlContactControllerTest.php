@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Http\Controllers\TlContactController;
+use App\Exceptions\TeamleaderAuthenticationException;
 use App\Models\TlContact;
 use App\Models\TlDeal;
 use App\Services\TeamleaderService;
@@ -98,6 +99,28 @@ class TlContactControllerTest extends TestCase
             'id' => '7d5a0466-b4ce-0bb6-b375-f26c92de7d70',
             'customer_id' => $otherContactId,
         ]);
+    }
+
+    public function test_it_offers_an_administrator_a_reconnect_link_when_teamleader_requires_authentication(): void
+    {
+        $contactId = '5d5a0466-b4ce-0bb6-b375-f26c92de7d78';
+        TlContact::create([
+            'id' => $contactId,
+            'first_name' => 'Contacto',
+            'raw_data' => [],
+        ]);
+
+        $teamleader = Mockery::mock(TeamleaderService::class);
+        $teamleader->shouldReceive('getContactById')
+            ->once()
+            ->with($contactId)
+            ->andThrow(new TeamleaderAuthenticationException());
+
+        $response = app(TlContactController::class)->refresh($contactId, $teamleader);
+
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertStringContainsString('Reconectar Teamleader', session('error'));
+        $this->assertStringContainsString(route('teamleader.redirect'), session('error'));
     }
 
     private function contactPayload(string $id): array

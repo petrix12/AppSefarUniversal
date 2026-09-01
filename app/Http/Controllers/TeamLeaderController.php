@@ -23,8 +23,15 @@ class TeamleaderController extends Controller
         ]);
     }
 
-    public function redirectToProvider()
+    public function redirectToProvider(Request $request)
     {
+        $returnTo = $this->safeReturnUrl($request->query('return_to'));
+        if ($returnTo) {
+            session(['teamleader.oauth_return_to' => $returnTo]);
+        } else {
+            session()->forget('teamleader.oauth_return_to');
+        }
+
         $authorizationUrl = $this->provider->getAuthorizationUrl();
         session(['oauth2state' => $this->provider->getState()]);
 
@@ -49,7 +56,9 @@ class TeamleaderController extends Controller
             // Almacenar los tokens de forma segura
             $this->storeTokens($accessToken);
 
-            return redirect()->route('teamleader.success');
+            return redirect()->to(
+                session()->pull('teamleader.oauth_return_to', route('teamleader.success'))
+            )->with('status', 'Teamleader fue reconectado correctamente. Ya puedes actualizar la información.');
 
         } catch (\Exception $e) {
             return redirect()->route('teamleader.redirect')->withErrors('Error al obtener el token de acceso: ' . $e->getMessage());
@@ -139,5 +148,24 @@ class TeamleaderController extends Controller
     public function success()
     {
         return '¡Integración con Teamleader configurada exitosamente!';
+    }
+
+    private function safeReturnUrl(?string $url): ?string
+    {
+        if (! is_string($url) || $url === '') {
+            return null;
+        }
+
+        if (str_starts_with($url, '/') && ! str_starts_with($url, '//')) {
+            return $url;
+        }
+
+        $parts = parse_url($url);
+        if (! in_array($parts['scheme'] ?? null, ['http', 'https'], true)
+            || ($parts['host'] ?? null) !== request()->getHost()) {
+            return null;
+        }
+
+        return $url;
     }
 }

@@ -591,7 +591,7 @@ Route::post('adminchangepassword',[UserController::class, 'adminchangepassword']
 
 //TeamleaderTest
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'can:administrador'])->group(function () {
     Route::get('/teamleader/redirect', [TeamleaderController::class, 'redirectToProvider'])->name('teamleader.redirect');
     Route::get('/teamleader/callback', [TeamleaderController::class, 'handleProviderCallback'])->name('teamleader.callback');
 });
