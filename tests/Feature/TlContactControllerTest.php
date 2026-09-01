@@ -7,6 +7,7 @@ use App\Exceptions\TeamleaderAuthenticationException;
 use App\Models\TlCompany;
 use App\Models\TlContact;
 use App\Models\TlDeal;
+use App\Models\TlProject;
 use App\Services\TeamleaderService;
 use Illuminate\Support\Facades\DB;
 use Mockery;
@@ -41,7 +42,7 @@ class TlContactControllerTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_it_refreshes_a_contact_and_its_current_teamleader_deals(): void
+    public function test_it_refreshes_a_contact_and_its_current_teamleader_deals_and_projects(): void
     {
         $contactId = '5d5a0466-b4ce-0bb6-b375-f26c92de7d78';
         $otherContactId = '8d5a0466-b4ce-0bb6-b375-f26c92de7d79';
@@ -55,6 +56,13 @@ class TlContactControllerTest extends TestCase
         TlDeal::create([
             'id' => '7d5a0466-b4ce-0bb6-b375-f26c92de7d70',
             'title' => 'Deal reasignado',
+            'customer_id' => $contactId,
+            'customer_type' => 'contact',
+            'raw_data' => [],
+        ]);
+        TlProject::create([
+            'id' => '4d5a0466-b4ce-0bb6-b375-f26c92de7d73',
+            'title' => 'Proyecto reasignado',
             'customer_id' => $contactId,
             'customer_type' => 'contact',
             'raw_data' => [],
@@ -82,6 +90,23 @@ class TlContactControllerTest extends TestCase
             ->once()
             ->with('6d5a0466-b4ce-0bb6-b375-f26c92de7d71')
             ->andReturn($this->dealPayload('6d5a0466-b4ce-0bb6-b375-f26c92de7d71', $contactId, 'Deal nuevo'));
+        $teamleader->shouldReceive('listProjectsByContactId')
+            ->once()
+            ->with($contactId, 1, 100)
+            ->andReturn([
+                'data' => [
+                    ['id' => '3d5a0466-b4ce-0bb6-b375-f26c92de7d74'],
+                ],
+                'meta' => ['matches' => 1],
+            ]);
+        $teamleader->shouldReceive('getProjectDetails')
+            ->once()
+            ->with('4d5a0466-b4ce-0bb6-b375-f26c92de7d73')
+            ->andReturn($this->projectPayload('4d5a0466-b4ce-0bb6-b375-f26c92de7d73', $otherContactId, 'Proyecto reasignado'));
+        $teamleader->shouldReceive('getProjectDetails')
+            ->once()
+            ->with('3d5a0466-b4ce-0bb6-b375-f26c92de7d74')
+            ->andReturn($this->projectPayload('3d5a0466-b4ce-0bb6-b375-f26c92de7d74', $contactId, 'Proyecto nuevo'));
 
         $response = app(TlContactController::class)->refresh($contactId, $teamleader);
 
@@ -98,6 +123,15 @@ class TlContactControllerTest extends TestCase
         ]);
         $this->assertDatabaseHas('tl_deals', [
             'id' => '7d5a0466-b4ce-0bb6-b375-f26c92de7d70',
+            'customer_id' => $otherContactId,
+        ]);
+        $this->assertDatabaseHas('tl_projects', [
+            'id' => '3d5a0466-b4ce-0bb6-b375-f26c92de7d74',
+            'title' => 'Proyecto nuevo',
+            'customer_id' => $contactId,
+        ]);
+        $this->assertDatabaseHas('tl_projects', [
+            'id' => '4d5a0466-b4ce-0bb6-b375-f26c92de7d73',
             'customer_id' => $otherContactId,
         ]);
     }
@@ -181,6 +215,24 @@ class TlContactControllerTest extends TestCase
             'lead' => ['customer' => ['id' => $contactId, 'type' => 'contact']],
             'responsible_user' => ['id' => '9d5a0466-b4ce-0bb6-b375-f26c92de7d72'],
             'source' => ['id' => 'origen'],
+            'custom_fields' => [],
+            'tags' => [],
+            'created_at' => '2026-01-01T10:00:00+00:00',
+            'updated_at' => '2026-09-01T10:00:00+00:00',
+        ];
+    }
+
+    private function projectPayload(string $id, string $contactId, string $title): array
+    {
+        return [
+            'id' => $id,
+            'title' => $title,
+            'status' => 'active',
+            'customer' => ['id' => $contactId, 'type' => 'contact'],
+            'budget' => ['amount' => 2500, 'currency' => 'EUR'],
+            'responsible_user' => ['id' => '9d5a0466-b4ce-0bb6-b375-f26c92de7d72'],
+            'participants' => [],
+            'milestones' => [],
             'custom_fields' => [],
             'tags' => [],
             'created_at' => '2026-01-01T10:00:00+00:00',

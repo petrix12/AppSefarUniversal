@@ -9,6 +9,7 @@ use App\Jobs\Teamleader\SyncDocumentsJob;
 use App\Models\TlContact;
 use App\Models\TlDeal;
 use App\Models\TlDocument;
+use App\Models\TlProject;
 use App\Models\TlSyncLog;
 use App\Services\TeamleaderService;
 use Illuminate\Http\RedirectResponse;
@@ -73,13 +74,14 @@ class TlContactController extends Controller
     }
 
     /**
-     * Pulls the current contact and all of its deals from Teamleader into the
+     * Pulls the current contact, deals, and projects from Teamleader into the
      * local mirror. It never updates Teamleader itself or imports documents.
      */
     public function refresh(string $id, TeamleaderService $teamleader): RedirectResponse
     {
         $contact = TlContact::findOrFail($id);
         $localDealIds = $contact->deals()->pluck('id')->all();
+        $localProjectIds = $contact->projects()->pluck('id')->all();
 
         try {
             $remoteContact = $teamleader->getContactById($contact->id);
@@ -114,6 +116,33 @@ class TlContactController extends Controller
                     ]);
                 }
             }
+
+            $remoteProjectIds = $this->remoteProjectIdsForContact($teamleader, $contact->id);
+            $projectIds = array_values(array_unique(array_merge($localProjectIds, $remoteProjectIds)));
+            $updatedProjects = 0;
+            $failedProjects = 0;
+
+            foreach ($projectIds as $projectId) {
+                try {
+                    $project = $teamleader->getProjectDetails($projectId);
+                    if (! is_array($project) || empty($project['id'])) {
+                        $failedProjects++;
+                        continue;
+                    }
+
+                    TlProject::fromTeamleader($project);
+                    $updatedProjects++;
+                } catch (TeamleaderRateLimitException|TeamleaderAuthenticationException $exception) {
+                    throw $exception;
+                } catch (\Throwable $exception) {
+                    $failedProjects++;
+                    Log::channel('teamleader')->warning('Teamleader: no se pudo actualizar un proyecto desde la ficha de contacto', [
+                        'contact_id' => $contact->id,
+                        'project_id' => $projectId,
+                        'error' => $exception->getMessage(),
+                    ]);
+                }
+            }
         } catch (TeamleaderRateLimitException $exception) {
             return back()->with('error', 'Teamleader aplicó un límite temporal. Espera '.max(1, $exception->retryAfterSeconds()).' segundos e inténtalo de nuevo.');
         } catch (TeamleaderAuthenticationException $exception) {
@@ -140,11 +169,14 @@ class TlContactController extends Controller
             'user_id' => auth()->id(),
             'deals_updated' => $updatedDeals,
             'deals_failed' => $failedDeals,
+            'projects_updated' => $updatedProjects,
+            'projects_failed' => $failedProjects,
         ]);
 
-        $message = "Información actualizada desde Teamleader. Contacto sincronizado y {$updatedDeals} trato(s) actualizado(s).";
-        if ($failedDeals) {
-            $message .= " {$failedDeals} trato(s) no pudieron actualizarse; revisa el log de Teamleader.";
+        $message = "Información actualizada desde Teamleader. Contacto sincronizado, {$updatedDeals} trato(s) y {$updatedProjects} proyecto(s) actualizado(s).";
+        $failedRecords = $failedDeals + $failedProjects;
+        if ($failedRecords) {
+            $message .= " {$failedRecords} registro(s) no pudieron actualizarse; revisa el log de Teamleader.";
         }
 
         return redirect()->route('teamleader.contacts.show', $contact->id)->with('status', $message);
@@ -223,5 +255,23 @@ class TlContactController extends Controller
         } while ($hasMore);
 
         return array_values(array_unique($dealIds));
+    }
+
+    private function remoteProjectIdsForContact(TeamleaderService $teamleader, string $contactId): array
+    {
+        $page = 1;
+        $perPage = 100;
+        $projectIds = [];
+
+        do {
+            $response = $teamleader->listProjectsByContactId($contactId, $page, $perPage);
+            $items = collect($response['data'] ?? []);
+            $projectIds = array_merge($projectIds, $items->pluck('id')->filter()->all());
+            $matches = (int) data_get($response, 'meta.matches', 0);
+            $hasMore = $items->count() === $perPage && ($matches === 0 || $page * $perPage < $matches);
+            $page++;
+        } while ($hasMore);
+
+        return array_values(array_unique($projectIds));
     }
 }
