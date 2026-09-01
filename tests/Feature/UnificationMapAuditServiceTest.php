@@ -340,6 +340,17 @@ class UnificationMapAuditServiceTest extends TestCase
             fn (array $relation) => in_array($relation['left']['entity_type'], ['client', 'contact'], true)
                 && in_array($relation['right']['entity_type'], ['business', 'deal', 'project'], true)
         ));
+
+        $response = app(UnificationMapController::class)->fields(
+            Request::create('/admin/unification-map/fields', 'GET', [
+                'provider' => 'hubspot',
+                'entity_type' => 'deal',
+            ]),
+            app(UnificationMapAuditService::class),
+        );
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertCount(1, $response->getData(true)['data']);
+        $this->assertSame('deal', $response->getData(true)['data'][0]['entity_type']);
     }
 
     public function test_ai_evaluates_the_two_explicitly_selected_fields_even_when_they_are_not_an_automatic_match(): void
@@ -404,7 +415,7 @@ class UnificationMapAuditServiceTest extends TestCase
         $this->assertDatabaseCount('integration_field_mappings', 0);
     }
 
-    public function test_it_saves_multiple_ai_recommendations_only_as_audit_proposals(): void
+    public function test_it_approves_multiple_ai_recommendations_as_design_without_creating_operational_mappings(): void
     {
         DB::table('assoc_tl_hs')->insert([
             [
@@ -435,6 +446,7 @@ class UnificationMapAuditServiceTest extends TestCase
         $user = new \App\Models\User;
         $user->id = 999;
         $request = Request::create('/admin/unification-map/relations/bulk', 'POST', [
+            'status' => 'approved',
             'relations' => [[
                 'left_provider' => 'teamleader',
                 'left_entity_type' => 'contact',
@@ -474,7 +486,7 @@ class UnificationMapAuditServiceTest extends TestCase
             'right_provider' => 'hubspot',
             'right_field_key' => 'estado_documental',
             'match_method' => 'ai_batch',
-            'status' => 'proposed',
+            'status' => 'approved',
         ]);
         $this->assertDatabaseHas('unification_audit_relations', [
             'left_provider' => 'teamleader',
@@ -482,7 +494,7 @@ class UnificationMapAuditServiceTest extends TestCase
             'right_provider' => 'hubspot',
             'right_field_key' => 'name',
             'match_method' => 'ai_batch',
-            'status' => 'proposed',
+            'status' => 'approved',
         ]);
         $this->assertDatabaseCount('integration_field_mappings', 0);
     }

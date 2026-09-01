@@ -55,6 +55,7 @@ class UnificationMapController extends Controller
     {
         $data = $request->validate([
             'provider' => ['required', Rule::in(UnificationAuditRelation::PROVIDERS)],
+            'entity_type' => ['nullable', 'string', 'max:64'],
             'search' => ['nullable', 'string', 'max:120'],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:10', 'max:100'],
@@ -65,6 +66,7 @@ class UnificationMapController extends Controller
             $data['search'] ?? null,
             (int) ($data['page'] ?? 1),
             (int) ($data['per_page'] ?? 50),
+            $data['entity_type'] ?? null,
         ));
     }
 
@@ -473,6 +475,7 @@ class UnificationMapController extends Controller
             'relations.*.right_field_label' => ['nullable', 'string', 'max:255'],
             'relations.*.confidence' => ['nullable', 'integer', 'between:0,100'],
             'relations.*.reason' => ['nullable', 'string', 'max:500'],
+            'status' => ['nullable', Rule::in(['proposed', 'approved'])],
             'notes' => ['nullable', 'string', 'max:5000'],
         ]);
         $configuredLimit = $this->batchCandidateLimit();
@@ -543,7 +546,7 @@ class UnificationMapController extends Controller
                 'right_field_label' => $right['label'],
                 'match_method' => 'ai_batch',
                 'confidence' => $relation['confidence'] ?? null,
-                'status' => 'proposed',
+                'status' => $data['status'] ?? 'proposed',
                 'notes' => ($data['notes'] ?? null) ?: ($relation['reason'] ?? null),
                 'created_by_user_id' => $request->user()->id,
                 'metadata' => ['created_from' => 'unification_map_ai_batch'],
@@ -559,7 +562,7 @@ class UnificationMapController extends Controller
         return response()->json([
             'created' => count($records),
             'skipped_existing' => $skippedExisting,
-            'message' => count($records).' propuesta(s) guardada(s) para auditoría. No se creó ningún mapeo activo ni se sincronizaron datos.',
+            'message' => count($records).' relación(es) guardada(s) para auditoría. No se creó ningún mapeo activo ni se sincronizaron datos.',
         ]);
     }
 

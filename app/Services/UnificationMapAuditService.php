@@ -249,12 +249,15 @@ class UnificationMapAuditService
      * Keeps the relation builder responsive even when a provider has many
      * hundreds of fields or Monday boards.
      */
-    public function paginatedFieldOptions(string $provider, ?string $search, int $page, int $perPage): array
+    public function paginatedFieldOptions(string $provider, ?string $search, int $page, int $perPage, ?string $entityType = null): array
     {
         $options = $this->fieldOptions();
         $term = $this->normalise((string) $search);
         $fields = collect($options[$provider] ?? [])
-            ->filter(function (array $field) use ($term): bool {
+            ->filter(function (array $field) use ($term, $entityType): bool {
+                if (filled($entityType) && ($field['entity_type'] ?? null) !== $entityType) {
+                    return false;
+                }
                 if ($term === '') {
                     return true;
                 }

@@ -11,7 +11,7 @@
         <div class="btn-group">
             <a href="{{ route('unification-map.diagram') }}" class="btn btn-outline-primary"><i class="fas fa-project-diagram mr-1"></i>Diagrama ER</a>
             @if($summary['relation_storage_ready'])
-                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#newAuditRelationModal">
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#relationSetupModal">
                     <i class="fas fa-plus mr-1"></i>Relacionar dos plataformas
                 </button>
             @else
@@ -310,11 +310,39 @@
     @endif
 
     @if($summary['relation_storage_ready'])
+        <div class="modal fade" id="relationSetupModal" tabindex="-1" role="dialog" aria-labelledby="relationSetupTitle" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document"><div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title" id="relationSetupTitle">Paso 1 de 2 · Elegir plataformas y módulos</h5><button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button></div>
+                <div class="modal-body">
+                    <div class="alert alert-info small">Elige los dos sistemas y el módulo que quieres comparar. En Monday, el módulo es el tablero. Después verás solo los campos de esos módulos y podrás pedir la revisión IA.</div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Primera plataforma</label>
+                            <select id="setup-left-provider" class="form-control setup-provider"><option value="app">App</option><option value="hubspot">HubSpot</option><option value="teamleader">Teamleader</option><option value="monday">Monday</option></select>
+                            <label class="mt-2">Módulo</label>
+                            <select id="setup-left-module" class="form-control setup-module"></select>
+                            <div id="setup-left-monday-board-wrap" class="d-none mt-2"><label>Tablero Monday</label><select id="setup-left-monday-board" class="form-control setup-monday-board"><option value="">Selecciona un tablero</option></select></div>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>Segunda plataforma</label>
+                            <select id="setup-right-provider" class="form-control setup-provider"><option value="hubspot">HubSpot</option><option value="app">App</option><option value="teamleader">Teamleader</option><option value="monday">Monday</option></select>
+                            <label class="mt-2">Módulo</label>
+                            <select id="setup-right-module" class="form-control setup-module"></select>
+                            <div id="setup-right-monday-board-wrap" class="d-none mt-2"><label>Tablero Monday</label><select id="setup-right-monday-board" class="form-control setup-monday-board"><option value="">Selecciona un tablero</option></select></div>
+                        </div>
+                    </div>
+                    <div id="relation-setup-message" class="small text-muted">Selecciona dos plataformas y módulos comparables.</div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button><button type="button" class="btn btn-primary" id="continue-relation-setup" disabled>Ver campos asociables <i class="fas fa-arrow-right ml-1"></i></button></div>
+            </div></div>
+        </div>
+
         <div class="modal fade" id="newAuditRelationModal" tabindex="-1" role="dialog" aria-labelledby="newAuditRelationTitle" aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document"><form method="POST" action="{{ route('unification-map.relations.store') }}" class="modal-content" id="audit-relation-form">@csrf
-                <div class="modal-header"><h5 class="modal-title" id="newAuditRelationTitle">Relacionar dos plataformas para auditoría</h5><button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button></div>
+                <div class="modal-header"><h5 class="modal-title" id="newAuditRelationTitle">Paso 2 de 2 · Campos asociables</h5><button type="button" class="btn btn-sm btn-outline-secondary mr-3" id="change-relation-setup"><i class="fas fa-sliders-h mr-1"></i>Cambiar plataformas/módulos</button><button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button></div>
                 <div class="modal-body">
                     <div class="alert alert-info small">Selecciona dos extremos de la misma entidad: Contacto/cliente ↔ Contacto, o Negocio ↔ Deal/Proyecto. Para Monday, escoge un tablero por cada extremo; puedes asociar columnas de tableros distintos. Esta conexión es de diseño: no copia datos, no crea campos y no activa ninguna sincronización.</div>
+                    <div id="relation-configuration-summary" class="alert alert-light border small py-2">Primero configura las plataformas y módulos.</div>
                     <div class="mb-3">
                         <button type="button" id="ai-suggest-platform-pair" class="btn btn-sm btn-outline-info" @if(! $summary['ai_suggestions_available']) disabled title="Configura OPENROUTER_API_KEY para habilitarlo" @endif>
                             <i class="fas fa-magic mr-1"></i>IA: revisar este par
@@ -420,8 +448,8 @@
         let automaticRelations = [];
         const automaticState = {page: 1, hasMore: false, total: 0};
         const relationFieldState = {
-            left: {fields: [], page: 0, hasMore: false, selectedIdentity: null, requestId: 0},
-            right: {fields: [], page: 0, hasMore: false, selectedIdentity: null, requestId: 0},
+            left: {fields: [], page: 0, hasMore: false, selectedIdentity: null, requestId: 0, module: null},
+            right: {fields: [], page: 0, hasMore: false, selectedIdentity: null, requestId: 0, module: null},
         };
 
         window.selectMap = function (index) {
@@ -500,6 +528,132 @@
             picker.value = selected;
         }
 
+        const providerModules = {
+            app: [{value: 'client', label: 'Contactos / clientes'}, {value: 'business', label: 'Negocios'}],
+            hubspot: [{value: 'contact', label: 'Contacts'}, {value: 'deal', label: 'Deals'}],
+            teamleader: [{value: 'contact', label: 'Contactos'}, {value: 'project', label: 'Proyectos'}],
+            monday: [{value: 'item', label: 'Tablero Monday'}],
+        };
+
+        const moduleFamily = (module) => ({
+            client: 'contact', contact: 'contact',
+            business: 'commercial', deal: 'commercial', project: 'commercial',
+            item: 'workflow',
+        }[module] || module || '');
+
+        function selectedSetup(side) {
+            return {
+                provider: document.getElementById(`setup-${side}-provider`)?.value || '',
+                module: document.getElementById(`setup-${side}-module`)?.value || '',
+                boardId: document.getElementById(`setup-${side}-monday-board`)?.value || '',
+            };
+        }
+
+        function moduleLabel(provider, module) {
+            return (providerModules[provider] || []).find((item) => item.value === module)?.label || module || 'Sin módulo';
+        }
+
+        async function renderSetupModules(side) {
+            const provider = document.getElementById(`setup-${side}-provider`);
+            const module = document.getElementById(`setup-${side}-module`);
+            const boardWrap = document.getElementById(`setup-${side}-monday-board-wrap`);
+            const board = document.getElementById(`setup-${side}-monday-board`);
+            if (!provider || !module || !boardWrap || !board) return;
+
+            const previous = module.value;
+            module.innerHTML = (providerModules[provider.value] || []).map((item) => `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`).join('');
+            module.value = [...module.options].some((item) => item.value === previous) ? previous : (module.options[0]?.value || '');
+            const isMonday = provider.value === 'monday';
+            boardWrap.classList.toggle('d-none', !isMonday);
+            if (isMonday) {
+                try {
+                    await ensureMondayBoards();
+                    const previousBoard = board.value;
+                    board.innerHTML = '<option value="">Selecciona un tablero</option>';
+                    mondayBoards.forEach((item) => {
+                        const option = document.createElement('option');
+                        option.value = item.id;
+                        option.textContent = item.name;
+                        board.appendChild(option);
+                    });
+                    board.value = previousBoard;
+                } catch (error) {
+                    board.innerHTML = '<option value="">No se pudieron cargar los tableros</option>';
+                }
+            }
+            updateRelationSetup();
+        }
+
+        function setupCanContinue(left, right) {
+            if (!providersCanBeCompared(left.provider, right.provider) || !left.module || !right.module) return false;
+            const leftFamily = moduleFamily(left.module);
+            const rightFamily = moduleFamily(right.module);
+            if (leftFamily !== rightFamily && leftFamily !== 'workflow' && rightFamily !== 'workflow') return false;
+            if ((left.provider === 'monday' && !left.boardId) || (right.provider === 'monday' && !right.boardId)) return false;
+            if (left.provider === 'monday' && right.provider === 'monday' && left.boardId === right.boardId) return false;
+
+            return true;
+        }
+
+        function updateRelationSetup() {
+            const left = selectedSetup('left');
+            const right = selectedSetup('right');
+            const button = document.getElementById('continue-relation-setup');
+            const message = document.getElementById('relation-setup-message');
+            const ready = setupCanContinue(left, right);
+            if (button) button.disabled = !ready;
+            if (!message) return;
+            if (ready) {
+                message.className = 'small text-success';
+                message.textContent = 'Configuración válida. Continúa para elegir los campos que la IA revisará.';
+            } else if (left.provider === right.provider && left.provider !== 'monday') {
+                message.className = 'small text-warning';
+                message.textContent = 'Selecciona plataformas distintas. La única excepción permitida es Monday entre dos tableros distintos.';
+            } else if (moduleFamily(left.module) !== moduleFamily(right.module)
+                && moduleFamily(left.module) !== 'workflow' && moduleFamily(right.module) !== 'workflow') {
+                message.className = 'small text-warning';
+                message.textContent = 'No se pueden mezclar contactos/clientes con negocios/deals/proyectos.';
+            } else if ((left.provider === 'monday' && !left.boardId) || (right.provider === 'monday' && !right.boardId)) {
+                message.className = 'small text-warning';
+                message.textContent = 'Selecciona el tablero de Monday para cada extremo.';
+            } else {
+                message.className = 'small text-muted';
+                message.textContent = 'Selecciona dos plataformas y módulos comparables.';
+            }
+        }
+
+        async function applyRelationSetup() {
+            const left = selectedSetup('left');
+            const right = selectedSetup('right');
+            if (!setupCanContinue(left, right)) return;
+
+            const setup = {left, right};
+            for (const side of ['left', 'right']) {
+                const endpoint = setup[side];
+                document.getElementById(`relation-${side}-provider`).value = endpoint.provider;
+                relationFieldState[side].module = endpoint.provider === 'monday' ? null : endpoint.module;
+                if (endpoint.provider === 'monday') {
+                    await ensureMondayBoards();
+                    renderMondayBoardPicker(side);
+                    document.getElementById(`relation-${side}-monday-board`).value = endpoint.boardId;
+                }
+            }
+            aiBatchPairs = [];
+            clearPlatformAiSuggestions();
+            const summary = document.getElementById('relation-configuration-summary');
+            if (summary) {
+                const describe = (endpoint) => `${endpoint.provider === 'app' ? 'App' : endpoint.provider === 'hubspot' ? 'HubSpot' : endpoint.provider === 'teamleader' ? 'Teamleader' : 'Monday'} · ${endpoint.provider === 'monday' ? (mondayBoards || []).find((item) => String(item.id) === String(endpoint.boardId))?.name || `Tablero ${endpoint.boardId}` : moduleLabel(endpoint.provider, endpoint.module)}`;
+                summary.innerHTML = `<strong>Configuración:</strong> ${escapeHtml(describe(left))} <i class="fas fa-arrows-alt-h mx-1 text-muted"></i> ${escapeHtml(describe(right))}. Estos son los únicos módulos cuyos campos se mostrarán.`;
+            }
+            if (window.jQuery) {
+                window.jQuery('#relationSetupModal').modal('hide');
+                window.jQuery('#newAuditRelationModal').modal('show');
+            }
+            await Promise.all(['left', 'right'].map((side) => loadRelationFields(side)));
+            updatePairAiButton();
+            renderAiBatch();
+        }
+
         function renderRelationPicker(side, message = null) {
             const picker = document.getElementById(`relation-${side}-field-picker`);
             const more = document.getElementById(`relation-${side}-field-more`);
@@ -573,7 +727,10 @@
                 per_page: '50',
             });
             if (provider.value === 'monday') params.set('board_id', mondayBoard.value);
-            else params.set('provider', provider.value);
+            else {
+                params.set('provider', provider.value);
+                if (state.module) params.set('entity_type', state.module);
+            }
 
             try {
                 const payload = await fetchJson(`${provider.value === 'monday' ? mondayFieldsUrl : fieldsUrl}?${params.toString()}`);
@@ -704,9 +861,11 @@
 
         function updatePairAiButton() {
             const button = document.getElementById('ai-suggest-platform-pair');
-            const selection = selectedPairPayload();
-            const {left, right} = selection;
-            if (button) button.disabled = !aiAvailable || !providersCanBeCompared(left, right);
+            if (!button) return;
+            button.disabled = !aiAvailable;
+            button.title = aiAvailable
+                ? 'Selecciona los campos y pide la revisión IA.'
+                : 'Configura OPENROUTER_API_KEY para habilitarlo.';
         }
 
         function clearPlatformAiSuggestions() {
@@ -731,7 +890,7 @@
             };
         }
 
-        async function storeSelectedAiSuggestions(items) {
+        async function storeSelectedAiSuggestions(items, status = 'proposed') {
             const target = document.getElementById('ai-platform-suggestions');
             const selected = [...target.querySelectorAll('.ai-relation-selection:checked')]
                 .map((checkbox) => items[Number(checkbox.dataset.aiIndex)])
@@ -740,22 +899,23 @@
                 window.alert('Selecciona al menos una sugerencia para guardarla como propuesta de auditoría.');
                 return;
             }
-            if (!window.confirm(`¿Guardar ${selected.length} propuesta(s) para auditoría? No se activará ningún mapeo ni sincronización.`)) return;
+            const action = status === 'approved' ? 'aprobar como diseño' : 'guardar para auditoría';
+            if (!window.confirm(`¿${action.charAt(0).toUpperCase() + action.slice(1)} ${selected.length} relación(es)? No se activará ningún mapeo ni sincronización.`)) return;
 
-            const button = target.querySelector('.store-ai-suggestions');
-            if (button) button.disabled = true;
+            const buttons = [...target.querySelectorAll('.store-ai-suggestions, .approve-ai-suggestions')];
+            buttons.forEach((button) => button.disabled = true);
             try {
                 const response = await fetch(bulkStoreUrl, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken},
-                    body: JSON.stringify({relations: selected.map(serialiseAiRelation)}),
+                    body: JSON.stringify({relations: selected.map(serialiseAiRelation), status}),
                 });
                 const payload = await response.json().catch(() => ({}));
                 if (!response.ok) throw new Error(payload.message || `No se pudieron guardar las propuestas (HTTP ${response.status}).`);
                 target.className = 'alert alert-success small mt-2 mb-0';
-                target.textContent = `${payload.message || 'Propuestas guardadas para auditoría.'} Recarga el mapa para verlas en la cola de revisión.`;
+                target.textContent = `${payload.message || 'Relaciones guardadas para auditoría.'} ${status === 'approved' ? 'Quedaron aprobadas como diseño y pueden servir de puente en el mapa.' : 'Quedaron pendientes de revisión.'} Recarga el mapa para verlas.`;
             } catch (error) {
-                if (button) button.disabled = false;
+                buttons.forEach((button) => button.disabled = false);
                 target.className = 'alert alert-warning small mt-2 mb-0';
                 target.textContent = error.message || 'No se pudieron guardar las propuestas de auditoría.';
             }
@@ -776,18 +936,33 @@
                 ? ` · ${suggestion.candidate_count} pareja(s) evaluada(s) en ${suggestion.batch_count} llamada(s)`
                 : '';
             target.className = 'alert alert-info small mt-2 mb-0';
-            target.innerHTML = `<strong>IA · ${items.length} sugerencia(s) para revisar${batchInfo}</strong><ul class="mb-1 pl-3 mt-2">${items.map((item, index) => `<li class="mb-2"><label class="mb-0"><input type="checkbox" class="ai-relation-selection mr-1" data-ai-index="${index}" checked><strong>${escapeHtml(item.left.label)} ↔ ${escapeHtml(item.right.label)}</strong></label> <span class="badge badge-info">${escapeHtml(item.confidence)}%</span><br>${escapeHtml(item.reason || 'Sin explicación adicional.')}<br><button type="button" class="btn btn-xs btn-outline-primary mt-1 use-ai-relation" data-ai-index="${index}">Editar individualmente</button></li>`).join('')}</ul><button type="button" class="btn btn-sm btn-outline-success store-ai-suggestions">Guardar seleccionadas para auditoría</button><br><small>Modelo: ${escapeHtml(suggestion.model)}. Requiere revisión humana; no se activó ningún mapeo.</small>`;
+            target.innerHTML = `<strong>IA · ${items.length} sugerencia(s) para revisar${batchInfo}</strong><ul class="mb-1 pl-3 mt-2">${items.map((item, index) => `<li class="mb-2"><label class="mb-0"><input type="checkbox" class="ai-relation-selection mr-1" data-ai-index="${index}" checked><strong>${escapeHtml(item.left.label)} ↔ ${escapeHtml(item.right.label)}</strong></label> <span class="badge badge-info">${escapeHtml(item.confidence)}%</span><br>${escapeHtml(item.reason || 'Sin explicación adicional.')}<br><button type="button" class="btn btn-xs btn-outline-primary mt-1 use-ai-relation" data-ai-index="${index}">Editar individualmente</button></li>`).join('')}</ul><button type="button" class="btn btn-sm btn-outline-secondary store-ai-suggestions">Guardar para revisión</button><button type="button" class="btn btn-sm btn-outline-success ml-1 approve-ai-suggestions">Aprobar como diseño</button><br><small>Aprobar solo registra el diseño auditado y habilita puentes en este mapa; no crea mapeos ni sincronizaciones.</small>`;
             target.querySelectorAll('.use-ai-relation').forEach((item) => item.addEventListener('click', () => {
                 openSuggestedRelation(items[Number(item.dataset.aiIndex)]);
             }));
             target.querySelector('.store-ai-suggestions')?.addEventListener('click', () => storeSelectedAiSuggestions(items));
+            target.querySelector('.approve-ai-suggestions')?.addEventListener('click', () => storeSelectedAiSuggestions(items, 'approved'));
         }
 
         async function requestAiSuggestion(payload, button, busyText, contextLabel, idleHtml) {
             const {left, right} = selectedPlatformPair();
-            if (!aiAvailable || !providersCanBeCompared(left, right)) return;
-
             const target = document.getElementById('ai-platform-suggestions');
+            if (!aiAvailable) {
+                target.className = 'alert alert-warning small mt-2 mb-0';
+                target.textContent = 'OPENROUTER_API_KEY no está disponible en esta instancia.';
+                return;
+            }
+            if (!providersCanBeCompared(left, right)) {
+                target.className = 'alert alert-warning small mt-2 mb-0';
+                target.textContent = 'Selecciona dos plataformas distintas; Monday solo puede compararse entre tableros distintos.';
+                return;
+            }
+            if (!Array.isArray(payload.batch_pairs) && (!payload.left_field_key || !payload.right_field_key)) {
+                target.className = 'alert alert-warning small mt-2 mb-0';
+                target.textContent = 'Primero elige un campo en cada módulo. El botón permanece disponible para que puedas ver esta indicación.';
+                return;
+            }
+
             button.disabled = true;
             button.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i>${busyText}`;
             target.className = 'alert alert-info small mt-2 mb-0';
@@ -827,10 +1002,25 @@
             requestAiSuggestion({left_provider: left, right_provider: right, batch_pairs: aiBatchPairs}, this, 'Analizando lote', `el lote de ${aiBatchPairs.length} pareja(s)`, '<i class="fas fa-magic mr-1"></i>IA: revisar lote');
         });
 
+        ['left', 'right'].forEach((side) => {
+            document.getElementById(`setup-${side}-provider`)?.addEventListener('change', () => renderSetupModules(side));
+            document.getElementById(`setup-${side}-module`)?.addEventListener('change', updateRelationSetup);
+            document.getElementById(`setup-${side}-monday-board`)?.addEventListener('change', updateRelationSetup);
+            renderSetupModules(side);
+        });
+        document.getElementById('continue-relation-setup')?.addEventListener('click', applyRelationSetup);
+        document.getElementById('change-relation-setup')?.addEventListener('click', () => {
+            if (window.jQuery) {
+                window.jQuery('#newAuditRelationModal').modal('hide');
+                window.jQuery('#relationSetupModal').modal('show');
+            }
+        });
+
         const fieldSearchTimers = {};
         ['left', 'right'].forEach((side) => {
             document.getElementById(`relation-${side}-provider`)?.addEventListener('change', () => {
                 aiBatchPairs = [];
+                relationFieldState[side].module = null;
                 clearPlatformAiSuggestions();
                 updatePairAiButton();
                 loadRelationFields(side);
