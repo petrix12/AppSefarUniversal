@@ -14,6 +14,15 @@
         <div class="d-flex flex-wrap" style="gap:.4rem">
             @can('administrador')
                 <form method="POST"
+                      action="{{ route('teamleader.contacts.refresh', $contact->id) }}"
+                      class="d-inline"
+                      onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').innerHTML = '<i class=&quot;fas fa-spinner fa-spin mr-1&quot;></i> Actualizando';">
+                    @csrf
+                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-sync-alt mr-1"></i> Actualizar información
+                    </button>
+                </form>
+                <form method="POST"
                       action="{{ route('teamleader.contacts.documents.import', $contact->id) }}"
                       class="d-inline"
                       onsubmit="return confirm('Importar archivos de este contacto desde Teamleader hacia S3?');">

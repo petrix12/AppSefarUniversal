@@ -209,6 +209,32 @@ class TeamleaderService
     }
 
     /**
+     * Lista exclusivamente los deals cuyo cliente actual es un contacto.
+     */
+    public function listDealsByContactId(string $contactId, int $page = 1, int $size = 100): array
+    {
+        if (! $this->isValidUuid($contactId)) {
+            throw new \InvalidArgumentException('El identificador del contacto Teamleader no es válido.');
+        }
+
+        $response = $this->teamleaderPost('deals.list', [
+            'filter' => [
+                'customer' => [
+                    'type' => 'contact',
+                    'id' => $contactId,
+                ],
+            ],
+            'page' => ['size' => $size, 'number' => $page],
+        ]);
+
+        if (! $response->successful()) {
+            throw new \Exception('Error listando deals del contacto: ' . $response->body());
+        }
+
+        return $response->json();
+    }
+
+    /**
      * Obtener documentos de una entidad
      * $type puede ser: 'contact', 'company', 'deal', 'project'
      */

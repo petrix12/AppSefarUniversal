@@ -316,7 +316,7 @@
                 <div class="modal-body">
                     <div class="alert alert-info small">Selecciona dos extremos de la misma entidad: Contacto/cliente ↔ Contacto, o Negocio ↔ Deal/Proyecto. Para Monday, escoge un tablero por cada extremo; puedes asociar columnas de tableros distintos. Esta conexión es de diseño: no copia datos, no crea campos y no activa ninguna sincronización.</div>
                     <div class="mb-3">
-                        <button type="button" id="ai-suggest-platform-pair" class="btn btn-sm btn-outline-info" disabled @if(! $summary['ai_suggestions_available']) title="Configura OPENROUTER_API_KEY para habilitarlo" @endif>
+                        <button type="button" id="ai-suggest-platform-pair" class="btn btn-sm btn-outline-info" @if(! $summary['ai_suggestions_available']) disabled title="Configura OPENROUTER_API_KEY para habilitarlo" @endif>
                             <i class="fas fa-magic mr-1"></i>IA: revisar este par
                         </button>
                         <small class="d-block text-muted mt-1">Con ambos campos seleccionados, analiza solo esa pareja; si no hay selección, revisa como máximo 40 coincidencias locales. No envía datos de clientes ni guarda una relación.</small>
@@ -832,12 +832,14 @@
             document.getElementById(`relation-${side}-provider`)?.addEventListener('change', () => {
                 aiBatchPairs = [];
                 clearPlatformAiSuggestions();
+                updatePairAiButton();
                 loadRelationFields(side);
                 renderAiBatch();
             });
             document.getElementById(`relation-${side}-monday-board`)?.addEventListener('change', () => {
                 aiBatchPairs = [];
                 clearPlatformAiSuggestions();
+                updatePairAiButton();
                 loadRelationFields(side);
                 renderAiBatch();
             });
