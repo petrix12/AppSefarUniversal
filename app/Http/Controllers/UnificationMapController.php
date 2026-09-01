@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\UnificationAuditLink;
 use App\Models\UnificationAuditRelation;
+use App\Services\ExternalPlatformFieldCatalogService;
 use App\Services\MondayCatalogService;
 use App\Services\UnificationAiSuggestionService;
 use App\Services\UnificationMapAuditService;
@@ -24,7 +25,11 @@ class UnificationMapController extends Controller
         $this->middleware(['auth', 'can:administrador']);
     }
 
-    public function map(Request $request, UnificationMapAuditService $map): mixed
+    public function map(
+        Request $request,
+        UnificationMapAuditService $map,
+        ?ExternalPlatformFieldCatalogService $catalogues = null,
+    ): mixed
     {
         $data = $request->validate([
             'q' => ['nullable', 'string', 'max:120'],
@@ -44,11 +49,39 @@ class UnificationMapController extends Controller
         $inventory['audited_relations'] = $inventory['audited_relations_pagination']->items();
         $inventory['audited_links_pagination'] = $this->paginateItems($inventory['audited_links'], $request, 'audit_page', 20);
         $inventory['audited_links'] = $inventory['audited_links_pagination']->items();
+        $inventory['catalog_status'] = ($catalogues ?? app(ExternalPlatformFieldCatalogService::class))->status();
 
         // Field pickers query their own compact endpoint on demand.
         unset($inventory['field_options']);
 
         return view('unification-map.index', $inventory);
+    }
+
+    /**
+     * Explicitly refreshes external field metadata. It never reads CRM item
+     * values and it does not write to any integration or canonical table.
+     */
+    public function refreshCatalogues(Request $request, ExternalPlatformFieldCatalogService $catalogues): JsonResponse
+    {
+        $data = $request->validate([
+            'providers' => ['nullable', 'array', 'min:1', 'max:3'],
+            'providers.*' => ['required', Rule::in(['hubspot', 'teamleader', 'monday'])],
+        ]);
+
+        $providers = $data['providers'] ?? ['hubspot', 'teamleader', 'monday'];
+        $immediate = array_values(array_diff($providers, ['monday']));
+        $report = $catalogues->refresh($immediate);
+
+        if (in_array('monday', $providers, true)) {
+            $report['providers']['monday'] = $catalogues->startMondayRefresh();
+        }
+
+        return response()->json($report);
+    }
+
+    public function catalogueStatus(ExternalPlatformFieldCatalogService $catalogues): JsonResponse
+    {
+        return response()->json(['providers' => $catalogues->status()]);
     }
 
     public function fields(Request $request, UnificationMapAuditService $map): JsonResponse

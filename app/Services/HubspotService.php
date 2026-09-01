@@ -85,6 +85,60 @@ class HubspotService
         return true;
     }
 
+    /**
+     * Reads property definitions only. This intentionally does not fetch any
+     * Contact or Deal records, so it is safe to use from the audit catalogue.
+     *
+     * @return array<int, array{key:string,label:string,type:?string,field_type:?string,group:?string,description:?string}>
+     */
+    public function propertyCatalog(string $objectType): array
+    {
+        if (! in_array($objectType, ['contacts', 'deals'], true)) {
+            throw new \InvalidArgumentException('El catálogo de HubSpot solo admite Contacts o Deals.');
+        }
+
+        try {
+            $properties = $this->hubspot
+                ->crm()
+                ->properties()
+                ->coreApi()
+                ->getAll($objectType)
+                ->getResults();
+
+            return collect($properties)
+                ->map(function ($property): array {
+                    $read = static function ($object, string $method): ?string {
+                        if (! method_exists($object, $method)) {
+                            return null;
+                        }
+
+                        $value = $object->{$method}();
+
+                        return $value === null || $value === '' ? null : (string) $value;
+                    };
+
+                    return [
+                        // HubSpot identifies a property by its API name.
+                        'key' => (string) $property->getName(),
+                        'label' => $read($property, 'getLabel') ?: (string) $property->getName(),
+                        'type' => $read($property, 'getType'),
+                        'field_type' => $read($property, 'getFieldType'),
+                        'group' => $read($property, 'getGroupName'),
+                        'description' => $read($property, 'getDescription'),
+                    ];
+                })
+                ->filter(fn (array $property): bool => $property['key'] !== '')
+                ->unique('key')
+                ->sortBy('label', SORT_NATURAL | SORT_FLAG_CASE)
+                ->values()
+                ->all();
+        } catch (PropertiesApiException $exception) {
+            throw new \RuntimeException('HubSpot no permitió leer su catálogo de propiedades (HTTP '.$exception->getCode().'): '.$exception->getMessage(), 0, $exception);
+        } catch (\Throwable $exception) {
+            throw new \RuntimeException('No fue posible leer el catálogo de propiedades de HubSpot: '.$exception->getMessage(), 0, $exception);
+        }
+    }
+
     public function getAllContactsByOwnerId(
         string $ownerId,
         array $properties = ['email', 'firstname', 'lastname', 'hubspot_owner_id'],

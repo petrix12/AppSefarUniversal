@@ -10,23 +10,18 @@ class MondayCatalogService
 {
     private const API_URL = 'https://api.monday.com/v2';
 
-    public function boards(): array
+    public function boards(bool $refresh = false): array
     {
-        return Cache::remember('monday.catalog.boards', now()->addMinutes(10), function (): array {
+        if ($refresh) {
+            Cache::forget('monday.catalog.boards');
+        }
+
+        return Cache::remember('monday.catalog.boards', now()->addMinutes(10), function () use ($refresh): array {
             $boards = collect();
             $page = 1;
 
             do {
-                $data = $this->query(<<<'GRAPHQL'
-                    query ($page: Int!) {
-                        boards(limit: 100, page: $page) {
-                            id
-                            name
-                        }
-                    }
-                    GRAPHQL, ['page' => $page]);
-
-                $pageBoards = collect(data_get($data, 'boards', []));
+                $pageBoards = collect($this->boardPage($page, $refresh));
                 $boards = $boards->concat($pageBoards);
                 $page++;
             } while ($pageBoards->count() === 100 && $page <= 100);
@@ -71,8 +66,12 @@ class MondayCatalogService
         });
     }
 
-    public function columns(string $boardId): array
+    public function columns(string $boardId, bool $refresh = false): array
     {
+        if ($refresh) {
+            Cache::forget("monday.catalog.board.{$boardId}.columns");
+        }
+
         return Cache::remember("monday.catalog.board.{$boardId}.columns", now()->addMinutes(10), function () use ($boardId): array {
             $data = $this->query(<<<'GRAPHQL'
                 query ($boardId: ID!) {
@@ -96,6 +95,40 @@ class MondayCatalogService
                     'name' => (string) $column['title'],
                     'type' => (string) $column['type'],
                 ])
+                ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
+                ->values()
+                ->all();
+        });
+    }
+
+    /**
+     * Returns one bounded page so large Monday accounts can be inventoried by
+     * queued jobs without keeping a browser request open.
+     */
+    public function boardPage(int $page, bool $refresh = false): array
+    {
+        $page = max(1, min(100, $page));
+        $cacheKey = "monday.catalog.boards.page.{$page}";
+        if ($refresh) {
+            Cache::forget($cacheKey);
+        }
+
+        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($page): array {
+            $data = $this->query(<<<'GRAPHQL'
+                query ($page: Int!) {
+                    boards(limit: 100, page: $page) {
+                        id
+                        name
+                    }
+                }
+                GRAPHQL, ['page' => $page]);
+
+            return collect(data_get($data, 'boards', []))
+                ->map(fn (array $board): array => [
+                    'id' => (string) $board['id'],
+                    'name' => (string) $board['name'],
+                ])
+                ->unique('id')
                 ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
                 ->values()
                 ->all();

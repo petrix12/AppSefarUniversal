@@ -79,6 +79,10 @@ class UnificationMapAuditServiceTest extends TestCase
 
     protected function tearDown(): void
     {
+        Cache::forget('unification.external-field-catalog.hubspot');
+        Cache::forget('unification.external-field-catalog.teamleader');
+        Cache::forget('unification.external-field-catalog.monday');
+        Cache::forget('unification.external-field-catalog.monday-progress');
         $this->relationMigration->down();
         $this->auditMigration->down();
         $this->foundationMigration->down();
@@ -351,6 +355,40 @@ class UnificationMapAuditServiceTest extends TestCase
         $this->assertSame(200, $response->getStatusCode());
         $this->assertCount(1, $response->getData(true)['data']);
         $this->assertSame('deal', $response->getData(true)['data'][0]['entity_type']);
+    }
+
+    public function test_a_refreshed_remote_field_catalogue_is_available_to_the_picker_and_ai_validation(): void
+    {
+        Cache::put('unification.external-field-catalog.hubspot', [
+            'fetched_at' => now()->toIso8601String(),
+            'fields' => [[
+                'provider' => 'hubspot',
+                'entity_type' => 'contact',
+                'scope_key' => '*',
+                'scope_label' => 'Contacts',
+                'key' => 'hs_remote_passport',
+                'label' => 'Pasaporte remoto',
+                'type' => 'string · text',
+                'source' => 'HubSpot · Contacts',
+                'metadata' => ['group' => 'contactinformation'],
+            ]],
+            'meta' => [],
+        ], now()->addHour());
+
+        $response = app(UnificationMapController::class)->fields(
+            Request::create('/admin/unification-map/fields', 'GET', [
+                'provider' => 'hubspot',
+                'entity_type' => 'contact',
+                'search' => 'pasaporte remoto',
+            ]),
+            app(UnificationMapAuditService::class),
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+        $field = $response->getData(true)['data'][0];
+        $this->assertSame('hs_remote_passport', $field['key']);
+        $this->assertSame('Pasaporte remoto', $field['label']);
+        $this->assertSame('HubSpot · Contacts', $field['source']);
     }
 
     public function test_ai_evaluates_the_two_explicitly_selected_fields_even_when_they_are_not_an_automatic_match(): void

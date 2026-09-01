@@ -198,6 +198,8 @@ Route::middleware(['auth', 'can:administrador'])
     ->name('unification-map.')
     ->group(function () {
         Route::get('/', [UnificationMapController::class, 'map'])->name('index');
+        Route::post('/catalogues/refresh', [UnificationMapController::class, 'refreshCatalogues'])->name('catalogues.refresh');
+        Route::get('/catalogues/status', [UnificationMapController::class, 'catalogueStatus'])->name('catalogues.status');
         Route::get('/fields', [UnificationMapController::class, 'fields'])->name('fields');
         Route::get('/monday/boards', [UnificationMapController::class, 'mondayBoards'])->name('monday.boards');
         Route::get('/monday/fields', [UnificationMapController::class, 'mondayFields'])->name('monday.fields');

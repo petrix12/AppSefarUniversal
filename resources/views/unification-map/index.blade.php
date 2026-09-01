@@ -10,6 +10,7 @@
         </div>
         <div class="btn-group">
             <a href="{{ route('unification-map.diagram') }}" class="btn btn-outline-primary"><i class="fas fa-project-diagram mr-1"></i>Diagrama ER</a>
+            <button type="button" class="btn btn-outline-secondary refresh-unification-catalogues"><i class="fas fa-cloud-download-alt mr-1"></i>Actualizar catálogos</button>
             @if($summary['relation_storage_ready'])
                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#relationSetupModal">
                     <i class="fas fa-plus mr-1"></i>Relacionar dos plataformas
@@ -36,8 +37,8 @@
 
     <div class="alert alert-warning border-warning audit-notice">
         <i class="fas fa-shield-alt mr-1"></i>
-        <strong>Auditoría primero.</strong> Este mapa solo lee los catálogos locales y guarda, si se habilita, decisiones de auditoría.
-        El catálogo de Monday se consulta únicamente al elegir un tablero en el selector. No crea campos en <code>users</code>, no crea <code>integration_field_mappings</code>, no activa automatizaciones y no mueve clientes entre tableros.
+        <strong>Auditoría primero.</strong> Este mapa lee catálogos locales y, cuando pulsas <em>Actualizar catálogos</em>, solo metadatos remotos de campo (nombre, clave/ID, tipo y módulo).
+        No lee valores de contactos, negocios, proyectos o items. No crea campos en <code>users</code>, no crea <code>integration_field_mappings</code>, no activa automatizaciones y no mueve clientes entre tableros.
         <br><strong>Entidades separadas:</strong> contacto/cliente no equivale a negocio. El mapa distingue <code>users ↔ HubSpot Contacts ↔ Teamleader Contacts</code> de <code>negocios ↔ HubSpot Deals ↔ Teamleader Projects</code> y no propone cruces entre ambos.
     </div>
 
@@ -52,7 +53,7 @@
             <div class="small-box bg-info"><div class="inner"><h3>{{ $summary['hubspot_fields'] }}</h3><p>{{ $summary['hubspot_contact_fields'] }} Contacts · {{ $summary['hubspot_deal_fields'] }} Deals</p></div><div class="icon"><i class="fab fa-hubspot"></i></div></div>
         </div>
         <div class="col-lg-3 col-sm-6">
-            <div class="small-box bg-success"><div class="inner"><h3>{{ $summary['teamleader_fields'] }}</h3><p>{{ $summary['teamleader_contact_fields'] }} contactos · {{ $summary['teamleader_project_fields'] }} proyectos</p></div><div class="icon"><i class="fas fa-people-arrows"></i></div></div>
+            <div class="small-box bg-success"><div class="inner"><h3>{{ $summary['teamleader_fields'] }}</h3><p>{{ $summary['teamleader_contact_fields'] }} contactos · {{ $summary['teamleader_deal_fields'] }} deals · {{ $summary['teamleader_project_fields'] }} proyectos</p></div><div class="icon"><i class="fas fa-people-arrows"></i></div></div>
         </div>
         <div class="col-lg-3 col-sm-6">
             <div class="small-box bg-primary"><div class="inner"><h3>{{ $summary['app_fields'] }}</h3><p>{{ $summary['client_app_fields'] }} clientes · {{ $summary['business_app_fields'] }} negocios</p></div><div class="icon"><i class="fas fa-database"></i></div></div>
@@ -315,6 +316,13 @@
                 <div class="modal-header"><h5 class="modal-title" id="relationSetupTitle">Paso 1 de 2 · Elegir plataformas y módulos</h5><button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button></div>
                 <div class="modal-body">
                     <div class="alert alert-info small">Elige los dos sistemas y el módulo que quieres comparar. En Monday, el módulo es el tablero. Después verás solo los campos de esos módulos y podrás pedir la revisión IA.</div>
+                    <div class="d-flex flex-wrap align-items-center mb-3">
+                        <button type="button" class="btn btn-sm btn-outline-secondary refresh-unification-catalogues"><i class="fas fa-cloud-download-alt mr-1"></i>Traer todos los catálogos remotos</button>
+                        <small class="text-muted ml-2">Lee nombres, claves/IDs, tipos y módulos; no trae valores de clientes.</small>
+                    </div>
+                    <div id="catalogue-refresh-status" class="small text-muted mb-3">
+                        HubSpot: {{ $catalog_status['hubspot']['field_count'] }} campos{{ $catalog_status['hubspot']['fetched_at'] ? ' · última actualización '.$catalog_status['hubspot']['fetched_at'] : ' · pendiente de actualizar' }}. Teamleader: {{ $catalog_status['teamleader']['field_count'] }} campos{{ $catalog_status['teamleader']['fetched_at'] ? ' · última actualización '.$catalog_status['teamleader']['fetched_at'] : ' · pendiente de actualizar' }}. Monday: {{ $catalog_status['monday']['field_count'] }} columnas{{ $catalog_status['monday']['fetched_at'] ? ' · última actualización '.$catalog_status['monday']['fetched_at'] : ' · pendiente de actualizar' }}.
+                    </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label>Primera plataforma</label>
@@ -347,7 +355,7 @@
                         <button type="button" id="ai-suggest-platform-pair" class="btn btn-sm btn-outline-info" @if(! $summary['ai_suggestions_available']) disabled title="Configura OPENROUTER_API_KEY para habilitarlo" @endif>
                             <i class="fas fa-magic mr-1"></i>IA: revisar este par
                         </button>
-                        <small class="d-block text-muted mt-1">Con ambos campos seleccionados, analiza solo esa pareja; si no hay selección, revisa como máximo 40 coincidencias locales. No envía datos de clientes ni guarda una relación.</small>
+                        <small class="d-block text-muted mt-1">Con ambos campos seleccionados, analiza solo esa pareja; si no hay selección, revisa como máximo 40 coincidencias del catálogo disponible. No envía datos de clientes ni guarda una relación.</small>
                         <div id="ai-platform-suggestions" class="alert alert-info small mt-2 mb-0 d-none" role="status"></div>
                         <div class="border rounded bg-light p-2 mt-2" id="ai-batch-builder">
                             <div class="d-flex flex-wrap align-items-center">
@@ -427,6 +435,8 @@
         const suggestUrl = @json(route('unification-map.suggest'));
         const bulkStoreUrl = @json(route('unification-map.relations.bulk'));
         const fieldsUrl = @json(route('unification-map.fields'));
+        const catalogueRefreshUrl = @json(route('unification-map.catalogues.refresh'));
+        const catalogueStatusUrl = @json(route('unification-map.catalogues.status'));
         const mondayBoardsUrl = @json(route('unification-map.monday.boards'));
         const mondayFieldsUrl = @json(route('unification-map.monday.fields'));
         const automaticRelationsUrl = @json(route('unification-map.relations.automatic'));
@@ -445,6 +455,7 @@
         let aiBatchPairs = [];
         let mondayBoards = null;
         let mondayBoardsRequest = null;
+        let catalogueStatusTimer = null;
         let automaticRelations = [];
         const automaticState = {page: 1, hasMore: false, total: 0};
         const relationFieldState = {
@@ -493,6 +504,110 @@
             return payload;
         }
 
+        async function refreshExternalCatalogues() {
+            const buttons = [...document.querySelectorAll('.refresh-unification-catalogues')];
+            const status = document.getElementById('catalogue-refresh-status');
+            buttons.forEach((button) => {
+                button.disabled = true;
+                button.dataset.idleHtml = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Actualizando…';
+            });
+            if (status) {
+                status.className = 'alert alert-info small mb-3';
+                status.textContent = 'Leyendo únicamente metadatos de HubSpot, Teamleader y todos los tableros de Monday. Puede tardar si Monday tiene muchos tableros.';
+            }
+
+            try {
+                const response = await fetch(catalogueRefreshUrl, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken},
+                    body: JSON.stringify({providers: ['hubspot', 'teamleader', 'monday']}),
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(payload.message || `No se pudieron actualizar los catálogos (HTTP ${response.status}).`);
+
+                const report = Object.entries(payload.providers || {}).map(([provider, result]) => {
+                    const title = provider === 'hubspot' ? 'HubSpot' : provider === 'teamleader' ? 'Teamleader' : 'Monday';
+                    if (result.in_progress) {
+                        const progress = result.board_count === null || result.board_count === undefined
+                            ? 'preparando tableros'
+                            : `${result.processed_boards || 0}/${result.board_count} tableros`;
+                        return `${title}: actualización en curso (${progress})`;
+                    }
+                    if (result.ok) {
+                        const warning = result.unavailable_boards?.length
+                            ? ` · ${result.unavailable_boards.length} tablero(s) de Monday no disponible(s)`
+                            : '';
+                        return `${title}: ${result.field_count || 0} campo(s)${warning}`;
+                    }
+                    return `${title}: ERROR · ${result.message || 'sin detalle'}${result.cached ? ` (se conserva el último catálogo de ${result.field_count || 0} campos)` : ''}`;
+                });
+                const failed = Object.values(payload.providers || {}).some((result) => !result.ok);
+                if (status) {
+                    status.className = `alert alert-${failed ? 'warning' : 'success'} small mb-3`;
+                    status.textContent = `${report.join(' · ')}. Los selectores ya usan el catálogo actualizado; recarga el mapa si quieres actualizar los contadores superiores.`;
+                }
+
+                if (payload.providers?.monday?.in_progress) {
+                    pollMondayCatalogueStatus();
+                }
+
+                // The server cache was refreshed, so discard any browser copy
+                // of boards and reload visible field lists from the new metadata.
+                mondayBoards = null;
+                await Promise.all(['left', 'right'].map((side) => {
+                    const provider = document.getElementById(`relation-${side}-provider`);
+                    return provider?.value ? loadRelationFields(side) : Promise.resolve();
+                }));
+            } catch (error) {
+                if (status) {
+                    status.className = 'alert alert-danger small mb-3';
+                    status.textContent = error.message || 'No se pudieron actualizar los catálogos remotos.';
+                } else {
+                    window.alert(error.message || 'No se pudieron actualizar los catálogos remotos.');
+                }
+            } finally {
+                buttons.forEach((button) => {
+                    button.disabled = false;
+                    button.innerHTML = button.dataset.idleHtml || '<i class="fas fa-cloud-download-alt mr-1"></i>Actualizar catálogos';
+                });
+            }
+        }
+
+        async function pollMondayCatalogueStatus() {
+            if (catalogueStatusTimer) window.clearTimeout(catalogueStatusTimer);
+            const status = document.getElementById('catalogue-refresh-status');
+            try {
+                const payload = await fetchJson(catalogueStatusUrl);
+                const monday = payload.providers?.monday || {};
+                const progress = monday.refresh || {};
+                const total = progress.total;
+                const processed = progress.processed || 0;
+                if (status && progress.status) {
+                    if (progress.status === 'completed') {
+                        status.className = 'alert alert-success small mb-3';
+                        status.textContent = `Monday: catálogo completo actualizado (${monday.field_count || 0} columnas en ${total || 0} tableros; ${progress.unavailable_boards?.length || 0} no disponibles). Recarga el mapa para actualizar los contadores superiores.`;
+                    } else if (progress.status === 'failed') {
+                        status.className = 'alert alert-danger small mb-3';
+                        status.textContent = `Monday: la actualización del catálogo falló. ${progress.message || 'Sin detalle.'}`;
+                    } else {
+                        status.className = 'alert alert-info small mb-3';
+                        status.textContent = total === null || total === undefined
+                            ? 'Monday: preparando la lista completa de tableros…'
+                            : `Monday: ${processed}/${total} tableros procesados; ${monday.field_count || 0} columnas de metadatos disponibles hasta ahora.`;
+                    }
+                }
+                if (['queued', 'running'].includes(progress.status)) {
+                    catalogueStatusTimer = window.setTimeout(pollMondayCatalogueStatus, 4000);
+                }
+            } catch (error) {
+                if (status) {
+                    status.className = 'alert alert-warning small mb-3';
+                    status.textContent = `No se pudo consultar el progreso de Monday: ${error.message || 'sin detalle.'}`;
+                }
+            }
+        }
+
         async function ensureMondayBoards() {
             if (mondayBoards) return mondayBoards;
             if (!mondayBoardsRequest) {
@@ -531,7 +646,7 @@
         const providerModules = {
             app: [{value: 'client', label: 'Contactos / clientes'}, {value: 'business', label: 'Negocios'}],
             hubspot: [{value: 'contact', label: 'Contacts'}, {value: 'deal', label: 'Deals'}],
-            teamleader: [{value: 'contact', label: 'Contactos'}, {value: 'project', label: 'Proyectos'}],
+            teamleader: [{value: 'contact', label: 'Contactos / empresas'}, {value: 'deal', label: 'Deals'}, {value: 'project', label: 'Proyectos'}],
             monday: [{value: 'item', label: 'Tablero Monday'}],
         };
 
@@ -1000,6 +1115,9 @@
             const {left, right} = selectedPlatformPair();
             if (!aiBatchPairs.length || !providersCanBeCompared(left, right)) return;
             requestAiSuggestion({left_provider: left, right_provider: right, batch_pairs: aiBatchPairs}, this, 'Analizando lote', `el lote de ${aiBatchPairs.length} pareja(s)`, '<i class="fas fa-magic mr-1"></i>IA: revisar lote');
+        });
+        document.querySelectorAll('.refresh-unification-catalogues').forEach((button) => {
+            button.addEventListener('click', refreshExternalCatalogues);
         });
 
         ['left', 'right'].forEach((side) => {

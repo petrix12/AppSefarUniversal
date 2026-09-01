@@ -209,6 +209,33 @@ class TeamleaderService
     }
 
     /**
+     * Lists Teamleader custom-field definitions, never contact/project values.
+     * The API id is retained so the unification audit can use the exact
+     * platform identifier instead of guessing from a label.
+     */
+    public function listCustomFieldDefinitions(int $page = 1, int $size = 100): array
+    {
+        $response = $this->teamleaderPost('customFieldDefinitions.list', [
+            'page' => [
+                'size' => max(1, min(100, $size)),
+                'number' => max(1, $page),
+            ],
+        ], [
+            'X-Api-Version' => '2023-10-01',
+        ]);
+
+        if (! $response->successful()) {
+            $message = data_get($response->json(), 'errors.0.title')
+                ?: data_get($response->json(), 'message')
+                ?: 'sin detalle de Teamleader.';
+
+            throw new \RuntimeException("Teamleader no permitió leer las definiciones de campos (HTTP {$response->status()}): {$message}");
+        }
+
+        return (array) $response->json();
+    }
+
+    /**
      * Lista exclusivamente los deals cuyo cliente actual es un contacto.
      */
     public function listDealsByContactId(string $contactId, int $page = 1, int $size = 100): array

@@ -17,6 +17,11 @@ use Illuminate\Support\Str;
  */
 class UnificationMapAuditService
 {
+    public function __construct(
+        private readonly ExternalPlatformFieldCatalogService $externalCatalog,
+    ) {
+    }
+
     public function inventory(bool $includeAutomaticRelations = true): array
     {
         $legacyLinks = $this->legacyLinks();
@@ -164,6 +169,7 @@ class UnificationMapAuditService
                 'hubspot_contact_fields' => collect($platformFields['hubspot'])->where('entity_type', 'contact')->count(),
                 'hubspot_deal_fields' => collect($platformFields['hubspot'])->where('entity_type', 'deal')->count(),
                 'teamleader_contact_fields' => collect($platformFields['teamleader'])->where('entity_type', 'contact')->count(),
+                'teamleader_deal_fields' => collect($platformFields['teamleader'])->where('entity_type', 'deal')->count(),
                 'teamleader_project_fields' => collect($platformFields['teamleader'])->where('entity_type', 'project')->count(),
                 'app_legacy_columns' => collect($legacyLinks)->filter(fn (array $link) => $link['app_field']['storage'] === 'users')->pluck('hubspot_key')->unique()->count(),
                 'monday_fields' => count($platformFields['monday']),
@@ -224,9 +230,9 @@ class UnificationMapAuditService
     }
 
     /**
-     * Returns the selectable local catalog without building map rows or
-     * automatic suggestions. Controllers use this for validation and the
-     * field picker endpoint so a large catalog is never sent to the browser.
+     * Returns the selectable audit catalog without building map rows or
+     * automatic suggestions. It merges only an already-refreshed remote
+     * metadata cache; it never makes a remote request while this method runs.
      */
     public function fieldOptions(): array
     {
@@ -794,6 +800,27 @@ class UnificationMapAuditService
             ]));
         }
 
+        // A remote catalogue is deliberately opt-in: it is populated by the
+        // administrator's refresh action and contains definitions only, never
+        // contact, deal, project or Monday item values.
+        $external = $this->externalCatalog->cachedFields();
+        foreach ($external['hubspot'] ?? [] as $field) {
+            $hubspot->put(($field['entity_type'] ?? 'contact').'|'.($field['key'] ?? ''), $field);
+        }
+        foreach ($external['teamleader'] ?? [] as $field) {
+            $teamleader->put(($field['entity_type'] ?? 'contact').'|'.($field['key'] ?? ''), $field);
+        }
+
+        $mergedMonday = collect($mondayFields)
+            ->map(fn (array $field) => array_merge($field, [
+                'provider' => 'monday',
+                'entity_type' => 'item',
+            ]))
+            ->keyBy(fn (array $field) => ($field['scope_key'] ?? '*').'|'.$field['key']);
+        foreach ($external['monday'] ?? [] as $field) {
+            $mergedMonday->put(($field['scope_key'] ?? '*').'|'.($field['key'] ?? ''), $field);
+        }
+
         return [
             'app' => collect($clientFields)->map(fn (array $field) => array_merge($field, [
                 'provider' => 'app',
@@ -812,10 +839,10 @@ class UnificationMapAuditService
                 ->sortBy('label')
                 ->values()
                 ->all(),
-            'monday' => collect($mondayFields)->map(fn (array $field) => array_merge($field, [
-                'provider' => 'monday',
-                'entity_type' => 'item',
-            ]))->values()->all(),
+            'monday' => $mergedMonday
+                ->sortBy(fn (array $field) => ($field['scope_label'] ?? $field['scope_key'] ?? '').'|'.($field['label'] ?? ''), SORT_NATURAL | SORT_FLAG_CASE)
+                ->values()
+                ->all(),
         ];
     }
 
