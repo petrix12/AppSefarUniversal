@@ -1244,16 +1244,8 @@ class ClienteController extends Controller
     }
 
     public function tree(){
-        if (Auth::user()->roles->first()->name == "Cliente"){
-            if($this->clientHasPendingInitialPayment(Auth::user()) || Auth::user()->pay==0){
-                return redirect()->route('clientes.pay');
-            }
-            if(Auth::user()->pay==1 || auth()->user()->pay == 3){
-                return redirect()->route('clientes.getinfo');
-            }
-            if(Auth::user()->contrato==0){
-                return redirect()->route('cliente.contrato');
-            }
+        if ($redirect = $this->redirectClientUnlessOnboardingRoute('clientes.tree')) {
+            return $redirect;
         }
         $IDCliente = Auth::user()->passport;
         $user = Auth::user();
@@ -1609,16 +1601,8 @@ class ClienteController extends Controller
     }
 
     public function hermanoscliente(){
-        if (Auth::user()->roles->first()->name == "Cliente"){
-            if($this->clientHasPendingInitialPayment(Auth::user()) || Auth::user()->pay==0){
-                return redirect()->route('clientes.pay');
-            }
-            if(Auth::user()->pay==1 || auth()->user()->pay == 3){
-                return redirect()->route('clientes.getinfo');
-            }
-            if(Auth::user()->contrato==0){
-                return redirect()->route('cliente.contrato');
-            }
+        if ($redirect = $this->redirectClientUnlessOnboardingRoute('clientes.tree')) {
+            return $redirect;
         }
 
         $usermain = User::where('id', '=', auth()->user()->id)->get();
@@ -1628,16 +1612,8 @@ class ClienteController extends Controller
     }
 
     public function contrato(){
-        if (Auth::user()->roles->first()->name == "Cliente"){
-            if($this->clientHasPendingInitialPayment(Auth::user()) || Auth::user()->pay==0){
-                return redirect()->route('clientes.pay');
-            }
-            if(Auth::user()->pay==1 || auth()->user()->pay == 3){
-                return redirect()->route('clientes.getinfo');
-            }
-            if(Auth::user()->contrato==1){
-                return redirect('/tree');
-            }
+        if ($redirect = $this->redirectClientUnlessOnboardingRoute('cliente.contrato')) {
+            return $redirect;
         }
         return view('clientes.contrato');
     }
@@ -1729,13 +1705,10 @@ class ClienteController extends Controller
     }
 
     public function getinfo(){
-        if (Auth::user()->roles->first()->name == "Cliente"){
-            if($this->clientHasPendingInitialPayment(Auth::user()) || Auth::user()->pay==0){
-                return redirect()->route('clientes.pay');
-            }
-            if((Auth::user()->pay==2 || auth()->user()->cerocerouno == 1) && !session('force_getinfo')){
-                return redirect('/tree');
-            }
+        $destination = $this->clientOnboardingRoute();
+
+        if ($destination === 'clientes.pay' || (! session('force_getinfo') && $destination && $destination !== 'clientes.getinfo')) {
+            return redirect()->route($destination);
         }
         return view('clientes.getinfo');
     }
@@ -1982,16 +1955,11 @@ class ClienteController extends Controller
     }
 
     public function pay(){
-        $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->whereNull('deal_id')->get();
-
-        if (Auth::user()->roles->first()->name == "Cliente"){
-            if ($compras->isEmpty() && Auth::user()->pay==2){
-                $IDCliente = Auth::user()->passport;
-                return redirect('/tree');
-            } else if($compras->isEmpty() && (Auth::user()->pay==1 || Auth::user()->pay==3)){
-                return redirect()->route('clientes.getinfo');
-            }
+        if ($redirect = $this->redirectClientUnlessOnboardingRoute('clientes.pay')) {
+            return $redirect;
         }
+
+        $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->whereNull('deal_id')->get();
 
         if (auth()->user()->tiene_hermanos==1 || auth()->user()->tiene_hermanos=="1" || auth()->user()->tiene_hermanos=="Si") {
             $servicio = Servicio::where('id_hubspot', 'like', auth()->user()->servicio . '% - Hermano')->get();

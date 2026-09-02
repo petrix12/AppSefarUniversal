@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Country;
 use App\Models\User;
+use App\Support\ClientOnboardingFlow;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
@@ -31,6 +32,32 @@ class Controller extends BaseController
             ->where('pagado', 0)
             ->whereNull('deal_id')
             ->exists();
+    }
+
+    protected function clientOnboardingRoute(?User $user = null): ?string
+    {
+        $user = $user ?: Auth::user();
+
+        if (! $user || ! $user->hasRole('Cliente')) {
+            return null;
+        }
+
+        return ClientOnboardingFlow::destination(
+            (int) $user->pay,
+            (bool) $user->contrato,
+            $this->clientHasPendingInitialPayment($user)
+        );
+    }
+
+    protected function redirectClientUnlessOnboardingRoute(string $allowedRoute, ?User $user = null)
+    {
+        $destination = $this->clientOnboardingRoute($user);
+
+        if ($destination && $destination !== $allowedRoute) {
+            return redirect()->route($destination);
+        }
+
+        return null;
     }
 
     public function index()
@@ -94,14 +121,8 @@ class Controller extends BaseController
             return redirect()->route('docs.index');
         }
 
-        if (Auth::user()->hasRole('Cliente')) {
-            if ($this->clientHasPendingInitialPayment(Auth::user()) || Auth::user()->pay == 0) {
-                return redirect()->route('clientes.pay');
-            } elseif (Auth::user()->pay == 1 || Auth::user()->pay == 3) {
-                return redirect()->route('clientes.getinfo');
-            }
-
-            return redirect('/tree');
+        if ($destination = $this->clientOnboardingRoute(Auth::user())) {
+            return redirect()->route($destination);
         }
 
         $countries = Country::where('pais', '!=', 'aanull')
