@@ -15,7 +15,7 @@ use Monday;
 
 class ClientCosSnapshotService
 {
-    private const CACHE_TTL_DAYS = 5;
+    private const DEFAULT_CACHE_TTL_DAYS = 30;
 
     private const MONDAY_BOARD_IDS = [
         878831315,
@@ -69,7 +69,7 @@ class ClientCosSnapshotService
         $user = $user->fresh() ?? $user;
         $sync = [
             'external' => $syncExternal,
-            'cache' => ['hit' => false, 'ttl_days' => self::CACHE_TTL_DAYS],
+            'cache' => ['hit' => false, 'ttl_days' => $this->cacheTtlDays()],
             'hubspot' => ['attempted' => false, 'contact' => false, 'deals' => 0, 'linked_contact' => false],
             'teamleader' => ['attempted' => false, 'contact' => false, 'deals' => 0],
             'local_deals' => ['received' => 0, 'inserted' => 0, 'updated' => 0],
@@ -112,7 +112,7 @@ class ClientCosSnapshotService
         });
 
         $user->arraycos = array_values($cosuserFinal);
-        $user->arraycos_expire = Carbon::now()->addDays(self::CACHE_TTL_DAYS);
+        $user->arraycos_expire = Carbon::now()->addDays($this->cacheTtlDays());
         $user->cosready = $this->checkCosReady($cosuserFinal, $cos);
         $user->save();
 
@@ -147,6 +147,11 @@ class ClientCosSnapshotService
         }
 
         return Carbon::parse($user->arraycos_expire)->isFuture();
+    }
+
+    private function cacheTtlDays(): int
+    {
+        return max(1, (int) config('cos_snapshot.cache_ttl_days', self::DEFAULT_CACHE_TTL_DAYS));
     }
 
     private function fromCache(User $user, float $startedAt): array

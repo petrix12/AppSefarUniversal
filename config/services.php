@@ -63,7 +63,12 @@ return [
         'key' => env('OPENROUTER_API_KEY'),
         'url' => 'https://openrouter.ai/api/v1/chat/completions',
         'model' => 'openai/gpt-4o-mini',
-        'unification_model' => env('OPENROUTER_UNIFICATION_MODEL', 'mistralai/mistral-small-24b-instruct-2501'),
+        // More capable than the previous small model while keeping the field
+        // audit inexpensive. It is scoped only to the unification screen.
+        'unification_model' => env('OPENROUTER_UNIFICATION_MODEL', 'qwen/qwen3-32b'),
+        // OpenRouter tries these only when the primary model/provider fails
+        // (including HTTP 429), so the stronger fallback is not the default cost.
+        'unification_fallback_models' => env('OPENROUTER_UNIFICATION_FALLBACK_MODELS', 'google/gemini-2.5-flash'),
         'unification_timeout' => env('OPENROUTER_UNIFICATION_TIMEOUT', 30),
         // Per-request size. Larger selected batches are split into these
         // chunks so a user can review more than one model request safely.

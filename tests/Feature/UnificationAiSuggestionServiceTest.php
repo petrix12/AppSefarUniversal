@@ -43,7 +43,7 @@ class UnificationAiSuggestionServiceTest extends TestCase
             $prompt = json_decode((string) data_get($request->data(), 'messages.1.content'), true);
 
             return $request->url() === 'https://openrouter.test/chat'
-                && $request['model'] === 'qwen/qwen3.5-flash-02-23'
+                && $request['models'] === ['qwen/qwen3.5-flash-02-23', 'google/gemini-2.5-flash']
                 && data_get($request->data(), 'provider.require_parameters') === true
                 && data_get($request->data(), 'response_format.type') === 'json_object'
                 && data_get($prompt, 'left_platform') === 'app'

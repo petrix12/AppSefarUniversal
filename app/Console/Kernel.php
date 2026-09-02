@@ -34,6 +34,11 @@ class Kernel extends ConsoleKernel
         $schedule->command('followups:registration-payment')
         ->dailyAt('09:00')
         ->withoutOverlapping();
+        $schedule->command('cos:refresh-active-clients')
+            ->dailyAt('02:15')
+            ->timezone('America/Caracas')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/cos-refresh-active-clients.log'));
         $schedule->command('automations:run --limit=100')
             ->everyMinute()
             ->withoutOverlapping();

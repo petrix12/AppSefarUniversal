@@ -37,12 +37,13 @@ class UnificationAiSuggestionService
         if ($candidates === []) {
             return [
                 'suggestions' => [],
-                'model' => config('services.openrouter.unification_model', 'mistralai/mistral-small-24b-instruct-2501'),
+                'model' => $this->primaryModel(),
                 'candidate_limit' => $candidateLimit,
                 'used_ai' => false,
             ];
         }
 
+        $models = $this->models();
         $response = Http::timeout((int) config('services.openrouter.unification_timeout', 30))
             ->retry(1, 250, throw: false)
             ->withHeaders([
@@ -53,7 +54,9 @@ class UnificationAiSuggestionService
                 'X-OpenRouter-Metadata' => 'enabled',
             ])
             ->post(config('services.openrouter.url'), [
-                'model' => config('services.openrouter.unification_model', 'mistralai/mistral-small-24b-instruct-2501'),
+                // `models` enables OpenRouter's own failover: a 429 from the
+                // primary model/provider tries the next configured model.
+                'models' => $models,
                 'messages' => $this->pairMessages($leftProvider, $rightProvider, $candidates),
                 'temperature' => 0.1,
                 'max_tokens' => 700,
@@ -63,7 +66,7 @@ class UnificationAiSuggestionService
             ]);
 
         if (! $response->successful()) {
-            throw new RuntimeException($this->apiErrorMessage($response->status(), $response->json(), $response->body(), $apiKey));
+            throw new RuntimeException($this->apiErrorMessage($response->status(), $response->json(), $response->body(), $apiKey, $models));
         }
 
         $content = trim((string) data_get($response->json(), 'choices.0.message.content', ''));
@@ -76,7 +79,12 @@ class UnificationAiSuggestionService
 
         $suggestion = $this->decodeSuggestion($content);
 
-        return $this->normalisePairSuggestions($suggestion, $candidates, $candidateLimit);
+        return $this->normalisePairSuggestions(
+            $suggestion,
+            $candidates,
+            $candidateLimit,
+            (string) data_get($response->json(), 'model', $this->primaryModel()),
+        );
     }
 
     /**
@@ -100,7 +108,7 @@ class UnificationAiSuggestionService
         if ($candidates === []) {
             return [
                 'suggestions' => [],
-                'model' => config('services.openrouter.unification_model', 'mistralai/mistral-small-24b-instruct-2501'),
+                'model' => $this->primaryModel(),
                 'candidate_limit' => $this->perRequestCandidateLimit(),
                 'candidate_count' => 0,
                 'batch_count' => 0,
@@ -117,7 +125,7 @@ class UnificationAiSuggestionService
 
         return [
             'suggestions' => collect($suggestions)->unique('identity')->values()->all(),
-            'model' => config('services.openrouter.unification_model', 'mistralai/mistral-small-24b-instruct-2501'),
+            'model' => $this->primaryModel(),
             'candidate_limit' => $this->perRequestCandidateLimit(),
             'candidate_count' => $candidateCount,
             'batch_count' => count($chunks),
@@ -249,7 +257,7 @@ class UnificationAiSuggestionService
         ];
     }
 
-    private function normalisePairSuggestions(array $suggestion, array $candidates, int $candidateLimit): array
+    private function normalisePairSuggestions(array $suggestion, array $candidates, int $candidateLimit, string $model): array
     {
         return [
             'suggestions' => collect($suggestion['suggestions'] ?? [])
@@ -270,13 +278,34 @@ class UnificationAiSuggestionService
                 ->unique('identity')
                 ->values()
                 ->all(),
-            'model' => config('services.openrouter.unification_model', 'mistralai/mistral-small-24b-instruct-2501'),
+            'model' => $model,
             'candidate_limit' => $candidateLimit,
             'used_ai' => true,
         ];
     }
 
-    private function apiErrorMessage(int $status, mixed $payload, string $body, string $apiKey): string
+    /** @return array<int, string> */
+    private function models(): array
+    {
+        $fallbacks = config('services.openrouter.unification_fallback_models', []);
+        if (is_string($fallbacks)) {
+            $fallbacks = preg_split('/\s*,\s*/', trim($fallbacks)) ?: [];
+        }
+
+        return collect(array_merge([$this->primaryModel()], is_array($fallbacks) ? $fallbacks : []))
+            ->map(fn (mixed $model) => trim((string) $model))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function primaryModel(): string
+    {
+        return trim((string) config('services.openrouter.unification_model', 'qwen/qwen3-32b')) ?: 'qwen/qwen3-32b';
+    }
+
+    private function apiErrorMessage(int $status, mixed $payload, string $body, string $apiKey, array $models): string
     {
         $providerMessage = is_array($payload)
             ? (string) (data_get($payload, 'error.message') ?: data_get($payload, 'message') ?: '')
@@ -286,7 +315,7 @@ class UnificationAiSuggestionService
         $providerMessage = preg_replace('/Bearer\s+\S+/i', 'Bearer [clave oculta]', $providerMessage) ?: '';
         $providerMessage = Str::limit(trim($providerMessage), 900, '');
 
-        $model = config('services.openrouter.unification_model', 'mistralai/mistral-small-24b-instruct-2501');
+        $model = implode(' → ', $models ?: [$this->primaryModel()]);
 
         return "OpenRouter HTTP {$status} con {$model}: ".($providerMessage ?: 'sin detalle adicional del proveedor.');
     }

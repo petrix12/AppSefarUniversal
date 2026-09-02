@@ -128,7 +128,7 @@ HTTP remoto:
 - `estado_mcp`: verifica token, usuario y endpoint.
 - `buscar_cliente`: busca clientes por nombre, email, pasaporte, telefono o ID.
 - `ver_cliente`: lee informacion basica de un cliente.
-- `ver_cos_cliente`: lee `users.arraycos` si `users.arraycos_expire` sigue vigente. Si no hay cache o pasaron 5 dias, recalcula mediante `ClientCosSnapshotService`.
+- `ver_cos_cliente`: lee `users.arraycos` si `users.arraycos_expire` sigue vigente. Si no hay cache o pasaron 30 dias, recalcula mediante `ClientCosSnapshotService`.
 - `refrescar_cos_cliente`: fuerza el flujo Laravel de COS mediante `ClientCosSnapshotService`; puede actualizar `users.arraycos`, `users.arraycos_expire`, `users.cosready` y sincronizaciones necesarias.
 - `resumen_cliente`: resume ficha, cache COS local, conteos y ultimos registros operativos sin recalcular COS.
 - `listar_negocios_cliente`: lista negocios locales asociados al cliente.
@@ -145,7 +145,7 @@ Stdio / Artisan:
 - `cerrar_sesion`: cierra la sesion MCP actual.
 - `buscar_cliente`: busca clientes por nombre, email, pasaporte, telefono o ID.
 - `ver_cliente`: lee informacion basica de un cliente.
-- `ver_cos_cliente`: lee `users.arraycos` si `users.arraycos_expire` sigue vigente. Si no hay cache o pasaron 5 dias, recalcula mediante `ClientCosSnapshotService`.
+- `ver_cos_cliente`: lee `users.arraycos` si `users.arraycos_expire` sigue vigente. Si no hay cache o pasaron 30 dias, recalcula mediante `ClientCosSnapshotService`.
 - `refrescar_cos_cliente`: fuerza el flujo Laravel de COS mediante `ClientCosSnapshotService`; puede actualizar `users.arraycos`, `users.arraycos_expire`, `users.cosready` y sincronizaciones necesarias.
 - `resumen_cliente`: resume ficha, cache COS local, conteos y ultimos registros operativos sin recalcular COS.
 - `listar_negocios_cliente`: lista negocios locales asociados al cliente.
