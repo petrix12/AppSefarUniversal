@@ -42,6 +42,7 @@ class User extends Authenticatable
         'task_assignment_daily_limit' => 'integer',
         'last_task_reassigned_at' => 'datetime',
         'task_reassignment_locked_at' => 'datetime',
+        'google_review_completed_at' => 'datetime',
     ];
 
     protected $appends = [
@@ -117,6 +118,11 @@ class User extends Authenticatable
     public function compras()
     {
         return $this->hasMany(Compras::class, 'id_user', 'id');
+    }
+
+    public function treePeople()
+    {
+        return $this->hasMany(Agcliente::class, 'IDCliente', 'passport');
     }
 
     public function owner()

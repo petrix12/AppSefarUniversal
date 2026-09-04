@@ -1577,6 +1577,7 @@
             </form>
         </div>
     </div>
+    @include('components.google-review-invitation')
 </x-app-layout>
 @stop
 

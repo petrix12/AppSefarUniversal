@@ -43,6 +43,7 @@ use App\Http\Controllers\SolicitudCuponController;
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\AdminBancaOnlineController;
 use App\Http\Controllers\GeneralCouponController;
+use App\Http\Controllers\GoogleReviewInvitationController;
 use App\Http\Controllers\BancaOnlineController;
 use App\Http\Controllers\NegocioController;
 use App\Http\Controllers\TreenaController;
@@ -787,6 +788,8 @@ Route::group(['middleware' => ['auth'], 'as' => 'arboles.'], function(){
 // Grupo de rutas para vistas de clientes
 Route::group(['middleware' => ['auth'], 'as' => 'clientes.'], function(){
     Route::get('tree', [ClienteController::class, 'tree'])->name('tree')
+        ->middleware('can:cliente');
+    Route::post('google-review', [GoogleReviewInvitationController::class, 'write'])->name('google-review')
         ->middleware('can:cliente');
     Route::get('salir', [ClienteController::class, 'salir'])->name('salir')
         ->middleware('can:cliente');

@@ -1265,6 +1265,7 @@ class ClienteController extends Controller
         $parentescos = $treeData['parentescos'];
         $treeWarnings = $treeData['warnings'];
         $treeStats = $treeData['stats'];
+        $googleReviewInvitation = app(\App\Services\GoogleReviewInvitationService::class)->canInvite($user);
         $tipoarchivos = TFile::all();
         $checkBtn = "no";
         $generacionBase = 0;
@@ -1284,7 +1285,8 @@ class ClienteController extends Controller
             'checkBtn',
             'parentnumber',
             'treeWarnings',
-            'treeStats'
+            'treeStats',
+            'googleReviewInvitation'
         ));
 
         //revisar padres
