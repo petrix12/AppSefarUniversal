@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\MondayServiceRegistration;
+use App\Models\Agcliente;
 use App\Models\Servicio;
 use App\Models\User;
 use App\Services\MondayRegistrationService;
@@ -69,6 +70,15 @@ class MondayRegistrationServiceTest extends TestCase
             $table->timestamp('synced_at')->nullable();
             $table->timestamps();
         });
+
+        Schema::create('agclientes', function (Blueprint $table) {
+            $table->id();
+            $table->string('IDCliente');
+            $table->unsignedInteger('IDPersona');
+            $table->string('Nombres')->nullable();
+            $table->string('Apellidos')->nullable();
+            $table->timestamps();
+        });
     }
 
     protected function tearDown(): void
@@ -76,6 +86,7 @@ class MondayRegistrationServiceTest extends TestCase
         Schema::dropIfExists('monday_service_registrations');
         Schema::dropIfExists('servicios');
         Schema::dropIfExists('users');
+        Schema::dropIfExists('agclientes');
         DB::disconnect('monday_registration_test');
 
         parent::tearDown();
@@ -198,5 +209,52 @@ class MondayRegistrationServiceTest extends TestCase
             $registration->syncAfterGetInfo($user, [$servicio])
         );
         Http::assertSentCount(1);
+    }
+
+    public function test_it_sends_the_parents_saved_by_getinfo_to_monday(): void
+    {
+        Http::fake([
+            'api.monday.com/v2' => Http::response([
+                'data' => ['create_item' => ['id' => 'parents-987', 'name' => 'Perez Ana']],
+            ]),
+        ]);
+
+        $user = User::withoutEvents(fn () => User::create([
+            'name' => 'Ana Perez',
+            'passport' => 'PARENTS123',
+        ]));
+        $servicio = Servicio::create([
+            'id_hubspot' => 'ANALISIS-GENEALOGICO',
+            'nombre' => 'Análisis genealógico',
+            'precio' => 100,
+            'monday_sync_enabled' => true,
+            'monday_board_id' => '878831315',
+            'monday_group_id' => 'duplicate_of_en_proceso',
+            'monday_registration_timing' => MondayRegistrationService::TIMING_AFTER_GETINFO,
+        ]);
+
+        Agcliente::create([
+            'IDCliente' => $user->passport,
+            'IDPersona' => 2,
+            'Nombres' => 'Carlos',
+            'Apellidos' => 'Pérez',
+        ]);
+        Agcliente::create([
+            'IDCliente' => $user->passport,
+            'IDPersona' => 3,
+            'Nombres' => 'María Elena Rodríguez',
+        ]);
+
+        $this->assertSame(
+            [$servicio->id => true],
+            app(MondayRegistrationService::class)->syncAfterGetInfo($user, [$servicio])
+        );
+
+        Http::assertSent(function ($request): bool {
+            $columns = json_decode($request->data()['variables']['columnValues'], true);
+
+            return $columns['texto_largo8'] === 'Carlos Pérez'
+                && $columns['texto_largo75'] === 'María Elena Rodríguez';
+        });
     }
 }

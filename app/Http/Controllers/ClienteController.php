@@ -1822,42 +1822,16 @@ class ClienteController extends Controller
                 $user->save();
             }
 
-            // Padre
-            @$nombres_y_apellidos_del_padre = trim($input['nombres_y_apellidos_del_padre']);
-            if($nombres_y_apellidos_del_padre){
-                @$padre = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',2)->first();
-                if(!$padre) {
-                    $agcliente = Agcliente::create([
-                        'IDCliente' => $user->passport,
-                        'Nombres' => $nombres_y_apellidos_del_padre,
-                        'IDPersona' => 2,
-                        'Sexo' => 'M',
-                        'IDPadre' => 4,
-                        'IDMadre' => 5,
-                        'Generacion' => 2,
-                        'FUpdate' => date('Y-m-d H:i:s'),
-                        'Usuario' => $user->email,
-                    ]);
-                }
+            // Padre y madre: además de crearlos, GetInfo debe actualizar sus
+            // nombres cuando ya existan nodos iniciales en el árbol.
+            $nombres_y_apellidos_del_padre = trim((string) ($input['nombres_y_apellidos_del_padre'] ?? ''));
+            if ($nombres_y_apellidos_del_padre !== '') {
+                $this->saveGetInfoParent($user, 2, $nombres_y_apellidos_del_padre, 'M', 4, 5);
             }
 
-            // Madre
-            @$nombres_y_apellidos_de_madre = trim($input['nombres_y_apellidos_de_madre']);
-            if($nombres_y_apellidos_de_madre){
-                @$madre = Agcliente::where('IDCliente',$user->passport)->where('IDPersona',3)->first();
-                if(!$madre) {
-                    $agcliente = Agcliente::create([
-                        'IDCliente' => $user->passport,
-                        'Nombres' => $nombres_y_apellidos_de_madre,
-                        'IDPersona' => 3,
-                        'Sexo' => 'F',
-                        'IDPadre' => 6,
-                        'IDMadre' => 7,
-                        'Generacion' => 2,
-                        'FUpdate' => date('Y-m-d H:i:s'),
-                        'Usuario' => $user->email,
-                    ]);
-                }
+            $nombres_y_apellidos_de_madre = trim((string) ($input['nombres_y_apellidos_de_madre'] ?? ''));
+            if ($nombres_y_apellidos_de_madre !== '') {
+                $this->saveGetInfoParent($user, 3, $nombres_y_apellidos_de_madre, 'F', 6, 7);
             }
 
             /* Fin de la actualización en Base de Datos */
@@ -1886,6 +1860,40 @@ class ClienteController extends Controller
 
 
 
+    }
+
+    private function saveGetInfoParent(
+        User $user,
+        int $personId,
+        string $name,
+        string $sex,
+        int $fatherId,
+        int $motherId
+    ): void {
+        $attributes = [
+            'Nombres' => $name,
+            'Sexo' => $sex,
+            'IDPadre' => $fatherId,
+            'IDMadre' => $motherId,
+            'Generacion' => 2,
+            'FUpdate' => now()->format('Y-m-d H:i:s'),
+            'Usuario' => $user->email,
+        ];
+
+        $parent = Agcliente::where('IDCliente', $user->passport)
+            ->where('IDPersona', $personId)
+            ->first();
+
+        if ($parent) {
+            $parent->fill($attributes)->save();
+
+            return;
+        }
+
+        Agcliente::create(array_merge($attributes, [
+            'IDCliente' => $user->passport,
+            'IDPersona' => $personId,
+        ]));
     }
 
     public function gotopayfases(Request $request){

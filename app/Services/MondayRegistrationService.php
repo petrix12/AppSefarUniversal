@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Agcliente;
 use App\Models\MondayServiceRegistration;
 use App\Models\Compras;
 use App\Models\Servicio;
@@ -240,6 +241,7 @@ class MondayRegistrationService
     private function columnValues(User $user, Servicio $servicio): array
     {
         $treeUrl = rtrim((string) config('app.url'), '/').'/tree/'.urlencode((string) $user->passport);
+        $parents = $this->parentNames($user);
         $values = [
             'texto' => $user->passport ?: 'N/A',
             'enlace' => ['url' => $treeUrl, 'text' => $treeUrl],
@@ -247,6 +249,9 @@ class MondayRegistrationService
             'texto1' => $servicio->id_hubspot ?: $servicio->nombre,
             'texto4' => $user->hs_id ?: '',
             'texto_largo88' => $user->nombre_de_familiar_realizando_procesos ?: '',
+            // Column IDs from the client registration board: father and mother.
+            'texto_largo8' => $parents['father'],
+            'texto_largo75' => $parents['mother'],
         ];
 
         if ($user->date_of_birth) {
@@ -254,6 +259,44 @@ class MondayRegistrationService
         }
 
         return $values;
+    }
+
+    /**
+     * GetInfo persists the direct parents as IDPersona 2 and 3. Querying by
+     * those IDs is stable even when a tree has been manually reordered.
+     *
+     * @return array{father: string, mother: string}
+     */
+    private function parentNames(User $user): array
+    {
+        $passport = trim((string) $user->passport);
+
+        if ($passport === '') {
+            return ['father' => '', 'mother' => ''];
+        }
+
+        $parents = Agcliente::query()
+            ->where('IDCliente', $passport)
+            ->whereIn('IDPersona', [2, 3])
+            ->get(['IDPersona', 'Nombres', 'Apellidos'])
+            ->keyBy('IDPersona');
+
+        return [
+            'father' => $this->personName($parents->get(2)),
+            'mother' => $this->personName($parents->get(3)),
+        ];
+    }
+
+    private function personName(?Agcliente $person): string
+    {
+        if (! $person) {
+            return '';
+        }
+
+        return trim(implode(' ', array_filter([
+            trim((string) $person->Nombres),
+            trim((string) $person->Apellidos),
+        ])));
     }
 
     private function clientName(User $user): string
