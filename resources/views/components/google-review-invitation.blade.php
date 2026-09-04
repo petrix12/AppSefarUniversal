@@ -10,11 +10,9 @@
             <div class="google-review-invitation__badge" aria-hidden="true">
                 <i class="fa-brands fa-google"></i>
             </div>
-            <p class="google-review-invitation__eyebrow">Tu opinión nos impulsa</p>
-            <h2 id="googleReviewInvitationTitle">¿Cómo fue tu experiencia con Sefar Universal?</h2>
+            <h2 id="googleReviewInvitationTitle">¿Cómo está siendo tu experiencia?</h2>
             <p id="googleReviewInvitationDescription">
-                Ya tienes cinco o más personas en tu árbol. Si nuestra atención te ha ayudado,
-                nos encantaría conocer tu opinión.
+                Ya has avanzado en tu árbol genealógico. Cuéntanos qué tal está siendo tu experiencia.
             </p>
 
             <div class="google-review-invitation__stars" aria-label="Cinco estrellas">
