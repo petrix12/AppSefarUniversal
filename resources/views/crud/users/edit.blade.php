@@ -386,59 +386,71 @@
                         @php
                             $clientHistory = $clientTeamleaderHistory ?? [];
                             $historySummary = $clientHistory['summary'] ?? [];
-                            $historyInvoices = collect($clientHistory['invoices'] ?? []);
                             $historyPaidAmounts = collect($historySummary['paid_amounts'] ?? []);
+                            $historyOutstandingAmounts = collect($historySummary['outstanding_amounts'] ?? []);
                             $portalPaymentAmount = $facturas->sum(function ($factura) {
                                 return collect($factura->compras ?? [])->sum('monto');
                             });
+                            $portalOutstandingAmount = $comprasConDealNoPagadas
+                                ->merge($comprasSinDealNoPagadas)
+                                ->sum('monto');
+
+                            $paymentSummaryByCurrency = collect([
+                                'EUR' => [
+                                    'currency' => 'EUR',
+                                    'paid' => (float) $portalPaymentAmount,
+                                    'owed' => (float) $portalOutstandingAmount,
+                                ],
+                            ]);
+
+                            $addPaymentSummaryAmount = function ($amount, string $type) use ($paymentSummaryByCurrency) {
+                                $currency = trim((string) ($amount['currency'] ?? '')) ?: 'EUR';
+                                $current = $paymentSummaryByCurrency->get($currency, [
+                                    'currency' => $currency,
+                                    'paid' => 0.0,
+                                    'owed' => 0.0,
+                                ]);
+                                $current[$type] += (float) ($amount['amount'] ?? 0);
+                                $paymentSummaryByCurrency->put($currency, $current);
+                            };
+
+                            $historyPaidAmounts->each(fn ($amount) => $addPaymentSummaryAmount($amount, 'paid'));
+                            $historyOutstandingAmounts->each(fn ($amount) => $addPaymentSummaryAmount($amount, 'owed'));
+
+                            $paymentSummaryByCurrency = $paymentSummaryByCurrency
+                                ->map(function ($amount) {
+                                    $amount['paid'] = round((float) $amount['paid'], 2);
+                                    // Teamleader puede devolver un saldo inconsistente mientras se corrige la migración.
+                                    $amount['debt'] = round(max((float) $amount['owed'] - $amount['paid'], 0), 2);
+
+                                    return $amount;
+                                })
+                                ->sortKeys()
+                                ->values();
                         @endphp
 
-                        <section class="mb-4" aria-labelledby="client-payment-summary-title" style="border:1px solid #bfdbfe; border-radius:.65rem; overflow:hidden; background:#fff;">
-                            <div style="padding:1rem 1.25rem; background:#eff6ff; border-bottom:1px solid #bfdbfe;">
-                                <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
-                                    <div>
-                                        <div class="small fw-bold text-primary text-uppercase" style="letter-spacing:.04em;">COS actualizado</div>
-                                        <h2 id="client-payment-summary-title" class="h5 fw-bold mb-1">Resumen de pagos y proceso</h2>
-                                        <p class="text-muted small mb-0">Aquí puedes revisar los pagos registrados durante tu proceso y consultar el detalle en la pestaña <strong>Pagos realizados</strong>.</p>
-                                    </div>
-                                    <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('payments-tab').click(); document.getElementById('payments-tab').scrollIntoView({ behavior: 'smooth', block: 'nearest' });">
-                                        <i class="fas fa-receipt me-1"></i>Ver pagos y facturas
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="p-3">
-                                <div class="row g-3">
-                                    <div class="col-md-4">
+                        <section class="mb-4" aria-labelledby="client-payment-summary-title">
+                            <h2 id="client-payment-summary-title" class="h5 fw-bold mb-3">Resumen de pagos</h2>
+                            <div class="row g-3">
+                                @foreach($paymentSummaryByCurrency as $amount)
+                                    <div class="col-md-6">
                                         <div class="border rounded p-3 h-100 bg-light">
-                                            <div class="small text-muted">Comprobantes en el portal</div>
-                                            <div class="h4 fw-bold mb-1">{{ $facturas->count() }}</div>
-                                            <div class="small text-muted">{{ number_format((float) $portalPaymentAmount, 2, ',', '.') }} EUR registrados</div>
+                                            <div class="small text-muted">Total pagado</div>
+                                            <div class="h4 fw-bold mb-0 text-success">{{ number_format((float) $amount['paid'], 2, ',', '.') }} {{ $amount['currency'] }}</div>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-6">
                                         <div class="border rounded p-3 h-100 bg-light">
-                                            <div class="small text-muted">Facturas históricas migradas</div>
-                                            <div class="h4 fw-bold mb-1">{{ $historyInvoices->count() }}</div>
-                                            <div class="small text-muted">{{ $clientHistory['contact'] ?? null ? 'Registros asociados a tu identidad.' : 'Aparecerán al estar disponibles en la migración.' }}</div>
+                                            <div class="small text-muted">Deuda pendiente</div>
+                                            @if($amount['debt'] > 0)
+                                                <div class="h4 fw-bold mb-0 text-danger">{{ number_format((float) $amount['debt'], 2, ',', '.') }} {{ $amount['currency'] }}</div>
+                                            @else
+                                                <div class="fw-bold text-success">No hay deudas pendientes.</div>
+                                                <div class="small text-muted">0,00 {{ $amount['currency'] }}</div>
+                                            @endif
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
-                                        <div class="border rounded p-3 h-100 bg-light">
-                                            <div class="small text-muted">Pagado en registros históricos</div>
-                                            @forelse($historyPaidAmounts as $amount)
-                                                <div class="fw-bold text-success">{{ number_format((float) ($amount['amount'] ?? 0), 2, ',', '.') }} {{ $amount['currency'] ?? '' }}</div>
-                                            @empty
-                                                <div class="h6 fw-bold mb-1">Sin montos migrados</div>
-                                            @endforelse
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="alert alert-light border small mb-0 mt-3">
-                                    <i class="fas fa-clipboard-check text-primary me-1"></i>
-                                    <strong>Información para auditoría:</strong> los comprobantes del portal y los registros migrados se muestran por separado para evitar duplicar pagos. Si identificas algún dato que requiera revisión, usa <strong>Solicitar soporte</strong> e indica el comprobante o factura.
-                                </div>
+                                @endforeach
                             </div>
                         </section>
                     @endif
@@ -2132,72 +2144,6 @@
                         </div>
                     @endif
 
-                    @if($rolId === 5)
-                        @php
-                            $clientHistory = $clientTeamleaderHistory ?? [];
-                            $historyInvoices = collect($clientHistory['invoices'] ?? []);
-                            $historySummary = $clientHistory['summary'] ?? [];
-                            $invoiceStatusLabels = [
-                                'matched' => ['label' => 'Pagada', 'class' => 'bg-success'],
-                                'paid' => ['label' => 'Pagada', 'class' => 'bg-success'],
-                                'outstanding' => ['label' => 'Pendiente', 'class' => 'bg-warning text-dark'],
-                                'late' => ['label' => 'Vencida', 'class' => 'bg-danger'],
-                                'draft' => ['label' => 'Borrador', 'class' => 'bg-secondary'],
-                            ];
-                        @endphp
-
-                        <section class="mt-4" aria-labelledby="teamleader-payment-history-title">
-                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
-                                <div>
-                                    <h3 id="teamleader-payment-history-title" class="h5 fw-bold mb-1">Historial de facturas migradas</h3>
-                                    <p class="text-muted small mb-0">Registros históricos asociados por {{ implode(' y ', $clientHistory['match_labels'] ?? []) ?: 'la identidad del cliente' }}. Se mantienen separados de los comprobantes de este portal.</p>
-                                </div>
-                                @if($historySummary['last_activity_at'] ?? null)
-                                    <span class="badge bg-light text-dark border">Último registro: {{ optional($historySummary['last_activity_at'])->format('d/m/Y') }}</span>
-                                @endif
-                            </div>
-
-                            <div class="table-responsive border rounded">
-                                <table class="table table-sm table-hover align-middle mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Factura</th>
-                                            <th>Fecha</th>
-                                            <th>Estado</th>
-                                            <th>Servicio o proceso</th>
-                                            <th class="text-end">Monto</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @forelse($historyInvoices as $invoice)
-                                            @php
-                                                $status = mb_strtolower(trim((string) ($invoice->status ?? '')));
-                                                $statusMeta = $invoiceStatusLabels[$status] ?? ['label' => $invoice->status ?: 'Sin estado', 'class' => 'bg-secondary'];
-                                                $lineDescriptions = collect($invoice->invoice_lines ?? [])
-                                                    ->pluck('description')
-                                                    ->filter()
-                                                    ->implode(' · ');
-                                            @endphp
-                                            <tr>
-                                                <td>
-                                                    <span class="badge bg-primary me-1">Histórico</span>
-                                                    {{ $invoice->invoice_number ?: 'Sin número' }}
-                                                </td>
-                                                <td>{{ optional($invoice->paid_date ?? $invoice->invoice_date ?? $invoice->tl_created_at)->format('d/m/Y') ?: '-' }}</td>
-                                                <td><span class="badge {{ $statusMeta['class'] }}">{{ $statusMeta['label'] }}</span></td>
-                                                <td>{{ \Illuminate\Support\Str::limit($lineDescriptions ?: 'Proceso asociado en Teamleader', 95) }}</td>
-                                                <td class="text-end fw-semibold">{{ number_format((float) $invoice->total_price_incl_tax, 2, ',', '.') }} {{ $invoice->currency ?: '' }}</td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="5" class="text-center text-muted py-4">No hay facturas históricas migradas asociadas a tu cuenta todavía.</td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
-                        </section>
-                    @endif
                 </div>
 
                 <div class="tab-pane fade" id="paymentspen" role="tabpanel" aria-labelledby="payments-tab">
