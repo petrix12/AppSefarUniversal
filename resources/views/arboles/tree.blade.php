@@ -80,6 +80,12 @@
                         <p class="mt-2 text-lg leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
                             ÁRBOL GENEALÓGICO
                         </p>
+                        @if(auth()->user() && auth()->user()->hasRole('Cliente'))
+                            <a href="{{ route('clientes.status') }}" class="tree-client-status-cta">
+                                <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
+                                <span>¿Deseas consultar el estatus de tu proceso?</span>
+                            </a>
+                        @endif
                     </div>
                 </div>
 
@@ -583,22 +589,10 @@
                         </div>
                     </div>
                     <div class="md:flex ms:flex-wrap">
-                        <div class="px-1 py-2 m-2 flex-1/2">
+                        <div class="px-1 py-2 m-2 flex-1">
                             <div>
-                                <label for="AnhoNac" class="block text-sm font-medium text-gray-700" title="Año de nacimiento">Año Nac.</label>
-                                <input value="" min="0" max="3000" type="number" name="AnhoNac" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            </div>
-                        </div>
-                        <div class="px-1 py-2 m-2 flex-1/2">
-                            <div>
-                                <label for="MesNac" class="block text-sm font-medium text-gray-700" title="Mes de nacimiento">Mes Nac.</label>
-                                <input value="" min="1" max="12" type="number" name="MesNac" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            </div>
-                        </div>
-                        <div class="px-1 py-2 m-2 flex-1/2">
-                            <div>
-                                <label for="DiaNac" class="block text-sm font-medium text-gray-700" title="Día de nacimiento">Día Nac.</label>
-                                <input value="" min="1" max="31" type="number" name="DiaNac" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <label for="FechaNac" class="block text-sm font-medium text-gray-700">Fecha de nacimiento</label>
+                                <input value="" id="FechaNac" min="0001-01-01" max="3000-12-31" type="date" name="FechaNac" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -665,22 +659,10 @@
                         </div>
                     </div>
                     <div class="md:flex ms:flex-wrap">
-                        <div class="px-1 py-2 m-2 flex-1/2">
+                        <div class="px-1 py-2 m-2 flex-1">
                             <div>
-                                <label for="AnhoBtzo" class="block text-sm font-medium text-gray-700" title="Año de bautizo">Año Btzo.</label>
-                                <input value="" min="0" max="3000" type="number" name="AnhoBtzo" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            </div>
-                        </div>
-                        <div class="px-1 py-2 m-2 flex-1/2">
-                            <div>
-                                <label for="MesBtzo" class="block text-sm font-medium text-gray-700" title="Mes de bautizo">Mes Btzo.</label>
-                                <input value="" min="1" max="12" type="number" name="MesBtzo" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            </div>
-                        </div>
-                        <div class="px-1 py-2 m-2 flex-1/2">
-                            <div>
-                                <label for="DiaBtzo" class="block text-sm font-medium text-gray-700" title="Día de bautizo">Día Btzo.</label>
-                                <input value="" min="1" max="31" type="number" name="DiaBtzo" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <label for="FechaBtzo" class="block text-sm font-medium text-gray-700">Fecha de bautizo</label>
+                                <input value="" id="FechaBtzo" min="0001-01-01" max="3000-12-31" type="date" name="FechaBtzo" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -747,22 +729,10 @@
                         </div>
                     </div>
                     <div class="md:flex ms:flex-wrap">
-                        <div class="px-1 py-2 m-2 flex-1/2">
+                        <div class="px-1 py-2 m-2 flex-1">
                             <div>
-                                <label for="AnhoMatr" class="block text-sm font-medium text-gray-700" title="Año de matrimonio">Año Matr.</label>
-                                <input value="" min="0" max="3000" type="number" name="AnhoMatr" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            </div>
-                        </div>
-                        <div class="px-1 py-2 m-2 flex-1/2">
-                            <div>
-                                <label for="MesMatr" class="block text-sm font-medium text-gray-700" title="Mes de matrimonio">Mes Matr.</label>
-                                <input value="" min="1" max="12" type="number" name="MesMatr" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            </div>
-                        </div>
-                        <div class="px-1 py-2 m-2 flex-1/2">
-                            <div>
-                                <label for="DiaMatr" class="block text-sm font-medium text-gray-700" title="Día de matrimonio">Día Matr.</label>
-                                <input value="" min="1" max="31" type="number" name="DiaMatr" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <label for="FechaMatr" class="block text-sm font-medium text-gray-700">Fecha de matrimonio</label>
+                                <input value="" id="FechaMatr" min="0001-01-01" max="3000-12-31" type="date" name="FechaMatr" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -829,22 +799,10 @@
                         </div>
                     </div>
                     <div class="md:flex ms:flex-wrap">
-                        <div class="px-1 py-2 m-2 flex-1/2">
+                        <div class="px-1 py-2 m-2 flex-1">
                             <div>
-                                <label for="AnhoDef" class="block text-sm font-medium text-gray-700" title="Año de defunción">Año Def.</label>
-                                <input value="" min="0" max="3000" type="number" name="AnhoDef" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            </div>
-                        </div>
-                        <div class="px-1 py-2 m-2 flex-1/2">
-                            <div>
-                                <label for="MesDef" class="block text-sm font-medium text-gray-700" title="Mes de defunción">Mes Def.</label>
-                                <input value="" min="1" max="12" type="number" name="MesDef" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            </div>
-                        </div>
-                        <div class="px-1 py-2 m-2 flex-1/2">
-                            <div>
-                                <label for="DiaDef" class="block text-sm font-medium text-gray-700" title="Día de defunción">Día Def.</label>
-                                <input value="" min="1" max="31" type="number" name="DiaDef" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <label for="FechaDef" class="block text-sm font-medium text-gray-700">Fecha de defunción</label>
+                                <input value="" id="FechaDef" min="0001-01-01" max="3000-12-31" type="date" name="FechaDef" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -1090,22 +1048,13 @@
                         </div>
                     </div>
                     <div class="md:flex ms:flex-wrap">
-                        <div class="px-1 py-2 m-2 flex-1/2">
+                        <div class="px-1 py-2 m-2 flex-1">
                             <div>
-                                <label for="AnhoNac"  class="block text-sm font-medium text-gray-700" title="Año de nacimiento">Año Nac.</label>
-                                <input value="" id="editAnhoNac" min="0" max="3000" type="number" name="AnhoNac" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            </div>
-                        </div>
-                        <div class="px-1 py-2 m-2 flex-1/2">
-                            <div>
-                                <label for="MesNac" class="block text-sm font-medium text-gray-700" title="Mes de nacimiento">Mes Nac.</label>
-                                <input value="" id="editMesNac" min="1" max="12" type="number" name="MesNac" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            </div>
-                        </div>
-                        <div class="px-1 py-2 m-2 flex-1/2">
-                            <div>
-                                <label for="DiaNac" class="block text-sm font-medium text-gray-700" title="Día de nacimiento">Día Nac.</label>
-                                <input value="" id="editDiaNac" min="1" max="31" type="number" name="DiaNac" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <label for="editFechaNac" class="block text-sm font-medium text-gray-700">Fecha de nacimiento</label>
+                                <input value="" id="editFechaNac" min="0001-01-01" max="3000-12-31" type="date" name="FechaNac" data-date-parts="editAnhoNac,editMesNac,editDiaNac" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input id="editAnhoNac" type="hidden" name="AnhoNac">
+                                <input id="editMesNac" type="hidden" name="MesNac">
+                                <input id="editDiaNac" type="hidden" name="DiaNac">
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -1171,22 +1120,13 @@
                         </div>
                     </div>
                     <div class="md:flex ms:flex-wrap">
-                        <div class="px-1 py-2 m-2 flex-1/2">
+                        <div class="px-1 py-2 m-2 flex-1">
                             <div>
-                                <label for="AnhoBtzo" class="block text-sm font-medium text-gray-700" title="Año de bautizo">Año Btzo.</label>
-                                <input value="" id="editAnhoBtzo" min="0" max="3000" type="number" name="AnhoBtzo" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            </div>
-                        </div>
-                        <div class="px-1 py-2 m-2 flex-1/2">
-                            <div>
-                                <label for="MesBtzo" class="block text-sm font-medium text-gray-700" title="Mes de bautizo">Mes Btzo.</label>
-                                <input value="" id="editMesBtzo" min="1" max="12" type="number" name="MesBtzo" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            </div>
-                        </div>
-                        <div class="px-1 py-2 m-2 flex-1/2">
-                            <div>
-                                <label for="DiaBtzo" class="block text-sm font-medium text-gray-700" title="Día de bautizo">Día Btzo.</label>
-                                <input value="" id="editDiaBtzo" min="1" max="31" type="number" name="DiaBtzo" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <label for="editFechaBtzo" class="block text-sm font-medium text-gray-700">Fecha de bautizo</label>
+                                <input value="" id="editFechaBtzo" min="0001-01-01" max="3000-12-31" type="date" name="FechaBtzo" data-date-parts="editAnhoBtzo,editMesBtzo,editDiaBtzo" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input id="editAnhoBtzo" type="hidden" name="AnhoBtzo">
+                                <input id="editMesBtzo" type="hidden" name="MesBtzo">
+                                <input id="editDiaBtzo" type="hidden" name="DiaBtzo">
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -1253,22 +1193,13 @@
                         </div>
                     </div>
                     <div class="md:flex ms:flex-wrap">
-                        <div class="px-1 py-2 m-2 flex-1/2">
+                        <div class="px-1 py-2 m-2 flex-1">
                             <div>
-                                <label for="AnhoMatr" class="block text-sm font-medium text-gray-700" title="Año de matrimonio">Año Matr.</label>
-                                <input value="" id="editAnhoMatr" min="0" max="3000" type="number" name="AnhoMatr" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            </div>
-                        </div>
-                        <div class="px-1 py-2 m-2 flex-1/2">
-                            <div>
-                                <label for="MesMatr" class="block text-sm font-medium text-gray-700" title="Mes de matrimonio">Mes Matr.</label>
-                                <input value="" id="editMesMatr" min="1" max="12" type="number" name="MesMatr" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            </div>
-                        </div>
-                        <div class="px-1 py-2 m-2 flex-1/2">
-                            <div>
-                                <label for="DiaMatr" class="block text-sm font-medium text-gray-700" title="Día de matrimonio">Día Matr.</label>
-                                <input value="" id="editDiaMatr" min="1" max="31" type="number" name="DiaMatr" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <label for="editFechaMatr" class="block text-sm font-medium text-gray-700">Fecha de matrimonio</label>
+                                <input value="" id="editFechaMatr" min="0001-01-01" max="3000-12-31" type="date" name="FechaMatr" data-date-parts="editAnhoMatr,editMesMatr,editDiaMatr" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input id="editAnhoMatr" type="hidden" name="AnhoMatr">
+                                <input id="editMesMatr" type="hidden" name="MesMatr">
+                                <input id="editDiaMatr" type="hidden" name="DiaMatr">
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -1335,22 +1266,13 @@
                         </div>
                     </div>
                     <div class="md:flex ms:flex-wrap">
-                        <div class="px-1 py-2 m-2 flex-1/2">
+                        <div class="px-1 py-2 m-2 flex-1">
                             <div>
-                                <label for="AnhoDef" class="block text-sm font-medium text-gray-700" title="Año de defunción">Año Def.</label>
-                                <input value="" id="editAnhoDef" min="0" max="3000" type="number" name="AnhoDef" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            </div>
-                        </div>
-                        <div class="px-1 py-2 m-2 flex-1/2">
-                            <div>
-                                <label for="MesDef" class="block text-sm font-medium text-gray-700" title="Mes de defunción">Mes Def.</label>
-                                <input value="" id="editMesDef"  min="1" max="12" type="number" name="MesDef" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            </div>
-                        </div>
-                        <div class="px-1 py-2 m-2 flex-1/2">
-                            <div>
-                                <label for="DiaDef" class="block text-sm font-medium text-gray-700" title="Día de defunción">Día Def.</label>
-                                <input value="" id="editDiaDef" min="1" max="31" type="number" name="DiaDef" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <label for="editFechaDef" class="block text-sm font-medium text-gray-700">Fecha de defunción</label>
+                                <input value="" id="editFechaDef" min="0001-01-01" max="3000-12-31" type="date" name="FechaDef" data-date-parts="editAnhoDef,editMesDef,editDiaDef" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input id="editAnhoDef" type="hidden" name="AnhoDef">
+                                <input id="editMesDef" type="hidden" name="MesDef">
+                                <input id="editDiaDef" type="hidden" name="DiaDef">
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -1796,6 +1718,32 @@
     width: 100%;
     max-width: 1120px;
     margin-top: 18px;
+}
+
+.tree-client-status-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .65rem;
+    max-width: 100%;
+    margin-top: 1rem;
+    padding: .7rem 1rem;
+    border-radius: .75rem;
+    background: #093143;
+    color: #fff;
+    font-size: .95rem;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(9, 49, 67, .18);
+    transition: transform .2s ease, background .2s ease;
+}
+
+.tree-client-status-cta:hover,
+.tree-client-status-cta:focus {
+    background: #0d4a63;
+    color: #fff;
+    text-decoration: none;
+    transform: translateY(-1px);
 }
 
 .tree-toolbar-control {
@@ -3270,28 +3218,68 @@ dialog::backdrop {
         }
     }
 
+    function setDateInputFromParts(inputId, year, month, day) {
+        const input = document.getElementById(inputId);
+
+        if (!input) {
+            return;
+        }
+
+        const legacyFields = (input.dataset.dateParts || '')
+            .split(',')
+            .map((fieldId) => document.getElementById(fieldId))
+            .filter(Boolean);
+        const values = [year, month, day].map((value) => value ?? '');
+
+        legacyFields.forEach((field, index) => {
+            field.value = values[index];
+        });
+
+        const [currentYear, currentMonth, currentDay] = values.map((value) => String(value).trim());
+        const hasCompleteDate = /^\d{1,4}$/.test(currentYear)
+            && /^\d{1,2}$/.test(currentMonth)
+            && /^\d{1,2}$/.test(currentDay);
+
+        input.value = hasCompleteDate
+            ? `${currentYear.padStart(4, '0')}-${currentMonth.padStart(2, '0')}-${currentDay.padStart(2, '0')}`
+            : '';
+    }
+
+    function syncDatePartsToLegacyFields(input) {
+        const legacyFieldIds = (input.dataset.dateParts || '').split(',');
+
+        if (legacyFieldIds.length !== 3) {
+            return;
+        }
+
+        const values = input.value ? input.value.split('-') : ['', '', ''];
+        legacyFieldIds.forEach((fieldId, index) => {
+            const field = document.getElementById(fieldId);
+
+            if (field) {
+                field.value = values[index] || '';
+            }
+        });
+    }
+
+    document.querySelectorAll('input[type="date"][data-date-parts]').forEach((input) => {
+        input.addEventListener('change', () => syncDatePartsToLegacyFields(input));
+    });
+
     function callEdit(Nombres, Apellidos, AnhoNac, MesNac, DiaNac, LugarNac, PaisNac, AnhoBtzo, MesBtzo, DiaBtzo, LugarBtzo, PaisBtzo, AnhoMatr, MesMatr, DiaMatr, LugarMatr, PaisMatr, AnhoDef, MesDef, DiaDef, LugarDef, PaisDef, Observaciones, id, NPasaporte, PaisPasaporte, NDocIdent, PaisDocIdent){
         $("#editid").val(id);
         $("#editnombres").val(Nombres);
         $("#editApellidos").val(Apellidos);
-        $("#editAnhoNac").val(AnhoNac);
-        $("#editMesNac").val(MesNac);
-        $("#editDiaNac").val(DiaNac);
+        setDateInputFromParts('editFechaNac', AnhoNac, MesNac, DiaNac);
         $("#editLugarNac").val(LugarNac);
         $("#editPaisNac").val(PaisNac);
-        $("#editAnhoBtzo").val(AnhoBtzo);
-        $("#editMesBtzo").val(MesBtzo);
-        $("#editDiaBtzo").val(DiaBtzo);
+        setDateInputFromParts('editFechaBtzo', AnhoBtzo, MesBtzo, DiaBtzo);
         $("#editLugarBtzo").val(LugarBtzo);
         $("#editPaisBtzo").val(PaisBtzo);
-        $("#editAnhoMatr").val(AnhoMatr);
-        $("#editMesMatr").val(MesMatr);
-        $("#editDiaMatr").val(DiaMatr);
+        setDateInputFromParts('editFechaMatr', AnhoMatr, MesMatr, DiaMatr);
         $("#editLugarMatr").val(LugarMatr);
         $("#editPaisMatr").val(PaisMatr);
-        $("#editAnhoDef").val(AnhoDef);
-        $("#editMesDef").val(MesDef);
-        $("#editDiaDef").val(DiaDef);
+        setDateInputFromParts('editFechaDef', AnhoDef, MesDef, DiaDef);
         $("#editLugarDef").val(LugarDef);
         $("#editPaisDef").val(PaisDef);
         $("#editObservaciones").val(Observaciones);

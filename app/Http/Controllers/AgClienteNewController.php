@@ -22,6 +22,7 @@ class AgClienteNewController extends Controller
 {
     public function storeNotCliente(Request $request)
     {
+        $dateParts = $this->datePartsFromRequest($request);
 
         // Determinar quien llamó a este método
         $Origen = $request->Origen;
@@ -71,27 +72,27 @@ class AgClienteNewController extends Controller
 
             'Sexo' => $request->Sexo,
 
-            'AnhoNac' => $request->AnhoNac,
-            'MesNac' => $request->MesNac,
-            'DiaNac' => $request->DiaNac,
+            'AnhoNac' => $dateParts['AnhoNac'],
+            'MesNac' => $dateParts['MesNac'],
+            'DiaNac' => $dateParts['DiaNac'],
             'LugarNac' => trim($request->LugarNac),
             'PaisNac' => $request->PaisNac,
 
-            'AnhoBtzo' => $request->AnhoBtzo,
-            'MesBtzo' => $request->MesBtzo,
-            'DiaBtzo' => $request->DiaBtzo,
+            'AnhoBtzo' => $dateParts['AnhoBtzo'],
+            'MesBtzo' => $dateParts['MesBtzo'],
+            'DiaBtzo' => $dateParts['DiaBtzo'],
             'LugarBtzo' => trim($request->LugarBtzo),
             'PaisBtzo' => $request->PaisBtzo,
 
-            'AnhoMatr' => $request->AnhoMatr,
-            'MesMatr' => $request->MesMatr,
-            'DiaMatr' => $request->DiaMatr,
+            'AnhoMatr' => $dateParts['AnhoMatr'],
+            'MesMatr' => $dateParts['MesMatr'],
+            'DiaMatr' => $dateParts['DiaMatr'],
             'LugarMatr' => trim($request->LugarMatr),
             'PaisMatr' => $request->PaisMatr,
 
-            'AnhoDef' => $request->AnhoDef,
-            'MesDef' => $request->MesDef,
-            'DiaDef' => $request->DiaDef,
+            'AnhoDef' => $dateParts['AnhoDef'],
+            'MesDef' => $dateParts['MesDef'],
+            'DiaDef' => $dateParts['DiaDef'],
             'LugarDef' => trim($request->LugarDef),
             'PaisDef' => $request->PaisDef,
 
@@ -395,12 +396,13 @@ class AgClienteNewController extends Controller
 
     public function updateNotCliente(Request $request)
     {
+        $dateParts = $this->datePartsFromRequest($request);
         $agcliente = Agcliente::findOrFail($request->id);
 
         $agcliente->update([
-            'AnhoNac' => $request->AnhoNac,
-            'MesNac' => $request->MesNac,
-            'DiaNac' => $request->DiaNac,
+            'AnhoNac' => $dateParts['AnhoNac'],
+            'MesNac' => $dateParts['MesNac'],
+            'DiaNac' => $dateParts['DiaNac'],
             'LugarNac' => trim($request->LugarNac),
             'PaisNac' => $request->PaisNac,
 
@@ -409,21 +411,21 @@ class AgClienteNewController extends Controller
             'NDocIdent' => trim($request->NDocIdent),
             'PaisDocIdent' => $request->PaisDocIdent,
 
-            'AnhoBtzo' => $request->AnhoBtzo,
-            'MesBtzo' => $request->MesBtzo,
-            'DiaBtzo' => $request->DiaBtzo,
+            'AnhoBtzo' => $dateParts['AnhoBtzo'],
+            'MesBtzo' => $dateParts['MesBtzo'],
+            'DiaBtzo' => $dateParts['DiaBtzo'],
             'LugarBtzo' => trim($request->LugarBtzo),
             'PaisBtzo' => $request->PaisBtzo,
 
-            'AnhoMatr' => $request->AnhoMatr,
-            'MesMatr' => $request->MesMatr,
-            'DiaMatr' => $request->DiaMatr,
+            'AnhoMatr' => $dateParts['AnhoMatr'],
+            'MesMatr' => $dateParts['MesMatr'],
+            'DiaMatr' => $dateParts['DiaMatr'],
             'LugarMatr' => trim($request->LugarMatr),
             'PaisMatr' => $request->PaisMatr,
 
-            'AnhoDef' => $request->AnhoDef,
-            'MesDef' => $request->MesDef,
-            'DiaDef' => $request->DiaDef,
+            'AnhoDef' => $dateParts['AnhoDef'],
+            'MesDef' => $dateParts['MesDef'],
+            'DiaDef' => $dateParts['DiaDef'],
             'LugarDef' => trim($request->LugarDef),
             'PaisDef' => $request->PaisDef,
 
@@ -435,6 +437,47 @@ class AgClienteNewController extends Controller
         app(GenealogyService::class)->forgetProcessedTree($agcliente->IDCliente);
 
         return redirect()->back()->withInput()->with('refresh', true);
+    }
+
+    /**
+     * The tree still stores every date in the legacy Year/Month/Day columns.
+     * The forms can now send a single ISO date without changing that storage
+     * contract; direct legacy submissions remain supported as well.
+     */
+    private function datePartsFromRequest(Request $request): array
+    {
+        $request->validate([
+            'FechaNac' => ['nullable', 'date_format:Y-m-d'],
+            'FechaBtzo' => ['nullable', 'date_format:Y-m-d'],
+            'FechaMatr' => ['nullable', 'date_format:Y-m-d'],
+            'FechaDef' => ['nullable', 'date_format:Y-m-d'],
+        ]);
+
+        $parts = [];
+
+        foreach ([
+            'Nac' => 'FechaNac',
+            'Btzo' => 'FechaBtzo',
+            'Matr' => 'FechaMatr',
+            'Def' => 'FechaDef',
+        ] as $suffix => $field) {
+            $date = trim((string) $request->input($field));
+
+            if ($date === '') {
+                $parts['Anho' . $suffix] = $request->input('Anho' . $suffix);
+                $parts['Mes' . $suffix] = $request->input('Mes' . $suffix);
+                $parts['Dia' . $suffix] = $request->input('Dia' . $suffix);
+
+                continue;
+            }
+
+            [$year, $month, $day] = explode('-', $date);
+            $parts['Anho' . $suffix] = (int) $year;
+            $parts['Mes' . $suffix] = (int) $month;
+            $parts['Dia' . $suffix] = (int) $day;
+        }
+
+        return $parts;
     }
 
     public function getClientFiles(Request $request)
