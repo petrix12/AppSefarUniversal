@@ -63,6 +63,7 @@ use App\Services\UserSyncService;
 use App\Services\GenealogyService;
 use App\Jobs\SyncUserDealsJob;
 use App\Services\CosService;
+use App\Services\TeamleaderClientHistoryService;
 use Illuminate\Support\Facades\Cache;
 class ClienteController extends Controller
 {
@@ -87,6 +88,7 @@ class ClienteController extends Controller
         $compras = Compras::with(['consultationBooking.calendar'])
             ->where('id_user', $user)
             ->where('pagado', 0)
+            ->where('monto', '>', 0)
             ->orderByDesc('created_at')
             ->get();
 
@@ -335,15 +337,17 @@ class ClienteController extends Controller
         // ==========================================
         // DATOS ADICIONALES
         // ==========================================
-        $comprasConDealNoPagadas = Compras::where('deal_id', '!=', null)
-            ->where('pagado', 0)
-            ->where('id_user', $user->id)
-            ->get();
+    $comprasConDealNoPagadas = Compras::where('deal_id', '!=', null)
+        ->where('pagado', 0)
+        ->where('id_user', $user->id)
+        ->where('monto', '>', 0)
+        ->get();
 
-        $comprasSinDealNoPagadas = Compras::whereNull('deal_id')
-            ->where('pagado', 0)
-            ->where('id_user', $user->id)
-            ->get();
+    $comprasSinDealNoPagadas = Compras::whereNull('deal_id')
+        ->where('pagado', 0)
+        ->where('id_user', $user->id)
+        ->where('monto', '>', 0)
+        ->get();
 
         $documentRequests = DocumentRequest::where('user_id', $user->id)
             ->latest()
@@ -353,7 +357,13 @@ class ClienteController extends Controller
 
         $facturas = Factura::with('compras')
             ->where('id_cliente', $user->id)
+            ->orderByDesc('created_at')
             ->get();
+
+        // Incluye los comprobantes recientes del portal y el historial
+        // migrado de Teamleader. El servicio solo lee datos asociados al
+        // contacto autenticado y no realiza cambios durante la consulta.
+        $clientTeamleaderHistory = app(TeamleaderClientHistoryService::class)->for($user);
 
         // ==========================================
         // PREPARAR DATOS PARA VISTA
@@ -464,6 +474,7 @@ class ClienteController extends Controller
             'roles',
             'permissions',
             'facturas',
+            'clientTeamleaderHistory',
             'servicios',
             'columnasparatabla'
         ))->render();

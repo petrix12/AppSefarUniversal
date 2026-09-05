@@ -35,7 +35,7 @@
                 </div>
                 {{-- Fin --}}
                 <div class="card p-6">
-                    @if (!is_null($compras))
+                    @if ($compras->isNotEmpty())
                         <table class="min-w-full divide-y divide-gray-200 w-100" id="example">
                             <thead class="bg-gray-50">
                             <tr>
@@ -90,7 +90,10 @@
                             </tbody>
                         </table>
                     @else
-                        <h5>No hay pagos pendientes en este momento</h5>
+                        <div class="alert alert-success mb-0">
+                            <i class="fas fa-check-circle me-1"></i>
+                            No tienes deudas pendientes.
+                        </div>
                     @endif
                 </div>
             </div>
