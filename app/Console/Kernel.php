@@ -31,6 +31,11 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:actualizar-y-limpiar')->everyMinute()->timezone('UTC');
         $schedule->command('teamleader:refresh-token')->everyMinute()->timezone('UTC');
         $schedule->command('chat:clean-expired')->everyFiveMinutes();
+        $schedule->command('queue:work cos --queue=cos-refresh --stop-when-empty --max-time=50 --timeout=300 --tries=3')
+            ->everyMinute()
+            ->withoutOverlapping(10)
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/cos-worker.log'));
         $schedule->command('followups:registration-payment')
         ->dailyAt('09:00')
         ->withoutOverlapping();

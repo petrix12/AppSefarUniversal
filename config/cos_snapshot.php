@@ -1,6 +1,23 @@
 <?php
 
 return [
+    // Búsqueda por enlace únicamente cuando el cliente no tiene monday_id.
+    // Lista mínima de análisis y producción; los vínculos existentes se consultan por ID.
+    'monday_search_boards' => [
+        878831315 => 'ANÁLISIS PRELIMINAR',
+        625187241 => 'ANALISIS',
+        6524058079 => 'DESLINDE - SIN INFORME',
+        3950637564 => 'CNAT LMD - SIN INFORME',
+        3469085450 => 'CNAT LMD',
+        2213224176 => 'ITALIA',
+        1845710504 => 'LEY DE NIETOS',
+        1845706367 => 'CONSANGUINIDAD',
+        1845701215 => 'CNAT SEFARDI',
+        708128239 => 'CNAT GENERAL',
+        708123651 => 'SEFARDI PORTUGAL',
+        669590637 => 'SEFARDI ESPAÑA',
+    ],
+
     /*
     | El lote programado solo considera clientes con pay > 1 y contrato = 1.
     | Un cliente se vuelve elegible otra vez cuando vence arraycos_expire.

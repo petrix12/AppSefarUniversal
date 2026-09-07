@@ -17,31 +17,6 @@ class ClientCosSnapshotService
 {
     private const DEFAULT_CACHE_TTL_DAYS = 30;
 
-    private const MONDAY_BOARD_IDS = [
-        878831315,
-        6524058079,
-        3950637564,
-        815474056,
-        3639222742,
-        3469085450,
-        2213224176,
-        1910043474,
-        1845710504,
-        1845706367,
-        1845701215,
-        1016436921,
-        1026956491,
-        815474056,
-        815471640,
-        807173414,
-        803542982,
-        765394861,
-        742896377,
-        708128239,
-        708123651,
-        669590637,
-        625187241,
-    ];
 
     public function __construct(
         private HubspotService $hubspotService,
@@ -63,6 +38,64 @@ class ClientCosSnapshotService
         return $this->refresh($user, $syncExternal);
     }
 
+    /** Render from local data only, even when the global queue uses sync. */
+    public function forPage(User $user): array
+    {
+        $negocios = Negocio::where('user_id', $user->id)->get();
+        $stored = MondayData::where('user_id', $user->id)->value('data');
+        $details = is_array($stored) ? $stored : json_decode($stored ?: 'null', true);
+        $details = is_array($details) ? $details : null;
+        $monday = [
+            'mondayUserDetails' => $details,
+            'mondaydataforAI' => [
+                'tablero' => $details['board']['name'] ?? '',
+                'etiquetas' => collect($details['column_values'] ?? [])->firstWhere('id', 'men__desplegable')['text'] ?? '',
+            ],
+        ];
+
+        if ($this->hasFreshCachedCos($user)) {
+            $statuses = is_array($user->arraycos) ? $user->arraycos : [];
+        } else {
+            // A stale snapshot remains visible until the worker replaces it.
+            $statuses = is_array($user->arraycos) ? $user->arraycos : [];
+            if ($statuses === []) {
+                foreach ($negocios as $negocio) {
+                    if (blank($negocio->servicio_solicitado2) && blank($negocio->servicio_solicitado)) {
+                        continue;
+                    }
+                    $calculator = new CosService(clone $negocio, $user, $negocios, $monday['mondaydataforAI'], false);
+                    $statuses[] = $calculator->calculateProgress($calculator->calculateStatus());
+                }
+                if ($negocios->isEmpty()) {
+                    $service = filled($user->servicio)
+                        ? Servicio::where('id_hubspot', 'like', $user->servicio . '%')->first()
+                        : null;
+                    $statuses[] = $this->handleNoNegocios($service);
+                }
+                $statuses = $this->removeDuplicatesAndSort($statuses);
+            }
+
+        }
+
+        if (! $this->hasFreshCachedCos($user) || ! \Illuminate\Support\Facades\Cache::has('cos.page_refreshed.' . $user->id)) {
+            try {
+                \App\Jobs\RefreshClientCosSnapshot::dispatch($user->id, true);
+            } catch (\Throwable $exception) {
+                Log::warning('COS: no se pudo encolar la actualización', [
+                    'user_id' => $user->id,
+                    'error' => $exception->getMessage(),
+                ]);
+            }
+        }
+
+        $definitions = $this->cosHelper->get();
+        $statuses = array_values(array_filter($statuses, fn ($status) =>
+            ! empty($status['servicio']) && array_key_exists($status['servicio'], $definitions)
+        ));
+
+        return ['cos' => $statuses, 'negocios' => $negocios, 'monday_data' => $monday];
+    }
+
     public function refresh(User $user, bool $syncExternal = true): array
     {
         $startedAt = microtime(true);
@@ -78,6 +111,9 @@ class ClientCosSnapshotService
 
         if ($syncExternal) {
             $sync = $this->refreshExternalData($user, $sync);
+            if (! empty($sync['error']) || (filled($user->hs_id) && empty($sync['hubspot']['contact']))) {
+                throw new \RuntimeException('No se pudo actualizar HubSpot; se conserva el COS anterior para reintentar.');
+            }
             $user = $user->fresh() ?? $user;
         }
 
@@ -400,7 +436,7 @@ class ClientCosSnapshotService
 
         $searchUrl = 'https://app.sefaruniversal.com/tree/' . $passport;
 
-        foreach (self::MONDAY_BOARD_IDS as $boardId) {
+        foreach (array_keys(config('cos_snapshot.monday_search_boards', [])) as $boardId) {
             $query = "
                 items_page_by_column_values(
                     limit: 50,

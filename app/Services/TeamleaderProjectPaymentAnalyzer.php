@@ -57,6 +57,14 @@ class TeamleaderProjectPaymentAnalyzer
                 $effectivePaid = ($exonerated || $included) ? 0.0 : $paid['total'];
                 $balance = max($effectivePreestab - $effectivePaid, 0.0);
                 $overpaid = max($effectivePaid - $effectivePreestab, 0.0);
+                $difference = $effectivePreestab - $effectivePaid;
+                $reviewReasons = $this->reviewReasons(
+                    $preestab,
+                    $paid,
+                    $effectivePreestab,
+                    $effectivePaid,
+                    $overpaid
+                );
 
                 return [
                     $phase => [
@@ -69,7 +77,10 @@ class TeamleaderProjectPaymentAnalyzer
                         'effective_paid_amount' => round($effectivePaid, 2),
                         'balance_amount' => round($balance, 2),
                         'overpaid_amount' => round($overpaid, 2),
-                        'status' => $this->phaseStatus($effectivePreestab, $effectivePaid, $balance, $exonerated, $included),
+                        'difference_amount' => round($difference, 2),
+                        'status' => $this->phaseStatus($effectivePreestab, $effectivePaid, $balance, $overpaid, $exonerated, $included),
+                        'needs_review' => $reviewReasons !== [],
+                        'review_reasons' => $reviewReasons,
                         'preestab_parse' => $preestab,
                         'paid_parse' => $paid,
                     ],
@@ -82,11 +93,14 @@ class TeamleaderProjectPaymentAnalyzer
             'customer_id' => $project->customer_id,
             'customer_type' => $project->customer_type,
             'phases' => $phases->all(),
+            'needs_review' => $phases->contains('needs_review', true),
+            'review_count' => $phases->where('needs_review', true)->count(),
             'totals' => [
                 'preestab_amount' => round($phases->sum('effective_preestab_amount'), 2),
                 'paid_amount' => round($phases->sum('effective_paid_amount'), 2),
                 'balance_amount' => round($phases->sum('balance_amount'), 2),
                 'overpaid_amount' => round($phases->sum('overpaid_amount'), 2),
+                'difference_amount' => round($phases->sum('difference_amount'), 2),
             ],
         ];
     }
@@ -103,6 +117,8 @@ class TeamleaderProjectPaymentAnalyzer
                 'paid_amount' => round($items->sum('totals.paid_amount'), 2),
                 'balance_amount' => round($items->sum('totals.balance_amount'), 2),
                 'overpaid_amount' => round($items->sum('totals.overpaid_amount'), 2),
+                'difference_amount' => round($items->sum('totals.difference_amount'), 2),
+                'projects_to_review' => $items->where('needs_review', true)->count(),
             ],
         ];
     }
@@ -264,7 +280,33 @@ class TeamleaderProjectPaymentAnalyzer
         return trim((string) $clean) === '';
     }
 
-    private function phaseStatus(float $preestab, float $paid, float $balance, bool $exonerated, bool $included): string
+    private function reviewReasons(
+        array $preestab,
+        array $paid,
+        float $effectivePreestab,
+        float $effectivePaid,
+        float $overpaid
+    ): array {
+        $reasons = [];
+
+        if ($overpaid > 0.01) {
+            $reasons[] = $effectivePreestab <= 0 && $effectivePaid > 0
+                ? 'payment_without_preestablished_amount'
+                : 'paid_exceeds_preestablished_amount';
+        }
+
+        if ($preestab['raw'] !== '' && ! $preestab['has_amount'] && ! $preestab['exonerated'] && ! $preestab['included']) {
+            $reasons[] = 'unreadable_preestablished_amount';
+        }
+
+        if ($paid['raw'] !== '' && ! $paid['has_amount'] && ! $paid['exonerated'] && ! $paid['included']) {
+            $reasons[] = 'unreadable_paid_amount';
+        }
+
+        return $reasons;
+    }
+
+    private function phaseStatus(float $preestab, float $paid, float $balance, float $overpaid, bool $exonerated, bool $included): string
     {
         if ($exonerated) {
             return 'exonerated';
@@ -276,6 +318,10 @@ class TeamleaderProjectPaymentAnalyzer
 
         if ($preestab <= 0 && $paid <= 0) {
             return 'empty';
+        }
+
+        if ($overpaid > 0.01) {
+            return 'review';
         }
 
         if ($preestab > 0 && $balance <= 0.01) {

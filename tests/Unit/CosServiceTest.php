@@ -27,6 +27,30 @@ class CosServiceTest extends TestCase
         );
     }
 
+    public function test_it_does_not_invent_a_service_when_both_business_fields_are_empty(): void
+    {
+        $negocio = new Negocio([
+            'servicio_solicitado' => null,
+            'servicio_solicitado2' => '   ',
+        ]);
+
+        new CosService($negocio, (object) ['id' => 23681], collect([$negocio]));
+
+        $this->assertSame('', $negocio->servicio_solicitado2);
+    }
+
+    public function test_it_uses_the_legacy_service_when_the_preferred_field_is_blank(): void
+    {
+        $negocio = new Negocio([
+            'servicio_solicitado' => 'Portuguesa Sefardi',
+            'servicio_solicitado2' => ' ',
+        ]);
+
+        new CosService($negocio, (object) ['id' => 23681], collect([$negocio]));
+
+        $this->assertSame('Portuguesa Sefardi', $negocio->servicio_solicitado2);
+    }
+
     public function test_cos_helper_exposes_carta_de_naturaleza_alias_with_same_phases(): void
     {
         $canonicalPhases = [

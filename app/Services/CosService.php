@@ -37,7 +37,7 @@ class CosService
     /**
      * Constructor del servicio
      */
-    public function __construct($negocio, $user, $negocios, $mondayData = [])
+    public function __construct($negocio, $user, $negocios, $mondayData = [], private bool $allowRemoteAI = true)
     {
         $this->negocio = $negocio;
         $this->user = $user;
@@ -1235,11 +1235,18 @@ class CosService
 
     private function getServiceName(): string
     {
-        $serviceName = $this->negocio->servicio_solicitado2
-            ?? $this->negocio->servicio_solicitado
-            ?? 'Española Sefardi';
+        foreach ([
+            $this->negocio->servicio_solicitado2 ?? null,
+            $this->negocio->servicio_solicitado ?? null,
+        ] as $serviceName) {
+            $serviceName = $this->normalizeServiceName((string) $serviceName);
 
-        return $this->normalizeServiceName((string) $serviceName);
+            if ($serviceName !== '') {
+                return $serviceName;
+            }
+        }
+
+        return '';
     }
 
     private function normalizeServiceName(string $serviceName): string
@@ -1256,7 +1263,7 @@ class CosService
 
     private function getServicioDisplay(): string
     {
-        return $this->negocio->servicio_solicitado2 ?? $this->negocio->servicio_solicitado ?? '';
+        return $this->getServiceName();
     }
 
     private function calculateTotalSteps(): void
@@ -1315,6 +1322,10 @@ class CosService
             return $cachedResult;
         }
 
+        if (! $this->allowRemoteAI) {
+            return $this->fallbackManualAnalysis($mondaydataforAI);
+        }
+
         try {
             $aiResult = $this->callOpenRouterAI($mondaydataforAI);
             $validatedResult = $this->validateAndMergeAIResult($aiResult, $defaultResult);
@@ -1332,7 +1343,10 @@ class CosService
                 'tablero' => $mondaydataforAI['tablero'] ?? 'unknown'
             ]);
 
-            return $this->fallbackManualAnalysis($mondaydataforAI);
+            $fallback = $this->fallbackManualAnalysis($mondaydataforAI);
+            Cache::put($cacheKey, $fallback, 60);
+
+            return $fallback;
         }
     }
 

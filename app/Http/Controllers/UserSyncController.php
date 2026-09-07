@@ -20,11 +20,11 @@ class UserSyncController extends Controller
             abort_if(auth()->id() !== $user->id, 403);
         }
 
-        $snapshots->get($user, true, true);
+        \App\Jobs\RefreshClientCosSnapshot::dispatch($user->id, true);
 
         $message = $rolId === 5
-            ? 'Tu estatus ya muestra la informacion mas reciente.'
-            : "Sincronizacion completada para {$user->name}";
+            ? 'La actualización de tu estatus está en cola. Recarga la página en unos minutos.'
+            : "Actualización en cola para {$user->name}. Recarga la ficha en unos minutos.";
 
         return back()
             ->with('sync_success', $message);

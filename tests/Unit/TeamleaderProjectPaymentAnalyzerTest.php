@@ -75,6 +75,35 @@ class TeamleaderProjectPaymentAnalyzerTest extends TestCase
         $this->assertSame('partial', $analysis['phases'][1]['status']);
     }
 
+    public function test_it_flags_an_excess_payment_as_data_to_review_instead_of_negative_customer_debt(): void
+    {
+        $project = new TlProject([
+            'id' => 'project-review',
+            'title' => 'Proyecto con datos inconsistentes',
+            'custom_fields' => [
+                [
+                    'definition' => ['id' => '73173887-a0e8-0f4f-bb55-b61f33d3c6e9'],
+                    'value' => '1000 EUR',
+                ],
+                [
+                    'definition' => ['id' => 'a1b50c58-8175-0d13-9856-f661e783dc08'],
+                    'value' => '1500 EUR',
+                ],
+            ],
+        ]);
+
+        $analysis = $this->analyzer()->analyzeProject($project);
+        $phase = $analysis['phases'][1];
+
+        $this->assertSame(0.0, $phase['balance_amount']);
+        $this->assertSame(500.0, $phase['overpaid_amount']);
+        $this->assertSame(-500.0, $phase['difference_amount']);
+        $this->assertSame('review', $phase['status']);
+        $this->assertTrue($phase['needs_review']);
+        $this->assertSame(['paid_exceeds_preestablished_amount'], $phase['review_reasons']);
+        $this->assertTrue($analysis['needs_review']);
+    }
+
     private function analyzer(): TeamleaderProjectPaymentAnalyzer
     {
         return new TeamleaderProjectPaymentAnalyzer();

@@ -30,6 +30,15 @@ return [
 
     'connections' => [
 
+        'cos' => [
+            'driver' => 'database',
+            'connection' => env('DB_QUEUE_CONNECTION'),
+            'table' => 'jobs',
+            'queue' => 'cos-refresh',
+            'retry_after' => 360,
+            'after_commit' => true,
+        ],
+
         'sync' => [
             'driver' => 'sync',
         ],

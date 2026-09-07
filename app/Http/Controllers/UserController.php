@@ -1666,144 +1666,11 @@ class UserController extends Controller
     // CACHE BÁSICO
     // ==========================================
     $imageUrls = $this->getRandomImages();
-    $cos = $cos = app(\App\Services\CosHelperService::class)->get();
+    $cos = app(\App\Services\CosHelperService::class)->get();
 
-    // ==========================================
-    // SINCRONIZACIÓN CONCURRENTE DE APIS
-    // ==========================================
-    $syncService = new UserSyncService($this->hubspotService, $this->teamleaderService);
-
-    // Ejecutar sincronizaciones en paralelo usando el método existente
-    $apiResults = $this->hubspotService->executeConcurrent([
-        'hubspot' => fn() => $syncService->syncWithHubspot($user),
-        'teamleader' => fn() => $syncService->syncWithTeamleader($user),
-    ]);
-
-    // Extraer resultados
-    $HScontact = $apiResults['hubspot']['contact'] ?? null;
-    $HScontactFiles = $apiResults['hubspot']['files'] ?? [];
-    $deals = $apiResults['hubspot']['deals'] ?? [];
-    $TLcontact = $apiResults['teamleader']['contact'] ?? null;
-    $TLdeals = $apiResults['teamleader']['deals'] ?? [];
-
-    if (!$HScontact) {
-        Log::error("No se pudo obtener datos de HubSpot para el usuario", ['user_id' => $user->id]);
-        abort(500, "Error al sincronizar con HubSpot");
-    }
-
-    // ==========================================
-    // OBTENER ETAPAS DE PIPELINES
-    // ==========================================
-    $pipelineStages = [];
-    $usedPipelineIds = array_unique(array_filter(
-        array_column(array_column($deals, 'properties'), 'pipeline')
-    ));
-
-    foreach ($usedPipelineIds as $pipelineId) {
-        try {
-            $pipelineStages[$pipelineId] = $this->hubspotService->getDealStagesByPipeline($pipelineId);
-        } catch (\Exception $e) {
-            Log::warning("Error obteniendo etapas del pipeline {$pipelineId}", [
-                'error' => $e->getMessage()
-            ]);
-        }
-    }
-
-    // Procesar deals con etapas
-    $dealsWithStages = array_map(function ($deal) use ($pipelineStages) {
-        $properties = $deal['properties'];
-        $dealstageId = $properties['dealstage'] ?? null;
-        $pipelineId = $properties['pipeline'] ?? null;
-
-        $dealstageName = null;
-        $dealstageOptions = [];
-
-        if ($pipelineId && isset($pipelineStages[$pipelineId])) {
-            $dealstageName = collect($pipelineStages[$pipelineId])
-                ->firstWhere('id', $dealstageId)['name'] ?? null;
-            $dealstageOptions = $pipelineStages[$pipelineId];
-        }
-
-        return array_merge($deal, [
-            'dealstage_name' => $dealstageName,
-            'dealstage_options' => $dealstageOptions,
-        ]);
-    }, $deals);
-
-    // ==========================================
-    // SINCRONIZACIÓN DE CAMPOS
-    // ==========================================
-    $fieldUpdates = $syncService->calculateFieldUpdates($user, $HScontact);
-
-    // Actualizar DB si hay cambios
-    if (!empty($fieldUpdates['updatesToDB'])) {
-        foreach ($fieldUpdates['updatesToDB'] as $field => $value) {
-            $user->{$field} = $value;
-        }
-
-        try {
-            $user->save();
-        } catch (UniqueConstraintViolationException $e) {
-            if (! $this->isAdminUser()) {
-                throw $e;
-            }
-
-            $emailConflict = $fieldUpdates['updatesToDB']['email'] ?? null;
-            $conflictingUser = $emailConflict
-                ? User::where('email', $emailConflict)->whereKeyNot($user->id)->first()
-                : null;
-
-            Log::warning('Conflicto de sincronizacion HubSpot -> DB al abrir usuario', [
-                'user_id' => $user->id,
-                'updates_to_db' => $fieldUpdates['updatesToDB'],
-                'conflicting_user_id' => $conflictingUser?->id,
-                'error' => $e->getMessage(),
-            ]);
-
-            return redirect()
-                ->route('crud.users.editBasic', $user->id)
-                ->with('sync_conflict', [
-                    'message' => 'La sincronizacion encontro datos que chocan con otro usuario. Verifica y guarda los datos correctos manualmente.',
-                    'updates_to_db' => $fieldUpdates['updatesToDB'],
-                    'conflicting_user' => $conflictingUser ? [
-                        'id' => $conflictingUser->id,
-                        'nombres' => $conflictingUser->nombres,
-                        'apellidos' => $conflictingUser->apellidos,
-                        'email' => $conflictingUser->email,
-                        'passport' => $conflictingUser->passport,
-                        'hs_id' => $conflictingUser->hs_id,
-                        'tl_id' => $conflictingUser->tl_id,
-                    ] : null,
-                ]);
-        }
-
-        Log::info("Usuario actualizado desde HubSpot", [
-            'user_id' => $user->id,
-            'fields_updated' => array_keys($fieldUpdates['updatesToDB'])
-        ]);
-    }
-
-    // Actualizar HubSpot de forma asíncrona si hay cambios
-    if (!empty($fieldUpdates['updatesToHubSpot'])) {
-        dispatch(new \App\Jobs\UpdateHubspotContactJob(
-            $user->hs_id,
-            $fieldUpdates['updatesToHubSpot'],
-            $this->hubspotService
-        ));
-    }
-
-    // ==========================================
-    // SINCRONIZACIÓN DE DEALS (ASÍNCRONO)
-    // ==========================================
-    dispatch(new SyncUserDealsJob($user));
-
-    // Obtener deals existentes de la DB
-    $negocios = Negocio::where("user_id", $user->id)->get();
-
-    // ==========================================
-    // MONDAY (CON CACHE)
-    // ==========================================
-    $mondayData = $this->getMondayDataCached($user);
+    $pageSnapshot = app(\App\Services\ClientCosSnapshotService::class)->forPage($user);
+    $negocios = $pageSnapshot['negocios'];
+    $mondayData = $pageSnapshot['monday_data'];
 
     // ==========================================
     // GENEALOGÍA (CON CACHE)
@@ -1817,42 +1684,10 @@ class UserController extends Controller
     // ==========================================
     // CUSTOMER ORDER STATUS
     // ==========================================
-    $servicename = Servicio::where("id_hubspot", "like", $user->servicio."%")->first();
-
-    $cosuser = [];
-
-    if (count($negocios) > 0) {
-        foreach ($negocios as $negocio) {
-            $statusService = new CosService(
-                $negocio,
-                $user,
-                $negocios,
-                $mondayData['mondaydataforAI'] ?? []
-            );
-
-            $status = $statusService->calculateStatus();
-            $status = $statusService->calculateProgress($status);
-
-            $cosuser[] = $status;
-        }
-    } else {
-        $cosuser[] = $this->handleNoNegocios($user, $servicename);
-    }
-
-    // Procesar y eliminar duplicados
-    $cosuserFinal = $this->removeDuplicatesAndSort($cosuser);
-
-    $cosuser = array_filter($cosuserFinal, function ($proceso) use ($cos) {
-                    return array_key_exists($proceso['servicio'], $cos);
-                });
-
-    $cosuserFinal = $cosuser;
-
-    // Guardar en usuario
-    $user->arraycos = array_values($cosuserFinal);
-    $user->arraycos_expire = Carbon::now()->addDays(2);
-    $user->cosready = $this->checkCosReady($cosuserFinal, $cos);
-    $user->save();
+    $servicename = filled($user->servicio)
+        ? Servicio::where('id_hubspot', 'like', $user->servicio . '%')->first()
+        : null;
+    $cosuserFinal = $pageSnapshot['cos'];
 
     // ==========================================
     // DATOS ADICIONALES
@@ -1898,7 +1733,7 @@ class UserController extends Controller
     // ==========================================
     // PREPARAR DATOS PARA VISTA
     // ==========================================
-    $usuariosMonday = $this->getUsersForSelect()->original ?? [];
+    $usuariosMonday = Cache::get('cos.monday_users', []);
     $roles = Role::all();
     $permissions = Permission::all();
     $servicios = Servicio::all();
@@ -1906,9 +1741,7 @@ class UserController extends Controller
     $user->loadMissing('owner:id,name,email');
 
     // Procesar URLs de archivos (ya existente en tu código)
-    $urls = $this->hubspotService->getEngagementsByContactId($user->hs_id);
-    $processedUrls = $this->processFilesConcurrently($urls, $user, $this->hubspotService);
-    $processedContactFiles = $this->processFilesConcurrently($HScontactFiles, $user, $this->hubspotService);
+    // Los documentos ya importados se leen desde la base local.
 
     // ==========================================
     // REGISTRAR VISITA
@@ -2021,8 +1854,14 @@ class UserController extends Controller
         'teamleaderProjectPayments',
         'servicios',
         'ownerOptions',
-        'columnasparatabla'
+'columnasparatabla'
     ))->render();
+
+    Log::info('COS página renderizada', [
+        'user_id' => $user->id,
+        'duration_ms' => (int) round((microtime(true) - $startTime) * 1000),
+        'source' => 'local',
+    ]);
 
     return $html;
 }
@@ -3045,14 +2884,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
     private function searchUserInMonday($passport, User $user)
     {
         $client = new Client();  // Inicializa el cliente Guzzle
-        $boardIds = [
-            878831315,
-            6524058079, 3950637564, 815474056, 3639222742, 3469085450, 2213224176,
-            1910043474, 1845710504, 1845706367, 1845701215, 1016436921,
-            1026956491, 815474056, 815471640, 807173414,
-            803542982, 765394861, 742896377, 708128239, 708123651,
-            669590637, 625187241
-        ];
+        $boardIds = array_keys(config('cos_snapshot.monday_search_boards', []));
         $searchUrl = "https://app.sefaruniversal.com/tree/" . $passport;
 
         $promises = [];  // Array para almacenar las promesas de las solicitudes
