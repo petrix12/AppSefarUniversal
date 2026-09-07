@@ -46,7 +46,7 @@
                     {{ $deal->status ?: 'Sin estado' }}
                 </span>
                 <h2 class="mt-3 mb-0">
-                    {{ number_format($deal->amount ?? 0, 2) }}
+                    {{ format_money($deal->amount ?? 0, 2) }}
                     <small class="text-muted">{{ $deal->currency }}</small>
                 </h2>
                 <small class="text-muted">Valor estimado</small>
@@ -118,7 +118,7 @@
                                         <br><small class="text-muted">{{ $invoice->invoice_date?->format('d/m/Y') ?? '-' }}</small>
                                     </td>
                                     <td>{{ $invoice->status ?: '-' }}</td>
-                                    <td class="text-right">{{ number_format($invoice->total_price_incl_tax ?? 0, 2) }} {{ $invoice->currency }}</td>
+                                    <td class="text-right">{{ format_money($invoice->total_price_incl_tax ?? 0, 2) }} {{ $invoice->currency }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

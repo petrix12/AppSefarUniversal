@@ -11,7 +11,7 @@
                 <small class="text-muted mr-3">
                     Último sync:
                     <strong>{{ $lastSync->finished_at?->diffForHumans() ?? 'en curso...' }}</strong>
-                    — {{ number_format($lastSync->processed) }} procesados
+                    — {{ format_money($lastSync->processed) }} procesados
                     @if($lastSync->failed > 0)
                         <span class="text-danger">/ {{ $lastSync->failed }} errores</span>
                     @endif
@@ -60,7 +60,7 @@
 
         <div class="card-tools">
             <span class="badge badge-info">
-                {{ number_format($contacts->total()) }} contactos
+                {{ format_money($contacts->total()) }} contactos
             </span>
         </div>
     </div>

@@ -55,10 +55,10 @@
             <div class="row">
                 @php
                     $kpiCards = [
-                        ['label' => 'Registros del mes', 'value' => number_format($kpis['registered_month']), 'color' => 'info', 'icon' => 'user-plus'],
-                        ['label' => 'Pagaron registro', 'value' => number_format($kpis['paid_registration_month']), 'color' => 'success', 'icon' => 'credit-card'],
-                        ['label' => 'Conversion x10', 'value' => number_format($kpis['conversion_per_ten'], 2), 'color' => 'primary', 'icon' => 'percentage'],
-                        ['label' => 'Monto registro', 'value' => number_format($kpis['registration_payment_amount'], 2) . ' EUR', 'color' => 'teal', 'icon' => 'euro-sign'],
+                        ['label' => 'Registros del mes', 'value' => format_money($kpis['registered_month']), 'color' => 'info', 'icon' => 'user-plus'],
+                        ['label' => 'Pagaron registro', 'value' => format_money($kpis['paid_registration_month']), 'color' => 'success', 'icon' => 'credit-card'],
+                        ['label' => 'Conversion x10', 'value' => format_money($kpis['conversion_per_ten'], 2), 'color' => 'primary', 'icon' => 'percentage'],
+                        ['label' => 'Monto registro', 'value' => format_money($kpis['registration_payment_amount'], 2) . ' EUR', 'color' => 'teal', 'icon' => 'euro-sign'],
                     ];
                 @endphp
 
@@ -207,7 +207,7 @@
                             <span class="info-box-icon bg-{{ $card['color'] }}"><i class="fas fa-{{ $card['icon'] }}"></i></span>
                             <div class="info-box-content">
                                 <span class="info-box-text">{{ $card['label'] }}</span>
-                                <span class="info-box-number">{{ number_format($card['value']) }}</span>
+                                <span class="info-box-number">{{ format_money($card['value']) }}</span>
                             </div>
                         </div>
                     </div>
@@ -383,7 +383,7 @@
                                         @foreach($salesPipeline as $row)
                                             <tr>
                                                 <td>{{ $row['label'] }}</td>
-                                                <td class="text-right">{{ number_format($row['total']) }}</td>
+                                                <td class="text-right">{{ format_money($row['total']) }}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>

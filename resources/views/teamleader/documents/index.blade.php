@@ -17,7 +17,7 @@
         <div class="col-md-4 col-sm-6">
             <div class="small-box bg-info">
                 <div class="inner">
-                    <h3>{{ number_format($stats['total']) }}</h3>
+                    <h3>{{ format_money($stats['total']) }}</h3>
                     <p>Total migrados</p>
                 </div>
                 <div class="icon"><i class="fas fa-folder-open"></i></div>
@@ -26,7 +26,7 @@
         <div class="col-md-4 col-sm-6">
             <div class="small-box bg-success">
                 <div class="inner">
-                    <h3>{{ number_format($stats['downloaded']) }}</h3>
+                    <h3>{{ format_money($stats['downloaded']) }}</h3>
                     <p>Descargados en S3</p>
                 </div>
                 <div class="icon"><i class="fas fa-cloud-download-alt"></i></div>
@@ -35,7 +35,7 @@
         <div class="col-md-4 col-sm-6">
             <div class="small-box bg-warning">
                 <div class="inner">
-                    <h3>{{ number_format($stats['pending']) }}</h3>
+                    <h3>{{ format_money($stats['pending']) }}</h3>
                     <p>Pendientes</p>
                 </div>
                 <div class="icon"><i class="fas fa-clock"></i></div>
@@ -88,7 +88,7 @@
             </form>
 
             <div class="card-tools">
-                <span class="badge badge-info">{{ number_format($documents->total()) }} archivo(s)</span>
+                <span class="badge badge-info">{{ format_money($documents->total()) }} archivo(s)</span>
             </div>
         </div>
 

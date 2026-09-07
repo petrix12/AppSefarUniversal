@@ -180,7 +180,7 @@
                     {{ $servicio->categoria ?? 'general' }}
                 </td>
                 <td class="">
-                    {{ $servicio->precio }} {{ $servicio->moneda ?? 'EUR' }}
+                    {{ format_money($servicio->precio) }} {{ $servicio->moneda ?? 'EUR' }}
                 </td>
                 <td class="text-center">
                     @if($servicio->visible_cliente)

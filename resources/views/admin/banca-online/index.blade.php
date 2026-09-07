@@ -308,15 +308,15 @@
                     <div class="bo-package-totals">
                         <div>
                             <strong>Subtotal</strong>
-                            <span data-package-subtotal>{{ number_format($catalog->packageSubtotal($package), 0, ',', '.') }} EUR</span>
+                            <span data-package-subtotal>{{ format_money($catalog->packageSubtotal($package), 0, ',', '.') }} EUR</span>
                         </div>
                         <div>
                             <strong>Descuento</strong>
-                            <span data-package-discount>-{{ number_format($catalog->packageDiscount($package), 0, ',', '.') }} EUR</span>
+                            <span data-package-discount>-{{ format_money($catalog->packageDiscount($package), 0, ',', '.') }} EUR</span>
                         </div>
                         <div class="is-total">
                             <strong>Total de la modalidad</strong>
-                            <span data-package-total>{{ number_format($catalog->packageTotal($package), 0, ',', '.') }} EUR</span>
+                            <span data-package-total>{{ format_money($catalog->packageTotal($package), 0, ',', '.') }} EUR</span>
                         </div>
                     </div>
                     <button type="submit" class="btn bo-save-package-button">

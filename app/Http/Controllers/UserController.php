@@ -2580,7 +2580,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
 
         // Actualizar Teamleader
         foreach ($updatesToTeamleaderAll as $tlDealId => $payload) {
-            $this->teamleaderService->updateProject($tlDealId, $payload);
+            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($tlDealId, $payload["custom_fields"] ?? []);
         }
 
         // Actualizar DB

@@ -206,12 +206,12 @@
                         @foreach ($facturas as $servicio => $monto)
                             <tr>
                                 <td>{{ $servicio }}</td>
-                                <td>{{ $monto }}€</td>
+                                <td>{{ format_money($monto) }}€</td>
                             </tr>
                         @endforeach
                         <tr>
                             <td><strong>Total General:</strong></td>
-                            <td><strong>{{ array_sum($facturas) }}€</strong></td>
+                            <td><strong>{{ format_money(array_sum($facturas)) }}€</strong></td>
                         </tr>
                     </tbody>
                 </table>
@@ -236,12 +236,12 @@
                         @foreach ($facturasCupones as $servicio => $monto)
                             <tr>
                                 <td>{{ $servicio }}</td>
-                                <td>{{ $monto }}€</td>
+                                <td>{{ format_money($monto) }}€</td>
                             </tr>
                         @endforeach
                         <tr>
                             <td><strong>Total General:</strong></td>
-                            <td><strong>{{ array_sum($facturasCupones) }}€</strong></td>
+                            <td><strong>{{ format_money(array_sum($facturasCupones)) }}€</strong></td>
                         </tr>
                     </tbody>
                 </table>

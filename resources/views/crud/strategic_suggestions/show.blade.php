@@ -100,7 +100,7 @@
                                 {{ $attachment->original_name }}
                             </a>
                             <small class="text-muted">
-                                ({{ number_format($attachment->size / 1024, 2) }} KB)
+                                ({{ format_money($attachment->size / 1024, 2) }} KB)
                             </small>
                         </li>
                     @endforeach
@@ -172,7 +172,7 @@
                                             {{ $attachment->original_name }}
                                         </a>
                                         <small class="text-muted">
-                                            ({{ number_format($attachment->size / 1024, 2) }} KB)
+                                            ({{ format_money($attachment->size / 1024, 2) }} KB)
                                         </small>
                                     </li>
                                 @endforeach

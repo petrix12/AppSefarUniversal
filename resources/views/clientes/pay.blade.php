@@ -695,7 +695,7 @@
                                         @endphp
                                         <tr>
                                             <td>{{ $compra["descripcion"] }}</td>
-                                            <td><center>{{ $compra["monto"] }}€</center></td>
+                                            <td><center>{{ format_money($compra['monto']) }}€</center></td>
                                             @if(count($compras) > 1)
                                                 <td>
                                                     <center>
@@ -707,7 +707,7 @@
                                     @endforeach
                                         <tr>
                                             <td class="text-end fw-bold" style="text-align: right"><b>TOTAL:</b></td>
-                                            <td class="fw-bold"><center><b>{{ $total }}€</b></center></td>
+                                            <td class="fw-bold"><center><b>{{ format_money($total) }}€</b></center></td>
                                             @if (count($compras) > 1)
                                                 <td></td>
                                             @endif

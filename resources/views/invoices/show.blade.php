@@ -254,10 +254,10 @@
                             <tr>
                                 <td>{{ $line->description }}</td>
                                 <td class="text-right">{{ $line->quantity }}</td>
-                                <td class="text-right">{{ number_format($line->unit_price, 2) }}</td>
+                                <td class="text-right">{{ format_money($line->unit_price, 2) }}</td>
                                 <td class="text-right">{{ $line->tax_rate }}%</td>
                                 <td class="text-right font-weight-bold">
-                                    {{ number_format($line->total, 2) }}
+                                    {{ format_money($line->total, 2) }}
                                 </td>
                             </tr>
                             @endforeach
@@ -266,20 +266,20 @@
                             <tr>
                                 <td colspan="4" class="text-right text-muted">Subtotal</td>
                                 <td class="text-right font-weight-bold">
-                                    {{ number_format($invoice->total_excl_tax, 2) }} {{ $invoice->currency }}
+                                    {{ format_money($invoice->total_excl_tax, 2) }} {{ $invoice->currency }}
                                 </td>
                             </tr>
                             <tr>
                                 <td colspan="4" class="text-right text-muted">IVA</td>
                                 <td class="text-right font-weight-bold">
-                                    {{ number_format($invoice->total_tax, 2) }} {{ $invoice->currency }}
+                                    {{ format_money($invoice->total_tax, 2) }} {{ $invoice->currency }}
                                 </td>
                             </tr>
                             <tr>
                                 <td colspan="4" class="text-right"><strong>Total</strong></td>
                                 <td class="text-right">
                                     <strong>
-                                        {{ number_format($invoice->total_incl_tax, 2) }} {{ $invoice->currency }}
+                                        {{ format_money($invoice->total_incl_tax, 2) }} {{ $invoice->currency }}
                                     </strong>
                                 </td>
                             </tr>

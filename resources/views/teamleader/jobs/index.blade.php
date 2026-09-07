@@ -61,7 +61,7 @@
         <div class="col-md-2 col-sm-6">
             <div class="small-box bg-info">
                 <div class="inner">
-                    <h3>{{ number_format($totals['total']) }}</h3>
+                    <h3>{{ format_money($totals['total']) }}</h3>
                     <p>Total en cola</p>
                 </div>
                 <div class="icon"><i class="fas fa-layer-group"></i></div>
@@ -70,7 +70,7 @@
         <div class="col-md-2 col-sm-6">
             <div class="small-box bg-success">
                 <div class="inner">
-                    <h3>{{ number_format($totals['ready']) }}</h3>
+                    <h3>{{ format_money($totals['ready']) }}</h3>
                     <p>Listos</p>
                 </div>
                 <div class="icon"><i class="fas fa-play"></i></div>
@@ -79,7 +79,7 @@
         <div class="col-md-2 col-sm-6">
             <div class="small-box bg-warning">
                 <div class="inner">
-                    <h3>{{ number_format($totals['delayed']) }}</h3>
+                    <h3>{{ format_money($totals['delayed']) }}</h3>
                     <p>Diferidos</p>
                 </div>
                 <div class="icon"><i class="fas fa-clock"></i></div>
@@ -88,7 +88,7 @@
         <div class="col-md-2 col-sm-6">
             <div class="small-box bg-primary">
                 <div class="inner">
-                    <h3>{{ number_format($totals['reserved']) }}</h3>
+                    <h3>{{ format_money($totals['reserved']) }}</h3>
                     <p>Reservados</p>
                 </div>
                 <div class="icon"><i class="fas fa-spinner"></i></div>
@@ -97,7 +97,7 @@
         <div class="col-md-2 col-sm-6">
             <div class="small-box bg-danger">
                 <div class="inner">
-                    <h3>{{ number_format($totals['failed']) }}</h3>
+                    <h3>{{ format_money($totals['failed']) }}</h3>
                     <p>Fallidos</p>
                 </div>
                 <div class="icon"><i class="fas fa-exclamation-triangle"></i></div>
@@ -129,10 +129,10 @@
                                 @foreach($queueStats as $stat)
                                     <tr>
                                         <td><code>{{ $stat['queue'] }}</code></td>
-                                        <td class="text-right">{{ number_format($stat['total']) }}</td>
-                                        <td class="text-right text-success">{{ number_format($stat['ready']) }}</td>
-                                        <td class="text-right text-warning">{{ number_format($stat['delayed']) }}</td>
-                                        <td class="text-right text-primary">{{ number_format($stat['reserved']) }}</td>
+                                        <td class="text-right">{{ format_money($stat['total']) }}</td>
+                                        <td class="text-right text-success">{{ format_money($stat['ready']) }}</td>
+                                        <td class="text-right text-warning">{{ format_money($stat['delayed']) }}</td>
+                                        <td class="text-right text-primary">{{ format_money($stat['reserved']) }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -155,7 +155,7 @@
                             <div class="col-md-3 col-sm-6 mb-3">
                                 <div class="border rounded p-2 h-100">
                                     <div class="text-muted small">{{ $label }}</div>
-                                    <div class="h5 mb-0">{{ number_format($count) }}</div>
+                                    <div class="h5 mb-0">{{ format_money($count) }}</div>
                                 </div>
                             </div>
                         @endforeach
@@ -326,9 +326,9 @@
                                         <td>{{ $log->entity }}</td>
                                         <td><span class="badge badge-{{ $logClass }}">{{ $log->status }}</span></td>
                                         <td class="text-right">
-                                            {{ number_format($log->processed) }}/{{ number_format($log->total) }}
+                                            {{ format_money($log->processed) }}/{{ format_money($log->total) }}
                                             @if($log->failed)
-                                                <span class="text-danger">({{ number_format($log->failed) }} err.)</span>
+                                                <span class="text-danger">({{ format_money($log->failed) }} err.)</span>
                                             @endif
                                         </td>
                                         <td>

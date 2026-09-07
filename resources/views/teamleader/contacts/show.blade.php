@@ -240,7 +240,7 @@
                             @endphp
                             <span class="badge badge-{{ $badgeColor }}">{{ $project->status }}</span>
                             @if($project->budget_amount)
-                                <br><small>{{ number_format($project->budget_amount, 2) }} {{ $project->budget_currency }}</small>
+                                <br><small>{{ format_money($project->budget_amount, 2) }} {{ $project->budget_currency }}</small>
                             @endif
                         </div>
                     </a>
@@ -268,7 +268,7 @@
                             @endphp
                             <span class="badge badge-{{ $badgeColor }}">{{ $deal->status }}</span>
                             @if($deal->amount)
-                                <br><small>{{ number_format($deal->amount, 2) }} {{ $deal->currency }}</small>
+                                <br><small>{{ format_money($deal->amount, 2) }} {{ $deal->currency }}</small>
                             @endif
                         </div>
                     </a>
@@ -297,7 +297,7 @@
                             @endphp
                             <span class="badge badge-{{ $badgeColor }}">{{ $invoice->status }}</span>
                             @if($invoice->total_price_incl_tax)
-                                <br><small>{{ number_format($invoice->total_price_incl_tax, 2) }} {{ $invoice->currency }}</small>
+                                <br><small>{{ format_money($invoice->total_price_incl_tax, 2) }} {{ $invoice->currency }}</small>
                             @endif
                         </div>
                     </a>
@@ -325,7 +325,7 @@
                             <small class="text-muted">
                                 {{ $doc->tl_created_at?->format('d/m/Y') ?? '—' }}
                                 @if($doc->size_bytes)
-                                    · {{ number_format($doc->size_bytes / 1024, 1) }} KB
+                                    · {{ format_money($doc->size_bytes / 1024, 1) }} KB
                                 @endif
                             </small>
                         </div>

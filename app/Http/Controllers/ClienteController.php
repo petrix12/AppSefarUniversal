@@ -65,6 +65,8 @@ use App\Jobs\SyncUserDealsJob;
 use App\Services\CosService;
 use App\Services\TeamleaderClientHistoryService;
 use App\Services\TeamleaderPhasePaymentService;
+use App\Services\TeamleaderProjectPaymentAnalyzer;
+use App\Services\TeamleaderProjectPaymentWriter;
 use App\Services\TeamleaderProjectFullUpdater;
 use Illuminate\Support\Facades\Cache;
 class ClienteController extends Controller
@@ -835,7 +837,7 @@ class ClienteController extends Controller
 
         // Actualizar Teamleader
         foreach ($updatesToTeamleaderAll as $tlDealId => $payload) {
-            $this->teamleaderService->updateProject($tlDealId, $payload);
+            app(TeamleaderProjectFullUpdater::class)->updateCustomFields($tlDealId, $payload["custom_fields"] ?? []);
         }
 
         // Actualizar DB
@@ -1994,8 +1996,11 @@ class ClienteController extends Controller
                         'met' => 'cupon',
                     ]);
 
+                    $paidAt = now();
+
                     foreach ($compras as $key => $compra) {
-                        DB::table('compras')->where('id', $compra['id'])->update(['pagado' => 1, 'hash_factura' => $hash_factura]);
+                        DB::table('compras')->where('id', $compra['id'])->update(['pagado' => 1, 'hash_factura' => $hash_factura, 'paid_at' => $paidAt]);
+                        $compra->forceFill(['pagado' => 1, 'hash_factura' => $hash_factura, 'paid_at' => $paidAt]);
                     }
 
                     $this->finalizeCatalogPurchases($compras, $hash_factura);
@@ -2520,9 +2525,15 @@ class ClienteController extends Controller
             'hash_factura' => $hash_factura,
             'met' => 'paypal',
         ]);
+        $paidAt = now();
 
         foreach ($compras as $key => $compra) {
-            DB::table('compras')->where('id', $compra['id'])->update(['pagado' => 1, 'hash_factura' => $hash_factura]);
+            DB::table('compras')->where('id', $compra['id'])->update([
+                'pagado' => 1,
+                'hash_factura' => $hash_factura,
+                'paid_at' => $paidAt,
+            ]);
+            $compra->forceFill(['pagado' => 1, 'hash_factura' => $hash_factura, 'paid_at' => $paidAt]);
 
             if ($compra->source === TeamleaderPhasePaymentService::PURCHASE_SOURCE) {
                 try {
@@ -2536,6 +2547,9 @@ class ClienteController extends Controller
 
                 continue;
             }
+
+            $this->recordLegacyPhasePayment($compra, $paidAt);
+            continue;
 
             $deal = Negocio::find($compra->deal_id);
             $fechaActual = Carbon::now()->format('Y/m/d');
@@ -2939,9 +2953,11 @@ class ClienteController extends Controller
                     'idcus' => $charged->customer,
                     'idcharge' => $charged->id
                 ]);
+                $paidAt = now();
 
                 foreach ($compras as $key => $compra) {
-                    DB::table('compras')->where('id', $compra['id'])->update(['pagado' => 1, 'hash_factura' => $hash_factura]);
+                    DB::table('compras')->where('id', $compra['id'])->update(['pagado' => 1, 'hash_factura' => $hash_factura, 'paid_at' => $paidAt]);
+                    $compra->forceFill(['pagado' => 1, 'hash_factura' => $hash_factura, 'paid_at' => $paidAt]);
                 }
 
                 $this->finalizeCatalogPurchases($compras, $hash_factura, $charged->id);
@@ -3289,8 +3305,15 @@ class ClienteController extends Controller
                     'idcharge' => $charged->id
                 ]);
 
+                $paidAt = now();
+
                 foreach ($compras as $key => $compra) {
-                    DB::table('compras')->where('id', $compra['id'])->update(['pagado' => 1, 'hash_factura' => $hash_factura]);
+                    DB::table('compras')->where('id', $compra['id'])->update([
+                        'pagado' => 1,
+                        'hash_factura' => $hash_factura,
+                        'paid_at' => $paidAt,
+                    ]);
+                    $compra->forceFill(['pagado' => 1, 'hash_factura' => $hash_factura, 'paid_at' => $paidAt]);
 
                     if ($compra->source === TeamleaderPhasePaymentService::PURCHASE_SOURCE) {
                         try {
@@ -3304,6 +3327,9 @@ class ClienteController extends Controller
 
                         continue;
                     }
+
+                    $this->recordLegacyPhasePayment($compra, $paidAt);
+                    continue;
 
                     $deal = Negocio::find($compra->deal_id);
                     $fechaActual = Carbon::now()->format('Y/m/d');
@@ -4111,6 +4137,100 @@ class ClienteController extends Controller
                 'success' => false,
                 'message' => 'Ha ocurrido un error inesperado. Por favor, intente nuevamente.'
             ], 500);
+        }
+    }
+
+    /**
+     * Records legacy phase purchases as append-only payment entries. Older
+     * payment handlers used to replace the paid field with the latest amount,
+     * which erased prior installments from Teamleader and local integrations.
+     */
+    private function recordLegacyPhasePayment(Compras $purchase, Carbon $paidAt): void
+    {
+        $deal = Negocio::find($purchase->deal_id);
+        $phase = (int) $purchase->phasenum;
+        $amount = round((float) $purchase->monto, 2);
+
+        $definitions = [
+            1 => ['paid' => 'fase_1_pagado', 'date' => 'fecha_fase_1_pagado', 'total' => 'monto_fase_1_pagado', 'hubspot' => true],
+            2 => ['paid' => 'fase_2_pagado', 'date' => 'fecha_fase_2_pagado', 'total' => 'monto_fase_2_pagado', 'hubspot' => true],
+            3 => ['paid' => 'fase_3_pagado', 'date' => 'fecha_fase_3_pagado', 'total' => 'monto_fase_3_pagado', 'hubspot' => true],
+            99 => ['paid' => 'cil___fcje_pagado', 'date' => 'cilfcje_fechapagado', 'total' => 'cilfcje_montopagado', 'hubspot' => false],
+            98 => ['paid' => 'carta_nat_pagado', 'date' => 'carta_nat_fechapagado', 'total' => 'carta_nat_montopagado', 'hubspot' => false],
+        ];
+        $definition = $definitions[$phase] ?? null;
+
+        if (! $deal || ! $definition || $amount <= 0) {
+            return;
+        }
+
+        $reference = 'purchase-' . $purchase->id;
+        $paidField = $definition['paid'];
+        $dateField = $definition['date'];
+        $totalField = $definition['total'];
+        $previous = trim((string) ($deal->{$paidField} ?? ''));
+        $alreadyRecordedLocally = str_contains($previous, "[COS:{$reference}]");
+        $previousPaymentData = app(TeamleaderProjectPaymentAnalyzer::class)
+            ->parseMoneyText($previous);
+        $hasUnconvertedPreviousPayment = (bool) ($previousPaymentData['requires_currency_conversion'] ?? false);
+        $previousFromEntries = (float) ($previousPaymentData['total'] ?? 0);
+        $previousTotal = max($previousFromEntries, (float) ($deal->{$totalField} ?? 0));
+        $total = $alreadyRecordedLocally || $hasUnconvertedPreviousPayment
+            ? $previousTotal
+            : round($previousTotal + $amount, 2);
+        $entry = 'Abono ' . format_money($amount, 2, '.', '') . ' EUR ' . $paidAt->format('Y-m-d')
+            . " [COS:{$reference}]";
+
+        if (! $alreadyRecordedLocally) {
+            $deal->{$paidField} = $previous === '' ? $entry : $previous . ' + ' . $entry;
+            $deal->{$dateField} = $paidAt->toDateString();
+
+            if (! $hasUnconvertedPreviousPayment) {
+                $deal->{$totalField} = $total;
+            }
+
+            $deal->save();
+        }
+        if ($deal->teamleader_id) {
+            try {
+                app(TeamleaderProjectPaymentWriter::class)->appendPhasePayment(
+                    (string) $deal->teamleader_id,
+                    $phase,
+                    $amount,
+                    $paidAt->format('Y-m-d'),
+                    $reference,
+                    'EUR'
+                );
+            } catch (\Throwable $exception) {
+                Log::channel('teamleader')->error('No se pudo acumular el abono de una fase legacy', [
+                    'purchase_id' => $purchase->id,
+                    'deal_id' => $deal->id,
+                    'phase' => $phase,
+                    'error' => $exception->getMessage(),
+                ]);
+            }
+        }
+
+        if ($deal->hubspot_id && ! $alreadyRecordedLocally) {
+            $payload = [$paidField => $deal->{$paidField}];
+
+            if ($definition['hubspot']) {
+                $payload[$dateField] = $paidAt->copy()->utc()->startOfDay()->getTimestamp() * 1000;
+
+                if (! $hasUnconvertedPreviousPayment) {
+                    $payload[$totalField] = $total;
+                }
+            }
+            try {
+                $this->hubspotService->updateDeals($deal->hubspot_id, $payload);
+            } catch (\Throwable $exception) {
+                Log::warning('No se pudo reflejar el abono acumulado en HubSpot', [
+                    'purchase_id' => $purchase->id,
+                    'deal_id' => $deal->id,
+                    'phase' => $phase,
+                    'error' => $exception->getMessage(),
+                ]);
+            }
         }
     }
 

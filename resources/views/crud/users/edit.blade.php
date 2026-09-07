@@ -73,7 +73,7 @@
                         @if($cosViewRoleId == 5)
                         Mi Estatus
                         @else
-                        Estatus de Cliente
+                        Estatus de Solicitante
                         @endif
                     </button>
                 </li>
@@ -107,7 +107,7 @@
                 </li>
                 <li class="nav-item" role="presentation">
                     <button style="color:black" class="nav-link" id="paymentspen-tab" data-bs-toggle="tab" data-bs-target="#paymentspen" type="button" role="tab" aria-controls="paymentspen" aria-selected="false">
-                        Pagos pendientes
+                        Deuda pendiente
                     </button>
                 </li>
                 @if($cosViewRoleId == 5)
@@ -187,10 +187,10 @@
                         $isClientRole = $rolId === 5;
                         $syncButtonLabel = $isClientRole
                             ? 'Actualizar a estatus más reciente'
-                            : 'Sincronizar COS del cliente';
+                            : 'Sincronizar COS del solicitante';
                         $syncLoadingLabel = $isClientRole
                             ? 'Actualizando... Puede tardar un poco.'
-                            : 'Sincronizando... Puede tardar un tiempo dependiendo de la cantidad de datos del cliente.';
+                            : 'Sincronizando... Puede tardar un tiempo dependiendo de la cantidad de datos del solicitante.';
                         $supportTicketButtonLabel = $isClientRole
                             ? 'Solicitar soporte'
                             : 'Crear ticket de soporte';
@@ -278,7 +278,7 @@
                             onmouseout="this.style.background='#7c3aed'"
                         >
                             <i class="fas fa-bell" id="iconNotifyCosStatus"></i>
-                            <span id="labelNotifyCosStatus">Notificar estatus al cliente</span>
+                            <span id="labelNotifyCosStatus">Notificar estatus al solicitante</span>
                         </button>
                         <button
                             type="button"
@@ -430,14 +430,14 @@
                                     <div class="col-md-6">
                                         <div class="border rounded p-3 h-100 bg-light">
                                             <div class="small text-muted">Total pagado</div>
-                                            <div class="h4 fw-bold mb-0 text-success">{{ number_format((float) $amount['paid'], 2, ',', '.') }} {{ $amount['currency'] }}</div>
+                                            <div class="h4 fw-bold mb-0 text-success">{{ format_money((float) $amount['paid'], 2, ',', '.') }} {{ $amount['currency'] }}</div>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="border rounded p-3 h-100 bg-light">
                                             <div class="small text-muted">Deuda pendiente</div>
                                             @if($amount['debt'] > 0)
-                                                <div class="h4 fw-bold mb-0 text-danger">{{ number_format((float) $amount['debt'], 2, ',', '.') }} {{ $amount['currency'] }}</div>
+                                                <div class="h4 fw-bold mb-0 text-danger">{{ format_money((float) $amount['debt'], 2, ',', '.') }} {{ $amount['currency'] }}</div>
                                             @else
                                                 <div class="fw-bold text-success">No hay deudas pendientes.</div>
                                                 <div class="small text-muted">0,00 {{ $amount['currency'] }}</div>
@@ -531,7 +531,7 @@
                                 })
                                 ->values();
                             $tlPaymentHasData = $tlPaymentRows->isNotEmpty();
-                            $tlMoney = fn ($amount) => number_format((float) $amount, 2, ',', '.') . ' EUR';
+                            $tlMoney = fn ($amount) => format_money((float) $amount, 2, ',', '.') . ' EUR';
                             $tlStatusLabels = [
                                 'paid' => 'Pagado',
                                 'partial' => 'Parcial',
@@ -680,7 +680,7 @@
                                         'icon' => 'fa-project-diagram',
                                         'name' => $project->title ?: $project->id,
                                         'status' => $project->status ?: '-',
-                                        'amount' => $project->budget_amount ? number_format((float) $project->budget_amount, 2, ',', '.') . ' ' . ($project->budget_currency ?: 'EUR') : '-',
+                                        'amount' => $project->budget_amount ? format_money((float) $project->budget_amount, 2, ',', '.') . ' ' . ($project->budget_currency ?: 'EUR') : '-',
                                         'meta' => $project->custom_field_value ?: '-',
                                         'updated' => $project->tl_updated_at ?: $project->updated_at,
                                         'url' => $canViewTeamleader ? route('teamleader.projects.show', $project->id) : null,
@@ -693,7 +693,7 @@
                                         'icon' => 'fa-handshake',
                                         'name' => $deal->title ?: $deal->id,
                                         'status' => $deal->status ?: '-',
-                                        'amount' => $deal->amount ? number_format((float) $deal->amount, 2, ',', '.') . ' ' . ($deal->currency ?: 'EUR') : '-',
+                                        'amount' => $deal->amount ? format_money((float) $deal->amount, 2, ',', '.') . ' ' . ($deal->currency ?: 'EUR') : '-',
                                         'meta' => optional($deal->estimated_closing_date)->format('d/m/Y') ?: '-',
                                         'updated' => $deal->tl_updated_at ?: $deal->updated_at,
                                         'url' => $canViewTeamleader ? route('teamleader.deals.show', $deal->id) : null,
@@ -706,7 +706,7 @@
                                         'icon' => 'fa-file-invoice-dollar',
                                         'name' => $invoice->invoice_number ?: $invoice->id,
                                         'status' => $invoice->status ?: '-',
-                                        'amount' => $invoice->total_price_incl_tax ? number_format((float) $invoice->total_price_incl_tax, 2, ',', '.') . ' ' . ($invoice->currency ?: 'EUR') : '-',
+                                        'amount' => $invoice->total_price_incl_tax ? format_money((float) $invoice->total_price_incl_tax, 2, ',', '.') . ' ' . ($invoice->currency ?: 'EUR') : '-',
                                         'meta' => optional($invoice->invoice_date)->format('d/m/Y') ?: '-',
                                         'updated' => $invoice->tl_updated_at ?: $invoice->updated_at,
                                         'url' => $canViewTeamleader ? route('teamleader.invoices.show', $invoice->id) : null,
@@ -1864,7 +1864,7 @@
                                     <input type="date" value="{{ old('n2__f_solicitud_mayor_info', $user->n2__f_solicitud_mayor_info) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n2__f_solicitud_mayor_info" name="n2__f_solicitud_mayor_info">
                                 </div>
                                 <div style="flex: 1;" class="mb-3">
-                                    <label for="n2__f__de_solicitud_al_cliente" class="block text-sm font-medium text-gray-700">Fecha Solicitud al Cliente</label>
+                                    <label for="n2__f__de_solicitud_al_cliente" class="block text-sm font-medium text-gray-700">Fecha de solicitud al solicitante</label>
                                     <input type="date" value="{{ old('n2__f__de_solicitud_al_cliente', $user->n2__f__de_solicitud_al_cliente) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n2__f__de_solicitud_al_cliente" name="n2__f__de_solicitud_al_cliente">
                                 </div>
                                 <div style="flex: 1;" class="mb-3">
@@ -2114,7 +2114,7 @@
                                         @endforeach
                                     </td>
                                     <td>
-                                        {{$monto}} €
+                                        {{ format_money($monto) }} €
                                     </td>
                                     <td>
                                         @if($cosViewRoleId == 1)
@@ -2135,7 +2135,7 @@
                                     <td>{{ optional($compra->paid_at ?: $compra->updated_at)->format('d/m/Y') ?: '-' }}</td>
                                     <td>Pago registrado</td>
                                     <td>{{ $compra->descripcion }}</td>
-                                    <td>{{ number_format((float) $compra->monto, 2, ',', '.') }} €</td>
+                                    <td>{{ format_money((float) $compra->monto, 2, ',', '.') }} €</td>
                                     <td>—</td>
                                 </tr>
                             @endforeach
@@ -2172,10 +2172,15 @@
                             @foreach($comprasSinDealNoPagadas as $compra)
                                 <tr>
                                     <td>{{ $compra->descripcion }}</td>
-                                    <td>{{ $compra->monto }} €</td>
+                                    <td>{{ format_money($compra->monto) }} €</td>
                                     @if($cosViewRoleId == 5)
                                     <td>
-                                        @if(($compra->source ?? null) === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE)
+                                        @if($cosClientPreview)
+                                        <button type="button" class="btn btn-secondary" disabled
+                                            title="La vista previa es solo de lectura. El solicitante puede pagar al entrar a su cuenta.">
+                                            <i class="fas fa-credit-card"></i> Pagar desde mi cuenta
+                                        </button>
+                                        @elseif(($compra->source ?? null) === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE)
                                         <form action="{{ route('gotopayfases') }}" method="POST">
                                             @csrf
                                             <input type="hidden" name="id" value="{{ $compra->id }}">
@@ -2196,9 +2201,15 @@
                             @foreach($comprasConDealNoPagadas as $compra)
                                 <tr>
                                     <td>{{ $compra->descripcion }}</td>
-                                    <td>{{ $compra->monto }} €</td>
+                                    <td>{{ format_money($compra->monto) }} €</td>
                                     @if($cosViewRoleId == 5)
                                     <td>
+                                        @if($cosClientPreview)
+                                        <button type="button" class="btn btn-secondary" disabled
+                                            title="La vista previa es solo de lectura. El solicitante puede pagar al entrar a su cuenta.">
+                                            <i class="fas fa-credit-card"></i> Pagar desde mi cuenta
+                                        </button>
+                                        @else
                                         <form action="{{ route('gotopayfases') }}" method="POST">
                                             @csrf
                                             <input type="hidden" name="id" value="{{ $compra->id }}">
@@ -2206,6 +2217,7 @@
                                                 <i class="fas fa-credit-card"></i> Pagar ahora
                                             </button>
                                         </form>
+                                        @endif
                                     </td>
                                     @endif
                                 </tr>
@@ -2412,7 +2424,7 @@
                     </form>
                     @else
                         <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4 mb-4">
-                            <span class="ctvSefar block text-indigo-600">Este cliente no se encuentra en Monday</span>
+                            <span class="ctvSefar block text-indigo-600">Este solicitante no se encuentra en Monday</span>
                         </h2>
                     @endif
                 </div>
@@ -2455,14 +2467,14 @@
 
                     <div class="mb-3">
                         <h3 class="text-xl font-bold text-gray-900 mb-1">Datos migrados de Teamleader</h3>
-                        <p class="text-sm text-gray-500 mb-0">Cruce de solo lectura usando ID Teamleader, pasaporte o correo del cliente.</p>
+                        <p class="text-sm text-gray-500 mb-0">Cruce de solo lectura usando ID Teamleader, pasaporte o correo del solicitante.</p>
                     </div>
 
                     @if(! $tlContact)
                         <div class="alert alert-warning d-flex align-items-start gap-2">
                             <i class="fas fa-search mt-1"></i>
                             <div>
-                                <strong>No se encontro un contacto migrado de Teamleader para este cliente.</strong>
+                                <strong>No se encontro un contacto migrado de Teamleader para este solicitante.</strong>
                                 <div class="small">Se intento asociar por el ID Teamleader guardado, por pasaporte y por correo principal/alternativo.</div>
                             </div>
                         </div>
@@ -2492,7 +2504,7 @@
                             <div class="col-md-3">
                                 <div class="border rounded p-3 bg-light h-100">
                                     <div class="small text-muted">Total facturado</div>
-                                    <div class="h5 mb-0">{{ number_format((float) ($tlSummary['total_invoiced'] ?? 0), 2) }}</div>
+                                    <div class="h5 mb-0">{{ format_money((float) ($tlSummary['total_invoiced'] ?? 0), 2) }}</div>
                                     <small class="text-muted">{{ $tlSummary['currency'] ?? '-' }}</small>
                                 </div>
                             </div>
@@ -2572,7 +2584,7 @@
                                             @endif
                                         </td>
                                         <td>{{ $deal->status ?: '-' }}</td>
-                                        <td>{{ $deal->amount ? number_format((float) $deal->amount, 2) . ' ' . $deal->currency : '-' }}</td>
+                                        <td>{{ $deal->amount ? format_money((float) $deal->amount, 2) . ' ' . $deal->currency : '-' }}</td>
                                         <td>{{ optional($deal->estimated_closing_date)->format('d/m/Y') ?: '-' }}</td>
                                         <td>{{ optional($deal->tl_updated_at)->format('d/m/Y H:i') ?: '-' }}</td>
                                     </tr>
@@ -2607,7 +2619,7 @@
                                         </td>
                                         <td>{{ $project->status ?: '-' }}</td>
                                         <td>{{ $project->custom_field_value ?: '-' }}</td>
-                                        <td>{{ $project->budget_amount ? number_format((float) $project->budget_amount, 2) . ' ' . $project->budget_currency : '-' }}</td>
+                                        <td>{{ $project->budget_amount ? format_money((float) $project->budget_amount, 2) . ' ' . $project->budget_currency : '-' }}</td>
                                         <td>{{ optional($project->due_on)->format('d/m/Y') ?: '-' }}</td>
                                     </tr>
                                 @endforeach
@@ -2640,7 +2652,7 @@
                                             @endif
                                         </td>
                                         <td>{{ $invoice->status ?: '-' }}</td>
-                                        <td>{{ $invoice->total_price_incl_tax ? number_format((float) $invoice->total_price_incl_tax, 2) . ' ' . $invoice->currency : '-' }}</td>
+                                        <td>{{ $invoice->total_price_incl_tax ? format_money((float) $invoice->total_price_incl_tax, 2) . ' ' . $invoice->currency : '-' }}</td>
                                         <td>{{ optional($invoice->invoice_date)->format('d/m/Y') ?: '-' }}</td>
                                         <td>{{ optional($invoice->paid_date)->format('d/m/Y') ?: '-' }}</td>
                                     </tr>
@@ -2702,8 +2714,8 @@
 
                 <div class="tab-pane fade" id="client-tasks" role="tabpanel" aria-labelledby="client-tasks-tab">
                     <div class="mb-3">
-                        <h3 class="text-xl font-bold text-gray-900 mb-1">Tareas del cliente</h3>
-                        <p class="text-sm text-gray-500 mb-0">Historial completo de tareas asociadas a este cliente.</p>
+                        <h3 class="text-xl font-bold text-gray-900 mb-1">Tareas del solicitante</h3>
+                        <p class="text-sm text-gray-500 mb-0">Historial completo de tareas asociadas a este solicitante.</p>
                     </div>
 
                     <table id="clientTasksTable" class="table table-striped table-hover w-100">
@@ -2780,7 +2792,7 @@
                 <div class="tab-pane fade" id="client-chat" role="tabpanel" aria-labelledby="client-chat-tab">
                     <div class="mb-3">
                         <h3 class="text-xl font-bold text-gray-900 mb-1">Chat interno</h3>
-                        <p class="text-sm text-gray-500 mb-0">Notas internas entre coordinadores y administradores sobre este cliente. El cliente no ve este chat.</p>
+                        <p class="text-sm text-gray-500 mb-0">Notas internas entre coordinadores y administradores sobre este solicitante. El solicitante no ve este chat.</p>
                     </div>
 
                     <div class="border rounded bg-light p-3">
@@ -2808,7 +2820,7 @@
                                     @endif
                                 </div>
                             @empty
-                                <div id="clientInternalChatEmpty" class="text-muted text-center py-5">No hay mensajes internos para este cliente.</div>
+                                <div id="clientInternalChatEmpty" class="text-muted text-center py-5">No hay mensajes internos para este solicitante.</div>
                             @endforelse
                         </div>
 
@@ -3821,7 +3833,7 @@
                     data: {
                         support_topic: result.value.support_topic,
                         request_description: result.value.request_description,
-                        source: 'Estatus del cliente - App Sefar'
+                        source: 'Estatus del solicitante - App Sefar'
                     },
                     headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
                     beforeSend: function () {
@@ -3863,7 +3875,7 @@
             const icon = $('#iconNotifyCosStatus');
             const label = $('#labelNotifyCosStatus');
             const originalLabel = label.text();
-            const clientFirstName = @json($user->nombres ?: $user->name ?: 'cliente');
+            const clientFirstName = @json($user->nombres ?: $user->name ?: 'solicitante');
             const cosNotifyTemplates = {
                 custom: {
                     title: 'Actualizacion de estatus de tu proceso',
@@ -3888,7 +3900,7 @@
             };
 
             Swal.fire({
-                title: 'Notificar al cliente',
+                title: 'Notificar al solicitante',
                 html: `
                     <select id="cosNotifyTemplate" class="swal2-select">
                         <option value="custom">Mensaje personalizado</option>
@@ -3898,7 +3910,7 @@
                         <option value="payment">Pagos o servicios</option>
                     </select>
                     <input id="cosNotifyTitle" class="swal2-input" placeholder="Titulo" value="Actualizacion de estatus de tu proceso">
-                    <textarea id="cosNotifyMessage" class="swal2-textarea" placeholder="Mensaje para el cliente"></textarea>
+                    <textarea id="cosNotifyMessage" class="swal2-textarea" placeholder="Mensaje para el solicitante"></textarea>
                     <label style="display:flex;align-items:center;gap:.5rem;justify-content:center;font-size:.9rem;">
                         <input type="checkbox" id="cosNotifyEmail" checked>
                         Enviar tambien por correo

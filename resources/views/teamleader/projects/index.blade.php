@@ -88,7 +88,7 @@
         <div class="col-md-3 col-6">
             <div class="small-box bg-info">
                 <div class="inner">
-                    <h4>{{ number_format($paymentTotals['preestab_amount'], 2, ',', '.') }} EUR</h4>
+                    <h4>{{ format_money($paymentTotals['preestab_amount'], 2, ',', '.') }} EUR</h4>
                     <p>Preestablecido</p>
                 </div>
             </div>
@@ -96,7 +96,7 @@
         <div class="col-md-3 col-6">
             <div class="small-box bg-success">
                 <div class="inner">
-                    <h4>{{ number_format($paymentTotals['paid_amount'], 2, ',', '.') }} EUR</h4>
+                    <h4>{{ format_money($paymentTotals['paid_amount'], 2, ',', '.') }} EUR</h4>
                     <p>Pagado / abonado</p>
                 </div>
             </div>
@@ -104,7 +104,7 @@
         <div class="col-md-3 col-6">
             <div class="small-box bg-warning">
                 <div class="inner">
-                    <h4>{{ number_format($paymentTotals['balance_amount'], 2, ',', '.') }} EUR</h4>
+                    <h4>{{ format_money($paymentTotals['balance_amount'], 2, ',', '.') }} EUR</h4>
                     <p>Por cobrar</p>
                 </div>
             </div>
@@ -177,14 +177,14 @@
                             </td>
 
                             <td class="text-right">
-                                <strong>{{ number_format($phase['effective_preestab_amount'], 2, ',', '.') }} EUR</strong>
+                                <strong>{{ format_money($phase['effective_preestab_amount'], 2, ',', '.') }} EUR</strong>
                                 <br><small class="text-muted text-wrap d-inline-block" style="max-width: 220px;">
                                     Original: {{ $phase['preestab_raw'] ?: '—' }}
                                 </small>
                             </td>
 
                             <td class="text-right text-success">
-                                <strong>{{ number_format($phase['effective_paid_amount'], 2, ',', '.') }} EUR</strong>
+                                <strong>{{ format_money($phase['effective_paid_amount'], 2, ',', '.') }} EUR</strong>
                                 <br><small class="text-muted text-wrap d-inline-block" style="max-width: 220px;">
                                     Original: {{ $phase['paid_raw'] ?: '—' }}
                                 </small>
@@ -193,11 +193,11 @@
                             <td class="text-right font-weight-bold">
                                 @if($exceedsPreestablished)
                                     <span class="text-danger">
-                                        Exceso de {{ number_format($phase['overpaid_amount'], 2, ',', '.') }} EUR
+                                        Exceso de {{ format_money($phase['overpaid_amount'], 2, ',', '.') }} EUR
                                     </span>
                                 @else
                                     <span class="text-dark">
-                                        Por cobrar: {{ number_format($phase['balance_amount'], 2, ',', '.') }} EUR
+                                        Por cobrar: {{ format_money($phase['balance_amount'], 2, ',', '.') }} EUR
                                     </span>
                                 @endif
                             </td>

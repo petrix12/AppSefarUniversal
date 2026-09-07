@@ -143,7 +143,9 @@ class TeamleaderPhasePaymentService
             $projectId,
             $phase,
             (float) $purchase->monto,
-            now()->format('Y/m/d')
+            ($purchase->paid_at ?: now())->format('Y-m-d'),
+            'purchase-' . $purchase->id,
+            'EUR'
         );
     }
 

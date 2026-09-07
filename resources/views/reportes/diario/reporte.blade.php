@@ -377,7 +377,7 @@
                                             <tr>
                                                 <td>{{ $factura['usuario']['name'] }}</td>
                                                 <td>{{ $compra['servicio_hs_id'] }}</td>
-                                                <td>{{ $compra['monto'] }}€</td>
+                                                <td>{{ format_money($compra['monto']) }}€</td>
                                                 <td>{{ $factura['met'] }}</td>
                                             </tr>
                                             @php
@@ -389,7 +389,7 @@
                                 <tr class="theadreport">
                                     <td><strong>Total General:</strong></td>
                                     <td colspan="2"></td>
-                                    <td><strong>{{ $totalMontoStripe }}€</strong></td>
+                                    <td><strong>{{ format_money($totalMontoStripe) }}€</strong></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -424,7 +424,7 @@
                                             <tr>
                                                 <td>{{ $factura['usuario']['name'] }}</td>
                                                 <td>{{ $compra['servicio_hs_id'] }}</td>
-                                                <td>{{ $compra['monto'] }}€</td>
+                                                <td>{{ format_money($compra['monto']) }}€</td>
                                                 <td>{{ $factura['met'] }}</td>
                                             </tr>
                                             @php
@@ -436,7 +436,7 @@
                                 <tr class="theadreport">
                                     <td><strong>Total General:</strong></td>
                                     <td colspan="2"></td>
-                                    <td><strong>{{ $totalMontoCupon }}€</strong></td>
+                                    <td><strong>{{ format_money($totalMontoCupon) }}€</strong></td>
                                 </tr>
                             </tbody>
                         </table>

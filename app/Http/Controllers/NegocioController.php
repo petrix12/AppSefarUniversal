@@ -125,7 +125,7 @@ class NegocioController extends Controller
 
         // Actualizar Teamleader
         if ($teamleaderId && !empty($updatesToTeamleader)) {
-            $this->teamleaderService->updateProject($teamleaderId, ['custom_fields' => $updatesToTeamleader]);
+            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($teamleaderId, $updatesToTeamleader, $TLdeal);
         }
 
         // Actualizar base de datos
@@ -276,7 +276,7 @@ class NegocioController extends Controller
 
             $campoTeamleader = ['custom_fields' => $updatedFields];
 
-            $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id, $campoTeamleader["custom_fields"], $currentProject);
         }
 
         if($deal->hubspot_id){
@@ -348,7 +348,7 @@ class NegocioController extends Controller
 
             $campoTeamleader = ['custom_fields' => $updatedFields];
 
-            $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id, $campoTeamleader["custom_fields"], $currentProject);
         }
 
         if($deal->hubspot_id){
@@ -420,7 +420,7 @@ class NegocioController extends Controller
 
             $campoTeamleader = ['custom_fields' => $updatedFields];
 
-            $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id, $campoTeamleader["custom_fields"], $currentProject);
         }
 
         if($deal->hubspot_id){
@@ -488,7 +488,7 @@ class NegocioController extends Controller
 
             $campoTeamleader = ['custom_fields' => $updatedFields];
 
-            $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id, $campoTeamleader["custom_fields"], $currentProject);
         }
 
         if($deal->hubspot_id){
@@ -556,7 +556,7 @@ class NegocioController extends Controller
 
             $campoTeamleader = ['custom_fields' => $updatedFields];
 
-            $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id, $campoTeamleader["custom_fields"], $currentProject);
         }
 
         if($deal->hubspot_id){
@@ -630,7 +630,7 @@ class NegocioController extends Controller
 
             $campoTeamleader = ['custom_fields' => $updatedFields];
 
-            $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id, $campoTeamleader["custom_fields"], $currentProject);
         }
 
         if ($deal->hubspot_id) {
@@ -707,7 +707,7 @@ class NegocioController extends Controller
 
             $campoTeamleader = ['custom_fields' => $updatedFields];
 
-            $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id, $campoTeamleader["custom_fields"], $currentProject);
         }
 
         if ($deal->hubspot_id) {
@@ -784,7 +784,7 @@ class NegocioController extends Controller
 
             $campoTeamleader = ['custom_fields' => $updatedFields];
 
-            $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id, $campoTeamleader["custom_fields"], $currentProject);
         }
 
         if ($deal->hubspot_id) {
@@ -861,7 +861,7 @@ class NegocioController extends Controller
 
             $campoTeamleader = ['custom_fields' => $updatedFields];
 
-            $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id, $campoTeamleader["custom_fields"], $currentProject);
         }
 
         if ($deal->hubspot_id) {
@@ -935,7 +935,7 @@ class NegocioController extends Controller
 
             $campoTeamleader = ['custom_fields' => $updatedFields];
 
-            $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id, $campoTeamleader["custom_fields"], $currentProject);
         }
 
         if ($deal->hubspot_id) {
@@ -1008,7 +1008,7 @@ class NegocioController extends Controller
 
             $campoTeamleader = ['custom_fields' => $updatedFields];
 
-            $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id, $campoTeamleader["custom_fields"], $currentProject);
         }
 
         if ($deal->hubspot_id) {
@@ -1104,14 +1104,13 @@ class NegocioController extends Controller
 
         // Actualizar en Teamleader
         if ($deal->teamleader_id) {
-            $this->teamleaderService->updateProject($deal->teamleader_id, [
-                'custom_fields' => collect($request->all())->map(function ($value, $field) use ($camposRelacionados) {
+            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id,
+                collect($request->all())->map(function ($value, $field) use ($camposRelacionados) {
                     return isset($camposRelacionados[$field]) ? [
                         'id' => $camposRelacionados[$field],
                         'value' => $value
                     ] : null;
-                })->filter()->values()->all()
-            ]);
+                })->filter()->values()->all());
         }
 
         // Actualizar en HubSpot

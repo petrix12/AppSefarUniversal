@@ -31,7 +31,7 @@
 		                        	}
 		                        ?>
 		                    	<div id="total" style="font-size: 24px;">
-									<small>Total recaudado en el mes de {{ $meses[ intval(date('m'))-1 ] }}: {{$total}}€</small>
+									<small>Total recaudado en el mes de {{ $meses[ intval(date('m'))-1 ] }}: {{ format_money($total) }}€</small>
 								</div>
 								<div style="font-size: 24px;">
 									<small>Saldo disponible en Stripe: {{ ($balance["available"][0]["amount"]/100) }}$</small>
@@ -132,7 +132,7 @@
 								{{ $charge["customer"] }}
 							</td>
 							<td style="vertical-align: center;">
-								{{ $charge["amount"]/100 }}€
+								{{ format_money($charge['amount'] / 100) }}€
 							</td>
 							<td style="vertical-align: center;">
 								<p style="display: inline-flex;"><img src="https://flagdownload.com/wp-content/uploads/Flag_of_Spain_Flat_Round.png" style="width:18px; height:18px;">{{ date('d/m/Y H:i:s', $charge["created"] + 2 * 60 * 60) }}</p><br>
@@ -231,11 +231,11 @@
 	            var balance = 0;
 
 	            for (var i = 0; i < data.length; i++) {
-	            	var table = table + '<tr><td style="vertical-align: center;">' + data[i][3] + '</td><td style="vertical-align: center;">' + data[i][1] + '€</td><td style="vertical-align: center;"><p style="display: inline-flex;"><img src="https://flagdownload.com/wp-content/uploads/Flag_of_Spain_Flat_Round.png" style="width:18px; height:18px;">'+ data[i][5] + '</p><br><p style="display: inline-flex;"><img src="https://static.vecteezy.com/system/resources/previews/011/571/444/original/circle-flag-of-venezuela-free-png.png" style="width:18px; height:18px;">' + data[i][4] + '</p></td><td style="vertical-align: center;">' + data[i][0] + '</td></tr>';
+                var table = table + '<tr><td style="vertical-align: center;">' + data[i][3] + '</td><td style="vertical-align: center;">' + formatStripeAmount(data[i][1]) + '€</td><td style="vertical-align: center;"><p style="display: inline-flex;"><img src="https://flagdownload.com/wp-content/uploads/Flag_of_Spain_Flat_Round.png" style="width:18px; height:18px;">'+ data[i][5] + '</p><br><p style="display: inline-flex;"><img src="https://static.vecteezy.com/system/resources/previews/011/571/444/original/circle-flag-of-venezuela-free-png.png" style="width:18px; height:18px;">' + data[i][4] + '</p></td><td style="vertical-align: center;">' + data[i][0] + '</td></tr>';
 	            	var balance = balance + data[i][1];
 	            }
 
-	            $('#total').html('<small>Total recaudado en el mes de '+meses[$('#monthstripe').val()-1]+': '+Math.round(balance)+'€</small>');
+	            $('#total').html('<small>Total recaudado en el mes de '+meses[$('#monthstripe').val()-1]+': '+formatStripeAmount(balance)+'€</small>');
 
 	            var table = table + '</tbody></table>';
 

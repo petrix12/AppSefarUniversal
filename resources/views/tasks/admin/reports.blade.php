@@ -103,7 +103,7 @@
                 <div class="col-sm-6 col-lg-2">
                     <div class="small-box bg-{{ $card['color'] }}">
                         <div class="inner">
-                            <h3>{{ number_format($card['value']) }}</h3>
+                            <h3>{{ format_money($card['value']) }}</h3>
                             <p>{{ $card['label'] }}</p>
                         </div>
                         <div class="icon"><i class="fas fa-{{ $card['icon'] }}"></i></div>

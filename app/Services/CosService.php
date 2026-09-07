@@ -664,7 +664,7 @@ class CosService
 
             return '<b>¡Solicita tu Auditoría de Expedientes!</b>
                 <a style="border:0!important;"
-                href="https://sefaruniversal.com/landing-registro-auditoria-de-expedientes/"
+                href="https://sefaruniversal.com/landing-registro-auditoria-de-expedientes/" target="_blank" rel="noopener noreferrer"
                 class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
                 Activa tu auditoría de Expediente
                 </a>';
@@ -696,7 +696,7 @@ class CosService
 
         return '<b>¡Solicita tu Recurso de Alzada!</b>
             <a style="border:0!important;"
-            href="https://sefaruniversal.com/landing-email-de-recurso-de-alzada/"
+            href="https://sefaruniversal.com/landing-email-de-recurso-de-alzada/" target="_blank" rel="noopener noreferrer"
             class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
             Solicita el Recurso de Alzada
             </a>';
@@ -725,7 +725,7 @@ class CosService
             return null;
         }
 
-        return '<b>¡Solicita tu resolución expresa!</b><a href="https://sefaruniversal.com/resolucion-expresa/" style="border:0!important;" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita tu Resolución Expresa</a>';
+        return '<b>¡Solicita tu resolución expresa!</b><a href="https://sefaruniversal.com/resolucion-expresa/" target="_blank" rel="noopener noreferrer" style="border:0!important;" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Solicita tu Resolución Expresa</a>';
     }
 
     private function isSubsanacionElegible($hoy): bool
@@ -751,7 +751,7 @@ class CosService
             return null;
         }
 
-        return '<b>¡Consulta si requieres subsanación o mejora de expediente!</b><a style="border:0!important;" href="https://sefaruniversal.com/landing-registro-subsanacion-de-la-nacionalidad-espanola-sefardi/" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">¡Consulta ahora!</a>';
+        return '<b>¡Consulta si requieres subsanación o mejora de expediente!</b><a style="border:0!important;" href="https://sefaruniversal.com/landing-registro-subsanacion-de-la-nacionalidad-espanola-sefardi/" target="_blank" rel="noopener noreferrer" class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">¡Consulta ahora!</a>';
     }
 
     /**

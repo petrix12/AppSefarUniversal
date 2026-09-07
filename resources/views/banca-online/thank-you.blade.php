@@ -24,13 +24,13 @@
 
             @if($isInstallmentPayment)
                 <div class="bo-payment-breakdown">
-                    <span>Total del plan <strong>{{ number_format((float) ($paymentPlan['contract_total'] ?? $purchaseMetadata['package_total'] ?? $total), 0, ',', '.') }} EUR</strong></span>
-                    <span>Inicial recibido <strong>{{ number_format((float) ($paymentPlan['amount_due_now'] ?? $total), 0, ',', '.') }} EUR</strong></span>
-                    <span>{{ (int) ($paymentPlan['installments_count'] ?? 0) }} cuotas {{ $paymentPlan['period_plural_label'] ?? 'mensuales' }} <strong>{{ number_format((float) ($paymentPlan['installment_amount'] ?? 0), 0, ',', '.') }} EUR</strong></span>
+                    <span>Total del plan <strong>{{ format_money((float) ($paymentPlan['contract_total'] ?? $purchaseMetadata['package_total'] ?? $total), 0, ',', '.') }} EUR</strong></span>
+                    <span>Inicial recibido <strong>{{ format_money((float) ($paymentPlan['amount_due_now'] ?? $total), 0, ',', '.') }} EUR</strong></span>
+                    <span>{{ (int) ($paymentPlan['installments_count'] ?? 0) }} cuotas {{ $paymentPlan['period_plural_label'] ?? 'mensuales' }} <strong>{{ format_money((float) ($paymentPlan['installment_amount'] ?? 0), 0, ',', '.') }} EUR</strong></span>
                 </div>
             @endif
 
-            <div class="bo-confirm-total">{{ number_format($total, 0, ',', '.') }} EUR</div>
+            <div class="bo-confirm-total">{{ format_money($total, 0, ',', '.') }} EUR</div>
             @if(!empty($purchaseMetadata['package_title']))
                 <h2>{{ $purchaseMetadata['package_title'] }}</h2>
             @endif
@@ -41,7 +41,7 @@
                         <span class="bo-service-line">
                             <strong>{{ $component['name'] ?? 'Servicio incluido' }}</strong>
                             @if(!empty($component['description']))<small>{{ $component['description'] }}</small>@endif
-                            @isset($component['price'])<span>{{ number_format((float) $component['price'], 0, ',', '.') }} EUR</span>@endisset
+                            @isset($component['price'])<span>{{ format_money((float) $component['price'], 0, ',', '.') }} EUR</span>@endisset
                         </span>
                     </li>
                 @empty

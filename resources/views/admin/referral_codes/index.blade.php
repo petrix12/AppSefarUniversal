@@ -79,7 +79,7 @@
                                 @endif
                             </td>
                             <td>{{ $code->sales_count }}</td>
-                            <td>{{ number_format((float) ($code->sales_amount ?? 0), 2) }} EUR</td>
+                            <td>{{ format_money((float) ($code->sales_amount ?? 0), 2) }} EUR</td>
                             <td>{{ optional($code->last_sent_at)->format('d/m/Y H:i') ?? 'No enviado' }}</td>
                         </tr>
                     @empty

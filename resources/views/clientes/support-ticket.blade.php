@@ -82,7 +82,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Correo del cliente</label>
+                        <label>Correo del solicitante</label>
                         <input class="form-control" value="{{ $user->email }}" readonly>
                     </div>
 

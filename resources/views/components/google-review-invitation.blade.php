@@ -29,7 +29,7 @@
 
             <button type="button" class="google-review-invitation__later" data-review-close>Ahora no, gracias</button>
             <p class="google-review-invitation__privacy-note">
-                Se abrirá directamente el formulario de Google para escribir tu reseña; no verás las reseñas de otros clientes.
+                Se abrirá directamente el formulario de Google para escribir tu reseña; no verás las reseñas de otros solicitantes.
             </p>
         </section>
     </div>

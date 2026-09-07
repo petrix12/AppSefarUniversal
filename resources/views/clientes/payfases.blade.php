@@ -381,7 +381,7 @@
                                         @endphp
                                         <tr>
                                             <td>{{ $compra["descripcion"] }}</td>
-                                            <td><center>{{ $compra["monto"] }}€</center></td>
+                                            <td><center>{{ format_money($compra['monto']) }}€</center></td>
                                             @if(count($compras) > 1)
                                                 <td>
                                                     <center>
@@ -393,7 +393,7 @@
                                     @endforeach
                                         <tr>
                                             <td class="text-end fw-bold" style="text-align: right"><b>TOTAL:</b></td>
-                                            <td class="fw-bold"><b>{{ $total }}€</b></td>
+                                            <td class="fw-bold"><b>{{ format_money($total) }}€</b></td>
                                             @if (count($compras) > 1)
                                                 <td></td>
                                             @endif
@@ -614,7 +614,7 @@
                             error = "La tarjeta no admite este tipo de compra.";
                             break;
                         case "card_velocity_exceeded":
-                            error = "El cliente ha superado el saldo o límite de crédito disponible en su tarjeta.";
+                            error = "El solicitante ha superado el saldo o límite de crédito disponible en su tarjeta.";
                             break;
                         case "currency_not_supported":
                             error = "La tarjeta no admite la moneda especificada.";
@@ -698,7 +698,7 @@
                             error = "La tarjeta fue rechazada porque requiere un PIN.";
                             break;
                         case "pickup_card":
-                            error = "El cliente no puede usar esta tarjeta para realizar este pago (es posible que haya sido reportada como perdida o robada).";
+                            error = "El solicitante no puede usar esta tarjeta para realizar este pago (es posible que haya sido reportada como perdida o robada).";
                             break;
                         case "pin_try_exceeded":
                             error = "Se superó el número permitido de intentos de PIN.";
@@ -710,7 +710,7 @@
                             error = "El emisor no pudo procesar el pago por un motivo desconocido.";
                             break;
                         case "restricted_card":
-                            error = "El cliente no puede usar esta tarjeta para realizar este pago (es posible que haya sido reportada como perdida o robada).";
+                            error = "El solicitante no puede usar esta tarjeta para realizar este pago (es posible que haya sido reportada como perdida o robada).";
                             break;
                         case "revocation_of_all_authorizations":
                             error = "La tarjeta fue rechazada por un motivo desconocido";
@@ -740,7 +740,7 @@
                             error = "La tarjeta fue rechazada por un motivo desconocido.";
                             break;
                         case "withdrawal_count_limit_exceeded":
-                            error = "El cliente ha superado el saldo o límite de crédito disponible en su tarjeta.";
+                            error = "El solicitante ha superado el saldo o límite de crédito disponible en su tarjeta.";
                             break;
                         default:
                             error = response.error.code;

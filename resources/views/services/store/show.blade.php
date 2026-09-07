@@ -30,7 +30,7 @@
                         <dt class="col-sm-4">Tipo</dt>
                         <dd class="col-sm-8">{{ $servicio->tipo }}</dd>
                         <dt class="col-sm-4">Precio</dt>
-                        <dd class="col-sm-8">{{ number_format((float) $servicio->precio, 2) }} {{ $servicio->moneda ?? 'EUR' }}</dd>
+                        <dd class="col-sm-8">{{ format_money((float) $servicio->precio, 2) }} {{ $servicio->moneda ?? 'EUR' }}</dd>
                         @if($servicio->requiere_agenda || $servicio->tipo === 'consulta')
                             <dt class="col-sm-4">Duracion</dt>
                             <dd class="col-sm-8">{{ $servicio->duracion_minutos ?? 60 }} minutos</dd>

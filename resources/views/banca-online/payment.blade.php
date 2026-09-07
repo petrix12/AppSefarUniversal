@@ -43,7 +43,7 @@
                             <span class="bo-service-line">
                                 <strong>{{ $component['name'] ?? 'Servicio incluido' }}</strong>
                                 @if(!empty($component['description']))<small>{{ $component['description'] }}</small>@endif
-                                @isset($component['price'])<span>{{ number_format((float) $component['price'], 0, ',', '.') }} EUR</span>@endisset
+                                @isset($component['price'])<span>{{ format_money((float) $component['price'], 0, ',', '.') }} EUR</span>@endisset
                             </span>
                         </li>
                     @empty
@@ -62,12 +62,12 @@
                 <div
                     class="bo-payment-breakdown is-hidden"
                     data-payment-breakdown
-                    data-subtotal-label="{{ number_format((float) ($metadata['package_subtotal'] ?? $total), 0, ',', '.') }}"
+                    data-subtotal-label="{{ format_money((float) ($metadata['package_subtotal'] ?? $total), 0, ',', '.') }}"
                     data-discount="{{ (float) ($metadata['package_discount'] ?? 0) }}"
-                    data-discount-label="{{ number_format((float) ($metadata['package_discount'] ?? 0), 0, ',', '.') }}"></div>
+                    data-discount-label="{{ format_money((float) ($metadata['package_discount'] ?? 0), 0, ',', '.') }}"></div>
 
                 <div class="bo-total-label" id="paymentTotalLabel">{{ $isInstallmentPayment ? 'Total para activar tu proceso hoy' : 'Total de activación' }}</div>
-                <div class="bo-total"><span id="paymentTotalAmount">{{ number_format($total, 0, ',', '.') }}</span> <small>EUR</small></div>
+                <div class="bo-total"><span id="paymentTotalAmount">{{ format_money($total, 0, ',', '.') }}</span> <small>EUR</small></div>
 
                 <form
                     id="payment-form"
@@ -87,7 +87,7 @@
                             <input type="radio" name="checkout_payment_choice" value="full" checked>
                             <span>
                                 <strong>Activación única</strong>
-                                <small id="checkoutFullPaymentLabel">{{ number_format($total, 0, ',', '.') }} EUR ahora</small>
+                                <small id="checkoutFullPaymentLabel">{{ format_money($total, 0, ',', '.') }} EUR ahora</small>
                             </span>
                         </label>
 
@@ -107,14 +107,14 @@
                                             <input type="radio" name="checkout_period_choice" value="{{ $period['slug'] }}">
                                             <span>
                                                 <strong>{{ $period['label'] }}</strong>
-                                                <small>{{ number_format((float) ($period['surcharge_percent'] ?? 0), 2, ',', '.') }}% recargo</small>
+                                                <small>{{ format_money((float) ($period['surcharge_percent'] ?? 0), 2, ',', '.') }}% recargo</small>
                                             </span>
                                         </label>
                                     @endforeach
                                 </div>
 
                                 <label class="bo-field bo-range-field">
-                                    <span>Inicial: <strong id="checkoutInitialPercentLabel">{{ number_format((float) ($paymentOptions['min_initial_percent'] ?? 20), 0, ',', '.') }}%</strong></span>
+                                    <span>Inicial: <strong id="checkoutInitialPercentLabel">{{ format_money((float) ($paymentOptions['min_initial_percent'] ?? 20), 0, ',', '.') }}%</strong></span>
                                     <input type="range" id="checkoutInitialSlider" min="{{ $paymentOptions['min_initial_percent'] ?? 20 }}" max="{{ $paymentOptions['max_initial_percent'] ?? 99 }}" step="1" value="{{ $paymentOptions['min_initial_percent'] ?? 20 }}">
                                 </label>
 

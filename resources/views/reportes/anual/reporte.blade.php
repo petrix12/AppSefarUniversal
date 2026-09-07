@@ -163,12 +163,12 @@
                             @foreach ($facturas as $servicio => $monto)
                                 <tr>
                                     <td>{{ $servicio }}</td>
-                                    <td>{{ $monto }}€</td>
+                                    <td>{{ format_money($monto) }}€</td>
                                 </tr>
                             @endforeach
                             <tr class="theadreport">
                                 <td><strong>Total General:</strong></td>
-                                <td><strong>{{ $totalMontoStripe }}€</strong></td>
+                                <td><strong>{{ format_money($totalMontoStripe) }}€</strong></td>
                             </tr>
                         </tbody>
                     </table>
@@ -197,12 +197,12 @@
                             @foreach ($facturasCupones as $servicio => $monto)
                                 <tr>
                                     <td>{{ $servicio }}</td>
-                                    <td>{{ $monto }}€</td>
+                                    <td>{{ format_money($monto) }}€</td>
                                 </tr>
                             @endforeach
                             <tr class="theadreport">
                                 <td><strong>Total General:</strong></td>
-                                <td><strong>{{ $totalMontoCupones }}€</strong></td>
+                                <td><strong>{{ format_money($totalMontoCupones) }}€</strong></td>
                             </tr>
                         </tbody>
                     </table>

@@ -570,3 +570,18 @@ function getTiposDoc(){
     $t_files =TFile::all();
     return $t_files;
 }
+if (! function_exists('format_money')) {
+    /**
+     * Formats numeric amounts without displaying meaningless trailing cents.
+     * Exact integers render as "750" instead of "750,00" / "750.00".
+     */
+    function format_money(mixed $amount, int $precision = 0, string $decimal = '.', string $thousands = ','): string
+    {
+        $value = round((float) ($amount ?? 0), $precision);
+        $decimals = $precision > 0 && abs($value - round($value)) > 0.000001
+            ? $precision
+            : 0;
+
+        return number_format($value, $decimals, $decimal, $thousands);
+    }
+}

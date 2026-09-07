@@ -57,7 +57,7 @@
                     {{ $badgeLabel }}
                 </span>
                 <h2 class="mt-3 mb-0">
-                    {{ number_format($invoice->total_price_incl_tax ?? 0, 2) }}
+                    {{ format_money($invoice->total_price_incl_tax ?? 0, 2) }}
                     <small class="text-muted">{{ $invoice->currency }}</small>
                 </h2>
                 <small class="text-muted">Total con IVA</small>
@@ -66,7 +66,7 @@
                 <ul class="list-group list-group-flush">
                     <li class="list-group-item d-flex justify-content-between">
                         <span class="text-muted">Sin IVA</span>
-                        <strong>{{ number_format($invoice->total_price_excl_tax ?? 0, 2) }} {{ $invoice->currency }}</strong>
+                        <strong>{{ format_money($invoice->total_price_excl_tax ?? 0, 2) }} {{ $invoice->currency }}</strong>
                     </li>
                     <li class="list-group-item d-flex justify-content-between">
                         <span class="text-muted">Fecha factura</span>
@@ -133,7 +133,7 @@
                     @foreach($creditNotes as $cn)
                     <li class="list-group-item d-flex justify-content-between">
                         <span>{{ $cn->credit_note_number ?? '—' }}</span>
-                        <strong>{{ number_format($cn->total_price_incl_tax ?? 0, 2) }} {{ $cn->currency }}</strong>
+                        <strong>{{ format_money($cn->total_price_incl_tax ?? 0, 2) }} {{ $cn->currency }}</strong>
                     </li>
                     @endforeach
                 </ul>
@@ -180,11 +180,11 @@
                                     </td>
                                     <td class="text-right">{{ $line['quantity'] ?? 1 }}</td>
                                     <td class="text-right">
-                                        {{ number_format($line['unit_price']['amount'] ?? 0, 2) }}
+                                        {{ format_money($line['unit_price']['amount'] ?? 0, 2) }}
                                         <small class="text-muted">{{ $line['unit_price']['currency'] ?? '' }}</small>
                                     </td>
                                     <td class="text-right">
-                                        <strong>{{ number_format($line['total']['tax_inclusive']['amount'] ?? 0, 2) }}</strong>
+                                        <strong>{{ format_money($line['total']['tax_inclusive']['amount'] ?? 0, 2) }}</strong>
                                     </td>
                                 </tr>
                             @endforeach
@@ -193,7 +193,7 @@
                             <tr>
                                 <td colspan="3" class="text-right font-weight-bold">Total (con IVA)</td>
                                 <td class="text-right font-weight-bold">
-                                    {{ number_format($invoice->total_price_incl_tax ?? 0, 2) }}
+                                    {{ format_money($invoice->total_price_incl_tax ?? 0, 2) }}
                                     {{ $invoice->currency }}
                                 </td>
                             </tr>

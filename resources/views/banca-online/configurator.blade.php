@@ -111,15 +111,15 @@
                                 <div class="bo-package-price">
                                     @if($total > 0)
                                         @if($discount > 0)
-                                            <del class="bo-package-old-price">{{ number_format($subtotal, 0, ',', '.') }} EUR</del>
+                                            <del class="bo-package-old-price">{{ format_money($subtotal, 0, ',', '.') }} EUR</del>
                                         @endif
                                         <div class="bo-package-current-price">
-                                            <strong>{{ number_format($total, 0, ',', '.') }}</strong>
+                                            <strong>{{ format_money($total, 0, ',', '.') }}</strong>
                                             <span>EUR activación única</span>
                                         </div>
                                         @if($discount > 0)
                                             <div class="bo-package-saving">
-                                                <span>Ahorras {{ number_format($discount, 0, ',', '.') }} EUR</span>
+                                                <span>Ahorras {{ format_money($discount, 0, ',', '.') }} EUR</span>
                                             </div>
                                         @endif
                                     @else
@@ -134,7 +134,7 @@
                                             <span class="bo-package-component-copy">
                                                 <strong>{{ $item['name'] ?? 'Servicio incluido' }}</strong>
                                                 @if(!empty($item['description']))<small>{{ $item['description'] }}</small>@endif
-                                                @if(array_key_exists('price', $item))<span>{{ number_format((float) $item['price'], 0, ',', '.') }} EUR</span>@endif
+                                                @if(array_key_exists('price', $item))<span>{{ format_money((float) $item['price'], 0, ',', '.') }} EUR</span>@endif
                                             </span>
                                         </li>
                                     @empty

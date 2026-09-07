@@ -86,7 +86,7 @@
         <a class="grid-item" href="{{ route('cliente.regvinculaciones', ['id' => $servicio->id_hubspot]) }}">
             <center>
                 <p style="margin: 0; font-size: 28px; color: white; width: 100%; line-height: 1;">{{$servicio->nombre}}</p>
-                <p style="margin: 0; font-size: 34px; color: #EDD175; width: 100%;"><b>{{$servicio->precio}}€</b></p>
+                <p style="margin: 0; font-size: 34px; color: #EDD175; width: 100%;"><b>{{ format_money($servicio->precio) }}€</b></p>
             </center>
         </a>
         <?php

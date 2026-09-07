@@ -61,12 +61,13 @@ class TeamleaderPhasePaymentRulesTest extends TestCase
         $payload = $writer->projectUpdatePayload([
             'title' => 'Proyecto de prueba',
             'description' => 'Descripción vigente',
+            'status' => 'on_hold',
             'customer' => ['id' => 'contact-1', 'type' => 'contact'],
             'participants' => [['participant' => ['id' => 'user-1', 'type' => 'user'], 'role' => 'decision_maker']],
             'milestones' => [['name' => 'Inicio', 'starts_on' => '2026-09-01']],
             'budget' => ['amount' => 1200, 'currency' => 'EUR'],
             'starts_on' => '2026-09-01',
-            'due_on' => '2026-12-01',
+            'purchase_order_number' => 'PO-2026-001',
         ], [
             ['id' => 'payment-field', 'value' => '500 EUR'],
         ]);
@@ -75,11 +76,43 @@ class TeamleaderPhasePaymentRulesTest extends TestCase
         $this->assertSame('Descripción vigente', $payload['description']);
         $this->assertSame(['id' => 'contact-1', 'type' => 'contact'], $payload['customer']);
         $this->assertSame(['amount' => 1200, 'currency' => 'EUR'], $payload['budget']);
-        $this->assertCount(1, $payload['participants']);
-        $this->assertCount(1, $payload['milestones']);
+        $this->assertSame('on_hold', $payload['status']);
+        $this->assertSame('PO-2026-001', $payload['purchase_order_number']);
         $this->assertSame([['id' => 'payment-field', 'value' => '500 EUR']], $payload['custom_fields']);
     }
 
+    public function test_full_updater_merges_changes_without_discarding_existing_fields(): void
+    {
+        $teamleader = $this->createMock(TeamleaderService::class);
+        $teamleader->expects($this->once())
+            ->method('getProjectDetails')
+            ->with('project-full-update')
+            ->willReturn([
+                'id' => 'project-full-update',
+                'title' => 'Expediente vigente',
+                'status' => 'active',
+                'custom_fields' => [
+                    ['definition' => ['id' => 'keep'], 'value' => 'Conservar'],
+                    ['definition' => ['id' => 'change'], 'value' => 'Anterior'],
+                ],
+            ]);
+        $teamleader->expects($this->once())
+            ->method('updateProject')
+            ->with('project-full-update', $this->callback(function (array $payload): bool {
+                $fields = collect($payload['custom_fields'])->keyBy('id');
+
+                return $payload['title'] === 'Expediente vigente'
+                    && $payload['status'] === 'active'
+                    && $fields->get('keep')['value'] === 'Conservar'
+                    && $fields->get('change')['value'] === 'Nuevo';
+            }));
+
+        $writer = new TeamleaderProjectPaymentWriter($teamleader);
+        $updater = new \App\Services\TeamleaderProjectFullUpdater($teamleader, $writer);
+        $updater->updateCustomFields('project-full-update', [
+            ['id' => 'change', 'value' => 'Nuevo'],
+        ]);
+    }
     public function test_a_balance_below_fifty_is_not_collectible_but_keeps_the_actual_paid_amount(): void
     {
         $service = new TeamleaderPhasePaymentService();
@@ -90,5 +123,93 @@ class TeamleaderPhasePaymentRulesTest extends TestCase
         $this->assertTrue($pending->invoke($service, 50.00));
         $this->assertSame(2491.9, $recordAmount->invoke($service, 2491.9, 10.1));
         $this->assertSame(750.0, $recordAmount->invoke($service, 0.0, 750.0));
+    }
+
+    public function test_payment_writer_appends_an_installment_without_replacing_previous_teamleader_entries(): void
+    {
+        $paidFieldId = 'a1b50c58-8175-0d13-9856-f661e783dc08';
+        $teamleader = $this->createMock(TeamleaderService::class);
+        $teamleader->expects($this->once())
+            ->method('getProjectDetails')
+            ->with('project-installments')
+            ->willReturn([
+                'id' => 'project-installments',
+                'title' => 'Expediente de prueba',
+                'custom_fields' => [
+                    [
+                        'definition' => ['id' => $paidFieldId],
+                        'value' => 'Abono 100 EUR 2026-05-18 [COS:purchase-previous]',
+                    ],
+                    [
+                        'definition' => ['id' => 'unrelated-field'],
+                        'value' => 'Conservar esta información',
+                    ],
+                ],
+            ]);
+        $teamleader->expects($this->once())
+            ->method('updateProject')
+            ->with('project-installments', $this->callback(function (array $payload) use ($paidFieldId): bool {
+                $fields = collect($payload['custom_fields'])->keyBy('id');
+
+                return $fields->get($paidFieldId)['value']
+                    === 'Abono 100 EUR 2026-05-18 [COS:purchase-previous] + Abono 50 EUR 2026-09-07 [COS:purchase-123]'
+                    && $fields->get('unrelated-field')['value'] === 'Conservar esta información';
+            }));
+
+        (new TeamleaderProjectPaymentWriter($teamleader))->appendPhasePayment(
+            'project-installments',
+            1,
+            50.00,
+            '2026-09-07',
+            'purchase-123'
+        );
+    }
+
+    public function test_payment_writer_uses_its_reference_to_avoid_a_duplicate_installment(): void
+    {
+        $teamleader = $this->createMock(TeamleaderService::class);
+        $teamleader->expects($this->once())
+            ->method('getProjectDetails')
+            ->willReturn([
+                'id' => 'project-idempotent',
+                'custom_fields' => [[
+                    'definition' => ['id' => 'a1b50c58-8175-0d13-9856-f661e783dc08'],
+                    'value' => 'Abono 50 EUR 2026-09-07 [COS:purchase-123]',
+                ]],
+            ]);
+        $teamleader->expects($this->never())->method('updateProject');
+
+        (new TeamleaderProjectPaymentWriter($teamleader))->appendPhasePayment(
+            'project-idempotent',
+            1,
+            50.00,
+            '2026-09-07',
+            'purchase-123'
+        );
+    }
+
+    public function test_usd_amounts_wait_for_date_based_conversion_before_affecting_euro_debt(): void
+    {
+        $analyzer = new TeamleaderProjectPaymentAnalyzer();
+        $parsed = $analyzer->parseMoneyText('Abono 100 USD 2026-05-18 + Abono 40 EUR 2026-06-01');
+
+        $this->assertSame([40.0], $parsed['amounts']);
+        $this->assertSame(['USD'], $parsed['foreign_currencies']);
+        $this->assertTrue($parsed['requires_currency_conversion']);
+        $this->assertSame(['2026-05-18', '2026-06-01'], $parsed['payment_dates']);
+
+        $project = new TlProject([
+            'id' => 'project-usd-review',
+            'custom_fields' => [
+                ['definition' => ['id' => '73173887-a0e8-0f4f-bb55-b61f33d3c6e9'], 'value' => '300 EUR'],
+                ['definition' => ['id' => 'a1b50c58-8175-0d13-9856-f661e783dc08'], 'value' => 'Abono 100 USD 2026-05-18'],
+            ],
+        ]);
+        $phase = $analyzer->analyzeProject($project)['phases'][1];
+
+        $this->assertSame(0.0, $phase['effective_paid_amount']);
+        $this->assertSame(300.0, $phase['balance_amount']);
+        $this->assertSame('review', $phase['status']);
+        $this->assertSame(['currency_conversion_required'], $phase['review_reasons']);
     }
 }

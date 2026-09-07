@@ -10,7 +10,7 @@
             @if($lastSync)
                 <small class="text-muted mr-3">
                     Último sync: <strong>{{ $lastSync->finished_at?->diffForHumans() ?? 'en curso...' }}</strong>
-                    — {{ number_format($lastSync->processed) }} procesadas
+                    — {{ format_money($lastSync->processed) }} procesadas
                 </small>
             @endif
         </div>
@@ -34,7 +34,7 @@
     <div class="col-6 col-md-3">
         <div class="small-box bg-{{ $card['color'] }}">
             <div class="inner">
-                <h3>{{ number_format($totals[$card['key']]) }}</h3>
+                <h3>{{ format_money($totals[$card['key']]) }}</h3>
                 <p>{{ $card['label'] }}</p>
             </div>
             <div class="icon"><i class="fas fa-{{ $card['icon'] }}"></i></div>
@@ -75,7 +75,7 @@
         </form>
 
         <div class="card-tools">
-            <span class="badge badge-info">{{ number_format($invoices->total()) }} facturas</span>
+            <span class="badge badge-info">{{ format_money($invoices->total()) }} facturas</span>
         </div>
     </div>
 
@@ -127,7 +127,7 @@
                         </td>
                         <td>
                             @if($invoice->total_price_excl_tax)
-                                {{ number_format($invoice->total_price_excl_tax, 2) }}
+                                {{ format_money($invoice->total_price_excl_tax, 2) }}
                                 <small class="text-muted">{{ $invoice->currency }}</small>
                             @else
                                 —
@@ -135,7 +135,7 @@
                         </td>
                         <td>
                             @if($invoice->total_price_incl_tax)
-                                <strong>{{ number_format($invoice->total_price_incl_tax, 2) }}</strong>
+                                <strong>{{ format_money($invoice->total_price_incl_tax, 2) }}</strong>
                                 <small class="text-muted">{{ $invoice->currency }}</small>
                             @else
                                 —

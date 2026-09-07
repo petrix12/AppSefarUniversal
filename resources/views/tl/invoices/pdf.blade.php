@@ -427,16 +427,16 @@ body {
                 <td class="right">{{ $line['quantity'] }}</td>
                 <td class="right">
                     {{ $line['currency'] === 'EUR' ? '€' : '$' }}
-                    {{ number_format($line['unit_price'], 2, ',', '.') }}
+                    {{ format_money($line['unit_price'], 2, ',', '.') }}
                 </td>
                 <td class="right">{{ $line['tax_rate'] }}%</td>
                 <td class="right">
                     {{ $line['currency'] === 'EUR' ? '€' : '$' }}
-                    {{ number_format($line['tax_amount'], 2, ',', '.') }}
+                    {{ format_money($line['tax_amount'], 2, ',', '.') }}
                 </td>
                 <td class="right">
                     {{ $line['currency'] === 'EUR' ? '€' : '$' }}
-                    {{ number_format($line['total'], 2, ',', '.') }}
+                    {{ format_money($line['total'], 2, ',', '.') }}
                 </td>
             </tr>
             @endforeach
@@ -453,14 +453,14 @@ body {
                             <td>Total IVA excl.</td>
                             <td>
                                 {{ $currency === 'EUR' ? '€' : '$' }}
-                                {{ number_format($totals['excl_tax'], 2, ',', '.') }}
+                                {{ format_money($totals['excl_tax'], 2, ',', '.') }}
                             </td>
                         </tr>
 
                         @if($has_conversion)
                         <tr>
                             <td>Convertido excl. IVA</td>
-                            <td>${{ number_format($totals['excl_tax'] * $exchange_rate['rate'], 2, ',', '.') }}</td>
+                            <td>${{ format_money($totals['excl_tax'] * $exchange_rate['rate'], 2, ',', '.') }}</td>
                         </tr>
                         @endif
 
@@ -469,7 +469,7 @@ body {
                             <td>IVA {{ $tax['rate'] }}%</td>
                             <td>
                                 {{ $currency === 'EUR' ? '€' : '$' }}
-                                {{ number_format($tax['tax']['amount'], 2, ',', '.') }}
+                                {{ format_money($tax['tax']['amount'], 2, ',', '.') }}
                             </td>
                         </tr>
                         @endforeach
@@ -478,14 +478,14 @@ body {
                             <td>Total IVA incl.</td>
                             <td>
                                 {{ $currency === 'EUR' ? '€' : '$' }}
-                                {{ number_format($totals['incl_tax'], 2, ',', '.') }}
+                                {{ format_money($totals['incl_tax'], 2, ',', '.') }}
                             </td>
                         </tr>
 
                         @if($has_conversion)
                         <tr>
                             <td>Convertido IVA incl.</td>
-                            <td>${{ number_format($totals['incl_tax'] * $exchange_rate['rate'], 2, ',', '.') }}</td>
+                            <td>${{ format_money($totals['incl_tax'] * $exchange_rate['rate'], 2, ',', '.') }}</td>
                         </tr>
                         @endif
 
@@ -493,14 +493,14 @@ body {
                             <td>Cantidad total</td>
                             <td>
                                 {{ $currency === 'EUR' ? '€' : '$' }}
-                                {{ number_format($totals['incl_tax'], 2, ',', '.') }}
+                                {{ format_money($totals['incl_tax'], 2, ',', '.') }}
                             </td>
                         </tr>
 
                         @if($has_conversion)
                         <tr class="row-total">
                             <td>Total convertido</td>
-                            <td>${{ number_format($totals['incl_tax'] * $exchange_rate['rate'], 2, ',', '.') }}</td>
+                            <td>${{ format_money($totals['incl_tax'] * $exchange_rate['rate'], 2, ',', '.') }}</td>
                         </tr>
                         @endif
                     </table>

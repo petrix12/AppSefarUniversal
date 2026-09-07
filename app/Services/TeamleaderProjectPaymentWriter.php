@@ -23,7 +23,14 @@ class TeamleaderProjectPaymentWriter
     {
     }
 
-    public function appendPhasePayment(string $projectId, int $phase, float $amount, string $date): void
+    public function appendPhasePayment(
+        string $projectId,
+        int $phase,
+        float $amount,
+        string $date,
+        ?string $reference = null,
+        string $currency = 'EUR'
+    ): void
     {
         $fieldId = self::PAID_FIELD_IDS[$phase] ?? null;
 
@@ -37,7 +44,10 @@ class TeamleaderProjectPaymentWriter
         }
 
         $customFields = $this->customFieldsForUpdate($project['custom_fields'] ?? []);
-        $newPaymentText = 'Abono ' . number_format($amount, 2, '.', '') . " EUR {$date}";
+        $currency = strtoupper(trim($currency)) ?: 'EUR';
+        $reference = trim((string) $reference) ?: null;
+        $newPaymentText = 'Abono ' . format_money($amount, 2, '.', '') . " {$currency} {$date}"
+            . ($reference ? " [COS:{$reference}]" : '');
         $fieldFound = false;
 
         foreach ($customFields as &$field) {
@@ -46,6 +56,10 @@ class TeamleaderProjectPaymentWriter
             }
 
             $previous = trim((string) ($field['value'] ?? ''));
+            if ($reference && str_contains($previous, "[COS:{$reference}]")) {
+                return;
+            }
+
             $field['value'] = $previous === '' ? $newPaymentText : $previous . ' + ' . $newPaymentText;
             $fieldFound = true;
             break;
@@ -70,7 +84,10 @@ class TeamleaderProjectPaymentWriter
     {
         $payload = [];
 
-        foreach (['title', 'description', 'participants', 'milestones', 'starts_on', 'due_on'] as $field) {
+        // projects.update accepts these project attributes. Re-sending the
+        // current values makes an update of custom_fields safe in this
+        // Teamleader account, where collections are replaced as a whole.
+        foreach (['title', 'description', 'status', 'starts_on', 'purchase_order_number'] as $field) {
             if (array_key_exists($field, $project) && $project[$field] !== null) {
                 $payload[$field] = $project[$field];
             }

@@ -41,7 +41,7 @@
                             <td>{{ $invoice->customer_name }}</td>
                             <td>{{ $invoice->invoice_date->format('d/m/Y') }}</td>
                             <td>{{ $invoice->expiry_date?->format('d/m/Y') ?? '—' }}</td>
-                            <td>{{ number_format($invoice->total_incl_tax, 2) }} {{ $invoice->currency }}</td>
+                            <td>{{ format_money($invoice->total_incl_tax, 2) }} {{ $invoice->currency }}</td>
                             <td>
                                 @php
                                     $badges = [

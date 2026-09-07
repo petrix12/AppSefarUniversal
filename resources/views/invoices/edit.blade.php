@@ -349,6 +349,11 @@ var initialLines = {!! json_encode($invoice->lines->map(function($l) {
 
 var lineIndex = 0;
 
+function formatDisplayedMoney(value) {
+    var rounded = Math.round((Number(value) || 0) * 100) / 100;
+    return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2);
+}
+
 function addLine(data) {
     data = data || { description: '', quantity: 1, unit_price: 0, tax_rate: 0 };
     var i     = lineIndex++;
@@ -360,7 +365,7 @@ function addLine(data) {
         '<td><input type="number" name="lines[' + i + '][quantity]" value="' + data.quantity + '" step="0.01" min="0" class="form-control form-control-sm line-qty"></td>' +
         '<td><input type="number" name="lines[' + i + '][unit_price]" value="' + data.unit_price + '" step="0.01" min="0" class="form-control form-control-sm line-price"></td>' +
         '<td><div class="input-group input-group-sm"><input type="number" name="lines[' + i + '][tax_rate]" value="' + data.tax_rate + '" step="0.01" min="0" max="100" class="form-control form-control-sm line-tax"><div class="input-group-append"><span class="input-group-text">%</span></div></div></td>' +
-        '<td><input type="text" readonly value="' + total.toFixed(2) + '" class="form-control form-control-sm bg-light font-weight-bold line-total"></td>' +
+        '<td><input type="text" readonly value="' + formatDisplayedMoney(total) + '" class="form-control form-control-sm bg-light font-weight-bold line-total"></td>' +
         '<td class="text-center"><button type="button" class="btn btn-xs btn-danger btn-remove-line"><i class="fas fa-times"></i></button></td>';
     document.getElementById('lines-body').appendChild(tr);
     updateRemoveButtons();
@@ -374,7 +379,7 @@ function escHtml(str) {
 function recalcTr(tr) {
     var qty   = parseFloat(tr.querySelector('.line-qty').value   || 0);
     var price = parseFloat(tr.querySelector('.line-price').value || 0);
-    tr.querySelector('.line-total').value = (qty * price).toFixed(2);
+    tr.querySelector('.line-total').value = formatDisplayedMoney(qty * price);
 }
 
 function recalculate() {
@@ -387,9 +392,9 @@ function recalculate() {
         tax      += total * (taxRate / 100);
     });
     var sym = document.getElementById('currency').value === 'USD' ? ' $' : ' €';
-    document.getElementById('summary-subtotal').textContent = subtotal.toFixed(2) + sym;
-    document.getElementById('summary-tax').textContent      = tax.toFixed(2)      + sym;
-    document.getElementById('summary-total').textContent    = (subtotal + tax).toFixed(2) + sym;
+    document.getElementById('summary-subtotal').textContent = subformatDisplayedMoney(total) + sym;
+    document.getElementById('summary-tax').textContent      = formatDisplayedMoney(tax)      + sym;
+    document.getElementById('summary-total').textContent    = formatDisplayedMoney(subtotal + tax) + sym;
 }
 
 function updateRemoveButtons() {

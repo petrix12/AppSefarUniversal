@@ -90,6 +90,19 @@ class TeamleaderProjectPaymentAnalyzer
                     $overpaid
                 );
 
+                $status = $this->phaseStatus(
+                    $effectivePreestab,
+                    $effectivePaid,
+                    $balance,
+                    $overpaid,
+                    $exonerated,
+                    $included
+                );
+
+                if (in_array('currency_conversion_required', $reviewReasons, true)) {
+                    $status = 'review';
+                }
+
                 return [
                     $phase => [
                         'phase' => $phase,
@@ -104,7 +117,7 @@ class TeamleaderProjectPaymentAnalyzer
                         'balance_amount' => round($balance, 2),
                         'overpaid_amount' => round($overpaid, 2),
                         'difference_amount' => round($difference, 2),
-                        'status' => $this->phaseStatus($effectivePreestab, $effectivePaid, $balance, $overpaid, $exonerated, $included),
+                        'status' => $status,
                         'needs_review' => $reviewReasons !== [],
                         'review_reasons' => $reviewReasons,
                         'preestab_parse' => $preestab,
@@ -158,16 +171,38 @@ class TeamleaderProjectPaymentAnalyzer
         $exonerated = (bool) preg_match('/\bEXONERAD[OA]|\bEXONERACION\b/u', $withoutDates);
         $included = (bool) preg_match('/\bINCLUID[OA]\s+EN\s+FASE\b/u', $withoutDates);
 
-        $amounts = $this->extractAmounts($withoutDates);
+        $entries = $this->extractAmounts($withoutDates);
+        $amounts = collect($entries)
+            ->where('currency', 'EUR')
+            ->pluck('amount')
+            ->values()
+            ->all();
+        $foreignEntries = collect($entries)
+            ->where('currency', '!=', 'EUR')
+            ->values()
+            ->all();
+        $foreignCurrencies = collect($foreignEntries)
+            ->pluck('currency')
+            ->unique()
+            ->values()
+            ->all();
 
         return [
             'raw' => $raw,
             'normalized' => $withoutDates,
+            // Only amounts already expressed in EUR take part in an automatic
+            // balance. A USD payment must be converted using its payment-date
+            // rate and the agreed adjustment rule before it can reduce debt.
             'amounts' => $amounts,
+            'entries' => $entries,
+            'foreign_amounts' => $foreignEntries,
+            'foreign_currencies' => $foreignCurrencies,
+            'requires_currency_conversion' => $foreignCurrencies !== [],
+            'payment_dates' => $this->extractPaymentDates($raw),
             'total' => round(array_sum($amounts), 2),
             'exonerated' => $exonerated,
             'included' => $included,
-            'has_amount' => count($amounts) > 0,
+            'has_amount' => count($entries) > 0,
         ];
     }
 
@@ -209,7 +244,7 @@ class TeamleaderProjectPaymentAnalyzer
             }
 
             $context = $this->amountContext($text, $position, strlen($token));
-            $hasMoneyContext = (bool) preg_match('/(€|EUR|EURO|EUROS|ABONO|ABONADO|PAGO|PAGADO|MONTO|CUOTA|TRANSFER|TRANSFERENCIA|PREESTAB)/u', $context);
+            $hasMoneyContext = (bool) preg_match('/(€|EUR|EURO|EUROS|USD|US\$|DOLAR|DOLARES|ABONO|ABONADO|PAGO|PAGADO|MONTO|CUOTA|TRANSFER|TRANSFERENCIA|PREESTAB)/u', $context);
             $mostlyNumericValue = $this->isMostlyNumericPaymentValue($text);
             $isLikelyPhaseNumber = $amount <= 3 && preg_match('/FASE\s*' . preg_quote((string) (int) $amount, '/') . '/u', $context);
 
@@ -218,11 +253,35 @@ class TeamleaderProjectPaymentAnalyzer
             }
 
             if ($hasMoneyContext || $amount >= 100 || ($tokenCount === 1 && $mostlyNumericValue)) {
-                $amounts[] = round($amount, 2);
+                $currency = $this->amountCurrency($text, $position, strlen($token));
+                $amounts[] = ['amount' => round($amount, 2), 'currency' => $currency];
             }
         }
 
         return $amounts;
+    }
+
+    private function amountCurrency(string $text, int $position, int $length): string
+    {
+        $start = max(0, $position - 8);
+        $nearby = substr($text, $start, $length + 20);
+
+        if (preg_match('/(?:USD|US\$|DOLARES?|\$)/u', $nearby)) {
+            return 'USD';
+        }
+
+        return 'EUR';
+    }
+
+    private function extractPaymentDates(string $value): array
+    {
+        preg_match_all('/\b(?:\d{4}[\/-]\d{1,2}[\/-]\d{1,2}|\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})\b/u', $value, $matches);
+
+        return collect($matches[0] ?? [])
+            ->map(static fn (string $date) => str_replace('/', '-', $date))
+            ->unique()
+            ->values()
+            ->all();
     }
 
     private function parseDecimal(string $token): ?float
@@ -272,7 +331,7 @@ class TeamleaderProjectPaymentAnalyzer
     {
         $value = Str::ascii($value);
         $value = mb_strtoupper($value);
-        $value = preg_replace('/(EUR|EUROS?)/u', ' $1 ', $value);
+        $value = preg_replace('/(EUR|EUROS?|USD|US\$|DOLARES?)/u', ' $1 ', $value);
         $value = str_replace(["\u{00A0}", "\r", "\n", "\t"], ' ', $value);
 
         return trim(preg_replace('/\s+/', ' ', $value));
@@ -327,6 +386,10 @@ class TeamleaderProjectPaymentAnalyzer
 
         if ($paid['raw'] !== '' && ! $paid['has_amount'] && ! $paid['exonerated'] && ! $paid['included']) {
             $reasons[] = 'unreadable_paid_amount';
+        }
+
+        if ($preestab['requires_currency_conversion'] || $paid['requires_currency_conversion']) {
+            $reasons[] = 'currency_conversion_required';
         }
 
         return $reasons;

@@ -163,7 +163,7 @@
                                     <tr>
                                         <td>{{ $label }}</td>
                                         <td class="text-right font-weight-bold">
-                                            {{ number_format($item['amount'], 2) }}
+                                            {{ format_money($item['amount'], 2) }}
                                         </td>
                                         <td>{{ $item['currency'] }}</td>
                                     </tr>
@@ -306,7 +306,7 @@
                                         @elseif($defType === 'date')
                                             {{ \Carbon\Carbon::parse($value)->format('d/m/Y') }}
                                         @elseif($defType === 'money')
-                                            {{ number_format((float)$value, 2) }} €
+                                            {{ format_money((float)$value, 2) }} €
                                         @elseif($defType === 'boolean')
                                             <span class="badge badge-{{ $value ? 'success' : 'secondary' }}">
                                                 {{ $value ? 'Sí' : 'No' }}
@@ -354,7 +354,7 @@
                                     <tr>
                                         <td class="text-muted small">{{ $label }}</td>
                                         <td class="text-right font-weight-bold">
-                                            {{ number_format($item['amount'], 2) }} {{ $item['currency'] }}
+                                            {{ format_money($item['amount'], 2) }} {{ $item['currency'] }}
                                         </td>
                                     </tr>
                                 @endif

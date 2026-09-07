@@ -30,7 +30,7 @@
                                 {{ $servicio->descripcion_publica ?: 'Servicio Sefar Universal.' }}
                             </p>
                             <div class="d-flex justify-content-between align-items-center">
-                                <strong>{{ number_format((float) $servicio->precio, 2) }} {{ $servicio->moneda ?? 'EUR' }}</strong>
+                                <strong>{{ format_money((float) $servicio->precio, 2) }} {{ $servicio->moneda ?? 'EUR' }}</strong>
                                 <a href="{{ route('service-store.show', $servicio) }}" class="btn btn-primary">
                                     Ver
                                 </a>
