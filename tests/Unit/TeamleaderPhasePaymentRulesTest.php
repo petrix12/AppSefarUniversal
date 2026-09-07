@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Models\TlProject;
 use App\Services\TeamleaderProjectPaymentAnalyzer;
+use App\Services\TeamleaderPhasePaymentService;
 use App\Services\TeamleaderProjectPaymentWriter;
 use App\Services\TeamleaderService;
 use PHPUnit\Framework\TestCase;
@@ -77,5 +78,17 @@ class TeamleaderPhasePaymentRulesTest extends TestCase
         $this->assertCount(1, $payload['participants']);
         $this->assertCount(1, $payload['milestones']);
         $this->assertSame([['id' => 'payment-field', 'value' => '500 EUR']], $payload['custom_fields']);
+    }
+
+    public function test_a_balance_below_fifty_is_not_collectible_but_keeps_the_actual_paid_amount(): void
+    {
+        $service = new TeamleaderPhasePaymentService();
+        $pending = new \ReflectionMethod($service, 'isPortalPaymentPending');
+        $recordAmount = new \ReflectionMethod($service, 'portalRecordAmount');
+
+        $this->assertFalse($pending->invoke($service, 49.99));
+        $this->assertTrue($pending->invoke($service, 50.00));
+        $this->assertSame(2491.9, $recordAmount->invoke($service, 2491.9, 10.1));
+        $this->assertSame(750.0, $recordAmount->invoke($service, 0.0, 750.0));
     }
 }

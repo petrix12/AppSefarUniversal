@@ -24,9 +24,9 @@
 
 @unless($cosActualClient)
     <div class="alert alert-info d-flex justify-content-between align-items-center" id="cos-preview-control">
-        <span>{{ $cosClientPreview ? 'Vista del cliente · solo lectura' : 'Vista interna del COS' }}</span>
+        <span>{{ $cosClientPreview ? 'Vista del solicitante · solo lectura' : 'Vista interna del COS' }}</span>
         <a class="btn btn-sm btn-outline-primary" href="{{ request()->fullUrlWithQuery(['vista_cliente' => $cosClientPreview ? 0 : 1]) }}" role="switch" aria-checked="{{ $cosClientPreview ? 'true' : 'false' }}">
-            {{ $cosClientPreview ? 'Volver a vista interna' : 'Ver como cliente' }}
+            {{ $cosClientPreview ? 'Volver a vista interna' : 'Ver como solicitante' }}
         </a>
     </div>
 @endunless
@@ -405,49 +405,22 @@
 
                     @if($rolId === 5)
                         @php
-                            $clientHistory = $clientTeamleaderHistory ?? [];
-                            $historySummary = $clientHistory['summary'] ?? [];
-                            $historyPaidAmounts = collect($historySummary['paid_amounts'] ?? []);
-                            $historyOutstandingAmounts = collect($historySummary['outstanding_amounts'] ?? []);
                             $portalPaymentAmount = $facturas->sum(function ($factura) {
                                 return collect($factura->compras ?? [])->sum('monto');
-                            });
+                            }) + collect($comprasPagadasSinFactura ?? [])->sum('monto');
                             $portalOutstandingAmount = $comprasConDealNoPagadas
                                 ->merge($comprasSinDealNoPagadas)
                                 ->sum('monto');
 
-                            $paymentSummaryByCurrency = collect([
-                                'EUR' => [
-                                    'currency' => 'EUR',
-                                    'paid' => (float) $portalPaymentAmount,
-                                    'owed' => (float) $portalOutstandingAmount,
-                                ],
-                            ]);
-
-                            $addPaymentSummaryAmount = function ($amount, string $type) use ($paymentSummaryByCurrency) {
-                                $currency = trim((string) ($amount['currency'] ?? '')) ?: 'EUR';
-                                $current = $paymentSummaryByCurrency->get($currency, [
-                                    'currency' => $currency,
-                                    'paid' => 0.0,
-                                    'owed' => 0.0,
-                                ]);
-                                $current[$type] += (float) ($amount['amount'] ?? 0);
-                                $paymentSummaryByCurrency->put($currency, $current);
-                            };
-
-                            $historyPaidAmounts->each(fn ($amount) => $addPaymentSummaryAmount($amount, 'paid'));
-                            $historyOutstandingAmounts->each(fn ($amount) => $addPaymentSummaryAmount($amount, 'owed'));
-
-                            $paymentSummaryByCurrency = $paymentSummaryByCurrency
-                                ->map(function ($amount) {
-                                    $amount['paid'] = round((float) $amount['paid'], 2);
-                                    // Teamleader puede devolver un saldo inconsistente mientras se corrige la migración.
-                                    $amount['debt'] = round(max((float) $amount['owed'] - $amount['paid'], 0), 2);
-
-                                    return $amount;
-                                })
-                                ->sortKeys()
-                                ->values();
+                            // The payment summary is deliberately calculated
+                            // from the exact same portal records rendered in
+                            // the completed and pending payment tabs.
+                            $paymentSummaryByCurrency = collect([[
+                                'currency' => 'EUR',
+                                'paid' => round((float) $portalPaymentAmount, 2),
+                                'owed' => round((float) $portalOutstandingAmount, 2),
+                                'debt' => round(max((float) $portalOutstandingAmount, 0), 2),
+                            ]]);
                         @endphp
 
                         <section class="mb-4" aria-labelledby="client-payment-summary-title">
@@ -2090,73 +2063,6 @@
 
                 <div class="tab-pane fade" id="payments" role="tabpanel" aria-labelledby="payments-tab">
 
-                    @php
-                        $teamleaderPhaseAnalysis = ($clientTeamleaderHistory['project_payments'] ?? null)
-                            ?: ($teamleaderProjectPayments ?? []);
-                        $teamleaderPhaseRows = collect($teamleaderPhaseAnalysis['projects'] ?? [])
-                            ->flatMap(function ($project) {
-                                return collect($project['phases'] ?? [])
-                                    ->filter(fn ($phase) => (float) ($phase['effective_preestab_amount'] ?? 0) > 0)
-                                    ->map(function ($phase) use ($project) {
-                                        $phase['project_title'] = $project['project_title'] ?? $project['project_id'] ?? '-';
-                                        return $phase;
-                                    });
-                            })
-                            ->values();
-                        $teamleaderPhaseLabels = [
-                            'paid' => 'Pagado',
-                            'partial' => 'Pendiente parcial',
-                            'pending' => 'Pendiente',
-                            'review' => 'Pagado · revisar',
-                            'exonerated' => 'Exonerado',
-                            'included' => 'Incluido',
-                        ];
-                        $teamleaderPhaseClasses = [
-                            'paid' => 'bg-success',
-                            'partial' => 'bg-warning text-dark',
-                            'pending' => 'bg-danger',
-                            'review' => 'bg-info text-dark',
-                            'exonerated' => 'bg-secondary',
-                            'included' => 'bg-secondary',
-                        ];
-                    @endphp
-
-                    @if($teamleaderPhaseRows->isNotEmpty())
-                        <section class="card border-primary mb-4">
-                            <div class="card-body">
-                                <h3 class="h5 mb-1">Pagos por fase</h3>
-                                <p class="small text-muted mb-3">Montos independientes calculados desde los campos preestablecidos y pagados de Teamleader.</p>
-                                <div class="table-responsive">
-                                    <table class="table table-sm align-middle mb-0">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>Proyecto</th>
-                                                <th>Fase</th>
-                                                <th>Estado</th>
-                                                <th class="text-end">Preestablecido</th>
-                                                <th class="text-end">Pagado</th>
-                                                <th class="text-end">Pendiente</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach($teamleaderPhaseRows as $phase)
-                                                @php $status = $phase['status'] ?? 'pending'; @endphp
-                                                <tr>
-                                                    <td>{{ \Illuminate\Support\Str::limit($phase['project_title'], 52) }}</td>
-                                                    <td>{{ $phase['payment_label'] ?? 'Fase ' . ($phase['phase'] ?? '-') }}</td>
-                                                    <td><span class="badge {{ $teamleaderPhaseClasses[$status] ?? 'bg-secondary' }}">{{ $teamleaderPhaseLabels[$status] ?? 'Sin datos' }}</span></td>
-                                                    <td class="text-end">{{ number_format((float) ($phase['effective_preestab_amount'] ?? 0), 2, ',', '.') }} EUR</td>
-                                                    <td class="text-end">{{ number_format((float) ($phase['effective_paid_amount'] ?? 0), 2, ',', '.') }} EUR</td>
-                                                    <td class="text-end fw-bold {{ (float) ($phase['balance_amount'] ?? 0) > 0 ? 'text-danger' : 'text-success' }}">{{ number_format((float) ($phase['balance_amount'] ?? 0), 2, ',', '.') }} EUR</td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </section>
-                    @endif
-
                     <table id="paymentsTable" class="min-w-full divide-y divide-gray-200 w-100">
                         <thead class="bg-gray-50">
                             <tr>
@@ -2223,14 +2129,25 @@
                                     </td>
                                 </tr>
                             @endforeach
+                            @foreach(($comprasPagadasSinFactura ?? collect()) as $compra)
+                                <tr>
+                                    <td>—</td>
+                                    <td>{{ optional($compra->paid_at ?: $compra->updated_at)->format('d/m/Y') ?: '-' }}</td>
+                                    <td>Pago registrado</td>
+                                    <td>{{ $compra->descripcion }}</td>
+                                    <td>{{ number_format((float) $compra->monto, 2, ',', '.') }} €</td>
+                                    <td>—</td>
+                                </tr>
+                            @endforeach
                         </tbody>
                     </table>
 
-                    @if($facturas->isEmpty())
+                    @if($facturas->isEmpty() && collect($comprasPagadasSinFactura ?? [])->isEmpty())
                         <div class="alert alert-light border mt-3 mb-0">
                             Aún no hay comprobantes de pago registrados directamente en el portal.
                         </div>
                     @endif
+
 
                 </div>
 

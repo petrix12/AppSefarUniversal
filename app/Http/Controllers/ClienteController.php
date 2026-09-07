@@ -210,6 +210,15 @@ class ClienteController extends Controller
             ->where('id_user', $user->id)
             ->where('monto', '>', 0)
             ->get();
+        $comprasPagadasSinFactura = Compras::query()
+            ->where('id_user', $user->id)
+            ->where('source', TeamleaderPhasePaymentService::PURCHASE_SOURCE)
+            ->where('pagado', 1)
+            ->whereNull('hash_factura')
+            ->get()
+            ->filter(fn (Compras $purchase) => (float) $purchase->monto > 0.01)
+            ->values();
+
 
         // ==========================================
         // PREPARAR DATOS PARA VISTA
@@ -300,6 +309,7 @@ class ClienteController extends Controller
         $html = view('crud.users.edit', compact(
             'documentRequests',
             'comprasConDealNoPagadas',
+            'comprasPagadasSinFactura',
             'comprasSinDealNoPagadas',
             'imageUrls',
             'cosuser',

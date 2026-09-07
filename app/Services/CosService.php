@@ -664,9 +664,9 @@ class CosService
 
             return '<b>¡Solicita tu Auditoría de Expedientes!</b>
                 <a style="border:0!important;"
-                href="https://sefaruniversal.com/bancaonline/"
+                href="https://sefaruniversal.com/landing-registro-auditoria-de-expedientes/"
                 class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                Solicita la Auditoría de Expedientes
+                Activa tu auditoría de Expediente
                 </a>';
         }
 
