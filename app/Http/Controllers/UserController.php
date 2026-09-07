@@ -51,6 +51,7 @@ use Carbon\Carbon;
 use App\Models\DocumentRequest;
 use App\Services\CustomerOrderStatusService;
 use App\Services\TeamleaderProjectPaymentAnalyzer;
+use App\Services\TeamleaderPhasePaymentService;
 use Illuminate\Support\Facades\Cache;  // ← AGREGAR ESTE
 use App\Services\UserSyncService;      // ← AGREGAR ESTE
 use App\Services\GenealogyService;     // ← AGREGAR ESTE
@@ -1729,6 +1730,23 @@ class UserController extends Controller
     $teamleaderMigration = $this->getTeamleaderMigrationData($user);
     $teamleaderProjectPayments = app(TeamleaderProjectPaymentAnalyzer::class)
         ->analyzeProjects($teamleaderMigration['projects'] ?? collect());
+    app(TeamleaderPhasePaymentService::class)->sync($user, $teamleaderProjectPayments);
+
+    // The source of truth is Teamleader. Re-read purchases after creating or
+    // closing each independent phase record so internal COS shows the same
+    // debts the public COS will show.
+    $comprasConDealNoPagadas = Compras::query()
+        ->whereNotNull('deal_id')
+        ->where('pagado', 0)
+        ->where('id_user', $user->id)
+        ->where('monto', '>', 0)
+        ->get();
+    $comprasSinDealNoPagadas = Compras::query()
+        ->whereNull('deal_id')
+        ->where('pagado', 0)
+        ->where('id_user', $user->id)
+        ->where('monto', '>', 0)
+        ->get();
 
     // ==========================================
     // PREPARAR DATOS PARA VISTA

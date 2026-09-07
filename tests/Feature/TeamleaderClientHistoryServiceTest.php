@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\TlContact;
 use App\Models\TlInvoice;
 use App\Models\TlProject;
+use App\Models\Negocio;
 use App\Models\User;
 use App\Services\TeamleaderClientHistoryService;
 use Illuminate\Database\Schema\Blueprint;
@@ -22,6 +23,13 @@ class TeamleaderClientHistoryServiceTest extends TestCase
             $table->string('name')->nullable();
             $table->string('email')->nullable();
             $table->string('passport')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('negocios', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->text('teamleader_id')->nullable();
             $table->timestamps();
         });
 
@@ -122,6 +130,7 @@ class TeamleaderClientHistoryServiceTest extends TestCase
         Schema::dropIfExists('tl_projects');
         Schema::dropIfExists('tl_deals');
         Schema::dropIfExists('tl_contacts');
+        Schema::dropIfExists('negocios');
         Schema::dropIfExists('users');
 
         parent::tearDown();
@@ -217,5 +226,42 @@ class TeamleaderClientHistoryServiceTest extends TestCase
 
         $this->assertNull($history['contact']);
         $this->assertCount(0, $history['invoices']);
+    }
+    public function test_it_includes_a_project_explicitly_linked_to_the_cos_case_without_a_contact_match(): void
+    {
+        $client = new User([
+            'id' => 999,
+            'name' => 'Cliente COS',
+            'email' => 'sin-coincidencia@example.com',
+        ]);
+
+        Negocio::create([
+            'user_id' => $client->id,
+            'teamleader_id' => 'project-linked-to-cos',
+        ]);
+
+        TlProject::create([
+            'id' => 'project-linked-to-cos',
+            'title' => 'Proyecto asociado al expediente',
+            'customer_id' => 'unrelated-contact',
+            'customer_type' => 'contact',
+            'custom_fields' => [
+                [
+                    'definition' => ['id' => 'c66a9c15-c965-0812-ad5b-7e48f183c6f9'],
+                    'value' => '700 EUR',
+                ],
+            ],
+            'raw_data' => [],
+        ]);
+
+        $history = app(TeamleaderClientHistoryService::class)->for($client);
+        $phase = $history['project_payments']['projects'][0]['phases'][2];
+
+        $this->assertNull($history['contact']);
+        $this->assertContains('Proyecto Teamleader asociado al expediente COS', $history['match_labels']);
+        $this->assertCount(1, $history['projects']);
+        $this->assertSame('project-linked-to-cos', $history['projects']->first()->id);
+        $this->assertSame('pending', $phase['status']);
+        $this->assertSame(700.0, $phase['balance_amount']);
     }
 }

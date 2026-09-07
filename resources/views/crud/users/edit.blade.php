@@ -657,7 +657,7 @@
                                                     @endphp
                                                     <tr>
                                                         <td>{{ \Illuminate\Support\Str::limit($phase['project_title'] ?? '-', 42) }}</td>
-                                                        <td>Fase {{ $phase['phase'] ?? '-' }}</td>
+                                                        <td>{{ $phase['payment_label'] ?? 'Fase ' . ($phase['phase'] ?? '-') }}</td>
                                                         <td>
                                                             <span class="badge {{ $tlStatusClasses[$status] ?? 'bg-secondary' }}">
                                                                 {{ $tlStatusLabels[$status] ?? $status }}
@@ -2090,6 +2090,73 @@
 
                 <div class="tab-pane fade" id="payments" role="tabpanel" aria-labelledby="payments-tab">
 
+                    @php
+                        $teamleaderPhaseAnalysis = ($clientTeamleaderHistory['project_payments'] ?? null)
+                            ?: ($teamleaderProjectPayments ?? []);
+                        $teamleaderPhaseRows = collect($teamleaderPhaseAnalysis['projects'] ?? [])
+                            ->flatMap(function ($project) {
+                                return collect($project['phases'] ?? [])
+                                    ->filter(fn ($phase) => (float) ($phase['effective_preestab_amount'] ?? 0) > 0)
+                                    ->map(function ($phase) use ($project) {
+                                        $phase['project_title'] = $project['project_title'] ?? $project['project_id'] ?? '-';
+                                        return $phase;
+                                    });
+                            })
+                            ->values();
+                        $teamleaderPhaseLabels = [
+                            'paid' => 'Pagado',
+                            'partial' => 'Pendiente parcial',
+                            'pending' => 'Pendiente',
+                            'review' => 'Pagado · revisar',
+                            'exonerated' => 'Exonerado',
+                            'included' => 'Incluido',
+                        ];
+                        $teamleaderPhaseClasses = [
+                            'paid' => 'bg-success',
+                            'partial' => 'bg-warning text-dark',
+                            'pending' => 'bg-danger',
+                            'review' => 'bg-info text-dark',
+                            'exonerated' => 'bg-secondary',
+                            'included' => 'bg-secondary',
+                        ];
+                    @endphp
+
+                    @if($teamleaderPhaseRows->isNotEmpty())
+                        <section class="card border-primary mb-4">
+                            <div class="card-body">
+                                <h3 class="h5 mb-1">Pagos por fase</h3>
+                                <p class="small text-muted mb-3">Montos independientes calculados desde los campos preestablecidos y pagados de Teamleader.</p>
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Proyecto</th>
+                                                <th>Fase</th>
+                                                <th>Estado</th>
+                                                <th class="text-end">Preestablecido</th>
+                                                <th class="text-end">Pagado</th>
+                                                <th class="text-end">Pendiente</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($teamleaderPhaseRows as $phase)
+                                                @php $status = $phase['status'] ?? 'pending'; @endphp
+                                                <tr>
+                                                    <td>{{ \Illuminate\Support\Str::limit($phase['project_title'], 52) }}</td>
+                                                    <td>{{ $phase['payment_label'] ?? 'Fase ' . ($phase['phase'] ?? '-') }}</td>
+                                                    <td><span class="badge {{ $teamleaderPhaseClasses[$status] ?? 'bg-secondary' }}">{{ $teamleaderPhaseLabels[$status] ?? 'Sin datos' }}</span></td>
+                                                    <td class="text-end">{{ number_format((float) ($phase['effective_preestab_amount'] ?? 0), 2, ',', '.') }} EUR</td>
+                                                    <td class="text-end">{{ number_format((float) ($phase['effective_paid_amount'] ?? 0), 2, ',', '.') }} EUR</td>
+                                                    <td class="text-end fw-bold {{ (float) ($phase['balance_amount'] ?? 0) > 0 ? 'text-danger' : 'text-success' }}">{{ number_format((float) ($phase['balance_amount'] ?? 0), 2, ',', '.') }} EUR</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </section>
+                    @endif
+
                     <table id="paymentsTable" class="min-w-full divide-y divide-gray-200 w-100">
                         <thead class="bg-gray-50">
                             <tr>
@@ -2191,9 +2258,19 @@
                                     <td>{{ $compra->monto }} €</td>
                                     @if($cosViewRoleId == 5)
                                     <td>
+                                        @if(($compra->source ?? null) === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE)
+                                        <form action="{{ route('gotopayfases') }}" method="POST">
+                                            @csrf
+                                            <input type="hidden" name="id" value="{{ $compra->id }}">
+                                            <button type="submit" class="btn btn-danger">
+                                                <i class="fas fa-credit-card"></i> Pagar ahora
+                                            </button>
+                                        </form>
+                                        @else
                                         <a href="/pay" class="btn btn-warning">
                                             <i class="fas fa-credit-card"></i> Pagar ahora
                                         </a>
+                                        @endif
                                     </td>
                                     @endif
                                 </tr>
@@ -2205,7 +2282,7 @@
                                     <td>{{ $compra->monto }} €</td>
                                     @if($cosViewRoleId == 5)
                                     <td>
-                                        <form action="/payfases" method="POST">
+                                        <form action="{{ route('gotopayfases') }}" method="POST">
                                             @csrf
                                             <input type="hidden" name="id" value="{{ $compra->id }}">
                                             <button type="submit" class="btn btn-danger">

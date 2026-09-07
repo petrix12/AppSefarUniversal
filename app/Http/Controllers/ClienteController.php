@@ -64,6 +64,8 @@ use App\Services\GenealogyService;
 use App\Jobs\SyncUserDealsJob;
 use App\Services\CosService;
 use App\Services\TeamleaderClientHistoryService;
+use App\Services\TeamleaderPhasePaymentService;
+use App\Services\TeamleaderProjectFullUpdater;
 use Illuminate\Support\Facades\Cache;
 class ClienteController extends Controller
 {
@@ -188,6 +190,26 @@ class ClienteController extends Controller
         // migrado de Teamleader. El servicio solo lee datos asociados al
         // contacto autenticado y no realiza cambios durante la consulta.
         $clientTeamleaderHistory = app(TeamleaderClientHistoryService::class)->for($user);
+
+        app(TeamleaderPhasePaymentService::class)->sync(
+            $user,
+            $clientTeamleaderHistory['project_payments'] ?? []
+        );
+
+        // Re-read after Teamleader phases have been translated to individual
+        // portal records, so a debt is visible in this same COS request.
+        $comprasConDealNoPagadas = Compras::query()
+            ->whereNotNull('deal_id')
+            ->where('pagado', 0)
+            ->where('id_user', $user->id)
+            ->where('monto', '>', 0)
+            ->get();
+        $comprasSinDealNoPagadas = Compras::query()
+            ->whereNull('deal_id')
+            ->where('pagado', 0)
+            ->where('id_user', $user->id)
+            ->where('monto', '>', 0)
+            ->get();
 
         // ==========================================
         // PREPARAR DATOS PARA VISTA
@@ -1736,14 +1758,25 @@ class ClienteController extends Controller
     }
 
     public function gotopayfases(Request $request){
-        if (Auth::user()->roles->first()->name == "Cliente"){
+        $isTeamleaderPhasePurchase = Compras::query()
+            ->where('id_user', auth()->id())
+            ->where('id', $request->id)
+            ->where('source', TeamleaderPhasePaymentService::PURCHASE_SOURCE)
+            ->exists();
+
+        if (! $isTeamleaderPhasePurchase && Auth::user()->roles->first()->name == "Cliente"){
             if(Auth::user()->pay==1 || Auth::user()->pay==3){
                 return redirect()->route('clientes.getinfo');
             } else if(Auth::user()->pay==0){
                 return redirect()->route('clientes.pay');
             }
         }
-        $compras = Compras::where('id_user', auth()->user()->id)->where('id', $request->id)->where('pagado', 0)->whereNotNull('deal_id')->get();
+        $compras = Compras::where('id_user', auth()->user()->id)->where('id', $request->id)->where('pagado', 0)
+            ->where(function ($query) {
+                $query->whereNotNull('deal_id')
+                    ->orWhere('source', TeamleaderPhasePaymentService::PURCHASE_SOURCE);
+            })
+            ->get();
 
         if (auth()->user()->tiene_hermanos==1 || auth()->user()->tiene_hermanos=="1" || auth()->user()->tiene_hermanos=="Si") {
             $servicio = Servicio::where('id_hubspot', auth()->user()->servicio." - Hermano")->get();
@@ -2446,7 +2479,12 @@ class ClienteController extends Controller
     }
 
     public function procesarpaypalfases(Request $request) {
-        $compras = Compras::where('id_user', auth()->user()->id)->where('id', $request->compraid)->where('pagado', 0)->whereNotNull('deal_id')->get();
+        $compras = Compras::where('id_user', auth()->user()->id)->where('id', $request->compraid)->where('pagado', 0)
+            ->where(function ($query) {
+                $query->whereNotNull('deal_id')
+                    ->orWhere('source', TeamleaderPhasePaymentService::PURCHASE_SOURCE);
+            })
+            ->get();
 
         $monto = 0;
 
@@ -2475,6 +2513,19 @@ class ClienteController extends Controller
 
         foreach ($compras as $key => $compra) {
             DB::table('compras')->where('id', $compra['id'])->update(['pagado' => 1, 'hash_factura' => $hash_factura]);
+
+            if ($compra->source === TeamleaderPhasePaymentService::PURCHASE_SOURCE) {
+                try {
+                    app(TeamleaderPhasePaymentService::class)->syncPortalPayment($compra, $this->teamleaderService);
+                } catch (\Throwable $exception) {
+                    Log::channel('teamleader')->error('Pago del portal no se pudo sincronizar en Teamleader', [
+                        'purchase_id' => $compra->id,
+                        'error' => $exception->getMessage(),
+                    ]);
+                }
+
+                continue;
+            }
 
             $deal = Negocio::find($compra->deal_id);
             $fechaActual = Carbon::now()->format('Y/m/d');
@@ -2506,7 +2557,7 @@ class ClienteController extends Controller
 
                     $campoTeamleader = ['custom_fields' => $updatedFields];
 
-                    $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+                    app(TeamleaderProjectFullUpdater::class)->update($deal->teamleader_id, $currentProject, $updatedFields);
                 }
 
                 if ($deal->hubspot_id) {
@@ -2556,7 +2607,7 @@ class ClienteController extends Controller
 
                     $campoTeamleader = ['custom_fields' => $updatedFields];
 
-                    $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+                    app(TeamleaderProjectFullUpdater::class)->update($deal->teamleader_id, $currentProject, $updatedFields);
                 }
 
                 if ($deal->hubspot_id) {
@@ -2606,7 +2657,7 @@ class ClienteController extends Controller
 
                     $campoTeamleader = ['custom_fields' => $updatedFields];
 
-                    $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+                    app(TeamleaderProjectFullUpdater::class)->update($deal->teamleader_id, $currentProject, $updatedFields);
                 }
 
                 if ($deal->hubspot_id) {
@@ -2656,7 +2707,7 @@ class ClienteController extends Controller
 
                     $campoTeamleader = ['custom_fields' => $updatedFields];
 
-                    $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+                    app(TeamleaderProjectFullUpdater::class)->update($deal->teamleader_id, $currentProject, $updatedFields);
                 }
 
                 if ($deal->hubspot_id) {
@@ -2704,7 +2755,7 @@ class ClienteController extends Controller
 
                     $campoTeamleader = ['custom_fields' => $updatedFields];
 
-                    $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+                    app(TeamleaderProjectFullUpdater::class)->update($deal->teamleader_id, $currentProject, $updatedFields);
                 }
 
                 if ($deal->hubspot_id) {
@@ -3135,7 +3186,12 @@ class ClienteController extends Controller
 
         $errorcod = "error";
 
-        $compras = Compras::where('id_user', auth()->user()->id)->where('id', $request->compraid)->where('pagado', 0)->whereNotNull('deal_id')->get();
+        $compras = Compras::where('id_user', auth()->user()->id)->where('id', $request->compraid)->where('pagado', 0)
+            ->where(function ($query) {
+                $query->whereNotNull('deal_id')
+                    ->orWhere('source', TeamleaderPhasePaymentService::PURCHASE_SOURCE);
+            })
+            ->get();
         $servicio = Servicio::where('id_hubspot', auth()->user()->servicio)->get();
 
         $monto = 0;
@@ -3226,6 +3282,19 @@ class ClienteController extends Controller
                 foreach ($compras as $key => $compra) {
                     DB::table('compras')->where('id', $compra['id'])->update(['pagado' => 1, 'hash_factura' => $hash_factura]);
 
+                    if ($compra->source === TeamleaderPhasePaymentService::PURCHASE_SOURCE) {
+                        try {
+                            app(TeamleaderPhasePaymentService::class)->syncPortalPayment($compra, $this->teamleaderService);
+                        } catch (\Throwable $exception) {
+                            Log::channel('teamleader')->error('Pago del portal no se pudo sincronizar en Teamleader', [
+                                'purchase_id' => $compra->id,
+                                'error' => $exception->getMessage(),
+                            ]);
+                        }
+
+                        continue;
+                    }
+
                     $deal = Negocio::find($compra->deal_id);
                     $fechaActual = Carbon::now()->format('Y/m/d');
 
@@ -3256,7 +3325,7 @@ class ClienteController extends Controller
 
                             $campoTeamleader = ['custom_fields' => $updatedFields];
 
-                            $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+                            app(TeamleaderProjectFullUpdater::class)->update($deal->teamleader_id, $currentProject, $updatedFields);
                         }
 
                         if ($deal->hubspot_id) {
@@ -3306,7 +3375,7 @@ class ClienteController extends Controller
 
                             $campoTeamleader = ['custom_fields' => $updatedFields];
 
-                            $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+                            app(TeamleaderProjectFullUpdater::class)->update($deal->teamleader_id, $currentProject, $updatedFields);
                         }
 
                         if ($deal->hubspot_id) {
@@ -3356,7 +3425,7 @@ class ClienteController extends Controller
 
                             $campoTeamleader = ['custom_fields' => $updatedFields];
 
-                            $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+                            app(TeamleaderProjectFullUpdater::class)->update($deal->teamleader_id, $currentProject, $updatedFields);
                         }
 
                         if ($deal->hubspot_id) {
@@ -3406,7 +3475,7 @@ class ClienteController extends Controller
 
                             $campoTeamleader = ['custom_fields' => $updatedFields];
 
-                            $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+                            app(TeamleaderProjectFullUpdater::class)->update($deal->teamleader_id, $currentProject, $updatedFields);
                         }
 
                         if ($deal->hubspot_id) {
@@ -3454,7 +3523,7 @@ class ClienteController extends Controller
 
                             $campoTeamleader = ['custom_fields' => $updatedFields];
 
-                            $this->teamleaderService->updateProject($deal->teamleader_id, $campoTeamleader);
+                            app(TeamleaderProjectFullUpdater::class)->update($deal->teamleader_id, $currentProject, $updatedFields);
                         }
 
                         if ($deal->hubspot_id) {

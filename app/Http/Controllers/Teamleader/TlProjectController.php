@@ -50,7 +50,6 @@ class TlProjectController extends Controller
             })
             ->filter(fn (array $row) =>
                 $row['phase']['effective_preestab_amount'] > 0
-                && $row['phase']['effective_paid_amount'] > 0
             );
 
         if ($request->input('payment_audit') === 'overpaid') {

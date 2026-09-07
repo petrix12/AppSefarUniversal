@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\TlContact;
 use App\Models\TlDeal;
 use App\Models\TlInvoice;
+use App\Models\Negocio;
 use App\Models\TlProject;
 use App\Models\User;
 use Illuminate\Support\Collection;
@@ -31,26 +32,60 @@ class TeamleaderClientHistoryService
             return $this->emptyHistory();
         }
 
+        // A project deliberately linked to the customer's own COS case is a
+        // stronger and safer signal than a heuristic contact match. Include
+        // it so an imperfect passport/email migration cannot hide a debt.
+        $linkedProjectIds = Schema::hasTable('negocios')
+            ? Negocio::query()
+                ->where('user_id', $user->id)
+                ->whereNotNull('teamleader_id')
+                ->where('teamleader_id', '!=', '')
+                ->pluck('teamleader_id')
+                ->map(fn ($id) => trim((string) $id))
+                ->filter()
+                ->unique()
+                ->values()
+            : collect();
+
         $match = $this->bestContactMatch($user);
         $contact = $match['contact'] ?? null;
 
-        if (! $contact instanceof TlContact) {
+        if (! $contact instanceof TlContact && $linkedProjectIds->isEmpty()) {
             return $this->emptyHistory();
         }
 
-        $deals = TlDeal::query()
-            ->where('customer_type', 'contact')
-            ->where('customer_id', $contact->id)
+        $deals = $contact instanceof TlContact
+            ? TlDeal::query()
+                ->where('customer_type', 'contact')
+                ->where('customer_id', $contact->id)
+                ->orderByDesc('tl_updated_at')
+                ->orderByDesc('tl_created_at')
+                ->get()
+            : collect();
+
+        $projects = TlProject::query()
+            ->where(function ($query) use ($contact, $linkedProjectIds) {
+                if ($contact instanceof TlContact) {
+                    $query->where(function ($contactQuery) use ($contact) {
+                        $contactQuery
+                            ->where('customer_type', 'contact')
+                            ->where('customer_id', $contact->id);
+                    });
+                }
+
+                if ($linkedProjectIds->isNotEmpty()) {
+                    $method = $contact instanceof TlContact ? 'orWhereIn' : 'whereIn';
+                    $query->{$method}('id', $linkedProjectIds->all());
+                }
+            })
             ->orderByDesc('tl_updated_at')
             ->orderByDesc('tl_created_at')
             ->get();
 
-        $projects = TlProject::query()
-            ->where('customer_type', 'contact')
-            ->where('customer_id', $contact->id)
-            ->orderByDesc('tl_updated_at')
-            ->orderByDesc('tl_created_at')
-            ->get();
+        $matchLabels = $match['reasons'] ?? [];
+        if ($linkedProjectIds->isNotEmpty()) {
+            $matchLabels[] = 'Proyecto Teamleader asociado al expediente COS';
+        }
 
         $invoices = $this->invoicesFor($contact, $deals, $projects);
         $paidInvoices = $invoices->filter(fn (TlInvoice $invoice) => $this->invoiceIsPaid($invoice));
@@ -58,7 +93,7 @@ class TeamleaderClientHistoryService
 
         return [
             'contact' => $contact,
-            'match_labels' => $match['reasons'] ?? [],
+            'match_labels' => array_values(array_unique($matchLabels)),
             'deals' => $deals,
             'projects' => $projects,
             'invoices' => $invoices,
@@ -158,25 +193,33 @@ class TeamleaderClientHistoryService
         return $bestMatch;
     }
 
-    private function invoicesFor(TlContact $contact, Collection $deals, Collection $projects): Collection
+    private function invoicesFor(?TlContact $contact, Collection $deals, Collection $projects): Collection
     {
         $dealIds = $deals->pluck('id')->filter()->values();
         $projectIds = $projects->pluck('id')->filter()->values();
 
         return TlInvoice::query()
             ->where(function ($query) use ($contact, $dealIds, $projectIds) {
-                $query->where(function ($contactQuery) use ($contact) {
-                    $contactQuery
-                        ->where('customer_type', 'contact')
-                        ->where('customer_id', $contact->id);
-                });
+                $hasCondition = false;
+
+                if ($contact instanceof TlContact) {
+                    $query->where(function ($contactQuery) use ($contact) {
+                        $contactQuery
+                            ->where('customer_type', 'contact')
+                            ->where('customer_id', $contact->id);
+                    });
+                    $hasCondition = true;
+                }
 
                 if ($dealIds->isNotEmpty()) {
-                    $query->orWhereIn('deal_id', $dealIds->all());
+                    $method = $hasCondition ? 'orWhereIn' : 'whereIn';
+                    $query->{$method}('deal_id', $dealIds->all());
+                    $hasCondition = true;
                 }
 
                 if ($projectIds->isNotEmpty()) {
-                    $query->orWhereIn('project_id', $projectIds->all());
+                    $method = $hasCondition ? 'orWhereIn' : 'whereIn';
+                    $query->{$method}('project_id', $projectIds->all());
                 }
             })
             ->orderByDesc('paid_date')

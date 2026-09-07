@@ -71,7 +71,7 @@
                                     ?>
                                 </td>
                                 <td class="py-2 px-3" style="text-align: center;">
-                                    @if($compra['deal_id'])
+                                    @if($compra['deal_id'] || ($compra->source ?? null) === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE)
                                     <form action="{{ route('gotopayfases') }}" method="POST" style="display: inline;">
                                         @csrf <!-- Token de seguridad para Laravel -->
                                         <input type="hidden" name="id" value="{{ $compra['id'] }}">

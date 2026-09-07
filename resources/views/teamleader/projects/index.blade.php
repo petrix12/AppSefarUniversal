@@ -173,7 +173,7 @@
                             </td>
 
                             <td class="font-weight-bold text-center">
-                                Fase {{ $phase['phase'] }}
+                                {{ $phase['payment_label'] ?? 'Fase ' . ($phase['phase'] ?? '-') }}
                             </td>
 
                             <td class="text-right">

@@ -39,6 +39,30 @@ class TeamleaderProjectPaymentAnalyzer
                 'label' => 'Fase 3 Pagado',
             ],
         ],
+        98 => [
+            'key' => 'carta_naturaleza',
+            'label' => 'Carta de Naturaleza',
+            'preestab' => [
+                'id' => 'a42ed217-b570-0973-9052-fab97214c229',
+                'label' => 'Carta Nat Preestablecido',
+            ],
+            'paid' => [
+                'id' => '4339375f-ed77-02d9-a157-7da9f9e4bfac',
+                'label' => 'Carta Nat Pagado',
+            ],
+        ],
+        99 => [
+            'key' => 'cil_fcje',
+            'label' => 'CIL / FCJE',
+            'preestab' => [
+                'id' => 'aa1ce4b9-a410-00f2-a953-5f8c2713dc35',
+                'label' => 'CIL FCJE Preestablecido',
+            ],
+            'paid' => [
+                'id' => 'f23fbe3b-5d13-0a41-a857-e9ab1c63dc42',
+                'label' => 'CIL FCJE Pagado',
+            ],
+        ],
     ];
 
     public function analyzeProject(TlProject $project): array
@@ -69,6 +93,8 @@ class TeamleaderProjectPaymentAnalyzer
                 return [
                     $phase => [
                         'phase' => $phase,
+                        'payment_key' => $fields['key'] ?? "fase_{$phase}",
+                        'payment_label' => $fields['label'] ?? "Fase {$phase}",
                         'preestab_raw' => $preestabRaw,
                         'paid_raw' => $paidRaw,
                         'preestab_amount' => round($preestab['total'], 2),
