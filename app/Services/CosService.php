@@ -69,7 +69,9 @@ class CosService
 
         //dd($certificadoDescargado);
 
-        return $this->calculateCOS($certificadoDescargado);
+        $status = $this->calculateCOS($certificadoDescargado);
+
+        return CosPresentation::statuses([$status])[0];
     }
 
     // ============ MÉTODOS DE CÁLCULO DE ESTADO ============
@@ -644,7 +646,8 @@ class CosService
                 ['Recurso', 'Urgencia']
             );
 
-            if ($tieneRecursoUrgencia || isset($this->negocio->fecha_solicitud_recurso_urgencia)) {
+            $tieneAuditoria = $this->verificarNegocioActivo($this->negocios, 'Auditoría de Expedientes', ['Auditoría', 'Expedientes']);
+            if ($tieneRecursoUrgencia || $tieneAuditoria || isset($this->negocio->fecha_solicitud_recurso_urgencia)) {
                 return null;
             }
 
@@ -659,11 +662,11 @@ class CosService
                 return null;
             }
 
-            return '<b>¡Solicita tu Recurso de Urgencia!</b>
+            return '<b>¡Solicita tu Auditoría de Expedientes!</b>
                 <a style="border:0!important;"
                 href="https://sefaruniversal.com/bancaonline/"
                 class="cfrSefar inline-flex items-center justify-center px-3 py-1 ml-2 text-decoration-none text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                Solicita el Recurso de Urgencia
+                Solicita la Auditoría de Expedientes
                 </a>';
         }
 
@@ -803,13 +806,16 @@ class CosService
                     $dealname = strtolower($negocio->dealname ?? '');
 
                     return $servicio === 'recurso de urgencia'
+                        || $servicio === 'auditoría de expedientes'
+                        || str_contains($titulo, 'auditoría de expedientes')
+                        || str_contains($dealname, 'auditoría de expedientes')
                         || str_contains($titulo, 'urgencia')
                         || str_contains($dealname, 'urgencia')
                         || str_contains($titulo, 'recurso urgencia');
                 });
 
                 if (!$tieneRecurso) {
-                    return '¡Solicita tu Recurso de Urgencia!';
+                    return '¡Solicita tu Auditoría de Expedientes!';
                 }
             }
 

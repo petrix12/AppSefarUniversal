@@ -97,46 +97,7 @@ class ClienteController extends Controller
 
     private function searchUserInMonday($passport, User $user)
     {
-        $boardIds = array_keys(config('cos_snapshot.monday_search_boards', []));
-
-        $searchUrl = "https://app.sefaruniversal.com/tree/" . $passport;
-
-        foreach ($boardIds as $boardId) {
-            $query = "
-                items_page_by_column_values(
-                    limit: 50,
-                    board_id: {$boardId},
-                    columns: [{column_id: \"enlace\", column_values: [\"{$searchUrl}\"]}]
-                ) {
-                    cursor
-                    items {
-                        id
-                        name
-                        board {
-                            name
-                        }
-                        column_values {
-                            id
-                            column {
-                                title
-                            }
-                            text
-                        }
-                    }
-                }
-            ";
-
-            $result = json_decode(json_encode(Monday::customQuery($query)), true);
-
-            if (!empty($result['items_page_by_column_values']['items'])) {
-                $item = $result['items_page_by_column_values']['items'][0];
-                $user->monday_id = $item['id']; // Guardar el ID de Monday
-                $user->save();
-                return $item;
-            }
-        }
-
-        return null;
+        return app(\App\Services\CosMondayLookup::class)->find($passport, $user);
     }
 
     private function getRandomImages(): array

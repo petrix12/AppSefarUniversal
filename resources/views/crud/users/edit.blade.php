@@ -11,6 +11,27 @@
 @section('content')
 
 @php
+    $cosActualClient = auth()->user()->roles->contains('id', 5);
+    $cosClientPreview = ! $cosActualClient && request()->boolean('vista_cliente');
+    $cosViewRoleId = ($cosActualClient || $cosClientPreview) ? 5 : (int) (auth()->user()->roles->first()?->id ?? 0);
+    $cosuser = \App\Services\CosPresentation::statuses($cosuser ?? []);
+    foreach ($cos as $service => $definition) {
+        if (str_starts_with(mb_strtolower(trim($service)), 'portuguesa sefardi')) {
+            $cos[$service] = \App\Services\CosPresentation::portugueseLabels($definition);
+        }
+    }
+@endphp
+
+@unless($cosActualClient)
+    <div class="alert alert-info d-flex justify-content-between align-items-center" id="cos-preview-control">
+        <span>{{ $cosClientPreview ? 'Vista del cliente · solo lectura' : 'Vista interna del COS' }}</span>
+        <a class="btn btn-sm btn-outline-primary" href="{{ request()->fullUrlWithQuery(['vista_cliente' => $cosClientPreview ? 0 : 1]) }}" role="switch" aria-checked="{{ $cosClientPreview ? 'true' : 'false' }}">
+            {{ $cosClientPreview ? 'Volver a vista interna' : 'Ver como cliente' }}
+        </a>
+    </div>
+@endunless
+
+@php
     // Simulando un array de países (puedes llenarlo con todos los que necesites)
     $opcionesPersonas = [
         'Soporte IT', 'Crisanto Bello', 'Abel Tejeda', 'rrcastro@sefarvzla.com',
@@ -21,7 +42,7 @@
 
 <x-app-layout>
     <div>
-        @if(auth()->user()->roles[0]->id != 5)
+        @if($cosViewRoleId != 5)
         <div class="flex flex-col">
             <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                 <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
@@ -49,7 +70,7 @@
             <ul class="nav nav-tabs" id="formTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button style="color:black" class="nav-link active" id="mystatus-tab" data-bs-toggle="tab" data-bs-target="#mystatus" type="button" role="tab" aria-controls="mystatus" aria-selected="true">
-                        @if(auth()->user()->roles[0]->id == 5)
+                        @if($cosViewRoleId == 5)
                         Mi Estatus
                         @else
                         Estatus de Cliente
@@ -61,13 +82,13 @@
                         Datos personales
                     </button>
                 </li>
-                @if(auth()->user()->roles[0]->id == 1)
+                @if($cosViewRoleId == 1)
                 <li class="nav-item" role="presentation">
                     <button style="color:black" class="nav-link" id="adminchangepassword-tab" data-bs-toggle="tab" data-bs-target="#adminchangepassword" type="button" role="tab" aria-controls="adminchangepassword" aria-selected="true">
                         Contraseña
                     </button>
                 </li>
-                @elseif(auth()->user()->roles[0]->id == 5)
+                @elseif($cosViewRoleId == 5)
                 <li class="nav-item" role="presentation">
                     <button style="color:black" class="nav-link" id="mypassword-tab" data-bs-toggle="tab" data-bs-target="#mypassword" type="button" role="tab" aria-controls="mypassword" aria-selected="true">
                         Cambiar mi Contraseña
@@ -89,7 +110,7 @@
                         Pagos pendientes
                     </button>
                 </li>
-                @if(auth()->user()->roles[0]->id == 5)
+                @if($cosViewRoleId == 5)
                 <li class="nav-item">
                     <button style="color:black" class="nav-link" id="client-req-tab"
                             data-bs-toggle="tab" data-bs-target="#client-req"
@@ -112,21 +133,21 @@
                         Archivos Cargados
                     </button>
                 </li>
-                @if(auth()->user()->roles[0]->id == 1 || auth()->user()->roles[0]->id == 2)
+                @if($cosViewRoleId == 1 || $cosViewRoleId == 2)
                 <li class="nav-item" role="presentation">
                     <button style="color:black" class="nav-link" id="etiquetado-tab" data-bs-toggle="tab" data-bs-target="#etiquetado" type="button" role="tab" aria-controls="etiquetado" aria-selected="false">
                         Etiquetado
                     </button>
                 </li>
                 @endif
-                @if(auth()->user()->roles[0]->id == 17 || auth()->user()->roles[0]->id == 1 || auth()->user()->roles[0]->id == 4 || auth()->user()->roles[0]->id == 16 || auth()->user()->roles[0]->id == 15)
+                @if($cosViewRoleId == 17 || $cosViewRoleId == 1 || $cosViewRoleId == 4 || $cosViewRoleId == 16 || $cosViewRoleId == 15)
                 <li class="nav-item" role="presentation">
                     <button style="color:black" class="nav-link" id="negocios-tab" data-bs-toggle="tab" data-bs-target="#negocios" type="button" role="tab" aria-controls="negocios" aria-selected="false">
                         Negocios
                     </button>
                 </li>
                 @endif
-                @if(auth()->user()->roles[0]->id != 5)
+                @if($cosViewRoleId != 5)
                 <li class="nav-item" role="presentation">
                     <button style="color:black" class="nav-link" id="teamleader-migration-tab" data-bs-toggle="tab" data-bs-target="#teamleader-migration" type="button" role="tab" aria-controls="teamleader-migration" aria-selected="false">
                         Teamleader
@@ -158,7 +179,7 @@
             </style>
             <div class="tab-content mt-4" id="formTabsContent">
                 <!-- Primer Formulario -->
-                @php $rolId = auth()->user()->roles[0]->id; @endphp
+                @php $rolId = $cosViewRoleId; @endphp
 
                 <div class="tab-pane fade show active" id="mystatus" role="tabpanel" aria-labelledby="mystatus-tab">
                     {{-- ══ BOTÓN DE SINCRONIZACIÓN ══ --}}
@@ -1448,7 +1469,7 @@
                                 </select>
                             </div>
                         </div>
-                        @if(auth()->user()->roles[0]->id == 1 || auth()->user()->roles[0]->id == 15 || auth()->user()->roles[0]->id == 16)
+                        @if($cosViewRoleId == 1 || $cosViewRoleId == 15 || $cosViewRoleId == 16)
                         <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
                             <div style="flex: 1;" class="mb-3">
                                 <label for="detalle_de_la_solicitud" class="block text-sm font-medium text-gray-700">Detalles de la solicitud</label>
@@ -1465,7 +1486,7 @@
                         <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
                             <div style="flex: 1;" class="mb-3">
                                 <label for="pay" class="block text-sm font-medium text-gray-700">{{ __('Payment status') }} del registro</label>
-                                @if(auth()->user()->roles[0]->id == 1)
+                                @if($cosViewRoleId == 1)
                                     <select name="pay" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                         @if ($user->pay == 0)
                                             <option selected value=0>No ha pagado</option>
@@ -1513,7 +1534,7 @@
                             </div>
                             <div style="flex: 1;" class="mb-3">
                                 <label for="contrato" class="block text-sm font-medium text-gray-700">Servicio Principal</label>
-                                @if(auth()->user()->roles[0]->id == 1)
+                                @if($cosViewRoleId == 1)
                                 <select name="servicio" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                     <option></option>
                                     @foreach ($servicios as $servicio)
@@ -1528,7 +1549,7 @@
                             </div>
                             <div style="flex: 1;" class="mb-3">
                                 <label for="contrato" class="block text-sm font-medium text-gray-700">Contrato</label>
-                                @if(auth()->user()->roles[0]->id == 1)
+                                @if($cosViewRoleId == 1)
                                     <select name="contrato" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                         @if ($user->contrato == 0)
                                             <option selected value=0>No ha firmado contrato</option>
@@ -1667,7 +1688,7 @@
                             </div>
                         </div>
 
-                        @if(auth()->user()->roles[0]->id == 1 || auth()->user()->roles[0]->id == 15 || auth()->user()->roles[0]->id == 4 || auth()->user()->roles[0]->id == 17)
+                        @if($cosViewRoleId == 1 || $cosViewRoleId == 15 || $cosViewRoleId == 4 || $cosViewRoleId == 17)
 
                             <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
                                 <span class="ctvSefar block text-indigo-600">Otros datos personales</span>
@@ -1943,7 +1964,7 @@
 
                         @endif
 
-                        @if(auth()->user()->roles[0]->id == 1 || auth()->user()->roles[0]->id == 15 || auth()->user()->roles[0]->id == 4 || auth()->user()->roles[0]->id == 17)
+                        @if($cosViewRoleId == 1 || $cosViewRoleId == 15 || $cosViewRoleId == 4 || $cosViewRoleId == 17)
                             <button type="button" id="guardar-datos" class="cfrSefar btn btn-primary mt-3">Guardar</button>
                         @endif
                     </form>
@@ -1984,7 +2005,7 @@
 
                 <div class="tab-pane fade" id="familiars" role="tabpanel" aria-labelledby="familiars-tab">
                     <center>
-                        @if(auth()->user()->roles[0]->id == 5)
+                        @if($cosViewRoleId == 5)
                         <a href="/tree/" class="btn btn-primary mb-3">
                             Ir al Arbol
                         </a>
@@ -2123,11 +2144,11 @@
                                         {{$monto}} €
                                     </td>
                                     <td>
-                                        @if(auth()->user()->roles[0]->id == 1)
+                                        @if($cosViewRoleId == 1)
                                             <a href="{{ route('viewcomprobante', ['id' => $factura['id']]) }}" target="_blank" class="btn btn-primary">
                                                 <i class="fas fa-receipt"></i>
                                             </a>
-                                        @elseif(auth()->user()->roles[0]->id == 5)
+                                        @elseif($cosViewRoleId == 5)
                                             <a href="{{ route('viewcomprobantecliente', ['id' => $factura['id']]) }}" target="_blank" class="btn btn-primary">
                                                 <i class="fas fa-receipt"></i>
                                             </a>
@@ -2158,7 +2179,7 @@
                             <tr>
                                 <th scope="col">Descripción</th>
                                 <th scope="col">Monto</th>
-                                @if(auth()->user()->roles[0]->id == 5)
+                                @if($cosViewRoleId == 5)
                                 <th scope="col">Acción</th>
                                 @endif
                             </tr>
@@ -2168,7 +2189,7 @@
                                 <tr>
                                     <td>{{ $compra->descripcion }}</td>
                                     <td>{{ $compra->monto }} €</td>
-                                    @if(auth()->user()->roles[0]->id == 5)
+                                    @if($cosViewRoleId == 5)
                                     <td>
                                         <a href="/pay" class="btn btn-warning">
                                             <i class="fas fa-credit-card"></i> Pagar ahora
@@ -2182,7 +2203,7 @@
                                 <tr>
                                     <td>{{ $compra->descripcion }}</td>
                                     <td>{{ $compra->monto }} €</td>
-                                    @if(auth()->user()->roles[0]->id == 5)
+                                    @if($cosViewRoleId == 5)
                                     <td>
                                         <form action="/payfases" method="POST">
                                             @csrf
@@ -3393,6 +3414,22 @@
 @stop
 
 @section('js')
+    @if($cosClientPreview)
+        <script>
+            // Preview keeps the authenticated staff identity; customer actions are read-only.
+            document.addEventListener('submit', function (event) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+            }, true);
+            document.addEventListener('click', function (event) {
+                const control = event.target.closest('button, a, input[type="submit"]');
+                if (!control || control.closest('#cos-preview-control')) return;
+                if (control.matches('[data-bs-toggle="tab"], [data-bs-toggle="collapse"], [data-bs-toggle="modal"], [data-bs-dismiss], [data-bs-slide], [data-bs-slide-to]')) return;
+                event.preventDefault();
+                event.stopImmediatePropagation();
+            }, true);
+        </script>
+    @endif
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
 <!-- DataTables CSS para Bootstrap 4 -->
 <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>

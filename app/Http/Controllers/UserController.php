@@ -1827,7 +1827,16 @@ class UserController extends Controller
         }
     }
 
+    $clientTeamleaderHistory = [];
+    if (! auth()->user()->roles->contains('id', 5) && request()->boolean('vista_cliente')) {
+        $clientTeamleaderHistory = app(\App\Services\TeamleaderClientHistoryService::class)->for($user);
+        $comprasConDealNoPagadas = $comprasConDealNoPagadas->filter(fn ($purchase) => $purchase->monto > 0);
+        $comprasSinDealNoPagadas = $comprasSinDealNoPagadas->filter(fn ($purchase) => $purchase->monto > 0);
+        $facturas = Factura::with('compras')->where('id_cliente', $user->id)->orderByDesc('created_at')->get();
+    }
+
     $html = view('crud.users.edit', compact(
+        'clientTeamleaderHistory',
         'documentRequests',
         'comprasConDealNoPagadas',
         'comprasSinDealNoPagadas',
@@ -2883,55 +2892,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
 
     private function searchUserInMonday($passport, User $user)
     {
-        $client = new Client();  // Inicializa el cliente Guzzle
-        $boardIds = array_keys(config('cos_snapshot.monday_search_boards', []));
-        $searchUrl = "https://app.sefaruniversal.com/tree/" . $passport;
-
-        $promises = [];  // Array para almacenar las promesas de las solicitudes
-
-        foreach ($boardIds as $boardId) {
-            $query = "
-                query {
-                    items_page_by_column_values(
-                        limit: 50,
-                        board_id: {$boardId},
-                        columns: [{column_id: \"enlace\", column_values: [\"{$searchUrl}\"]}]
-                    ) {
-                        cursor
-                        items {
-                            id
-                        }
-                    }
-                }
-            ";
-
-            // Cada solicitud se hace de manera asíncrona
-            $promises[] = $client->postAsync("https://api.monday.com/v2", [
-                'json' => ['query' => $query],
-                'headers' => [
-                    "Authorization" => "Bearer " . getenv('MONDAY_TOKEN'),
-                    "Content-Type" => "application/json"
-                ]
-            ]);
-        }
-
-        // Esperar todas las respuestas y procesarlas
-        $responses = Promise\Utils::settle($promises)->wait();
-
-        foreach ($responses as $response) {
-            if ($response['state'] === 'fulfilled') {
-                $data = json_decode($response['value']->getBody(), true);
-
-                if (!empty($data['data']['items_page_by_column_values']['items'])) {
-                    $item = $data['data']['items_page_by_column_values']['items'][0];
-                    $user->monday_id = $item['id']; // Guardar el ID de Monday
-                    $user->save();
-                    return $item;  // Devolver el primer item encontrado
-                }
-            }
-        }
-
-        return null;  // Si no se encuentra el usuario en ningún board
+        return app(\App\Services\CosMondayLookup::class)->find($passport, $user);
     }
 
     private function storeMondayBoardColumns($boardId)

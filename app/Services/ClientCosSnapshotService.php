@@ -93,7 +93,7 @@ class ClientCosSnapshotService
             ! empty($status['servicio']) && array_key_exists($status['servicio'], $definitions)
         ));
 
-        return ['cos' => $statuses, 'negocios' => $negocios, 'monday_data' => $monday];
+        return ['cos' => CosPresentation::statuses($statuses), 'negocios' => $negocios, 'monday_data' => $monday];
     }
 
     public function refresh(User $user, bool $syncExternal = true): array
@@ -364,8 +364,9 @@ class ClientCosSnapshotService
         $cacheKey = "monday_data_{$user->id}_{$user->monday_id}";
 
         return Cache::remember($cacheKey, 600, function () use ($user) {
+            $mondayUserDetailsPre = null;
             if (! $user->monday_id) {
-                $this->searchUserInMonday($user->passport, $user);
+                $mondayUserDetailsPre = $this->searchUserInMonday($user->passport, $user);
                 $user->refresh();
             }
 
@@ -396,8 +397,10 @@ class ClientCosSnapshotService
                 }
             ";
 
-            $result = json_decode(json_encode(Monday::customQuery($query)), true);
-            $mondayUserDetailsPre = $result['items'][0] ?? null;
+            if ($mondayUserDetailsPre === null) {
+                $result = json_decode(json_encode(Monday::customQuery($query)), true);
+                $mondayUserDetailsPre = $result['items'][0] ?? null;
+            }
 
             if ($mondayUserDetailsPre) {
                 $this->storeMondayUserData($user, $mondayUserDetailsPre);
@@ -430,49 +433,7 @@ class ClientCosSnapshotService
 
     private function searchUserInMonday(?string $passport, User $user): ?array
     {
-        if (! $passport) {
-            return null;
-        }
-
-        $searchUrl = 'https://app.sefaruniversal.com/tree/' . $passport;
-
-        foreach (array_keys(config('cos_snapshot.monday_search_boards', [])) as $boardId) {
-            $query = "
-                items_page_by_column_values(
-                    limit: 50,
-                    board_id: {$boardId},
-                    columns: [{column_id: \"enlace\", column_values: [\"{$searchUrl}\"]}]
-                ) {
-                    cursor
-                    items {
-                        id
-                        name
-                        board {
-                            name
-                        }
-                        column_values {
-                            id
-                            column {
-                                title
-                            }
-                            text
-                        }
-                    }
-                }
-            ";
-
-            $result = json_decode(json_encode(Monday::customQuery($query)), true);
-
-            if (! empty($result['items_page_by_column_values']['items'])) {
-                $item = $result['items_page_by_column_values']['items'][0];
-                $user->monday_id = $item['id'];
-                $user->save();
-
-                return $item;
-            }
-        }
-
-        return null;
+        return app(\App\Services\CosMondayLookup::class)->find($passport, $user);
     }
 
     private function storeMondayUserData(User $user, array $mondayUserDetailsPre): void
@@ -485,38 +446,44 @@ class ClientCosSnapshotService
 
     private function storeMondayBoardColumns($boardId): void
     {
-        $query = "
-            boards(ids: [$boardId]) {
-                columns {
-                    id
-                    title
-                    type
-                    settings_str
+        Cache::remember('cos.monday.columns.' . $boardId, 3600, function () use ($boardId) {
+            $query = "
+                boards(ids: [$boardId]) {
+                    columns {
+                        id
+                        title
+                        type
+                        settings_str
+                    }
                 }
+            ";
+
+            $result = json_decode(json_encode(Monday::customQuery($query)), true);
+            if (! is_array($result['boards'][0]['columns'] ?? null)) {
+                throw new \RuntimeException('Monday no devolvió las columnas del tablero; se reintentará su actualización.');
             }
-        ";
+            $columns = $result['boards'][0]['columns'];
 
-        $result = json_decode(json_encode(Monday::customQuery($query)), true);
-        $columns = $result['boards'][0]['columns'] ?? [];
+            foreach ($columns as $column) {
+                $settings = $column['settings_str'] ? json_decode($column['settings_str'], true) : [];
 
-        foreach ($columns as $column) {
-            $settings = $column['settings_str'] ? json_decode($column['settings_str'], true) : [];
+                $tagIds = [];
+                if (in_array($column['type'], ['tags', 'multi-select']) && isset($settings['tags'])) {
+                    $tagIds = array_column($settings['tags'], 'id');
+                }
 
-            $tagIds = [];
-            if (in_array($column['type'], ['tags', 'multi-select']) && isset($settings['tags'])) {
-                $tagIds = array_column($settings['tags'], 'id');
+                MondayFormBuilder::updateOrCreate(
+                    ['board_id' => $boardId, 'column_id' => $column['id']],
+                    [
+                        'title' => $column['title'],
+                        'type' => $column['type'],
+                        'settings' => $column['settings_str'] ?: null,
+                        'tag_ids' => $tagIds,
+                    ]
+                );
             }
-
-            MondayFormBuilder::updateOrCreate(
-                ['board_id' => $boardId, 'column_id' => $column['id']],
-                [
-                    'title' => $column['title'],
-                    'type' => $column['type'],
-                    'settings' => $column['settings_str'] ?: null,
-                    'tag_ids' => $tagIds,
-                ]
-            );
-        }
+            return true;
+        });
     }
 
     private function handleNoNegocios(?Servicio $servicename): array

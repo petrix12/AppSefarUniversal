@@ -94,6 +94,12 @@ class CosHelperService
             ? Cache::remember('cos.estructura', 3600, $builder)
             : $builder();
 
+        foreach ($cos as $service => $definition) {
+            if (str_starts_with(mb_strtolower(trim($service)), 'portuguesa sefardi')) {
+                $cos[$service] = CosPresentation::portugueseLabels($definition);
+            }
+        }
+
         return $this->withServiceAliases($cos);
     }
 
