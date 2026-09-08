@@ -80,17 +80,28 @@
                                     @php
                                         $isPhasePurchase = ($compra->source ?? null) === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE;
                                         $canPayThisPurchase = ! $isPhasePurchase || collect($payablePurchaseIds ?? [])->has($compra->id);
+                                        $allRemainingAmount = (float) data_get($allPhasePaymentAmounts ?? [], $compra->id, 0);
                                     @endphp
                                     @if($isPhasePurchase && ! $canPayThisPurchase)
-                                        <span class="text-muted small">Disponible al completar la fase pendiente anterior.</span>
+                                        <span class="text-muted small">Puedes incluir esta fase al pagar todo lo pendiente.</span>
                                     @elseif($compra['deal_id'] || $isPhasePurchase)
-                                    <form action="{{ route('gotopayfases') }}" method="POST" target="_blank" style="display: inline;">
-                                        @csrf <!-- Token de seguridad para Laravel -->
-                                        <input type="hidden" name="id" value="{{ $compra['id'] }}">
-                                        <button type="submit" class="btn btn-primary" title="Ir a pagar">
-                                            <i class="fas fa-credit-card"></i>
-                                        </button>
-                                    </form>
+                                        <form action="{{ route('gotopayfases') }}" method="POST" target="_blank" class="d-inline-block mb-1">
+                                            @csrf
+                                            <input type="hidden" name="id" value="{{ $compra['id'] }}">
+                                            <button type="submit" class="btn btn-primary" title="Pagar esta fase">
+                                                <i class="fas fa-credit-card"></i> Pagar fase
+                                            </button>
+                                        </form>
+                                        @if($isPhasePurchase && $allRemainingAmount > ((float) $compra->monto + 0.01))
+                                            <form action="{{ route('gotopayfases') }}" method="POST" target="_blank" class="d-inline-block mb-1">
+                                                @csrf
+                                                <input type="hidden" name="id" value="{{ $compra['id'] }}">
+                                                <input type="hidden" name="pay_all_remaining" value="1">
+                                                <button type="submit" class="btn btn-outline-primary" title="Pagar todo lo pendiente de este proceso">
+                                                    <i class="fas fa-layer-group"></i> Pagar todo ({{ format_money($allRemainingAmount) }} €)
+                                                </button>
+                                            </form>
+                                        @endif
                                     @else
                                         <a href="{{ route('clientes.pay') }}" target="_blank" class="btn btn-primary" title="Ir a pagar">
                                             <i class="fas fa-credit-card"></i>

@@ -593,11 +593,11 @@
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
                                 <label for="FechaNac" class="block text-sm font-medium text-gray-700">Fecha de nacimiento</label>
-                                <input value="" id="FechaNac" type="text" name="FechaNac" inputmode="numeric" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="AnhoNac,MesNac,DiaNac" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input value="" id="FechaNac" type="text" name="FechaNac" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="AnhoNac,MesNac,DiaNac" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                 <input id="AnhoNac" type="hidden" name="AnhoNac">
                                 <input id="MesNac" type="hidden" name="MesNac">
                                 <input id="DiaNac" type="hidden" name="DiaNac">
-                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año o mes y año.</p>
+                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año, mes y año, o escribir 12 de junio de 1583.</p>
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -667,11 +667,11 @@
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
                                 <label for="FechaBtzo" class="block text-sm font-medium text-gray-700">Fecha de bautizo</label>
-                                <input value="" id="FechaBtzo" type="text" name="FechaBtzo" inputmode="numeric" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="AnhoBtzo,MesBtzo,DiaBtzo" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input value="" id="FechaBtzo" type="text" name="FechaBtzo" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="AnhoBtzo,MesBtzo,DiaBtzo" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                 <input id="AnhoBtzo" type="hidden" name="AnhoBtzo">
                                 <input id="MesBtzo" type="hidden" name="MesBtzo">
                                 <input id="DiaBtzo" type="hidden" name="DiaBtzo">
-                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año o mes y año.</p>
+                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año, mes y año, o escribir 12 de junio de 1583.</p>
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -741,11 +741,11 @@
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
                                 <label for="FechaMatr" class="block text-sm font-medium text-gray-700">Fecha de matrimonio</label>
-                                <input value="" id="FechaMatr" type="text" name="FechaMatr" inputmode="numeric" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="AnhoMatr,MesMatr,DiaMatr" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input value="" id="FechaMatr" type="text" name="FechaMatr" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="AnhoMatr,MesMatr,DiaMatr" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                 <input id="AnhoMatr" type="hidden" name="AnhoMatr">
                                 <input id="MesMatr" type="hidden" name="MesMatr">
                                 <input id="DiaMatr" type="hidden" name="DiaMatr">
-                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año o mes y año.</p>
+                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año, mes y año, o escribir 12 de junio de 1583.</p>
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -815,11 +815,11 @@
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
                                 <label for="FechaDef" class="block text-sm font-medium text-gray-700">Fecha de defunción</label>
-                                <input value="" id="FechaDef" type="text" name="FechaDef" inputmode="numeric" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="AnhoDef,MesDef,DiaDef" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input value="" id="FechaDef" type="text" name="FechaDef" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="AnhoDef,MesDef,DiaDef" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                 <input id="AnhoDef" type="hidden" name="AnhoDef">
                                 <input id="MesDef" type="hidden" name="MesDef">
                                 <input id="DiaDef" type="hidden" name="DiaDef">
-                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año o mes y año.</p>
+                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año, mes y año, o escribir 12 de junio de 1583.</p>
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -1069,11 +1069,11 @@
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
                                 <label for="editFechaNac" class="block text-sm font-medium text-gray-700">Fecha de nacimiento</label>
-                                <input value="" id="editFechaNac" type="text" name="FechaNac" inputmode="numeric" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="editAnhoNac,editMesNac,editDiaNac" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input value="" id="editFechaNac" type="text" name="FechaNac" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="editAnhoNac,editMesNac,editDiaNac" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                 <input id="editAnhoNac" type="hidden" name="AnhoNac">
                                 <input id="editMesNac" type="hidden" name="MesNac">
                                 <input id="editDiaNac" type="hidden" name="DiaNac">
-                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año o mes y año.</p>
+                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año, mes y año, o escribir 12 de junio de 1583.</p>
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -1142,11 +1142,11 @@
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
                                 <label for="editFechaBtzo" class="block text-sm font-medium text-gray-700">Fecha de bautizo</label>
-                                <input value="" id="editFechaBtzo" type="text" name="FechaBtzo" inputmode="numeric" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="editAnhoBtzo,editMesBtzo,editDiaBtzo" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input value="" id="editFechaBtzo" type="text" name="FechaBtzo" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="editAnhoBtzo,editMesBtzo,editDiaBtzo" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                 <input id="editAnhoBtzo" type="hidden" name="AnhoBtzo">
                                 <input id="editMesBtzo" type="hidden" name="MesBtzo">
                                 <input id="editDiaBtzo" type="hidden" name="DiaBtzo">
-                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año o mes y año.</p>
+                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año, mes y año, o escribir 12 de junio de 1583.</p>
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -1216,11 +1216,11 @@
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
                                 <label for="editFechaMatr" class="block text-sm font-medium text-gray-700">Fecha de matrimonio</label>
-                                <input value="" id="editFechaMatr" type="text" name="FechaMatr" inputmode="numeric" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="editAnhoMatr,editMesMatr,editDiaMatr" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input value="" id="editFechaMatr" type="text" name="FechaMatr" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="editAnhoMatr,editMesMatr,editDiaMatr" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                 <input id="editAnhoMatr" type="hidden" name="AnhoMatr">
                                 <input id="editMesMatr" type="hidden" name="MesMatr">
                                 <input id="editDiaMatr" type="hidden" name="DiaMatr">
-                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año o mes y año.</p>
+                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año, mes y año, o escribir 12 de junio de 1583.</p>
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -1290,11 +1290,11 @@
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
                                 <label for="editFechaDef" class="block text-sm font-medium text-gray-700">Fecha de defunción</label>
-                                <input value="" id="editFechaDef" type="text" name="FechaDef" inputmode="numeric" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="editAnhoDef,editMesDef,editDiaDef" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input value="" id="editFechaDef" type="text" name="FechaDef" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="editAnhoDef,editMesDef,editDiaDef" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                 <input id="editAnhoDef" type="hidden" name="AnhoDef">
                                 <input id="editMesDef" type="hidden" name="MesDef">
                                 <input id="editDiaDef" type="hidden" name="DiaDef">
-                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año o mes y año.</p>
+                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año, mes y año, o escribir 12 de junio de 1583.</p>
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -3265,30 +3265,50 @@ dialog::backdrop {
     }
 
     function normalizeTreeDate(value) {
-        const text = String(value || '').trim().replace(/\s+/g, '');
+        const text = String(value || '').trim().replace(/\s+/g, ' ');
 
         if (!text) {
             return { value: '', parts: ['', '', ''] };
         }
 
+        const numericDate = text.replace(/\s+/g, '');
+        const spanishMonths = {
+            enero: 1,
+            febrero: 2,
+            marzo: 3,
+            abril: 4,
+            mayo: 5,
+            junio: 6,
+            julio: 7,
+            agosto: 8,
+            septiembre: 9,
+            setiembre: 9,
+            octubre: 10,
+            noviembre: 11,
+            diciembre: 12,
+        };
         let year;
         let month = '';
         let day = '';
         let match;
 
-        if ((match = text.match(/^(\d{4})$/))) {
+        if ((match = text.match(/^(\d{1,2})\s+de\s+([a-záéíóúüñ]+)\s+de\s+(\d{4})$/i))) {
+            day = Number(match[1]);
+            month = spanishMonths[match[2].toLocaleLowerCase('es-ES')] || '';
+            year = Number(match[3]);
+        } else if ((match = numericDate.match(/^(\d{4})$/))) {
             year = Number(match[1]);
-        } else if ((match = text.match(/^(\d{1,2})[./-](\d{4})$/))) {
+        } else if ((match = numericDate.match(/^(\d{1,2})[./-](\d{4})$/))) {
             month = Number(match[1]);
             year = Number(match[2]);
-        } else if ((match = text.match(/^(\d{4})[./-](\d{1,2})$/))) {
+        } else if ((match = numericDate.match(/^(\d{4})[./-](\d{1,2})$/))) {
             year = Number(match[1]);
             month = Number(match[2]);
-        } else if ((match = text.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/))) {
+        } else if ((match = numericDate.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/))) {
             day = Number(match[1]);
             month = Number(match[2]);
             year = Number(match[3]);
-        } else if ((match = text.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})$/))) {
+        } else if ((match = numericDate.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})$/))) {
             year = Number(match[1]);
             month = Number(match[2]);
             day = Number(match[3]);
@@ -3350,7 +3370,7 @@ dialog::backdrop {
         const parsedDate = normalizeTreeDate(input.value);
 
         if (parsedDate === null) {
-            input.setCustomValidity('Usa aaaa, mm/aaaa o dd/mm/aaaa.');
+            input.setCustomValidity('Usa aaaa, mm/aaaa, dd/mm/aaaa o 12 de junio de 1583.');
 
             return false;
         }

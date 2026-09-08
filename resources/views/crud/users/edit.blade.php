@@ -878,7 +878,14 @@
                                                             </span>
                                                         </td>
                                                         <td class="text-end">{{ $tlMoney($phase['effective_preestab_amount'] ?? 0) }}</td>
-                                                        <td class="text-end">{{ $tlMoney($phase['effective_paid_amount'] ?? 0) }}</td>
+                                                        <td class="text-end">
+                                                            {{ $tlMoney($phase['effective_paid_amount'] ?? 0) }}
+                                                            @if((float) ($phase['converted_foreign_paid_amount'] ?? 0) > 0)
+                                                                <div class="small text-muted">
+                                                                    Incluye {{ $tlMoney($phase['converted_foreign_paid_amount']) }} en cuotas convertidas
+                                                                </div>
+                                                            @endif
+                                                        </td>
                                                         <td class="text-end fw-bold {{ ((float) ($phase['balance_amount'] ?? 0)) > 0 ? 'text-danger' : 'text-success' }}">
                                                             {{ $tlMoney($phase['balance_amount'] ?? 0) }}
                                                         </td>
@@ -1222,7 +1229,7 @@
                                     {{-- Header con título y estatus --}}
                                     <div class="card-header text-center bg-white">
                                         <h1 class="card-title mt-4 mb-2" style="font-size:1.8rem;">
-                                            Proceso: {!! $proceso['servicio'] !!}
+                                           {!! $proceso['servicio'] !!}
                                         </h1>
 
                                         <p class="pb-4" style="font-size:1.4rem;">

@@ -14,6 +14,7 @@ class TreeDatePrecisionRequestTest extends TestCase
             'FechaNac' => '04/1885',
             'FechaBtzo' => '1885',
             'FechaMatr' => '1885-04-17',
+            'FechaDef' => '12 de junio de 1583',
         ]);
 
         $this->assertSame(1885, $parts['AnhoNac']);
@@ -23,6 +24,9 @@ class TreeDatePrecisionRequestTest extends TestCase
         $this->assertNull($parts['MesBtzo']);
         $this->assertNull($parts['DiaBtzo']);
         $this->assertSame(17, $parts['DiaMatr']);
+        $this->assertSame(1583, $parts['AnhoDef']);
+        $this->assertSame(6, $parts['MesDef']);
+        $this->assertSame(12, $parts['DiaDef']);
     }
 
     public function test_blank_current_date_field_clears_legacy_parts(): void

@@ -21,6 +21,22 @@ use Illuminate\Validation\ValidationException;
 
 class AgClienteNewController extends Controller
 {
+    private const SPANISH_MONTHS = [
+        'enero' => 1,
+        'febrero' => 2,
+        'marzo' => 3,
+        'abril' => 4,
+        'mayo' => 5,
+        'junio' => 6,
+        'julio' => 7,
+        'agosto' => 8,
+        'septiembre' => 9,
+        'setiembre' => 9,
+        'octubre' => 10,
+        'noviembre' => 11,
+        'diciembre' => 12,
+    ];
+
     public function storeNotCliente(Request $request)
     {
         $dateParts = $this->datePartsFromRequest($request);
@@ -449,10 +465,10 @@ class AgClienteNewController extends Controller
     private function datePartsFromRequest(Request $request): array
     {
         $request->validate([
-            'FechaNac' => ['nullable', 'string', 'max:20'],
-            'FechaBtzo' => ['nullable', 'string', 'max:20'],
-            'FechaMatr' => ['nullable', 'string', 'max:20'],
-            'FechaDef' => ['nullable', 'string', 'max:20'],
+            'FechaNac' => ['nullable', 'string', 'max:50'],
+            'FechaBtzo' => ['nullable', 'string', 'max:50'],
+            'FechaMatr' => ['nullable', 'string', 'max:50'],
+            'FechaDef' => ['nullable', 'string', 'max:50'],
         ]);
 
         $parts = [];
@@ -490,7 +506,7 @@ class AgClienteNewController extends Controller
 
             if ($parsedDate === null) {
                 throw ValidationException::withMessages([
-                    $field => 'Indique una fecha válida: aaaa, mm/aaaa o dd/mm/aaaa.',
+                    $field => 'Indique una fecha válida: aaaa, mm/aaaa, dd/mm/aaaa o 12 de junio de 1583.',
                 ]);
             }
 
@@ -504,24 +520,29 @@ class AgClienteNewController extends Controller
 
     private function parseTreeDate(string $value): ?array
     {
-        $date = preg_replace('/\s+/', '', $value);
+        $date = trim(preg_replace('/\s+/', ' ', $value));
+        $numericDate = str_replace(' ', '', $date);
         $year = null;
         $month = null;
         $day = null;
 
-        if (preg_match('/^(\d{4})$/', $date, $matches)) {
+        if (preg_match('/^(\d{1,2})\s+de\s+([\p{L}]+)\s+de\s+(\d{4})$/ui', $date, $matches)) {
+            $day = (int) $matches[1];
+            $month = self::SPANISH_MONTHS[strtolower($matches[2])] ?? null;
+            $year = (int) $matches[3];
+        } elseif (preg_match('/^(\d{4})$/', $numericDate, $matches)) {
             $year = (int) $matches[1];
-        } elseif (preg_match('/^(\d{1,2})[.\/-](\d{4})$/', $date, $matches)) {
+        } elseif (preg_match('/^(\d{1,2})[.\/-](\d{4})$/', $numericDate, $matches)) {
             $month = (int) $matches[1];
             $year = (int) $matches[2];
-        } elseif (preg_match('/^(\d{4})[.\/-](\d{1,2})$/', $date, $matches)) {
+        } elseif (preg_match('/^(\d{4})[.\/-](\d{1,2})$/', $numericDate, $matches)) {
             $year = (int) $matches[1];
             $month = (int) $matches[2];
-        } elseif (preg_match('/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/', $date, $matches)) {
+        } elseif (preg_match('/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/', $numericDate, $matches)) {
             $day = (int) $matches[1];
             $month = (int) $matches[2];
             $year = (int) $matches[3];
-        } elseif (preg_match('/^(\d{4})[.\/-](\d{1,2})[.\/-](\d{1,2})$/', $date, $matches)) {
+        } elseif (preg_match('/^(\d{4})[.\/-](\d{1,2})[.\/-](\d{1,2})$/', $numericDate, $matches)) {
             $year = (int) $matches[1];
             $month = (int) $matches[2];
             $day = (int) $matches[3];

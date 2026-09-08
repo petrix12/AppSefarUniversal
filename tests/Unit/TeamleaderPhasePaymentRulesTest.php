@@ -197,6 +197,41 @@ class TeamleaderPhasePaymentRulesTest extends TestCase
         $this->assertSame([101, 102, 103], $service->visiblePortalPurchases($purchases)->pluck('id')->all());
         $this->assertSame([101], $service->currentPortalPurchases($purchases)->pluck('id')->all());
     }
+
+    public function test_active_phase_can_include_all_visible_remaining_phases_in_one_payment(): void
+    {
+        $service = new TeamleaderPhasePaymentService();
+        $purchase = function (int $id, int $phase, float $amount): Compras {
+            $record = new Compras([
+                'source' => TeamleaderPhasePaymentService::PURCHASE_SOURCE,
+                'pagado' => 0,
+                'monto' => $amount,
+                'phasenum' => $phase,
+                'metadata' => [
+                    'teamleader_project_id' => 'project-pay-all',
+                    'phase' => $phase,
+                ],
+            ]);
+            $record->id = $id;
+
+            return $record;
+        };
+
+        $purchases = collect([
+            $purchase(102, 2, 425.00),
+            $purchase(103, 3, 750.00),
+        ]);
+
+        $this->assertSame([102], $service->currentPortalPurchases($purchases)->pluck('id')->all());
+        $this->assertSame(
+            [102, 103],
+            $service->remainingProjectPortalPurchases($purchases->first(), $purchases)->pluck('id')->all()
+        );
+        $this->assertSame(
+            1175.0,
+            $service->remainingProjectPortalPurchases($purchases->first(), $purchases)->sum('monto')
+        );
+    }
     public function test_an_administratively_hidden_phase_does_not_show_or_block_the_next_phase(): void
     {
         $service = new TeamleaderPhasePaymentService();
@@ -338,5 +373,36 @@ class TeamleaderPhasePaymentRulesTest extends TestCase
         $this->assertSame(300.0, $phase['balance_amount']);
         $this->assertSame('review', $phase['status']);
         $this->assertSame(['currency_conversion_required'], $phase['review_reasons']);
+    }
+
+    public function test_reconciled_installments_refresh_the_totals_rendered_by_internal_cos(): void
+    {
+        $service = new TeamleaderPhasePaymentService();
+        $refreshTotals = new \ReflectionMethod($service, 'refreshAnalysisTotals');
+        $analysis = [
+            'projects' => [[
+                'project_id' => 'project-installments-total',
+                'phases' => [
+                    2 => [
+                        'effective_preestab_amount' => 2500.0,
+                        // EUR 1,175 plus EUR 1,180.76 from historical USD
+                        // installments, converted using each payment date.
+                        'effective_paid_amount' => 2355.76,
+                        'balance_amount' => 144.24,
+                        'overpaid_amount' => 0.0,
+                        'difference_amount' => 144.24,
+                        'needs_review' => false,
+                    ],
+                ],
+            ]],
+        ];
+
+        $refreshTotals->invokeArgs($service, [&$analysis]);
+
+        $this->assertSame(2355.76, $analysis['projects'][0]['totals']['paid_amount']);
+        $this->assertSame(144.24, $analysis['projects'][0]['totals']['balance_amount']);
+        $this->assertSame(2355.76, $analysis['totals']['paid_amount']);
+        $this->assertSame(144.24, $analysis['totals']['balance_amount']);
+        $this->assertSame(0, $analysis['totals']['projects_to_review']);
     }
 }

@@ -32,7 +32,7 @@ class TeamleaderPhasePaymentService
 
     private const OVERPAYMENT_RECIPIENTS = TeamleaderPhasePaymentRecipients::ADDRESSES;
 
-    public function sync(User $user, array $analysis): Collection
+    public function sync(User $user, array &$analysis): Collection
     {
         $existing = Compras::query()
             ->where('id_user', $user->id)
@@ -51,8 +51,19 @@ class TeamleaderPhasePaymentService
         $records = collect();
         $historicalPaidAmounts = $this->historicalPaidAmounts($user);
 
-        foreach ($analysis['projects'] ?? [] as $project) {
-            foreach ($project['phases'] ?? [] as $phase) {
+        if (! isset($analysis['projects']) || ! is_array($analysis['projects'])) {
+            return $records;
+        }
+
+        // Keep the same reconciled figures available to the internal COS
+        // view. Previously the purchase record used converted installments,
+        // while the view still rendered the pre-conversion analyzer result.
+        foreach ($analysis['projects'] as &$project) {
+            if (! isset($project['phases']) || ! is_array($project['phases'])) {
+                continue;
+            }
+
+            foreach ($project['phases'] as &$phase) {
                 $projectId = (string) ($project['project_id'] ?? '');
                 $phaseNumber = (int) ($phase['phase'] ?? 0);
 
@@ -206,9 +217,49 @@ class TeamleaderPhasePaymentService
 
                 $records->push($purchase);
             }
+
+            unset($phase);
         }
 
+        unset($project);
+        $this->refreshAnalysisTotals($analysis);
+
         return $records;
+    }
+
+    /**
+     * Rebuilds the totals after historical installments, dated currency
+     * conversion and legacy payments have been reconciled per phase.
+     */
+    private function refreshAnalysisTotals(array &$analysis): void
+    {
+        $projectTotals = collect();
+
+        foreach ($analysis['projects'] as &$project) {
+            $phases = collect($project['phases'] ?? []);
+            $project['needs_review'] = $phases->contains('needs_review', true);
+            $project['review_count'] = $phases->where('needs_review', true)->count();
+            $project['totals'] = [
+                'preestab_amount' => round($phases->sum('effective_preestab_amount'), 2),
+                'paid_amount' => round($phases->sum('effective_paid_amount'), 2),
+                'balance_amount' => round($phases->sum('balance_amount'), 2),
+                'overpaid_amount' => round($phases->sum('overpaid_amount'), 2),
+                'difference_amount' => round($phases->sum('difference_amount'), 2),
+            ];
+            $projectTotals->push($project);
+        }
+
+        unset($project);
+
+        $analysis['totals'] = [
+            'projects' => $projectTotals->count(),
+            'preestab_amount' => round($projectTotals->sum('totals.preestab_amount'), 2),
+            'paid_amount' => round($projectTotals->sum('totals.paid_amount'), 2),
+            'balance_amount' => round($projectTotals->sum('totals.balance_amount'), 2),
+            'overpaid_amount' => round($projectTotals->sum('totals.overpaid_amount'), 2),
+            'difference_amount' => round($projectTotals->sum('totals.difference_amount'), 2),
+            'projects_to_review' => $projectTotals->where('needs_review', true)->count(),
+        ];
     }
 
     /**
@@ -253,6 +304,30 @@ class TeamleaderPhasePaymentService
             ->reject(fn (Compras $purchase) => $purchase->source === self::PURCHASE_SOURCE
                 && in_array((int) data_get($purchase->metadata, 'phase', $purchase->phasenum), self::SEQUENTIAL_PHASES, true)
                 && ! $availableIds->has($purchase->id))
+            ->values();
+    }
+
+    /**
+     * Returns every visible outstanding phase in the same project as the
+     * currently payable phase. This permits an optional one-time payment of
+     * the complete remaining project balance without making later phases
+     * individually payable out of sequence.
+     */
+    public function remainingProjectPortalPurchases(Compras $anchor, Collection $purchases): Collection
+    {
+        if ($anchor->source !== self::PURCHASE_SOURCE) {
+            return collect();
+        }
+
+        $projectId = (string) data_get($anchor->metadata, 'teamleader_project_id');
+        if ($projectId === '' || ! $this->currentPortalPurchases($purchases)->contains('id', $anchor->id)) {
+            return collect();
+        }
+
+        return $this->visiblePortalPurchases($purchases)
+            ->filter(fn (Compras $purchase) => $purchase->source === self::PURCHASE_SOURCE)
+            ->filter(fn (Compras $purchase) => (string) data_get($purchase->metadata, 'teamleader_project_id') === $projectId)
+            ->sortBy(fn (Compras $purchase) => (int) data_get($purchase->metadata, 'phase', $purchase->phasenum))
             ->values();
     }
 
@@ -306,7 +381,20 @@ class TeamleaderPhasePaymentService
             ->where('id_user', $balancePurchase->id_user)
             ->where('source', self::INSTALLMENT_SOURCE)
             ->where('hash_factura', $invoiceHash)
-            ->first();
+            ->get()
+            ->first(function (Compras $candidate) use ($balancePurchase): bool {
+                $linkedBalanceId = data_get($candidate->metadata, 'balance_purchase_id');
+
+                if ($linkedBalanceId !== null) {
+                    return (int) $linkedBalanceId === (int) $balancePurchase->id;
+                }
+
+                // Compatibility with receipts created before the balance
+                // purchase identifier was stored in metadata.
+                return (int) $candidate->phasenum === (int) $balancePurchase->phasenum
+                    && (string) data_get($candidate->metadata, 'teamleader_project_id')
+                        === (string) data_get($balancePurchase->metadata, 'teamleader_project_id');
+            });
 
         if (! $receipt) {
             $receiptMetadata = array_merge($balancePurchase->metadata ?? [], [

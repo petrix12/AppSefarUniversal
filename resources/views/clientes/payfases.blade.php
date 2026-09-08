@@ -111,6 +111,9 @@
     <form action="/payfases" method="POST" class="require-validation" data-cc-on-file="false" data-stripe-publishable-key="{{ env('STRIPE_KEY') }}" id="payment-form">
     @endif
         <input id="compraid" name="compraid" type="hidden" value="{{$compraid}}">
+        @if($isInstallmentPayment ?? false)
+            <input name="pay_all_remaining" type="hidden" value="{{ !empty($isPayingAllRemainingPhases) ? '1' : '0' }}">
+        @endif
         <div class="container-fluid px-2 py-3">
             <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
 
@@ -256,14 +259,25 @@
                 <section class="alert alert-info border-primary mb-3" aria-labelledby="phase-installment-title">
                     <div class="d-flex flex-column flex-md-row justify-content-between gap-3 align-items-md-end">
                         <div>
-                            <h2 id="phase-installment-title" class="h5 mb-1">Paga esta fase a tu ritmo</h2>
-                            <p class="mb-0">Saldo pendiente: <strong>{{ format_money($outstandingAmount ?? 0) }} €</strong>. Puedes pagar todo ahora o registrar el abono que prefieras.</p>
+                            <h2 id="phase-installment-title" class="h5 mb-1">
+                                {{ !empty($isPayingAllRemainingPhases) ? 'Paga todo lo pendiente a tu ritmo' : 'Paga esta fase a tu ritmo' }}
+                            </h2>
+                            <p class="mb-0">
+                                Saldo pendiente: <strong>{{ format_money($outstandingAmount ?? 0) }} €</strong>.
+                                @if(!empty($isPayingAllRemainingPhases))
+                                    El abono se aplicará primero a la fase actual y luego a las siguientes fases pendientes.
+                                @else
+                                    Puedes pagar todo ahora o registrar el abono que prefieras.
+                                @endif
+                            </p>
                         </div>
                         <div class="text-md-end">
                             <label class="form-label fw-semibold" for="payment_amount">Monto a pagar ahora (€)</label>
                             <div class="input-group">
                                 <input id="payment_amount" name="payment_amount" class="form-control" type="number" min="0.01" max="{{ number_format($outstandingAmount ?? 0, 2, '.', '') }}" step="0.01" inputmode="decimal" value="{{ old('payment_amount', number_format($outstandingAmount ?? 0, 2, '.', '')) }}" required>
-                                <button id="pay_full_balance" type="button" class="btn btn-outline-primary">Pagar saldo completo</button>
+                                <button id="pay_full_balance" type="button" class="btn btn-outline-primary">
+                                    {{ !empty($isPayingAllRemainingPhases) ? 'Pagar todo lo pendiente' : 'Pagar saldo completo' }}
+                                </button>
                             </div>
                             <small class="text-muted">El saldo restante seguirá disponible para un próximo abono.</small>
                         </div>
@@ -555,6 +569,7 @@
                                 details: details,
                                 compraid: {{$compraid}},
                                 payment_amount: phasePaymentAmount(),
+                                pay_all_remaining: {{ !empty($isPayingAllRemainingPhases) ? 'true' : 'false' }},
                                 referral_code: referralCodeValue()
                             }),
                             contentType: 'application/json',

@@ -26,6 +26,8 @@ class TreeDatePrecisionTest extends TestCase
             'ISO month and year' => ['1885-04', ['year' => 1885, 'month' => 4, 'day' => null]],
             'full Latin date' => ['29/02/2000', ['year' => 2000, 'month' => 2, 'day' => 29]],
             'full ISO date' => ['2000-02-29', ['year' => 2000, 'month' => 2, 'day' => 29]],
+            'full Spanish date' => ['12 de junio de 1583', ['year' => 1583, 'month' => 6, 'day' => 12]],
+            'full Spanish date with uppercase month' => ['12 de JUNIO de 1583', ['year' => 1583, 'month' => 6, 'day' => 12]],
         ];
     }
 
