@@ -3266,6 +3266,46 @@ dialog::backdrop {
         input.addEventListener('change', () => syncDatePartsToLegacyFields(input));
     });
 
+    function normalizePastedTreeDate(value) {
+        const text = String(value || '').trim();
+        const iso = text.match(/^([0-9]{4})[./-]([0-9]{1,2})[./-]([0-9]{1,2})$/);
+        const latin = text.match(/^([0-9]{1,2})[./-]([0-9]{1,2})[./-]([0-9]{4})$/);
+        const match = iso || latin;
+
+        if (!match) {
+            return null;
+        }
+
+        const year = Number(iso ? match[1] : match[3]);
+        const month = Number(match[2]);
+        const day = Number(iso ? match[3] : match[1]);
+        const daysByMonth = [31, (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+        if (year < 1 || year > 3000 || month < 1 || month > 12 || day < 1 || day > daysByMonth[month - 1]) {
+            return null;
+        }
+
+        return [String(year).padStart(4, '0'), String(month).padStart(2, '0'), String(day).padStart(2, '0')].join('-');
+    }
+
+    // Native date inputs do not consistently accept Ctrl/Cmd+V across
+    // browsers. Accept the formats people routinely copy from records and
+    // dispatch the normal events so the legacy date-part fields stay in sync.
+    document.querySelectorAll('input[type="date"]').forEach((input) => {
+        input.addEventListener('paste', (event) => {
+            const normalizedDate = normalizePastedTreeDate(event.clipboardData?.getData('text'));
+
+            if (!normalizedDate || (input.min && normalizedDate < input.min) || (input.max && normalizedDate > input.max)) {
+                return;
+            }
+
+            event.preventDefault();
+            input.value = normalizedDate;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    });
+
     function callEdit(Nombres, Apellidos, AnhoNac, MesNac, DiaNac, LugarNac, PaisNac, AnhoBtzo, MesBtzo, DiaBtzo, LugarBtzo, PaisBtzo, AnhoMatr, MesMatr, DiaMatr, LugarMatr, PaisMatr, AnhoDef, MesDef, DiaDef, LugarDef, PaisDef, Observaciones, id, NPasaporte, PaisPasaporte, NDocIdent, PaisDocIdent){
         $("#editid").val(id);
         $("#editnombres").val(Nombres);
