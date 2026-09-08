@@ -1747,12 +1747,18 @@ class UserController extends Controller
         ->where('id_user', $user->id)
         ->where('monto', '>', 0)
         ->get();
+    $activePhasePurchases = app(TeamleaderPhasePaymentService::class)
+        ->currentPortalPurchases($comprasConDealNoPagadas->merge($comprasSinDealNoPagadas))
+        ->filter(fn (Compras $purchase) => $purchase->source === TeamleaderPhasePaymentService::PURCHASE_SOURCE)
+        ->values();
+
     $comprasPagadasSinFactura = Compras::query()
         ->where('id_user', $user->id)
         ->where('source', TeamleaderPhasePaymentService::PURCHASE_SOURCE)
         ->where('pagado', 1)
         ->whereNull('hash_factura')
         ->get()
+        ->reject(fn (Compras $purchase) => data_get($purchase->metadata, 'portal_record_kind') === 'balance')
         ->filter(fn (Compras $purchase) => (float) $purchase->monto > 0.01)
         ->values();
 
@@ -1867,6 +1873,7 @@ class UserController extends Controller
         'documentRequests',
         'comprasConDealNoPagadas',
         'comprasSinDealNoPagadas',
+        'activePhasePurchases',
         'comprasPagadasSinFactura',
         'imageUrls',
         'cosuser',

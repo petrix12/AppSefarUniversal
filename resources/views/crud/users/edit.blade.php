@@ -408,9 +408,10 @@
                             $portalPaymentAmount = $facturas->sum(function ($factura) {
                                 return collect($factura->compras ?? [])->sum('monto');
                             }) + collect($comprasPagadasSinFactura ?? [])->sum('monto');
-                            $portalOutstandingAmount = $comprasConDealNoPagadas
-                                ->merge($comprasSinDealNoPagadas)
-                                ->sum('monto');
+                            $allPendingPurchases = $comprasConDealNoPagadas->merge($comprasSinDealNoPagadas);
+                            $portalOutstandingAmount = $allPendingPurchases
+                                ->reject(fn ($purchase) => $purchase->source === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE)
+                                ->sum('monto') + collect($activePhasePurchases ?? [])->sum('monto');
 
                             // The payment summary is deliberately calculated
                             // from the exact same portal records rendered in
@@ -422,6 +423,25 @@
                                 'debt' => round(max((float) $portalOutstandingAmount, 0), 2),
                             ]]);
                         @endphp
+
+                        @php
+                            $nextPhasePurchase = collect($activePhasePurchases ?? [])->first();
+                        @endphp
+                        @if($nextPhasePurchase)
+                            <section class="alert alert-warning border-warning d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4" aria-label="Pago pendiente">
+                                <div>
+                                    <strong class="d-block">Tienes un pago pendiente.</strong>
+                                    <span>Puedes registrar un abono o pagar el saldo completo de la fase disponible.</span>
+                                </div>
+                                <form action="{{ route('gotopayfases') }}" method="POST" target="_blank" class="m-0">
+                                    @csrf
+                                    <input type="hidden" name="id" value="{{ $nextPhasePurchase->id }}">
+                                    <button type="submit" class="btn btn-warning text-dark text-nowrap">
+                                        <i class="fas fa-credit-card me-1"></i> Ver opciones de pago
+                                    </button>
+                                </form>
+                            </section>
+                        @endif
 
                         <section class="mb-4" aria-labelledby="client-payment-summary-title">
                             <h2 id="client-payment-summary-title" class="h5 fw-bold mb-3">Resumen de pagos</h2>
@@ -440,7 +460,7 @@
                                                 <div class="h4 fw-bold mb-0 text-danger">{{ format_money((float) $amount['debt'], 2, ',', '.') }} {{ $amount['currency'] }}</div>
                                             @else
                                                 <div class="fw-bold text-success">No hay deudas pendientes.</div>
-                                                <div class="small text-muted">0,00 {{ $amount['currency'] }}</div>
+                                                <div class="small text-muted">{{ format_money(0, 2, ',', '.') }} {{ $amount['currency'] }}</div>
                                             @endif
                                         </div>
                                     </div>
@@ -2153,8 +2173,14 @@
 
                 <div class="tab-pane fade" id="paymentspen" role="tabpanel" aria-labelledby="payments-tab">
                     @php
-                        $hasPendingPayments = $comprasSinDealNoPagadas->isNotEmpty()
-                            || $comprasConDealNoPagadas->isNotEmpty();
+                        $allPendingPurchasesForCos = $comprasSinDealNoPagadas->merge($comprasConDealNoPagadas);
+                        $portalPendingPurchases = $rolId === 5
+                            ? $allPendingPurchasesForCos
+                                ->reject(fn ($purchase) => $purchase->source === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE)
+                                ->merge(collect($activePhasePurchases ?? []))
+                                ->values()
+                            : $allPendingPurchasesForCos;
+                        $hasPendingPayments = $portalPendingPurchases->isNotEmpty();
                     @endphp
 
                     @if($hasPendingPayments)
@@ -2169,7 +2195,7 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach($comprasSinDealNoPagadas as $compra)
+                            @foreach($portalPendingPurchases as $compra)
                                 <tr>
                                     <td>{{ $compra->descripcion }}</td>
                                     <td>{{ format_money($compra->monto) }} €</td>
@@ -2180,8 +2206,8 @@
                                             title="La vista previa es solo de lectura. El solicitante puede pagar al entrar a su cuenta.">
                                             <i class="fas fa-credit-card"></i> Pagar desde mi cuenta
                                         </button>
-                                        @elseif(($compra->source ?? null) === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE)
-                                        <form action="{{ route('gotopayfases') }}" method="POST">
+                                        @elseif($compra->deal_id || ($compra->source ?? null) === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE)
+                                        <form action="{{ route('gotopayfases') }}" method="POST" target="_blank">
                                             @csrf
                                             <input type="hidden" name="id" value="{{ $compra->id }}">
                                             <button type="submit" class="btn btn-danger">
@@ -2189,34 +2215,9 @@
                                             </button>
                                         </form>
                                         @else
-                                        <a href="/pay" class="btn btn-warning">
+                                        <a href="{{ route('clientes.pay') }}" target="_blank" class="btn btn-warning">
                                             <i class="fas fa-credit-card"></i> Pagar ahora
                                         </a>
-                                        @endif
-                                    </td>
-                                    @endif
-                                </tr>
-                            @endforeach
-
-                            @foreach($comprasConDealNoPagadas as $compra)
-                                <tr>
-                                    <td>{{ $compra->descripcion }}</td>
-                                    <td>{{ format_money($compra->monto) }} €</td>
-                                    @if($cosViewRoleId == 5)
-                                    <td>
-                                        @if($cosClientPreview)
-                                        <button type="button" class="btn btn-secondary" disabled
-                                            title="La vista previa es solo de lectura. El solicitante puede pagar al entrar a su cuenta.">
-                                            <i class="fas fa-credit-card"></i> Pagar desde mi cuenta
-                                        </button>
-                                        @else
-                                        <form action="{{ route('gotopayfases') }}" method="POST">
-                                            @csrf
-                                            <input type="hidden" name="id" value="{{ $compra->id }}">
-                                            <button type="submit" class="btn btn-danger">
-                                                <i class="fas fa-credit-card"></i> Pagar ahora
-                                            </button>
-                                        </form>
                                         @endif
                                     </td>
                                     @endif

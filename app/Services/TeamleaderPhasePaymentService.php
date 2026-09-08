@@ -22,6 +22,10 @@ class TeamleaderPhasePaymentService
 {
     public const PURCHASE_SOURCE = 'teamleader_phase';
 
+    public const INSTALLMENT_SOURCE = 'teamleader_phase_installment';
+
+    private const SEQUENTIAL_PHASES = [1, 2, 3];
+
     private const MINIMUM_COLLECTIBLE_BALANCE = 50.00;
 
     private const OVERPAYMENT_RECIPIENTS = TeamleaderPhasePaymentRecipients::ADDRESSES;
@@ -90,11 +94,21 @@ class TeamleaderPhasePaymentService
                 } else {
                     $previousMetadata = $purchase->metadata ?? [];
                     $metadata = array_merge($previousMetadata, $metadata);
+                    $teamleaderHasNotReflectedLastPortalInstallment = ! $purchase->pagado
+                        && data_get($previousMetadata, 'last_portal_installment_id')
+                        && $paid <= ((float) data_get($previousMetadata, 'paid_amount_at_sync', 0) + 0.01);
+                    $amountToShow = $teamleaderHasNotReflectedLastPortalInstallment
+                        ? min((float) $purchase->monto, $portalRecordAmount)
+                        : $portalRecordAmount;
 
                     $purchase->fill([
                         'source' => self::PURCHASE_SOURCE,
                         'descripcion' => $this->description($project, $phase),
-                        'monto' => max($portalRecordAmount, (float) $purchase->monto),
+                        // If Teamleader is momentarily behind a successful
+                        // portal write, retain the reduced local balance.
+                        // When its paid amount advances, it remains the
+                        // source of truth and replaces this value.
+                        'monto' => $purchase->pagado ? (float) $purchase->monto : $amountToShow,
                         'metadata' => $metadata,
                     ]);
 
@@ -120,6 +134,139 @@ class TeamleaderPhasePaymentService
         return $records;
     }
 
+    /**
+     * Returns the phase charges that may be paid now. Phases 1–3 advance in
+     * order per project; other independently configured payment fields keep
+     * their own availability.
+     */
+    public function currentPortalPurchases(Collection $purchases): Collection
+    {
+        $phasePurchases = $purchases
+            ->filter(fn (Compras $purchase) => $purchase->source === self::PURCHASE_SOURCE)
+            ->groupBy(fn (Compras $purchase) => (string) data_get($purchase->metadata, 'teamleader_project_id', $purchase->id));
+
+        $availableIds = $phasePurchases
+            ->flatMap(function (Collection $projectPurchases) {
+                return $projectPurchases
+                    ->filter(fn (Compras $purchase) => in_array((int) data_get($purchase->metadata, 'phase', $purchase->phasenum), self::SEQUENTIAL_PHASES, true))
+                    ->sortBy(fn (Compras $purchase) => (int) data_get($purchase->metadata, 'phase', $purchase->phasenum))
+                    ->take(1);
+            })
+            ->pluck('id')
+            ->flip();
+
+        return $purchases
+            ->reject(fn (Compras $purchase) => $purchase->source === self::PURCHASE_SOURCE
+                && in_array((int) data_get($purchase->metadata, 'phase', $purchase->phasenum), self::SEQUENTIAL_PHASES, true)
+                && ! $availableIds->has($purchase->id))
+            ->values();
+    }
+
+    public function canPayPortalPurchase(Compras $purchase): bool
+    {
+        if ($purchase->source !== self::PURCHASE_SOURCE) {
+            return true;
+        }
+
+        return $this->currentPortalPurchases(
+            Compras::query()
+                ->where('id_user', $purchase->id_user)
+                ->where('source', self::PURCHASE_SOURCE)
+                ->where('pagado', 0)
+                ->where('monto', '>', 0)
+                ->get()
+        )->contains('id', $purchase->id);
+    }
+
+    /**
+     * Stores a completed installment separately from the outstanding balance,
+     * so each payment is auditable and the remaining amount remains payable.
+     */
+    public function recordPortalInstallment(
+        Compras $balancePurchase,
+        float $amount,
+        string $invoiceHash,
+        \Carbon\Carbon $paidAt,
+        ?string $gatewayReference = null
+    ): Compras {
+        if ($balancePurchase->source !== self::PURCHASE_SOURCE || $balancePurchase->pagado) {
+            throw new \InvalidArgumentException('El pago de fase ya no está disponible.');
+        }
+
+        $balance = round((float) $balancePurchase->monto, 2);
+        $amount = round($amount, 2);
+
+        if ($amount <= 0 || $amount > $balance) {
+            throw new \InvalidArgumentException('El abono debe ser mayor que cero y no puede superar el saldo pendiente.');
+        }
+
+        $receipt = Compras::query()
+            ->where('id_user', $balancePurchase->id_user)
+            ->where('source', self::INSTALLMENT_SOURCE)
+            ->where('hash_factura', $invoiceHash)
+            ->first();
+
+        if (! $receipt) {
+            $receiptMetadata = array_merge($balancePurchase->metadata ?? [], [
+                'portal_record_kind' => 'installment',
+                'balance_purchase_id' => $balancePurchase->id,
+                'gateway_reference' => $gatewayReference,
+            ]);
+
+            $receipt = Compras::create([
+                'id_user' => $balancePurchase->id_user,
+                'source' => self::INSTALLMENT_SOURCE,
+                'servicio_hs_id' => $balancePurchase->servicio_hs_id,
+                'descripcion' => 'Abono · ' . $balancePurchase->descripcion,
+                'pagado' => 1,
+                'monto' => $amount,
+                'deal_id' => $balancePurchase->deal_id,
+                'phasenum' => $balancePurchase->phasenum,
+                'metadata' => $receiptMetadata,
+                'hash_factura' => $invoiceHash,
+                'paid_at' => $paidAt,
+            ]);
+        }
+
+        $remaining = round(max($balance - $amount, 0), 2);
+        $balanceMetadata = array_merge($balancePurchase->metadata ?? [], [
+            'portal_record_kind' => 'balance',
+            'last_portal_installment_id' => $receipt->id,
+            'last_portal_installment_at' => $paidAt->toIso8601String(),
+        ]);
+        $balancePurchase->forceFill([
+            'monto' => $remaining,
+            'pagado' => $remaining <= 0.01 ? 1 : 0,
+            'metadata' => $balanceMetadata,
+            'paid_at' => $remaining <= 0.01 ? $paidAt : null,
+        ])->save();
+
+        try {
+            $projectId = (string) data_get($balancePurchase->metadata, 'teamleader_project_id');
+            $phase = (int) data_get($balancePurchase->metadata, 'phase', $balancePurchase->phasenum);
+
+            if ($projectId === '' || ! array_key_exists($phase, TeamleaderProjectPaymentAnalyzer::PHASE_FIELDS)) {
+                throw new \InvalidArgumentException('El pago de fase no contiene la referencia necesaria.');
+            }
+
+            app(TeamleaderProjectPaymentWriter::class)->appendPhasePayment(
+                $projectId,
+                $phase,
+                $amount,
+                $paidAt->format('Y-m-d'),
+                'phase-payment-' . $receipt->id,
+                'EUR'
+            );
+        } catch (\Throwable $exception) {
+            Log::channel('teamleader')->error('El abono fue registrado localmente pero no se pudo sincronizar en Teamleader', [
+                'purchase_id' => $balancePurchase->id,
+                'receipt_id' => $receipt->id,
+                'error' => $exception->getMessage(),
+            ]);
+        }
+
+        return $receipt;
+    }
     /**
      * Records a portal payment in the corresponding Teamleader paid field.
      * The Teamleader service fetches the current project and sends all mutable

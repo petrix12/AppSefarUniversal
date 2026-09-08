@@ -31,6 +31,10 @@ class Controller extends BaseController
         return $user->compras()
             ->where('pagado', 0)
             ->whereNull('deal_id')
+            ->where(function ($query) {
+                $query->whereNull('source')
+                    ->orWhere('source', '!=', \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE);
+            })
             ->exists();
     }
 

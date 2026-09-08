@@ -72,7 +72,7 @@
                                 </td>
                                 <td class="py-2 px-3" style="text-align: center;">
                                     @if($compra['deal_id'] || ($compra->source ?? null) === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE)
-                                    <form action="{{ route('gotopayfases') }}" method="POST" style="display: inline;">
+                                    <form action="{{ route('gotopayfases') }}" method="POST" target="_blank" style="display: inline;">
                                         @csrf <!-- Token de seguridad para Laravel -->
                                         <input type="hidden" name="id" value="{{ $compra['id'] }}">
                                         <button type="submit" class="btn btn-primary" title="Ir a pagar">
@@ -80,7 +80,7 @@
                                         </button>
                                     </form>
                                     @else
-                                        <a href="{{ route('clientes.pay') }}" class="btn btn-primary" title="Ir a pagar">
+                                        <a href="{{ route('clientes.pay') }}" target="_blank" class="btn btn-primary" title="Ir a pagar">
                                             <i class="fas fa-credit-card"></i>
                                         </a>
                                     @endif

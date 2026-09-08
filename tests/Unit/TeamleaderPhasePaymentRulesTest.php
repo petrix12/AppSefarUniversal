@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Models\Compras;
 use App\Models\TlProject;
 use App\Services\TeamleaderProjectPaymentAnalyzer;
 use App\Services\TeamleaderPhasePaymentService;
@@ -125,6 +126,36 @@ class TeamleaderPhasePaymentRulesTest extends TestCase
         $this->assertSame(750.0, $recordAmount->invoke($service, 0.0, 750.0));
     }
 
+    public function test_portal_exposes_only_the_next_sequential_phase_for_each_project(): void
+    {
+        $service = new TeamleaderPhasePaymentService();
+        $purchase = function (int $id, string $projectId, int $phase): Compras {
+            $record = new Compras([
+                'source' => TeamleaderPhasePaymentService::PURCHASE_SOURCE,
+                'pagado' => 0,
+                'monto' => 100,
+                'phasenum' => $phase,
+                'metadata' => [
+                    'teamleader_project_id' => $projectId,
+                    'phase' => $phase,
+                ],
+            ]);
+            $record->id = $id;
+
+            return $record;
+        };
+
+        $available = $service->currentPortalPurchases(collect([
+            $purchase(101, 'project-a', 1),
+            $purchase(102, 'project-a', 2),
+            $purchase(103, 'project-a', 3),
+            $purchase(104, 'project-a', 98),
+            $purchase(201, 'project-b', 2),
+            $purchase(202, 'project-b', 3),
+        ]));
+
+        $this->assertSame([101, 104, 201], $available->pluck('id')->all());
+    }
     public function test_payment_writer_appends_an_installment_without_replacing_previous_teamleader_entries(): void
     {
         $paidFieldId = 'a1b50c58-8175-0d13-9856-f661e783dc08';

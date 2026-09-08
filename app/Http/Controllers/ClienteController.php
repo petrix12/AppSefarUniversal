@@ -96,6 +96,8 @@ class ClienteController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
+        $compras = app(TeamleaderPhasePaymentService::class)->currentPortalPurchases($compras);
+
         return view('clientes.pagospendientes', compact('compras'));
     }
 
@@ -212,12 +214,17 @@ class ClienteController extends Controller
             ->where('id_user', $user->id)
             ->where('monto', '>', 0)
             ->get();
+        $activePhasePurchases = app(TeamleaderPhasePaymentService::class)
+            ->currentPortalPurchases($comprasConDealNoPagadas->merge($comprasSinDealNoPagadas))
+            ->filter(fn (Compras $purchase) => $purchase->source === TeamleaderPhasePaymentService::PURCHASE_SOURCE)
+            ->values();
         $comprasPagadasSinFactura = Compras::query()
             ->where('id_user', $user->id)
             ->where('source', TeamleaderPhasePaymentService::PURCHASE_SOURCE)
             ->where('pagado', 1)
             ->whereNull('hash_factura')
             ->get()
+            ->reject(fn (Compras $purchase) => data_get($purchase->metadata, 'portal_record_kind') === 'balance')
             ->filter(fn (Compras $purchase) => (float) $purchase->monto > 0.01)
             ->values();
 
@@ -313,6 +320,7 @@ class ClienteController extends Controller
             'comprasConDealNoPagadas',
             'comprasPagadasSinFactura',
             'comprasSinDealNoPagadas',
+            'activePhasePurchases',
             'imageUrls',
             'cosuser',
             'cos',
@@ -1774,6 +1782,7 @@ class ClienteController extends Controller
             ->where('id_user', auth()->id())
             ->where('id', $request->id)
             ->where('source', TeamleaderPhasePaymentService::PURCHASE_SOURCE)
+            ->where('pagado', 0)
             ->exists();
 
         if (! $isTeamleaderPhasePurchase && Auth::user()->roles->first()->name == "Cliente"){
@@ -1789,6 +1798,12 @@ class ClienteController extends Controller
                     ->orWhere('source', TeamleaderPhasePaymentService::PURCHASE_SOURCE);
             })
             ->get();
+
+        $phasePurchase = $compras->firstWhere('source', TeamleaderPhasePaymentService::PURCHASE_SOURCE);
+        if ($phasePurchase && ! app(TeamleaderPhasePaymentService::class)->canPayPortalPurchase($phasePurchase)) {
+            return redirect()->route('clientes.pagospendientes')
+                ->with('info', 'Completa primero la fase pendiente anterior para continuar.');
+        }
 
         if (auth()->user()->tiene_hermanos==1 || auth()->user()->tiene_hermanos=="1" || auth()->user()->tiene_hermanos=="Si") {
             $servicio = Servicio::where('id_hubspot', auth()->user()->servicio." - Hermano")->get();
@@ -1845,7 +1860,10 @@ class ClienteController extends Controller
 
         $compraid = $request->id;
 
-        return view('clientes.payfases', compact('compraid', 'servicio', 'compras', 'alertas'));
+        $isInstallmentPayment = $phasePurchase !== null;
+        $outstandingAmount = $isInstallmentPayment ? (float) $phasePurchase->monto : null;
+
+        return view('clientes.payfases', compact('compraid', 'servicio', 'compras', 'alertas', 'isInstallmentPayment', 'outstandingAmount'));
     }
 
     public function pay(){
@@ -1853,7 +1871,14 @@ class ClienteController extends Controller
             return $redirect;
         }
 
-        $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->whereNull('deal_id')->get();
+        $compras = Compras::where('id_user', auth()->user()->id)
+            ->where('pagado', 0)
+            ->whereNull('deal_id')
+            ->where(function ($query) {
+                $query->whereNull('source')
+                    ->orWhere('source', '!=', TeamleaderPhasePaymentService::PURCHASE_SOURCE);
+            })
+            ->get();
 
         if (auth()->user()->tiene_hermanos==1 || auth()->user()->tiene_hermanos=="1" || auth()->user()->tiene_hermanos=="Si") {
             $servicio = Servicio::where('id_hubspot', 'like', auth()->user()->servicio . '% - Hermano')->get();
@@ -2501,12 +2526,14 @@ class ClienteController extends Controller
             })
             ->get();
 
-        $monto = 0;
+        $phasePaymentAmount = $this->requestedTeamleaderPhasePaymentAmount($request, $compras);
+        $monto = $phasePaymentAmount ?? 0;
 
-        foreach ($compras as $key => $compra) {
-            $monto = $monto + $compra["monto"];
+        if ($phasePaymentAmount === null) {
+            foreach ($compras as $key => $compra) {
+                $monto += $compra["monto"];
+            }
         }
-
         [$referralCode, $normalizedReferralCode] = $this->resolveReferralCode($request->input('referral_code'));
 
         if ($normalizedReferralCode && ! $referralCode) {
@@ -2528,6 +2555,17 @@ class ClienteController extends Controller
         $paidAt = now();
 
         foreach ($compras as $key => $compra) {
+            if ($compra->source === TeamleaderPhasePaymentService::PURCHASE_SOURCE) {
+                app(TeamleaderPhasePaymentService::class)->recordPortalInstallment(
+                    $compra,
+                    (float) $phasePaymentAmount,
+                    $hash_factura,
+                    $paidAt,
+                    $request->input('orderID')
+                );
+
+                continue;
+            }
             DB::table('compras')->where('id', $compra['id'])->update([
                 'pagado' => 1,
                 'hash_factura' => $hash_factura,
@@ -2806,8 +2844,10 @@ class ClienteController extends Controller
         $this->registerReferralSale($referralCode, $hash_factura, $compras, $monto);
 
         $user = User::find(auth()->user()->id);
-        $user->pay = $user->pay-10;
-        $user->save();
+        if ($phasePaymentAmount === null) {
+            $user->pay = $user->pay - 10;
+            $user->save();
+        }
 
         $pdfContent = $this->createPDF($hash_factura);
 
@@ -3220,12 +3260,14 @@ class ClienteController extends Controller
             ->get();
         $servicio = Servicio::where('id_hubspot', auth()->user()->servicio)->get();
 
-        $monto = 0;
+        $phasePaymentAmount = $this->requestedTeamleaderPhasePaymentAmount($request, $compras);
+        $monto = $phasePaymentAmount ?? 0;
 
-        foreach ($compras as $key => $compra) {
-            $monto = $monto + $compra["monto"];
+        if ($phasePaymentAmount === null) {
+            foreach ($compras as $key => $compra) {
+                $monto += $compra["monto"];
+            }
         }
-
         [$referralCode, $normalizedReferralCode] = $this->resolveReferralCode($request->input('referral_code'));
 
         if ($normalizedReferralCode && ! $referralCode) {
@@ -3308,6 +3350,17 @@ class ClienteController extends Controller
                 $paidAt = now();
 
                 foreach ($compras as $key => $compra) {
+                    if ($compra->source === TeamleaderPhasePaymentService::PURCHASE_SOURCE) {
+                        app(TeamleaderPhasePaymentService::class)->recordPortalInstallment(
+                            $compra,
+                            (float) $phasePaymentAmount,
+                            $hash_factura,
+                            $paidAt,
+                            $charged->id
+                        );
+
+                        continue;
+                    }
                     DB::table('compras')->where('id', $compra['id'])->update([
                         'pagado' => 1,
                         'hash_factura' => $hash_factura,
@@ -3586,8 +3639,10 @@ class ClienteController extends Controller
                 $this->registerReferralSale($referralCode, $hash_factura, $compras, $monto);
 
                 $user = User::find(auth()->user()->id);
-                $user->pay = $user->pay-10;
-                $user->save();
+        if ($phasePaymentAmount === null) {
+            $user->pay = $user->pay - 10;
+            $user->save();
+        }
 
 
 
@@ -4140,6 +4195,42 @@ class ClienteController extends Controller
         }
     }
 
+    /**
+     * Validates an amount chosen for the active Teamleader phase. The amount
+     * is always constrained by the server-side balance, never by the browser.
+     */
+    private function requestedTeamleaderPhasePaymentAmount(Request $request, $purchases): ?float
+    {
+        $purchase = $purchases->first();
+
+        if (! $purchase || $purchase->source !== TeamleaderPhasePaymentService::PURCHASE_SOURCE) {
+            return null;
+        }
+
+        if ($purchases->count() !== 1 || ! app(TeamleaderPhasePaymentService::class)->canPayPortalPurchase($purchase)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'compraid' => 'Esta fase aún no está disponible para pago.',
+            ]);
+        }
+
+        $rawAmount = str_replace(',', '.', trim((string) $request->input('payment_amount', $purchase->monto)));
+        if (! is_numeric($rawAmount)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'payment_amount' => 'Indica un monto válido para el abono.',
+            ]);
+        }
+
+        $amount = round((float) $rawAmount, 2);
+        $balance = round((float) $purchase->monto, 2);
+
+        if ($amount <= 0 || $amount > $balance) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'payment_amount' => 'El abono debe ser mayor que cero y no puede superar el saldo pendiente.',
+            ]);
+        }
+
+        return $amount;
+    }
     /**
      * Records legacy phase purchases as append-only payment entries. Older
      * payment handlers used to replace the paid field with the latest amount,

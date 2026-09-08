@@ -252,6 +252,24 @@
             </script>
 
             @csrf
+            @if($isInstallmentPayment ?? false)
+                <section class="alert alert-info border-primary mb-3" aria-labelledby="phase-installment-title">
+                    <div class="d-flex flex-column flex-md-row justify-content-between gap-3 align-items-md-end">
+                        <div>
+                            <h2 id="phase-installment-title" class="h5 mb-1">Paga esta fase a tu ritmo</h2>
+                            <p class="mb-0">Saldo pendiente: <strong>{{ format_money($outstandingAmount ?? 0) }} €</strong>. Puedes pagar todo ahora o registrar el abono que prefieras.</p>
+                        </div>
+                        <div class="text-md-end">
+                            <label class="form-label fw-semibold" for="payment_amount">Monto a pagar ahora (€)</label>
+                            <div class="input-group">
+                                <input id="payment_amount" name="payment_amount" class="form-control" type="number" min="0.01" max="{{ number_format($outstandingAmount ?? 0, 2, '.', '') }}" step="0.01" inputmode="decimal" value="{{ old('payment_amount', number_format($outstandingAmount ?? 0, 2, '.', '')) }}" required>
+                                <button id="pay_full_balance" type="button" class="btn btn-outline-primary">Pagar saldo completo</button>
+                            </div>
+                            <small class="text-muted">El saldo restante seguirá disponible para un próximo abono.</small>
+                        </div>
+                    </div>
+                </section>
+            @endif
             <div class="row">
                 <!-- Columna izquierda: Datos de pago -->
                 <div class="col-12 col-md-5 mb-3 order-2 order-md-1">
@@ -441,6 +459,35 @@
         document.addEventListener('DOMContentLoaded', function () {
 
             // Configurar el botón de PayPal
+            function phasePaymentAmount() {
+                var input = document.getElementById('payment_amount');
+                if (!input) {
+                    return '{{ $total }}';
+                }
+
+                var amount = Number(input.value);
+                var balance = Number(input.max);
+                if (!Number.isFinite(amount) || amount <= 0 || amount > balance) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Indica un abono válido',
+                        text: 'El monto debe ser mayor que cero y no puede superar el saldo pendiente.'
+                    });
+                    return null;
+                }
+
+                return amount.toFixed(2);
+            }
+
+            var payFullBalanceButton = document.getElementById('pay_full_balance');
+            if (payFullBalanceButton) {
+                payFullBalanceButton.addEventListener('click', function () {
+                    var input = document.getElementById('payment_amount');
+                    input.value = input.max;
+                    input.focus();
+                });
+            }
+
             function referralCodeValue() {
                 var input = document.getElementById('referral_code');
                 return input ? input.value : '';
@@ -484,7 +531,7 @@
                             amount: {
                                 // Aquí puedes pasar el total calculado en tu Blade
                                 // Por ejemplo, si tienes el total en la variable $total:
-                                value: '{{ $total }}'
+                                value: phasePaymentAmount() || '0.00'
                             }
                         }]
                         });
@@ -507,6 +554,7 @@
                                 orderID: data.orderID,
                                 details: details,
                                 compraid: {{$compraid}},
+                                payment_amount: phasePaymentAmount(),
                                 referral_code: referralCodeValue()
                             }),
                             contentType: 'application/json',
