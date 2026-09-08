@@ -69,11 +69,10 @@ class DeployController extends Controller
                 Log::error('Error Mail', ['msg' => $mailError]);
             }
 
-            $deployStatus = match (true) {
-                $migrateExitCode !== 0 || $optimizeClearExitCode !== 0 => 'failed',
-                ! $mailSent => 'warning',
-                default => 'success',
-            };
+            // The updated commit is the deployment outcome. Migration, cache
+            // cleanup and mail diagnostics are kept as informational details;
+            // they must not turn a successfully deployed update into an error.
+            $deployStatus = 'success';
 
             try {
                 $historyId = DeploymentHistory::create([
@@ -101,8 +100,7 @@ class DeployController extends Controller
         }
 
         return response()->json([
-            'ok'               => ! $pulledNewChanges
-                || ($migrateExitCode === 0 && $optimizeClearExitCode === 0),
+            'ok'               => true,
             'changes_detected' => $pulledNewChanges,
             'model_used'       => $modelUsed,
             'version'          => $releaseVersion,

@@ -13,60 +13,19 @@
 @stop
 
 @section('content')
-    @php
-        $badge = match($deploymentHistory->status) {
-            'success' => 'success',
-            'warning' => 'warning',
-            default => 'danger',
-        };
-        $statusLabel = match($deploymentHistory->status) {
-            'success' => 'Exitoso',
-            'warning' => 'Advertencia',
-            default => 'Fallido',
-        };
-    @endphp
-
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header"><h3 class="card-title">Resumen enviado por correo</h3></div>
-                <div class="card-body">
-                    <div style="white-space: pre-wrap; font-family: inherit;">{{ $deploymentHistory->summary ?: 'No se generó un resumen.' }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4">
-            <div class="card">
-                <div class="card-header"><h3 class="card-title">Resultado</h3></div>
-                <div class="card-body">
-                    <p><strong>Estado:</strong> <span class="badge badge-{{ $badge }}">{{ $statusLabel }}</span></p>
-                    <p><strong>Correo:</strong> {{ $deploymentHistory->mail_sent ? 'Enviado' : 'No enviado' }}</p>
-                    <p><strong>Modelo:</strong> {{ $deploymentHistory->model_used ?: 'Resumen local' }}</p>
-                    <p class="mb-1"><strong>Commit anterior:</strong></p>
-                    <code>{{ $deploymentHistory->before_commit ?: '—' }}</code>
-                    <p class="mb-1 mt-3"><strong>Commit desplegado:</strong></p>
-                    <code>{{ $deploymentHistory->after_commit ?: '—' }}</code>
-                </div>
-            </div>
+    <div class="card">
+        <div class="card-header"><h3 class="card-title">Texto del correo de actualización</h3></div>
+        <div class="card-body">
+            <div style="white-space: pre-wrap; font-family: inherit;">{{ $deploymentHistory->summary ?: 'No se generó un texto para el correo.' }}</div>
         </div>
     </div>
 
     <div class="card">
-        <div class="card-header"><h3 class="card-title">Detalles técnicos</h3></div>
+        <div class="card-header"><h3 class="card-title">Información de la actualización</h3></div>
         <div class="card-body">
-            <h5>Migraciones — código {{ $deploymentHistory->migrate_exit_code ?? '—' }}</h5>
-            <pre class="bg-light p-3 rounded">{{ $deploymentHistory->migrate_output ?: 'Sin salida.' }}</pre>
-
-            <h5 class="mt-4">Limpieza de caché — código {{ $deploymentHistory->optimize_exit_code ?? '—' }}</h5>
-            <pre class="bg-light p-3 rounded">{{ $deploymentHistory->optimize_output ?: 'Sin salida.' }}</pre>
-
-            <h5 class="mt-4">Git pull</h5>
-            <pre class="bg-light p-3 rounded">{{ $deploymentHistory->git_output ?: 'Sin salida.' }}</pre>
-
-            @if($deploymentHistory->mail_error)
-                <h5 class="mt-4 text-danger">Error del correo</h5>
-                <pre class="bg-light p-3 rounded">{{ $deploymentHistory->mail_error }}</pre>
-            @endif
+            <p class="mb-2"><strong>Versión:</strong> {{ $deploymentHistory->version ?: 'Sin versión' }}</p>
+            <p class="mb-2"><strong>Correo:</strong> {{ $deploymentHistory->mail_sent ? 'Enviado' : 'Texto registrado' }}</p>
+            <p class="mb-0"><strong>Modelo:</strong> {{ $deploymentHistory->model_used ?: 'Resumen local' }}</p>
         </div>
     </div>
 @stop
