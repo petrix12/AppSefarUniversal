@@ -42,6 +42,7 @@ class TeamleaderPhasePaymentService
             ));
 
         $records = collect();
+        $historicalPaidAmounts = $this->historicalPaidAmounts($user);
 
         foreach ($analysis['projects'] ?? [] as $project) {
             foreach ($project['phases'] ?? [] as $phase) {
@@ -52,13 +53,33 @@ class TeamleaderPhasePaymentService
                     continue;
                 }
 
-                $this->notifyPhaseThreeOverpayment($user, $project, $phase);
-
+                $key = $this->purchaseKey($projectId, $phaseNumber);
                 $preestablished = round((float) ($phase['effective_preestab_amount'] ?? 0), 2);
-                $paid = round((float) ($phase['effective_paid_amount'] ?? 0), 2);
-                $this->notifySmallBalance($user, $project, $phase);
+                $teamleaderPaid = round((float) ($phase['effective_paid_amount'] ?? 0), 2);
+                $historicalPaid = (float) ($historicalPaidAmounts[$key] ?? 0);
+                // A historic abono can exist both in Teamleader and in the
+                // legacy negocio totals. It must count once, so reconcile
+                // the two independently confirmed totals instead of adding
+                // them together.
+                $paid = $this->reconciledPaidAmount($teamleaderPaid, $historicalPaid);
+                $balance = round(max($preestablished - $paid, 0), 2);
+                $overpaid = round(max($paid - $preestablished, 0), 2);
 
-                $balance = round((float) ($phase['balance_amount'] ?? 0), 2);
+                $phase['teamleader_paid_amount'] = $teamleaderPaid;
+                $phase['historical_paid_amount'] = $historicalPaid;
+                $phase['paid_amount'] = $paid;
+                $phase['effective_paid_amount'] = $paid;
+                $phase['balance_amount'] = $balance;
+                $phase['overpaid_amount'] = $overpaid;
+                $phase['difference_amount'] = round($preestablished - $paid, 2);
+                if (empty($phase['needs_review'])) {
+                    $phase['status'] = $overpaid > 0.01
+                        ? 'review'
+                        : ($balance <= 0.01 ? 'paid' : ($paid > 0 ? 'partial' : 'pending'));
+                }
+
+                $this->notifyPhaseThreeOverpayment($user, $project, $phase);
+                $this->notifySmallBalance($user, $project, $phase);
 
                 // A payment record only makes sense when Teamleader contains a
                 // real, readable pre-established amount for this phase.
@@ -66,13 +87,12 @@ class TeamleaderPhasePaymentService
                 // still visibly flagged in COS and phase 3 sends its internal
                 // notification above; only other data-quality issues pause
                 // record creation.
-                $hasBlockingReview = ! empty($phase['needs_review']) && (float) ($phase['overpaid_amount'] ?? 0) <= 0.01;
+                $hasBlockingReview = ! empty($phase['needs_review']) && $overpaid <= 0.01;
 
                 if ($preestablished <= 0 || $hasBlockingReview) {
                     continue;
                 }
 
-                $key = $this->purchaseKey($projectId, $phaseNumber);
                 $purchase = $existing->get($key) ?? $this->legacyPurchaseFor($user, $projectId, $phaseNumber);
                 $portalRecordAmount = $this->portalRecordAmount($paid, $balance);
                 $metadata = $this->metadata($project, $phase);
@@ -301,6 +321,107 @@ class TeamleaderPhasePaymentService
         return $purchase->source === self::PURCHASE_SOURCE;
     }
 
+    /**
+     * Reconciles the same historical payment when it appears in both the
+     * Teamleader custom field and the local legacy negocio record.
+     */
+    private function reconciledPaidAmount(float $teamleaderPaid, float $historicalPaid): float
+    {
+        return round(max($teamleaderPaid, $historicalPaid, 0), 2);
+    }
+
+    /**
+     * Older phase payments were stored in the negocio totals before the
+     * Teamleader payment fields became the normal source. Treat those totals
+     * as a fallback so an existing abono cannot make the portal request the
+     * whole phase again. The maximum per phase avoids double counting a value
+     * that has already reached Teamleader.
+     *
+     * @return array<string, float>
+     */
+    private function historicalPaidAmounts(User $user): array
+    {
+        $fieldsByPhase = [
+            1 => ['monto_fase_1_pagado', 'fase_1_pagado'],
+            2 => ['monto_fase_2_pagado', 'fase_2_pagado'],
+            3 => ['monto_fase_3_pagado', 'fase_3_pagado'],
+            98 => ['carta_nat_montopagado', 'carta_nat_pagado'],
+            99 => ['cilfcje_montopagado', 'cil___fcje_pagado'],
+        ];
+        $analyzer = app(TeamleaderProjectPaymentAnalyzer::class);
+        $amounts = [];
+        $deals = Negocio::query()
+            ->where('user_id', $user->id)
+            ->whereNotNull('teamleader_id')
+            ->get();
+        $projectByDealId = $deals
+            ->mapWithKeys(fn (Negocio $deal) => [$deal->id => trim((string) $deal->teamleader_id)])
+            ->filter();
+
+        foreach ($deals as $deal) {
+            $projectId = trim((string) $deal->teamleader_id);
+            if ($projectId === '') {
+                continue;
+            }
+
+            foreach ($fieldsByPhase as $phase => $fields) {
+                $confirmedAmount = collect($fields)
+                    ->map(function (string $field) use ($deal, $analyzer): float {
+                        $value = $deal->{$field};
+                        if ($value === null || $value === '') {
+                            return 0.0;
+                        }
+
+                        return (float) ($analyzer->parseMoneyText((string) $value)['total'] ?? 0);
+                    })
+                    ->max() ?? 0.0;
+
+                if ($confirmedAmount <= 0) {
+                    continue;
+                }
+
+                $key = $this->purchaseKey($projectId, $phase);
+                $amounts[$key] = max((float) ($amounts[$key] ?? 0), round($confirmedAmount, 2));
+            }
+        }
+
+        // Some older abonos only have a paid purchase receipt. Sum those
+        // receipts per negocio/phase, then reconcile them with the legacy
+        // total above using max() so a mirrored receipt is never counted twice.
+        $paidPurchaseAmounts = [];
+        if ($projectByDealId->isNotEmpty()) {
+            $historicalPurchases = Compras::query()
+                ->where('id_user', $user->id)
+                ->where('pagado', 1)
+                ->whereIn('deal_id', $projectByDealId->keys())
+                ->whereIn('phasenum', array_keys($fieldsByPhase))
+                ->where('monto', '>', 0)
+                ->where(function ($query) {
+                    $query->whereNull('source')
+                        ->orWhereNotIn('source', [self::PURCHASE_SOURCE, self::INSTALLMENT_SOURCE]);
+                })
+                ->get(['deal_id', 'phasenum', 'monto']);
+
+            foreach ($historicalPurchases as $purchase) {
+                $projectId = (string) $projectByDealId->get($purchase->deal_id);
+                if ($projectId === '') {
+                    continue;
+                }
+
+                $key = $this->purchaseKey($projectId, (int) $purchase->phasenum);
+                $paidPurchaseAmounts[$key] = round(
+                    (float) ($paidPurchaseAmounts[$key] ?? 0) + (float) $purchase->monto,
+                    2
+                );
+            }
+        }
+
+        foreach ($paidPurchaseAmounts as $key => $amount) {
+            $amounts[$key] = max((float) ($amounts[$key] ?? 0), $amount);
+        }
+
+        return $amounts;
+    }
     private function legacyPurchaseFor(User $user, string $projectId, int $phase): ?Compras
     {
         $dealIds = Negocio::query()
@@ -331,6 +452,8 @@ class TeamleaderPhasePaymentService
             'payment_key' => $phase['payment_key'] ?? null,
             'payment_label' => $phase['payment_label'] ?? null,
             'preestablished_amount' => round((float) ($phase['effective_preestab_amount'] ?? 0), 2),
+            'teamleader_paid_amount_at_sync' => round((float) ($phase['teamleader_paid_amount'] ?? $phase['effective_paid_amount'] ?? 0), 2),
+            'historical_paid_amount_at_sync' => round((float) ($phase['historical_paid_amount'] ?? 0), 2),
             'paid_amount_at_sync' => round((float) ($phase['effective_paid_amount'] ?? 0), 2),
             'portal_disposition' => $disposition,
             'minimum_collectible_balance' => self::MINIMUM_COLLECTIBLE_BALANCE,

@@ -114,6 +114,15 @@ class TeamleaderPhasePaymentRulesTest extends TestCase
             ['id' => 'change', 'value' => 'Nuevo'],
         ]);
     }
+    public function test_historical_phase_abonos_reconcile_with_teamleader_without_double_counting(): void
+    {
+        $service = new TeamleaderPhasePaymentService();
+        $reconciledPaid = new \ReflectionMethod($service, 'reconciledPaidAmount');
+
+        $this->assertSame(2491.9, $reconciledPaid->invoke($service, 2491.9, 2491.9));
+        $this->assertSame(2491.9, $reconciledPaid->invoke($service, 0.0, 2491.9));
+        $this->assertSame(2500.0, $reconciledPaid->invoke($service, 2500.0, 2491.9));
+    }
     public function test_a_balance_below_fifty_is_not_collectible_but_keeps_the_actual_paid_amount(): void
     {
         $service = new TeamleaderPhasePaymentService();
