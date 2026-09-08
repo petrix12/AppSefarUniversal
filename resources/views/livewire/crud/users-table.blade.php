@@ -721,7 +721,7 @@
                                     </div>
 
                                     <div class="mb-3 p-3 bg-gray-50 rounded-md">
-                                        <h4 class="text-xs font-semibold text-gray-700 uppercase mb-2">Servicios y Pago</h4>
+                                        <h4 class="text-xs font-semibold text-gray-700 uppercase mb-2">Servicio solicitado y registro</h4>
 
                                         @include('livewire.crud.partials.user-services-summary', ['user' => $user])
                                     </div>
@@ -862,7 +862,7 @@
                                     <tr>
                                         <th></th>
                                         <th>Nombre, Correo y Pasaporte</th>
-                                        <th>Servicios Solicitados / Pago</th>
+                                        <th>Servicio solicitado / Registro</th>
                                         <th>
                                             Fecha Registro
                                             @role('Administrador')

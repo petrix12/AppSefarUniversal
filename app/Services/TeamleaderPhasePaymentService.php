@@ -212,6 +212,20 @@ class TeamleaderPhasePaymentService
     }
 
     /**
+     * Returns every phase charge that the solicitante may see in the portal.
+     * Sequential phases stay visible as debt even when an earlier phase must
+     * be paid first; hidden and review-required records remain internal.
+     */
+    public function visiblePortalPurchases(Collection $purchases): Collection
+    {
+        return $purchases
+            ->reject(fn (Compras $purchase) => $purchase->source === self::PURCHASE_SOURCE
+                && $this->isHiddenFromClient($purchase))
+            ->reject(fn (Compras $purchase) => $purchase->source === self::PURCHASE_SOURCE
+                && data_get($purchase->metadata, 'portal_disposition') === 'review_required')
+            ->values();
+    }
+    /**
      * Returns the phase charges that may be paid now. Phases 1–3 advance in
      * order per project; other independently configured payment fields keep
      * their own availability.
@@ -235,11 +249,7 @@ class TeamleaderPhasePaymentService
             ->pluck('id')
             ->flip();
 
-        return $purchases
-            ->reject(fn (Compras $purchase) => $purchase->source === self::PURCHASE_SOURCE
-                && $this->isHiddenFromClient($purchase))
-            ->reject(fn (Compras $purchase) => $purchase->source === self::PURCHASE_SOURCE
-                && data_get($purchase->metadata, 'portal_disposition') === 'review_required')
+        return $this->visiblePortalPurchases($purchases)
             ->reject(fn (Compras $purchase) => $purchase->source === self::PURCHASE_SOURCE
                 && in_array((int) data_get($purchase->metadata, 'phase', $purchase->phasenum), self::SEQUENTIAL_PHASES, true)
                 && ! $availableIds->has($purchase->id))

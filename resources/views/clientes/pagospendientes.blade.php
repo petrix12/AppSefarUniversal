@@ -39,13 +39,16 @@
                         <table class="min-w-full divide-y divide-gray-200 w-100" id="example">
                             <thead class="bg-gray-50">
                             <tr>
-                                <th scope="col" class="px-3 py-1" style="width: 75%;">
+                                <th scope="col" class="px-3 py-1" style="width: 55%;">
                                     Servicio
+                                </th>
+                                <th scope="col" class="px-3 py-1" style="width: 15%;">
+                                    Monto pendiente
                                 </th>
                                 <th scope="col" class="px-3 py-1" style="width: 15%;">
                                     Fecha de Emisión
                                 </th>
-                                <th scope="col" class="px-3 py-1" style="width: 10%;">
+                                <th scope="col" class="px-3 py-1" style="width: 15%;">
                                     Acciones
                                 </th>
                             </tr>
@@ -66,12 +69,21 @@
                                     @endif
                                 </td>
                                 <td class="py-2 px-3">
+                                    {{ format_money($compra->monto) }} €
+                                </td>
+                                <td class="py-2 px-3">
                                     <?php
                                         echo(date("d-m-Y", strtotime($compra["created_at"])));
                                     ?>
                                 </td>
                                 <td class="py-2 px-3" style="text-align: center;">
-                                    @if($compra['deal_id'] || ($compra->source ?? null) === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE)
+                                    @php
+                                        $isPhasePurchase = ($compra->source ?? null) === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE;
+                                        $canPayThisPurchase = ! $isPhasePurchase || collect($payablePurchaseIds ?? [])->has($compra->id);
+                                    @endphp
+                                    @if($isPhasePurchase && ! $canPayThisPurchase)
+                                        <span class="text-muted small">Disponible al completar la fase pendiente anterior.</span>
+                                    @elseif($compra['deal_id'] || $isPhasePurchase)
                                     <form action="{{ route('gotopayfases') }}" method="POST" target="_blank" style="display: inline;">
                                         @csrf <!-- Token de seguridad para Laravel -->
                                         <input type="hidden" name="id" value="{{ $compra['id'] }}">

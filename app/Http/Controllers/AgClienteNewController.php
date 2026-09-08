@@ -17,6 +17,7 @@ use RealRashid\SweetAlert\Facades\Alert;
 use App\Mail\CargaSefar;
 use App\Services\GenealogyService;
 use Illuminate\Support\Facades\Mail as Mail2;
+use Illuminate\Validation\ValidationException;
 
 class AgClienteNewController extends Controller
 {
@@ -440,20 +441,22 @@ class AgClienteNewController extends Controller
     }
 
     /**
-     * The tree still stores every date in the legacy Year/Month/Day columns.
-     * The forms can now send a single ISO date without changing that storage
-     * contract; direct legacy submissions remain supported as well.
+     * The tree stores each date in the legacy Year/Month/Day columns.  A
+     * genealogical source does not always provide every part of a date, so the
+     * form accepts a year, month/year, or a complete date without inventing a
+     * missing month or day. Direct legacy submissions remain supported too.
      */
     private function datePartsFromRequest(Request $request): array
     {
         $request->validate([
-            'FechaNac' => ['nullable', 'date_format:Y-m-d'],
-            'FechaBtzo' => ['nullable', 'date_format:Y-m-d'],
-            'FechaMatr' => ['nullable', 'date_format:Y-m-d'],
-            'FechaDef' => ['nullable', 'date_format:Y-m-d'],
+            'FechaNac' => ['nullable', 'string', 'max:20'],
+            'FechaBtzo' => ['nullable', 'string', 'max:20'],
+            'FechaMatr' => ['nullable', 'string', 'max:20'],
+            'FechaDef' => ['nullable', 'string', 'max:20'],
         ]);
 
         $parts = [];
+        $usesPrecisionAwareFields = $request->boolean('tree_date_precision_input');
 
         foreach ([
             'Nac' => 'FechaNac',
@@ -463,7 +466,11 @@ class AgClienteNewController extends Controller
         ] as $suffix => $field) {
             $date = trim((string) $request->input($field));
 
-            if ($date === '') {
+            // Older forms and integrations can still post separate date
+            // components. Their empty combined field means "keep those
+            // components"; the precision-aware form marks itself so a blank
+            // field there intentionally clears the date.
+            if (!$request->has($field) || (!$usesPrecisionAwareFields && $date === '')) {
                 $parts['Anho' . $suffix] = $request->input('Anho' . $suffix);
                 $parts['Mes' . $suffix] = $request->input('Mes' . $suffix);
                 $parts['Dia' . $suffix] = $request->input('Dia' . $suffix);
@@ -471,13 +478,68 @@ class AgClienteNewController extends Controller
                 continue;
             }
 
-            [$year, $month, $day] = explode('-', $date);
-            $parts['Anho' . $suffix] = (int) $year;
-            $parts['Mes' . $suffix] = (int) $month;
-            $parts['Dia' . $suffix] = (int) $day;
+            if ($date === '') {
+                $parts['Anho' . $suffix] = null;
+                $parts['Mes' . $suffix] = null;
+                $parts['Dia' . $suffix] = null;
+
+                continue;
+            }
+
+            $parsedDate = $this->parseTreeDate($date);
+
+            if ($parsedDate === null) {
+                throw ValidationException::withMessages([
+                    $field => 'Indique una fecha válida: aaaa, mm/aaaa o dd/mm/aaaa.',
+                ]);
+            }
+
+            $parts['Anho' . $suffix] = $parsedDate['year'];
+            $parts['Mes' . $suffix] = $parsedDate['month'];
+            $parts['Dia' . $suffix] = $parsedDate['day'];
         }
 
         return $parts;
+    }
+
+    private function parseTreeDate(string $value): ?array
+    {
+        $date = preg_replace('/\s+/', '', $value);
+        $year = null;
+        $month = null;
+        $day = null;
+
+        if (preg_match('/^(\d{4})$/', $date, $matches)) {
+            $year = (int) $matches[1];
+        } elseif (preg_match('/^(\d{1,2})[.\/-](\d{4})$/', $date, $matches)) {
+            $month = (int) $matches[1];
+            $year = (int) $matches[2];
+        } elseif (preg_match('/^(\d{4})[.\/-](\d{1,2})$/', $date, $matches)) {
+            $year = (int) $matches[1];
+            $month = (int) $matches[2];
+        } elseif (preg_match('/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/', $date, $matches)) {
+            $day = (int) $matches[1];
+            $month = (int) $matches[2];
+            $year = (int) $matches[3];
+        } elseif (preg_match('/^(\d{4})[.\/-](\d{1,2})[.\/-](\d{1,2})$/', $date, $matches)) {
+            $year = (int) $matches[1];
+            $month = (int) $matches[2];
+            $day = (int) $matches[3];
+        }
+
+        if ($year === null || $year < 1 || $year > 3000) {
+            return null;
+        }
+
+        if ($month !== null && ($month < 1 || $month > 12)) {
+            return null;
+        }
+
+        if ($day !== null && ($month === null || !checkdate($month, $day, $year))) {
+            return null;
+        }
+
+        return compact('year', 'month', 'day');
     }
 
     public function getClientFiles(Request $request)

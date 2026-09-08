@@ -23,12 +23,204 @@
 @endphp
 
 @unless($cosActualClient)
-    <div class="alert alert-info d-flex justify-content-between align-items-center" id="cos-preview-control">
+    @php
+        $cosPreviewTargetUrl = request()->fullUrlWithQuery(['vista_cliente' => $cosClientPreview ? 0 : 1]);
+        $cosPreviewButtonLabel = $cosClientPreview ? 'Volver a vista interna' : 'Ver como solicitante';
+        $cosPreviewLoadingLabel = $cosClientPreview ? 'Cargando vista interna…' : 'Cargando vista del solicitante…';
+    @endphp
+
+    <style>
+        #cos-preview-control {
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding: .9rem 1rem;
+            color: #0c4a6e;
+            background: linear-gradient(135deg, #ecfeff, #e0f2fe);
+            border: 1px solid #7dd3fc;
+            border-radius: .65rem;
+            box-shadow: 0 .25rem .9rem rgba(14, 116, 144, .08);
+        }
+
+        #cos-preview-control > span {
+            font-weight: 600;
+        }
+
+        .cos-preview-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .45rem;
+            min-height: 2.3rem;
+            padding: .42rem .82rem;
+            border: 1px solid transparent;
+            border-radius: .45rem;
+            font-size: .875rem;
+            font-weight: 700;
+            line-height: 1.25;
+            text-decoration: none;
+            transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease, color .15s ease;
+        }
+
+        .cos-preview-toggle:hover,
+        .cos-preview-toggle:focus-visible {
+            transform: translateY(-1px);
+            text-decoration: none;
+        }
+
+        .cos-preview-toggle:focus-visible {
+            outline: 3px solid rgba(14, 116, 144, .3);
+            outline-offset: 2px;
+        }
+
+        .cos-preview-toggle--enter {
+            color: #fff !important;
+            background: #0f5e78;
+            border-color: #0f5e78;
+            box-shadow: 0 .2rem .55rem rgba(15, 94, 120, .23);
+        }
+
+        .cos-preview-toggle--enter:hover,
+        .cos-preview-toggle--enter:focus-visible {
+            color: #fff !important;
+            background: #0c4a6e;
+            border-color: #0c4a6e;
+        }
+
+        .cos-preview-toggle--return {
+            color: #0f5e78 !important;
+            background: #fff;
+            border-color: #0f5e78;
+        }
+
+        .cos-preview-toggle--return:hover,
+        .cos-preview-toggle--return:focus-visible {
+            color: #fff !important;
+            background: #0f5e78;
+            border-color: #0f5e78;
+        }
+
+        .cos-preview-toggle.is-loading {
+            pointer-events: none;
+            cursor: progress;
+            opacity: .72;
+        }
+
+        .cos-preview-loading {
+            position: fixed;
+            inset: 0;
+            z-index: 1080;
+            display: none;
+            place-items: center;
+            padding: 1.25rem;
+            background: rgba(15, 23, 42, .42);
+            backdrop-filter: blur(2px);
+        }
+
+        .cos-preview-loading.is-visible {
+            display: grid;
+        }
+
+        .cos-preview-loading__panel {
+            display: flex;
+            align-items: center;
+            gap: .85rem;
+            max-width: 31rem;
+            padding: 1rem 1.2rem;
+            color: #0f172a;
+            background: #fff;
+            border-radius: .7rem;
+            box-shadow: 0 1rem 2.5rem rgba(15, 23, 42, .28);
+        }
+
+        .cos-preview-loading__spinner {
+            width: 1.35rem;
+            height: 1.35rem;
+            flex: 0 0 auto;
+            border: .2rem solid #bae6fd;
+            border-top-color: #0f5e78;
+            border-radius: 50%;
+            animation: cos-preview-spin .75s linear infinite;
+        }
+
+        @keyframes cos-preview-spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 575.98px) {
+            #cos-preview-control {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .cos-preview-toggle {
+                width: 100%;
+            }
+        }
+    </style>
+
+    <div class="alert d-flex justify-content-between align-items-center" id="cos-preview-control">
         <span>{{ $cosClientPreview ? 'Vista del solicitante · solo lectura' : 'Vista interna del COS' }}</span>
-        <a class="btn btn-sm btn-outline-primary" href="{{ request()->fullUrlWithQuery(['vista_cliente' => $cosClientPreview ? 0 : 1]) }}" role="switch" aria-checked="{{ $cosClientPreview ? 'true' : 'false' }}">
-            {{ $cosClientPreview ? 'Volver a vista interna' : 'Ver como solicitante' }}
+        <a id="cos-preview-toggle"
+            class="cos-preview-toggle {{ $cosClientPreview ? 'cos-preview-toggle--return' : 'cos-preview-toggle--enter' }}"
+            href="{{ $cosPreviewTargetUrl }}"
+            role="switch"
+            aria-checked="{{ $cosClientPreview ? 'true' : 'false' }}"
+            data-loading-label="{{ $cosPreviewLoadingLabel }}">
+            <i class="fas fa-{{ $cosClientPreview ? 'arrow-left' : 'eye' }}" aria-hidden="true"></i>
+            <span>{{ $cosPreviewButtonLabel }}</span>
         </a>
     </div>
+
+    <div class="cos-preview-loading" id="cos-preview-loading" hidden role="status" aria-live="assertive" aria-atomic="true">
+        <div class="cos-preview-loading__panel">
+            <span class="cos-preview-loading__spinner" aria-hidden="true"></span>
+            <span data-cos-preview-loading-label>{{ $cosPreviewLoadingLabel }}</span>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const toggle = document.getElementById('cos-preview-toggle');
+            const loading = document.getElementById('cos-preview-loading');
+            const loadingLabel = loading?.querySelector('[data-cos-preview-loading-label]');
+
+            if (!toggle || !loading) {
+                return;
+            }
+
+            toggle.addEventListener('click', function (event) {
+                if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || toggle.dataset.loading === 'true') {
+                    return;
+                }
+
+                event.preventDefault();
+                toggle.dataset.loading = 'true';
+                toggle.classList.add('is-loading');
+                toggle.setAttribute('aria-busy', 'true');
+                toggle.setAttribute('aria-disabled', 'true');
+                if (loadingLabel) {
+                    loadingLabel.textContent = toggle.dataset.loadingLabel;
+                }
+                loading.hidden = false;
+                loading.classList.add('is-visible');
+
+                window.requestAnimationFrame(function () {
+                    window.location.assign(toggle.href);
+                });
+            });
+
+            // A browser back-navigation can restore the page from its cache.
+            // Always remove the transient loading layer in that situation.
+            window.addEventListener('pageshow', function () {
+                toggle.dataset.loading = 'false';
+                toggle.classList.remove('is-loading');
+                toggle.removeAttribute('aria-busy');
+                toggle.removeAttribute('aria-disabled');
+                loading.classList.remove('is-visible');
+                loading.hidden = true;
+            });
+        });
+    </script>
 @endunless
 
 @php
@@ -418,9 +610,13 @@
                                 ->filter(fn ($purchase) => strtoupper((string) data_get($purchase->metadata, 'display_currency', 'EUR')) === 'EUR')
                                 ->sum('monto');
                             $allPendingPurchases = $comprasConDealNoPagadas->merge($comprasSinDealNoPagadas);
+                            $portalPhasePaymentService = app(\App\Services\TeamleaderPhasePaymentService::class);
+                            $visiblePhasePurchases = $portalPhasePaymentService
+                                ->visiblePortalPurchases($allPendingPurchases)
+                                ->filter(fn ($purchase) => $purchase->source === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE);
                             $portalOutstandingAmount = $allPendingPurchases
                                 ->reject(fn ($purchase) => $purchase->source === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE)
-                                ->sum('monto') + collect($activePhasePurchases ?? [])->sum('monto');
+                                ->sum('monto') + $visiblePhasePurchases->sum('monto');
 
                             // The payment summary is deliberately calculated
                             // from the exact same portal records rendered in
@@ -2222,11 +2418,12 @@
                 <div class="tab-pane fade" id="paymentspen" role="tabpanel" aria-labelledby="payments-tab">
                     @php
                         $allPendingPurchasesForCos = $comprasSinDealNoPagadas->merge($comprasConDealNoPagadas);
+                        $paymentPhasePaymentService = app(\App\Services\TeamleaderPhasePaymentService::class);
+                        $payablePhasePurchaseIds = collect($activePhasePurchases ?? [])
+                            ->pluck('id')
+                            ->flip();
                         $portalPendingPurchases = $rolId === 5
-                            ? $allPendingPurchasesForCos
-                                ->reject(fn ($purchase) => $purchase->source === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE)
-                                ->merge(collect($activePhasePurchases ?? []))
-                                ->values()
+                            ? $paymentPhasePaymentService->visiblePortalPurchases($allPendingPurchasesForCos)
                             : $allPendingPurchasesForCos;
                         $hasPendingPayments = $portalPendingPurchases->isNotEmpty();
                     @endphp
@@ -2249,12 +2446,18 @@
                                     <td>{{ format_money($compra->monto) }} €</td>
                                     @if($cosViewRoleId == 5)
                                     <td>
+                                        @php
+                                            $isPhasePurchase = ($compra->source ?? null) === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE;
+                                            $canPayThisPurchase = ! $isPhasePurchase || $payablePhasePurchaseIds->has($compra->id);
+                                        @endphp
                                         @if($cosClientPreview)
                                         <button type="button" class="btn btn-secondary" disabled
                                             title="La vista previa es solo de lectura. El solicitante puede pagar al entrar a su cuenta.">
                                             <i class="fas fa-credit-card"></i> Pagar desde mi cuenta
                                         </button>
-                                        @elseif($compra->deal_id || ($compra->source ?? null) === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE)
+                                        @elseif(! $canPayThisPurchase)
+                                        <span class="text-muted small">Disponible al completar la fase pendiente anterior.</span>
+                                        @elseif($compra->deal_id || $isPhasePurchase)
                                         <form action="{{ route('gotopayfases') }}" method="POST" target="_blank">
                                             @csrf
                                             <input type="hidden" name="id" value="{{ $compra->id }}">
@@ -3473,13 +3676,6 @@
         <script>
             // Preview keeps the authenticated staff identity; customer actions are read-only.
             document.addEventListener('submit', function (event) {
-                event.preventDefault();
-                event.stopImmediatePropagation();
-            }, true);
-            document.addEventListener('click', function (event) {
-                const control = event.target.closest('button, a, input[type="submit"]');
-                if (!control || control.closest('#cos-preview-control')) return;
-                if (control.matches('[data-bs-toggle="tab"], [data-bs-toggle="collapse"], [data-bs-toggle="modal"], [data-bs-dismiss], [data-bs-slide], [data-bs-slide-to]')) return;
                 event.preventDefault();
                 event.stopImmediatePropagation();
             }, true);

@@ -444,6 +444,7 @@
             </div>
             <form action="{{route('agclientesnew.store')}}" method="POST" data-hs-cf-bound="true">
                 @csrf
+                <input name="tree_date_precision_input" type="hidden" value="1">
                 <input name="Origen" type="hidden" value="arbol">
                 <input name="Sexo" id="sexaddform" type="hidden">
                 <input name="IDCliente" type="hidden" value="{{$columnasparatabla[0][0]["IDCliente"]}}" >
@@ -592,7 +593,11 @@
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
                                 <label for="FechaNac" class="block text-sm font-medium text-gray-700">Fecha de nacimiento</label>
-                                <input value="" id="FechaNac" min="0001-01-01" max="3000-12-31" type="date" name="FechaNac" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input value="" id="FechaNac" type="text" name="FechaNac" inputmode="numeric" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="AnhoNac,MesNac,DiaNac" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input id="AnhoNac" type="hidden" name="AnhoNac">
+                                <input id="MesNac" type="hidden" name="MesNac">
+                                <input id="DiaNac" type="hidden" name="DiaNac">
+                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año o mes y año.</p>
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -662,7 +667,11 @@
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
                                 <label for="FechaBtzo" class="block text-sm font-medium text-gray-700">Fecha de bautizo</label>
-                                <input value="" id="FechaBtzo" min="0001-01-01" max="3000-12-31" type="date" name="FechaBtzo" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input value="" id="FechaBtzo" type="text" name="FechaBtzo" inputmode="numeric" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="AnhoBtzo,MesBtzo,DiaBtzo" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input id="AnhoBtzo" type="hidden" name="AnhoBtzo">
+                                <input id="MesBtzo" type="hidden" name="MesBtzo">
+                                <input id="DiaBtzo" type="hidden" name="DiaBtzo">
+                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año o mes y año.</p>
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -732,7 +741,11 @@
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
                                 <label for="FechaMatr" class="block text-sm font-medium text-gray-700">Fecha de matrimonio</label>
-                                <input value="" id="FechaMatr" min="0001-01-01" max="3000-12-31" type="date" name="FechaMatr" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input value="" id="FechaMatr" type="text" name="FechaMatr" inputmode="numeric" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="AnhoMatr,MesMatr,DiaMatr" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input id="AnhoMatr" type="hidden" name="AnhoMatr">
+                                <input id="MesMatr" type="hidden" name="MesMatr">
+                                <input id="DiaMatr" type="hidden" name="DiaMatr">
+                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año o mes y año.</p>
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -802,7 +815,11 @@
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
                                 <label for="FechaDef" class="block text-sm font-medium text-gray-700">Fecha de defunción</label>
-                                <input value="" id="FechaDef" min="0001-01-01" max="3000-12-31" type="date" name="FechaDef" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input value="" id="FechaDef" type="text" name="FechaDef" inputmode="numeric" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="AnhoDef,MesDef,DiaDef" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input id="AnhoDef" type="hidden" name="AnhoDef">
+                                <input id="MesDef" type="hidden" name="MesDef">
+                                <input id="DiaDef" type="hidden" name="DiaDef">
+                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año o mes y año.</p>
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -904,6 +921,7 @@
             </div>
             <form action="{{route('agclientesnew.update')}}" method="POST" data-hs-cf-bound="true">
                 @csrf
+                <input name="tree_date_precision_input" type="hidden" value="1">
                 <input name="id" id="editid" type="hidden">
                 <div class="container">
                     <div class="md:flex ms:flex-wrap">
@@ -1051,10 +1069,11 @@
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
                                 <label for="editFechaNac" class="block text-sm font-medium text-gray-700">Fecha de nacimiento</label>
-                                <input value="" id="editFechaNac" min="0001-01-01" max="3000-12-31" type="date" name="FechaNac" data-date-parts="editAnhoNac,editMesNac,editDiaNac" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input value="" id="editFechaNac" type="text" name="FechaNac" inputmode="numeric" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="editAnhoNac,editMesNac,editDiaNac" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                 <input id="editAnhoNac" type="hidden" name="AnhoNac">
                                 <input id="editMesNac" type="hidden" name="MesNac">
                                 <input id="editDiaNac" type="hidden" name="DiaNac">
+                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año o mes y año.</p>
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -1123,10 +1142,11 @@
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
                                 <label for="editFechaBtzo" class="block text-sm font-medium text-gray-700">Fecha de bautizo</label>
-                                <input value="" id="editFechaBtzo" min="0001-01-01" max="3000-12-31" type="date" name="FechaBtzo" data-date-parts="editAnhoBtzo,editMesBtzo,editDiaBtzo" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input value="" id="editFechaBtzo" type="text" name="FechaBtzo" inputmode="numeric" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="editAnhoBtzo,editMesBtzo,editDiaBtzo" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                 <input id="editAnhoBtzo" type="hidden" name="AnhoBtzo">
                                 <input id="editMesBtzo" type="hidden" name="MesBtzo">
                                 <input id="editDiaBtzo" type="hidden" name="DiaBtzo">
+                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año o mes y año.</p>
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -1196,10 +1216,11 @@
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
                                 <label for="editFechaMatr" class="block text-sm font-medium text-gray-700">Fecha de matrimonio</label>
-                                <input value="" id="editFechaMatr" min="0001-01-01" max="3000-12-31" type="date" name="FechaMatr" data-date-parts="editAnhoMatr,editMesMatr,editDiaMatr" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input value="" id="editFechaMatr" type="text" name="FechaMatr" inputmode="numeric" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="editAnhoMatr,editMesMatr,editDiaMatr" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                 <input id="editAnhoMatr" type="hidden" name="AnhoMatr">
                                 <input id="editMesMatr" type="hidden" name="MesMatr">
                                 <input id="editDiaMatr" type="hidden" name="DiaMatr">
+                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año o mes y año.</p>
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -1269,10 +1290,11 @@
                         <div class="px-1 py-2 m-2 flex-1">
                             <div>
                                 <label for="editFechaDef" class="block text-sm font-medium text-gray-700">Fecha de defunción</label>
-                                <input value="" id="editFechaDef" min="0001-01-01" max="3000-12-31" type="date" name="FechaDef" data-date-parts="editAnhoDef,editMesDef,editDiaDef" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input value="" id="editFechaDef" type="text" name="FechaDef" inputmode="numeric" autocomplete="off" placeholder="dd/mm/aaaa, mm/aaaa o aaaa" data-tree-date data-date-parts="editAnhoDef,editMesDef,editDiaDef" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                 <input id="editAnhoDef" type="hidden" name="AnhoDef">
                                 <input id="editMesDef" type="hidden" name="MesDef">
                                 <input id="editDiaDef" type="hidden" name="DiaDef">
+                                <p class="mt-1 text-xs text-gray-500">Puedes indicar solo año o mes y año.</p>
                             </div>
                         </div>
                         <div class="px-1 py-2 m-2 flex-1">
@@ -3218,7 +3240,87 @@ dialog::backdrop {
         }
     }
 
-    function setDateInputFromParts(inputId, year, month, day) {
+    function formatTreeDateParts(year, month, day) {
+        const currentYear = String(year ?? '').trim();
+        const currentMonth = String(month ?? '').trim();
+        const currentDay = String(day ?? '').trim();
+
+        if (!currentYear) {
+            return '';
+        }
+
+        const formattedYear = currentYear.padStart(4, '0');
+
+        if (!currentMonth) {
+            return formattedYear;
+        }
+
+        const formattedMonth = currentMonth.padStart(2, '0');
+
+        if (!currentDay) {
+            return `${formattedMonth}/${formattedYear}`;
+        }
+
+        return `${currentDay.padStart(2, '0')}/${formattedMonth}/${formattedYear}`;
+    }
+
+    function normalizeTreeDate(value) {
+        const text = String(value || '').trim().replace(/\s+/g, '');
+
+        if (!text) {
+            return { value: '', parts: ['', '', ''] };
+        }
+
+        let year;
+        let month = '';
+        let day = '';
+        let match;
+
+        if ((match = text.match(/^(\d{4})$/))) {
+            year = Number(match[1]);
+        } else if ((match = text.match(/^(\d{1,2})[./-](\d{4})$/))) {
+            month = Number(match[1]);
+            year = Number(match[2]);
+        } else if ((match = text.match(/^(\d{4})[./-](\d{1,2})$/))) {
+            year = Number(match[1]);
+            month = Number(match[2]);
+        } else if ((match = text.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/))) {
+            day = Number(match[1]);
+            month = Number(match[2]);
+            year = Number(match[3]);
+        } else if ((match = text.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})$/))) {
+            year = Number(match[1]);
+            month = Number(match[2]);
+            day = Number(match[3]);
+        } else {
+            return null;
+        }
+
+        if (year < 1 || year > 3000 || (month && (month < 1 || month > 12))) {
+            return null;
+        }
+
+        if (day) {
+            const daysByMonth = [31, (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+            if (!month || day < 1 || day > daysByMonth[month - 1]) {
+                return null;
+            }
+        }
+
+        const parts = [
+            String(year),
+            month ? String(month) : '',
+            day ? String(day) : '',
+        ];
+
+        return {
+            value: formatTreeDateParts(...parts),
+            parts,
+        };
+    }
+
+    function setTreeDateInputFromParts(inputId, year, month, day) {
         const input = document.getElementById(inputId);
 
         if (!input) {
@@ -3235,74 +3337,71 @@ dialog::backdrop {
             field.value = values[index];
         });
 
-        const [currentYear, currentMonth, currentDay] = values.map((value) => String(value).trim());
-        const hasCompleteDate = /^\d{1,4}$/.test(currentYear)
-            && /^\d{1,2}$/.test(currentMonth)
-            && /^\d{1,2}$/.test(currentDay);
-
-        input.value = hasCompleteDate
-            ? `${currentYear.padStart(4, '0')}-${currentMonth.padStart(2, '0')}-${currentDay.padStart(2, '0')}`
-            : '';
+        input.value = formatTreeDateParts(...values);
     }
 
-    function syncDatePartsToLegacyFields(input) {
+    function syncTreeDatePartsToLegacyFields(input, normalize = false) {
         const legacyFieldIds = (input.dataset.dateParts || '').split(',');
 
         if (legacyFieldIds.length !== 3) {
-            return;
+            return true;
         }
 
-        const values = input.value ? input.value.split('-') : ['', '', ''];
+        const parsedDate = normalizeTreeDate(input.value);
+
+        if (parsedDate === null) {
+            input.setCustomValidity('Usa aaaa, mm/aaaa o dd/mm/aaaa.');
+
+            return false;
+        }
+
+        input.setCustomValidity('');
+
+        if (normalize) {
+            input.value = parsedDate.value;
+        }
+
         legacyFieldIds.forEach((fieldId, index) => {
             const field = document.getElementById(fieldId);
 
             if (field) {
-                field.value = values[index] || '';
+                field.value = parsedDate.parts[index] || '';
             }
         });
+
+        return true;
     }
 
-    document.querySelectorAll('input[type="date"][data-date-parts]').forEach((input) => {
-        input.addEventListener('change', () => syncDatePartsToLegacyFields(input));
-    });
-
-    function normalizePastedTreeDate(value) {
-        const text = String(value || '').trim();
-        const iso = text.match(/^([0-9]{4})[./-]([0-9]{1,2})[./-]([0-9]{1,2})$/);
-        const latin = text.match(/^([0-9]{1,2})[./-]([0-9]{1,2})[./-]([0-9]{4})$/);
-        const match = iso || latin;
-
-        if (!match) {
-            return null;
-        }
-
-        const year = Number(iso ? match[1] : match[3]);
-        const month = Number(match[2]);
-        const day = Number(iso ? match[3] : match[1]);
-        const daysByMonth = [31, (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-
-        if (year < 1 || year > 3000 || month < 1 || month > 12 || day < 1 || day > daysByMonth[month - 1]) {
-            return null;
-        }
-
-        return [String(year).padStart(4, '0'), String(month).padStart(2, '0'), String(day).padStart(2, '0')].join('-');
-    }
-
-    // Native date inputs do not consistently accept Ctrl/Cmd+V across
-    // browsers. Accept the formats people routinely copy from records and
-    // dispatch the normal events so the legacy date-part fields stay in sync.
-    document.querySelectorAll('input[type="date"]').forEach((input) => {
+    // A text field lets genealogy staff paste an exact, partial source date;
+    // the original precision is kept in Year/Month/Day instead of creating a
+    // synthetic day or month.
+    document.querySelectorAll('input[data-tree-date]').forEach((input) => {
+        input.addEventListener('input', () => syncTreeDatePartsToLegacyFields(input));
+        input.addEventListener('change', () => syncTreeDatePartsToLegacyFields(input, true));
+        input.addEventListener('blur', () => syncTreeDatePartsToLegacyFields(input, true));
         input.addEventListener('paste', (event) => {
-            const normalizedDate = normalizePastedTreeDate(event.clipboardData?.getData('text'));
+            const pastedDate = normalizeTreeDate(event.clipboardData?.getData('text'));
 
-            if (!normalizedDate || (input.min && normalizedDate < input.min) || (input.max && normalizedDate > input.max)) {
+            if (!pastedDate) {
                 return;
             }
 
             event.preventDefault();
-            input.value = normalizedDate;
+            input.value = pastedDate.value;
             input.dispatchEvent(new Event('input', { bubbles: true }));
             input.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    });
+
+    document.querySelectorAll('form[action*="agclientesnew"]').forEach((form) => {
+        form.addEventListener('submit', (event) => {
+            const invalidInput = Array.from(form.querySelectorAll('input[data-tree-date]'))
+                .find((input) => !syncTreeDatePartsToLegacyFields(input, true));
+
+            if (invalidInput) {
+                event.preventDefault();
+                invalidInput.reportValidity();
+            }
         });
     });
 
@@ -3310,16 +3409,16 @@ dialog::backdrop {
         $("#editid").val(id);
         $("#editnombres").val(Nombres);
         $("#editApellidos").val(Apellidos);
-        setDateInputFromParts('editFechaNac', AnhoNac, MesNac, DiaNac);
+        setTreeDateInputFromParts('editFechaNac', AnhoNac, MesNac, DiaNac);
         $("#editLugarNac").val(LugarNac);
         $("#editPaisNac").val(PaisNac);
-        setDateInputFromParts('editFechaBtzo', AnhoBtzo, MesBtzo, DiaBtzo);
+        setTreeDateInputFromParts('editFechaBtzo', AnhoBtzo, MesBtzo, DiaBtzo);
         $("#editLugarBtzo").val(LugarBtzo);
         $("#editPaisBtzo").val(PaisBtzo);
-        setDateInputFromParts('editFechaMatr', AnhoMatr, MesMatr, DiaMatr);
+        setTreeDateInputFromParts('editFechaMatr', AnhoMatr, MesMatr, DiaMatr);
         $("#editLugarMatr").val(LugarMatr);
         $("#editPaisMatr").val(PaisMatr);
-        setDateInputFromParts('editFechaDef', AnhoDef, MesDef, DiaDef);
+        setTreeDateInputFromParts('editFechaDef', AnhoDef, MesDef, DiaDef);
         $("#editLugarDef").val(LugarDef);
         $("#editPaisDef").val(PaisDef);
         $("#editObservaciones").val(Observaciones);

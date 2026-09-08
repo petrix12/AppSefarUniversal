@@ -30,6 +30,12 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', rtrim((string) env('APP_URL'), '/') . '/registerv2/google/callback'),
+    ],
+
     'teamleader' => [
         'client_id' => env('TEAMLEADER_CLIENT_ID'),
         'client_secret' => env('TEAMLEADER_CLIENT_SECRET'),

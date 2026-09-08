@@ -96,9 +96,14 @@ class ClienteController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        $compras = app(TeamleaderPhasePaymentService::class)->currentPortalPurchases($compras);
+        $phasePaymentService = app(TeamleaderPhasePaymentService::class);
+        $payablePurchaseIds = $phasePaymentService
+            ->currentPortalPurchases($compras)
+            ->pluck('id')
+            ->flip();
+        $compras = $phasePaymentService->visiblePortalPurchases($compras);
 
-        return view('clientes.pagospendientes', compact('compras'));
+        return view('clientes.pagospendientes', compact('compras', 'payablePurchaseIds'));
     }
 
     private function searchUserInMonday($passport, User $user)

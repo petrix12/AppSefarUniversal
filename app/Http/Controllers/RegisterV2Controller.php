@@ -31,7 +31,11 @@ class RegisterV2Controller extends Controller
             Auth::logout();
         }
 
-        return view('auth.registerv2');
+        return view('auth.registerv2', [
+            'googleLoginEnabled' => filled(config('services.google.client_id'))
+                && filled(config('services.google.client_secret'))
+                && filled(config('services.google.redirect')),
+        ]);
     }
 
     public function store(

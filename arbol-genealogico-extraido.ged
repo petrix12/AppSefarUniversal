@@ -1,0 +1,160 @@
+0 HEAD
+1 SOUR Imagen de árbol genealógico aportada por el usuario
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 CHAR UTF-8
+0 @I1@ INDI
+1 NAME [nombre ilegible] /Pardo/
+1 SEX M
+1 NOTE El nombre de pila no se distingue con seguridad en la imagen.
+1 FAMS @F1@
+0 @I2@ INDI
+1 NAME Ágata [apellido ilegible]
+1 SEX F
+1 NOTE La tarjeta parece indicar «Ágata», pero el resto no se distingue con seguridad.
+1 FAMS @F1@
+0 @I3@ INDI
+1 NAME Francisca /Álvarez/
+1 SEX F
+1 FAMC @F1@
+1 FAMS @F2@
+0 @I4@ INDI
+1 NAME Francisco /Díaz Álvarez/
+1 SEX M
+1 FAMC @F2@
+1 FAMS @F5@
+0 @I5@ INDI
+1 NAME José Justo /Crespo Pérez/
+1 SEX M
+1 FAMS @F3@
+0 @I6@ INDI
+1 NAME María José /Pérez Álvarez/
+1 SEX F
+1 FAMS @F3@
+0 @I7@ INDI
+1 NAME Isabel Teresa /Crespo Pérez/
+1 SEX F
+1 FAMC @F3@
+1 FAMS @F5@
+0 @I8@ INDI
+1 NAME Ramón A. /Monasterios/
+1 SEX M
+1 NOTE La imagen solo permite leer «Ramón A.»; la inicial se conserva literalmente.
+1 FAMS @F4@
+0 @I9@ INDI
+1 NAME María Ant. /Fernández/
+1 SEX F
+1 NOTE La imagen solo permite leer «María Ant.»; la abreviatura se conserva literalmente.
+1 FAMS @F4@
+0 @I10@ INDI
+1 NAME Ramón Eli. /Monasterios/
+1 SEX M
+1 NOTE La imagen solo permite leer «Ramón Eli.»; la abreviatura se conserva literalmente.
+1 FAMC @F4@
+1 FAMS @F6@
+0 @I11@ INDI
+1 NAME [nombre ilegible] /Carballo/
+1 SEX F
+1 NOTE Solo el apellido Carballo se distingue con seguridad en la tarjeta.
+1 FAMC @F7@
+1 FAMS @F6@
+0 @I12@ INDI
+1 NAME Inés Jacin. /Monasterios Carballo/
+1 SEX F
+1 NOTE La imagen solo permite leer «Inés Jacin.»; la abreviatura se conserva literalmente.
+1 FAMC @F6@
+1 FAMS @F8@
+0 @I13@ INDI
+1 NAME José Ram. /Carballo/
+1 SEX M
+1 NOTE La imagen solo permite leer «José Ram.»; la abreviatura se conserva literalmente.
+1 FAMS @F7@
+0 @I14@ INDI
+1 NAME María de [nombre ilegible] /Jiménez/
+1 SEX F
+1 NOTE La tarjeta muestra «María de … Jiménez»; el segundo nombre está truncado.
+1 FAMS @F7@
+0 @I15@ INDI
+1 NAME Ignacio E. /Díaz Crespo/
+1 SEX M
+1 NOTE La imagen solo permite leer «Ignacio E.»; la inicial se conserva literalmente.
+1 FAMC @F5@
+1 FAMS @F8@
+0 @I16@ INDI
+1 NAME Gaspar A. /Díaz Monasterios/
+1 SEX M
+1 NOTE La imagen solo permite leer «Gaspar A.»; la inicial se conserva literalmente.
+1 FAMC @F8@
+1 FAMS @F9@
+0 @I17@ INDI
+1 NAME Olga Mar. /Izquierdo/
+1 SEX F
+1 NOTE La imagen solo permite leer «Olga Mar.»; la abreviatura se conserva literalmente.
+1 FAMS @F9@
+0 @I18@ INDI
+1 NAME Fernando /Díaz Izquierdo/
+1 SEX M
+1 NOTE El nombre aparece truncado como «Fernan…» en la imagen.
+1 FAMC @F9@
+0 @I19@ INDI
+1 NAME Alejandro /Díaz Izquierdo/
+1 SEX M
+1 FAMC @F9@
+1 FAMS @F10@
+0 @I20@ INDI
+1 NAME Nitzexa /Rodríguez/
+1 SEX F
+1 NOTE El segundo apellido, si lo hubiera, no se ve en la imagen.
+1 FAMS @F10@
+0 @I21@ INDI
+1 NAME Graciela /Díaz Rodríguez/
+1 SEX F
+1 FAMC @F10@
+0 @I22@ INDI
+1 NAME Alejandro /Díaz Rodríguez/
+1 SEX M
+1 FAMC @F10@
+0 @F1@ FAM
+1 HUSB @I1@
+1 WIFE @I2@
+1 CHIL @I3@
+0 @F2@ FAM
+1 WIFE @I3@
+1 CHIL @I4@
+1 NOTE El otro progenitor de Francisco Díaz Álvarez no aparece en la imagen.
+0 @F3@ FAM
+1 HUSB @I5@
+1 WIFE @I6@
+1 CHIL @I7@
+0 @F4@ FAM
+1 HUSB @I8@
+1 WIFE @I9@
+1 CHIL @I10@
+0 @F5@ FAM
+1 HUSB @I4@
+1 WIFE @I7@
+1 CHIL @I15@
+0 @F6@ FAM
+1 HUSB @I10@
+1 WIFE @I11@
+1 CHIL @I12@
+0 @F7@ FAM
+1 HUSB @I13@
+1 WIFE @I14@
+1 CHIL @I11@
+0 @F8@ FAM
+1 HUSB @I15@
+1 WIFE @I12@
+1 CHIL @I16@
+0 @F9@ FAM
+1 HUSB @I16@
+1 WIFE @I17@
+1 CHIL @I18@
+1 CHIL @I19@
+0 @F10@ FAM
+1 HUSB @I19@
+1 WIFE @I20@
+1 CHIL @I21@
+1 CHIL @I22@
+0 TRLR

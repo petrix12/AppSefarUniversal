@@ -7,6 +7,7 @@ use Livewire\WithPagination;
 use App\Models\User;
 use App\Models\Servicio;
 use App\Models\ClientChatMessage;
+use App\Services\TeamleaderPhasePaymentService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,12 @@ use Spatie\Permission\Models\Role;
 
 class UsersTable extends Component
 {
+    private const PHASE_PAYMENT_SOURCES = [
+        TeamleaderPhasePaymentService::PURCHASE_SOURCE,
+        TeamleaderPhasePaymentService::INSTALLMENT_SOURCE,
+        TeamleaderPhasePaymentService::HISTORY_SOURCE,
+    ];
+
     use WithPagination;
 
     protected $queryString = [
@@ -148,7 +155,12 @@ class UsersTable extends Component
             $query->where(function ($q) {
                 $q->where('servicio', $this->filterServicio)
                     ->orWhereHas('compras', function ($c) {
-                        $c->where('servicio_hs_id', $this->filterServicio);
+                        $c->where('servicio_hs_id', $this->filterServicio)
+                            ->where(function ($sourceQuery) {
+                                $sourceQuery
+                                    ->whereNull('source')
+                                    ->orWhereNotIn('source', self::PHASE_PAYMENT_SOURCES);
+                            });
                     });
             });
         });
@@ -197,6 +209,7 @@ class UsersTable extends Component
             'serviciosPlano' => $this->serviciosPlano,
             'rolesList' => $this->rolesList,
             'owners' => $this->owners,
+            'phasePaymentSources' => self::PHASE_PAYMENT_SOURCES,
         ]);
     }
 

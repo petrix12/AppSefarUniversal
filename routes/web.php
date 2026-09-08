@@ -60,6 +60,7 @@ use App\Http\Controllers\DeployController;
 use App\Http\Controllers\DeploymentHistoryController;
 use App\Http\Controllers\ProveedorRegisterController;
 use App\Http\Controllers\RegisterV2Controller;
+use App\Http\Controllers\Auth\GoogleAuthenticationController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ListController;
@@ -407,6 +408,12 @@ Route::put('/crud/users/{user}/update-basic', [UserController::class, 'updateBas
 
 Route::get('/registerv2', [RegisterV2Controller::class, 'index'])->name('register.v2.form');
 Route::post('/registerv2', [RegisterV2Controller::class, 'store'])->name('register.v2');
+Route::get('/registerv2/google', [GoogleAuthenticationController::class, 'redirect'])
+    ->middleware(['guest', 'throttle:10,1'])
+    ->name('register.v2.google.redirect');
+Route::get('/registerv2/google/callback', [GoogleAuthenticationController::class, 'callback'])
+    ->middleware(['guest', 'throttle:10,1'])
+    ->name('register.v2.google.callback');
 
 // Registro estándar de clientes desactivado temporalmente hasta nuevo aviso.
 

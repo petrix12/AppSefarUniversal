@@ -1,6 +1,14 @@
 @php
+    $phasePaymentSources = $phasePaymentSources ?? [
+        \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE,
+        \App\Services\TeamleaderPhasePaymentService::INSTALLMENT_SOURCE,
+        \App\Services\TeamleaderPhasePaymentService::HISTORY_SOURCE,
+    ];
     $purchases = $user->compras
         ->filter(fn ($purchase) => (int) $purchase->id_user === (int) $user->id && filled($purchase->servicio_hs_id))
+        // Phase balances, abonos and historical entries are financial records,
+        // not separately contracted services.
+        ->reject(fn ($purchase) => in_array((string) $purchase->source, $phasePaymentSources, true))
         ->values();
 
     $isBancaOnline = fn ($purchase) => $purchase->source === config('banca_online.source', 'banca_online_2026')
