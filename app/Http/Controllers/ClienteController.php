@@ -220,9 +220,14 @@ class ClienteController extends Controller
             ->values();
         $comprasPagadasSinFactura = Compras::query()
             ->where('id_user', $user->id)
-            ->where('source', TeamleaderPhasePaymentService::PURCHASE_SOURCE)
+            ->whereIn('source', [
+                TeamleaderPhasePaymentService::PURCHASE_SOURCE,
+                TeamleaderPhasePaymentService::HISTORY_SOURCE,
+            ])
             ->where('pagado', 1)
             ->whereNull('hash_factura')
+            ->orderByDesc('paid_at')
+            ->orderByDesc('id')
             ->get()
             ->reject(fn (Compras $purchase) => data_get($purchase->metadata, 'portal_record_kind') === 'balance')
             ->filter(fn (Compras $purchase) => (float) $purchase->monto > 0.01)

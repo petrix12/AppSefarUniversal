@@ -165,6 +165,34 @@ class TeamleaderPhasePaymentRulesTest extends TestCase
 
         $this->assertSame([101, 104, 201], $available->pluck('id')->all());
     }
+    public function test_an_administratively_hidden_phase_does_not_show_or_block_the_next_phase(): void
+    {
+        $service = new TeamleaderPhasePaymentService();
+        $purchase = function (int $id, int $phase, bool $hidden = false): Compras {
+            $record = new Compras([
+                'source' => TeamleaderPhasePaymentService::PURCHASE_SOURCE,
+                'pagado' => 0,
+                'monto' => 100,
+                'phasenum' => $phase,
+                'metadata' => [
+                    'teamleader_project_id' => 'project-hidden-phase',
+                    'phase' => $phase,
+                    'hidden_from_client' => $hidden,
+                ],
+            ]);
+            $record->id = $id;
+
+            return $record;
+        };
+
+        $available = $service->currentPortalPurchases(collect([
+            $purchase(102, 2, true),
+            $purchase(103, 3),
+        ]));
+
+        $this->assertSame([103], $available->pluck('id')->all());
+    }
+
     public function test_a_review_required_phase_blocks_following_phases_without_becoming_payable(): void
     {
         $service = new TeamleaderPhasePaymentService();

@@ -56,6 +56,13 @@ class TeamleaderProjectPaymentAnalyzerTest extends TestCase
         $this->assertSame('2021-11-22', $parsed['dated_entries'][1]['date']);
         $this->assertSame('2022-09-15', $parsed['dated_entries'][2]['date']);
     }
+    public function test_it_marks_portal_generated_abonos_so_they_are_not_copied_to_the_history(): void
+    {
+        $parsed = $this->analyzer()->parseMoneyText('Abono 50 EUR 2026-09-07 [COS:phase-payment-321]');
+
+        $this->assertSame('phase-payment-321', $parsed['dated_entries'][0]['cos_reference']);
+    }
+
     public function test_it_marks_exonerated_without_treating_dates_as_amounts(): void
     {
         $parsed = $this->analyzer()->parseMoneyText('EXONERADO 2026/05/18');

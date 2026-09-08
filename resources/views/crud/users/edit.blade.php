@@ -338,6 +338,13 @@
                     </div>
                     @endif
 
+                    @if(session('phase_visibility_success') || session('phase_visibility_error'))
+                    <div class="alert alert-{{ session('phase_visibility_success') ? 'success' : 'danger' }} py-2 mb-3">
+                        <i class="fas {{ session('phase_visibility_success') ? 'fa-check-circle' : 'fa-exclamation-triangle' }} me-1"></i>
+                        {{ session('phase_visibility_success') ?: session('phase_visibility_error') }}
+                    </div>
+                    @endif
+
                     <script>
                     function onSyncSubmit(e) {
                         const btn   = document.getElementById('btnSync');
@@ -407,7 +414,9 @@
                         @php
                             $portalPaymentAmount = $facturas->sum(function ($factura) {
                                 return collect($factura->compras ?? [])->sum('monto');
-                            }) + collect($comprasPagadasSinFactura ?? [])->sum('monto');
+                            }) + collect($comprasPagadasSinFactura ?? [])
+                                ->filter(fn ($purchase) => strtoupper((string) data_get($purchase->metadata, 'display_currency', 'EUR')) === 'EUR')
+                                ->sum('monto');
                             $allPendingPurchases = $comprasConDealNoPagadas->merge($comprasSinDealNoPagadas);
                             $portalOutstandingAmount = $allPendingPurchases
                                 ->reject(fn ($purchase) => $purchase->source === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE)
@@ -550,6 +559,20 @@
                                         });
                                 })
                                 ->values();
+                            $tlPhasePurchases = $comprasSinDealNoPagadas
+                                ->filter(fn ($purchase) => $purchase->source === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE)
+                                ->keyBy(fn ($purchase) => (string) data_get($purchase->metadata, 'teamleader_project_id')
+                                    . ':' . (int) data_get($purchase->metadata, 'phase', $purchase->phasenum));
+                            $tlPaymentRows = $tlPaymentRows->map(function ($phase) use ($tlPhasePurchases) {
+                                $key = (string) ($phase['project_id'] ?? '') . ':' . (int) ($phase['phase'] ?? 0);
+                                $purchase = $tlPhasePurchases->get($key);
+                                $phase['visibility_purchase_id'] = $purchase?->id;
+                                $phase['hidden_from_client'] = $purchase
+                                    ? filter_var(data_get($purchase->metadata, 'hidden_from_client', false), FILTER_VALIDATE_BOOLEAN)
+                                    : false;
+
+                                return $phase;
+                            });
                             $tlPaymentHasData = $tlPaymentRows->isNotEmpty();
                             $tlMoney = fn ($amount) => format_money((float) $amount, 2, ',', '.') . ' EUR';
                             $tlStatusLabels = [
@@ -637,10 +660,12 @@
                                                     <th class="text-end">Pagado</th>
                                                     <th class="text-end">Saldo</th>
                                                     <th>Valor TL</th>
+                                                    <th>Vista del solicitante</th>
+                                                    <th class="text-end">Acción</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                @foreach($tlPaymentRows->take(12) as $phase)
+                                                @foreach($tlPaymentRows as $phase)
                                                     @php
                                                         $status = $phase['status'] ?? 'empty';
                                                         $rawPieces = array_filter([
@@ -662,17 +687,37 @@
                                                             {{ $tlMoney($phase['balance_amount'] ?? 0) }}
                                                         </td>
                                                         <td class="small text-muted">{{ \Illuminate\Support\Str::limit(implode(' | ', $rawPieces), 70) ?: '-' }}</td>
+                                                        <td>
+                                                            @if($phase['visibility_purchase_id'] ?? null)
+                                                                <span class="badge {{ !empty($phase['hidden_from_client']) ? 'bg-secondary' : 'bg-success' }}">
+                                                                    {{ !empty($phase['hidden_from_client']) ? 'Oculta' : 'Visible' }}
+                                                                </span>
+                                                            @else
+                                                                <span class="text-muted small">Sin saldo cobrable</span>
+                                                            @endif
+                                                        </td>
+                                                        <td class="text-end">
+                                                            @if($phase['visibility_purchase_id'] ?? null)
+                                                                <form method="POST" action="{{ route('crud.users.update-phase-payment-visibility', ['user' => $user->id]) }}" class="d-inline" @if(empty($phase['hidden_from_client'])) onsubmit="return confirm('Ocultar esta fase al solicitante? El saldo seguirá visible internamente.');" @endif>
+                                                                    @csrf
+                                                                    @method('PATCH')
+                                                                    <input type="hidden" name="project_id" value="{{ $phase['project_id'] ?? '' }}">
+                                                                    <input type="hidden" name="phase" value="{{ $phase['phase'] ?? '' }}">
+                                                                    <input type="hidden" name="hidden" value="{{ !empty($phase['hidden_from_client']) ? '0' : '1' }}">
+                                                                    <button type="submit" class="btn btn-sm {{ !empty($phase['hidden_from_client']) ? 'btn-outline-success' : 'btn-outline-secondary' }}">
+                                                                        {{ !empty($phase['hidden_from_client']) ? 'Mostrar al solicitante' : 'Ocultar al solicitante' }}
+                                                                    </button>
+                                                                </form>
+                                                            @else
+                                                                <span class="text-muted small">—</span>
+                                                            @endif
+                                                        </td>
                                                     </tr>
                                                 @endforeach
                                             </tbody>
                                         </table>
                                     </div>
 
-                                    @if($tlPaymentRows->count() > 12)
-                                        <div class="small text-muted mt-2">
-                                            Se muestran 12 de {{ $tlPaymentRows->count() }} fases con movimiento.
-                                        </div>
-                                    @endif
                                 @else
                                     <div class="alert alert-light border mt-3 mb-0">
                                         No hay montos detectados en los campos Fase 1/2/3 Preestab y Pagado de los proyectos Teamleader asociados.
@@ -2155,7 +2200,10 @@
                                     <td>{{ optional($compra->paid_at ?: $compra->updated_at)->format('d/m/Y') ?: '-' }}</td>
                                     <td>Pago registrado</td>
                                     <td>{{ $compra->descripcion }}</td>
-                                    <td>{{ format_money((float) $compra->monto, 2, ',', '.') }} €</td>
+                                    @php
+                                        $displayCurrency = strtoupper((string) data_get($compra->metadata, 'display_currency', 'EUR'));
+                                    @endphp
+                                    <td>{{ format_money((float) $compra->monto, 2, ',', '.') }} {{ $displayCurrency === 'EUR' ? '€' : $displayCurrency }}</td>
                                     <td>—</td>
                                 </tr>
                             @endforeach

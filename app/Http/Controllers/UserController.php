@@ -194,6 +194,71 @@ class UserController extends Controller
     }
 
     /**
+     * Keeps a residual phase balance visible to staff while removing it from
+     * the solicitante COS and its payment flow. No amount is changed and no
+     * external project data is written by this administrative decision.
+     */
+    public function updatePhasePaymentVisibility(Request $request, User $user)
+    {
+        if (auth()->user()?->hasRole('Cliente')) {
+            abort(403, 'No tienes acceso para cambiar la visibilidad de pagos.');
+        }
+
+        if (! $user->hasRole('Cliente')) {
+            return back()->with('phase_visibility_error', 'Solo se puede cambiar la visibilidad de fases de solicitantes.');
+        }
+
+        $data = $request->validate([
+            'project_id' => ['required', 'string', 'max:255'],
+            'phase' => ['required', 'integer', 'in:1,2,3,98,99'],
+            'hidden' => ['required', 'boolean'],
+        ]);
+
+        $purchase = Compras::query()
+            ->where('id_user', $user->id)
+            ->where('source', TeamleaderPhasePaymentService::PURCHASE_SOURCE)
+            ->where('pagado', 0)
+            ->get()
+            ->first(fn (Compras $item) => (string) data_get($item->metadata, 'teamleader_project_id') === $data['project_id']
+                && (int) data_get($item->metadata, 'phase', $item->phasenum) === (int) $data['phase']);
+
+        if (! $purchase) {
+            return back()->with('phase_visibility_error', 'No se encontró una fase pendiente para actualizar.');
+        }
+
+        $hidden = $request->boolean('hidden');
+        $metadata = $purchase->metadata ?? [];
+        if ($hidden) {
+            $metadata['hidden_from_client'] = true;
+            $metadata['hidden_from_client_at'] = now()->toIso8601String();
+            $metadata['hidden_from_client_by'] = auth()->id();
+        } else {
+            unset(
+                $metadata['hidden_from_client'],
+                $metadata['hidden_from_client_at'],
+                $metadata['hidden_from_client_by']
+            );
+        }
+
+        $purchase->forceFill(['metadata' => $metadata])->save();
+
+        Log::info('Visibilidad de fase actualizada desde COS interno', [
+            'solicitante_id' => $user->id,
+            'project_id' => $data['project_id'],
+            'phase' => (int) $data['phase'],
+            'hidden_from_client' => $hidden,
+            'changed_by_user_id' => auth()->id(),
+        ]);
+
+        return back()->with(
+            'phase_visibility_success',
+            $hidden
+                ? 'La fase ya no se muestra al solicitante. El saldo se conserva para revisión interna.'
+                : 'La fase vuelve a mostrarse al solicitante como saldo pendiente.'
+        );
+    }
+
+    /**
      * Show the form for creating a new resource.
      *
      * @return \Illuminate\Http\Response
@@ -1754,9 +1819,14 @@ class UserController extends Controller
 
     $comprasPagadasSinFactura = Compras::query()
         ->where('id_user', $user->id)
-        ->where('source', TeamleaderPhasePaymentService::PURCHASE_SOURCE)
+        ->whereIn('source', [
+            TeamleaderPhasePaymentService::PURCHASE_SOURCE,
+            TeamleaderPhasePaymentService::HISTORY_SOURCE,
+        ])
         ->where('pagado', 1)
         ->whereNull('hash_factura')
+        ->orderByDesc('paid_at')
+        ->orderByDesc('id')
         ->get()
         ->reject(fn (Compras $purchase) => data_get($purchase->metadata, 'portal_record_kind') === 'balance')
         ->filter(fn (Compras $purchase) => (float) $purchase->monto > 0.01)

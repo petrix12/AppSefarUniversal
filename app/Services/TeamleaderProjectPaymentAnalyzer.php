@@ -188,10 +188,12 @@ class TeamleaderProjectPaymentAnalyzer
             ->all();
 
         $paymentDates = $this->extractPaymentDates($raw);
+        $paymentSegments = preg_split('/\s*\+\s*/u', $raw) ?: [];
         $datedEntries = collect($entries)
             ->values()
-            ->map(function (array $entry, int $index) use ($paymentDates): array {
+            ->map(function (array $entry, int $index) use ($paymentDates, $paymentSegments): array {
                 $entry['date'] = $this->normalizedPaymentDate($paymentDates[$index] ?? null);
+                $entry['cos_reference'] = $this->cosReference($paymentSegments[$index] ?? '');
 
                 return $entry;
             })
@@ -323,6 +325,16 @@ class TeamleaderProjectPaymentAnalyzer
 
         return null;
     }
+
+    private function cosReference(string $value): ?string
+    {
+        if (preg_match('/\[COS:([^\]]+)\]/u', $value, $matches)) {
+            return trim($matches[1]) ?: null;
+        }
+
+        return null;
+    }
+
     private function parseDecimal(string $token): ?float
     {
         $token = trim($token);

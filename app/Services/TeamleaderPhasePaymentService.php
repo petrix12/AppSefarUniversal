@@ -24,6 +24,8 @@ class TeamleaderPhasePaymentService
 
     public const INSTALLMENT_SOURCE = 'teamleader_phase_installment';
 
+    public const HISTORY_SOURCE = 'teamleader_phase_history';
+
     private const SEQUENTIAL_PHASES = [1, 2, 3];
 
     private const MINIMUM_COLLECTIBLE_BALANCE = 50.00;
@@ -40,6 +42,11 @@ class TeamleaderPhasePaymentService
                 (string) data_get($purchase->metadata, 'teamleader_project_id'),
                 (int) data_get($purchase->metadata, 'phase')
             ));
+        $historicalEntries = Compras::query()
+            ->where('id_user', $user->id)
+            ->where('source', self::HISTORY_SOURCE)
+            ->get()
+            ->keyBy(fn (Compras $purchase) => (string) data_get($purchase->metadata, 'teamleader_payment_reference'));
 
         $records = collect();
         $historicalPaidAmounts = $this->historicalPaidAmounts($user);
@@ -57,6 +64,7 @@ class TeamleaderPhasePaymentService
                 $preestablished = round((float) ($phase['effective_preestab_amount'] ?? 0), 2);
                 $foreignConversion = app(TeamleaderHistoricalExchangeRateService::class)
                     ->convertForeignEntriesToEuro(data_get($phase, 'paid_parse.dated_entries', []));
+                $this->syncHistoricalPaymentEntries($user, $project, $phase, $foreignConversion, $historicalEntries);
                 $hasUnconvertedCurrency = ! empty(data_get($phase, 'preestab_parse.requires_currency_conversion'))
                     || ! empty($foreignConversion['unconverted_entries']);
                 if (! $hasUnconvertedCurrency) {
@@ -112,10 +120,10 @@ class TeamleaderPhasePaymentService
                     // later phases are not enabled, but it is never payable
                     // from the portal until Finance validates the conversion.
                     if ($preestablished > 0 && $hasBlockingReview) {
-                        $reviewMetadata = $this->metadata($project, array_merge($phase, [
+                        $reviewMetadata = array_merge($this->metadata($project, array_merge($phase, [
                             'portal_disposition' => 'review_required',
                             'is_collectible_in_portal' => false,
-                        ]));
+                        ])), ['portal_record_kind' => 'balance']);
 
                         if (! $purchase) {
                             $purchase = Compras::create([
@@ -143,7 +151,7 @@ class TeamleaderPhasePaymentService
                     continue;
                 }
                 $portalRecordAmount = $this->portalRecordAmount($paid, $balance);
-                $metadata = $this->metadata($project, $phase);
+                $metadata = array_merge($this->metadata($project, $phase), ['portal_record_kind' => 'balance']);
 
                 if (! $purchase) {
                     $purchase = Compras::create([
@@ -212,6 +220,9 @@ class TeamleaderPhasePaymentService
     {
         $phasePurchases = $purchases
             ->filter(fn (Compras $purchase) => $purchase->source === self::PURCHASE_SOURCE)
+            // An internal completion decision treats the residual as settled
+            // for the portal sequence, without changing its financial record.
+            ->reject(fn (Compras $purchase) => $this->isHiddenFromClient($purchase))
             ->groupBy(fn (Compras $purchase) => (string) data_get($purchase->metadata, 'teamleader_project_id', $purchase->id));
 
         $availableIds = $phasePurchases
@@ -225,6 +236,8 @@ class TeamleaderPhasePaymentService
             ->flip();
 
         return $purchases
+            ->reject(fn (Compras $purchase) => $purchase->source === self::PURCHASE_SOURCE
+                && $this->isHiddenFromClient($purchase))
             ->reject(fn (Compras $purchase) => $purchase->source === self::PURCHASE_SOURCE
                 && data_get($purchase->metadata, 'portal_disposition') === 'review_required')
             ->reject(fn (Compras $purchase) => $purchase->source === self::PURCHASE_SOURCE
@@ -247,6 +260,14 @@ class TeamleaderPhasePaymentService
                 ->where('monto', '>', 0)
                 ->get()
         )->contains('id', $purchase->id);
+    }
+
+    private function isHiddenFromClient(Compras $purchase): bool
+    {
+        return filter_var(
+            data_get($purchase->metadata, 'hidden_from_client', false),
+            FILTER_VALIDATE_BOOLEAN
+        );
     }
 
     /**
@@ -473,6 +494,110 @@ class TeamleaderPhasePaymentService
 
         return $amounts;
     }
+
+    /**
+     * Stores every historic Teamleader installment as a read-only completed
+     * payment for COS. Portal-generated installments carry a [COS:...] marker
+     * and are deliberately skipped because their invoice/receipt is already
+     * rendered by the portal payment history.
+     */
+    private function syncHistoricalPaymentEntries(
+        User $user,
+        array $project,
+        array $phase,
+        array $foreignConversion,
+        Collection $existingEntries
+    ): void {
+        $conversionQueues = [];
+        foreach ($foreignConversion['conversions'] ?? [] as $conversion) {
+            $conversionKey = $this->historicalConversionKey(
+                (float) ($conversion['amount'] ?? 0),
+                (string) ($conversion['currency'] ?? ''),
+                (string) ($conversion['payment_date'] ?? '')
+            );
+            $conversionQueues[$conversionKey][] = $conversion;
+        }
+
+        foreach (array_values(data_get($phase, 'paid_parse.dated_entries', [])) as $index => $entry) {
+            $amount = round((float) ($entry['amount'] ?? 0), 2);
+            $currency = strtoupper(trim((string) ($entry['currency'] ?? 'EUR')));
+            $paymentDate = trim((string) ($entry['date'] ?? ''));
+
+            if ($amount <= 0 || $currency === '' || ! empty($entry['cos_reference'])) {
+                continue;
+            }
+
+            $conversion = null;
+            $displayAmount = $amount;
+            $displayCurrency = $currency;
+            if ($currency !== 'EUR') {
+                $conversionKey = $this->historicalConversionKey($amount, $currency, $paymentDate);
+                $conversion = ! empty($conversionQueues[$conversionKey])
+                    ? array_shift($conversionQueues[$conversionKey])
+                    : null;
+                if ($conversion) {
+                    $displayAmount = round((float) ($conversion['eur_amount'] ?? 0), 2);
+                    $displayCurrency = 'EUR';
+                }
+            }
+
+            $reference = sha1(implode('|', [
+                (string) ($project['project_id'] ?? ''),
+                (string) ($phase['phase'] ?? ''),
+                (string) $index,
+                number_format($amount, 2, '.', ''),
+                $currency,
+                $paymentDate,
+            ]));
+            $attributes = [
+                'id_user' => $user->id,
+                'source' => self::HISTORY_SOURCE,
+                'servicio_hs_id' => $user->servicio ?: 'teamleader-phase-payment',
+                'descripcion' => $this->historicalDescription($project, $phase, $amount, $currency),
+                'pagado' => 1,
+                'monto' => $displayAmount,
+                'phasenum' => (int) ($phase['phase'] ?? 0),
+                'metadata' => [
+                    'portal_record_kind' => 'historical_installment',
+                    'teamleader_project_id' => (string) ($project['project_id'] ?? ''),
+                    'phase' => (int) ($phase['phase'] ?? 0),
+                    'payment_label' => (string) ($phase['payment_label'] ?? ''),
+                    'teamleader_payment_reference' => $reference,
+                    'original_amount' => $amount,
+                    'original_currency' => $currency,
+                    'display_currency' => $displayCurrency,
+                    'payment_date' => $paymentDate ?: null,
+                    'conversion' => $conversion,
+                ],
+                'paid_at' => $paymentDate !== '' ? \Carbon\Carbon::createFromFormat('Y-m-d', $paymentDate)->startOfDay() : null,
+            ];
+
+            $purchase = $existingEntries->get($reference);
+            if ($purchase) {
+                $purchase->fill($attributes)->save();
+            } else {
+                $purchase = Compras::create($attributes);
+                $existingEntries->put($reference, $purchase);
+            }
+        }
+    }
+
+    private function historicalConversionKey(float $amount, string $currency, string $paymentDate): string
+    {
+        return implode('|', [number_format($amount, 2, '.', ''), strtoupper(trim($currency)), $paymentDate]);
+    }
+
+    private function historicalDescription(array $project, array $phase, float $amount, string $currency): string
+    {
+        $title = trim((string) ($project['project_title'] ?? 'Proyecto'));
+        $label = (string) ($phase['payment_label'] ?? 'Fase ' . ($phase['phase'] ?? '-'));
+        $originalAmount = format_money($amount, 2, ',', '.');
+
+        return $currency === 'EUR'
+            ? "Abono {$label} · {$title}"
+            : "Abono {$label} · {$title} ({$originalAmount} {$currency})";
+    }
+
     private function legacyPurchaseFor(User $user, string $projectId, int $phase): ?Compras
     {
         $dealIds = Negocio::query()
@@ -519,7 +644,7 @@ class TeamleaderPhasePaymentService
 
     private function description(array $project, array $payment): string
     {
-        $title = trim((string) ($project['project_title'] ?? 'Proyecto Teamleader'));
+        $title = trim((string) ($project['project_title'] ?? 'Proyecto'));
         $label = (string) ($payment['payment_label'] ?? 'Fase ' . ($payment['phase'] ?? '-'));
 
         return "Pago {$label} · {$title}";

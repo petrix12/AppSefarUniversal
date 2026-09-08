@@ -477,6 +477,9 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
     Route::patch('users/{user}/owner', [UserController::class, 'updateOwner'])
             ->name('users.update-owner')
             ->middleware('can:crud.users.index');
+    Route::patch('users/{user}/phase-payment-visibility', [UserController::class, 'updatePhasePaymentVisibility'])
+            ->name('users.update-phase-payment-visibility')
+            ->middleware('can:crud.users.index');
     Route::get('users/{user}/internal-chat', [ClientChatController::class, 'messages'])
             ->name('users.internal-chat.index')
             ->middleware('can:crud.users.index');
