@@ -171,7 +171,7 @@ class TeamleaderProjectPaymentAnalyzer
         $exonerated = (bool) preg_match('/\bEXONERAD[OA]|\bEXONERACION\b/u', $withoutDates);
         $included = (bool) preg_match('/\bINCLUID[OA]\s+EN\s+FASE\b/u', $withoutDates);
 
-        $entries = $this->extractAmounts($withoutDates);
+        $entries = $this->extractAmounts($this->withoutInstallmentCount($withoutDates));
         $amounts = collect($entries)
             ->where('currency', 'EUR')
             ->pluck('amount')
@@ -187,18 +187,28 @@ class TeamleaderProjectPaymentAnalyzer
             ->values()
             ->all();
 
+        $paymentDates = $this->extractPaymentDates($raw);
+        $datedEntries = collect($entries)
+            ->values()
+            ->map(function (array $entry, int $index) use ($paymentDates): array {
+                $entry['date'] = $this->normalizedPaymentDate($paymentDates[$index] ?? null);
+
+                return $entry;
+            })
+            ->all();
+
         return [
             'raw' => $raw,
             'normalized' => $withoutDates,
-            // Only amounts already expressed in EUR take part in an automatic
-            // balance. A USD payment must be converted using its payment-date
-            // rate and the agreed adjustment rule before it can reduce debt.
+            // Amounts in another currency are kept separate until the phase
+            // service converts them with their payment-date ECB reference rate.
             'amounts' => $amounts,
             'entries' => $entries,
+            'dated_entries' => $datedEntries,
             'foreign_amounts' => $foreignEntries,
             'foreign_currencies' => $foreignCurrencies,
             'requires_currency_conversion' => $foreignCurrencies !== [],
-            'payment_dates' => $this->extractPaymentDates($raw),
+            'payment_dates' => $paymentDates,
             'total' => round(array_sum($amounts), 2),
             'exonerated' => $exonerated,
             'included' => $included,
@@ -206,6 +216,15 @@ class TeamleaderProjectPaymentAnalyzer
         ];
     }
 
+    /**
+     * In Teamleader, values such as "2500€/2" mean a 2-installment plan
+     * for a EUR 2500 phase. The suffix is not a second monetary amount and
+     * must never turn the phase into EUR 2502 or divide its agreed total.
+     */
+    private function withoutInstallmentCount(string $value): string
+    {
+        return preg_replace('/\s*(€|EUR|EUROS?|USD|US\$|DOLARES?)\s*\/\s*\d+\b/u', ' $1', $value) ?? $value;
+    }
     private function customFieldValue(TlProject $project, string $fieldId, string $label): ?string
     {
         $normalizedLabel = $this->normalizeFieldLabel($label);
@@ -263,10 +282,13 @@ class TeamleaderProjectPaymentAnalyzer
 
     private function amountCurrency(string $text, int $position, int $length): string
     {
-        $start = max(0, $position - 8);
-        $nearby = substr($text, $start, $length + 20);
+        // Currency belongs to the amount immediately before or after it. Do
+        // not inspect the next abono: "1232$ + 1175€" must keep 1175 in EUR.
+        $before = substr($text, max(0, $position - 12), min(12, $position));
+        $after = substr($text, $position + $length, 12);
 
-        if (preg_match('/(?:USD|US\$|DOLARES?|\$)/u', $nearby)) {
+        if (preg_match('/(?:USD|US\$|DOLARES?|\$)\s*$/u', $before)
+            || preg_match('/^\s*(?:USD|US\$|DOLARES?|\$)/u', $after)) {
             return 'USD';
         }
 
@@ -284,6 +306,23 @@ class TeamleaderProjectPaymentAnalyzer
             ->all();
     }
 
+    private function normalizedPaymentDate(?string $date): ?string
+    {
+        $date = trim((string) $date);
+        if (preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2})$/', $date, $matches)) {
+            return checkdate((int) $matches[2], (int) $matches[3], (int) $matches[1])
+                ? sprintf('%04d-%02d-%02d', $matches[1], $matches[2], $matches[3])
+                : null;
+        }
+
+        if (preg_match('/^(\d{1,2})-(\d{1,2})-(\d{4})$/', $date, $matches)) {
+            return checkdate((int) $matches[2], (int) $matches[1], (int) $matches[3])
+                ? sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1])
+                : null;
+        }
+
+        return null;
+    }
     private function parseDecimal(string $token): ?float
     {
         $token = trim($token);

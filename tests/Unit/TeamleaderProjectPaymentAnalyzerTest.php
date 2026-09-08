@@ -32,6 +32,30 @@ class TeamleaderProjectPaymentAnalyzerTest extends TestCase
         $this->assertSame(1100.53, $parsed['total']);
     }
 
+    public function test_it_keeps_the_agreed_total_when_teamleader_marks_an_installment_count(): void
+    {
+        $parsed = $this->analyzer()->parseMoneyText('2500€/2');
+
+        $this->assertSame([2500.0], $parsed['amounts']);
+        $this->assertSame(2500.0, $parsed['total']);
+    }
+    public function test_it_does_not_assign_a_following_dollar_symbol_to_a_euro_abono(): void
+    {
+        $parsed = $this->analyzer()->parseMoneyText('Abono 100$ 17/11/2021 + 1232$ 22/11/2021 + 1175€ 15/09/2022');
+
+        $this->assertSame([1175.0], $parsed['amounts']);
+        $this->assertSame(1175.0, $parsed['total']);
+        $this->assertSame([100.0, 1232.0], array_column($parsed['foreign_amounts'], 'amount'));
+        $this->assertSame(['USD'], $parsed['foreign_currencies']);
+    }
+    public function test_it_pairs_each_historical_abono_with_its_payment_date(): void
+    {
+        $parsed = $this->analyzer()->parseMoneyText('Abono 100$ 17/11/2021 + 1232$ 22/11/2021 + 1175€ 15/09/2022');
+
+        $this->assertSame('2021-11-17', $parsed['dated_entries'][0]['date']);
+        $this->assertSame('2021-11-22', $parsed['dated_entries'][1]['date']);
+        $this->assertSame('2022-09-15', $parsed['dated_entries'][2]['date']);
+    }
     public function test_it_marks_exonerated_without_treating_dates_as_amounts(): void
     {
         $parsed = $this->analyzer()->parseMoneyText('EXONERADO 2026/05/18');

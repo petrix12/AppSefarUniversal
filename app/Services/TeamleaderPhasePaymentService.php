@@ -55,7 +55,22 @@ class TeamleaderPhasePaymentService
 
                 $key = $this->purchaseKey($projectId, $phaseNumber);
                 $preestablished = round((float) ($phase['effective_preestab_amount'] ?? 0), 2);
-                $teamleaderPaid = round((float) ($phase['effective_paid_amount'] ?? 0), 2);
+                $foreignConversion = app(TeamleaderHistoricalExchangeRateService::class)
+                    ->convertForeignEntriesToEuro(data_get($phase, 'paid_parse.dated_entries', []));
+                $hasUnconvertedCurrency = ! empty(data_get($phase, 'preestab_parse.requires_currency_conversion'))
+                    || ! empty($foreignConversion['unconverted_entries']);
+                if (! $hasUnconvertedCurrency) {
+                    $phase['review_reasons'] = array_values(array_filter(
+                        $phase['review_reasons'] ?? [],
+                        fn (string $reason) => $reason !== 'currency_conversion_required'
+                    ));
+                    $phase['needs_review'] = ! empty($phase['review_reasons']);
+                }
+
+                $teamleaderPaid = round(
+                    (float) ($phase['effective_paid_amount'] ?? 0) + (float) ($foreignConversion['converted_amount'] ?? 0),
+                    2
+                );
                 $historicalPaid = (float) ($historicalPaidAmounts[$key] ?? 0);
                 // A historic abono can exist both in Teamleader and in the
                 // legacy negocio totals. It must count once, so reconcile
@@ -66,6 +81,8 @@ class TeamleaderPhasePaymentService
                 $overpaid = round(max($paid - $preestablished, 0), 2);
 
                 $phase['teamleader_paid_amount'] = $teamleaderPaid;
+                $phase['converted_foreign_paid_amount'] = (float) ($foreignConversion['converted_amount'] ?? 0);
+                $phase['foreign_payment_conversions'] = $foreignConversion['conversions'] ?? [];
                 $phase['historical_paid_amount'] = $historicalPaid;
                 $phase['paid_amount'] = $paid;
                 $phase['effective_paid_amount'] = $paid;
@@ -89,11 +106,42 @@ class TeamleaderPhasePaymentService
                 // record creation.
                 $hasBlockingReview = ! empty($phase['needs_review']) && $overpaid <= 0.01;
 
+                $purchase = $existing->get($key) ?? $this->legacyPurchaseFor($user, $projectId, $phaseNumber);
                 if ($preestablished <= 0 || $hasBlockingReview) {
+                    // A review-required phase must remain in the sequence so
+                    // later phases are not enabled, but it is never payable
+                    // from the portal until Finance validates the conversion.
+                    if ($preestablished > 0 && $hasBlockingReview) {
+                        $reviewMetadata = $this->metadata($project, array_merge($phase, [
+                            'portal_disposition' => 'review_required',
+                            'is_collectible_in_portal' => false,
+                        ]));
+
+                        if (! $purchase) {
+                            $purchase = Compras::create([
+                                'id_user' => $user->id,
+                                'source' => self::PURCHASE_SOURCE,
+                                'servicio_hs_id' => $user->servicio ?: 'teamleader-phase-payment',
+                                'descripcion' => $this->description($project, $phase),
+                                'pagado' => 0,
+                                'monto' => $balance,
+                                'phasenum' => $phaseNumber,
+                                'metadata' => $reviewMetadata,
+                            ]);
+                        } else {
+                            $purchase->forceFill([
+                                'source' => self::PURCHASE_SOURCE,
+                                'descripcion' => $this->description($project, $phase),
+                                'monto' => $balance,
+                                'pagado' => 0,
+                                'paid_at' => null,
+                                'metadata' => array_merge($purchase->metadata ?? [], $reviewMetadata),
+                            ])->save();
+                        }
+                    }
+
                     continue;
                 }
-
-                $purchase = $existing->get($key) ?? $this->legacyPurchaseFor($user, $projectId, $phaseNumber);
                 $portalRecordAmount = $this->portalRecordAmount($paid, $balance);
                 $metadata = $this->metadata($project, $phase);
 
@@ -136,7 +184,8 @@ class TeamleaderPhasePaymentService
                     // the portal obligation without generating a new charge.
                     if ($this->isPortalPaymentPending($balance)
                         && $purchase->pagado
-                        && data_get($previousMetadata, 'portal_disposition') === 'small_balance_ignored') {
+                        && in_array(data_get($previousMetadata, 'portal_disposition'), ['small_balance_ignored', 'review_required'], true)) {
+                        $purchase->monto = $portalRecordAmount;
                         $purchase->pagado = 0;
                         $purchase->paid_at = null;
                     } elseif (! $this->isPortalPaymentPending($balance) && ! $purchase->pagado) {
@@ -176,6 +225,8 @@ class TeamleaderPhasePaymentService
             ->flip();
 
         return $purchases
+            ->reject(fn (Compras $purchase) => $purchase->source === self::PURCHASE_SOURCE
+                && data_get($purchase->metadata, 'portal_disposition') === 'review_required')
             ->reject(fn (Compras $purchase) => $purchase->source === self::PURCHASE_SOURCE
                 && in_array((int) data_get($purchase->metadata, 'phase', $purchase->phasenum), self::SEQUENTIAL_PHASES, true)
                 && ! $availableIds->has($purchase->id))
@@ -444,7 +495,7 @@ class TeamleaderPhasePaymentService
 
     private function metadata(array $project, array $phase): array
     {
-        $disposition = $this->paymentDisposition($phase);
+        $disposition = (string) ($phase['portal_disposition'] ?? $this->paymentDisposition($phase));
         return [
             'teamleader_project_id' => (string) ($project['project_id'] ?? ''),
             'teamleader_project_title' => (string) ($project['project_title'] ?? ''),
@@ -453,6 +504,8 @@ class TeamleaderPhasePaymentService
             'payment_label' => $phase['payment_label'] ?? null,
             'preestablished_amount' => round((float) ($phase['effective_preestab_amount'] ?? 0), 2),
             'teamleader_paid_amount_at_sync' => round((float) ($phase['teamleader_paid_amount'] ?? $phase['effective_paid_amount'] ?? 0), 2),
+            'converted_foreign_paid_amount_at_sync' => round((float) ($phase['converted_foreign_paid_amount'] ?? 0), 2),
+            'foreign_payment_conversions_at_sync' => $phase['foreign_payment_conversions'] ?? [],
             'historical_paid_amount_at_sync' => round((float) ($phase['historical_paid_amount'] ?? 0), 2),
             'paid_amount_at_sync' => round((float) ($phase['effective_paid_amount'] ?? 0), 2),
             'portal_disposition' => $disposition,
