@@ -29,7 +29,4 @@ return [
 
     // Pausa entre clientes para distribuir las llamadas a HubSpot, Teamleader y Monday.
     'inter_client_delay_seconds' => (int) env('COS_SNAPSHOT_INTER_CLIENT_DELAY_SECONDS', 2),
-
-    // El primer cálculo también informa al cliente de su estatus actual.
-    'notify_on_initial_snapshot' => (bool) env('COS_SNAPSHOT_NOTIFY_ON_INITIAL', true),
 ];

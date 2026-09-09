@@ -478,9 +478,6 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
     Route::post('users/{user}/support-ticket', [SupportTicketController::class, 'storeForUser'])
             ->name('users.support-ticket')
             ->middleware('can:crud.users.index');
-    Route::post('users/{user}/notify-cos-status', [UserController::class, 'notifyCosStatusUpdate'])
-            ->name('users.notify-cos-status')
-            ->middleware('can:crud.users.index');
     Route::patch('users/{user}/owner', [UserController::class, 'updateOwner'])
             ->name('users.update-owner')
             ->middleware('can:crud.users.index');

@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
-use App\Notifications\ClientAppNotification;
 use App\Services\ClientCosSnapshotService;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,8 +13,7 @@ class RefreshActiveClientCosSnapshots extends Command
 {
     protected $signature = 'cos:refresh-active-clients
         {--limit= : Máximo de clientes a procesar en esta corrida}
-        {--force : Incluye clientes cuyo caché COS todavía no ha vencido}
-        {--no-notify : Actualiza COS, pero no envía correos ni notificaciones}';
+        {--force : Incluye clientes cuyo caché COS todavía no ha vencido}';
 
     protected $description = 'Actualiza gradualmente el COS vencido de clientes con pay > 1 y contrato = 1.';
 
@@ -23,7 +21,6 @@ class RefreshActiveClientCosSnapshots extends Command
     {
         $limit = $this->limit();
         $force = (bool) $this->option('force');
-        $notify = ! (bool) $this->option('no-notify');
         $delaySeconds = max(0, (int) config('cos_snapshot.inter_client_delay_seconds', 2));
 
         $clients = $this->eligibleClients($force)
@@ -38,7 +35,6 @@ class RefreshActiveClientCosSnapshots extends Command
 
         $updated = 0;
         $changed = 0;
-        $notified = 0;
         $failed = 0;
 
         foreach ($clients as $index => $client) {
@@ -54,20 +50,6 @@ class RefreshActiveClientCosSnapshots extends Command
 
                 if ($hasChanged) {
                     $changed++;
-                }
-
-                if ($notify && $this->shouldNotify($previousCos, $hasChanged)) {
-                    $freshClient = $snapshot['client']->fresh() ?? $client->fresh() ?? $client;
-                    $freshClient->notify(new ClientAppNotification(
-                        title: 'Actualización de estatus de tu proceso',
-                        body: $this->notificationBody($currentCos),
-                        actionUrl: route('clientes.status'),
-                        actionText: 'Ver mi estatus',
-                        category: 'cos_status',
-                        sendEmail: true,
-                        storeInApp: true,
-                    ));
-                    $notified++;
                 }
 
                 $this->line("Cliente {$client->id}: COS actualizado" . ($hasChanged ? ' (con cambio de estatus).' : '.'));
@@ -87,7 +69,7 @@ class RefreshActiveClientCosSnapshots extends Command
             }
         }
 
-        $this->info("Procesados: {$updated}; cambios: {$changed}; notificados: {$notified}; errores: {$failed}.");
+        $this->info("Procesados: {$updated}; cambios: {$changed}; errores: {$failed}.");
 
         return $failed > 0 ? self::FAILURE : self::SUCCESS;
     }
@@ -118,15 +100,6 @@ class RefreshActiveClientCosSnapshots extends Command
         return max(1, $limit);
     }
 
-    private function shouldNotify(?array $previousCos, bool $hasChanged): bool
-    {
-        if (! $hasChanged) {
-            return false;
-        }
-
-        return $previousCos !== null || (bool) config('cos_snapshot.notify_on_initial_snapshot', false);
-    }
-
     /**
      * Compara solo datos que representan el estatus para que cambios internos
      * de orden o de metadatos no generen correos innecesarios.
@@ -152,21 +125,4 @@ class RefreshActiveClientCosSnapshots extends Command
         return json_encode($statuses, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]';
     }
 
-    private function notificationBody(array $cos): string
-    {
-        $statuses = collect($cos)
-            ->map(function ($item) {
-                $service = trim((string) ($item['servicio'] ?? 'Tu proceso'));
-                $step = trim((string) ($item['currentStepName'] ?? 'Estado actualizado'));
-
-                return "{$service}: {$step}";
-            })
-            ->filter()
-            ->take(3)
-            ->implode(' | ');
-
-        $detail = $statuses !== '' ? " Estado actual: {$statuses}." : '';
-
-        return 'El estatus de tu proceso ha sido actualizado.' . $detail . ' Ingresa a la app para ver el detalle.';
-    }
 }

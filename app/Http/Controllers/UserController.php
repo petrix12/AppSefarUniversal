@@ -57,7 +57,6 @@ use App\Services\UserSyncService;      // ← AGREGAR ESTE
 use App\Services\GenealogyService;     // ← AGREGAR ESTE
 use App\Jobs\SyncUserDealsJob;         // ← AGREGAR ESTE
 use App\Jobs\UpdateHubspotContactJob;  // ← AGREGAR ESTE
-use App\Notifications\ClientAppNotification;
 use Illuminate\Support\Facades\Redis;
 
 class UserController extends Controller
@@ -94,61 +93,6 @@ class UserController extends Controller
             'success' => true,
             'exists' => $exists,
             'email' => $request->email
-        ]);
-    }
-
-    public function notifyCosStatusUpdate(Request $request, User $user)
-    {
-        if (auth()->user()?->hasRole('Cliente')) {
-            abort(403, 'No tienes acceso para notificar cambios de estatus del COS.');
-        }
-
-        $data = $request->validate([
-            'title' => ['nullable', 'string', 'max:120'],
-            'message' => ['required', 'string', 'min:10', 'max:3000'],
-            'service' => ['nullable', 'string', 'max:255'],
-            'send_email' => ['nullable', 'boolean'],
-        ]);
-
-        $notificationsReady = false;
-        try {
-            $notificationsReady = Schema::hasTable('notifications');
-        } catch (\Throwable) {
-            $notificationsReady = false;
-        }
-
-        $sendEmail = $request->boolean('send_email', true);
-
-        if (! $notificationsReady && ! $sendEmail) {
-            return response()->json([
-                'message' => 'La notificacion interna aun no esta activa. Marca el envio por correo o ejecuta la migracion mas adelante.',
-            ], 422);
-        }
-
-        $title = trim((string) ($data['title'] ?? ''));
-        $title = $title !== '' ? $title : 'Actualizacion de estatus de tu proceso';
-
-        $message = trim($data['message']);
-        $service = trim((string) ($data['service'] ?? ''));
-
-        if ($service !== '') {
-            $message = "Servicio: {$service}\n\n{$message}";
-        }
-
-        $user->notify(new ClientAppNotification(
-            title: $title,
-            body: $message,
-            actionUrl: route('clientes.status'),
-            actionText: 'Ver mi estatus',
-            category: 'cos_status',
-            sendEmail: $sendEmail,
-            storeInApp: $notificationsReady,
-        ));
-
-        return response()->json([
-            'message' => $notificationsReady
-                ? 'Notificacion enviada al cliente.'
-                : 'Notificacion enviada por correo. La campana interna quedara disponible cuando exista la tabla de notificaciones.',
         ]);
     }
 

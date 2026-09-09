@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use App\Notifications\ClientAppNotification;
 use App\Services\ClientCosSnapshotService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -76,7 +75,7 @@ class RefreshActiveClientCosSnapshotsTest extends TestCase
         $dueClient->refresh();
         $this->assertSame('Expediente formalizado', $dueClient->arraycos[0]['currentStepName']);
         $this->assertTrue($dueClient->arraycos_expire->between(now()->addDays(29), now()->addDays(31)));
-        Notification::assertSentTo($dueClient, ClientAppNotification::class);
+        Notification::assertNothingSent();
     }
 
     public function test_it_does_not_notify_when_the_status_is_unchanged(): void
@@ -111,7 +110,7 @@ class RefreshActiveClientCosSnapshotsTest extends TestCase
         Notification::assertNothingSent();
     }
 
-    public function test_it_builds_and_notifies_the_first_cos_snapshot_for_an_eligible_client(): void
+    public function test_it_builds_the_first_cos_snapshot_without_notifying_the_client(): void
     {
         Notification::fake();
         config()->set('cos_snapshot.inter_client_delay_seconds', 0);
@@ -145,7 +144,7 @@ class RefreshActiveClientCosSnapshotsTest extends TestCase
 
         $client->refresh();
         $this->assertSame('Documentos en revisión', $client->arraycos[0]['currentStepName']);
-        Notification::assertSentTo($client, ClientAppNotification::class);
+        Notification::assertNothingSent();
     }
 
     private function cosStatus(string $service, string $step, int $stepNumber): array
