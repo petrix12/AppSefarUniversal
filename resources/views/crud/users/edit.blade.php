@@ -274,6 +274,13 @@
                         Datos personales
                     </button>
                 </li>
+                @if($cosViewRoleId !== 5)
+                <li class="nav-item" role="presentation">
+                    <button style="color:black" class="nav-link" id="formulario-001-tab" data-bs-toggle="tab" data-bs-target="#formulario-001" type="button" role="tab" aria-controls="formulario-001" aria-selected="false">
+                        Formulario 001
+                    </button>
+                </li>
+                @endif
                 @if($cosViewRoleId == 1)
                 <li class="nav-item" role="presentation">
                     <button style="color:black" class="nav-link" id="adminchangepassword-tab" data-bs-toggle="tab" data-bs-target="#adminchangepassword" type="button" role="tab" aria-controls="adminchangepassword" aria-selected="true">
@@ -2187,6 +2194,10 @@
                         @endif
                     </form>
                 </div>
+
+                @if($cosViewRoleId !== 5)
+                    @include('crud.users.partials.formulario-001')
+                @endif
 
                 <div class="tab-pane fade" id="mypassword" role="tabpanel" aria-labelledby="mypassword-tab">
                     <form id="clientChangePasswordForm">
