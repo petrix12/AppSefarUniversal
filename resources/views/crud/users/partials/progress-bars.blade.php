@@ -73,7 +73,7 @@
         <div class="progress-line-full"></div>
         {{-- OJO: ya NO ponemos progress-line-warning para todo; el warning es solo en el último icono --}}
         <div class="progress-line"
-             style="width: {{ $progressPercentageGen }}%;"></div>
+             style="--progress: {{ $progressPercentageGen / 100 }};"></div>
 
         @foreach ($cos[$proceso['servicio']]['genealogico'] ?? [] as $step)
             @php
@@ -128,7 +128,7 @@
         <div class="progress-line-full"></div>
         {{-- OJO: ya NO ponemos progress-line-warning para todo; el warning es solo en el último icono --}}
         <div class="progress-line"
-             style="width: {{ $proceso['progressPercentageJur'] ?? 0 }}%;"></div>
+             style="--progress: {{ ($proceso['progressPercentageJur'] ?? 0) / 100 }};"></div>
 
         @foreach ($cos[$proceso['servicio']]['juridico'] ?? [] as $step)
             @php
@@ -278,10 +278,12 @@ document.addEventListener("DOMContentLoaded", function () {
 /* Fill (progreso) */
 .progress-line{
     z-index:1;
-    transition: width .45s cubic-bezier(.2,.8,.2,1);
-    width:0; /* se pisa inline */
+    transition: transform .45s cubic-bezier(.2,.8,.2,1);
+    width:auto;
     border-radius:1000px;
     overflow:hidden;
+    transform:scaleX(var(--progress, 0));
+    transform-origin:left center;
 
     background: linear-gradient(90deg, #06C2CC, #1CE56D) !important;
 

@@ -28,7 +28,7 @@ class ProgressBarsTest extends TestCase
             ],
         ])->render();
 
-        $this->assertStringContainsString('style="width: 100%;"', $html);
+        $this->assertStringContainsString('style="--progress: 1;"', $html);
         $this->assertMatchesRegularExpression(
             '/class="progress-step active"\s+data-step="19"/',
             $html
@@ -57,7 +57,7 @@ class ProgressBarsTest extends TestCase
             ],
         ])->render();
 
-        $this->assertStringContainsString('style="width: 94%;"', $html);
+        $this->assertStringContainsString('style="--progress: 0.94;"', $html);
         $this->assertSame(
             0,
             preg_match('/class="progress-step active"\s+data-step="19"/', $html)
