@@ -117,7 +117,7 @@ class CosServiceTest extends TestCase
     {
         Carbon::setTestNow('2026-09-09 12:00:00');
 
-        $status = $this->calculateStatusForNegocio([
+        $status = $this->calculateProgressForNegocio([
             'servicio_solicitado' => 'Nacionalidad Portuguesa por origen Sefardí',
             'servicio_solicitado2' => 'Portuguesa Sefardí',
             'n4__certificado_descargado' => '2026-08-31',
@@ -127,6 +127,19 @@ class CosServiceTest extends TestCase
         $this->assertSame('Portuguesa Sefardi', $status['servicio']);
         $this->assertSame(1, $status['certificadoDescargado']);
         $this->assertSame(17, $status['currentStepGen']);
+        $this->assertSame(100, $status['progressPercentageGen']);
+    }
+
+    public function test_spanish_certificate_keeps_its_existing_progress_percentage(): void
+    {
+        $status = $this->calculateProgressForNegocio([
+            'servicio_solicitado' => 'Española Sefardi',
+            'servicio_solicitado2' => 'Española Sefardi',
+            'n4__certificado_descargado' => '2026-08-31',
+        ]);
+
+        $this->assertSame(1, $status['certificadoDescargado']);
+        $this->assertSame(94.0, $status['progressPercentageGen']);
     }
 
     protected function tearDown(): void
@@ -142,6 +155,15 @@ class CosServiceTest extends TestCase
         $user = (object) ['id' => 23681];
 
         return (new CosService($negocio, $user, collect([$negocio])))->calculateStatus();
+    }
+
+    private function calculateProgressForNegocio(array $attributes): array
+    {
+        $negocio = new Negocio($attributes);
+        $user = (object) ['id' => 23681];
+        $service = new CosService($negocio, $user, collect([$negocio]));
+
+        return $service->calculateProgress($service->calculateStatus());
     }
 
     private function invokeCosServiceMethod(string $methodName, string $serviceName): string

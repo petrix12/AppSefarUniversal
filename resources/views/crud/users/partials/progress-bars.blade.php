@@ -6,15 +6,25 @@
     ]);
 
     $esPortuguesaSefardi = in_array($proceso['servicio'], [
+        'Portuguesa Sefardi',
         'Portuguesa Sefardí',
-        'Portuguesa - Sefardí'
-    ]);
+        'Portuguesa - Sefardí',
+        'Portuguesa - Sefardi',
+    ], true);
 
     $totalPasosGen = count($cos[$proceso['servicio']]['genealogico'] ?? []);
     $totalPasosJur = count($cos[$proceso['servicio']]['juridico'] ?? []);
 
     $currentGen = $proceso['currentStepGen'] ?? -1;
     $currentJur = $proceso['currentStepJur'] ?? -1;
+    // El certificado descargado es el hito que completa la genealogía. No
+    // dependemos del número de paso almacenado en la estructura COS, porque
+    // puede diferir del índice usado por el calculador.
+    $genealogiaCompletada = $esPortuguesaSefardi
+        && (int) ($proceso['certificadoDescargado'] ?? 0) === 1;
+    $progressPercentageGen = $genealogiaCompletada
+        ? 100
+        : ($proceso['progressPercentageGen'] ?? 0);
 
     $hayWarning = isset($proceso['warning']) && !empty($proceso['warning']);
 
@@ -24,7 +34,7 @@
     $ultimoActivoGen = null;
 
     foreach (($cos[$proceso['servicio']]['genealogico'] ?? []) as $s) {
-        $isActiveTmp = ($currentGen + 1) >= $s['paso'];
+        $isActiveTmp = $genealogiaCompletada || ($currentGen + 1) >= $s['paso'];
 
         if ($isActiveTmp) {
             $ultimoActivoGen = $s['paso'];
@@ -63,12 +73,12 @@
         <div class="progress-line-full"></div>
         {{-- OJO: ya NO ponemos progress-line-warning para todo; el warning es solo en el último icono --}}
         <div class="progress-line"
-             style="width: {{ $proceso['progressPercentageGen'] ?? 0 }}%;"></div>
+             style="width: {{ $progressPercentageGen }}%;"></div>
 
         @foreach ($cos[$proceso['servicio']]['genealogico'] ?? [] as $step)
             @php
                 // ========== CALCULAR SI ESTÁ ACTIVO ==========
-                $isActive = ($currentGen + 1) >= $step['paso'];
+                $isActive = $genealogiaCompletada || ($currentGen + 1) >= $step['paso'];
 
                 // ========== WARNING SOLO EN EL ÚLTIMO ACTIVO (SEGÚN REGLAS) ==========
                 $esUltimoActivoNaranja =

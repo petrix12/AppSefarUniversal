@@ -1627,9 +1627,12 @@ Analiza los datos y devuelve un JSON con las siguientes claves booleanas:
      */
     public function calculateProgress(array $status): array
     {
-        $status['progressPercentageGen'] = $status['currentStepGen'] >= 0
-            ? round(($status['currentStepGen'] / $this->totalStepsGen) * 100)
-            : 0;
+        $status['progressPercentageGen'] = $this->isPortuguesaSefardi()
+            && (int) ($status['certificadoDescargado'] ?? 0) === 1
+            ? 100
+            : ($status['currentStepGen'] >= 0
+                ? round(($status['currentStepGen'] / $this->totalStepsGen) * 100)
+                : 0);
 
         $status['progressPercentageJur'] = $status['currentStepJur'] >= 0
             ? round(($status['currentStepJur'] / $this->totalStepsJur) * 100)
