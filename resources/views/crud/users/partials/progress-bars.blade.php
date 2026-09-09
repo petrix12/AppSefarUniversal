@@ -12,8 +12,10 @@
         'Portuguesa - Sefardi',
     ], true);
 
-    $totalPasosGen = count($cos[$proceso['servicio']]['genealogico'] ?? []);
-    $totalPasosJur = count($cos[$proceso['servicio']]['juridico'] ?? []);
+    $pasosGen = array_values($cos[$proceso['servicio']]['genealogico'] ?? []);
+    $pasosJur = array_values($cos[$proceso['servicio']]['juridico'] ?? []);
+    $totalPasosGen = count($pasosGen);
+    $totalPasosJur = count($pasosJur);
 
     $currentGen = $proceso['currentStepGen'] ?? -1;
     $currentJur = $proceso['currentStepJur'] ?? -1;
@@ -22,31 +24,36 @@
     // puede diferir del índice usado por el calculador.
     $genealogiaCompletada = $esPortuguesaSefardi
         && (int) ($proceso['certificadoDescargado'] ?? 0) === 1;
-    $progressPercentageGen = $genealogiaCompletada
-        ? 100
-        : ($proceso['progressPercentageGen'] ?? 0);
-
     $hayWarning = isset($proceso['warning']) && !empty($proceso['warning']);
 
     // ==========================================
     // CALCULAR ÚLTIMO PASO ACTIVO (GENEALÓGICO)
     // ==========================================
     $ultimoActivoGen = null;
+    $ultimoIndiceActivoGen = null;
 
-    foreach (($cos[$proceso['servicio']]['genealogico'] ?? []) as $s) {
+    foreach ($pasosGen as $indice => $s) {
         $isActiveTmp = $genealogiaCompletada || ($currentGen + 1) >= $s['paso'];
 
         if ($isActiveTmp) {
             $ultimoActivoGen = $s['paso'];
+            $ultimoIndiceActivoGen = $indice;
         }
     }
+
+    // El relleno se mide sobre la posición visual de los hitos, no sobre el
+    // porcentaje del COS: así termina exactamente bajo el último círculo activo.
+    $progresoVisualGen = $ultimoIndiceActivoGen !== null && $totalPasosGen > 1
+        ? $ultimoIndiceActivoGen / ($totalPasosGen - 1)
+        : 0;
 
     // ==========================================
     // CALCULAR ÚLTIMO PASO ACTIVO (JURÍDICO)
     // ==========================================
     $ultimoActivoJur = null;
+    $ultimoIndiceActivoJur = null;
 
-    foreach (($cos[$proceso['servicio']]['juridico'] ?? []) as $s) {
+    foreach ($pasosJur as $indice => $s) {
         if ($currentJur === -1) {
             $isActiveTmp = false;
         } else {
@@ -55,8 +62,13 @@
 
         if ($isActiveTmp) {
             $ultimoActivoJur = $s['paso'];
+            $ultimoIndiceActivoJur = $indice;
         }
     }
+
+    $progresoVisualJur = $ultimoIndiceActivoJur !== null && $totalPasosJur > 1
+        ? $ultimoIndiceActivoJur / ($totalPasosJur - 1)
+        : 0;
 
     // ==========================================
     // REGLAS DE NARANJA (WARNING)
@@ -73,9 +85,9 @@
         <div class="progress-line-full"></div>
         {{-- OJO: ya NO ponemos progress-line-warning para todo; el warning es solo en el último icono --}}
         <div class="progress-line"
-             style="--progress: {{ $progressPercentageGen / 100 }};"></div>
+             style="--progress: {{ $progresoVisualGen }};"></div>
 
-        @foreach ($cos[$proceso['servicio']]['genealogico'] ?? [] as $step)
+        @foreach ($pasosGen as $step)
             @php
                 // ========== CALCULAR SI ESTÁ ACTIVO ==========
                 $isActive = $genealogiaCompletada || ($currentGen + 1) >= $step['paso'];
@@ -128,9 +140,9 @@
         <div class="progress-line-full"></div>
         {{-- OJO: ya NO ponemos progress-line-warning para todo; el warning es solo en el último icono --}}
         <div class="progress-line"
-             style="--progress: {{ ($proceso['progressPercentageJur'] ?? 0) / 100 }};"></div>
+             style="--progress: {{ $progresoVisualJur }};"></div>
 
-        @foreach ($cos[$proceso['servicio']]['juridico'] ?? [] as $step)
+        @foreach ($pasosJur as $step)
             @php
                 // ========== EVALUAR SOLO PROGRESO JURÍDICO ==========
                 // Si currentJur es -1, ningún paso jurídico está activo
