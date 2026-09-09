@@ -331,6 +331,11 @@ class ClienteController extends Controller
             }
         }
 
+        $formulario001 = null;
+        if (! auth()->user()->roles->contains('id', 5) && ! request()->boolean('vista_cliente')) {
+            $formulario001 = $this->hubspotService->formulario001ForContact($user->hs_id);
+        }
+
         $html = view('crud.users.edit', compact(
             'documentRequests',
             'comprasConDealNoPagadas',
@@ -356,6 +361,7 @@ class ClienteController extends Controller
             'facturas',
             'clientTeamleaderHistory',
             'servicios',
+            'formulario001',
 'columnasparatabla'
         ))->render();
 

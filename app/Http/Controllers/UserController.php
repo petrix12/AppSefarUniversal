@@ -1882,6 +1882,11 @@ class UserController extends Controller
         $facturas = Factura::with('compras')->where('id_cliente', $user->id)->orderByDesc('created_at')->get();
     }
 
+    $formulario001 = null;
+    if (! auth()->user()->roles->contains('id', 5) && ! request()->boolean('vista_cliente')) {
+        $formulario001 = $this->hubspotService->formulario001ForContact($user->hs_id);
+    }
+
     $html = view('crud.users.edit', compact(
         'clientTeamleaderHistory',
         'documentRequests',
@@ -1912,6 +1917,7 @@ class UserController extends Controller
         'teamleaderProjectPayments',
         'servicios',
         'ownerOptions',
+        'formulario001',
 'columnasparatabla'
     ))->render();
 

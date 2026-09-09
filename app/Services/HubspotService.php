@@ -34,6 +34,29 @@ class HubspotService
 {
     protected $hubspot;
 
+    private const FORMULARIO_001_FIELDS = [
+        'email' => ['label' => 'Correo'],
+        'city' => ['label' => 'Ciudad de residencia'],
+        'address' => ['label' => 'Direccion'],
+        'genero' => ['label' => 'Genero'],
+        'edo_civil' => ['label' => 'Estado civil'],
+        'fecha_nac' => ['label' => 'Fecha de nacimiento'],
+        'ciudad_de_nacimiento' => ['label' => 'Ciudad de nacimiento'],
+        'nombres_y_apellidos_del_padre' => ['label' => 'Nombres y apellidos del padre'],
+        'nombres_y_apellidos_de_madre' => ['label' => 'Nombres y apellidos de la madre'],
+        'fecha_de_caducidad_del_pasaporte' => ['label' => 'Fecha de caducidad del pasaporte'],
+        'pais_de_expedicion_del_pasaporte' => ['label' => 'Pais de expedicion del pasaporte'],
+        'tiene_hijos' => ['label' => 'Tiene hijos'],
+        'cuantos_hijos_tiene_' => ['label' => 'Cantidad de hijos'],
+        'nacionalidad_solicitada' => ['label' => 'Nacionalidad solicitada'],
+        'tengo_certeza_de_mi_antepasado_espanol_' => ['label' => 'Certeza sobre antepasado espanol'],
+        'vinculo_antepasados' => ['label' => 'Vinculo con antepasado'],
+        'requiere_tutor_o_representante_legal_' => ['label' => 'Requiere tutor o representante legal'],
+        'pasaporte__documento_' => ['label' => 'Pasaporte simple', 'type' => 'file'],
+        'partida_de_nacimiento_simple__' => ['label' => 'Partida de nacimiento simple', 'type' => 'file'],
+        'documentos_adicionales' => ['label' => 'Documentos adicionales', 'type' => 'file'],
+    ];
+
     public function __construct()
     {
         $this->hubspot = $this->makeHubspotClient();
@@ -314,6 +337,53 @@ class HubspotService
             ];
         } catch (ContactException $e) {
             throw new \Exception('Error al obtener owner del contacto en HubSpot: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Obtiene las respuestas actuales del Formulario 001 de un contacto.
+     */
+    public function formulario001ForContact(?string $contactId): array
+    {
+        $fields = collect(self::FORMULARIO_001_FIELDS)
+            ->map(function (array $definition, string $name): array {
+                return [
+                    'name' => $name,
+                    'label' => $definition['label'],
+                    'type' => $definition['type'] ?? 'text',
+                    'value' => '',
+                ];
+            })
+            ->values()
+            ->all();
+
+        if (blank($contactId)) {
+            return ['status' => 'missing_contact', 'fields' => $fields];
+        }
+
+        try {
+            $this->hubspotThrottle();
+
+            $contact = $this->hubspot
+                ->crm()
+                ->contacts()
+                ->basicApi()
+                ->getById((string) $contactId, array_keys(self::FORMULARIO_001_FIELDS));
+            $properties = $contact->getProperties();
+
+            foreach ($fields as &$field) {
+                $field['value'] = trim((string) ($properties[$field['name']] ?? ''));
+            }
+            unset($field);
+
+            return ['status' => 'ok', 'fields' => $fields];
+        } catch (\Throwable $exception) {
+            Log::warning('No se pudieron obtener las respuestas del Formulario 001.', [
+                'hubspot_contact_id' => $contactId,
+                'exception' => $exception->getMessage(),
+            ]);
+
+            return ['status' => 'unavailable', 'fields' => $fields];
         }
     }
 
