@@ -27,6 +27,22 @@ class CosServiceTest extends TestCase
         );
     }
 
+    public function test_it_resolves_all_portuguese_sefardi_name_variants_to_the_cos_key(): void
+    {
+        foreach ([
+            'Portuguesa Sefardí',
+            'Portuguesa - Sefardí',
+            'Portuguesa - Sefardi',
+            'Nacionalidad Portuguesa por origen Sefardí',
+            'Nacionalidad Portuguesa por origen Sefardi',
+        ] as $serviceName) {
+            $this->assertSame(
+                'Portuguesa Sefardi',
+                $this->invokeCosServiceMethod('resolveServiceName', $serviceName)
+            );
+        }
+    }
+
     public function test_it_does_not_invent_a_service_when_both_business_fields_are_empty(): void
     {
         $negocio = new Negocio([
@@ -95,6 +111,22 @@ class CosServiceTest extends TestCase
         $this->assertSame(1, $status['certificadoDescargado']);
         $this->assertSame('Certificado Descargado', $status['description']);
         $this->assertSame('Certificado Aprobado', $status['currentStepName']);
+    }
+
+    public function test_portuguese_certificate_completes_the_last_genealogical_step_after_formalization(): void
+    {
+        Carbon::setTestNow('2026-09-09 12:00:00');
+
+        $status = $this->calculateStatusForNegocio([
+            'servicio_solicitado' => 'Nacionalidad Portuguesa por origen Sefardí',
+            'servicio_solicitado2' => 'Portuguesa Sefardí',
+            'n4__certificado_descargado' => '2026-08-31',
+            'n5__fecha_de_formalizacion' => '2024-01-01',
+        ]);
+
+        $this->assertSame('Portuguesa Sefardi', $status['servicio']);
+        $this->assertSame(1, $status['certificadoDescargado']);
+        $this->assertSame(17, $status['currentStepGen']);
     }
 
     protected function tearDown(): void

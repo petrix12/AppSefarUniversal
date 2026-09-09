@@ -20,6 +20,11 @@ class CosService
 {
     private const SERVICE_ALIASES = [
         'Española - Carta de Naturaleza General' => 'Nacionalidad por Carta de Naturaleza',
+        'Portuguesa Sefardí' => 'Portuguesa Sefardi',
+        'Portuguesa - Sefardí' => 'Portuguesa Sefardi',
+        'Portuguesa - Sefardi' => 'Portuguesa Sefardi',
+        'Nacionalidad Portuguesa por origen Sefardí' => 'Portuguesa Sefardi',
+        'Nacionalidad Portuguesa por origen Sefardi' => 'Portuguesa Sefardi',
     ];
 
     // ============ PROPIEDADES ============
@@ -44,8 +49,8 @@ class CosService
         $this->negocios = $negocios;
         $this->mondayData = $mondayData;
         $this->cos = array_cos();
-        $this->negocio->servicio_solicitado2 = $this->getServiceName();
-        $this->serviceName = $this->resolveServiceName($this->negocio->servicio_solicitado2);
+        $this->negocio->servicio_solicitado2 = $this->resolveServiceName($this->getServiceName());
+        $this->serviceName = $this->negocio->servicio_solicitado2;
         $this->calculateTotalSteps();
         $this->logServiceInitialization();
     }
@@ -945,17 +950,10 @@ class CosService
             return 0;
         }
 
-        // Portuguesa Sefardí: certificado descargado O CIL pre-aprobado
+        // Portuguesa Sefardí: el certificado descargado completa el último
+        // paso genealógico. El valor 1 significa "completo" en todo el COS.
         if ($this->isPortuguesaSefardi()) {
-            // Si tiene certificado descargado o CIL pre-aprobado, paso completo (0)
-            if (isset($this->negocio->n4__certificado_descargado)/* || isset($this->negocio->n6__cil_preaprobado)*/) {
-                return 0;
-            }
-            // Si tiene fase jurídica pero ninguno de los dos, restar 1
-            if ($this->isJuridicoProcess()) {
-                return 1;
-            }
-            return 1; // Por defecto, no descargado
+            return isset($this->negocio->n4__certificado_descargado) ? 1 : 0;
         }
 
         //dd($this->negocio->n4__certificado_descargado);
@@ -974,10 +972,7 @@ class CosService
 
     private function isPortuguesaSefardi(): bool
     {
-        return in_array($this->negocio->servicio_solicitado2, [
-            'Portuguesa Sefardí',
-            'Portuguesa - Sefardí'
-        ]);
+        return $this->serviceName === 'Portuguesa Sefardi';
     }
 
     private function isJuridicoProcess(): bool
@@ -985,15 +980,16 @@ class CosService
         return isset($this->negocio->n7__enviado_al_dto_juridico)
             || isset($this->negocio->fase_3_pagado)
             || isset($this->negocio->fase_3_pagado__teamleader_)
+            || $this->isFormalizado()
             || $this->isCartaNaturaleza();
     }
 
     private function getLastGenStep($certificadoDescargado): int
     {
-        if ($this->isJuridicoProcess()) {
-            return $this->totalStepsGen - 1;
-        }
-        return $this->totalStepsGen - 1 - $certificadoDescargado;
+        // Las reglas que llaman a este método descuentan el paso final cuando
+        // el certificado no está descargado. Por eso este método siempre debe
+        // devolver el índice del último paso, sin volver a descontarlo aquí.
+        return $this->totalStepsGen - 1;
     }
 
     private function getFechaFormalizacion(): ?Carbon
@@ -1264,12 +1260,35 @@ class CosService
     {
         $serviceName = $this->normalizeServiceName($serviceName);
 
+        if ($this->isPortuguesaSefardiAlias($serviceName)) {
+            return 'Portuguesa Sefardi';
+        }
+
         return self::SERVICE_ALIASES[$serviceName] ?? $serviceName;
+    }
+
+    private function isPortuguesaSefardiAlias(string $serviceName): bool
+    {
+        $normalized = mb_strtolower($serviceName, 'UTF-8');
+        $normalized = strtr($normalized, [
+            'á' => 'a',
+            'é' => 'e',
+            'í' => 'i',
+            'ó' => 'o',
+            'ú' => 'u',
+            'ü' => 'u',
+        ]);
+        $normalized = preg_replace('/\s*-\s*/u', ' ', $normalized) ?? $normalized;
+
+        return in_array($normalized, [
+            'portuguesa sefardi',
+            'nacionalidad portuguesa por origen sefardi',
+        ], true);
     }
 
     private function getServicioDisplay(): string
     {
-        return $this->getServiceName();
+        return $this->serviceName;
     }
 
     private function calculateTotalSteps(): void
