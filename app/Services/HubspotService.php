@@ -16,6 +16,8 @@ use HubSpot\Client\Crm\Properties\ApiException as PropertiesApiException;
 use HubSpot\Client\Crm\Deals\Model\BatchReadInputSimplePublicObjectId;
 use App\Models\AssocTlHs;
 use App\Models\Compras;
+use App\Models\Factura;
+use App\Models\Negocio;
 use App\Models\Servicio;
 use App\Models\User;
 use GuzzleHttp\Exception\RequestException;
@@ -439,10 +441,32 @@ class HubspotService
      */
     public function formulario001ForUser(User $user): array
     {
+        $dealServiceNames = Negocio::query()
+            ->where('user_id', $user->id)
+            ->get()
+            ->flatMap(fn (Negocio $negocio): array => [
+                $negocio->servicio_solicitado2,
+                $negocio->servicio_solicitado,
+            ])
+            ->map(fn ($service): string => trim((string) $service))
+            ->filter();
+
+        $invoiceHashes = Factura::query()
+            ->where('id_cliente', $user->id)
+            ->pluck('hash_factura')
+            ->filter();
+
         $purchases = Compras::query()
             ->with('servicio:id,nombre')
-            ->where('id_user', $user->id)
-            ->where('pagado', 1)
+            ->where(function ($query) use ($user, $invoiceHashes): void {
+                $query->where(function ($paidPurchases) use ($user): void {
+                    $paidPurchases->where('id_user', $user->id)->where('pagado', 1);
+                });
+
+                if ($invoiceHashes->isNotEmpty()) {
+                    $query->orWhereIn('hash_factura', $invoiceHashes);
+                }
+            })
             ->orderByDesc('paid_at')
             ->orderByDesc('id')
             ->get();
@@ -451,7 +475,7 @@ class HubspotService
             ->whereIn('id_hubspot', $purchases->pluck('servicio_hs_id')->filter()->unique())
             ->pluck('nombre', 'id_hubspot');
 
-        $serviceNames = $purchases
+        $purchaseServiceNames = $purchases
             ->map(function (Compras $purchase) use ($servicesByHubSpotId): string {
                 return trim((string) ($purchase->servicio?->nombre
                     ?: $servicesByHubSpotId->get($purchase->servicio_hs_id)
@@ -459,14 +483,10 @@ class HubspotService
             })
             ->filter();
 
-        // El servicio vigente del cliente tiene prioridad funcional sobre compras
-        // históricas, siempre que el cliente figure como pagado.
-        if ((int) $user->pay > 0 && filled($user->servicio)) {
-            $serviceNames = collect($serviceNames)
-                ->push((string) $user->servicio)
-                ->unique()
-                ->values();
-        }
+        $serviceNames = collect($dealServiceNames)
+            ->merge($purchaseServiceNames)
+            ->push((string) $user->servicio)
+            ->filter();
 
         $definitions = [];
         $usingDefault = false;
