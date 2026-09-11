@@ -81,10 +81,12 @@ class HubspotService
             'form_id' => '5d4f503d-401c-4482-99d4-ba48eeb77f54',
             'fields' => [
                 'n1_que_parentesco_tiene_con_la_persona_de_nacionalidad_portuguesa' => ['label' => '1. ¿Qué parentesco tiene con la persona de nacionalidad portuguesa?'],
+                'que_parentesco_tiene_con_la_persona_de_nacionalidad_portuguesa' => ['label' => '¿Qué parentesco tiene con la persona de nacionalidad portuguesa?'],
                 'n2_como_obtuvo_la_nacionalidad_portuguesa_su_familiar' => ['label' => '2. ¿Cómo obtuvo la nacionalidad portuguesa su familiar?'],
                 'n3_su_familiar_conserva_actualmente_la_nacionalidad_portuguesa' => ['label' => '3. ¿Su familiar conserva actualmente la nacionalidad portuguesa?'],
                 'n4_su_familiar_reside_actualmente_en_portugal' => ['label' => '4. ¿Su familiar reside actualmente en Portugal?'],
                 'n5_su_familiar_perdio_renuncio_o_recupero_en_algun_momento_la_nacionalidad_portuguesa' => ['label' => '5. ¿Su familiar perdió, renunció o recuperó en algún momento la nacionalidad portuguesa?'],
+                'en_caso_afirmativo_que_ocurrio_con_la_nacionalidad_portuguesa_de_su_familiar' => ['label' => '¿Qué ocurrió con la nacionalidad portuguesa de su familiar?'],
                 'n3_su_padre_o_madre_ya_tenia_la_nacionalidad_portuguesa_cuando_usted_nacio' => ['label' => '¿Su padre o madre ya tenía la nacionalidad portuguesa cuando usted nació?'],
                 'su_padre_o_madre_obtuvo_la_nacionalidad_portuguesa_despues_de_su_nacimiento' => ['label' => '¿Su padre o madre obtuvo la nacionalidad portuguesa después de su nacimiento?'],
                 'n4_su_padremadre_hijoa_del_ciudadano_portugues_conserva_la_nacionalidad_portuguesa' => ['label' => '¿Su padre, madre, hijo o hija del ciudadano portugués conserva la nacionalidad portuguesa?'],
@@ -97,6 +99,10 @@ class HubspotService
             'service' => 'Nacionalidad Portuguesa por Cónyuge',
             'title' => 'Formulario 001 · Nacionalidad Portuguesa por Cónyuge',
             'form_id' => 'db8b5601-39bb-468c-bfb4-b757a342ad4f',
+            'excluded_common_fields' => [
+                'nombres_y_apellidos_del_padre',
+                'nombres_y_apellidos_de_madre',
+            ],
             'fields' => [
                 'n1_que_parentesco_tiene_con_la_persona_de_nacionalidad_portuguesa' => ['label' => '1. ¿Qué parentesco tiene con la persona de nacionalidad portuguesa?'],
                 'que_parentesco_tiene_con_la_persona_de_nacionalidad_portuguesa' => ['label' => '¿Qué parentesco tiene con la persona de nacionalidad portuguesa?'],
@@ -119,10 +125,12 @@ class HubspotService
             'form_id' => '5ab1cc74-b914-4f0f-aabb-7c61e11d0f0f',
             'fields' => [
                 'n1_que_parentesco_tiene_con_la_persona_de_nacionalidad_espanola' => ['label' => '1. ¿Qué parentesco tiene con la persona de nacionalidad española?'],
+                'que_parentesco_tiene_con_la_persona_de_nacionalidad_espanola' => ['label' => '¿Qué parentesco tiene con la persona de nacionalidad española?'],
                 'n2_como_obtuvo_la_nacionalidad_espanola_su_familiar' => ['label' => '2. ¿Cómo obtuvo la nacionalidad española su familiar?'],
                 'su_familiar_conserva_actualmente_la_nacionalidad_espanola' => ['label' => '¿Su familiar conserva actualmente la nacionalidad española?'],
                 'su_familiar_reside_actualmente_en_espana' => ['label' => '¿Su familiar reside actualmente en España?'],
                 'su_familiar_perdio_renuncio_o_recupero_en_algun_momento_la_nacionalidad_espanola' => ['label' => '¿Su familiar perdió, renunció o recuperó en algún momento la nacionalidad española?'],
+                'que_ocurrio_con_la_nacionalidad_espanola_de_su_familiar' => ['label' => '¿Qué ocurrió con la nacionalidad española de su familiar?'],
                 'n3_su_padre_o_madre_ya_tenia_la_nacionalidad_espanola_cuando_usted_nacio' => ['label' => '¿Su padre o madre ya tenía la nacionalidad española cuando usted nació?'],
                 'su_padre_o_madre_obtuvo_la_nacionalidad_espanola_despues_de_su_nacimiento_clonada' => ['label' => '¿Su padre o madre obtuvo la nacionalidad española después de su nacimiento?'],
                 'n4_su_padremadre_hijoa_del_ciudadano_portugues_conserva_la_nacionalidad_espanola' => ['label' => '¿Su padre, madre, hijo o hija del ciudadano español conserva la nacionalidad española?'],
@@ -135,6 +143,10 @@ class HubspotService
             'service' => 'Nacionalidad Española por Cónyuge',
             'title' => 'Formulario 001 · Nacionalidad Española por Cónyuge',
             'form_id' => 'eafda353-6a99-419d-aa6e-221e2c880a46',
+            'excluded_common_fields' => [
+                'nombres_y_apellidos_del_padre',
+                'nombres_y_apellidos_de_madre',
+            ],
             'fields' => [
                 'n1_que_parentesco_tiene_con_la_persona_de_nacionalidad_espanola' => ['label' => '1. ¿Qué parentesco tiene con la persona de nacionalidad española?'],
                 'que_parentesco_tiene_con_la_persona_de_nacionalidad_espanola' => ['label' => '¿Qué parentesco tiene con la persona de nacionalidad española?'],
@@ -575,7 +587,12 @@ class HubspotService
 
     private function formulario001Fields(array $definition): array
     {
-        return collect(array_merge(self::FORMULARIO_001_COMMON_FIELDS, $definition['fields']))
+        $commonFields = array_diff_key(
+            self::FORMULARIO_001_COMMON_FIELDS,
+            array_fill_keys($definition['excluded_common_fields'] ?? [], true)
+        );
+
+        return collect(array_merge($commonFields, $definition['fields']))
             ->map(function (array $field, string $name): array {
                 return [
                     'name' => $name,
