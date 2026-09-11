@@ -459,9 +459,13 @@ class HubspotService
             })
             ->filter();
 
-        // Compatibilidad con clientes anteriores que no tienen una compra pagada.
-        if ($serviceNames->isEmpty() && (int) $user->pay > 0 && filled($user->servicio)) {
-            $serviceNames = collect([(string) $user->servicio]);
+        // El servicio vigente del cliente tiene prioridad funcional sobre compras
+        // históricas, siempre que el cliente figure como pagado.
+        if ((int) $user->pay > 0 && filled($user->servicio)) {
+            $serviceNames = collect($serviceNames)
+                ->push((string) $user->servicio)
+                ->unique()
+                ->values();
         }
 
         $definitions = [];
