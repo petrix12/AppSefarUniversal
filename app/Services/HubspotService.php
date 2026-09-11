@@ -66,7 +66,7 @@ class HubspotService
     private const FORMULARIO_001_DEFAULT_FORM = [
         'service' => 'Formulario 001 predeterminado',
         'title' => 'Formulario 001',
-        'form_id' => null,
+        'form_id' => 'ae73e323-14a8-40f4-a20c-4a33a30aabde',
         'fields' => [
             'tengo_certeza_de_mi_antepasado_espanol_' => ['label' => 'Certeza sobre antepasado español'],
             'vinculo_antepasados' => ['label' => 'Vínculo con antepasado'],
@@ -439,7 +439,7 @@ class HubspotService
     /**
      * Devuelve solo los Formularios 001 vinculados a servicios pagados.
      */
-    public function formulario001ForUser(User $user): array
+    public function formulario001ForUser(User $user, bool $includeResponses = true): array
     {
         $dealServiceNames = Negocio::query()
             ->where('user_id', $user->id)
@@ -512,6 +512,14 @@ class HubspotService
                 'fields' => $this->formulario001Fields($definition),
             ];
         }, array_values($definitions));
+
+        if (! $includeResponses) {
+            return [
+                'status' => 'ok',
+                'forms' => $forms,
+                'using_default' => $usingDefault,
+            ];
+        }
 
         if (blank($user->hs_id)) {
             return [

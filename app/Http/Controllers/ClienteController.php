@@ -1615,7 +1615,17 @@ class ClienteController extends Controller
         if ($destination === 'clientes.pay' || (! session('force_getinfo') && $destination && $destination !== 'clientes.getinfo')) {
             return redirect()->route($destination);
         }
-        return view('clientes.getinfo');
+
+        // Esta pantalla es el formulario que llena el cliente, no la pestaña
+        // de consulta del COS. Resolvemos su 001 sin hacer una llamada adicional
+        // a HubSpot solo para leer las respuestas ya registradas.
+        $formulario001 = $this->hubspotService->formulario001ForUser(Auth::user(), false);
+        $formulario001FormId = collect($formulario001['forms'] ?? [])
+            ->pluck('form_id')
+            ->filter()
+            ->first();
+
+        return view('clientes.getinfo', compact('formulario001FormId'));
     }
 
     public function gracias(){
