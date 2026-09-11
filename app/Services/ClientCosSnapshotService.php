@@ -363,6 +363,10 @@ class ClientCosSnapshotService
     {
         $cacheKey = "monday_data_{$user->id}_{$user->monday_id}";
 
+        // El estatus del COS debe reflejar el ítem actual de Monday. Al
+        // actualizarlo, se invalida la respuesta anterior antes de consultar.
+        Cache::forget($cacheKey);
+
         return Cache::remember($cacheKey, 600, function () use ($user) {
             $mondayUserDetailsPre = null;
             if (! $user->monday_id) {

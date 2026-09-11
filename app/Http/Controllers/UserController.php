@@ -1884,7 +1884,7 @@ class UserController extends Controller
 
     $formulario001 = null;
     if (! auth()->user()->roles->contains('id', 5) && ! request()->boolean('vista_cliente')) {
-        $formulario001 = $this->hubspotService->formulario001ForContact($user->hs_id);
+        $formulario001 = $this->hubspotService->formulario001ForUser($user);
     }
 
     $html = view('crud.users.edit', compact(

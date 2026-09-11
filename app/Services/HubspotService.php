@@ -15,6 +15,9 @@ use HubSpot\Client\Crm\Associations\ApiException as AssociationsApiException;
 use HubSpot\Client\Crm\Properties\ApiException as PropertiesApiException;
 use HubSpot\Client\Crm\Deals\Model\BatchReadInputSimplePublicObjectId;
 use App\Models\AssocTlHs;
+use App\Models\Compras;
+use App\Models\Servicio;
+use App\Models\User;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\ClientInterface;
 use HubSpot\Client\Files\ApiException as FilesApiException;
@@ -27,6 +30,8 @@ use HubSpot\Client\Crm\Contacts\Model\PublicObjectSearchRequest;
 use HubSpot\Client\Settings\Users\ApiException as UsersApiException;
 use HubSpot\Client\Settings\Users\Model\UserProvisionRequest;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 use HubSpot\Client\Files\Model\FileUpdateInput;
 
@@ -34,27 +39,116 @@ class HubspotService
 {
     protected $hubspot;
 
-    private const FORMULARIO_001_FIELDS = [
+    private const FORMULARIO_001_COMMON_FIELDS = [
         'email' => ['label' => 'Correo'],
         'city' => ['label' => 'Ciudad de residencia'],
-        'address' => ['label' => 'Direccion'],
-        'genero' => ['label' => 'Genero'],
+        'address' => ['label' => 'Dirección'],
+        'genero' => ['label' => 'Género'],
         'edo_civil' => ['label' => 'Estado civil'],
         'fecha_nac' => ['label' => 'Fecha de nacimiento'],
         'ciudad_de_nacimiento' => ['label' => 'Ciudad de nacimiento'],
         'nombres_y_apellidos_del_padre' => ['label' => 'Nombres y apellidos del padre'],
         'nombres_y_apellidos_de_madre' => ['label' => 'Nombres y apellidos de la madre'],
         'fecha_de_caducidad_del_pasaporte' => ['label' => 'Fecha de caducidad del pasaporte'],
-        'pais_de_expedicion_del_pasaporte' => ['label' => 'Pais de expedicion del pasaporte'],
+        'pais_de_expedicion_del_pasaporte' => ['label' => 'País de expedición del pasaporte'],
         'tiene_hijos' => ['label' => 'Tiene hijos'],
         'cuantos_hijos_tiene_' => ['label' => 'Cantidad de hijos'],
         'nacionalidad_solicitada' => ['label' => 'Nacionalidad solicitada'],
-        'tengo_certeza_de_mi_antepasado_espanol_' => ['label' => 'Certeza sobre antepasado espanol'],
-        'vinculo_antepasados' => ['label' => 'Vinculo con antepasado'],
         'requiere_tutor_o_representante_legal_' => ['label' => 'Requiere tutor o representante legal'],
         'pasaporte__documento_' => ['label' => 'Pasaporte simple', 'type' => 'file'],
         'partida_de_nacimiento_simple__' => ['label' => 'Partida de nacimiento simple', 'type' => 'file'],
         'documentos_adicionales' => ['label' => 'Documentos adicionales', 'type' => 'file'],
+    ];
+
+    /** Formulario 001 histórico, mostrado cuando no hay un 001 específico. */
+    private const FORMULARIO_001_DEFAULT_FORM = [
+        'service' => 'Formulario 001 predeterminado',
+        'title' => 'Formulario 001',
+        'form_id' => null,
+        'fields' => [
+            'tengo_certeza_de_mi_antepasado_espanol_' => ['label' => 'Certeza sobre antepasado español'],
+            'vinculo_antepasados' => ['label' => 'Vínculo con antepasado'],
+        ],
+    ];
+
+    /** Formularios 001 y propiedades de contacto para cada servicio. */
+    private const FORMULARIO_001_FORMS = [
+        'nacionalidad portuguesa para familiares' => [
+            'service' => 'Nacionalidad Portuguesa para Familiares',
+            'title' => 'Formulario 001 · Nacionalidad Portuguesa para Familiares',
+            'form_id' => '5d4f503d-401c-4482-99d4-ba48eeb77f54',
+            'fields' => [
+                'n1_que_parentesco_tiene_con_la_persona_de_nacionalidad_portuguesa' => ['label' => '1. ¿Qué parentesco tiene con la persona de nacionalidad portuguesa?'],
+                'n2_como_obtuvo_la_nacionalidad_portuguesa_su_familiar' => ['label' => '2. ¿Cómo obtuvo la nacionalidad portuguesa su familiar?'],
+                'n3_su_familiar_conserva_actualmente_la_nacionalidad_portuguesa' => ['label' => '3. ¿Su familiar conserva actualmente la nacionalidad portuguesa?'],
+                'n4_su_familiar_reside_actualmente_en_portugal' => ['label' => '4. ¿Su familiar reside actualmente en Portugal?'],
+                'n5_su_familiar_perdio_renuncio_o_recupero_en_algun_momento_la_nacionalidad_portuguesa' => ['label' => '5. ¿Su familiar perdió, renunció o recuperó en algún momento la nacionalidad portuguesa?'],
+                'n3_su_padre_o_madre_ya_tenia_la_nacionalidad_portuguesa_cuando_usted_nacio' => ['label' => '¿Su padre o madre ya tenía la nacionalidad portuguesa cuando usted nació?'],
+                'su_padre_o_madre_obtuvo_la_nacionalidad_portuguesa_despues_de_su_nacimiento' => ['label' => '¿Su padre o madre obtuvo la nacionalidad portuguesa después de su nacimiento?'],
+                'n4_su_padremadre_hijoa_del_ciudadano_portugues_conserva_la_nacionalidad_portuguesa' => ['label' => '¿Su padre, madre, hijo o hija del ciudadano portugués conserva la nacionalidad portuguesa?'],
+                'n5_cuenta_con_documentos_que_permitan_demostrar_el_vinculo_familiar_con_el_ciudadano_portugues' => ['label' => '¿Cuenta con documentos que permitan demostrar el vínculo familiar con el ciudadano portugués?'],
+                'cuenta_con_las_partidas_de_nacimiento_que_acreditan_la_linea_familiar_hasta_el_ciudadano_portugues' => ['label' => '¿Cuenta con las partidas de nacimiento que acreditan la línea familiar hasta el ciudadano portugués?'],
+                'tiene_la_partida_de_nacimiento_que_prueba_que_su_padremadre_es_hijoa_de_un_ciudadano_portugues' => ['label' => '¿Tiene la partida de nacimiento que prueba que su padre o madre es hijo o hija de un ciudadano portugués?'],
+            ],
+        ],
+        'nacionalidad portuguesa por conyuge' => [
+            'service' => 'Nacionalidad Portuguesa por Cónyuge',
+            'title' => 'Formulario 001 · Nacionalidad Portuguesa por Cónyuge',
+            'form_id' => 'db8b5601-39bb-468c-bfb4-b757a342ad4f',
+            'fields' => [
+                'n1_que_parentesco_tiene_con_la_persona_de_nacionalidad_portuguesa' => ['label' => '1. ¿Qué parentesco tiene con la persona de nacionalidad portuguesa?'],
+                'que_parentesco_tiene_con_la_persona_de_nacionalidad_portuguesa' => ['label' => '¿Qué parentesco tiene con la persona de nacionalidad portuguesa?'],
+                'n2_como_obtuvo_la_nacionalidad_portuguesa_su_familiar' => ['label' => '2. ¿Cómo obtuvo la nacionalidad portuguesa su familiar?'],
+                'n3_su_familiar_conserva_actualmente_la_nacionalidad_portuguesa' => ['label' => '¿Su familiar conserva actualmente la nacionalidad portuguesa?'],
+                'n4_su_familiar_reside_actualmente_en_portugal' => ['label' => '¿Su familiar reside actualmente en Portugal?'],
+                'n5_su_familiar_perdio_renuncio_o_recupero_en_algun_momento_la_nacionalidad_portuguesa' => ['label' => '¿Su familiar perdió, renunció o recuperó en algún momento la nacionalidad portuguesa?'],
+                'en_caso_afirmativo_que_ocurrio_con_la_nacionalidad_portuguesa_de_su_familiar' => ['label' => '¿Qué ocurrió con la nacionalidad portuguesa de su familiar?'],
+                'n3_su_padre_o_madre_ya_tenia_la_nacionalidad_portuguesa_cuando_usted_nacio' => ['label' => '3. ¿Su padre o madre ya tenía la nacionalidad portuguesa cuando usted nació?'],
+                'su_padre_o_madre_obtuvo_la_nacionalidad_portuguesa_despues_de_su_nacimiento' => ['label' => '¿Su padre o madre obtuvo la nacionalidad portuguesa después de su nacimiento?'],
+                'n4_su_padremadre_hijoa_del_ciudadano_portugues_conserva_la_nacionalidad_portuguesa' => ['label' => '4. ¿Su padre, madre, hijo o hija del ciudadano portugués conserva la nacionalidad portuguesa?'],
+                'n5_cuenta_con_documentos_que_permitan_demostrar_el_vinculo_familiar_con_el_ciudadano_portugues' => ['label' => '5. ¿Cuenta con documentos que permitan demostrar el vínculo familiar con el ciudadano portugués?'],
+                'cuenta_con_las_partidas_de_nacimiento_que_acreditan_la_linea_familiar_hasta_el_ciudadano_portugues' => ['label' => '¿Cuenta con las partidas de nacimiento que acreditan la línea familiar hasta el ciudadano portugués?'],
+                'tiene_la_partida_de_nacimiento_que_prueba_que_su_padremadre_es_hijoa_de_un_ciudadano_portugues' => ['label' => '¿Tiene la partida de nacimiento que prueba que su padre o madre es hijo o hija de un ciudadano portugués?'],
+            ],
+        ],
+        'nacionalidad espanola para familiares' => [
+            'service' => 'Nacionalidad Española para Familiares',
+            'title' => 'Formulario 001 · Nacionalidad Española para Familiares',
+            'form_id' => '5ab1cc74-b914-4f0f-aabb-7c61e11d0f0f',
+            'fields' => [
+                'n1_que_parentesco_tiene_con_la_persona_de_nacionalidad_espanola' => ['label' => '1. ¿Qué parentesco tiene con la persona de nacionalidad española?'],
+                'n2_como_obtuvo_la_nacionalidad_espanola_su_familiar' => ['label' => '2. ¿Cómo obtuvo la nacionalidad española su familiar?'],
+                'su_familiar_conserva_actualmente_la_nacionalidad_espanola' => ['label' => '¿Su familiar conserva actualmente la nacionalidad española?'],
+                'su_familiar_reside_actualmente_en_espana' => ['label' => '¿Su familiar reside actualmente en España?'],
+                'su_familiar_perdio_renuncio_o_recupero_en_algun_momento_la_nacionalidad_espanola' => ['label' => '¿Su familiar perdió, renunció o recuperó en algún momento la nacionalidad española?'],
+                'n3_su_padre_o_madre_ya_tenia_la_nacionalidad_espanola_cuando_usted_nacio' => ['label' => '¿Su padre o madre ya tenía la nacionalidad española cuando usted nació?'],
+                'su_padre_o_madre_obtuvo_la_nacionalidad_espanola_despues_de_su_nacimiento_clonada' => ['label' => '¿Su padre o madre obtuvo la nacionalidad española después de su nacimiento?'],
+                'n4_su_padremadre_hijoa_del_ciudadano_portugues_conserva_la_nacionalidad_espanola' => ['label' => '¿Su padre, madre, hijo o hija del ciudadano español conserva la nacionalidad española?'],
+                'n5_cuenta_con_documentos_que_permitan_demostrar_el_vinculo_familiar_con_el_ciudadano_espanol' => ['label' => '¿Cuenta con documentos que permitan demostrar el vínculo familiar con el ciudadano español?'],
+                'cuenta_con_las_partidas_de_nacimiento_que_acreditan_la_linea_familiar_hasta_el_ciudadano_espanol' => ['label' => '¿Cuenta con las partidas de nacimiento que acreditan la línea familiar hasta el ciudadano español?'],
+                'tiene_la_partida_de_nacimiento_que_prueba_que_su_padremadre_es_hijoa_de_un_ciudadano_espanol' => ['label' => '¿Tiene la partida de nacimiento que prueba que su padre o madre es hijo o hija de un ciudadano español?'],
+            ],
+        ],
+        'nacionalidad espanola por conyuge' => [
+            'service' => 'Nacionalidad Española por Cónyuge',
+            'title' => 'Formulario 001 · Nacionalidad Española por Cónyuge',
+            'form_id' => 'eafda353-6a99-419d-aa6e-221e2c880a46',
+            'fields' => [
+                'n1_que_parentesco_tiene_con_la_persona_de_nacionalidad_espanola' => ['label' => '1. ¿Qué parentesco tiene con la persona de nacionalidad española?'],
+                'que_parentesco_tiene_con_la_persona_de_nacionalidad_espanola' => ['label' => '¿Qué parentesco tiene con la persona de nacionalidad española?'],
+                'n2_como_obtuvo_la_nacionalidad_espanola_su_familiar' => ['label' => '2. ¿Cómo obtuvo la nacionalidad española su familiar?'],
+                'su_familiar_conserva_actualmente_la_nacionalidad_espanola' => ['label' => '¿Su familiar conserva actualmente la nacionalidad española?'],
+                'su_familiar_reside_actualmente_en_espana' => ['label' => '¿Su familiar reside actualmente en España?'],
+                'su_familiar_perdio_renuncio_o_recupero_en_algun_momento_la_nacionalidad_espanola' => ['label' => '¿Su familiar perdió, renunció o recuperó en algún momento la nacionalidad española?'],
+                'que_ocurrio_con_la_nacionalidad_espanola_de_su_familiar' => ['label' => '¿Qué ocurrió con la nacionalidad española de su familiar?'],
+                'n3_su_padre_o_madre_ya_tenia_la_nacionalidad_espanola_cuando_usted_nacio' => ['label' => '3. ¿Su padre o madre ya tenía la nacionalidad española cuando usted nació?'],
+                'su_padre_o_madre_obtuvo_la_nacionalidad_espanola_despues_de_su_nacimiento_clonada' => ['label' => '¿Su padre o madre obtuvo la nacionalidad española después de su nacimiento?'],
+                'n4_su_padremadre_hijoa_del_ciudadano_portugues_conserva_la_nacionalidad_espanola' => ['label' => '4. ¿Su padre, madre, hijo o hija del ciudadano español conserva la nacionalidad española?'],
+                'n5_cuenta_con_documentos_que_permitan_demostrar_el_vinculo_familiar_con_el_ciudadano_espanol' => ['label' => '5. ¿Cuenta con documentos que permitan demostrar el vínculo familiar con el ciudadano español?'],
+                'cuenta_con_las_partidas_de_nacimiento_que_acreditan_la_linea_familiar_hasta_el_ciudadano_espanol' => ['label' => '¿Cuenta con las partidas de nacimiento que acreditan la línea familiar hasta el ciudadano español?'],
+                'tiene_la_partida_de_nacimiento_que_prueba_que_su_padremadre_es_hijoa_de_un_ciudadano_espanol' => ['label' => '¿Tiene la partida de nacimiento que prueba que su padre o madre es hijo o hija de un ciudadano español?'],
+            ],
+        ],
     ];
 
     public function __construct()
@@ -341,11 +435,144 @@ class HubspotService
     }
 
     /**
+     * Devuelve solo los Formularios 001 vinculados a servicios pagados.
+     */
+    public function formulario001ForUser(User $user): array
+    {
+        $purchases = Compras::query()
+            ->with('servicio:id,nombre')
+            ->where('id_user', $user->id)
+            ->where('pagado', 1)
+            ->orderByDesc('paid_at')
+            ->orderByDesc('id')
+            ->get();
+
+        $servicesByHubSpotId = Servicio::query()
+            ->whereIn('id_hubspot', $purchases->pluck('servicio_hs_id')->filter()->unique())
+            ->pluck('nombre', 'id_hubspot');
+
+        $serviceNames = $purchases
+            ->map(function (Compras $purchase) use ($servicesByHubSpotId): string {
+                return trim((string) ($purchase->servicio?->nombre
+                    ?: $servicesByHubSpotId->get($purchase->servicio_hs_id)
+                    ?: $purchase->servicio_hs_id));
+            })
+            ->filter();
+
+        // Compatibilidad con clientes anteriores que no tienen una compra pagada.
+        if ($serviceNames->isEmpty() && (int) $user->pay > 0 && filled($user->servicio)) {
+            $serviceNames = collect([(string) $user->servicio]);
+        }
+
+        $definitions = [];
+        $usingDefault = false;
+
+        foreach ($serviceNames as $serviceName) {
+            $serviceKey = $this->formulario001ServiceKey($serviceName);
+
+            if (isset(self::FORMULARIO_001_FORMS[$serviceKey])) {
+                $definitions[$serviceKey] = self::FORMULARIO_001_FORMS[$serviceKey];
+            }
+        }
+
+        if ($definitions === []) {
+            $definitions['default'] = self::FORMULARIO_001_DEFAULT_FORM;
+            $usingDefault = true;
+        }
+
+        $forms = array_map(function (array $definition): array {
+            return [
+                'service' => $definition['service'],
+                'title' => $definition['title'],
+                'form_id' => $definition['form_id'],
+                'fields' => $this->formulario001Fields($definition),
+            ];
+        }, array_values($definitions));
+
+        if (blank($user->hs_id)) {
+            return [
+                'status' => 'missing_contact',
+                'forms' => $forms,
+                'using_default' => $usingDefault,
+            ];
+        }
+
+        $propertyNames = collect($forms)
+            ->flatMap(fn (array $form): array => array_column($form['fields'], 'name'))
+            ->unique()
+            ->values()
+            ->all();
+
+        try {
+            $this->hubspotThrottle();
+
+            $contact = $this->hubspot
+                ->crm()
+                ->contacts()
+                ->basicApi()
+                ->getById((string) $user->hs_id, $propertyNames);
+            $properties = $contact->getProperties();
+
+            foreach ($forms as &$form) {
+                foreach ($form['fields'] as &$field) {
+                    $field['value'] = trim((string) ($properties[$field['name']] ?? ''));
+                }
+                unset($field);
+            }
+            unset($form);
+
+            return [
+                'status' => 'ok',
+                'forms' => $forms,
+                'using_default' => $usingDefault,
+            ];
+        } catch (\Throwable $exception) {
+            Log::warning('No se pudieron obtener las respuestas del Formulario 001.', [
+                'hubspot_contact_id' => $user->hs_id,
+                'client_id' => $user->id,
+                'exception' => $exception->getMessage(),
+            ]);
+
+            return [
+                'status' => 'unavailable',
+                'forms' => $forms,
+                'using_default' => $usingDefault,
+            ];
+        }
+    }
+
+    private function formulario001Fields(array $definition): array
+    {
+        return collect(array_merge(self::FORMULARIO_001_COMMON_FIELDS, $definition['fields']))
+            ->map(function (array $field, string $name): array {
+                return [
+                    'name' => $name,
+                    'label' => $field['label'],
+                    'type' => $field['type'] ?? 'text',
+                    'value' => '',
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    private function formulario001ServiceKey(?string $serviceName): string
+    {
+        $asciiName = Str::ascii((string) $serviceName);
+
+        $normalizedName = strtolower(trim(preg_replace('/\s+/', ' ', $asciiName) ?: ''));
+
+        return Str::startsWith($normalizedName, 'nacionalidad ')
+            ? $normalizedName
+            : 'nacionalidad '.$normalizedName;
+    }
+
+    /**
      * Obtiene las respuestas actuales del Formulario 001 de un contacto.
      */
     public function formulario001ForContact(?string $contactId): array
     {
-        $fields = collect(self::FORMULARIO_001_FIELDS)
+        $fields = collect(self::FORMULARIO_001_COMMON_FIELDS)
             ->map(function (array $definition, string $name): array {
                 return [
                     'name' => $name,
@@ -368,7 +595,7 @@ class HubspotService
                 ->crm()
                 ->contacts()
                 ->basicApi()
-                ->getById((string) $contactId, array_keys(self::FORMULARIO_001_FIELDS));
+                ->getById((string) $contactId, array_keys(self::FORMULARIO_001_COMMON_FIELDS));
             $properties = $contact->getProperties();
 
             foreach ($fields as &$field) {
