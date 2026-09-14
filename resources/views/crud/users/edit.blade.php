@@ -3331,11 +3331,11 @@
                                 </td>
                                 <td>
                                     @if(!in_array($req->status, ['aprobada', 'rechazada', 'no_documento']))
-                                    <button class="btn btn-sm btn-primary editar" data-id="{{ $req->id }}">Editar</button>
-                                    <button class="btn btn-sm btn-success aprobar" data-id="{{ $req->id }}">Aprobar</button>
-                                    <button class="btn btn-sm btn-danger rechazar" data-id="{{ $req->id }}">Rechazar</button>
+                                    <button type="button" class="btn btn-sm btn-primary editar" data-id="{{ $req->id }}">Editar</button>
+                                    <button type="button" class="btn btn-sm btn-success aprobar" data-id="{{ $req->id }}">Aprobar</button>
+                                    <button type="button" class="btn btn-sm btn-danger rechazar" data-id="{{ $req->id }}">Rechazar</button>
                                     @endif
-                                    <button class="btn btn-sm btn-outline-danger eliminar" data-id="{{ $req->id }}">Eliminar</button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger eliminar" data-id="{{ $req->id }}">Eliminar</button>
                                 </td>
                             </tr>
                             @endforeach
@@ -3404,10 +3404,10 @@
                                         res.document_type.charAt(0).toUpperCase() + res.document_type.slice(1),
                                         '<span class="badge bg-secondary">' + formattedStatus + '</span>',
                                         '—',
-                                        '<button class="btn btn-sm btn-primary editar" data-id="'+res.id+'">Editar</button> ' +
-                                        '<button class="btn btn-sm btn-success aprobar" data-id="'+res.id+'">Aprobar</button> ' +
-                                        '<button class="btn btn-sm btn-danger rechazar" data-id="'+res.id+'">Rechazar</button> ' +
-                                        '<button class="btn btn-sm btn-outline-danger eliminar" data-id="'+res.id+'">Eliminar</button>'
+                                        '<button type="button" class="btn btn-sm btn-primary editar" data-id="'+res.id+'">Editar</button> ' +
+                                        '<button type="button" class="btn btn-sm btn-success aprobar" data-id="'+res.id+'">Aprobar</button> ' +
+                                        '<button type="button" class="btn btn-sm btn-danger rechazar" data-id="'+res.id+'">Rechazar</button> ' +
+                                        '<button type="button" class="btn btn-sm btn-outline-danger eliminar" data-id="'+res.id+'">Eliminar</button>'
                                     ];
 
                                     // Añadir la nueva fila usando la API de DataTables
@@ -3430,7 +3430,7 @@
                         });
 
                         // Editar solicitud - Abrir modal
-                        $('#solicitudesTable').on('click', '.editar', function () {
+                        $('#solicitudesTableLegacyDisabled').on('click', '.editar', function () {
                             const id = $(this).data('id');
                             const row = $(this).closest('tr');
 
@@ -3441,7 +3441,7 @@
                         });
 
                         // Editar solicitud - Enviar formulario
-                        $('#editarSolicitudForm').on('submit', function (e) {
+                        $('#editarSolicitudFormLegacyDisabled').on('submit', function (e) {
                             e.preventDefault();
                             const id = $('#edit_request_id').val();
 
@@ -3483,7 +3483,7 @@
                         });
 
                         // Aprobar solicitud
-                        $('#solicitudesTable').on('click', '.aprobar', function () {
+                        $('#solicitudesTableLegacyDisabled').on('click', '.aprobar', function () {
                             const id = $(this).data('id');
                             const row = $(this).closest('tr');
 
@@ -3531,7 +3531,7 @@
                         });
 
                         // Rechazar solicitud
-                        $('#solicitudesTable').on('click', '.rechazar', function () {
+                        $('#solicitudesTableLegacyDisabled').on('click', '.rechazar', function () {
                             const id = $(this).data('id');
                             const row = $(this).closest('tr');
 
@@ -3580,7 +3580,7 @@
                         });
 
                         // Eliminar solicitud
-                        $('#solicitudesTable').on('click', '.eliminar', function () {
+                        $('#solicitudesTableLegacyDisabled').on('click', '.eliminar', function () {
                             const id = $(this).data('id');
                             const table = $('#solicitudesTable').DataTable();
                             const row = $(this).closest('tr');
@@ -3972,6 +3972,202 @@
 
 <script type="text/javascript" src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/1.13.1/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+    /**
+     * Las acciones de solicitudes se registran después de cargar jQuery,
+     * Bootstrap y SweetAlert. El bloque histórico de la vista se ejecutaba
+     * antes de esas dependencias en algunos layouts de AdminLTE, dejando los
+     * botones sin listeners (y el modal usaba la API retirada de Bootstrap 5).
+     */
+    (function ($) {
+        $(function () {
+            const table = $('#solicitudesTable');
+            const modalElement = document.getElementById('editarSolicitudModal');
+            const requestBaseUrl = @json(url('admin/requests'));
+
+            if (!table.length) {
+                return;
+            }
+
+            if ($.fn.DataTable && !$.fn.DataTable.isDataTable(table[0])) {
+                table.DataTable({
+                    language: {
+                        lengthMenu: 'Mostrar _MENU_ resultados por página',
+                        zeroRecords: 'No hay resultados',
+                        info: 'Página _PAGE_ de _PAGES_',
+                        infoEmpty: 'No hay resultados disponibles',
+                        infoFiltered: '(filtrado de _MAX_ resultados totales)',
+                        search: 'Buscar:',
+                        paginate: { previous: 'Anterior', next: 'Siguiente' }
+                    }
+                });
+            }
+
+            const requestUrl = (id, suffix = '') => `${requestBaseUrl}/${encodeURIComponent(id)}${suffix}`;
+            const csrfHeaders = () => ({
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            });
+            const errorMessage = (xhr, fallback) => xhr.responseJSON?.message || fallback;
+
+            const notifyAndReload = (title, text, icon = 'success') => {
+                if (window.Swal) {
+                    window.Swal.fire({ icon, title, text }).then(() => window.location.reload());
+                    return;
+                }
+
+                window.alert(text);
+                window.location.reload();
+            };
+
+            const showError = (xhr, fallback) => {
+                const message = errorMessage(xhr, fallback);
+                if (window.Swal) {
+                    window.Swal.fire('Error', message, 'error');
+                    return;
+                }
+
+                window.alert(message);
+            };
+
+            const confirmAction = (title, text, confirmButtonText) => {
+                if (window.Swal) {
+                    return window.Swal.fire({
+                        title,
+                        text,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#1e5670',
+                        cancelButtonColor: '#dc3545',
+                        confirmButtonText,
+                        cancelButtonText: 'Cancelar'
+                    });
+                }
+
+                return Promise.resolve({ isConfirmed: window.confirm(text) });
+            };
+
+            const editModal = () => window.bootstrap?.Modal
+                ? window.bootstrap.Modal.getOrCreateInstance(modalElement)
+                : null;
+
+            table.off('click.documentRequests', '.editar').on('click.documentRequests', '.editar', function (event) {
+                event.preventDefault();
+                const button = $(this);
+                const row = button.closest('tr');
+
+                $('#edit_request_id').val(button.data('id'));
+                $('#edit_document_kind').val(row.data('document-kind') || '');
+
+                const modal = editModal();
+                if (modal) {
+                    modal.show();
+                }
+            });
+
+            $('#editarSolicitudForm').off('submit.documentRequests').on('submit.documentRequests', function (event) {
+                event.preventDefault();
+                const form = $(this);
+                const id = $('#edit_request_id').val();
+
+                if (!id) {
+                    return;
+                }
+
+                $.ajax({
+                    url: requestUrl(id),
+                    method: 'PUT',
+                    data: form.serialize(),
+                    headers: csrfHeaders(),
+                    success: function () {
+                        editModal()?.hide();
+                        notifyAndReload('Solicitud editada', 'La solicitud se editó correctamente.');
+                    },
+                    error: function (xhr) {
+                        showError(xhr, 'No se pudo actualizar la solicitud.');
+                    }
+                });
+            });
+
+            table.off('click.documentRequests', '.aprobar').on('click.documentRequests', '.aprobar', function (event) {
+                event.preventDefault();
+                const id = $(this).data('id');
+
+                confirmAction('¿Aprobar solicitud?', '¿Estás seguro de aprobar esta solicitud?', 'Sí, aprobar')
+                    .then((result) => {
+                        if (!result.isConfirmed) {
+                            return;
+                        }
+
+                        $.ajax({
+                            url: requestUrl(id, '/approve'),
+                            method: 'POST',
+                            headers: csrfHeaders(),
+                            success: function () {
+                                notifyAndReload('Solicitud aprobada', 'La solicitud ha sido aprobada.');
+                            },
+                            error: function (xhr) {
+                                showError(xhr, 'No se pudo aprobar la solicitud.');
+                            }
+                        });
+                    });
+            });
+
+            table.off('click.documentRequests', '.rechazar').on('click.documentRequests', '.rechazar', function (event) {
+                event.preventDefault();
+                const id = $(this).data('id');
+
+                confirmAction('¿Rechazar solicitud?', '¿Estás seguro de rechazar esta solicitud?', 'Sí, rechazar')
+                    .then((result) => {
+                        if (!result.isConfirmed) {
+                            return;
+                        }
+
+                        $.ajax({
+                            url: requestUrl(id, '/reject'),
+                            method: 'POST',
+                            headers: csrfHeaders(),
+                            success: function () {
+                                notifyAndReload('Solicitud rechazada', 'La solicitud ha sido rechazada.');
+                            },
+                            error: function (xhr) {
+                                showError(xhr, 'No se pudo rechazar la solicitud.');
+                            }
+                        });
+                    });
+            });
+
+            table.off('click.documentRequests', '.eliminar').on('click.documentRequests', '.eliminar', function (event) {
+                event.preventDefault();
+                const id = $(this).data('id');
+
+                confirmAction('¿Eliminar solicitud?', 'Esta acción eliminará la solicitud y su archivo asociado.', 'Sí, eliminar')
+                    .then((result) => {
+                        if (!result.isConfirmed) {
+                            return;
+                        }
+
+                        $.ajax({
+                            url: requestUrl(id),
+                            method: 'DELETE',
+                            headers: csrfHeaders(),
+                            success: function (response) {
+                                if (response?.success === false) {
+                                    showError({ responseJSON: response }, 'No se pudo eliminar la solicitud.');
+                                    return;
+                                }
+
+                                notifyAndReload('Solicitud eliminada', 'La solicitud se eliminó correctamente.');
+                            },
+                            error: function (xhr) {
+                                showError(xhr, 'No se pudo eliminar la solicitud.');
+                            }
+                        });
+                    });
+            });
+        });
+    })(jQuery);
+</script>
 
 <script>
     $(document).ready(function () {
