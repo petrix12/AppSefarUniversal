@@ -811,6 +811,8 @@ Route::group(['middleware' => ['auth'], 'as' => 'clientes.'], function(){
         ->middleware('can:cliente');
     Route::get('tree', [ClienteController::class, 'tree'])->name('tree')
         ->middleware('can:cliente');
+    Route::get('archivos-subidos', [ClienteController::class, 'uploadedFiles'])->name('uploaded-files')
+        ->middleware('can:cliente');
     Route::post('google-review', [GoogleReviewInvitationController::class, 'write'])->name('google-review')
         ->middleware('can:cliente');
     Route::post('finalizar-carga', [ClienteController::class, 'finalizarCarga'])->name('finalizar-carga')

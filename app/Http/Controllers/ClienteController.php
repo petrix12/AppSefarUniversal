@@ -59,6 +59,7 @@ use App\Models\DocumentRequest;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use App\Services\UserSyncService;
+use App\Services\GenealogyDocumentService;
 use App\Services\GenealogyService;
 use App\Jobs\SyncUserDealsJob;
 use App\Services\CosService;
@@ -113,6 +114,52 @@ class ClienteController extends Controller
         $compras = $phasePaymentService->visiblePortalPurchases($compras);
 
         return view('clientes.pagospendientes', compact('compras', 'payablePurchaseIds', 'allPhasePaymentAmounts'));
+    }
+
+    /**
+     * Private document hub for the authenticated client. This deliberately
+     * queries the same safe collection used by the tree picker, rather than
+     * the broader COS file collection which can contain internal CRM files.
+     */
+    public function uploadedFiles()
+    {
+        $user = Auth::user();
+        $documents = app(GenealogyDocumentService::class);
+        $documentKinds = GenealogyDocumentService::kinds();
+
+        $people = Agcliente::query()
+            ->where('IDCliente', $user->passport)
+            ->orderBy('Generacion')
+            ->orderBy('IDPersona')
+            ->get();
+
+        $documentRequests = DocumentRequest::query()
+            ->where('user_id', $user->id)
+            ->where('document_type', 'genealogico')
+            ->whereIn('document_kind', array_keys($documentKinds))
+            ->with(['person', 'genealogyUnion.spouseOne', 'genealogyUnion.spouseTwo'])
+            ->latest('status_changed_at')
+            ->latest('id')
+            ->get();
+
+        // Includes the customer's app uploads and only the explicitly
+        // client-safe HubSpot fields. Nothing imported from Teamleader, nor
+        // any other HubSpot contact file, reaches this client-facing view.
+        $uploadedFiles = $documents->reusableForClient($user)
+            ->with('people')
+            ->get();
+
+        $pendingDocumentRequests = $documentRequests
+            ->whereIn('status', ['en_espera_cliente', 'rechazada'])
+            ->values();
+
+        return view('clientes.archivos-subidos', compact(
+            'documentKinds',
+            'documentRequests',
+            'pendingDocumentRequests',
+            'uploadedFiles',
+            'people'
+        ));
     }
 
     private function searchUserInMonday($passport, User $user)

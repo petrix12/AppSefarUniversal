@@ -1,10 +1,21 @@
-@props(['documents', 'people' => collect(), 'clientView' => false, 'id' => 'document-library'])
+@props([
+    'documents',
+    'people' => collect(),
+    'clientView' => false,
+    'id' => 'document-library',
+    'eyebrow' => null,
+    'title' => null,
+    'emptyMessage' => null,
+])
 
 @php
     $kindLabels = \App\Services\GenealogyDocumentService::kinds();
     $people = collect($people);
     $peopleById = $people->keyBy('id');
     $peopleByLegacyId = $people->filter(fn ($person) => filled($person->IDPersona))->keyBy('IDPersona');
+    $eyebrow = $eyebrow ?? ($clientView ? 'Documentos compartidos contigo' : 'Repositorio documental interno');
+    $title = $title ?? ($clientView ? 'Mis documentos' : 'Documentos del cliente');
+    $emptyMessage = $emptyMessage ?? ($clientView ? 'Todavía no tienes documentos publicados.' : 'No hay archivos registrados para este cliente.');
     $groups = collect($documents)->groupBy(function ($document) use ($peopleById, $peopleByLegacyId) {
         $person = filled($document->IDPersonaNew)
             ? $peopleById->get($document->IDPersonaNew)
@@ -17,8 +28,8 @@
 <section id="{{ $id }}" class="document-library" aria-label="Documentos">
     <div class="document-library-header">
         <div>
-            <span class="document-library-eyebrow">{{ $clientView ? 'Documentos compartidos contigo' : 'Repositorio documental interno' }}</span>
-            <h3>{{ $clientView ? 'Mis documentos' : 'Documentos del cliente' }}</h3>
+            <span class="document-library-eyebrow">{{ $eyebrow }}</span>
+            <h3>{{ $title }}</h3>
         </div>
         <span class="document-library-count">{{ collect($documents)->count() }} archivos</span>
     </div>
@@ -27,9 +38,10 @@
         @php
             $person = $personId === 'unassigned' ? null : $peopleById->get($personId);
             $personName = $person ? trim($person->Nombres . ' ' . $person->Apellidos) : 'Sin persona asociada';
+            $relationship = $person ? \App\Services\GenealogyDocumentService::relationshipLabel($person) : null;
         @endphp
         <section class="document-library-group">
-            <h4>{{ $personName }}@if($person?->parentesco)<small>{{ $person->parentesco }}</small>@endif</h4>
+            <h4>{{ $personName }}@if($relationship)<small>{{ $relationship }}</small>@endif</h4>
             <div class="document-library-grid">
                 @foreach($group as $document)
                     @php
@@ -49,9 +61,14 @@
                             'staff_upload' => 'Equipo',
                             default => $document->source ?: 'Legado',
                         };
-                        $associatedPeople = $document->people()
-                            ->get()
-                            ->map(fn ($linkedPerson) => trim($linkedPerson->Nombres . ' ' . $linkedPerson->Apellidos))
+                        $linkedPeople = $document->relationLoaded('people') ? $document->people : $document->people()->get();
+                        $associatedPeople = $linkedPeople
+                            ->map(function ($linkedPerson) {
+                                $name = trim($linkedPerson->Nombres . ' ' . $linkedPerson->Apellidos);
+                                $relationship = \App\Services\GenealogyDocumentService::relationshipLabel($linkedPerson);
+
+                                return $name ? $name . ' (' . $relationship . ')' : $relationship;
+                            })
                             ->filter()
                             ->unique()
                             ->values();
@@ -96,7 +113,7 @@
     @empty
         <div class="document-library-empty">
             <i class="far fa-folder-open"></i>
-            <p>{{ $clientView ? 'Todavía no tienes documentos publicados.' : 'No hay archivos registrados para este cliente.' }}</p>
+            <p>{{ $emptyMessage }}</p>
         </div>
     @endforelse
 </section>

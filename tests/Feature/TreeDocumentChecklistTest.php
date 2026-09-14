@@ -98,7 +98,7 @@ class TreeDocumentChecklistTest extends TestCase
             ->assertJsonMissingPath('allowed_document_kinds.death_certificate')
             ->assertJsonPath('document_requests.0.document_kind', 'passport')
             ->assertJsonPath('document_requests.0.status', 'en_espera_cliente')
-            ->assertJsonPath('reusable_files.0.id', $uploadedFile->id)
+            ->assertJsonFragment(['id' => $uploadedFile->id])
             ->assertJsonFragment(['file' => $hubspotPassport->file]);
     }
 
@@ -167,6 +167,71 @@ class TreeDocumentChecklistTest extends TestCase
             'person_id' => $person->id,
         ]);
         $this->assertNull($client->fresh()->arraycos_expire);
+    }
+
+    public function test_uploaded_files_hub_only_lists_client_safe_documents_and_allows_private_app_previews(): void
+    {
+        $client = User::factory()->create(['passport' => 'V22223333']);
+        $client->assignRole('Cliente');
+
+        $privateAppUpload = File::create([
+            'file' => 'pasaporte-cargado-en-app.pdf',
+            'location' => 'public/doc/P' . $client->passport,
+            'IDCliente' => $client->passport,
+            'IDPersona' => 0,
+            'user_id' => $client->id,
+            'source' => 'app_cliente',
+            'client_visible' => false,
+        ]);
+        $safeHubspotFile = File::create([
+            'file' => 'pasaporte-importado-seguro.pdf',
+            'location' => 'public/doc/P' . $client->passport,
+            'IDCliente' => $client->passport,
+            'IDPersona' => 0,
+            'user_id' => $client->id,
+            'source' => 'hubspot',
+            'source_reference' => 'hubspot:pasaporte__documento_:example',
+            'document_kind' => 'passport',
+            'client_visible' => false,
+        ]);
+        $internalTeamleaderFile = File::create([
+            'file' => 'nota-interna-teamleader.pdf',
+            'location' => 'public/doc/P' . $client->passport,
+            'IDCliente' => $client->passport,
+            'IDPersona' => 0,
+            'user_id' => $client->id,
+            'source' => 'teamleader',
+            'document_kind' => 'passport',
+            'client_visible' => true,
+        ]);
+        $internalHubspotFile = File::create([
+            'file' => 'archivo-interno-hubspot.pdf',
+            'location' => 'public/doc/P' . $client->passport,
+            'IDCliente' => $client->passport,
+            'IDPersona' => 0,
+            'user_id' => $client->id,
+            'source' => 'hubspot',
+            'source_reference' => 'hubspot:archivo_interno:example',
+            'document_kind' => 'passport',
+            'client_visible' => true,
+        ]);
+
+        $this->actingAs($client)
+            ->get(route('clientes.uploaded-files'))
+            ->assertOk()
+            ->assertSee('Archivos subidos')
+            ->assertSee('pasaporte-cargado-en-app.pdf')
+            ->assertSee('pasaporte-importado-seguro.pdf')
+            ->assertDontSee('nota-interna-teamleader.pdf')
+            ->assertDontSee('archivo-interno-hubspot.pdf');
+
+        $documents = app(GenealogyDocumentService::class);
+        $this->assertTrue($documents->canView($client, $privateAppUpload));
+        $this->assertTrue($documents->canView($client, $safeHubspotFile));
+        $this->assertFalse($documents->canView($client, $internalTeamleaderFile));
+        $this->assertFalse($documents->canView($client, $internalHubspotFile));
+        $this->assertFalse($documents->canReuseForRequest($client, $internalTeamleaderFile));
+        $this->assertFalse($documents->canReuseForRequest($client, $internalHubspotFile));
     }
 
     public function test_client_can_submit_an_available_document_without_an_internal_request(): void

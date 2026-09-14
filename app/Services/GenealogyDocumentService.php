@@ -136,10 +136,10 @@ class GenealogyDocumentService
                             }
                         });
                 })->orWhere(function (Builder $published) {
-                    $published->where('client_visible', true)
-                        ->where(function (Builder $notHubspot) {
-                            $notHubspot->whereNull('source')
-                                ->orWhere('source', '!=', 'hubspot');
+                        $published->where('client_visible', true)
+                        ->where(function (Builder $clientOwnedOrCurated) {
+                            $clientOwnedOrCurated->whereNull('source')
+                                ->orWhereNotIn('source', ['hubspot', 'teamleader']);
                         });
                 });
             })
@@ -153,8 +153,12 @@ class GenealogyDocumentService
             return false;
         }
 
-        if ($file->source === 'hubspot') {
-            return HubspotService::isClientEligibleFileSource($file->source, $file->source_reference);
+        if (in_array($file->source, ['hubspot', 'teamleader'], true)) {
+            // Teamleader is an internal historical source. HubSpot is also
+            // internal by default and only exposes its explicit client-safe
+            // contact file fields.
+            return $file->source === 'hubspot'
+                && HubspotService::isClientEligibleFileSource($file->source, $file->source_reference);
         }
 
         return (bool) $file->client_visible;
@@ -167,7 +171,14 @@ class GenealogyDocumentService
         }
 
         return (string) $file->IDCliente === (string) $user->passport
-            && $this->isVisibleToClient($file);
+            && (
+                // A customer must be able to reopen a private upload in order
+                // to classify it. This exception is intentionally limited to
+                // files created in the customer application; it never applies
+                // to imported HubSpot or Teamleader documents.
+                $file->source === 'app_cliente'
+                || $this->isVisibleToClient($file)
+            );
     }
 
     public function canReuseForRequest(User $user, File $file): bool
@@ -179,14 +190,18 @@ class GenealogyDocumentService
                 // classified, so do not hide it from its owner.
                 $file->source === 'app_cliente'
                 || ($file->source === 'solicitud_cliente' && self::isAllowedKind($file->document_kind))
+                // HubSpot documents can only be reused when the importer has
+                // identified the exact client-safe contact field. Teamleader
+                // files and every other HubSpot field remain internal.
+                || ($file->source === 'hubspot' && $this->isVisibleToClient($file))
             );
     }
 
     /**
-     * A private picker for the customer's own previous uploads. This is not the
-     * same as the client-facing document library: unclassified app uploads are
-     * intentionally visible here only so their owner can classify one through a
-     * controlled document request.
+     * Private picker for documents available to the customer. It contains that
+     * customer's prior app uploads and the narrow allowlist of HubSpot contact
+     * files that may be shown to the client. Unclassified app uploads remain
+     * visible here so their owner can classify them through a controlled request.
      */
     public function reusableForClient(User $user): Builder
     {
@@ -197,6 +212,15 @@ class GenealogyDocumentService
                     ->orWhere(function (Builder $requestUpload) {
                         $requestUpload->where('source', 'solicitud_cliente')
                             ->whereIn('document_kind', array_keys(self::kinds()));
+                    })
+                    ->orWhere(function (Builder $hubspot) {
+                        $hubspot->where('source', 'hubspot')
+                            ->whereIn('document_kind', array_keys(self::kinds()))
+                            ->where(function (Builder $eligible) {
+                                foreach (array_keys(HubspotService::clientEligibleContactFileProperties()) as $property) {
+                                    $eligible->orWhere('source_reference', 'like', 'hubspot:' . $property . ':%');
+                                }
+                            });
                     });
             })
             ->latest('id');
