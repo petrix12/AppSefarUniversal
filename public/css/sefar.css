@@ -438,6 +438,12 @@ textarea {
     box-shadow: 16px 0 34px rgba(0, 27, 39, 0.24);
   }
 
+  /* The background overlay must grow with the sidebar. Otherwise its compact
+     width remains visible as an artificial vertical rectangle on hover. */
+  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:hover::before {
+    width: var(--sefar-sidebar-width) !important;
+  }
+
   body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .brand-link {
     justify-content: center;
     min-height: 0;
@@ -499,6 +505,7 @@ textarea {
   /* Compact rail: profile first, followed immediately by navigation. */
   body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .sidebar {
     height: 100% !important;
+    margin-top: 0 !important;
     padding: 1rem 0.45rem !important;
     overflow-y: auto;
     scrollbar-width: none;
