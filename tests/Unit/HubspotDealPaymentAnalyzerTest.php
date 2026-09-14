@@ -36,7 +36,7 @@ class HubspotDealPaymentAnalyzerTest extends TestCase
         $this->assertSame('partial', $phase['status']);
     }
 
-    public function test_linked_teamleader_phase_is_used_only_when_hubspot_has_no_phase_data(): void
+    public function test_linked_teamleader_phase_never_replaces_an_empty_hubspot_phase(): void
     {
         $deal = new Negocio([
             'id' => 92,
@@ -54,8 +54,9 @@ class HubspotDealPaymentAnalyzerTest extends TestCase
         $analysis = $this->analyzer()->analyzeDeal($deal, $history);
         $phase = $analysis['phases'][1];
 
-        $this->assertSame('teamleader_history', $phase['payment_origin']);
-        $this->assertSame(500.0, $phase['balance_amount']);
+        $this->assertSame('hubspot', $phase['payment_origin']);
+        $this->assertSame(0.0, $phase['balance_amount']);
+        $this->assertSame('empty', $phase['status']);
         $this->assertSame('hubspot:92', $analysis['project_id']);
         $this->assertSame('tl-project-92', $analysis['legacy_teamleader_project_id']);
     }

@@ -6,6 +6,7 @@ use App\Jobs\RefreshClientCosSnapshot;
 use App\Models\User;
 use App\Services\ClientCosSnapshotService;
 use App\Services\CosHelperService;
+use App\Services\HubspotDealTeamleaderProjectLinkService;
 use App\Services\HubspotService;
 use App\Services\TeamleaderService;
 use Illuminate\Database\Schema\Blueprint;
@@ -20,7 +21,11 @@ class ClientCosPageTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config(['queue.default' => 'sync', 'cache.default' => 'array']);
+        config([
+            'queue.default' => 'sync',
+            'cache.default' => 'array',
+            'services.openrouter.key' => null,
+        ]);
         Cache::flush();
         Http::preventStrayRequests();
         $this->mock(HubspotService::class);
@@ -107,6 +112,21 @@ class ClientCosPageTest extends TestCase
         $this->assertSame(1, DB::table('jobs')->count());
         $this->assertNull($user->arraycos_expire);
         Http::assertNothingSent();
+    }
+
+    public function test_opening_the_cos_runs_the_local_deal_link_detection(): void
+    {
+        $user = $this->client();
+        $this->mock(HubspotDealTeamleaderProjectLinkService::class, function ($mock) use ($user) {
+            $mock->shouldReceive('detectAndLink')
+                ->once()
+                ->withArgs(fn (User $candidate) => $candidate->id === $user->id)
+                ->andReturn(['linked' => 0, 'review' => 0, 'unavailable' => false]);
+        });
+
+        app(ClientCosSnapshotService::class)->forPage($user);
+
+        $this->assertSame(1, DB::table('jobs')->where('queue', 'cos-refresh')->count());
     }
 
     private function client(): User

@@ -53,6 +53,8 @@ use App\Services\CustomerOrderStatusService;
 use App\Services\TeamleaderProjectPaymentAnalyzer;
 use App\Services\TeamleaderPhasePaymentService;
 use App\Services\HubspotDealPaymentAnalyzer;
+use App\Services\ClientPaymentSourceResolver;
+use App\Services\TeamleaderClientHistoryService;
 use Illuminate\Support\Facades\Cache;  // ← AGREGAR ESTE
 use App\Services\UserSyncService;      // ← AGREGAR ESTE
 use App\Services\GenealogyService;     // ← AGREGAR ESTE
@@ -1757,25 +1759,24 @@ public function edit(User $user)
         ->get();
 
     $teamleaderMigration = $this->getTeamleaderMigrationData($user);
+    // Payment selection uses the same history reader as the client portal.
+    // Besides a matched contact, it includes a project explicitly linked to a
+    // local HubSpot deal, which the older admin-only detail view may not have.
+    $teamleaderPaymentHistory = app(TeamleaderClientHistoryService::class)->for($user);
     $dealProjectLinking = app(\App\Services\HubspotDealTeamleaderProjectLinkService::class)->overview($user);
     $hubspotPaymentAnalyzer = app(HubspotDealPaymentAnalyzer::class);
     $hubspotProjectPayments = $hubspotPaymentAnalyzer->analyzeFor($user);
-    $linkedHistoricalProjectIds = collect($hubspotProjectPayments['projects'] ?? [])
-        ->pluck('legacy_teamleader_project_id')
-        ->filter()
-        ->map('strval');
-    $unlinkedHistoricalProjects = collect($teamleaderMigration['projects'] ?? collect())
-        ->reject(fn (TlProject $project) => $linkedHistoricalProjectIds->contains((string) $project->id))
-        ->values();
-    $teamleaderProjectPayments = $hubspotPaymentAnalyzer->combine(
-        $hubspotProjectPayments,
-        app(TeamleaderProjectPaymentAnalyzer::class)->analyzeProjects($unlinkedHistoricalProjects),
-    );
-    app(TeamleaderPhasePaymentService::class)->sync($user, $teamleaderProjectPayments);
+    $historicalProjectPayments = app(TeamleaderProjectPaymentAnalyzer::class)
+        ->analyzeProjects(collect($teamleaderPaymentHistory['projects'] ?? collect()));
+    $paymentSourceDecision = app(ClientPaymentSourceResolver::class)
+        ->resolve($hubspotProjectPayments, $historicalProjectPayments);
+    $teamleaderProjectPayments = $paymentSourceDecision['analysis'];
+    $phasePaymentService = app(TeamleaderPhasePaymentService::class);
+    $phasePaymentService->sync($user, $teamleaderProjectPayments);
+    $phasePaymentService->prioritizeSource($user, $paymentSourceDecision['source']);
 
-    // HubSpot is the operational source; the historical project is used only
-    // as a fallback for linked deals. Re-read purchases after reconciliation
-    // so internal COS shows the same debts the public COS will show.
+    // Re-read purchases after source selection and reconciliation so internal
+    // COS shows the same debts the public COS will show.
     $comprasConDealNoPagadas = Compras::query()
         ->whereNotNull('deal_id')
         ->where('pagado', 0)
@@ -1951,6 +1952,7 @@ public function edit(User $user)
         'teamleaderMigration',
         'dealProjectLinking',
         'teamleaderProjectPayments',
+        'paymentSourceDecision',
         'servicios',
         'ownerOptions',
         'formulario001',

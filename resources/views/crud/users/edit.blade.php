@@ -723,6 +723,20 @@
                         @php
                             $tlPaymentTotals = $teamleaderProjectPayments['totals'] ?? [];
                             $tlPaymentProjects = collect($teamleaderProjectPayments['projects'] ?? []);
+                            $paymentSource = $paymentSourceDecision['source'] ?? 'none';
+                            $paymentSourceReason = $paymentSourceDecision['reason'] ?? 'sin_datos_financieros';
+                            $paymentSourceTitle = match ($paymentSource) {
+                                'hubspot' => 'HubSpot como fuente de cobro',
+                                'teamleader' => 'Histórico Teamleader como fuente de cobro',
+                                default => 'Sin fuente financiera disponible',
+                            };
+                            $paymentSourceDetail = match ($paymentSourceReason) {
+                                'tratos_asociados' => 'Hay tratos correlacionados entre ambas plataformas; se muestra exclusivamente HubSpot.',
+                                'historico_sin_correlacion' => 'Hay datos en ambas plataformas, pero sin correlación entre los tratos; se muestra el histórico Teamleader.',
+                                'solo_hubspot' => 'Sólo hay tratos locales de HubSpot para este solicitante.',
+                                'solo_teamleader' => 'Sólo hay proyectos en el histórico Teamleader para este solicitante.',
+                                default => 'No se detectaron tratos ni proyectos con información financiera.',
+                            };
                             $tlPaymentRows = $tlPaymentProjects
                                 ->flatMap(function ($project) {
                                     return collect($project['phases'] ?? [])
@@ -780,11 +794,12 @@
                             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.75rem; padding:1rem 1.25rem; background:#eff6ff; border-bottom:1px solid #dbeafe;">
                                 <div>
                                     <div style="font-size:.78rem; font-weight:700; color:#1d4ed8; text-transform:uppercase; letter-spacing:.04em;">
-                                        Finanzas CRM e histórico
+                                        Fuente financiera seleccionada
                                     </div>
                                     <h3 style="font-size:1.1rem; font-weight:800; color:#111827; margin:0;">
-                                        HubSpot como fuente principal de cobro
+                                        {{ $paymentSourceTitle }}
                                     </h3>
+                                    <div class="small text-muted mt-1">{{ $paymentSourceDetail }}</div>
                                 </div>
                                 <span class="badge bg-primary" style="font-size:.78rem;">
                                     {{ $tlPaymentTotals['projects'] ?? 0 }} trato(s) / proyecto(s)
@@ -876,9 +891,6 @@
                                                         <td>
                                                             @if(($phase['payment_source'] ?? 'teamleader') === 'hubspot')
                                                                 <span class="badge bg-primary">HubSpot</span>
-                                                                @if(($phase['payment_origin'] ?? 'hubspot') === 'teamleader_history')
-                                                                    <span class="small text-muted d-block mt-1">Sin dato CRM; respaldo histórico</span>
-                                                                @endif
                                                             @else
                                                                 <span class="badge bg-secondary">Histórico Teamleader</span>
                                                             @endif
@@ -917,7 +929,7 @@
 
                                 @else
                                     <div class="alert alert-light border mt-3 mb-0">
-                                        No hay montos detectados en las fases de los tratos HubSpot ni en el histórico asociado.
+                                        No hay montos detectados en la fuente financiera seleccionada.
                                     </div>
                                 @endif
                             </div>
