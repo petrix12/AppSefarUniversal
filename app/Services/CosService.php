@@ -110,6 +110,42 @@ class CosService
         }, $phases);
     }
 
+    /**
+     * Payment states intended for the COS header.
+     *
+     * Carta de Naturaleza is sold and paid as its own service, not as one of
+     * the three ordinary process phases. Once that service has a payment
+     * recorded, presenting Fase 1–3 is misleading even when legacy fields
+     * from the same deal still contain values. Keep the regular phase helper
+     * unchanged because the workflow itself still relies on it.
+     */
+    public static function clientVisiblePaymentStatuses(object|array $negocio): array
+    {
+        $value = static function (string $field) use ($negocio): mixed {
+            return is_object($negocio) && method_exists($negocio, 'getAttribute')
+                ? $negocio->getAttribute($field)
+                : data_get($negocio, $field);
+        };
+
+        $carta = [
+            'label' => 'Carta de Naturaleza',
+            'preestablished' => $value('carta_nat_preestab'),
+            'paid' => [$value('carta_nat_montopagado'), $value('carta_nat_pagado')],
+        ];
+
+        if (! collect($carta['paid'])->contains(fn ($item) => filled($item))) {
+            return self::phasePaymentStatuses($negocio);
+        }
+
+        $values = array_merge([$carta['preestablished']], $carta['paid']);
+        $isExonerated = collect($values)->contains(fn ($item) => self::isExoneratedPaymentValue($item));
+
+        return [[
+            'label' => $carta['label'],
+            'status' => $isExonerated ? 'Exonerada' : 'Pagada',
+        ]];
+    }
+
     // ============ MÉTODOS DE CÁLCULO DE ESTADO ============
 
     /**
@@ -487,7 +523,7 @@ class CosService
             'subproceso' => $subproceso,
             'description' => $description,
             'documentStageVersion' => self::DOCUMENT_STAGE_VERSION,
-            'phasePayments' => self::phasePaymentStatuses($this->negocio),
+            'phasePayments' => self::clientVisiblePaymentStatuses($this->negocio),
         ];
 
         // Obtener detalles del paso actual desde array_cos()
