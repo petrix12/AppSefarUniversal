@@ -69,22 +69,41 @@ class GenealogyDocumentService
     {
         return File::query()
             ->where('IDCliente', $passport)
-            ->where('client_visible', true)
             ->whereIn('document_kind', array_keys(self::kinds()))
             ->where(function (Builder $query) {
-                $query->whereNull('source')
-                    ->orWhere('source', '!=', 'hubspot')
-                    ->orWhere(function (Builder $hubspot) {
-                        $hubspot->where('source', 'hubspot')
-                            ->where(function (Builder $eligible) {
-                                foreach (array_keys(HubspotService::clientEligibleContactFileProperties()) as $property) {
-                                    $eligible->orWhere('source_reference', 'like', 'hubspot:' . $property . ':%');
-                                }
-                            });
-                    });
+                // The explicitly approved HubSpot passport/birth fields are
+                // client-safe even when the importer deliberately left the
+                // legacy client_visible flag false.
+                $query->where(function (Builder $hubspot) {
+                    $hubspot->where('source', 'hubspot')
+                        ->where(function (Builder $eligible) {
+                            foreach (array_keys(HubspotService::clientEligibleContactFileProperties()) as $property) {
+                                $eligible->orWhere('source_reference', 'like', 'hubspot:' . $property . ':%');
+                            }
+                        });
+                })->orWhere(function (Builder $published) {
+                    $published->where('client_visible', true)
+                        ->where(function (Builder $notHubspot) {
+                            $notHubspot->whereNull('source')
+                                ->orWhere('source', '!=', 'hubspot');
+                        });
+                });
             })
             ->orderBy('document_kind')
             ->orderByDesc('created_at');
+    }
+
+    public function isVisibleToClient(File $file): bool
+    {
+        if (! self::isAllowedKind($file->document_kind)) {
+            return false;
+        }
+
+        if ($file->source === 'hubspot') {
+            return HubspotService::isClientEligibleFileSource($file->source, $file->source_reference);
+        }
+
+        return (bool) $file->client_visible;
     }
 
     public function canView(User $user, File $file): bool
@@ -94,9 +113,7 @@ class GenealogyDocumentService
         }
 
         return (string) $file->IDCliente === (string) $user->passport
-            && (bool) $file->client_visible
-            && self::isAllowedKind($file->document_kind)
-            && HubspotService::isClientEligibleFileSource($file->source, $file->source_reference);
+            && $this->isVisibleToClient($file);
     }
 
     public function canReuseForRequest(User $user, File $file): bool
@@ -201,11 +218,8 @@ class GenealogyDocumentService
         $ids = $this->fileIdsForPerson($person);
         $query = File::query()->where('IDCliente', $person->IDCliente)->whereIn('id', $ids);
 
-        if ($clientSafe) {
-            $query->where('client_visible', true)->whereIn('document_kind', array_keys(self::kinds()));
-        }
-
         return $query->orderBy('document_kind')->orderBy('file')->get()
+            ->when($clientSafe, fn ($files) => $files->filter(fn (File $file) => $this->isVisibleToClient($file)))
             ->map(fn (File $file) => $this->present($file))
             ->values()
             ->all();

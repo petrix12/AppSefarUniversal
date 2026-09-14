@@ -214,11 +214,11 @@ class TreeController extends Controller
             });
 
         if ($clientSafe) {
-            $query->where('client_visible', true)
-                ->whereIn('document_kind', array_keys(GenealogyDocumentService::kinds()));
+            $query->whereIn('document_kind', array_keys(GenealogyDocumentService::kinds()));
         }
 
         return $query->orderBy('tipo')->orderBy('file')->get()
+            ->when($clientSafe, fn ($files) => $files->filter(fn (ClientFile $file) => $this->documents->isVisibleToClient($file)))
             ->map(fn (ClientFile $file): array => $this->formatTreeFile($file))
             ->values()
             ->all();
