@@ -1242,9 +1242,12 @@
                                         @if($phasePayments)
                                             <div class="d-flex justify-content-center flex-wrap gap-2 pb-3" aria-label="Estado de pagos por fase">
                                                 @foreach($phasePayments as $phasePayment)
-                                                    @php($phaseStyle = $phaseStyles[$phasePayment['status']] ?? $phaseStyles['Sin información'])
+                                                    @php
+                                                        $phaseStatus = (string) ($phasePayment['status'] ?? 'Sin información');
+                                                        $phaseStyle = $phaseStyles[$phaseStatus] ?? $phaseStyles['Sin información'];
+                                                    @endphp
                                                     <span style="background:{{ $phaseStyle['background'] }}; color:{{ $phaseStyle['color'] }}; border:1px solid {{ $phaseStyle['border'] }}; border-radius:999px; padding:.3rem .65rem; font-size:.8rem; font-weight:600;">
-                                                        {{ $phasePayment['label'] }} · {{ $phasePayment['status'] }}
+                                                        {{ $phasePayment['label'] ?? 'Fase' }} · {{ $phaseStatus }}
                                                     </span>
                                                 @endforeach
                                             </div>
