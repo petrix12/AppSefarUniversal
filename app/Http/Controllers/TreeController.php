@@ -180,7 +180,17 @@ class TreeController extends Controller
             // Only documents the customer uploaded through the application can be
             // re-used. HubSpot and Teamleader files never enter this collection.
             'reusable_files' => $this->reusableFilesForClient($user),
-            'possible_spouses' => [],
+            // The client chooses the other spouse only when supplying a marriage
+            // certificate, so that document remains linked to both nodes.
+            'possible_spouses' => Agcliente::where('IDCliente', $user->passport)
+                ->whereKeyNot($person->id)
+                ->orderBy('Nombres')
+                ->get(['id', 'Nombres', 'Apellidos'])
+                ->map(fn (Agcliente $candidate) => [
+                    'id' => $candidate->id,
+                    'name' => trim($candidate->Nombres . ' ' . $candidate->Apellidos) ?: 'Sin nombre',
+                ])
+                ->values(),
         ]);
     }
 

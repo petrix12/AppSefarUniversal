@@ -190,6 +190,101 @@ class DocumentRequestController extends Controller
         ]);
     }
 
+    /**
+     * Lets a customer submit a required tree document without waiting for an
+     * internal request. It still enters the normal internal-review workflow.
+     */
+    public function selfSubmit(Request $request)
+    {
+        $user = auth()->user();
+        abort_unless($user && $user->hasRole('Cliente'), 403);
+
+        $validated = $request->validate([
+            'person_id' => 'required|integer',
+            'document_kind' => 'required|in:' . implode(',', array_keys(GenealogyDocumentService::kinds())),
+            'spouse_id' => 'nullable|integer|different:person_id',
+            'file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,webp,gif|max:10240',
+            'file_id' => 'nullable|integer',
+        ]);
+        abort_unless($request->hasFile('file') || ! empty($validated['file_id']), 422, 'Selecciona un archivo para continuar.');
+
+        $person = $this->personForClient($user, (int) $validated['person_id']);
+        abort_unless(
+            array_key_exists($validated['document_kind'], GenealogyDocumentService::allowedKindsForPerson($person)),
+            422,
+            'El acta de defunción solo aplica a antepasados.'
+        );
+
+        $union = null;
+        if ($validated['document_kind'] === GenealogyDocumentService::KIND_MARRIAGE) {
+            abort_unless(! empty($validated['spouse_id']), 422, 'Selecciona el otro cónyuge para asociar el acta de matrimonio.');
+            $union = $this->documents->findOrCreateUnion(
+                $person,
+                $this->personForClient($user, (int) $validated['spouse_id'])
+            );
+        }
+
+        $documentRequest = DocumentRequest::create([
+            'user_id' => $user->id,
+            // There is no internal requester for a self-submission. The client
+            // is stored here only to satisfy the legacy non-null audit column.
+            'requested_by' => $user->id,
+            'document_name' => GenealogyDocumentService::label($validated['document_kind']),
+            'document_type' => 'genealogico',
+            'document_kind' => $validated['document_kind'],
+            'person_id' => $person->id,
+            'genealogy_union_id' => $union?->id,
+            'status' => 'en_espera_cliente',
+        ]);
+
+        if ($request->hasFile('file')) {
+            $uploaded = $request->file('file');
+            $passport = (string) $user->passport;
+            $extension = strtolower($uploaded->getClientOriginalExtension());
+            $name = preg_replace('/[^A-Za-z0-9_-]/', '_', pathinfo($uploaded->getClientOriginalName(), PATHINFO_FILENAME));
+            $fileName = $name . '_' . now()->format('Ymd_His') . '.' . $extension;
+            $location = 'public/doc/P' . $passport . '/solicitudes';
+            $path = $uploaded->storeAs($location, $fileName, 's3');
+
+            $file = File::create([
+                'file' => $fileName,
+                'location' => $location,
+                'tipo' => GenealogyDocumentService::label($documentRequest->document_kind),
+                'IDCliente' => $passport,
+                'IDPersona' => 0,
+                'IDPersonaNew' => null,
+                'user_id' => $user->id,
+                'source' => 'solicitud_cliente',
+                'client_visible' => true,
+                'document_kind' => $documentRequest->document_kind,
+                'mime_type' => $uploaded->getMimeType(),
+                'size_bytes' => $uploaded->getSize(),
+                'document_request_id' => $documentRequest->id,
+            ]);
+        } else {
+            $file = File::findOrFail($validated['file_id']);
+            abort_unless($this->documents->canReuseForRequest($user, $file), 403, 'Ese archivo no puede asociarse a este documento.');
+            $file->update([
+                'document_kind' => $documentRequest->document_kind,
+                'tipo' => GenealogyDocumentService::label($documentRequest->document_kind),
+                'client_visible' => true,
+                'document_request_id' => $documentRequest->id,
+            ]);
+            $path = trim((string) $file->location, '/') . '/' . ltrim((string) $file->file, '/');
+        }
+
+        $documentRequest->update([
+            'file_path' => $path,
+            'status' => 'resuelto',
+            'status_changed_at' => now(),
+        ]);
+
+        return response()->json([
+            'request' => $documentRequest->fresh(),
+            'file' => $this->documents->present($file),
+        ]);
+    }
+
     /** Reutiliza un documento que el cliente ya había cargado en la aplicación. */
     public function associateExisting(Request $request, DocumentRequest $documentRequest)
     {

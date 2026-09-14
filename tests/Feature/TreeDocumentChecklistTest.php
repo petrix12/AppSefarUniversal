@@ -141,6 +141,45 @@ class TreeDocumentChecklistTest extends TestCase
         ]);
     }
 
+    public function test_client_can_submit_an_available_document_without_an_internal_request(): void
+    {
+        $client = User::factory()->create(['passport' => 'V44444444']);
+        $client->assignRole('Cliente');
+        $person = Agcliente::create([
+            'IDCliente' => $client->passport,
+            'IDPersona' => '1',
+            'Nombres' => 'Cliente',
+            'Apellidos' => 'Carga directa',
+        ]);
+        $uploadedFile = File::create([
+            'file' => 'documento-disponible.pdf',
+            'location' => 'public/doc/P' . $client->passport,
+            'IDCliente' => $client->passport,
+            'IDPersona' => 0,
+            'user_id' => $client->id,
+            'source' => 'app_cliente',
+            'client_visible' => false,
+        ]);
+
+        $this->actingAs($client)
+            ->postJson(route('client.requests.self-submit'), [
+                'person_id' => $person->id,
+                'document_kind' => 'passport',
+                'file_id' => $uploadedFile->id,
+            ])
+            ->assertOk()
+            ->assertJsonPath('request.status', 'resuelto')
+            ->assertJsonPath('request.document_kind', 'passport')
+            ->assertJsonPath('file.id', $uploadedFile->id);
+
+        $this->assertDatabaseHas('document_requests', [
+            'user_id' => $client->id,
+            'person_id' => $person->id,
+            'document_kind' => 'passport',
+            'status' => 'resuelto',
+        ]);
+    }
+
     public function test_marriage_request_is_visible_from_both_spouses_nodes(): void
     {
         $client = User::factory()->create(['passport' => 'V33333333']);
