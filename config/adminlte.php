@@ -146,9 +146,10 @@ return [
     */
 
     'sidebar_mini' => true,
-    // Sefar starts in compact mode: avatar and menu icons remain visible,
-    // while the full navigation is revealed on hover or when the user pins it.
-    'sidebar_collapse' => true,
+    // The sidebar starts fixed and fully visible. A user can collapse it with
+    // the header control; then its avatar and menu icons remain visible and
+    // the full navigation is revealed on hover.
+    'sidebar_collapse' => false,
     'sidebar_collapse_auto_size' => false,
     'sidebar_collapse_remember' => false,
     'sidebar_collapse_remember_no_transition' => true,

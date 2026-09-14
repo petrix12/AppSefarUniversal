@@ -69,9 +69,13 @@
 
     const readPinned = () => {
       try {
-        return window.localStorage.getItem(storageKey) === 'true';
+        const preference = window.localStorage.getItem(storageKey);
+
+        // Everyone starts with the sidebar fixed. We only collapse it when
+        // the user has explicitly chosen that compact presentation.
+        return preference === null ? true : preference === 'true';
       } catch (error) {
-        return false;
+        return true;
       }
     };
 
@@ -88,18 +92,28 @@
         return;
       }
 
+      const mobile = !isDesktop();
+      const drawerOpen = body.classList.contains('sidebar-open');
       toggle.setAttribute('aria-pressed', String(pinned));
-      toggle.setAttribute('aria-label', pinned ? 'Contraer menú lateral' : 'Fijar menú lateral');
-      toggle.setAttribute('title', pinned ? 'Contraer menú lateral' : 'Fijar menú lateral');
+      toggle.setAttribute('aria-expanded', String(mobile ? drawerOpen : pinned));
+      toggle.setAttribute('aria-label', mobile
+        ? (drawerOpen ? 'Cerrar menú lateral' : 'Abrir menú lateral')
+        : (pinned ? 'Contraer menú lateral' : 'Fijar menú lateral'));
+      toggle.setAttribute('title', mobile
+        ? (drawerOpen ? 'Cerrar menú lateral' : 'Abrir menú lateral')
+        : (pinned ? 'Contraer menú lateral' : 'Fijar menú lateral'));
       const icon = toggle.querySelector('i');
       if (icon) {
-        icon.className = pinned ? 'fas fa-thumbtack fa-rotate-90' : 'fas fa-thumbtack';
+        icon.className = mobile
+          ? (drawerOpen ? 'fas fa-times' : 'fas fa-bars')
+          : (pinned ? 'fas fa-thumbtack fa-rotate-90' : 'fas fa-bars');
       }
     };
 
     const setPinned = (pinned, save = true) => {
       if (!isDesktop()) {
         body.classList.remove('sefar-sidebar-pinned');
+        body.classList.remove('sidebar-collapse');
         updateToggle(false);
         return;
       }
@@ -120,6 +134,7 @@
       toggle.addEventListener('click', () => {
         if (!isDesktop()) {
           body.classList.toggle('sidebar-open');
+          updateToggle(false);
           return;
         }
 
