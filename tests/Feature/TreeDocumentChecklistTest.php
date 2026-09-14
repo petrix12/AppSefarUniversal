@@ -7,9 +7,13 @@ use App\Models\DocumentRequest;
 use App\Models\File;
 use App\Models\GenealogyUnion;
 use App\Models\User;
+use App\Mail\GenealogyDocumentUploaded;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -178,6 +182,50 @@ class TreeDocumentChecklistTest extends TestCase
             'document_kind' => 'passport',
             'status' => 'resuelto',
         ]);
+    }
+
+    public function test_upload_notifies_the_configured_internal_recipient_after_storage_succeeds(): void
+    {
+        Storage::fake('s3');
+        Mail::fake();
+        config()->set('services.genealogy_documents.upload_notification_to', ['documentos@sefar.test']);
+
+        $client = User::factory()->create(['passport' => 'V55555555']);
+        $client->assignRole('Cliente');
+        $person = Agcliente::create([
+            'IDCliente' => $client->passport,
+            'IDPersona' => '1',
+            'Nombres' => 'Cliente',
+            'Apellidos' => 'Notificación',
+        ]);
+        $documentRequest = DocumentRequest::create([
+            'user_id' => $client->id,
+            'requested_by' => $client->id,
+            'document_name' => 'Pasaporte',
+            'document_type' => 'genealogico',
+            'document_kind' => 'passport',
+            'person_id' => $person->id,
+            'status' => 'en_espera_cliente',
+        ]);
+
+        $this->actingAs($client)
+            ->post(route('upload', $documentRequest), [
+                'file' => UploadedFile::fake()->create('pasaporte.pdf', 240, 'application/pdf'),
+            ], ['Accept' => 'application/json'])
+            ->assertOk()
+            ->assertJsonPath('request.status', 'resuelto');
+
+        Mail::assertSent(GenealogyDocumentUploaded::class, function (GenealogyDocumentUploaded $mail) use ($client) {
+            return $mail->hasTo('documentos@sefar.test')
+                && $mail->user->is($client)
+                && $mail->file->document_kind === 'passport';
+        });
+
+        $file = File::where('document_request_id', $documentRequest->id)->firstOrFail();
+        $this->assertStringContainsString(
+            'Nuevo archivo cargado',
+            (new GenealogyDocumentUploaded($client, $file, $person))->render()
+        );
     }
 
     public function test_marriage_request_is_visible_from_both_spouses_nodes(): void

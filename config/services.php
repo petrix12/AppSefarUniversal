@@ -68,6 +68,16 @@ return [
         'cron_token' => env('JOTFORM_CRON_TOKEN'),
     ],
 
+    'genealogy_documents' => [
+        // Comma-separated internal recipients. Leave empty until the recipient
+        // is defined; uploads must never fail merely because notifications are
+        // not configured yet.
+        'upload_notification_to' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('GENEALOGY_DOCUMENT_UPLOAD_NOTIFICATION_TO', ''))
+        ))),
+    ],
+
     'openrouter' => [
         'key' => env('OPENROUTER_API_KEY'),
         'url' => 'https://openrouter.ai/api/v1/chat/completions',

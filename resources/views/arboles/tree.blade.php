@@ -43,6 +43,17 @@
             <div class="tree-loading-text">Preparando nodos familiares...</div>
         </div>
     </div>
+    <dialog id="treeDocumentUploadDialog" class="tree-document-upload-dialog" aria-labelledby="treeDocumentUploadTitle">
+        <div class="tree-document-upload-icon"><i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i></div>
+        <h3 id="treeDocumentUploadTitle">Subiendo documento</h3>
+        <p id="treeDocumentUploadFile" class="tree-document-upload-file"></p>
+        <p id="treeDocumentUploadStatus" class="tree-document-upload-status">Preparando carga segura…</p>
+        <div class="tree-document-upload-progress" role="progressbar" aria-label="Progreso de carga" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <span id="treeDocumentUploadProgressBar"></span>
+        </div>
+        <strong id="treeDocumentUploadPercent" class="tree-document-upload-percent">0%</strong>
+        <small>No cierres esta ventana hasta que termine la carga.</small>
+    </dialog>
         @if (session('refresh'))
         <script>
             window.location.reload();
@@ -2480,7 +2491,7 @@ dialog::backdrop {
     background-color: rgb(247, 176, 52);
 }
 
-.tree-document-actions { position: fixed; right: 24px; bottom: 24px; z-index: 1001; }
+.tree-document-actions { position: fixed; right: 24px; bottom: 96px; z-index: 1001; }
 .tree-document-action-button, .tree-document-submit, .tree-document-open-link { border: 0; border-radius: 10px; background: #0b5b6f; color: #fff; padding: .72rem 1rem; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-block; }
 .tree-document-dialog { width: min(960px, calc(100vw - 32px)); max-height: min(86vh, 900px); padding: 0; border: 0; border-radius: 18px; box-shadow: 0 24px 70px rgba(0,0,0,.35); color: #19313c; }
 .tree-document-dialog::backdrop { background: rgba(10, 25, 32, .62); }
@@ -2494,6 +2505,7 @@ dialog::backdrop {
 .tree-document-card:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(16,54,65,.12); }.tree-document-icon { color:#b55242; font-size:1.35rem; }.tree-document-card-copy { min-width:0; display:grid; gap:.15rem; }.tree-document-card-copy small { color:#63777e; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:175px; }
 .tree-document-preview-body { min-height: 55vh; padding: 0 1.25rem 1rem; display:flex; align-items:center; justify-content:center; background:#f4f7f8; }.tree-document-preview-body iframe { width:100%; height:55vh; border:0; border-radius:8px; background:#fff; }.tree-document-preview-body img { max-width:100%; max-height:55vh; object-fit:contain; border-radius:8px; }.tree-document-open-link { margin:0 1.25rem 1.25rem; }
 .tree-document-request-form { padding:1.25rem 1.5rem 1.5rem; display:grid; gap:.65rem; }.tree-document-request-form label { font-weight:700; }.tree-document-request-form select { width:100%; border:1px solid #c8d6da; border-radius:8px; padding:.65rem; background:white; }.tree-document-request-form small,.tree-document-request-person { color:#60757c; margin:0; }.tree-document-submit { justify-self:end; margin-top:.6rem; }
+.tree-document-upload-dialog { width:min(390px,calc(100vw - 32px)); border:0; border-radius:18px; padding:1.65rem; color:#183c4c; text-align:center; box-shadow:0 24px 70px rgba(0,0,0,.35); }.tree-document-upload-dialog::backdrop { background:rgba(10,25,32,.68); }.tree-document-upload-icon { width:54px; height:54px; display:grid; place-items:center; margin:0 auto .85rem; border-radius:16px; color:#fff; background:linear-gradient(135deg,#0b5b6f,#06c2cc); font-size:1.45rem; }.tree-document-upload-dialog h3 { margin:0; font-size:1.15rem; }.tree-document-upload-file { margin:.55rem 0 .25rem; overflow:hidden; color:#0b5b6f; font-size:.84rem; font-weight:800; text-overflow:ellipsis; white-space:nowrap; }.tree-document-upload-status { margin:0 0 .85rem; color:#60757c; font-size:.78rem; }.tree-document-upload-progress { height:9px; overflow:hidden; border-radius:99px; background:#d8e9ed; }.tree-document-upload-progress span { display:block; width:0; height:100%; border-radius:inherit; background:linear-gradient(90deg,#0b5b6f,#06c2cc); transition:width .16s linear; }.tree-document-upload-percent { display:block; margin:.55rem 0 .45rem; color:#0b5b6f; font-size:.85rem; }.tree-document-upload-dialog small { color:#6d8189; font-size:.7rem; }
 .tree-document-checklist { border: 1px solid #d7e4e8; border-radius: 14px; overflow: hidden; background: #fbfdfe; }
 .tree-document-checklist-intro { margin: 0; padding: .1rem 0 .8rem; color: #60757c; font-size: .78rem; line-height: 1.35; }
 .tree-document-slot { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .65rem; align-items: center; padding: .8rem .9rem; border-top: 1px solid #e4ecef; }
@@ -2507,7 +2519,7 @@ dialog::backdrop {
 .tree-document-slot-button { border: 0; border-radius: 8px; background: #0b5b6f; color: #fff; padding: .44rem .58rem; font-size: .72rem; font-weight: 800; cursor: pointer; white-space: nowrap; }.tree-document-slot-button:hover, .tree-document-slot-button.is-dragging { background: #08798a; box-shadow: 0 0 0 3px rgba(8,121,138,.2); }.tree-document-slot-button.is-secondary { background: #edf4f6; color: #0b5b6f; border: 1px solid #b9d4dc; }
 .tree-document-slot-select { max-width: 165px; border: 1px solid #c8d6da; border-radius: 8px; padding: .4rem; color: #274853; font-size: .72rem; background: #fff; }
 @media (max-width: 520px) { .tree-document-slot { grid-template-columns: 1fr; }.tree-document-slot-actions { justify-content: flex-start; }.tree-document-slot-select { max-width: 100%; flex: 1 1 160px; } }
-@media (max-width: 700px) { .tree-document-actions { right:16px; bottom:16px; }.tree-document-action-button { font-size:.85rem; }.tree-document-card-grid { grid-template-columns:1fr; } }
+@media (max-width: 700px) { .tree-document-actions { right:16px; bottom:88px; }.tree-document-action-button { font-size:.85rem; }.tree-document-card-grid { grid-template-columns:1fr; } }
     </style>
 @stop
 
@@ -2558,6 +2570,11 @@ dialog::backdrop {
     const treeDocumentCatalog = document.getElementById('treeDocumentCatalog');
     const treeDocumentPreview = document.getElementById('treeDocumentPreview');
     const treeDocumentRequest = document.getElementById('treeDocumentRequest');
+    const treeDocumentUploadDialog = document.getElementById('treeDocumentUploadDialog');
+    const treeDocumentUploadFile = document.getElementById('treeDocumentUploadFile');
+    const treeDocumentUploadStatus = document.getElementById('treeDocumentUploadStatus');
+    const treeDocumentUploadProgressBar = document.getElementById('treeDocumentUploadProgressBar');
+    const treeDocumentUploadPercent = document.getElementById('treeDocumentUploadPercent');
 
     let isDragging = false;
     let treeDragMoved = false;
@@ -3604,6 +3621,61 @@ dialog::backdrop {
         return result.isConfirmed ? result.value : false;
     }
 
+    function showTreeDocumentUpload(file) {
+        if (!treeDocumentUploadDialog) return;
+        treeDocumentUploadFile.textContent = file?.name || 'Archivo seleccionado';
+        treeDocumentUploadStatus.textContent = 'Preparando carga segura…';
+        treeDocumentUploadProgressBar.style.width = '0%';
+        treeDocumentUploadPercent.textContent = '0%';
+        treeDocumentUploadProgressBar.parentElement?.setAttribute('aria-valuenow', '0');
+        if (!treeDocumentUploadDialog.open) treeDocumentUploadDialog.showModal();
+    }
+
+    function setTreeDocumentUploadProgress(percent, status = null) {
+        const safePercent = Math.max(0, Math.min(100, Math.round(percent || 0)));
+        treeDocumentUploadProgressBar.style.width = `${safePercent}%`;
+        treeDocumentUploadPercent.textContent = `${safePercent}%`;
+        treeDocumentUploadProgressBar.parentElement?.setAttribute('aria-valuenow', String(safePercent));
+        if (status) treeDocumentUploadStatus.textContent = status;
+    }
+
+    function hideTreeDocumentUpload() {
+        if (treeDocumentUploadDialog?.open) treeDocumentUploadDialog.close();
+    }
+
+    function postTreeDocumentWithProgress(endpoint, formData, file) {
+        showTreeDocumentUpload(file);
+
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', endpoint, true);
+            xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
+            xhr.setRequestHeader('Accept', 'application/json');
+            xhr.responseType = 'json';
+            xhr.upload.addEventListener('progress', (event) => {
+                if (!event.lengthComputable) {
+                    treeDocumentUploadStatus.textContent = 'Subiendo archivo…';
+                    return;
+                }
+                const percent = (event.loaded / event.total) * 100;
+                setTreeDocumentUploadProgress(percent, percent >= 100 ? 'Registrando documento…' : 'Subiendo archivo…');
+            });
+            xhr.addEventListener('load', () => {
+                const payload = xhr.response || (() => {
+                    try { return JSON.parse(xhr.responseText || '{}'); } catch (_) { return {}; }
+                })();
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    setTreeDocumentUploadProgress(100, 'Carga completada.');
+                    resolve(payload);
+                    return;
+                }
+                reject(new Error(payload.message || 'No se pudo enviar el documento.'));
+            });
+            xhr.addEventListener('error', () => reject(new Error('La conexión se interrumpió durante la carga.')));
+            xhr.send(formData);
+        });
+    }
+
     async function submitTreeDocument({ requestId, personId, kind }, { file = null, fileId = null } = {}) {
         if (!file && !fileId) return false;
         if (file && file.size > 10 * 1024 * 1024) {
@@ -3635,14 +3707,21 @@ dialog::backdrop {
         }
 
         try {
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
-                body: formData,
-            });
-            const payload = await response.json().catch(() => ({}));
-            if (!response.ok) {
-                throw new Error(payload.message || 'No se pudo enviar el documento.');
+            if (file) {
+                await postTreeDocumentWithProgress(endpoint, formData, file);
+                // Let the user see the completed state before returning to the panel.
+                await new Promise((resolve) => setTimeout(resolve, 300));
+                hideTreeDocumentUpload();
+            } else {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                    body: formData,
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(payload.message || 'No se pudo enviar el documento.');
+                }
             }
             Swal.fire('Documento enviado', 'Lo recibimos y el equipo lo revisará.', 'success');
             if (currentTreePersonPayload?.person?.id) {
@@ -3650,6 +3729,7 @@ dialog::backdrop {
             }
             return true;
         } catch (error) {
+            hideTreeDocumentUpload();
             Swal.fire('No se pudo enviar', error.message || 'Intenta nuevamente.', 'error');
             return false;
         }
