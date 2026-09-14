@@ -3759,10 +3759,7 @@
                                         <div class="document-request-progress" data-dropzone-progress hidden><span data-dropzone-progress-bar></span></div>
                                     </div>
 
-                                    @php
-                                        $reusableDocuments = collect($archivos)->filter(fn ($document) => in_array($document->source, ['app_cliente', 'solicitud_cliente'], true));
-                                    @endphp
-                                    @if($reusableDocuments->isNotEmpty())
+                                    @if(($reusableDocuments ?? collect())->isNotEmpty())
                                     <div class="d-flex gap-2 mb-2">
                                         <select class="form-select form-select-sm existing-file-select" aria-label="Archivo ya cargado">
                                             <option value="">Usar archivo ya cargado…</option>

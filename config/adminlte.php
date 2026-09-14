@@ -1010,10 +1010,11 @@ return [
             ],
         ],
         [
-            'text'          => 'Finalizar carga',
-            'icon'          => 'fa-fw fas fa-sign-out-alt',
-            'icon_color'    => 'blue',
-            'route'         => 'clientes.salir',
+            'text'          => 'Cerrar sesión',
+            'icon'          => 'fa-fw fas fa-power-off',
+            'icon_color'    => 'rgba(255,255,255,0.8)',
+            'route'         => 'logout',
+            'logout'        => true,
             'can'           => 'cliente',
         ],
 

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Agcliente;
+use App\Models\DocumentRequest;
 use App\Models\File as ClientFile;
+use App\Models\GenealogyUnion;
 use App\Models\TFile;
 use App\Models\User;
 use App\Services\GenealogyService;
@@ -136,12 +138,18 @@ class TreeController extends Controller
         }
 
         $person = Agcliente::where('IDCliente', $IDCliente)->findOrFail($id);
+        $client = User::where('passport', $IDCliente)->first();
 
         return response()->json([
             'person' => $person,
             'files' => $this->filesForPerson($person),
             'tree_files' => $this->unassignedFilesForClient($IDCliente),
             'document_kinds' => GenealogyDocumentService::kinds(),
+            // The checklist is intentionally derived instead of creating requests
+            // automatically. Internal users explicitly decide which records to ask for.
+            'allowed_document_kinds' => GenealogyDocumentService::allowedKindsForPerson($person),
+            'document_requests' => $this->documentRequestsForPerson($client, $person),
+            'reusable_files' => [],
             'possible_spouses' => Agcliente::where('IDCliente', $IDCliente)
                 ->whereKeyNot($person->id)
                 ->orderBy('Nombres')
@@ -167,6 +175,11 @@ class TreeController extends Controller
             'files' => $this->filesForPerson($person, true),
             'tree_files' => $this->unassignedFilesForClient($user->passport, true),
             'document_kinds' => GenealogyDocumentService::kinds(),
+            'allowed_document_kinds' => GenealogyDocumentService::allowedKindsForPerson($person),
+            'document_requests' => $this->documentRequestsForPerson($user, $person),
+            // Only documents the customer uploaded through the application can be
+            // re-used. HubSpot and Teamleader files never enter this collection.
+            'reusable_files' => $this->reusableFilesForClient($user),
             'possible_spouses' => [],
         ]);
     }
@@ -196,6 +209,60 @@ class TreeController extends Controller
         }
 
         return $query->orderBy('tipo')->orderBy('file')->get()
+            ->map(fn (ClientFile $file): array => $this->formatTreeFile($file))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Return the latest request for each document slot of a person. Marriage
+     * requests are also returned from the other spouse's node through the union.
+     */
+    private function documentRequestsForPerson(?User $user, Agcliente $person): array
+    {
+        if (! $user) {
+            return [];
+        }
+
+        $unionIds = GenealogyUnion::query()
+            ->where('IDCliente', $person->IDCliente)
+            ->where(function ($query) use ($person) {
+                $query->where('spouse_one_id', $person->id)
+                    ->orWhere('spouse_two_id', $person->id);
+            })
+            ->pluck('id');
+
+        return DocumentRequest::query()
+            ->where('user_id', $user->id)
+            ->where('document_type', 'genealogico')
+            ->whereIn('document_kind', array_keys(GenealogyDocumentService::kinds()))
+            ->where(function ($query) use ($person, $unionIds) {
+                $query->where('person_id', $person->id);
+
+                if ($unionIds->isNotEmpty()) {
+                    $query->orWhereIn('genealogy_union_id', $unionIds);
+                }
+            })
+            ->latest('id')
+            ->get()
+            ->unique('document_kind')
+            ->map(fn (DocumentRequest $documentRequest): array => [
+                'id' => $documentRequest->id,
+                'document_kind' => $documentRequest->document_kind,
+                'document_label' => GenealogyDocumentService::label($documentRequest->document_kind),
+                'status' => $documentRequest->status,
+                'person_id' => $documentRequest->person_id,
+                'genealogy_union_id' => $documentRequest->genealogy_union_id,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /** Files from the client-owned library that may be attached to a request. */
+    private function reusableFilesForClient(User $user): array
+    {
+        return $this->documents->reusableForClient($user)
+            ->get()
             ->map(fn (ClientFile $file): array => $this->formatTreeFile($file))
             ->values()
             ->all();
