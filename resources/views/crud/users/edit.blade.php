@@ -735,11 +735,14 @@
                                         })
                                         ->map(function ($phase) use ($project) {
                                             $phase['project_title'] = $project['project_title'] ?? $project['project_id'] ?? '-';
+                                            $phase['project_id'] = $project['project_id'] ?? '';
+                                            $phase['payment_source'] = $project['payment_source'] ?? 'teamleader';
                                             return $phase;
                                         });
                                 })
                                 ->values();
                             $tlPhasePurchases = $comprasSinDealNoPagadas
+                                ->merge($comprasConDealNoPagadas)
                                 ->filter(fn ($purchase) => $purchase->source === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE)
                                 ->keyBy(fn ($purchase) => (string) data_get($purchase->metadata, 'teamleader_project_id')
                                     . ':' . (int) data_get($purchase->metadata, 'phase', $purchase->phasenum));
@@ -777,19 +780,15 @@
                             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.75rem; padding:1rem 1.25rem; background:#eff6ff; border-bottom:1px solid #dbeafe;">
                                 <div>
                                     <div style="font-size:.78rem; font-weight:700; color:#1d4ed8; text-transform:uppercase; letter-spacing:.04em;">
-                                        Finanzas Teamleader
+                                        Finanzas CRM e histórico
                                     </div>
                                     <h3 style="font-size:1.1rem; font-weight:800; color:#111827; margin:0;">
-                                        Resumen global por proyectos
+                                        HubSpot como fuente principal de cobro
                                     </h3>
                                 </div>
-                                @if(($teamleaderMigration['contact'] ?? null))
-                                    <span class="badge bg-primary" style="font-size:.78rem;">
-                                        {{ $tlPaymentTotals['projects'] ?? 0 }} proyecto(s)
-                                    </span>
-                                @else
-                                    <span class="badge bg-secondary" style="font-size:.78rem;">Sin contacto TL asociado</span>
-                                @endif
+                                <span class="badge bg-primary" style="font-size:.78rem;">
+                                    {{ $tlPaymentTotals['projects'] ?? 0 }} trato(s) / proyecto(s)
+                                </span>
                             </div>
 
                             <div style="padding:1rem 1.25rem;">
@@ -839,7 +838,8 @@
                                                     <th class="text-end">Preestab</th>
                                                     <th class="text-end">Pagado</th>
                                                     <th class="text-end">Saldo</th>
-                                                    <th>Valor TL</th>
+                                                    <th>Origen</th>
+                                                    <th>Valores registrados</th>
                                                     <th>Vista del solicitante</th>
                                                     <th class="text-end">Acción</th>
                                                 </tr>
@@ -872,6 +872,16 @@
                                                         </td>
                                                         <td class="text-end fw-bold {{ ((float) ($phase['balance_amount'] ?? 0)) > 0 ? 'text-danger' : 'text-success' }}">
                                                             {{ $tlMoney($phase['balance_amount'] ?? 0) }}
+                                                        </td>
+                                                        <td>
+                                                            @if(($phase['payment_source'] ?? 'teamleader') === 'hubspot')
+                                                                <span class="badge bg-primary">HubSpot</span>
+                                                                @if(($phase['payment_origin'] ?? 'hubspot') === 'teamleader_history')
+                                                                    <span class="small text-muted d-block mt-1">Sin dato CRM; respaldo histórico</span>
+                                                                @endif
+                                                            @else
+                                                                <span class="badge bg-secondary">Histórico Teamleader</span>
+                                                            @endif
                                                         </td>
                                                         <td class="small text-muted">{{ \Illuminate\Support\Str::limit(implode(' | ', $rawPieces), 70) ?: '-' }}</td>
                                                         <td>
@@ -907,7 +917,7 @@
 
                                 @else
                                     <div class="alert alert-light border mt-3 mb-0">
-                                        No hay montos detectados en los campos Fase 1/2/3 Preestab y Pagado de los proyectos Teamleader asociados.
+                                        No hay montos detectados en las fases de los tratos HubSpot ni en el histórico asociado.
                                     </div>
                                 @endif
                             </div>
@@ -1219,6 +1229,26 @@
                                         <p class="pb-4" style="font-size:1.4rem;">
                                             Estatus actual: <b>{{ $proceso['currentStepName'] ?? 'No iniciado' }}</b>
                                         </p>
+
+                                        @php
+                                            $phasePayments = $proceso['phasePayments'] ?? ($negocioDebug ? \App\Services\CosService::phasePaymentStatuses($negocioDebug) : []);
+                                            $phaseStyles = [
+                                                'Pagada' => ['background' => '#dcfce7', 'color' => '#166534', 'border' => '#bbf7d0'],
+                                                'Exonerada' => ['background' => '#e0f2fe', 'color' => '#075985', 'border' => '#bae6fd'],
+                                                'Pendiente de pago' => ['background' => '#fff7ed', 'color' => '#9a3412', 'border' => '#fed7aa'],
+                                                'Sin información' => ['background' => '#f8fafc', 'color' => '#64748b', 'border' => '#e2e8f0'],
+                                            ];
+                                        @endphp
+                                        @if($phasePayments)
+                                            <div class="d-flex justify-content-center flex-wrap gap-2 pb-3" aria-label="Estado de pagos por fase">
+                                                @foreach($phasePayments as $phasePayment)
+                                                    @php($phaseStyle = $phaseStyles[$phasePayment['status']] ?? $phaseStyles['Sin información'])
+                                                    <span style="background:{{ $phaseStyle['background'] }}; color:{{ $phaseStyle['color'] }}; border:1px solid {{ $phaseStyle['border'] }}; border-radius:999px; padding:.3rem .65rem; font-size:.8rem; font-weight:600;">
+                                                        {{ $phasePayment['label'] }} · {{ $phasePayment['status'] }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        @endif
 
                                         @if(isset($proceso['warning']))
                                             <div class="alert alert-warning fade show py-2 d-flex justify-content-center align-items-center gap-2" role="alert">
@@ -2683,7 +2713,7 @@
                                 <form method="POST" action="{{ route('crud.users.hubspot-teamleader-links.detect', $user) }}">
                                     @csrf
                                     <button class="btn btn-outline-primary" type="submit">
-                                        <i class="fas fa-magic me-1"></i> Detectar coincidencias exactas
+                                        <i class="fas fa-magic me-1"></i> Asociar coincidencias automáticas
                                     </button>
                                 </form>
                             </div>
@@ -2703,7 +2733,7 @@
                                     <td>
                                         {{ $negocio['servicio_solicitado2'] ?: $negocio['dealname'] ?: 'Trato sin nombre' }}
                                         @if($negocio['hubspot_id'])
-                                            <br><small>CRM: <a target="_blank" rel="noopener" href="https://app.hubspot.com/contacts/20053496/record/0-3/{{ $negocio['hubspot_id'] }}">HubSpot</a></small>
+                                            <br><small>CRM externo: <a target="_blank" rel="noopener" href="https://app.hubspot.com/contacts/20053496/record/0-3/{{ $negocio['hubspot_id'] }}">HubSpot</a></small>
                                         @endif
                                     </td>
                                     @if($cosViewRoleId !== 5)
@@ -2752,11 +2782,9 @@
                                         </td>
                                     @endif
                                     <td>
-                                        @if($negocio['hubspot_id'])
-                                            <a href="https://app.hubspot.com/contacts/20053496/record/0-3/{{ $negocio['hubspot_id'] }}" target="_blank" rel="noopener" class="btn btn-primary">
-                                                <i class="fas fa-external-link-alt"></i>
-                                            </a>
-                                        @else — @endif
+                                        <a href="{{ route('deals.edit', $negocio['id']) }}" class="btn btn-primary" title="Abrir negocio en la app" aria-label="Abrir negocio en la app">
+                                            <i class="fas fa-briefcase me-1"></i> Ver en la app
+                                        </a>
                                     </td>
                                 </tr>
                             @endforeach
@@ -3179,7 +3207,7 @@
                                             <select name="person_id" class="form-select" required>
                                                 <option value="">Selecciona una persona…</option>
                                                 @foreach(($documentPeople ?? collect()) as $person)
-                                                    <option value="{{ $person->id }}" data-client-root="{{ (string) $person->IDPersona === '1' ? '1' : '0' }}">{{ trim($person->Nombres . ' ' . $person->Apellidos) ?: 'Sin nombre' }}</option>
+                                                    <option value="{{ $person->id }}" data-client-root="{{ (string) $person->IDPersona === '1' ? '1' : '0' }}">{{ trim($person->Nombres . ' ' . $person->Apellidos) ?: 'Sin nombre' }} — {{ \App\Services\GenealogyDocumentService::relationshipLabel($person) }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -3196,7 +3224,7 @@
                                             <select name="spouse_id" class="form-select">
                                                 <option value="">No aplica</option>
                                                 @foreach(($documentPeople ?? collect()) as $person)
-                                                    <option value="{{ $person->id }}">{{ trim($person->Nombres . ' ' . $person->Apellidos) ?: 'Sin nombre' }}</option>
+                                                    <option value="{{ $person->id }}">{{ trim($person->Nombres . ' ' . $person->Apellidos) ?: 'Sin nombre' }} — {{ \App\Services\GenealogyDocumentService::relationshipLabel($person) }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -3243,6 +3271,7 @@
                         <thead>
                             <tr>
                                 <th>Nombre</th>
+                                <th>Persona / parentesco</th>
                                 <th>Tipo</th>
                                 <th>Estatus</th>
                                 <th>Archivo</th>
@@ -3253,6 +3282,21 @@
                             @foreach($documentRequests as $req)
                             <tr data-id="{{ $req->id }}" data-document-kind="{{ $req->document_kind }}">
                                 <td>{{ $req->document_name }}</td>
+                                <td>
+                                    @php
+                                        $requestPeople = $req->genealogyUnion
+                                            ? collect([$req->genealogyUnion->spouseOne, $req->genealogyUnion->spouseTwo])->filter()
+                                            : collect([$req->person])->filter();
+                                    @endphp
+                                    @forelse($requestPeople as $person)
+                                        <div class="{{ $loop->first ? '' : 'mt-1 pt-1 border-top' }}">
+                                            <strong>{{ trim($person->Nombres . ' ' . $person->Apellidos) ?: 'Sin nombre' }}</strong>
+                                            <small class="d-block text-muted">{{ \App\Services\GenealogyDocumentService::relationshipLabel($person) }}</small>
+                                        </div>
+                                    @empty
+                                        <span class="text-muted">Sin persona asociada</span>
+                                    @endforelse
+                                </td>
                                 <td>{{ ucfirst($req->document_type) }}</td>
                                 <td>
                                     <span class="badge
@@ -3295,11 +3339,12 @@
                                 "infoEmpty": "No hay resultados"
                             },
                             columnDefs: [
-                                { "width": "20%", "targets": 0 }, // Nombre
-                                { "width": "15%", "targets": 1 }, // Tipo
-                                { "width": "15%", "targets": 2 }, // Estatus
-                                { "width": "25%", "targets": 3 }, // Archivo
-                                { "width": "25%", "targets": 4 }  // Acciones
+                                { "width": "15%", "targets": 0 }, // Nombre
+                                { "width": "22%", "targets": 1 }, // Persona / parentesco
+                                { "width": "10%", "targets": 2 }, // Tipo
+                                { "width": "12%", "targets": 3 }, // Estatus
+                                { "width": "15%", "targets": 4 }, // Archivo
+                                { "width": "26%", "targets": 5 }  // Acciones
                             ]
                         });
 
@@ -3340,6 +3385,7 @@
                                     // Crear el nuevo elemento como un array para DataTables
                                     const newRowData = [
                                         res.document_name,
+                                        res.person ? `${res.person.Nombres || ''} ${res.person.Apellidos || ''}`.trim() : 'Sin persona asociada',
                                         res.document_type.charAt(0).toUpperCase() + res.document_type.slice(1),
                                         '<span class="badge bg-secondary">' + formattedStatus + '</span>',
                                         '—',
@@ -3397,7 +3443,7 @@
                                     const row = $(`tr[data-id="${id}"]`);
                                     if (row.length) {
                                         row.find('td:eq(0)').text(documentName);
-                                        row.find('td:eq(1)').text(documentType);
+                                        row.find('td:eq(2)').text(documentType);
                                         row.attr('data-document-kind', res.data.document_kind || '');
                                         $('#editarSolicitudModal').modal('hide');
 
@@ -3444,8 +3490,8 @@
                                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                                         },
                                         success: function (res) {
-                                            row.find('td:eq(2)').html('<span class="badge bg-success">Aprobada</span>');
-                                            row.find('td:eq(4)').html('<button class="btn btn-sm btn-outline-danger eliminar" data-id="'+id+'">Eliminar</button>');
+                                            row.find('td:eq(3)').html('<span class="badge bg-success">Aprobada</span>');
+                                            row.find('td:eq(5)').html('<button class="btn btn-sm btn-outline-danger eliminar" data-id="'+id+'">Eliminar</button>');
 
                                             // Si usas DataTables, actualiza la tabla
                                             if ($.fn.DataTable.isDataTable('#solicitudesTable')) {
@@ -3492,9 +3538,9 @@
                                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                                         },
                                         success: function (res) {
-                                            row.find('td:eq(2)').html('<span class="badge bg-danger">Rechazada</span>');
-                                            row.find('td:eq(3)').html('');
-                                            row.find('td:eq(4)').html('<button class="btn btn-sm btn-outline-danger eliminar" data-id="'+id+'">Eliminar</button>');
+                                            row.find('td:eq(3)').html('<span class="badge bg-danger">Rechazada</span>');
+                                            row.find('td:eq(4)').html('');
+                                            row.find('td:eq(5)').html('<button class="btn btn-sm btn-outline-danger eliminar" data-id="'+id+'">Eliminar</button>');
 
                                             // Si usas DataTables, actualiza la tabla
                                             if ($.fn.DataTable.isDataTable('#solicitudesTable')) {

@@ -23,7 +23,7 @@ class HubspotDealTeamleaderProjectLinkController extends Controller
             return back()->with('error', 'El histórico de Teamleader todavía no está disponible localmente.');
         }
 
-        return back()->with('success', "Se asociaron {$result['linked']} trato(s) con coincidencia inequívoca. Quedan {$result['review']} para revisión.");
+        return back()->with('success', "Se asociaron {$result['linked']} trato(s) por coincidencia exacta o similar de alta confianza. Quedan {$result['review']} para revisión.");
     }
 
     public function store(Request $request, User $user, Negocio $negocio): RedirectResponse

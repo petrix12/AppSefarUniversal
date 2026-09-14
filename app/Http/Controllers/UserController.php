@@ -52,6 +52,7 @@ use App\Models\DocumentRequest;
 use App\Services\CustomerOrderStatusService;
 use App\Services\TeamleaderProjectPaymentAnalyzer;
 use App\Services\TeamleaderPhasePaymentService;
+use App\Services\HubspotDealPaymentAnalyzer;
 use Illuminate\Support\Facades\Cache;  // ← AGREGAR ESTE
 use App\Services\UserSyncService;      // ← AGREGAR ESTE
 use App\Services\GenealogyService;     // ← AGREGAR ESTE
@@ -1724,7 +1725,10 @@ public function edit(User $user)
         $documentRequestsQuery->where('document_type', 'genealogico')
             ->whereIn('document_kind', array_keys(\App\Services\GenealogyDocumentService::kinds()));
     }
-    $documentRequests = $documentRequestsQuery->latest()->get();
+    $documentRequests = $documentRequestsQuery
+        ->with(['person', 'genealogyUnion.spouseOne', 'genealogyUnion.spouseTwo'])
+        ->latest()
+        ->get();
     $archivos = $isClientFacing
         ? $documentService->visibleToClient($user->passport)->get()
         : File::where('IDCliente', $user->passport)->get();
@@ -1754,13 +1758,24 @@ public function edit(User $user)
 
     $teamleaderMigration = $this->getTeamleaderMigrationData($user);
     $dealProjectLinking = app(\App\Services\HubspotDealTeamleaderProjectLinkService::class)->overview($user);
-    $teamleaderProjectPayments = app(TeamleaderProjectPaymentAnalyzer::class)
-        ->analyzeProjects($teamleaderMigration['projects'] ?? collect());
+    $hubspotPaymentAnalyzer = app(HubspotDealPaymentAnalyzer::class);
+    $hubspotProjectPayments = $hubspotPaymentAnalyzer->analyzeFor($user);
+    $linkedHistoricalProjectIds = collect($hubspotProjectPayments['projects'] ?? [])
+        ->pluck('legacy_teamleader_project_id')
+        ->filter()
+        ->map('strval');
+    $unlinkedHistoricalProjects = collect($teamleaderMigration['projects'] ?? collect())
+        ->reject(fn (TlProject $project) => $linkedHistoricalProjectIds->contains((string) $project->id))
+        ->values();
+    $teamleaderProjectPayments = $hubspotPaymentAnalyzer->combine(
+        $hubspotProjectPayments,
+        app(TeamleaderProjectPaymentAnalyzer::class)->analyzeProjects($unlinkedHistoricalProjects),
+    );
     app(TeamleaderPhasePaymentService::class)->sync($user, $teamleaderProjectPayments);
 
-    // The source of truth is Teamleader. Re-read purchases after creating or
-    // closing each independent phase record so internal COS shows the same
-    // debts the public COS will show.
+    // HubSpot is the operational source; the historical project is used only
+    // as a fallback for linked deals. Re-read purchases after reconciliation
+    // so internal COS shows the same debts the public COS will show.
     $comprasConDealNoPagadas = Compras::query()
         ->whereNotNull('deal_id')
         ->where('pagado', 0)

@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Turns the amount fields maintained in Teamleader into independent portal
@@ -73,9 +74,17 @@ class TeamleaderPhasePaymentService
 
                 $key = $this->purchaseKey($projectId, $phaseNumber);
                 $preestablished = round((float) ($phase['effective_preestab_amount'] ?? 0), 2);
-                $foreignConversion = app(TeamleaderHistoricalExchangeRateService::class)
-                    ->convertForeignEntriesToEuro(data_get($phase, 'paid_parse.dated_entries', []));
-                $this->syncHistoricalPaymentEntries($user, $project, $phase, $foreignConversion, $historicalEntries);
+                $isHubspotProject = (string) data_get($project, 'payment_source') === 'hubspot';
+                if ($isHubspotProject && $phaseNumber === 1) {
+                    $this->hideSupersededHistoricalBalances($user, $project);
+                }
+                $foreignConversion = $isHubspotProject
+                    ? ['converted_amount' => 0.0, 'conversions' => [], 'unconverted_entries' => []]
+                    : app(TeamleaderHistoricalExchangeRateService::class)
+                        ->convertForeignEntriesToEuro(data_get($phase, 'paid_parse.dated_entries', []));
+                if (! $isHubspotProject) {
+                    $this->syncHistoricalPaymentEntries($user, $project, $phase, $foreignConversion, $historicalEntries);
+                }
                 $hasUnconvertedCurrency = ! empty(data_get($phase, 'preestab_parse.requires_currency_conversion'))
                     || ! empty($foreignConversion['unconverted_entries']);
                 if (! $hasUnconvertedCurrency) {
@@ -90,7 +99,7 @@ class TeamleaderPhasePaymentService
                     (float) ($phase['effective_paid_amount'] ?? 0) + (float) ($foreignConversion['converted_amount'] ?? 0),
                     2
                 );
-                $historicalPaid = (float) ($historicalPaidAmounts[$key] ?? 0);
+                $historicalPaid = $isHubspotProject ? 0.0 : (float) ($historicalPaidAmounts[$key] ?? 0);
                 // A historic abono can exist both in Teamleader and in the
                 // legacy negocio totals. It must count once, so reconcile
                 // the two independently confirmed totals instead of adding
@@ -114,18 +123,20 @@ class TeamleaderPhasePaymentService
                         : ($balance <= 0.01 ? 'paid' : ($paid > 0 ? 'partial' : 'pending'));
                 }
 
-                $this->notifyPhaseThreeOverpayment($user, $project, $phase);
-                $this->notifySmallBalance($user, $project, $phase);
+                if (! $isHubspotProject) {
+                    $this->notifyPhaseThreeOverpayment($user, $project, $phase);
+                    $this->notifySmallBalance($user, $project, $phase);
+                }
 
-                // A payment record only makes sense when Teamleader contains a
-                // real, readable pre-established amount for this phase.
+                // A payment record only makes sense when its selected source
+                // contains a real, readable pre-established amount for this phase.
                 // An overpayment is a settled phase, not a portal debt. It is
                 // still visibly flagged in COS and phase 3 sends its internal
                 // notification above; only other data-quality issues pause
                 // record creation.
                 $hasBlockingReview = ! empty($phase['needs_review']) && $overpaid <= 0.01;
 
-                $purchase = $existing->get($key) ?? $this->legacyPurchaseFor($user, $projectId, $phaseNumber);
+                $purchase = $existing->get($key) ?? $this->legacyPurchaseFor($user, $project, $phaseNumber);
                 if ($preestablished <= 0 || $hasBlockingReview) {
                     // A review-required phase must remain in the sequence so
                     // later phases are not enabled, but it is never payable
@@ -144,6 +155,7 @@ class TeamleaderPhasePaymentService
                                 'descripcion' => $this->description($project, $phase),
                                 'pagado' => 0,
                                 'monto' => $balance,
+                                'deal_id' => $this->dealId($project),
                                 'phasenum' => $phaseNumber,
                                 'metadata' => $reviewMetadata,
                             ]);
@@ -174,6 +186,7 @@ class TeamleaderPhasePaymentService
                         // For a pending phase, only charge what is actually
                         // outstanding, never the original full phase amount.
                         'monto' => $portalRecordAmount,
+                        'deal_id' => $this->dealId($project),
                         'phasenum' => $phaseNumber,
                         'metadata' => $metadata,
                         'paid_at' => $balance <= 0.01 ? now() : null,
@@ -431,28 +444,32 @@ class TeamleaderPhasePaymentService
             'paid_at' => $remaining <= 0.01 ? $paidAt : null,
         ])->save();
 
-        try {
-            $projectId = (string) data_get($balancePurchase->metadata, 'teamleader_project_id');
-            $phase = (int) data_get($balancePurchase->metadata, 'phase', $balancePurchase->phasenum);
+        if ($this->isHubspotProjectPurchase($balancePurchase)) {
+            $this->syncHubspotPortalInstallment($balancePurchase, $receipt, $amount, $paidAt);
+        } elseif (! config('services.teamleader.historical_mode', true)) {
+            try {
+                $projectId = (string) data_get($balancePurchase->metadata, 'teamleader_project_id');
+                $phase = (int) data_get($balancePurchase->metadata, 'phase', $balancePurchase->phasenum);
 
-            if ($projectId === '' || ! array_key_exists($phase, TeamleaderProjectPaymentAnalyzer::PHASE_FIELDS)) {
-                throw new \InvalidArgumentException('El pago de fase no contiene la referencia necesaria.');
+                if ($projectId === '' || ! array_key_exists($phase, TeamleaderProjectPaymentAnalyzer::PHASE_FIELDS)) {
+                    throw new \InvalidArgumentException('El pago de fase no contiene la referencia necesaria.');
+                }
+
+                app(TeamleaderProjectPaymentWriter::class)->appendPhasePayment(
+                    $projectId,
+                    $phase,
+                    $amount,
+                    $paidAt->format('Y-m-d'),
+                    'phase-payment-' . $receipt->id,
+                    'EUR'
+                );
+            } catch (\Throwable $exception) {
+                Log::channel('teamleader')->error('El abono fue registrado localmente pero no se pudo sincronizar en Teamleader', [
+                    'purchase_id' => $balancePurchase->id,
+                    'receipt_id' => $receipt->id,
+                    'error' => $exception->getMessage(),
+                ]);
             }
-
-            app(TeamleaderProjectPaymentWriter::class)->appendPhasePayment(
-                $projectId,
-                $phase,
-                $amount,
-                $paidAt->format('Y-m-d'),
-                'phase-payment-' . $receipt->id,
-                'EUR'
-            );
-        } catch (\Throwable $exception) {
-            Log::channel('teamleader')->error('El abono fue registrado localmente pero no se pudo sincronizar en Teamleader', [
-                'purchase_id' => $balancePurchase->id,
-                'receipt_id' => $receipt->id,
-                'error' => $exception->getMessage(),
-            ]);
         }
 
         return $receipt;
@@ -466,6 +483,10 @@ class TeamleaderPhasePaymentService
     public function syncPortalPayment(Compras $purchase, TeamleaderService $teamleader): void
     {
         if ($purchase->source !== self::PURCHASE_SOURCE) {
+            return;
+        }
+
+        if ($this->isHubspotProjectPurchase($purchase) || config('services.teamleader.historical_mode', true)) {
             return;
         }
 
@@ -696,12 +717,20 @@ class TeamleaderPhasePaymentService
             : "Abono {$label} · {$title} ({$originalAmount} {$currency})";
     }
 
-    private function legacyPurchaseFor(User $user, string $projectId, int $phase): ?Compras
+    private function legacyPurchaseFor(User $user, array $project, int $phase): ?Compras
     {
-        $dealIds = Negocio::query()
-            ->where('user_id', $user->id)
-            ->where('teamleader_id', $projectId)
-            ->pluck('id');
+        $projectId = (string) ($project['project_id'] ?? '');
+        $dealIds = collect();
+
+        if ((string) ($project['payment_source'] ?? '') === 'hubspot') {
+            $dealId = $this->dealId($project);
+            $dealIds = $dealId ? collect([$dealId]) : collect();
+        } elseif ($projectId !== '') {
+            $dealIds = Negocio::query()
+                ->where('user_id', $user->id)
+                ->where('teamleader_id', $projectId)
+                ->pluck('id');
+        }
 
         if ($dealIds->isEmpty()) {
             return null;
@@ -719,9 +748,18 @@ class TeamleaderPhasePaymentService
     private function metadata(array $project, array $phase): array
     {
         $disposition = (string) ($phase['portal_disposition'] ?? $this->paymentDisposition($phase));
+        $projectId = (string) ($project['project_id'] ?? '');
+        $paymentSource = (string) ($project['payment_source'] ?? 'teamleader');
+
         return [
-            'teamleader_project_id' => (string) ($project['project_id'] ?? ''),
+            // Existing checkout code keys a phase group by this field. For a
+            // HubSpot deal it deliberately contains a local `hubspot:<id>`
+            // key, never an ID that can be written back to Teamleader.
+            'teamleader_project_id' => $projectId,
             'teamleader_project_title' => (string) ($project['project_title'] ?? ''),
+            'payment_source' => $paymentSource,
+            'hubspot_deal_id' => $project['hubspot_deal_id'] ?? null,
+            'negocio_id' => $this->dealId($project),
             'phase' => (int) ($phase['phase'] ?? 0),
             'payment_key' => $phase['payment_key'] ?? null,
             'payment_label' => $phase['payment_label'] ?? null,
@@ -738,6 +776,116 @@ class TeamleaderPhasePaymentService
             'teamleader_payment_status' => $phase['status'] ?? 'empty',
             'teamleader_synced_at' => now()->toIso8601String(),
         ];
+    }
+
+    private function dealId(array $project): ?int
+    {
+        $dealId = $project['negocio_id'] ?? null;
+
+        return is_numeric($dealId) && (int) $dealId > 0 ? (int) $dealId : null;
+    }
+
+    private function isHubspotProjectPurchase(Compras $purchase): bool
+    {
+        return (string) data_get($purchase->metadata, 'payment_source') === 'hubspot';
+    }
+
+    /**
+     * Once a deal has been associated, its HubSpot balance replaces any older
+     * pending balance generated from the same Teamleader project. Historical
+     * receipts remain intact; only the duplicate collection prompt is hidden.
+     */
+    private function hideSupersededHistoricalBalances(User $user, array $project): void
+    {
+        $legacyProjectId = trim((string) ($project['legacy_teamleader_project_id'] ?? ''));
+        $replacementKey = trim((string) ($project['project_id'] ?? ''));
+        if ($legacyProjectId === '' || $replacementKey === '') {
+            return;
+        }
+
+        Compras::query()
+            ->where('id_user', $user->id)
+            ->where('source', self::PURCHASE_SOURCE)
+            ->where('pagado', 0)
+            ->get()
+            ->filter(fn (Compras $purchase) => (string) data_get($purchase->metadata, 'teamleader_project_id') === $legacyProjectId)
+            ->each(function (Compras $purchase) use ($replacementKey): void {
+                $metadata = array_merge($purchase->metadata ?? [], [
+                    'hidden_from_client' => true,
+                    'superseded_by_payment_project_id' => $replacementKey,
+                ]);
+                $purchase->forceFill(['metadata' => $metadata])->save();
+            });
+    }
+
+    /**
+     * Writes a successful portal installment to the HubSpot deal projection.
+     * The linked Teamleader project is strictly historical and is never read
+     * from or mutated by this path.
+     */
+    private function syncHubspotPortalInstallment(
+        Compras $balancePurchase,
+        Compras $receipt,
+        float $amount,
+        \Carbon\Carbon $paidAt,
+    ): void {
+        $phase = (int) data_get($balancePurchase->metadata, 'phase', $balancePurchase->phasenum);
+        $fields = [
+            1 => ['paid' => 'fase_1_pagado', 'date' => 'fecha_fase_1_pagado', 'total' => 'monto_fase_1_pagado'],
+            2 => ['paid' => 'fase_2_pagado', 'date' => 'fecha_fase_2_pagado', 'total' => 'monto_fase_2_pagado'],
+            3 => ['paid' => 'fase_3_pagado', 'date' => 'fecha_fase_3_pagado', 'total' => 'monto_fase_3_pagado'],
+            98 => ['paid' => 'carta_nat_pagado', 'date' => 'carta_nat_fechapagado', 'total' => 'carta_nat_montopagado'],
+            99 => ['paid' => 'cil___fcje_pagado', 'date' => 'cilfcje_fechapagado', 'total' => 'cilfcje_montopagado'],
+        ][$phase] ?? null;
+        $dealId = data_get($balancePurchase->metadata, 'negocio_id') ?: $balancePurchase->deal_id;
+        $deal = $dealId ? Negocio::query()->find($dealId) : null;
+
+        if (! $fields || ! $deal || ! filled($deal->hubspot_id)) {
+            return;
+        }
+
+        $reference = 'phase-payment-' . $receipt->id;
+        $paidField = $fields['paid'];
+        $totalField = $fields['total'];
+        $dateField = $fields['date'];
+        $previous = trim((string) $deal->getAttribute($paidField));
+        $alreadyRecorded = str_contains($previous, "[COS:{$reference}]");
+        $parsedPrevious = app(TeamleaderProjectPaymentAnalyzer::class)->parseMoneyText($previous);
+        $previousTotal = max(
+            (float) ($parsedPrevious['total'] ?? 0),
+            (float) ($deal->getAttribute($totalField) ?? 0),
+        );
+        $total = $alreadyRecorded ? $previousTotal : round($previousTotal + $amount, 2);
+        $entry = number_format($amount, 2, '.', '') . ' EUR ' . $paidAt->format('Y-m-d') . " [COS:{$reference}]";
+        $paidValue = $alreadyRecorded ? $previous : trim(implode(' + ', array_filter([$previous, $entry])));
+
+        $localValues = [
+            $paidField => $paidValue,
+            $totalField => $total,
+            $dateField => $paidAt->format('Y-m-d'),
+        ];
+        $localValues = collect($localValues)
+            ->filter(fn ($value, $field) => Schema::hasColumn('negocios', $field))
+            ->all();
+        if ($localValues !== []) {
+            $deal->forceFill($localValues)->save();
+        }
+
+        try {
+            app(HubspotService::class)->updateDeals((string) $deal->hubspot_id, [
+                $paidField => $paidValue,
+                $totalField => $total,
+                // HubSpot date properties expect UTC midnight in milliseconds.
+                $dateField => $paidAt->copy()->utc()->startOfDay()->getTimestamp() * 1000,
+            ]);
+        } catch (\Throwable $exception) {
+            Log::error('El abono fue registrado localmente pero no se pudo sincronizar en HubSpot', [
+                'purchase_id' => $balancePurchase->id,
+                'receipt_id' => $receipt->id,
+                'hubspot_deal_id' => $deal->hubspot_id,
+                'error' => $exception->getMessage(),
+            ]);
+        }
     }
 
     private function description(array $project, array $payment): string

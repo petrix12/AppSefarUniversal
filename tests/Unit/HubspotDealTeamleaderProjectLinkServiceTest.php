@@ -42,6 +42,31 @@ class HubspotDealTeamleaderProjectLinkServiceTest extends TestCase
         $this->assertSame(100, $candidates[0]['confidence']);
     }
 
+    public function test_a_clear_high_confidence_similar_title_is_linked_automatically(): void
+    {
+        $service = new HubspotDealTeamleaderProjectLinkService();
+
+        $candidate = $this->automaticCandidate($service, collect([
+            ['match_method' => 'similar_title', 'confidence' => 82, 'project' => new TlProject(['id' => 'best'])],
+            ['match_method' => 'similar_title', 'confidence' => 66, 'project' => new TlProject(['id' => 'other'])],
+        ]));
+
+        $this->assertNotNull($candidate);
+        $this->assertSame('best', $candidate['project']->id);
+    }
+
+    public function test_ambiguous_similar_titles_remain_for_manual_review(): void
+    {
+        $service = new HubspotDealTeamleaderProjectLinkService();
+
+        $candidate = $this->automaticCandidate($service, collect([
+            ['match_method' => 'similar_title', 'confidence' => 84, 'project' => new TlProject(['id' => 'first'])],
+            ['match_method' => 'similar_title', 'confidence' => 79, 'project' => new TlProject(['id' => 'second'])],
+        ]));
+
+        $this->assertNull($candidate);
+    }
+
     private function candidatesFor(
         HubspotDealTeamleaderProjectLinkService $service,
         Negocio $deal,
@@ -50,5 +75,12 @@ class HubspotDealTeamleaderProjectLinkServiceTest extends TestCase
         $method = new \ReflectionMethod($service, 'candidatesFor');
 
         return $method->invoke($service, $deal, $projects);
+    }
+
+    private function automaticCandidate(HubspotDealTeamleaderProjectLinkService $service, Collection $candidates): ?array
+    {
+        $method = new \ReflectionMethod($service, 'automaticCandidate');
+
+        return $method->invoke($service, $candidates);
     }
 }
