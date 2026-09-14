@@ -58,6 +58,21 @@ class ClientPaymentSourceResolverTest extends TestCase
         $this->assertSame(3436.0, $decision['analysis']['totals']['balance_amount']);
     }
 
+    public function test_carta_payment_without_a_preestablished_amount_does_not_hide_regular_phases(): void
+    {
+        $hubspot = $this->hubspot(true, false);
+        $hubspot['projects'][0]['phases'] = [
+            1 => $this->phase(1, 'Fase 1', 'pending', 1000, 0, 1000),
+            98 => $this->phase(98, 'Carta de Naturaleza', 'review', 0, 500, 0, 'Abono 500 EUR'),
+        ];
+
+        $decision = $this->resolve($hubspot, $this->teamleader(false));
+        $project = $decision['analysis']['projects'][0];
+
+        $this->assertArrayNotHasKey('payment_scope', $project);
+        $this->assertSame([1, 98], array_keys($project['phases']));
+    }
+
     private function resolve(array $hubspot, array $teamleader): array
     {
         return (new ClientPaymentSourceResolver())->resolve($hubspot, $teamleader);

@@ -124,9 +124,14 @@ class TeamleaderPhasePaymentService
                 $phase['overpaid_amount'] = $overpaid;
                 $phase['difference_amount'] = round($preestablished - $paid, 2);
                 if (empty($phase['needs_review'])) {
-                    $phase['status'] = $overpaid > 0.01
-                        ? 'review'
-                        : ($balance <= 0.01 ? 'paid' : ($paid > 0 ? 'partial' : 'pending'));
+                    // A 0 / 0 record means the payment was never configured,
+                    // not that the client paid it in full. This status feeds
+                    // the internal COS table as well as portal balances.
+                    $phase['status'] = ($preestablished <= 0.01 && $paid <= 0.01)
+                        ? 'empty'
+                        : ($overpaid > 0.01
+                            ? 'review'
+                            : ($balance <= 0.01 ? 'paid' : ($paid > 0 ? 'partial' : 'pending')));
                 }
 
                 if (! $isHubspotProject) {

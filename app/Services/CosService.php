@@ -99,13 +99,17 @@ class CosService
         return array_map(function (array $phase): array {
             $values = array_merge([$phase['preestablished']], $phase['paid']);
             $isExonerated = collect($values)->contains(fn ($item) => self::isExoneratedPaymentValue($item));
-            $isPaid = collect($phase['paid'])->contains(fn ($item) => filled($item));
+            $preestablishedAmount = self::paymentAmount($phase['preestablished']);
+            $paidAmount = collect($phase['paid'])
+                // HubSpot and the legacy Teamleader field can contain the
+                // same abono, so the greatest confirmed amount is the paid
+                // total; summing them would duplicate a payment.
+                ->map(fn ($item) => self::paymentAmount($item))
+                ->max() ?? 0.0;
 
             return [
                 'label' => $phase['label'],
-                'status' => $isExonerated
-                    ? 'Exonerada'
-                    : ($isPaid ? 'Pagada' : (filled($phase['preestablished']) ? 'Pendiente de pago' : 'Sin información')),
+                'status' => self::paymentStatus($preestablishedAmount, $paidAmount, $isExonerated),
             ];
         }, $phases);
     }
@@ -139,11 +143,91 @@ class CosService
 
         $values = array_merge([$carta['preestablished']], $carta['paid']);
         $isExonerated = collect($values)->contains(fn ($item) => self::isExoneratedPaymentValue($item));
+        $preestablishedAmount = self::paymentAmount($carta['preestablished']);
+        $paidAmount = collect($carta['paid'])
+            ->map(fn ($item) => self::paymentAmount($item))
+            // carta_nat_pagado and carta_nat_montopagado can mirror the same
+            // abono, so use the greatest confirmed total, never their sum.
+            ->max() ?? 0.0;
 
         return [[
             'label' => $carta['label'],
-            'status' => $isExonerated ? 'Exonerada' : 'Pagada',
+            'status' => self::paymentStatus($preestablishedAmount, $paidAmount, $isExonerated),
         ]];
+    }
+
+    /**
+     * A payment cannot be considered complete without an established amount
+     * to reconcile it against. This intentionally favours "Sin información"
+     * over a misleading paid status when CRM fields are incomplete.
+     */
+    private static function paymentStatus(float $preestablishedAmount, float $paidAmount, bool $isExonerated): string
+    {
+        if ($isExonerated) {
+            return 'Exonerada';
+        }
+
+        if ($preestablishedAmount <= 0.01) {
+            return 'Sin información';
+        }
+
+        if ($paidAmount <= 0.01) {
+            return 'Pendiente de pago';
+        }
+
+        if ($paidAmount < ($preestablishedAmount - 0.01)) {
+            return 'Parcial';
+        }
+
+        return 'Pagada';
+    }
+
+    private static function paymentAmount(mixed $value): float
+    {
+        if ($value === null || $value === '') {
+            return 0.0;
+        }
+
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
+        return (float) ((new TeamleaderProjectPaymentAnalyzer())
+            ->parseMoneyText((string) $value)['total'] ?? 0);
+    }
+
+    /**
+     * Adapts the already-selected financial source to the compact COS header.
+     * The process deal and the financial deal can differ, so the header must
+     * prefer the selected Carta scope when it exists instead of falling back
+     * to the three empty fields of an unrelated process record.
+     */
+    public static function selectedFinancialPaymentStatuses(array $analysis): array
+    {
+        return collect($analysis['projects'] ?? [])
+            ->filter(fn (array $project): bool => ($project['payment_scope'] ?? null) === 'carta_naturaleza')
+            ->flatMap(function (array $project) {
+                return collect($project['phases'] ?? [])
+                    ->filter(fn (array $phase, int|string $key): bool => (int) ($phase['phase'] ?? $key) === 98);
+            })
+            ->map(function (array $phase): array {
+                $status = match ($phase['status'] ?? null) {
+                    'paid' => 'Pagada',
+                    'partial' => 'Parcial',
+                    'exonerated' => 'Exonerada',
+                    'included' => 'Incluida',
+                    'review' => 'En revisión',
+                    'pending' => 'Pendiente de pago',
+                    default => 'Sin información',
+                };
+
+                return [
+                    'label' => $phase['payment_label'] ?? 'Carta de Naturaleza',
+                    'status' => $status,
+                ];
+            })
+            ->values()
+            ->all();
     }
 
     // ============ MÉTODOS DE CÁLCULO DE ESTADO ============
