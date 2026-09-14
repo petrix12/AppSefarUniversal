@@ -47,6 +47,18 @@ class TeamleaderClientHistoryService
                 ->values()
             : collect();
 
+        if (Schema::hasTable('hubspot_deal_teamleader_project_links')) {
+            $linkedProjectIds = $linkedProjectIds
+                ->merge(DB::table('hubspot_deal_teamleader_project_links as link')
+                    ->join('negocios as negocio', 'negocio.id', '=', 'link.negocio_id')
+                    ->where('negocio.user_id', $user->id)
+                    ->pluck('link.teamleader_project_id'))
+                ->map(fn ($id) => trim((string) $id))
+                ->filter()
+                ->unique()
+                ->values();
+        }
+
         $match = $this->bestContactMatch($user);
         $contact = $match['contact'] ?? null;
 

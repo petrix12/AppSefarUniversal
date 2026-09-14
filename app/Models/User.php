@@ -37,6 +37,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'arraycos' => 'array',
         'arraycos_expire' => 'datetime',
+        'revision_archivos' => 'datetime',
         'contrato' => 'boolean',
         'exclude_from_task_assignment' => 'boolean',
         'task_assignment_daily_limit' => 'integer',

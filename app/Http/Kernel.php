@@ -39,6 +39,7 @@ class Kernel extends HttpKernel
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\RedirectCoordinatorWithoutContract::class,
             \App\Http\Middleware\AuditRequests::class,
+            \App\Http\Middleware\QueueClientFileReview::class,
         ],
 
         'api' => [

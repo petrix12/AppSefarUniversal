@@ -422,6 +422,100 @@ textarea {
   font-weight: 700;
 }
 
+/* Compact navigation: icons and avatar stay visible. On desktop the sidebar
+ * becomes a temporary overlay on hover, unless the user pins it with the
+ * top-bar toggle. The content column keeps its compact width while hovering. */
+.sefar-sidebar-pin-toggle {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.sefar-sidebar-pin-toggle[aria-pressed="true"] {
+  background: rgba(219, 186, 114, 0.22) !important;
+  color: #fff !important;
+}
+
+@media (min-width: 992px) {
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar,
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar::before {
+    width: var(--sefar-sidebar-mini-width) !important;
+  }
+
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar {
+    transition: width 180ms ease, box-shadow 180ms ease;
+  }
+
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:hover {
+    width: var(--sefar-sidebar-width) !important;
+    z-index: 1045;
+    box-shadow: 16px 0 34px rgba(0, 27, 39, 0.24);
+  }
+
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .brand-link {
+    justify-content: center;
+    min-height: 0;
+    height: 0;
+    padding-inline: 0;
+    border-width: 0 !important;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:focus-within .brand-link {
+    min-height: 4.15rem;
+    height: auto;
+    padding-inline: 0.9rem;
+    border-bottom-width: 1px !important;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .brand-link .brand-image {
+    margin: 0 !important;
+  }
+
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .brand-text,
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .user-panel .info,
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar .nav-link p,
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar .nav-header,
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar .right,
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-treeview {
+    width: 0 !important;
+    max-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+  }
+
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .user-panel {
+    justify-content: center;
+    margin-inline: 0.4rem;
+  }
+
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar {
+    padding-inline: 0.45rem;
+  }
+
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar .nav-link {
+    justify-content: center;
+    padding-inline: 0.35rem;
+  }
+
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar .nav-link > i:first-child {
+    margin: 0 !important;
+  }
+
+  body.sefar-sidebar-pinned .main-sidebar,
+  body.sefar-sidebar-pinned .main-sidebar::before {
+    width: var(--sefar-sidebar-width) !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .sefar-nav-canvas {
     display: none;

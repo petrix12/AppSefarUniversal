@@ -41,6 +41,78 @@ class HubspotService
 {
     protected $hubspot;
 
+    /**
+     * The only HubSpot contact file fields eligible for the controlled
+     * client-document workflow. Everything else found in HubSpot is internal.
+     */
+    private const CONTACT_FILE_PROPERTIES = [
+        'pasaporte__documento_' => [
+            'label' => 'Pasaporte simple',
+            'document_kind' => 'passport',
+        ],
+        'partida_de_nacimiento_simple__' => [
+            'label' => 'Partida de nacimiento simple',
+            'document_kind' => 'birth_certificate',
+        ],
+        'documentos_adicionales' => [
+            'label' => 'Documentos adicionales',
+            'document_kind' => null,
+        ],
+    ];
+
+    public static function isClientEligibleFileSource(?string $source, ?string $sourceReference): bool
+    {
+        if ($source !== 'hubspot') {
+            return true;
+        }
+
+        if (! preg_match('/^hubspot:([^:]+):/', (string) $sourceReference, $matches)) {
+            return false;
+        }
+
+        return array_key_exists($matches[1], self::clientEligibleContactFileProperties());
+    }
+
+    public static function clientEligibleContactFileProperties(): array
+    {
+        return self::CONTACT_FILE_PROPERTIES;
+    }
+
+    /**
+     * Reads HubSpot's actual contact schema and adds the controlled metadata
+     * for the three fields allowed in the document workflow.
+     *
+     * @return array<string, array{label:string,document_kind:?string}>
+     */
+    public function contactFilePropertyDefinitions(): array
+    {
+        return Cache::remember('hubspot.contact-file-properties.v2', now()->addDay(), function (): array {
+            try {
+                $properties = collect($this->propertyCatalog('contacts'))
+                    ->filter(fn (array $property) => strtolower((string) ($property['field_type'] ?? '')) === 'file')
+                    ->mapWithKeys(fn (array $property) => [
+                        $property['key'] => [
+                            'label' => $property['label'] ?: $property['key'],
+                            'document_kind' => null,
+                        ],
+                    ]);
+
+                foreach (self::CONTACT_FILE_PROPERTIES as $key => $definition) {
+                    $properties[$key] = array_merge($properties[$key] ?? [], $definition);
+                }
+
+                return $properties->all();
+            } catch (\Throwable $exception) {
+                Log::warning('No se pudo actualizar el catálogo de campos de archivo de HubSpot.', [
+                    'error' => $exception->getMessage(),
+                ]);
+
+                // A schema lookup must not block the known safe fields.
+                return self::CONTACT_FILE_PROPERTIES;
+            }
+        });
+    }
+
     private const FORMULARIO_001_COMMON_FIELDS = [
         'email' => ['label' => 'Correo'],
         'city' => ['label' => 'Ciudad de residencia'],
@@ -1507,8 +1579,17 @@ class HubspotService
         // 1. Extraer el ID del archivo desde la URL
         $fileId = $this->extractFileIdFromFormIntegrationsUrl($rawUrl);
         if (empty($fileId)) {
-            // No se obtuvo un ID => no podemos procesar
-            return null;
+            // Engagements and the Files API already return a HubSpot-hosted URL.
+            // It is not a form redirect, but it is still safe to import it.
+            $host = strtolower((string) parse_url($rawUrl, PHP_URL_HOST));
+            $isHubSpotHost = $host !== '' && (
+                str_ends_with($host, '.hubspot.com')
+                || str_contains($host, 'hubspotusercontent')
+                || str_ends_with($host, '.hsforms.com')
+                || str_ends_with($host, '.hsforms.net')
+            );
+
+            return $isHubSpotHost && filter_var($rawUrl, FILTER_VALIDATE_URL) ? $rawUrl : null;
         }
 
         try {
@@ -1571,6 +1652,18 @@ class HubspotService
      */
     public function getContactFileFields(string $contactId): array
     {
+        return array_values(array_unique(array_column(
+            $this->getContactFileFieldRecords($contactId),
+            'url'
+        )));
+    }
+
+    /**
+     * Same file properties as getContactFileFields(), retaining the property
+     * that supplied each document so imported records can be classified safely.
+     */
+    public function getContactFileFieldRecords(string $contactId): array
+    {
         try {
             // 1. Preparar el token y el cliente de HubSpot (o bien reusar $this->hubspot)
             $hubspot  = $this->makeHubspotClient();
@@ -1580,7 +1673,8 @@ class HubspotService
             //      pásalas en el segundo parámetro de getById con implode()
             //    - Ejemplo: "mi_archivo_cv,foto_del_contacto"
 
-            $fileProperties = ["pasaporte__documento_", "partida_de_nacimiento_simple__", "documentos_adicionales"];
+            $propertyDefinitions = $this->contactFilePropertyDefinitions();
+            $fileProperties = array_keys($propertyDefinitions);
             $propertiesToRequest = implode(',', $fileProperties);
 
             //    - OJO: Usa basicApi()->getById(...) de la CRM v3
@@ -1598,41 +1692,28 @@ class HubspotService
             $properties = $contactResponse->getProperties(); // array asociativo: ['mi_archivo_cv' => '...', ...]
 
             // 4. Array donde guardaremos las URLs finales
-            $fileUrls = [];
+            $fileRecords = [];
 
             // 5. Recorremos cada propiedad "de archivo" para ver si hay contenido
             foreach ($fileProperties as $propName) {
                 if (!empty($properties[$propName])) {
                     $propValue = $properties[$propName];
 
-                    // CASO A: El valor es un ID numérico (ej. "123456")
-                    if (is_numeric($propValue)) {
-                        $this->tryAddFileUrl($fileUrls, $propValue, $hubspot);
-
-                    // CASO B: El valor es una URL directa
-                    } elseif (filter_var($propValue, FILTER_VALIDATE_URL)) {
-                        $fileUrls[] = $propValue;
-
-                    // CASO C: El valor podría ser un JSON con varios IDs/URLs (por ejemplo, multi-file property)
-                    } elseif ($this->isJson($propValue)) {
-                        $decoded = json_decode($propValue, true);
-                        if (is_array($decoded)) {
-                            foreach ($decoded as $item) {
-                                // Si es un ID, llamamos a la Files API
-                                if (is_numeric($item)) {
-                                    $this->tryAddFileUrl($fileUrls, $item, $hubspot);
-
-                                // Si es una URL, la agregamos tal cual
-                                } elseif (filter_var($item, FILTER_VALIDATE_URL)) {
-                                    $fileUrls[] = $item;
-                                }
-                            }
-                        }
+                    foreach ($this->resolveContactFileUrls($propValue, $hubspot) as $url) {
+                        $fileRecords[] = [
+                            'url' => $url,
+                            'hubspot_property' => $propName,
+                            'property_label' => $propertyDefinitions[$propName]['label'] ?? $propName,
+                            'document_kind' => $propertyDefinitions[$propName]['document_kind'] ?? null,
+                        ];
                     }
                 }
             }
 
-            return $fileUrls;
+            return collect($fileRecords)
+                ->unique(fn (array $record) => $record['hubspot_property'] . '|' . $record['url'])
+                ->values()
+                ->all();
 
         } catch (ContactException $e) {
             throw new \Exception("Error al obtener contacto (ContactException): " . $e->getMessage());
@@ -1653,20 +1734,60 @@ class HubspotService
      */
     private function tryAddFileUrl(array &$fileUrls, string $fileId, $hubspot)
     {
+        $url = $this->hubspotFileUrl($fileId, $hubspot);
+        if ($url) $fileUrls[] = $url;
+    }
+
+    private function resolveContactFileUrls(mixed $value, $hubspot): array
+    {
+        if (is_array($value)) {
+            return collect($value)
+                ->flatMap(fn ($item) => $this->resolveContactFileUrls($item, $hubspot))
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+        }
+
+        $value = trim((string) $value);
+        if ($value === '') return [];
+
+        if (is_numeric($value)) {
+            return array_filter([$this->hubspotFileUrl($value, $hubspot)]);
+        }
+
+        if (filter_var($value, FILTER_VALIDATE_URL)) {
+            return [$value];
+        }
+
+        if ($this->isJson($value)) {
+            $decoded = json_decode($value, true);
+            return is_array($decoded) ? $this->resolveContactFileUrls($decoded, $hubspot) : [];
+        }
+
+        return collect(preg_split('/[;,\r\n]+/', $value) ?: [])
+            ->map('trim')
+            ->filter(fn ($item) => filter_var($item, FILTER_VALIDATE_URL))
+            ->values()
+            ->all();
+    }
+
+    private function hubspotFileUrl(string $fileId, $hubspot): ?string
+    {
         try {
             $fileDetails = $hubspot->files()->filesApi()->getById($fileId);
 
-            // Filtra sólo los que tengan 'access' público
             if (
                 in_array($fileDetails->getAccess(), ['PUBLIC_INDEXABLE', 'PUBLIC_NOT_INDEXABLE'], true)
                 && !empty($fileDetails->getUrl())
             ) {
-                $fileUrls[] = $fileDetails->getUrl();
+                return $fileDetails->getUrl();
             }
         } catch (FilesApiException $ex) {
-            // Si el archivo es privado o no existe, ignorar o loguear
-            // Log::warning("No se pudo obtener el archivo con ID {$fileId}: " . $ex->getMessage());
+            // Private or unavailable HubSpot files are deliberately not imported.
         }
+
+        return null;
     }
 
     /**

@@ -752,10 +752,7 @@ class HubspotFixAndImport extends Command
             try {
                 if ($syncNow) {
                     app(\App\Jobs\SyncUserDealsJob::class, ['user' => $user])
-                        ->handle(
-                            app(\App\Services\HubspotService::class),
-                            app(\App\Services\TeamleaderService::class)
-                        );
+                        ->handle(app(\App\Services\HubspotService::class));
                 } else {
                     SyncUserDealsJob::dispatch($user);
                 }

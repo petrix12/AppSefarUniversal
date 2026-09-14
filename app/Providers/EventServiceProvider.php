@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Event;
@@ -44,6 +45,12 @@ class EventServiceProvider extends ServiceProvider
             DarkModeWasToggled::class,
             [$this, 'handleDarkModeWasToggledEvt']
         );
+
+        Event::listen(Login::class, function (Login $event): void {
+            if ($event->user instanceof \App\Models\User) {
+                app(\App\Services\ClientFileReviewService::class)->queueIfDue($event->user, 'login');
+            }
+        });
     }
     public function handleReadingDarkModeEvt(ReadingDarkModePreference $event)
     {

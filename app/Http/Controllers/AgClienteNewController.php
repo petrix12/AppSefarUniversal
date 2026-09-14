@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\URL;
 use RealRashid\SweetAlert\Facades\Alert;
 use App\Mail\CargaSefar;
 use App\Services\GenealogyService;
+use App\Services\GenealogyDocumentService;
 use Illuminate\Support\Facades\Mail as Mail2;
 use Illuminate\Validation\ValidationException;
 
@@ -622,16 +623,24 @@ class AgClienteNewController extends Controller
             'file' => $originalFileName,
             'location' => $path,
             'notas' => $request->notas,
-            'Propietario' => $user->name,
+            'propietario' => $user->name,
             'user_id' => $user->id,
+            'source' => 'staff_upload',
+            'client_visible' => false,
+            'document_kind' => GenealogyDocumentService::inferKind($request->tipo),
+            'mime_type' => $request->file('archivo')->getMimeType(),
+            'size_bytes' => $request->file('archivo')->getSize(),
         ]);
         return redirect()->back()->withInput();
     }
 
     public function openfile(Request $request){
-        $path = $request->path;
+        $request->validate(['file_id' => 'required|integer']);
+        $file = File::findOrFail($request->integer('file_id'));
 
-        $url = Storage::disk('s3')->temporaryUrl($path, now()->addMinutes(5));
+        $documents = app(GenealogyDocumentService::class);
+        abort_unless(auth()->check() && $documents->canView(auth()->user(), $file), 403);
+        $url = $documents->temporaryUrl($file);
 
         return response()->json(['url' => $url]);
     }

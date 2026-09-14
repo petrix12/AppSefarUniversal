@@ -32,7 +32,7 @@ class RefreshClientCosSnapshot implements ShouldQueue, ShouldBeUnique
         return (string) $this->userId;
     }
 
-    public function handle(ClientCosSnapshotService $snapshots, \App\Services\HubspotService $hubspot): void
+    public function handle(ClientCosSnapshotService $snapshots): void
     {
         $user = User::find($this->userId);
         if ($user) {
@@ -46,18 +46,6 @@ class RefreshClientCosSnapshot implements ShouldQueue, ShouldBeUnique
                     ->map(fn ($user) => array_intersect_key($user, array_flip(['id', 'name', 'email'])))
                     ->values()->all();
             });
-            $user->refresh();
-            if (filled($user->hs_id) && filled($user->passport)) {
-                \Illuminate\Support\Facades\Cache::remember('cos.documents_imported.' . $user->id, 3600, function () use ($user, $hubspot) {
-                    $urls = array_unique(array_merge(
-                        $hubspot->getEngagementsByContactId($user->hs_id),
-                        $hubspot->getContactFileFields($user->hs_id)
-                    ));
-                    app(\App\Services\CosDocumentImporter::class)->import($urls, $user, $hubspot);
-
-                    return true;
-                });
-            }
         }
     }
 }

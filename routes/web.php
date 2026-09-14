@@ -65,6 +65,7 @@ use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ListController;
 use App\Http\Controllers\HubspotOwnerController;
+use App\Http\Controllers\HubspotDealTeamleaderProjectLinkController;
 use App\Http\Controllers\StrategicSuggestionAttachmentController;
 use App\Http\Controllers\StrategicSuggestionController;
 use App\Http\Controllers\Teamleader\TlProjectController;
@@ -484,6 +485,15 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
     Route::patch('users/{user}/phase-payment-visibility', [UserController::class, 'updatePhasePaymentVisibility'])
             ->name('users.update-phase-payment-visibility')
             ->middleware('can:crud.users.index');
+    Route::post('users/{user}/hubspot-teamleader-links/detect', [HubspotDealTeamleaderProjectLinkController::class, 'detect'])
+            ->name('users.hubspot-teamleader-links.detect')
+            ->middleware('can:crud.users.index');
+    Route::post('users/{user}/hubspot-teamleader-links/{negocio}', [HubspotDealTeamleaderProjectLinkController::class, 'store'])
+            ->name('users.hubspot-teamleader-links.store')
+            ->middleware('can:crud.users.index');
+    Route::delete('users/{user}/hubspot-teamleader-links/{negocio}', [HubspotDealTeamleaderProjectLinkController::class, 'destroy'])
+            ->name('users.hubspot-teamleader-links.destroy')
+            ->middleware('can:crud.users.index');
     Route::get('users/{user}/internal-chat', [ClientChatController::class, 'messages'])
             ->name('users.internal-chat.index')
             ->middleware('can:crud.users.index');
@@ -561,13 +571,16 @@ Route::delete('generalcoupons/{generalCoupon}', [GeneralCouponController::class,
 
 Route::post('agclientesnew', [AgClienteNewController::class, 'storeNotCliente'])->name('agclientesnew.store');
 Route::post('agclientesupdate', [AgClienteNewController::class, 'updateNotCliente'])->name('agclientesnew.update');
-Route::post('getclientfiles', [AgClienteNewController::class, 'getClientFiles'])->name('getclientfiles');
-Route::post('updatefiletype', [AgClienteNewController::class, 'updatefiletype'])->name('updatefiletype');
-Route::post('storefile', [AgClienteNewController::class, 'storefile'])->name('storefile');
-Route::post('openfile', [AgClienteNewController::class, 'openfile'])->name('openfile');
-Route::post('deletefile', [AgClienteNewController::class, 'deletefile'])->name('deletefile');
-Route::post('getfileedit', [AgClienteNewController::class, 'getfileedit'])->name('getfileedit');
-Route::post('getfileupdate', [AgClienteNewController::class, 'getfileupdate'])->name('getfileupdate');
+Route::middleware(['auth', 'can:administrar.documentos'])->group(function () {
+    Route::post('files/{file}/genealogy-association', [FileController::class, 'associateGenealogyDocument'])->name('files.genealogy-association');
+    Route::post('getclientfiles', [AgClienteNewController::class, 'getClientFiles'])->name('getclientfiles');
+    Route::post('updatefiletype', [AgClienteNewController::class, 'updatefiletype'])->name('updatefiletype');
+    Route::post('storefile', [AgClienteNewController::class, 'storefile'])->name('storefile');
+    Route::post('openfile', [AgClienteNewController::class, 'openfile'])->name('openfile');
+    Route::post('deletefile', [AgClienteNewController::class, 'deletefile'])->name('deletefile');
+    Route::post('getfileedit', [AgClienteNewController::class, 'getfileedit'])->name('getfileedit');
+    Route::post('getfileupdate', [AgClienteNewController::class, 'getfileupdate'])->name('getfileupdate');
+});
 
 Route::post('/sincronizarhsytl', [NegocioController::class, 'sincronizarhsytl'])->name('sincronizarhsytl');
 Route::post('/guardarfase1', [NegocioController::class, 'guardarfase1'])->name('guardarfase1');
@@ -628,7 +641,7 @@ Route::get('/downloadExcel/{id}', [GedcomController::class, 'getExcelCliente'])-
 //Ruta api GetEmail
 Route::get('/api/getemail/{id}', [UserController::class, 'getemail'])->name('getemail');
 
-Route::get('/viewfile/{id}', [FileController::class, 'viewFile'])->name('viewfile');
+Route::get('/viewfile/{id}', [FileController::class, 'viewFile'])->middleware('auth')->name('viewfile');
 
 //Ruta Comprobantes de Pago
 Route::get('/viewcomprobante/{id}', [FacturaController::class, 'viewcomprobante'])->name('viewcomprobante');
@@ -794,6 +807,8 @@ Route::group(['middleware' => ['auth'], 'as' => 'arboles.'], function(){
 
 // Grupo de rutas para vistas de clientes
 Route::group(['middleware' => ['auth'], 'as' => 'clientes.'], function(){
+    Route::get('tree/person/{id}/detail', [TreeController::class, 'clientPersonDetail'])->name('tree.person-detail')
+        ->middleware('can:cliente');
     Route::get('tree', [ClienteController::class, 'tree'])->name('tree')
         ->middleware('can:cliente');
     Route::post('google-review', [GoogleReviewInvitationController::class, 'write'])->name('google-review')
@@ -930,11 +945,11 @@ Route::get('view-clear', function(){
 });
 
 // Rutas para administradores
-Route::prefix('admin/requests')->group(function () {
+Route::middleware(['auth'])->prefix('admin/requests')->group(function () {
     Route::post('/{user}', [DocumentRequestController::class, 'store'])->name('admin.requests.store');
     // routes/web.php o routes/api.php
     Route::put('/{documentRequest}', [DocumentRequestController::class, 'update'])->name('admin.requests.update');
-    Route::delete('/{request}', [DocumentRequestController::class, 'destroy'])->name('admin.requests.destroy');
+    Route::delete('/{documentRequest}', [DocumentRequestController::class, 'destroy'])->name('admin.requests.destroy');
     Route::post('/{documentRequest}/approve', [DocumentRequestController::class, 'approve'])
          ->name('admin.requests.approve');              // →
 
@@ -943,9 +958,10 @@ Route::prefix('admin/requests')->group(function () {
 });
 
 // Rutas para clientes
-Route::prefix('client/requests')->group(function () {
+Route::middleware(['auth'])->prefix('client/requests')->group(function () {
     Route::post('/{documentRequest}/upload', [DocumentRequestController::class, 'upload'])->name('upload');
-    Route::post('/{documentRequest}/no-doc', [DocumentRequestController::class, 'noDoc'])->name('no_doc');
+    Route::post('/{documentRequest}/associate-existing', [DocumentRequestController::class, 'associateExisting'])->name('associate_existing');
+    Route::post('/{documentRequest}/no-doc', [DocumentRequestController::class, 'noDocument'])->name('no_doc');
 });
 
 

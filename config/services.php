@@ -47,6 +47,9 @@ return [
         'sync_chunk_delay_seconds' => env('TEAMLEADER_SYNC_CHUNK_DELAY_SECONDS', 12),
         'sync_documents' => env('TEAMLEADER_SYNC_DOCUMENTS', false),
         'download_invoice_pdfs' => env('TEAMLEADER_DOWNLOAD_INVOICE_PDFS', false),
+        // The migrated tl_* tables are the permanent historical archive.
+        // Explicitly opt out only for legacy maintenance operations.
+        'historical_mode' => env('TEAMLEADER_HISTORICAL_MODE', true),
     ],
 
     'n8n' => [

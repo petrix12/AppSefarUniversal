@@ -35,7 +35,10 @@ class UserSyncService
 
             return [
                 'contact' => $this->hubspotService->getContactById($user->hs_id),
-                'files' => $this->hubspotService->getContactFileFields($user->hs_id),
+                // HubSpot documents have their own client-only review job.
+                // Keeping them out of the general COS refresh prevents an
+                // internal user or ordinary navigation from scanning files.
+                'files' => [],
                 'deals' => $this->hubspotService->getDealsByContactId($user->hs_id),
             ];
         });

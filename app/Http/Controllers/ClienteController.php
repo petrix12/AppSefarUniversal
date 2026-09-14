@@ -192,11 +192,19 @@ class ClienteController extends Controller
         ->where('monto', '>', 0)
         ->get();
 
-        $documentRequests = DocumentRequest::where('user_id', $user->id)
-            ->latest()
-            ->get();
-
-        $archivos = File::where("IDCliente", $user->passport)->get();
+        $documentService = app(\App\Services\GenealogyDocumentService::class);
+        $isClientFacing = auth()->id() === $user->id || request()->boolean('vista_cliente');
+        $documentRequestsQuery = DocumentRequest::where('user_id', $user->id);
+        if ($isClientFacing) {
+            $documentRequestsQuery->where('document_type', 'genealogico')
+                ->whereIn('document_kind', array_keys(\App\Services\GenealogyDocumentService::kinds()));
+        }
+        $documentRequests = $documentRequestsQuery->latest()->get();
+        $archivos = $isClientFacing
+            ? $documentService->visibleToClient($user->passport)->get()
+            : File::where('IDCliente', $user->passport)->get();
+        $documentPeople = Agcliente::where('IDCliente', $user->passport)->orderBy('Generacion')->orderBy('IDPersona')->get();
+        $documentKinds = \App\Services\GenealogyDocumentService::kinds();
 
         $facturas = Factura::with('compras')
             ->where('id_cliente', $user->id)
@@ -355,6 +363,8 @@ class ClienteController extends Controller
             'boardId',
             'boardName',
             'archivos',
+            'documentPeople',
+            'documentKinds',
             'user',
             'roles',
             'permissions',
@@ -714,6 +724,10 @@ class ClienteController extends Controller
                     'file' => $filename,
                     'location' => "public/doc/{$user->passport}/",
                     'IDCliente' => $user->passport,
+                    'user_id' => $user->id,
+                    'source' => 'hubspot',
+                    'client_visible' => false,
+                    'source_reference' => $fileUrl,
                 ]);
 
                 $processedFiles[] = $filename;
@@ -744,6 +758,14 @@ class ClienteController extends Controller
 
     private function syncDealFieldsBetweenPlatforms($hubspotDeals, $teamleaderDeals, $camposRelacionados, $user)
     {
+        if (config('services.teamleader.historical_mode', true)) {
+            Log::warning('Sincronización heredada de tratos omitida: Teamleader está en modo histórico local.', [
+                'user_id' => $user->id,
+            ]);
+
+            return;
+        }
+
         $updatesToHubspotAll = [];
         $updatesToTeamleaderAll = [];
         $updatesToDBAll = [];
@@ -1168,6 +1190,7 @@ class ClienteController extends Controller
         $parentescos = $treeData['parentescos'];
         $treeWarnings = $treeData['warnings'];
         $treeStats = $treeData['stats'];
+        $documentCatalog = app(\App\Services\GenealogyDocumentService::class)->catalog($IDCliente, true);
         $googleReviewInvitation = app(\App\Services\GoogleReviewInvitationService::class)->canInvite($user);
         $tipoarchivos = TFile::all();
         $checkBtn = "no";
@@ -1189,6 +1212,7 @@ class ClienteController extends Controller
             'parentnumber',
             'treeWarnings',
             'treeStats',
+            'documentCatalog',
             'googleReviewInvitation'
         ));
 

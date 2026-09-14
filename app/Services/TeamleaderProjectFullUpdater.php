@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Log;
+
 /**
  * Builds a complete legacy projects.update payload before changing custom
  * fields. Teamleader replaces custom_fields as a collection in this account.
@@ -16,6 +18,14 @@ class TeamleaderProjectFullUpdater
 
     public function update(string $projectId, array $project, array $customFields): void
     {
+        if ($this->historicalMode()) {
+            Log::channel('teamleader')->info('Actualización de proyecto omitida: Teamleader está en modo histórico local.', [
+                'project_id' => $projectId,
+            ]);
+
+            return;
+        }
+
         $this->teamleader->updateProject(
             $projectId,
             $this->paymentWriter->projectUpdatePayload($project, $customFields)
@@ -28,6 +38,14 @@ class TeamleaderProjectFullUpdater
      */
     public function updateCustomFields(string $projectId, array $changes, ?array $project = null): void
     {
+        if ($this->historicalMode()) {
+            Log::channel('teamleader')->info('Actualización de campos omitida: Teamleader está en modo histórico local.', [
+                'project_id' => $projectId,
+            ]);
+
+            return;
+        }
+
         $project ??= $this->teamleader->getProjectDetails($projectId);
 
         if (! is_array($project) || empty($project['id'])) {
@@ -67,5 +85,17 @@ class TeamleaderProjectFullUpdater
         }
 
         return array_values($fieldsById);
+    }
+
+    /** See TeamleaderProjectPaymentWriter::historicalMode(). */
+    private function historicalMode(): bool
+    {
+        try {
+            return app()->bound('config')
+                ? (bool) app('config')->get('services.teamleader.historical_mode', true)
+                : false;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 }

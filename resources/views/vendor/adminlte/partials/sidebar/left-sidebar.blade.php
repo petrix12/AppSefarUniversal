@@ -3,7 +3,7 @@
     $showSnow = ($md >= '12-21' || $md <= '01-07');
 @endphp
 
-<aside class="main-sidebar {{ config('adminlte.classes_sidebar', 'sidebar-dark-primary elevation-4') }}
+<aside data-sefar-sidebar class="main-sidebar {{ config('adminlte.classes_sidebar', 'sidebar-dark-primary elevation-4') }}
      @if($showSnow) sidebar-snow @endif">
 
     {{-- Sidebar brand logo --}}
