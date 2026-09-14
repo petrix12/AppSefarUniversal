@@ -489,6 +489,16 @@ textarea {
     margin-inline: 0.4rem;
   }
 
+  /* The profile copy must not remain as a zero-width flex item. It otherwise
+     keeps spacing inside the compact rail even though its text is invisible. */
+  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .user-panel > .info {
+    display: none !important;
+  }
+
+  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:hover .user-panel > .info {
+    display: block !important;
+  }
+
   body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar {
     padding-inline: 0.45rem;
   }
@@ -516,18 +526,18 @@ textarea {
   }
 
   body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .user-panel {
-    width: 100%;
-    margin: 0 0 0.95rem !important;
-    padding: 0 0 0.9rem !important;
+    width: calc(100% - 0.55rem);
+    margin: 0.45rem auto 1.05rem !important;
+    padding: 0.3rem 0.25rem 0.95rem !important;
     justify-content: center;
   }
 
   body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .user-panel .sefar-user-avatar-frame,
   body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .user-panel .sefar-user-avatar,
   body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .user-panel .sefar-user-avatar-frame img {
-    width: 44px !important;
-    height: 44px !important;
-    flex-basis: 44px;
+    width: 40px !important;
+    height: 40px !important;
+    flex-basis: 40px;
   }
 
   body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar {
