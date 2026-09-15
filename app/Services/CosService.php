@@ -18,7 +18,9 @@ use Illuminate\Support\Facades\Http;
  */
 class CosService
 {
-    public const DOCUMENT_STAGE_VERSION = 1;
+    // Bump when the gate to redacción/documentos changes so snapshots that
+    // may have advanced without a valid Fase 1 are recalculated immediately.
+    public const DOCUMENT_STAGE_VERSION = 2;
 
     private const SERVICE_ALIASES = [
         'Española - Carta de Naturaleza General' => 'Nacionalidad por Carta de Naturaleza',
@@ -244,6 +246,17 @@ class CosService
         //dd($certificadoDescargado == 1, $this->totalStepsGen, $this->totalStepsGen - 1);
 
         $rules = [
+            // Fase 1 es el umbral comercial para todo el recorrido posterior
+            // a la genealogía aprobada. Esta regla debe evaluarse antes de
+            // documentos, redacción, informes u otros hitos operativos.
+            [
+                'name' => 'Esperando Pago Fase 1',
+                'condition' => fn() => $this->mustRemainInBudgetAndPayment($resultadoIA),
+                'stepGen' => 7,
+                'stepJur' => -1,
+                'warning' => "Para continuar con el proceso y proceder con la redacción del informe, <b>es necesario que realices el siguiente pago.</b>",
+            ],
+
             // PASO 8: NACIONALIDAD CONCEDIDA (FINAL)
             [
                 'name' => 'Nacionalidad Concedida',
@@ -456,15 +469,6 @@ class CosService
                 'stepGen' => 8,
                 'stepJur' => -1,
                 'warning' => null,
-            ],
-
-            // PASO 7: ESPERANDO PAGO FASE 1
-            [
-                'name' => 'Esperando Pago Fase 1',
-                'condition' => fn() => $this->hasFase1Preestablecida(),
-                'stepGen' => 7,
-                'stepJur' => -1,
-                'warning' => "Para continuar con el proceso y proceder con la redacción del informe, <b>es necesario que realices el siguiente pago.</b>",
             ],
 
             // PASOS 2-6: BASADOS EN IA
@@ -1059,20 +1063,20 @@ class CosService
 
     private function hasEnviadoARedaccion(): bool
     {
-        return isset($this->negocio->n2__enviado_a_redaccion_informe);
+        // La marca operativa de redacción no puede adelantar el COS. Antes
+        // debe existir una Fase 1 conciliada y completamente pagada.
+        return $this->canStartReportWriting()
+            && filled($this->negocio->getAttribute('n2__enviado_a_redaccion_informe'));
     }
 
     private function hasFase1Pagada(): bool
     {
-        return filled($this->negocio->getAttribute('fase_1_pagado'))
-            || filled($this->negocio->getAttribute('fase_1_pagado__teamleader_'));
+        return $this->fase1PaymentStatus() === 'Pagada';
     }
 
     private function hasFase1Exonerada(): bool
     {
-        $phase = self::phasePaymentStatuses($this->negocio)[0];
-
-        return $phase['status'] === 'Exonerada';
+        return $this->fase1PaymentStatus() === 'Exonerada';
     }
 
     private static function isExoneratedPaymentValue(mixed $value): bool
@@ -1080,16 +1084,45 @@ class CosService
         return str_contains(mb_strtoupper((string) $value, 'UTF-8'), 'EXONERAD');
     }
 
-    private function hasFase1Preestablecida(): bool
-    {
-        return isset($this->negocio->fase_1_preestab);
-    }
-
     // ============ CONDICIONES DE DOCUMENTOS ============
 
     private function canShowDocumentStage(array $resultadoIA): bool
     {
-        return (bool) ($resultadoIA['genealogiaAprobada'] ?? false);
+        // La solicitud, revisión y aprobación de documentos pertenecen a la
+        // etapa que empieza con la redacción del informe. No deben exponer un
+        // avance posterior mientras Fase 1 no esté pagada (o exonerada).
+        return (bool) ($resultadoIA['genealogiaAprobada'] ?? false)
+            && $this->canStartReportWriting();
+    }
+
+    /**
+     * El cliente solo puede entrar en redacción de informe cuando Fase 1 está
+     * plenamente conciliada. Un abono parcial, un pago sin importe
+     * preestablecido o datos incompletos no habilitan el siguiente paso.
+     */
+    private function canStartReportWriting(): bool
+    {
+        // HubSpot debe haber registrado primero el importe preestablecido.
+        // Un valor de pago aislado no se puede conciliar y, por tanto, no
+        // prueba que el cliente haya pagado Fase 1.
+        return $this->hasFase1Preestablecida()
+            && in_array($this->fase1PaymentStatus(), ['Pagada', 'Exonerada'], true);
+    }
+
+    private function hasFase1Preestablecida(): bool
+    {
+        return filled($this->negocio->getAttribute('fase_1_preestab'));
+    }
+
+    private function mustRemainInBudgetAndPayment(array $resultadoIA): bool
+    {
+        return (bool) ($resultadoIA['genealogiaAprobada'] ?? false)
+            && ! $this->canStartReportWriting();
+    }
+
+    private function fase1PaymentStatus(): string
+    {
+        return self::phasePaymentStatuses($this->negocio)[0]['status'] ?? 'Sin información';
     }
 
     private function hasApprovedDocuments(): bool

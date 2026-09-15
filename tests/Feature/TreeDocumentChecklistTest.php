@@ -365,12 +365,23 @@ class TreeDocumentChecklistTest extends TestCase
             ->assertJsonPath('document_requests.0.genealogy_union_id', $union->id);
     }
 
-    public function test_document_stage_requires_approved_genealogy_but_not_a_phase_one_payment(): void
+    public function test_document_stage_requires_approved_genealogy_and_a_completed_phase_one_payment(): void
     {
         $client = User::factory()->create();
-        $deal = new Negocio([
+        $dealWithoutPayment = new Negocio([
             'servicio_solicitado' => 'Española Sefardi',
             'servicio_solicitado2' => 'Española Sefardi',
+        ]);
+        $dealAwaitingPayment = new Negocio([
+            'servicio_solicitado' => 'Española Sefardi',
+            'servicio_solicitado2' => 'Española Sefardi',
+            'fase_1_preestab' => '1.000 EUR',
+        ]);
+        $dealWithCompletedPayment = new Negocio([
+            'servicio_solicitado' => 'Española Sefardi',
+            'servicio_solicitado2' => 'Española Sefardi',
+            'fase_1_preestab' => '1.000 EUR',
+            'fase_1_pagado' => '1.000 EUR',
         ]);
         DocumentRequest::create([
             'user_id' => $client->id,
@@ -381,13 +392,67 @@ class TreeDocumentChecklistTest extends TestCase
             'status' => 'resuelto',
         ]);
 
-        $withoutApproval = (new CosService($deal, $client, collect([$deal]), ['etiquetas' => 'En proceso'], false))
+        $withoutApproval = (new CosService($dealWithoutPayment, $client, collect([$dealWithoutPayment]), ['etiquetas' => 'En proceso'], false))
             ->calculateStatus();
-        $withApproval = (new CosService($deal, $client, collect([$deal]), ['etiquetas' => 'Aceptado'], false))
+        $withoutPayment = (new CosService($dealWithoutPayment, $client, collect([$dealWithoutPayment]), ['etiquetas' => 'Aceptado'], false))
+            ->calculateStatus();
+        $awaitingPayment = (new CosService($dealAwaitingPayment, $client, collect([$dealAwaitingPayment]), ['etiquetas' => 'Aceptado'], false))
+            ->calculateStatus();
+        $withCompletedPayment = (new CosService($dealWithCompletedPayment, $client, collect([$dealWithCompletedPayment]), ['etiquetas' => 'Aceptado'], false))
             ->calculateStatus();
 
         $this->assertNotSame('Documentos en Revisión', $withoutApproval['description']);
-        $this->assertSame('Documentos en Revisión', $withApproval['description']);
+        $this->assertSame('Esperando Pago Fase 1', $withoutPayment['description']);
+        $this->assertSame('Presupuesto y pago', $withoutPayment['currentStepName']);
+        $this->assertSame('Sin información', $withoutPayment['phasePayments'][0]['status']);
+        $this->assertSame('Esperando Pago Fase 1', $awaitingPayment['description']);
+        $this->assertSame('Documentos en Revisión', $withCompletedPayment['description']);
+    }
+
+    public function test_report_writing_status_requires_a_completed_phase_one_payment(): void
+    {
+        $client = User::factory()->create();
+        $withoutPayment = new Negocio([
+            'servicio_solicitado' => 'Española Sefardi',
+            'servicio_solicitado2' => 'Española Sefardi',
+            // A payment value without the HubSpot preestablished amount is
+            // incomplete financial data, not a verified payment.
+            'fase_1_pagado' => '1.000 EUR',
+            'n2__enviado_a_redaccion_informe' => '2026-09-15',
+        ]);
+        $withCompletedPayment = new Negocio([
+            'servicio_solicitado' => 'Española Sefardi',
+            'servicio_solicitado2' => 'Española Sefardi',
+            'fase_1_preestab' => '1.000 EUR',
+            'fase_1_pagado' => '1.000 EUR',
+            'n2__enviado_a_redaccion_informe' => '2026-09-15',
+        ]);
+
+        $blocked = (new CosService($withoutPayment, $client, collect([$withoutPayment]), ['etiquetas' => 'Aceptado'], false))
+            ->calculateStatus();
+        $allowed = (new CosService($withCompletedPayment, $client, collect([$withCompletedPayment]), ['etiquetas' => 'Aceptado'], false))
+            ->calculateStatus();
+
+        $this->assertSame('Esperando Pago Fase 1', $blocked['description']);
+        $this->assertSame('Presupuesto y pago', $blocked['currentStepName']);
+        $this->assertSame('Sin información', $blocked['phasePayments'][0]['status']);
+        $this->assertSame('Enviado a Redacción de Informe', $allowed['description']);
+    }
+
+    public function test_an_operational_report_marker_cannot_bypass_the_phase_one_payment_gate(): void
+    {
+        $client = User::factory()->create();
+        $deal = new Negocio([
+            'servicio_solicitado' => 'Española Sefardi',
+            'servicio_solicitado2' => 'Española Sefardi',
+            'n3__informe_cargado' => '2026-09-15',
+        ]);
+
+        $status = (new CosService($deal, $client, collect([$deal]), ['etiquetas' => 'Aceptado'], false))
+            ->calculateStatus();
+
+        $this->assertSame('Esperando Pago Fase 1', $status['description']);
+        $this->assertSame('Presupuesto y pago', $status['currentStepName']);
     }
 
     public function test_phase_one_exoneration_is_a_valid_cos_payment_state(): void
