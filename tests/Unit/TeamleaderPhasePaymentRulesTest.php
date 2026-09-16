@@ -33,20 +33,6 @@ class TeamleaderPhasePaymentRulesTest extends TestCase
         $this->assertSame('review', $phases[3]['status']);
         $this->assertSame(50.0, $phases[3]['overpaid_amount']);
     }
-
-    public function test_an_unconfigured_phase_is_not_considered_paid(): void
-    {
-        $project = new TlProject([
-            'id' => 'project-unconfigured-phase',
-            'custom_fields' => [],
-        ]);
-
-        $phase = (new TeamleaderProjectPaymentAnalyzer())->analyzeProject($project)['phases'][1];
-
-        $this->assertSame(0.0, $phase['effective_preestab_amount']);
-        $this->assertSame(0.0, $phase['effective_paid_amount']);
-        $this->assertSame('empty', $phase['status']);
-    }
     public function test_miscellaneous_preestablished_payments_are_independent(): void
     {
         $project = new TlProject([

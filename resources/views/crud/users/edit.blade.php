@@ -1243,37 +1243,20 @@
                                         </p>
 
                                         @php
-                                            $financialPaymentStatuses = \App\Services\CosService::selectedFinancialPaymentStatuses($teamleaderProjectPayments ?? []);
-                                            $currentPaymentStatuses = $negocioDebug
-                                                ? \App\Services\CosService::clientVisiblePaymentStatuses($negocioDebug)
-                                                : ($proceso['phasePayments'] ?? []);
-                                            $phasePayments = $financialPaymentStatuses ?: $currentPaymentStatuses;
+                                            $phasePayments = $proceso['phasePayments'] ?? ($negocioDebug ? \App\Services\CosService::clientVisiblePaymentStatuses($negocioDebug) : []);
                                             $paymentSummaryLabel = count($phasePayments) === 1
                                                 && ($phasePayments[0]['label'] ?? null) === 'Carta de Naturaleza'
                                                 ? 'Estado de pago de Carta de Naturaleza'
                                                 : 'Estado de pagos por fase';
-                                            $incompletePayments = collect($phasePayments)
-                                                ->filter(fn ($payment) => in_array($payment['status'] ?? null, ['Parcial', 'Pendiente de pago'], true))
-                                                ->map(function ($payment) {
-                                                    $state = ($payment['status'] ?? null) === 'Parcial'
-                                                        ? 'pago parcial'
-                                                        : 'pendiente de pago';
-
-                                                    return ($payment['label'] ?? 'Pago') . ' (' . $state . ')';
-                                                })
-                                                ->values();
                                             $phaseStyles = [
                                                 'Pagada' => ['background' => '#dcfce7', 'color' => '#166534', 'border' => '#bbf7d0'],
-                                                'Parcial' => ['background' => '#fef3c7', 'color' => '#92400e', 'border' => '#fde68a'],
                                                 'Exonerada' => ['background' => '#e0f2fe', 'color' => '#075985', 'border' => '#bae6fd'],
-                                                'Incluida' => ['background' => '#eef2ff', 'color' => '#3730a3', 'border' => '#c7d2fe'],
-                                                'En revisión' => ['background' => '#fef2f2', 'color' => '#991b1b', 'border' => '#fecaca'],
                                                 'Pendiente de pago' => ['background' => '#fff7ed', 'color' => '#9a3412', 'border' => '#fed7aa'],
                                                 'Sin información' => ['background' => '#f8fafc', 'color' => '#64748b', 'border' => '#e2e8f0'],
                                             ];
                                         @endphp
-                                            @if($phasePayments)
-                                                <div class="d-flex justify-content-center flex-wrap gap-2 pb-3" aria-label="{{ $paymentSummaryLabel }}">
+                                        @if($phasePayments)
+                                            <div class="d-flex justify-content-center flex-wrap gap-2 pb-3" aria-label="{{ $paymentSummaryLabel }}">
                                                 @foreach($phasePayments as $phasePayment)
                                                     @php
                                                         $phaseStatus = (string) ($phasePayment['status'] ?? 'Sin información');
@@ -1283,15 +1266,8 @@
                                                         {{ $phasePayment['label'] ?? 'Fase' }} · {{ $phaseStatus }}
                                                     </span>
                                                 @endforeach
-                                                </div>
-                                            @endif
-
-                                            @if($incompletePayments->isNotEmpty())
-                                                <div class="alert alert-warning py-2 px-3 mb-3 d-inline-flex align-items-center gap-2 text-start" role="status">
-                                                    <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
-                                                    <span>Pago por completar: {{ $incompletePayments->implode(' · ') }}.</span>
-                                                </div>
-                                            @endif
+                                            </div>
+                                        @endif
 
                                         @if(isset($proceso['warning']))
                                             <div class="alert alert-warning fade show py-2 d-flex justify-content-center align-items-center gap-2" role="alert">

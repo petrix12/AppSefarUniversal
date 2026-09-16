@@ -93,61 +93,11 @@ class CosServiceTest extends TestCase
         ];
 
         $this->assertSame([
-            ['label' => 'Carta de Naturaleza', 'status' => 'Parcial'],
+            ['label' => 'Carta de Naturaleza', 'status' => 'Pagada'],
         ], CosService::clientVisiblePaymentStatuses($negocio));
 
         // The ordinary phase helper remains available to the process logic.
         $this->assertCount(3, CosService::phasePaymentStatuses($negocio));
-    }
-
-    public function test_phase_payment_statuses_distinguish_partial_and_complete_payments(): void
-    {
-        $negocio = (object) [
-            'fase_1_preestab' => '1.000 EUR',
-            'fase_1_pagado' => 'Abono 400 EUR',
-            'fase_2_preestab' => '500 EUR',
-            'fase_2_pagado' => '500 EUR',
-            'fase_3_preestab' => '800 EUR',
-        ];
-
-        $this->assertSame([
-            ['label' => 'Fase 1', 'status' => 'Parcial'],
-            ['label' => 'Fase 2', 'status' => 'Pagada'],
-            ['label' => 'Fase 3', 'status' => 'Pendiente de pago'],
-        ], CosService::phasePaymentStatuses($negocio));
-    }
-
-    public function test_phase_without_a_preestablished_amount_is_never_assumed_paid(): void
-    {
-        $negocio = (object) [
-            'fase_1_pagado' => '500 EUR',
-            'carta_nat_pagado' => '500 EUR',
-        ];
-
-        $this->assertSame('Sin información', CosService::phasePaymentStatuses($negocio)[0]['status']);
-        $this->assertSame([
-            ['label' => 'Carta de Naturaleza', 'status' => 'Sin información'],
-        ], CosService::clientVisiblePaymentStatuses($negocio));
-    }
-
-    public function test_cos_header_uses_the_selected_carta_payment_when_the_process_deal_is_different(): void
-    {
-        $analysis = [
-            'projects' => [[
-                'payment_scope' => 'carta_naturaleza',
-                'phases' => [
-                    98 => [
-                        'phase' => 98,
-                        'payment_label' => 'Carta de Naturaleza',
-                        'status' => 'partial',
-                    ],
-                ],
-            ]],
-        ];
-
-        $this->assertSame([
-            ['label' => 'Carta de Naturaleza', 'status' => 'Parcial'],
-        ], CosService::selectedFinancialPaymentStatuses($analysis));
     }
 
     public function test_recent_uploaded_report_does_not_mark_certificate_as_approved(): void

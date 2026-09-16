@@ -107,11 +107,7 @@ class ClientPaymentSourceResolver
             return false;
         }
 
-        // A raw abono without a Carta amount to reconcile against is a data
-        // issue, not evidence that Carta was actually paid. Keep the normal
-        // phase scope until Finance establishes the service amount.
-        return (float) ($carta['effective_preestab_amount'] ?? 0) > 0.01
-            && in_array($carta['status'] ?? null, ['partial', 'paid', 'review'], true)
+        return in_array($carta['status'] ?? null, ['partial', 'paid', 'review'], true)
             && (
                 (float) ($carta['effective_paid_amount'] ?? 0) > 0
                 || trim((string) ($carta['paid_raw'] ?? '')) !== ''
