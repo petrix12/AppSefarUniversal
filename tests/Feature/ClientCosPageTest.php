@@ -74,14 +74,13 @@ class ClientCosPageTest extends TestCase
         Http::assertNothingSent();
     }
 
-    public function test_a_document_stage_snapshot_from_before_the_phase_one_gate_is_refreshed_once(): void
+    public function test_a_legacy_document_stage_snapshot_is_refreshed_once(): void
     {
         $user = $this->client();
         $user->arraycos = [[
             'servicio' => 'Española Sefardi',
             'description' => 'Documentos en Revisión',
             'currentStepName' => 'Cotejo de documentos',
-            'documentStageVersion' => 1,
         ]];
         $user->arraycos_expire = now()->addDay();
 
