@@ -72,18 +72,6 @@ class TreeDocumentChecklistTest extends TestCase
             'source' => 'app_cliente',
             'client_visible' => false,
         ]);
-        $hubspotPassport = File::create([
-            'file' => 'pasaporte-hubspot.pdf',
-            'location' => 'public/doc/P' . $client->passport,
-            'IDCliente' => $client->passport,
-            'IDPersona' => 0,
-            'IDPersonaNew' => $root->id,
-            'user_id' => $client->id,
-            'source' => 'hubspot',
-            'source_reference' => 'hubspot:pasaporte__documento_:example',
-            'document_kind' => 'passport',
-            'client_visible' => false,
-        ]);
 
         $response = $this->actingAs($client)
             ->getJson(route('clientes.tree.person-detail', $root));
@@ -95,8 +83,7 @@ class TreeDocumentChecklistTest extends TestCase
             ->assertJsonMissingPath('allowed_document_kinds.death_certificate')
             ->assertJsonPath('document_requests.0.document_kind', 'passport')
             ->assertJsonPath('document_requests.0.status', 'en_espera_cliente')
-            ->assertJsonPath('reusable_files.0.id', $uploadedFile->id)
-            ->assertJsonFragment(['file' => $hubspotPassport->file]);
+            ->assertJsonPath('reusable_files.0.id', $uploadedFile->id);
     }
 
     public function test_client_tree_detail_adds_death_certificate_for_an_ancestor(): void
@@ -156,10 +143,6 @@ class TreeDocumentChecklistTest extends TestCase
             'document_kind' => 'passport',
             'document_request_id' => $documentRequest->id,
         ]);
-        $this->assertDatabaseHas('genealogy_document_person', [
-            'file_id' => $uploadedFile->id,
-            'person_id' => $person->id,
-        ]);
     }
 
     public function test_client_can_submit_an_available_document_without_an_internal_request(): void
@@ -198,10 +181,6 @@ class TreeDocumentChecklistTest extends TestCase
             'person_id' => $person->id,
             'document_kind' => 'passport',
             'status' => 'resuelto',
-        ]);
-        $this->assertDatabaseHas('genealogy_document_person', [
-            'file_id' => $uploadedFile->id,
-            'person_id' => $person->id,
         ]);
     }
 
@@ -243,10 +222,6 @@ class TreeDocumentChecklistTest extends TestCase
         });
 
         $file = File::where('document_request_id', $documentRequest->id)->firstOrFail();
-        $this->assertDatabaseHas('genealogy_document_person', [
-            'file_id' => $file->id,
-            'person_id' => $person->id,
-        ]);
         $this->assertStringContainsString(
             'Nuevo archivo cargado',
             (new GenealogyDocumentUploaded($client, $file, $person))->render()

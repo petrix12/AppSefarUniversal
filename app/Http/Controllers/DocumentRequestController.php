@@ -169,8 +169,8 @@ class DocumentRequestController extends Controller
             'location' => $location,
             'tipo' => GenealogyDocumentService::label($documentRequest->document_kind),
             'IDCliente' => $passport,
-            // The document is visible under its intended person immediately;
-            // its request status still keeps the internal review pending.
+            // The document is attached to its person (or marriage union) only
+            // once it is approved by the internal team.
             'IDPersona' => 0,
             'IDPersonaNew' => null,
             'user_id' => auth()->id(),
@@ -181,7 +181,6 @@ class DocumentRequestController extends Controller
             'size_bytes' => $uploaded->getSize(),
             'document_request_id' => $documentRequest->id,
         ]);
-        $this->associateRequestFile($documentRequest, $file);
 
         $documentRequest->update([
             'file_path' => $path,
@@ -279,8 +278,6 @@ class DocumentRequestController extends Controller
             $path = trim((string) $file->location, '/') . '/' . ltrim((string) $file->file, '/');
         }
 
-        $this->associateRequestFile($documentRequest, $file);
-
         $documentRequest->update([
             'file_path' => $path,
             'status' => 'resuelto',
@@ -316,7 +313,6 @@ class DocumentRequestController extends Controller
             'client_visible' => true,
             'document_request_id' => $documentRequest->id,
         ]);
-        $this->associateRequestFile($documentRequest, $file);
         $documentRequest->update([
             'file_path' => trim((string) $file->location, '/') . '/' . ltrim((string) $file->file, '/'),
             'status' => 'resuelto',
