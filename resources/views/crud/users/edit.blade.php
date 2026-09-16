@@ -848,7 +848,7 @@
                                             <thead class="table-light">
                                                 <tr>
                                                     <th>Proyecto</th>
-                                                    <th>Concepto de cobro</th>
+                                                    <th>Fase</th>
                                                     <th>Estado</th>
                                                     <th class="text-end">Preestab</th>
                                                     <th class="text-end">Pagado</th>
@@ -1243,11 +1243,7 @@
                                         </p>
 
                                         @php
-                                            $phasePayments = $proceso['phasePayments'] ?? ($negocioDebug ? \App\Services\CosService::clientVisiblePaymentStatuses($negocioDebug) : []);
-                                            $paymentSummaryLabel = count($phasePayments) === 1
-                                                && ($phasePayments[0]['label'] ?? null) === 'Carta de Naturaleza'
-                                                ? 'Estado de pago de Carta de Naturaleza'
-                                                : 'Estado de pagos por fase';
+                                            $phasePayments = $proceso['phasePayments'] ?? ($negocioDebug ? \App\Services\CosService::phasePaymentStatuses($negocioDebug) : []);
                                             $phaseStyles = [
                                                 'Pagada' => ['background' => '#dcfce7', 'color' => '#166534', 'border' => '#bbf7d0'],
                                                 'Exonerada' => ['background' => '#e0f2fe', 'color' => '#075985', 'border' => '#bae6fd'],
@@ -1256,7 +1252,7 @@
                                             ];
                                         @endphp
                                         @if($phasePayments)
-                                            <div class="d-flex justify-content-center flex-wrap gap-2 pb-3" aria-label="{{ $paymentSummaryLabel }}">
+                                            <div class="d-flex justify-content-center flex-wrap gap-2 pb-3" aria-label="Estado de pagos por fase">
                                                 @foreach($phasePayments as $phasePayment)
                                                     @php
                                                         $phaseStatus = (string) ($phasePayment['status'] ?? 'Sin información');

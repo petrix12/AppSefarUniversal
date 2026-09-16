@@ -56,12 +56,6 @@ class TeamleaderPhasePaymentService
             return $records;
         }
 
-        // A project with a paid Carta de Naturaleza is deliberately scoped to
-        // that service by ClientPaymentSourceResolver. Keep any old Fase 1–3
-        // balance records for audit purposes, but make them invisible in the
-        // portal so they cannot be collected alongside Carta.
-        $this->applyPaymentScopes($existing, $analysis);
-
         // Keep the same reconciled figures available to the internal COS
         // view. Previously the purchase record used converted installments,
         // while the view still rendered the pre-conversion analyzer result.
@@ -332,59 +326,6 @@ class TeamleaderPhasePaymentService
             'difference_amount' => round($projectTotals->sum('totals.difference_amount'), 2),
             'projects_to_review' => $projectTotals->where('needs_review', true)->count(),
         ];
-    }
-
-    /**
-     * @param Collection<string, Compras> $purchases
-     */
-    private function applyPaymentScopes(Collection $purchases, array $analysis): void
-    {
-        $scopeByProject = collect($analysis['projects'] ?? [])
-            ->mapWithKeys(fn (array $project) => [
-                (string) ($project['project_id'] ?? '') => $project['payment_scope'] ?? null,
-            ])
-            ->filter(fn ($_scope, string $projectId) => $projectId !== '');
-
-        if ($scopeByProject->isEmpty()) {
-            return;
-        }
-
-        $purchases->each(function (Compras $purchase) use ($scopeByProject): void {
-            $metadata = is_array($purchase->metadata) ? $purchase->metadata : [];
-            $projectId = (string) ($metadata['teamleader_project_id'] ?? '');
-
-            if (! $scopeByProject->has($projectId)) {
-                return;
-            }
-
-            $scope = $scopeByProject->get($projectId);
-            $phase = (int) ($metadata['phase'] ?? $purchase->phasenum);
-            $isCartaOnly = $scope === 'carta_naturaleza';
-            $wasScopeHidden = (string) ($metadata['hidden_by_payment_scope'] ?? '') === 'carta_naturaleza';
-
-            if ($isCartaOnly && $phase !== 98) {
-                if (! $wasScopeHidden) {
-                    $metadata['hidden_from_client_before_payment_scope'] = filter_var(
-                        $metadata['hidden_from_client'] ?? false,
-                        FILTER_VALIDATE_BOOLEAN
-                    );
-                    $metadata['hidden_by_payment_scope'] = 'carta_naturaleza';
-                    $metadata['hidden_from_client'] = true;
-                    $purchase->forceFill(['metadata' => $metadata])->save();
-                }
-
-                return;
-            }
-
-            if ($wasScopeHidden) {
-                $wasHidden = filter_var($metadata['hidden_from_client_before_payment_scope'] ?? false, FILTER_VALIDATE_BOOLEAN);
-                unset($metadata['hidden_by_payment_scope'], $metadata['hidden_from_client_before_payment_scope']);
-                if (! $wasHidden) {
-                    unset($metadata['hidden_from_client']);
-                }
-                $purchase->forceFill(['metadata' => $metadata])->save();
-            }
-        });
     }
 
     /**

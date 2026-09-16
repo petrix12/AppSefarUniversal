@@ -82,24 +82,6 @@ class CosServiceTest extends TestCase
         $this->assertSame($canonicalPhases, $result['Española - Carta de Naturaleza General']);
     }
 
-    public function test_cos_header_shows_carta_de_naturaleza_instead_of_regular_phases_when_it_has_been_paid(): void
-    {
-        $negocio = (object) [
-            'fase_1_preestab' => '1.000 EUR',
-            'fase_1_pagado' => '1.000 EUR',
-            'carta_nat_preestab' => '6.067 EUR',
-            'carta_nat_montopagado' => 2631,
-            'carta_nat_pagado' => 'Abono 2.631 EUR',
-        ];
-
-        $this->assertSame([
-            ['label' => 'Carta de Naturaleza', 'status' => 'Pagada'],
-        ], CosService::clientVisiblePaymentStatuses($negocio));
-
-        // The ordinary phase helper remains available to the process logic.
-        $this->assertCount(3, CosService::phasePaymentStatuses($negocio));
-    }
-
     public function test_recent_uploaded_report_does_not_mark_certificate_as_approved(): void
     {
         Carbon::setTestNow('2026-08-27 12:00:00');
