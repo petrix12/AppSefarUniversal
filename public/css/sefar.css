@@ -99,10 +99,12 @@ textarea {
 .main-sidebar,
 .sefar-sidebar.main-sidebar {
   overflow: hidden;
-  background: linear-gradient(180deg, #123f54 0%, #082b3c 52%, #041b28 100%) !important;
+  background:
+    linear-gradient(180deg, rgba(13, 74, 99, 0.98) 0%, rgba(8, 43, 60, 0.99) 38%, rgba(3, 25, 37, 1) 100%) !important;
   color: rgba(255, 255, 255, 0.92);
   border-right: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 0;
+  border-top-right-radius: 18px;
+  border-bottom-right-radius: 18px;
 }
 
 .sefar-sidebar.main-sidebar::before {
@@ -117,7 +119,17 @@ textarea {
 }
 
 .sefar-sidebar .sefar-sidebar-scan {
-  display: none;
+  position: absolute;
+  top: -180px;
+  left: 0;
+  right: 0;
+  z-index: 0;
+  height: 180px;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, transparent 0%, rgba(143, 216, 255, 0.02) 22%, rgba(143, 216, 255, 0.2) 50%, rgba(219, 186, 114, 0.08) 62%, transparent 100%);
+  filter: blur(0.2px);
+  animation: sefarSidebarScan 7.5s linear infinite;
 }
 
 .sefar-sidebar.sefar-gsap-active .sefar-sidebar-scan {
@@ -131,11 +143,17 @@ textarea {
 }
 
 .sefar-nav-canvas {
-  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.54;
+  pointer-events: none;
 }
 
 .sefar-canvas-fallback .sefar-nav-canvas {
-  display: none;
+  opacity: 0.62;
 }
 
 .main-header,
@@ -494,69 +512,6 @@ textarea {
 
   body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar .nav-link > i:first-child {
     margin: 0 !important;
-  }
-
-  /* Compact rail: profile first, followed immediately by navigation. */
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .sidebar {
-    height: 100% !important;
-    padding: 1rem 0.45rem !important;
-    overflow-y: auto;
-    scrollbar-width: none;
-  }
-
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .sidebar::-webkit-scrollbar {
-    display: none;
-  }
-
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .user-panel {
-    width: 100%;
-    margin: 0 0 0.95rem !important;
-    padding: 0 0 0.9rem !important;
-    justify-content: center;
-  }
-
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .user-panel .sefar-user-avatar-frame,
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .user-panel .sefar-user-avatar,
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .user-panel .sefar-user-avatar-frame img {
-    width: 44px !important;
-    height: 44px !important;
-    flex-basis: 44px;
-  }
-
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar {
-    padding: 0 !important;
-  }
-
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar > .nav-item {
-    margin: 0 0 0.5rem !important;
-  }
-
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar .nav-link {
-    width: 44px;
-    min-height: 44px;
-    margin: 0 auto;
-    padding: 0 !important;
-  }
-
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar .nav-link > i:first-child {
-    width: 40px;
-    height: 40px;
-    flex-basis: 40px;
-    border-radius: 10px;
-    background: transparent;
-    color: rgba(255, 255, 255, 0.82) !important;
-  }
-
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar .nav-link:hover > i:first-child,
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar .nav-link.active > i:first-child,
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar .menu-open > .nav-link > i:first-child {
-    background: rgba(255, 255, 255, 0.14);
-    color: #ffffff !important;
-  }
-
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:hover .sidebar {
-    height: calc(100% - 4.15rem) !important;
-    padding: 0 !important;
   }
 
   body.sidebar-collapse:not(.sefar-sidebar-pinned) .content-wrapper,
