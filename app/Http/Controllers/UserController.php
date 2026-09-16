@@ -1728,9 +1728,6 @@ public function edit(User $user)
     $archivos = $isClientFacing
         ? $documentService->visibleToClient($user->passport)->get()
         : File::where('IDCliente', $user->passport)->get();
-    $reusableDocuments = $isClientFacing
-        ? $documentService->reusableForClient($user)->get()
-        : collect();
     $documentPeople = Agcliente::where('IDCliente', $user->passport)->orderBy('Generacion')->orderBy('IDPersona')->get();
     $documentKinds = \App\Services\GenealogyDocumentService::kinds();
 
@@ -1905,7 +1902,6 @@ public function edit(User $user)
     }
 
     $html = view('crud.users.edit', compact(
-        'reusableDocuments',
         'clientTeamleaderHistory',
         'documentRequests',
         'comprasConDealNoPagadas',

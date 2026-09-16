@@ -102,33 +102,8 @@ class GenealogyDocumentService
     public function canReuseForRequest(User $user, File $file): bool
     {
         return (string) $file->IDCliente === (string) $user->passport
-            && (
-                // An older upload made by the customer may not yet have a kind.
-                // Associating it to a controlled request is precisely how it gets
-                // classified, so do not hide it from its owner.
-                $file->source === 'app_cliente'
-                || ($file->source === 'solicitud_cliente' && self::isAllowedKind($file->document_kind))
-            );
-    }
-
-    /**
-     * A private picker for the customer's own previous uploads. This is not the
-     * same as the client-facing document library: unclassified app uploads are
-     * intentionally visible here only so their owner can classify one through a
-     * controlled document request.
-     */
-    public function reusableForClient(User $user): Builder
-    {
-        return File::query()
-            ->where('IDCliente', $user->passport)
-            ->where(function (Builder $query) {
-                $query->where('source', 'app_cliente')
-                    ->orWhere(function (Builder $requestUpload) {
-                        $requestUpload->where('source', 'solicitud_cliente')
-                            ->whereIn('document_kind', array_keys(self::kinds()));
-                    });
-            })
-            ->latest('id');
+            && in_array($file->source, self::CLIENT_SOURCES, true)
+            && self::isAllowedKind($file->document_kind);
     }
 
     public function isInternalUser(User $user): bool

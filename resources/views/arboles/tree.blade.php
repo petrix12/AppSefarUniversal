@@ -59,16 +59,6 @@
             });
         </script>
     @endif
-    @if(session('carga_finalizada'))
-        <script type="text/javascript">
-            Swal.fire({
-                icon: 'success',
-                title: 'Carga finalizada',
-                text: @json(session('carga_finalizada')),
-                confirmButtonText: 'Continuar'
-            });
-        </script>
-    @endif
     @php $boxheight = 120; @endphp
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -91,19 +81,10 @@
                             ÁRBOL GENEALÓGICO
                         </p>
                         @if(auth()->user() && auth()->user()->hasRole('Cliente'))
-                            <div class="tree-client-actions">
-                                <a href="{{ route('clientes.status') }}" class="tree-client-status-cta">
-                                    <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
-                                    <span>¿Deseas consultar el estatus de tu proceso?</span>
-                                </a>
-                                <form method="POST" action="{{ route('clientes.finalizar-carga') }}" class="m-0">
-                                    @csrf
-                                    <button type="submit" class="tree-client-finish-cta">
-                                        <i class="fa-solid fa-check" aria-hidden="true"></i>
-                                        <span>Finalizar carga</span>
-                                    </button>
-                                </form>
-                            </div>
+                            <a href="{{ route('clientes.status') }}" class="tree-client-status-cta">
+                                <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
+                                <span>¿Deseas consultar el estatus de tu proceso?</span>
+                            </a>
                         @endif
                     </div>
                 </div>
@@ -1871,42 +1852,6 @@
     transform: translateY(-1px);
 }
 
-.tree-client-actions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: .65rem;
-    margin-top: .8rem;
-}
-
-.tree-client-actions .tree-client-status-cta {
-    margin-top: 0;
-}
-
-.tree-client-finish-cta {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: .55rem;
-    min-height: 42px;
-    padding: .65rem 1rem;
-    border: 1px solid #0b6b52;
-    border-radius: 10px;
-    background: #0b6b52;
-    box-shadow: 0 4px 12px rgba(11, 107, 82, .18);
-    color: #fff;
-    font-size: .9rem;
-    font-weight: 800;
-    transition: transform .2s ease, background .2s ease;
-}
-
-.tree-client-finish-cta:hover,
-.tree-client-finish-cta:focus {
-    background: #08543f;
-    color: #fff;
-    transform: translateY(-1px);
-}
-
 .tree-toolbar-control {
     min-width: 0;
     margin: 0 !important;
@@ -2494,19 +2439,6 @@ dialog::backdrop {
 .tree-document-card:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(16,54,65,.12); }.tree-document-icon { color:#b55242; font-size:1.35rem; }.tree-document-card-copy { min-width:0; display:grid; gap:.15rem; }.tree-document-card-copy small { color:#63777e; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:175px; }
 .tree-document-preview-body { min-height: 55vh; padding: 0 1.25rem 1rem; display:flex; align-items:center; justify-content:center; background:#f4f7f8; }.tree-document-preview-body iframe { width:100%; height:55vh; border:0; border-radius:8px; background:#fff; }.tree-document-preview-body img { max-width:100%; max-height:55vh; object-fit:contain; border-radius:8px; }.tree-document-open-link { margin:0 1.25rem 1.25rem; }
 .tree-document-request-form { padding:1.25rem 1.5rem 1.5rem; display:grid; gap:.65rem; }.tree-document-request-form label { font-weight:700; }.tree-document-request-form select { width:100%; border:1px solid #c8d6da; border-radius:8px; padding:.65rem; background:white; }.tree-document-request-form small,.tree-document-request-person { color:#60757c; margin:0; }.tree-document-submit { justify-self:end; margin-top:.6rem; }
-.tree-document-checklist { border: 1px solid #d7e4e8; border-radius: 14px; overflow: hidden; background: #fbfdfe; }
-.tree-document-checklist-intro { margin: 0; padding: .1rem 0 .8rem; color: #60757c; font-size: .78rem; line-height: 1.35; }
-.tree-document-slot { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .65rem; align-items: center; padding: .8rem .9rem; border-top: 1px solid #e4ecef; }
-.tree-document-slot:first-of-type { border-top: 0; }
-.tree-document-slot-copy { min-width: 0; display: grid; gap: .2rem; }
-.tree-document-slot-copy strong { color: #183c4c; font-size: .84rem; }
-.tree-document-slot-copy small { color: #61767f; font-size: .72rem; line-height: 1.3; }
-.tree-document-slot-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: .4rem; }
-.tree-document-slot-status { display: inline-flex; align-items: center; gap: .3rem; border-radius: 999px; padding: .28rem .48rem; font-size: .67rem; font-weight: 800; white-space: nowrap; background: #e7eef1; color: #46616d; }
-.tree-document-slot-status.is-approved { background: #dff5e7; color: #166534; }.tree-document-slot-status.is-pending { background: #fff3cd; color: #8a5b00; }.tree-document-slot-status.is-review { background: #dceeff; color: #155a94; }.tree-document-slot-status.is-rejected { background: #fde4e4; color: #a12c2c; }.tree-document-slot-status.is-empty { background: #edf1f3; color: #657882; }
-.tree-document-slot-button { border: 0; border-radius: 8px; background: #0b5b6f; color: #fff; padding: .44rem .58rem; font-size: .72rem; font-weight: 800; cursor: pointer; white-space: nowrap; }.tree-document-slot-button:hover, .tree-document-slot-button.is-dragging { background: #08798a; box-shadow: 0 0 0 3px rgba(8,121,138,.2); }.tree-document-slot-button.is-secondary { background: #edf4f6; color: #0b5b6f; border: 1px solid #b9d4dc; }
-.tree-document-slot-select { max-width: 165px; border: 1px solid #c8d6da; border-radius: 8px; padding: .4rem; color: #274853; font-size: .72rem; background: #fff; }
-@media (max-width: 520px) { .tree-document-slot { grid-template-columns: 1fr; }.tree-document-slot-actions { justify-content: flex-start; }.tree-document-slot-select { max-width: 100%; flex: 1 1 160px; } }
 @media (max-width: 700px) { .tree-document-actions { right:16px; bottom:16px; }.tree-document-action-button { font-size:.85rem; }.tree-document-card-grid { grid-template-columns:1fr; } }
     </style>
 @stop
@@ -2537,7 +2469,6 @@ dialog::backdrop {
     const treeRootUrl = @json(url('/tree/' . $IDCliente));
     const treeRootPersonId = @json($columnasparatabla[0][0]['id'] ?? null);
     const csrfToken = @json(csrf_token());
-    const clientDocumentRequestBaseUrl = @json(url('/client/requests'));
     const canManageTree = @json(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']));
     const canEditClientTree = @json(auth()->user() && auth()->user()->hasRole(['Cliente']));
     const canViewTreeDocuments = canManageTree || canEditClientTree;
@@ -2760,112 +2691,8 @@ dialog::backdrop {
 
         treePersonPanelBody.innerHTML = `
             ${renderTreePersonInfo(person)}
-            ${renderTreeDocumentChecklist(payload)}
             ${renderTreePanelFileSection('Documentos de la persona', payload.files || [], 'No hay documentos asociados a esta persona.')}
-        `;
-    }
-
-    function renderTreeDocumentChecklist(payload) {
-        const allowedKinds = payload.allowed_document_kinds || {};
-        const filesByKind = (payload.files || []).reduce((groups, file) => {
-            if (file.document_kind && !groups[file.document_kind]) {
-                groups[file.document_kind] = file;
-            }
-            return groups;
-        }, {});
-        const requestsByKind = (payload.document_requests || []).reduce((groups, documentRequest) => {
-            if (documentRequest.document_kind && !groups[documentRequest.document_kind]) {
-                groups[documentRequest.document_kind] = documentRequest;
-            }
-            return groups;
-        }, {});
-        const slots = Object.entries(allowedKinds);
-
-        if (!slots.length) {
-            return '';
-        }
-
-        return `
-            <section class="tree-person-detail-section">
-                <div class="tree-person-detail-title">Documentos requeridos</div>
-                <p class="tree-document-checklist-intro">${canManageTree
-                    ? 'Solicita cada documento desde esta lista. El cliente lo verá en su árbol y podrá cargarlo o asociar un archivo que ya haya subido.'
-                    : 'Aquí verás el avance de cada documento. Cuando el equipo lo solicite, podrás cargar un PDF o imagen desde esta misma persona.'}</p>
-                <div class="tree-document-checklist">
-                    ${slots.map(([kind, label]) => renderTreeDocumentSlot({
-                        kind,
-                        label,
-                        file: filesByKind[kind],
-                        documentRequest: requestsByKind[kind],
-                        reusableFiles: payload.reusable_files || [],
-                        personId: payload.person?.id,
-                    })).join('')}
-                </div>
-            </section>
-        `;
-    }
-
-    function renderTreeDocumentSlot({ kind, label, file, documentRequest, reusableFiles, personId }) {
-        const requestStatus = documentRequest?.status;
-        let status = { label: 'Aún no solicitado', className: 'is-empty', icon: 'fa-circle-minus' };
-        let detail = 'El equipo aún no ha pedido este documento.';
-
-        if (file) {
-            status = { label: 'Documento asociado', className: 'is-approved', icon: 'fa-circle-check' };
-            detail = file.file || label;
-        } else if (requestStatus === 'en_espera_cliente') {
-            status = { label: 'Pendiente por cargar', className: 'is-pending', icon: 'fa-clock' };
-            detail = 'Puedes cargarlo ahora o usar un archivo que ya subiste en la aplicación.';
-        } else if (requestStatus === 'rechazada') {
-            status = { label: 'Requiere nueva carga', className: 'is-rejected', icon: 'fa-arrow-rotate-left' };
-            detail = 'El equipo pidió una nueva versión del documento.';
-        } else if (requestStatus === 'resuelto') {
-            status = { label: 'En revisión', className: 'is-review', icon: 'fa-magnifying-glass' };
-            detail = 'El archivo fue recibido y está pendiente de revisión interna.';
-        } else if (requestStatus === 'aprobada') {
-            status = { label: 'Aprobado', className: 'is-approved', icon: 'fa-circle-check' };
-            detail = 'El equipo aprobó este documento.';
-        } else if (requestStatus === 'no_documento') {
-            status = { label: 'No disponible', className: 'is-empty', icon: 'fa-circle-minus' };
-            detail = 'Se informó que este documento no está disponible.';
-        }
-
-        const canClientUpload = canEditClientTree && documentRequest
-            && ['en_espera_cliente', 'rechazada'].includes(requestStatus);
-        const canRequest = canManageTree && (!documentRequest || requestStatus === 'no_documento') && !file;
-        const matchingReusableFiles = (reusableFiles || []).filter((candidate) => candidate.id && (
-            !candidate.document_kind || candidate.document_kind === kind
-        ));
-
-        return `
-            <article class="tree-document-slot">
-                <div class="tree-document-slot-copy">
-                    <strong>${escapeHtml(label)}</strong>
-                    <small>${escapeHtml(detail)}</small>
-                </div>
-                <div class="tree-document-slot-actions">
-                    <span class="tree-document-slot-status ${status.className}"><i class="fa-solid ${status.icon}" aria-hidden="true"></i>${escapeHtml(status.label)}</span>
-                    ${canRequest ? `<button type="button" class="tree-document-slot-button" data-tree-request-person="${escapeAttr(personId || '')}" data-tree-request-kind="${escapeAttr(kind)}">Solicitar ${escapeHtml(label)}</button>` : ''}
-                    ${canClientUpload ? renderTreeClientDocumentActions(documentRequest, label, matchingReusableFiles) : ''}
-                </div>
-            </article>
-        `;
-    }
-
-    function renderTreeClientDocumentActions(documentRequest, label, reusableFiles) {
-        const requestId = documentRequest.id;
-        const inputId = `treeDocumentUpload${requestId}`;
-
-        return `
-            <input id="${escapeAttr(inputId)}" type="file" accept="application/pdf,image/jpeg,image/png,image/webp,image/gif" hidden data-tree-request-file="${escapeAttr(requestId)}">
-            <button type="button" class="tree-document-slot-button" data-tree-request-upload="${escapeAttr(requestId)}" data-tree-request-dropzone="${escapeAttr(requestId)}" data-tree-request-input="${escapeAttr(inputId)}" title="También puedes arrastrar un archivo aquí"><i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i> Subir ${escapeHtml(label)}</button>
-            ${reusableFiles.length ? `
-                <select class="tree-document-slot-select" data-tree-request-existing="${escapeAttr(requestId)}" aria-label="Archivo ya cargado para ${escapeAttr(label)}">
-                    <option value="">Usar archivo ya cargado…</option>
-                    ${reusableFiles.map((file) => `<option value="${escapeAttr(file.id)}">${escapeHtml(file.file || label)}</option>`).join('')}
-                </select>
-                <button type="button" class="tree-document-slot-button is-secondary" data-tree-request-associate="${escapeAttr(requestId)}">Asociar archivo</button>
-            ` : ''}
+            ${canManageTree ? `<button type="button" class="tree-document-submit" data-tree-request-person="${escapeAttr(person.id || '')}">Solicitar documentos</button>` : ''}
         `;
     }
 
@@ -2889,7 +2716,7 @@ dialog::backdrop {
         treeDocumentPreview.showModal();
     }
 
-    function openTreeDocumentRequest(personId, requestedKind = null) {
+    function openTreeDocumentRequest(personId) {
         if (!canManageTree) return;
         const payload = currentTreePersonPayload;
         const person = payload?.person;
@@ -2897,18 +2724,13 @@ dialog::backdrop {
 
         document.getElementById('treeDocumentRequestPerson').value = person.id;
         document.getElementById('treeDocumentRequestPersonName').textContent = `Persona: ${[person.Nombres, person.Apellidos].filter(Boolean).join(' ') || 'Sin nombre'}`;
-        const documentKind = document.getElementById('treeDocumentKind');
-        const allowedKinds = payload.allowed_document_kinds || {};
-        if (requestedKind && Object.prototype.hasOwnProperty.call(allowedKinds, requestedKind)) {
-            documentKind.value = requestedKind;
-        }
         const deathOption = document.querySelector('#treeDocumentKind option[value="death_certificate"]');
         const isClientRoot = String(person.IDPersona || '') === '1';
         if (deathOption) {
             deathOption.disabled = isClientRoot;
             deathOption.hidden = isClientRoot;
-            if (isClientRoot && documentKind.value === 'death_certificate') {
-                documentKind.value = 'passport';
+            if (isClientRoot && document.getElementById('treeDocumentKind').value === 'death_certificate') {
+                document.getElementById('treeDocumentKind').value = 'passport';
             }
         }
         const spouse = document.getElementById('treeDocumentSpouse');
@@ -3557,110 +3379,12 @@ dialog::backdrop {
             return;
         }
         treeDocumentRequest.close();
-        Swal.fire('Solicitud enviada', 'El cliente podrá subir o asociar el documento desde su árbol o su COS.', 'success');
-        if (currentTreePersonPayload?.person?.id) {
-            openTreePersonPanel(currentTreePersonPayload.person.id);
-        }
+        Swal.fire('Solicitud enviada', 'El cliente podrá subir o asociar el documento desde su COS.', 'success');
     });
 
     $(document).on('click', '[data-tree-request-person]', function(event) {
         event.preventDefault();
-        openTreeDocumentRequest(this.dataset.treeRequestPerson, this.dataset.treeRequestKind || null);
-    });
-
-    $(document).on('click', '[data-tree-request-upload]', function() {
-        document.getElementById(this.dataset.treeRequestInput)?.click();
-    });
-
-    async function uploadTreeRequestedDocument(requestId, file) {
-        if (!file || !requestId) return false;
-
-        if (file.size > 10 * 1024 * 1024) {
-            Swal.fire('Archivo demasiado grande', 'El archivo no puede superar 10 MB.', 'warning');
-            return false;
-        }
-
-        const formData = new FormData();
-        formData.append('file', file);
-
-        try {
-            const response = await fetch(`${clientDocumentRequestBaseUrl}/${encodeURIComponent(requestId)}/upload`, {
-                method: 'POST',
-                headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
-                body: formData,
-            });
-            const payload = await response.json().catch(() => ({}));
-            if (!response.ok) {
-                throw new Error(payload.message || 'No se pudo subir el archivo.');
-            }
-            Swal.fire('Documento enviado', 'Lo recibimos y el equipo lo revisará.', 'success');
-            if (currentTreePersonPayload?.person?.id) {
-                openTreePersonPanel(currentTreePersonPayload.person.id);
-            }
-            return true;
-        } catch (error) {
-            Swal.fire('No se pudo subir', error.message || 'Intenta nuevamente.', 'error');
-            return false;
-        }
-    }
-
-    $(document).on('change', '[data-tree-request-file]', async function() {
-        const input = this;
-        const uploaded = await uploadTreeRequestedDocument(input.dataset.treeRequestFile, input.files?.[0]);
-        if (!uploaded) {
-            input.value = '';
-        }
-    });
-
-    $(document).on('dragenter dragover', '[data-tree-request-dropzone]', function(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        this.classList.add('is-dragging');
-    });
-
-    $(document).on('dragleave dragend', '[data-tree-request-dropzone]', function(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        this.classList.remove('is-dragging');
-    });
-
-    $(document).on('drop', '[data-tree-request-dropzone]', async function(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        this.classList.remove('is-dragging');
-        await uploadTreeRequestedDocument(this.dataset.treeRequestDropzone, event.originalEvent.dataTransfer?.files?.[0]);
-    });
-
-    $(document).on('click', '[data-tree-request-associate]', async function() {
-        const requestId = this.dataset.treeRequestAssociate;
-        const select = document.querySelector(`[data-tree-request-existing="${requestId}"]`);
-        const fileId = select?.value;
-        if (!fileId) {
-            Swal.fire('Selecciona un archivo', 'Elige uno de los archivos que cargaste previamente en la aplicación.', 'warning');
-            return;
-        }
-
-        try {
-            const response = await fetch(`${clientDocumentRequestBaseUrl}/${encodeURIComponent(requestId)}/associate-existing`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ file_id: fileId }),
-            });
-            const payload = await response.json().catch(() => ({}));
-            if (!response.ok) {
-                throw new Error(payload.message || 'No se pudo asociar el archivo.');
-            }
-            Swal.fire('Archivo asociado', 'Lo enviamos al equipo para su revisión.', 'success');
-            if (currentTreePersonPayload?.person?.id) {
-                openTreePersonPanel(currentTreePersonPayload.person.id);
-            }
-        } catch (error) {
-            Swal.fire('No se pudo asociar', error.message || 'Intenta nuevamente.', 'error');
-        }
+        openTreeDocumentRequest(this.dataset.treeRequestPerson);
     });
 
     $(document).ready(function() {

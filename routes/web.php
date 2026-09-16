@@ -813,7 +813,7 @@ Route::group(['middleware' => ['auth'], 'as' => 'clientes.'], function(){
         ->middleware('can:cliente');
     Route::post('google-review', [GoogleReviewInvitationController::class, 'write'])->name('google-review')
         ->middleware('can:cliente');
-    Route::post('finalizar-carga', [ClienteController::class, 'finalizarCarga'])->name('finalizar-carga')
+    Route::get('salir', [ClienteController::class, 'salir'])->name('salir')
         ->middleware('can:cliente');
     Route::post('procesar', [ClienteController::class, 'procesar'])->name('procesar');
     Route::get('getinfo', [ClienteController::class, 'getinfo'])->name('getinfo')

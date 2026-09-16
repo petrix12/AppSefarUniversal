@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\CargaCliente;
 use App\Mail\CargaSefar;
 use App\Models\Agcliente;
 use App\Models\Coupon;
@@ -202,9 +203,6 @@ class ClienteController extends Controller
         $archivos = $isClientFacing
             ? $documentService->visibleToClient($user->passport)->get()
             : File::where('IDCliente', $user->passport)->get();
-        $reusableDocuments = $isClientFacing
-            ? $documentService->reusableForClient($user)->get()
-            : collect();
         $documentPeople = Agcliente::where('IDCliente', $user->passport)->orderBy('Generacion')->orderBy('IDPersona')->get();
         $documentKinds = \App\Services\GenealogyDocumentService::kinds();
 
@@ -348,7 +346,6 @@ class ClienteController extends Controller
 
         $html = view('crud.users.edit', compact(
             'documentRequests',
-            'reusableDocuments',
             'comprasConDealNoPagadas',
             'comprasPagadasSinFactura',
             'comprasSinDealNoPagadas',
@@ -1555,12 +1552,13 @@ class ClienteController extends Controller
         return redirect('/tree')->with('exito', 'contrato enviado');
     }
 
-    public function finalizarCarga(Request $request){
-        $user = $request->user();
+    public function salir(Request $request){
+        // Envía un correo al cliente que ha culminado la carga
+        $mail_cliente = new CargaCliente(Auth::user());
+        Mail2::to(Auth::user()->email)->send($mail_cliente);
 
-        // Esta acción pertenece al árbol: notifica exclusivamente al equipo
-        // interno y mantiene al cliente en sesión para que pueda continuar.
-        $mail_sefar = new CargaSefar($user);
+        // Envía un correo al equipo de Sefar
+        $mail_sefar = new CargaSefar(Auth::user());
         Mail2::to([
             'pedro.bazo@sefarvzla.com',
             'sistemasccs@sefarvzla.com',
@@ -1573,9 +1571,11 @@ class ClienteController extends Controller
             /* 'organizacionrrhh@sefarvzla.com' */
         ])->send($mail_sefar);
 
-        return redirect()
-            ->route('clientes.tree')
-            ->with('carga_finalizada', 'Recibimos tu carga y notificamos al equipo de genealogía.');
+        // Realiza logout de la aplicación
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect('/');
     }
 
     public function procesar(Request $request){
