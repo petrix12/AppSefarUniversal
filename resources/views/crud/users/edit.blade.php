@@ -2295,12 +2295,26 @@
                 </div>
 
                 <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
-                    <x-document-library
-                        :documents="$archivos"
-                        :people="$documentPeople ?? collect()"
-                        :client-view="$cosViewRoleId === 5"
-                        id="cos-document-library"
-                    />
+                    <table id="documentsTable" class="min-w-full divide-y divide-gray-200 w-100">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col">Nombre del Archivo</th>
+                                <th scope="col">Ver Archivo</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach ( $archivos as $archivo )
+                                <tr>
+                                    <td>{{$archivo["file"]}}</td>
+                                    <td>
+                                        <a href="/viewfile/{{$archivo["id"]}}" target="_blank" class="btn btn-primary">
+                                            <i class="fas fa-file"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
 
                 <div class="tab-pane fade" id="payments" role="tabpanel" aria-labelledby="payments-tab">
@@ -2663,96 +2677,21 @@
                 </div>
 
                 <div class="tab-pane fade" id="negocios" role="tabpanel" aria-labelledby="negocios-tab">
-                    @if($cosViewRoleId !== 5)
-                        @php
-                            $dealLinks = $dealProjectLinking['links'] ?? collect();
-                            $linkCandidates = $dealProjectLinking['candidates'] ?? [];
-                            $historicalProjects = $dealProjectLinking['projects'] ?? collect();
-                            $linkSummary = $dealProjectLinking['summary'] ?? [];
-                        @endphp
-                        <section class="card border-0 shadow-sm mb-3">
-                            <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
-                                <div>
-                                    <span class="text-uppercase text-muted small fw-bold">CRM HubSpot · Histórico Teamleader</span>
-                                    <h5 class="mb-1">Asociación de tratos y proyectos</h5>
-                                    <p class="mb-0 text-muted small">
-                                        {{ $linkSummary['linked'] ?? 0 }} enlazados · {{ $linkSummary['pending_review'] ?? 0 }} por revisar.
-                                        Teamleader se consulta únicamente desde la copia histórica local.
-                                    </p>
-                                </div>
-                                <form method="POST" action="{{ route('crud.users.hubspot-teamleader-links.detect', $user) }}">
-                                    @csrf
-                                    <button class="btn btn-outline-primary" type="submit">
-                                        <i class="fas fa-magic me-1"></i> Detectar coincidencias exactas
-                                    </button>
-                                </form>
-                            </div>
-                        </section>
-                    @endif
                     <table id="dealsTable" class="min-w-full divide-y divide-gray-200 w-100">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th scope="col">Nombre del Negocio</th>
-                                @if($cosViewRoleId !== 5)<th scope="col">Proyecto histórico Teamleader</th>@endif
                                 <th scope="col">Ver info</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach ( $negocios as $negocio )
                                 <tr>
+                                    <td>{{$negocio["servicio_solicitado2"]}}<br>{!!$negocio["hubspot_id"] ? "<small>Se encuentra en <b><a target='_blank' href='https://app.hubspot.com/contacts/20053496/record/0-3/".$negocio['hubspot_id']."'>Hubspot</a></b></small>" : ''!!}{!! $negocio["teamleader_id"] ? "<small> y en <b><a target='_blank' href='https://focus.teamleader.eu/web/projects/".$negocio['teamleader_id']."'>Teamleader</a></b></small>" : '' !!}</td>
                                     <td>
-                                        {{ $negocio['servicio_solicitado2'] ?: $negocio['dealname'] ?: 'Trato sin nombre' }}
-                                        @if($negocio['hubspot_id'])
-                                            <br><small>CRM: <a target="_blank" rel="noopener" href="https://app.hubspot.com/contacts/20053496/record/0-3/{{ $negocio['hubspot_id'] }}">HubSpot</a></small>
-                                        @endif
-                                    </td>
-                                    @if($cosViewRoleId !== 5)
-                                        @php
-                                            $projectLink = $dealLinks->get($negocio->id);
-                                            $suggestions = collect($linkCandidates[$negocio->id] ?? []);
-                                        @endphp
-                                        <td>
-                                            @if($projectLink)
-                                                <div class="fw-semibold">
-                                                    @if($projectLink->project)
-                                                        <a href="{{ route('teamleader.projects.show', $projectLink->project->id) }}" target="_blank" rel="noopener">{{ $projectLink->project->title ?: 'Proyecto sin título' }}</a>
-                                                    @else
-                                                        Proyecto histórico {{ $projectLink->teamleader_project_id }}
-                                                    @endif
-                                                </div>
-                                                <small class="text-muted">{{ str_replace('_', ' ', $projectLink->match_method) }} · {{ $projectLink->confidence }}%</small>
-                                                <form class="d-inline" method="POST" action="{{ route('crud.users.hubspot-teamleader-links.destroy', [$user, $negocio]) }}">
-                                                    @csrf @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0 ms-2">Desasociar</button>
-                                                </form>
-                                            @elseif($historicalProjects->isNotEmpty())
-                                                <form class="d-flex gap-2 align-items-center" method="POST" action="{{ route('crud.users.hubspot-teamleader-links.store', [$user, $negocio]) }}">
-                                                    @csrf
-                                                    <select class="form-select form-select-sm" name="teamleader_project_id" aria-label="Proyecto Teamleader">
-                                                        <option value="">Asociar manualmente…</option>
-                                                        @foreach($historicalProjects as $project)
-                                                            @php($suggestion = $suggestions->first(fn ($item) => (string) data_get($item, 'project.id') === (string) $project->id))
-                                                            <option value="{{ $project->id }}">
-                                                                {{ $project->title ?: $project->id }}@if($suggestion) — sugerido {{ $suggestion['confidence'] }}%@endif
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                    <button class="btn btn-sm btn-outline-secondary" type="submit">Asociar</button>
-                                                </form>
-                                                @if($suggestions->isNotEmpty())
-                                                    <small class="text-warning d-block mt-1">Coincidencia parcial: revisar antes de asociar.</small>
-                                                @endif
-                                            @else
-                                                <small class="text-muted">Sin proyectos históricos seguros para este cliente.</small>
-                                            @endif
-                                        </td>
-                                    @endif
-                                    <td>
-                                        @if($negocio['hubspot_id'])
-                                            <a href="https://app.hubspot.com/contacts/20053496/record/0-3/{{ $negocio['hubspot_id'] }}" target="_blank" rel="noopener" class="btn btn-primary">
-                                                <i class="fas fa-external-link-alt"></i>
-                                            </a>
-                                        @else — @endif
+                                        <a href="/deal/{{$negocio['id']}}/edit" target="_blank" class="btn btn-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
                                     </td>
                                 </tr>
                             @endforeach
@@ -3171,29 +3110,14 @@
                                     </div>
                                     <div class="modal-body">
                                         <div class="mb-3">
-                                            <label class="form-label">Persona del árbol</label>
-                                            <select name="person_id" class="form-select" required>
-                                                <option value="">Selecciona una persona…</option>
-                                                @foreach(($documentPeople ?? collect()) as $person)
-                                                    <option value="{{ $person->id }}" data-client-root="{{ (string) $person->IDPersona === '1' ? '1' : '0' }}">{{ trim($person->Nombres . ' ' . $person->Apellidos) ?: 'Sin nombre' }}</option>
-                                                @endforeach
-                                            </select>
+                                            <label class="form-label">Nombre del documento</label>
+                                            <input type="text" name="document_name" class="form-control" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label class="form-label">Documento requerido</label>
-                                            <select name="document_kind" class="form-select" required>
-                                                @foreach(($documentKinds ?? []) as $kind => $label)
-                                                    <option value="{{ $kind }}">{{ $label }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Cónyuge asociado <small class="text-muted">(requerido para acta de matrimonio)</small></label>
-                                            <select name="spouse_id" class="form-select">
-                                                <option value="">No aplica</option>
-                                                @foreach(($documentPeople ?? collect()) as $person)
-                                                    <option value="{{ $person->id }}">{{ trim($person->Nombres . ' ' . $person->Apellidos) ?: 'Sin nombre' }}</option>
-                                                @endforeach
+                                            <label class="form-label">Tipo de documento</label>
+                                            <select name="document_type" class="form-select" required>
+                                                <option value="juridico">Jurídico</option>
+                                                <option value="genealogico">Genealógico</option>
                                             </select>
                                         </div>
                                     </div>
@@ -3218,11 +3142,14 @@
                                     </div>
                                     <div class="modal-body">
                                         <div class="mb-3">
-                                            <label class="form-label">Documento requerido</label>
-                                            <select name="document_kind" id="edit_document_kind" class="form-select" required>
-                                                @foreach(($documentKinds ?? []) as $kind => $label)
-                                                    <option value="{{ $kind }}">{{ $label }}</option>
-                                                @endforeach
+                                            <label class="form-label">Nombre del documento</label>
+                                            <input type="text" name="document_name" id="edit_document_name" class="form-control" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Tipo de documento</label>
+                                            <select name="document_type" id="edit_document_type" class="form-select" required>
+                                                <option value="juridico">Jurídico</option>
+                                                <option value="genealogico">Genealógico</option>
                                             </select>
                                         </div>
                                     </div>
@@ -3247,7 +3174,7 @@
                         </thead>
                         <tbody>
                             @foreach($documentRequests as $req)
-                            <tr data-id="{{ $req->id }}" data-document-kind="{{ $req->document_kind }}">
+                            <tr data-id="{{ $req->id }}">
                                 <td>{{ $req->document_name }}</td>
                                 <td>{{ ucfirst($req->document_type) }}</td>
                                 <td>
@@ -3306,18 +3233,6 @@
                             }
                         });
 
-                        function syncRequestKindsForPerson() {
-                            const person = $('#solicitudForm select[name="person_id"] option:selected');
-                            const death = $('#solicitudForm select[name="document_kind"] option[value="death_certificate"]');
-                            const isClient = person.data('client-root') === 1 || person.attr('data-client-root') === '1';
-                            death.prop('disabled', isClient).prop('hidden', isClient);
-                            if (isClient && $('#solicitudForm select[name="document_kind"]').val() === 'death_certificate') {
-                                $('#solicitudForm select[name="document_kind"]').val('passport');
-                            }
-                        }
-
-                        $('#solicitudForm select[name="person_id"]').on('change', syncRequestKindsForPerson);
-
                         // Crear nueva solicitud - Versión corregida
                         $('#solicitudForm').on('submit', function (e) {
                             e.preventDefault();
@@ -3327,8 +3242,6 @@
                                 method: 'POST',
                                 data: $(this).serialize(),
                                 success: function (res) {
-                                    window.location.reload();
-                                    return;
                                     const table = $('#solicitudesTable').DataTable();
 
                                     const formattedStatus = res.status.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
@@ -3370,7 +3283,8 @@
                             const row = $(this).closest('tr');
 
                             $('#edit_request_id').val(id);
-                            $('#edit_document_kind').val(row.data('document-kind') || '');
+                            $('#edit_document_name').val(row.find('td:eq(0)').text());
+                            $('#edit_document_type').val(row.find('td:eq(1)').text().toLowerCase());
 
                             $('#editarSolicitudModal').modal('show');
                         });
@@ -3394,7 +3308,6 @@
                                     if (row.length) {
                                         row.find('td:eq(0)').text(documentName);
                                         row.find('td:eq(1)').text(documentType);
-                                        row.attr('data-document-kind', res.data.document_kind || '');
                                         $('#editarSolicitudModal').modal('hide');
 
                                         // Si usas DataTables
@@ -3545,136 +3458,53 @@
                             }
                         });
 
-                        const documentUploadAccepted = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-                        const documentUploadExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'gif'];
+                        $('#solicitudesClienteTable').on('click', '.upload-btn', function() {
+                            const requestId = $(this).data('request-id');
+                            const fileInput = $(this).siblings('.file-input')[0];
+                            const file = fileInput.files[0];
+                            const row = $(this).closest('tr');
 
-                        function setDocumentDropzoneMessage(dropzone, message, state) {
-                            dropzone.removeClass('is-error is-uploading is-success is-file-ready').addClass(state || '');
-                            dropzone.find('[data-dropzone-message]').text(message);
-                        }
-
-                        function showDocumentDropzonePreview(dropzone, file) {
-                            const preview = dropzone.find('[data-dropzone-preview]');
-                            const previewVisual = preview.find('[data-dropzone-preview-visual]');
-                            preview.removeAttr('hidden');
-                            preview.find('[data-dropzone-filename]').text(file.name);
-                            preview.find('[data-dropzone-filesize]').text((file.size / 1024 / 1024).toFixed(2) + ' MB');
-
-                            if (file.type.indexOf('image/') === 0) {
-                                const objectUrl = URL.createObjectURL(file);
-                                previewVisual.html('<img alt="Vista previa del archivo seleccionado">');
-                                previewVisual.find('img').attr('src', objectUrl).on('load', function() {
-                                    URL.revokeObjectURL(objectUrl);
-                                });
-                            } else {
-                                previewVisual.html('<i class="far fa-file-pdf" aria-hidden="true"></i>');
-                            }
-                        }
-
-                        function uploadRequestedDocument(dropzone, file) {
-                            const extension = (file.name.split('.').pop() || '').toLowerCase();
-                            const validType = documentUploadAccepted.includes(file.type) || documentUploadExtensions.includes(extension);
-
-                            if (!validType || file.size > 10 * 1024 * 1024) {
-                                setDocumentDropzoneMessage(dropzone, 'Usa un PDF o imagen de hasta 10 MB.', 'is-error');
+                            if (!file) {
+                                Swal.fire('Error', 'Por favor selecciona un archivo', 'error');
                                 return;
                             }
 
-                            const requestId = dropzone.data('request-id');
-                            const row = dropzone.closest('tr');
-                            const progress = dropzone.find('[data-dropzone-progress]');
-                            const progressBar = dropzone.find('[data-dropzone-progress-bar]');
                             const formData = new FormData();
                             formData.append('file', file);
                             formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
 
-                            showDocumentDropzonePreview(dropzone, file);
-                            setDocumentDropzoneMessage(dropzone, 'Subiendo documento…', 'is-uploading');
-                            progress.removeAttr('hidden');
-                            progressBar.css('width', '0%');
+                            Swal.fire({
+                                title: 'Subiendo archivo...',
+                                html: 'Por favor espera mientras se sube el archivo',
+                                allowOutsideClick: false,
+                                didOpen: () => {
+                                    Swal.showLoading();
+                                }
+                            });
 
                             $.ajax({
-                                url: "/client/requests/" + requestId + "/upload",
+                                url: "client/requests/" + requestId + "/upload",
                                 type: 'POST',
                                 data: formData,
                                 processData: false,
                                 contentType: false,
-                                xhr: function() {
-                                    const xhr = $.ajaxSettings.xhr();
-                                    if (xhr.upload) {
-                                        xhr.upload.addEventListener('progress', function(event) {
-                                            if (!event.lengthComputable) return;
-                                            progressBar.css('width', Math.round((event.loaded / event.total) * 100) + '%');
-                                        });
+                                success: function(response) {
+                                    Swal.fire(
+                                        'Éxito!',
+                                        'El archivo se ha subido correctamente',
+                                        'success'
+                                    );
+
+                                    // Actualizar la fila
+                                    row.find('td:eq(2)').html('<span class="badge bg-info">En revisión</span>');
+                                    row.find('.actions-column').html('<em>Sin acciones disponibles</em>');
+                                },
+                                error: function(xhr) {
+                                    let errorMsg = 'Error al subir el archivo';
+                                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                                        errorMsg = xhr.responseJSON.message;
                                     }
-                                    return xhr;
-                                },
-                                success: function() {
-                                    progressBar.css('width', '100%');
-                                    row.find('td:eq(2)').html('<span class="badge bg-info">En revisión</span>');
-                                    row.find('.actions-column').html('<em>Documento enviado a revisión</em>');
-                                    Swal.fire('Documento enviado', 'Podrás verlo en tu biblioteca cuando sea validado.', 'success');
-                                },
-                                error: function(xhr) {
-                                    const errorMsg = xhr.responseJSON?.message || 'No se pudo subir el archivo. Intenta nuevamente.';
-                                    progress.attr('hidden', true);
-                                    setDocumentDropzoneMessage(dropzone, errorMsg, 'is-error');
-                                }
-                            });
-                        }
-
-                        $('#solicitudesClienteTable').on('click', '[data-request-dropzone]', function(event) {
-                            if ($(event.target).closest('input').length) return;
-                            $(this).find('.file-input').trigger('click');
-                        });
-
-                        $('#solicitudesClienteTable').on('keydown', '[data-request-dropzone]', function(event) {
-                            if (event.key !== 'Enter' && event.key !== ' ') return;
-                            event.preventDefault();
-                            $(this).find('.file-input').trigger('click');
-                        });
-
-                        $('#solicitudesClienteTable').on('change', '.file-input', function() {
-                            const file = this.files && this.files[0];
-                            if (file) uploadRequestedDocument($(this).closest('[data-request-dropzone]'), file);
-                        });
-
-                        $('#solicitudesClienteTable').on('dragenter dragover', '[data-request-dropzone]', function(event) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            $(this).addClass('is-dragging');
-                        });
-
-                        $('#solicitudesClienteTable').on('dragleave dragend drop', '[data-request-dropzone]', function(event) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            $(this).removeClass('is-dragging');
-                        });
-
-                        $('#solicitudesClienteTable').on('drop', '[data-request-dropzone]', function(event) {
-                            const file = event.originalEvent.dataTransfer?.files?.[0];
-                            if (file) uploadRequestedDocument($(this), file);
-                        });
-
-                        $('#solicitudesClienteTable').on('click', '.associate-existing-btn', function() {
-                            const requestId = $(this).data('request-id');
-                            const fileId = $(this).siblings('.existing-file-select').val();
-                            const row = $(this).closest('tr');
-                            if (!fileId) {
-                                Swal.fire('Selecciona un archivo', 'Elige un archivo cargado previamente en la aplicación.', 'warning');
-                                return;
-                            }
-                            $.ajax({
-                                url: "/client/requests/" + requestId + "/associate-existing",
-                                method: 'POST',
-                                data: { file_id: fileId, _token: $('meta[name="csrf-token"]').attr('content') },
-                                success: function() {
-                                    row.find('td:eq(2)').html('<span class="badge bg-info">En revisión</span>');
-                                    row.find('.actions-column').html('<em>Documento asociado y enviado a revisión</em>');
-                                    Swal.fire('Documento asociado', 'Lo recibimos para su revisión.', 'success');
-                                },
-                                error: function(xhr) {
-                                    Swal.fire('No se pudo asociar', xhr.responseJSON?.message || 'Intenta nuevamente.', 'error');
+                                    Swal.fire('Error', errorMsg, 'error');
                                 }
                             });
                         });
@@ -3696,7 +3526,7 @@
                             }).then((result) => {
                                 if (result.isConfirmed) {
                                     $.ajax({
-                                    url: "/client/requests/" + requestId + "/no-doc",
+                                        url: "client/requests/" + requestId + "/no-doc",
                                         method: 'POST',
                                         headers: {
                                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -3745,34 +3575,10 @@
                                 <td class="actions-column">
                                     {{-- Subir archivo --}}
                                     @if(in_array($req->status, ['en_espera_cliente', 'rechazada']))
-                                    <div class="document-request-dropzone" data-request-dropzone data-request-id="{{ $req->id }}" role="button" tabindex="0" aria-label="Subir {{ $req->document_name }}">
-                                        <input type="file" class="file-input" accept="application/pdf,image/jpeg,image/png,image/webp,image/gif" hidden>
-                                        <i class="fas fa-cloud-arrow-up document-request-dropzone-icon" aria-hidden="true"></i>
-                                        <div class="document-request-dropzone-copy">
-                                            <strong>Arrastra tu archivo aquí</strong>
-                                            <span data-dropzone-message>o haz clic para elegir un PDF o imagen (máx. 10 MB)</span>
-                                        </div>
-                                        <div class="document-request-dropzone-preview" data-dropzone-preview hidden>
-                                            <span class="document-request-preview-visual" data-dropzone-preview-visual></span>
-                                            <span><strong data-dropzone-filename></strong><small data-dropzone-filesize></small></span>
-                                        </div>
-                                        <div class="document-request-progress" data-dropzone-progress hidden><span data-dropzone-progress-bar></span></div>
+                                    <div class="upload-form d-flex gap-2 mb-2">
+                                        <input type="file" class="form-control form-control-sm file-input" data-request-id="{{ $req->id }}">
+                                        <button class="btn btn-sm btn-success upload-btn" data-request-id="{{ $req->id }}">Subir</button>
                                     </div>
-
-                                    @php
-                                        $reusableDocuments = collect($archivos)->filter(fn ($document) => in_array($document->source, ['app_cliente', 'solicitud_cliente'], true));
-                                    @endphp
-                                    @if($reusableDocuments->isNotEmpty())
-                                    <div class="d-flex gap-2 mb-2">
-                                        <select class="form-select form-select-sm existing-file-select" aria-label="Archivo ya cargado">
-                                            <option value="">Usar archivo ya cargado…</option>
-                                            @foreach($reusableDocuments as $document)
-                                                <option value="{{ $document->id }}">{{ $document->file }}</option>
-                                            @endforeach
-                                        </select>
-                                        <button type="button" class="btn btn-sm btn-outline-primary associate-existing-btn" data-request-id="{{ $req->id }}">Asociar</button>
-                                    </div>
-                                    @endif
 
                                     {{-- No tengo documento --}}
                                     @if(now()->gte($req->no_document_button_at))
@@ -3857,37 +3663,6 @@
     .tl-associated-row.is-clickable:hover {
         background: #eef2ff;
     }
-    .document-request-dropzone {
-        position: relative;
-        display: grid;
-        grid-template-columns: auto 1fr;
-        gap: .7rem;
-        align-items: center;
-        min-height: 86px;
-        margin-bottom: .6rem;
-        padding: .8rem;
-        border: 1.5px dashed #94b7c1;
-        border-radius: 12px;
-        background: linear-gradient(135deg, #f7fcfd, #eef7f8);
-        color: #214c58;
-        cursor: pointer;
-        transition: border-color .16s ease, background .16s ease, box-shadow .16s ease, transform .16s ease;
-    }
-    .document-request-dropzone:hover, .document-request-dropzone:focus, .document-request-dropzone.is-dragging {
-        outline: 0;
-        border-color: #0b6f86;
-        background: #edf9fb;
-        box-shadow: 0 8px 18px rgba(11,111,134,.12);
-        transform: translateY(-1px);
-    }
-    .document-request-dropzone.is-dragging { border-style: solid; }
-    .document-request-dropzone.is-uploading { border-color: #1782a0; cursor: wait; }
-    .document-request-dropzone.is-error { border-color: #c05a50; background: #fff6f5; }
-    .document-request-dropzone-icon { display:grid; place-items:center; width:2.5rem; height:2.5rem; border-radius:10px; background:#d9f0f3; color:#0a7088; font-size:1.15rem; }
-    .document-request-dropzone-copy { display:grid; gap:.12rem; min-width:0; }.document-request-dropzone-copy strong { font-size:.86rem; }.document-request-dropzone-copy span { color:#64808a; font-size:.75rem; line-height:1.25; }
-    .document-request-dropzone-preview { grid-column:1 / -1; display:flex; align-items:center; gap:.55rem; min-width:0; padding-top:.1rem; }.document-request-dropzone-preview > span:last-child { min-width:0; display:grid; }.document-request-dropzone-preview strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.78rem; }.document-request-dropzone-preview small { color:#6f838b; font-size:.7rem; }
-    .document-request-preview-visual { width:32px; height:32px; display:grid; place-items:center; overflow:hidden; border-radius:7px; color:#bd4e44; background:#fff0ef; flex:0 0 32px; }.document-request-preview-visual img { width:100%; height:100%; object-fit:cover; }
-    .document-request-progress { grid-column:1 / -1; height:4px; overflow:hidden; border-radius:999px; background:#cce2e7; }.document-request-progress span { display:block; width:0; height:100%; background:linear-gradient(90deg,#0c7189,#55b9c6); transition:width .15s linear; }
 </style>
 @stop
 

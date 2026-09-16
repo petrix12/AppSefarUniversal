@@ -61,75 +61,6 @@
   const prefersReducedMotion = () => window.matchMedia
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  const setupSidebarPreference = (sidebar) => {
-    const body = document.body;
-    const toggle = document.getElementById('sefarSidebarPinToggle');
-    const storageKey = 'sefar.sidebar.pinned';
-    const isDesktop = () => window.matchMedia('(min-width: 992px)').matches;
-
-    const readPinned = () => {
-      try {
-        return window.localStorage.getItem(storageKey) === 'true';
-      } catch (error) {
-        return false;
-      }
-    };
-
-    const persistPinned = (pinned) => {
-      try {
-        window.localStorage.setItem(storageKey, String(pinned));
-      } catch (error) {
-        // A blocked storage policy must not stop navigation from working.
-      }
-    };
-
-    const updateToggle = (pinned) => {
-      if (!toggle) {
-        return;
-      }
-
-      toggle.setAttribute('aria-pressed', String(pinned));
-      toggle.setAttribute('aria-label', pinned ? 'Contraer menú lateral' : 'Fijar menú lateral');
-      toggle.setAttribute('title', pinned ? 'Contraer menú lateral' : 'Fijar menú lateral');
-      const icon = toggle.querySelector('i');
-      if (icon) {
-        icon.className = pinned ? 'fas fa-thumbtack fa-rotate-90' : 'fas fa-thumbtack';
-      }
-    };
-
-    const setPinned = (pinned, save = true) => {
-      if (!isDesktop()) {
-        body.classList.remove('sefar-sidebar-pinned');
-        updateToggle(false);
-        return;
-      }
-
-      body.classList.toggle('sefar-sidebar-pinned', pinned);
-      body.classList.toggle('sidebar-collapse', !pinned);
-      sidebar.classList.toggle('sefar-sidebar-is-pinned', pinned);
-      updateToggle(pinned);
-
-      if (save) {
-        persistPinned(pinned);
-      }
-    };
-
-    setPinned(readPinned(), false);
-
-    if (toggle) {
-      toggle.addEventListener('click', () => {
-        if (!isDesktop()) {
-          body.classList.toggle('sidebar-open');
-          return;
-        }
-
-        setPinned(!body.classList.contains('sefar-sidebar-pinned'));
-      });
-    }
-
-    window.addEventListener('resize', () => setPinned(readPinned(), false));
-  };
-
   const setupSidebarStructure = (sidebar) => {
     sidebar.classList.add('sefar-shell-ready');
 
@@ -502,7 +433,6 @@
       return;
     }
 
-    setupSidebarPreference(sidebar);
     setupSidebarStructure(sidebar);
     animateNavigation(sidebar);
     setupSidebarScene(sidebar);

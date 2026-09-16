@@ -23,7 +23,6 @@ class ClientCosSnapshotService
         private TeamleaderService $teamleaderService,
         private CosHelperService $cosHelper,
         private HubspotDealLocalSyncService $dealLocalSync,
-        private HubspotDealTeamleaderProjectLinkService $dealLinks,
     ) {
     }
 
@@ -107,7 +106,6 @@ class ClientCosSnapshotService
             'hubspot' => ['attempted' => false, 'contact' => false, 'deals' => 0, 'linked_contact' => false],
             'teamleader' => ['attempted' => false, 'contact' => false, 'deals' => 0],
             'local_deals' => ['received' => 0, 'inserted' => 0, 'updated' => 0],
-            'deal_links' => ['linked' => 0, 'review' => 0],
             'user_fields_updated' => [],
         ];
 
@@ -212,7 +210,6 @@ class ClientCosSnapshotService
                 'hubspot' => ['attempted' => false, 'contact' => false, 'deals' => 0, 'skipped' => 'cache_fresh'],
                 'teamleader' => ['attempted' => false, 'contact' => false, 'deals' => 0, 'skipped' => 'cache_fresh'],
                 'local_deals' => ['received' => 0, 'inserted' => 0, 'updated' => 0],
-                'deal_links' => ['linked' => 0, 'review' => 0, 'skipped' => 'cache_fresh'],
                 'user_fields_updated' => [],
             ],
             'monday' => [
@@ -239,7 +236,9 @@ class ClientCosSnapshotService
             }
         }
 
-        $callbacks = [];
+        $callbacks = [
+            'teamleader' => fn () => $syncService->syncWithTeamleader($user),
+        ];
 
         if (filled($user->hs_id)) {
             $callbacks['hubspot'] = fn () => $syncService->syncWithHubspot($user);
@@ -248,7 +247,7 @@ class ClientCosSnapshotService
         }
 
         try {
-            $apiResults = empty($callbacks) ? [] : $this->hubspotService->executeConcurrent($callbacks);
+            $apiResults = $this->hubspotService->executeConcurrent($callbacks);
         } catch (\Throwable $e) {
             Log::error('COS/MCP: error refrescando fuentes externas', [
                 'user_id' => $user->id,
@@ -261,13 +260,14 @@ class ClientCosSnapshotService
         }
 
         $hubspot = $apiResults['hubspot'] ?? [];
+        $teamleader = $apiResults['teamleader'] ?? [];
 
         $sync['hubspot']['attempted'] = filled($user->hs_id);
         $sync['hubspot']['contact'] = ! empty($hubspot['contact']);
         $sync['hubspot']['deals'] = count($hubspot['deals'] ?? []);
-        // Teamleader is now a local, immutable historical archive. COS never
-        // fetches or writes Teamleader during a client refresh.
-        $sync['teamleader'] = ['attempted' => false, 'contact' => false, 'deals' => 0, 'skipped' => 'historical_local_only'];
+        $sync['teamleader']['attempted'] = true;
+        $sync['teamleader']['contact'] = ! empty($teamleader['contact']);
+        $sync['teamleader']['deals'] = count($teamleader['deals'] ?? []);
 
         if (! empty($hubspot['contact'])) {
             $sync['user_fields_updated'] = $this->applyHubspotUpdatesToUser($user, $hubspot['contact'], $syncService);
@@ -276,8 +276,6 @@ class ClientCosSnapshotService
         if (! empty($hubspot['deals']) && is_array($hubspot['deals'])) {
             $sync['local_deals'] = $this->dealLocalSync->sync($user->fresh() ?? $user, $hubspot['deals']);
         }
-
-        $sync['deal_links'] = $this->dealLinks->detectAndLink($user->fresh() ?? $user);
 
         return $sync;
     }

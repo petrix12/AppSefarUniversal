@@ -7,7 +7,6 @@ use App\Models\File as ClientFile;
 use App\Models\TFile;
 use App\Models\User;
 use App\Services\GenealogyService;
-use App\Services\GenealogyDocumentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -15,10 +14,7 @@ class TreeController extends Controller
 {
     private const VISIBLE_GENERATIONS = 6;
 
-    public function __construct(
-        private GenealogyService $genealogyService,
-        private GenealogyDocumentService $documents,
-    )
+    public function __construct(private GenealogyService $genealogyService)
     {
     }
 
@@ -141,44 +137,39 @@ class TreeController extends Controller
             'person' => $person,
             'files' => $this->filesForPerson($person),
             'tree_files' => $this->unassignedFilesForClient($IDCliente),
-            'document_kinds' => GenealogyDocumentService::kinds(),
-            'possible_spouses' => Agcliente::where('IDCliente', $IDCliente)
-                ->whereKeyNot($person->id)
-                ->orderBy('Nombres')
-                ->get(['id', 'Nombres', 'Apellidos'])
-                ->map(fn (Agcliente $candidate) => [
-                    'id' => $candidate->id,
-                    'name' => trim($candidate->Nombres . ' ' . $candidate->Apellidos) ?: 'Sin nombre',
-                ])
-                ->values(),
         ]);
     }
 
-    /** Documents shown from the client-facing tree. Never return CRM/internal files here. */
-    public function clientPersonDetail(int $id): JsonResponse
+    private function filesForPerson(Agcliente $person): array
     {
-        $user = auth()->user();
-        abort_unless($user && $user->hasRole('Cliente'), 403);
+        $legacyPersonId = $person->IDPersona;
 
-        $person = Agcliente::where('IDCliente', $user->passport)->findOrFail($id);
+        return ClientFile::where('IDCliente', $person->IDCliente)
+            ->where(function ($query) use ($person, $legacyPersonId) {
+                $query->where('IDPersonaNew', $person->id);
 
-        return response()->json([
-            'person' => $person,
-            'files' => $this->filesForPerson($person, true),
-            'tree_files' => $this->unassignedFilesForClient($user->passport, true),
-            'document_kinds' => GenealogyDocumentService::kinds(),
-            'possible_spouses' => [],
-        ]);
+                if (!empty($legacyPersonId)) {
+                    $query->orWhere(function ($legacyQuery) use ($legacyPersonId) {
+                        $legacyQuery->where('IDPersona', $legacyPersonId)
+                            ->where(function ($unmigratedQuery) {
+                                $unmigratedQuery->whereNull('IDPersonaNew')
+                                    ->orWhere('IDPersonaNew', 0)
+                                    ->orWhere('IDPersonaNew', '');
+                            });
+                    });
+                }
+            })
+            ->orderBy('tipo')
+            ->orderBy('file')
+            ->get()
+            ->map(fn (ClientFile $file): array => $this->formatTreeFile($file))
+            ->values()
+            ->all();
     }
 
-    private function filesForPerson(Agcliente $person, bool $clientSafe = false): array
+    private function unassignedFilesForClient(string $IDCliente): array
     {
-        return $this->documents->filesForPerson($person, $clientSafe);
-    }
-
-    private function unassignedFilesForClient(string $IDCliente, bool $clientSafe = false): array
-    {
-        $query = ClientFile::where('IDCliente', $IDCliente)
+        return ClientFile::where('IDCliente', $IDCliente)
             ->where(function ($query) {
                 $query->whereNull('IDPersonaNew')
                     ->orWhere('IDPersonaNew', 0)
@@ -188,14 +179,10 @@ class TreeController extends Controller
                 $query->whereNull('IDPersona')
                     ->orWhere('IDPersona', 0)
                     ->orWhere('IDPersona', '');
-            });
-
-        if ($clientSafe) {
-            $query->where('client_visible', true)
-                ->whereIn('document_kind', array_keys(GenealogyDocumentService::kinds()));
-        }
-
-        return $query->orderBy('tipo')->orderBy('file')->get()
+            })
+            ->orderBy('tipo')
+            ->orderBy('file')
+            ->get()
             ->map(fn (ClientFile $file): array => $this->formatTreeFile($file))
             ->values()
             ->all();
@@ -203,7 +190,18 @@ class TreeController extends Controller
 
     private function formatTreeFile(ClientFile $file): array
     {
-        return $this->documents->present($file);
+        $location = rtrim((string) $file->location, '/');
+        $name = (string) $file->file;
+
+        return [
+            'id' => $file->id,
+            'file' => $name,
+            'tipo' => $file->tipo,
+            'notas' => $file->notas,
+            'location' => $file->location,
+            'path' => $location . '/' . $name,
+            'created_at' => optional($file->created_at)->format('d/m/Y'),
+        ];
     }
 
     private function renderTree(
@@ -248,7 +246,6 @@ class TreeController extends Controller
         $parentescos = $treeData['parentescos'];
         $treeWarnings = $treeData['warnings'];
         $treeStats = $treeData['stats'];
-        $documentCatalog = $this->documents->catalog($IDCliente);
         $tipoarchivos = TFile::all();
         $cliente = json_decode(json_encode(User::where('passport', $IDCliente)->get()), true);
         $user = User::where('passport', $IDCliente)->first();
@@ -268,7 +265,6 @@ class TreeController extends Controller
             'parentnumber',
             'treeWarnings',
             'treeStats'
-            ,'documentCatalog'
         ));
     }
 }

@@ -21,18 +21,6 @@ class TeamleaderService
 
     private ?string $cachedToken = null;
 
-    /**
-     * Teamleader is retained as an immutable local archive. Project writes are
-     * blocked at the API boundary so an old synchronizer cannot recreate or
-     * alter historical records by mistake.
-     */
-    private function assertProjectsWritable(): void
-    {
-        if ((bool) config('services.teamleader.historical_mode', true)) {
-            throw new \LogicException('Teamleader está en modo histórico local; los proyectos no se crean ni se actualizan.');
-        }
-    }
-
     private function teamleaderPost(string $endpoint, array $payload = [], array $headers = []): Response
     {
         $this->waitForTeamleaderSlot();
@@ -853,8 +841,6 @@ public function listProjectsByCustomerId(string $customerId)
 
     public function createProjectFromHubspotDeal($hubspotDeal, $customerId, $camposDeTeamleader)
     {
-        $this->assertProjectsWritable();
-
         try {
             $responsibleUserId = $this->getUserIdByEmail('seguridad@sefarvzla.com');
 
@@ -1097,7 +1083,6 @@ public function getProjectsWithDetailsByCustomerId(string $customerId)
 
     public function updateProject($projectId, $updatedData)
     {
-            $this->assertProjectsWritable();
             $accessToken = $this->getAccessToken();
 
             // Construir el payload con el ID del proyecto y los datos a actualizar

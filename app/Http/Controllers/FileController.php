@@ -6,19 +6,13 @@ use App\Models\File;
 use Exception;
 use App\Models\TFile;
 use App\Models\User;
-use App\Models\Agcliente;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Support\Facades\Storage;
-use App\Services\GenealogyDocumentService;
-use App\Services\HubspotService;
 
 class FileController extends Controller
 {
-    public function __construct(private GenealogyDocumentService $documents)
-    {
-    }
     /**
      * Display a listing of the resource.
      *
@@ -145,11 +139,6 @@ class FileController extends Controller
             $ruta = Storage::disk('s3')->putFileAs($location, $request->file, $fileName, 'public');
             if($ruta) {
                 // Agregando registro a la tabla files
-                $documentKind = $request->input('document_kind') ?: GenealogyDocumentService::inferKind($request->tipo);
-                $clientUpload = Auth::check()
-                    && Auth::id() === $user_id
-                    && Auth::user()->hasRole('Cliente');
-
                 File::create([
                     'file' => $fileName,
                     'location' => $location,
@@ -158,12 +147,7 @@ class FileController extends Controller
                     'IDCliente' => $IDCliente,
                     'notas' => $request->notas,
                     'IDPersona' => $request->IDPersona,
-                    'user_id' => $user_id,
-                    'source' => $clientUpload ? 'app_cliente' : 'staff_upload',
-                    'client_visible' => $clientUpload && GenealogyDocumentService::isAllowedKind($documentKind),
-                    'document_kind' => $documentKind,
-                    'mime_type' => $request->file('file')->getMimeType(),
-                    'size_bytes' => $request->file('file')->getSize(),
+                    'user_id' => $user_id
                 ]);
 
                 // Mensaje
@@ -190,7 +174,6 @@ class FileController extends Controller
      */
     public function show(File $file)
     {
-        abort_unless(Auth::check() && $this->documents->canView(Auth::user(), $file), 403);
         /* $pathtoFile = storage_path().'/app/'.$file->location.'/'.$file->file;
         return response()->file($pathtoFile); */
         //return Storage::disk('s3')->url($file->location.'/'.$file->file);
@@ -199,14 +182,12 @@ class FileController extends Controller
             return back();
         }
 
-        return redirect()->away($this->documents->temporaryUrl($file));
+        return redirect(Storage::disk('s3')->url($file->location . '/' . $file->file));
     }
 
     public function viewfile($id)
     {
         $file = File::findOrFail($id);
-
-        abort_unless(Auth::check() && $this->documents->canView(Auth::user(), $file), 403);
 
         $fileroute = preg_replace('/\/+/', '/', $file->location . "/" . $file->file);
 
@@ -215,73 +196,8 @@ class FileController extends Controller
             abort(404);
         }
 
-        return redirect()->away($this->documents->temporaryUrl($file));
-    }
-
-    /**
-     * An internal curator decides whether an imported HubSpot file belongs to a
-     * genealogy person/union and whether it becomes visible to the client.
-     */
-    public function associateGenealogyDocument(Request $request, File $file)
-    {
-        abort_unless(Auth::check() && Auth::user()->can('administrar.documentos'), 403);
-        abort_unless($file->source === 'hubspot', 422, 'Solo se pueden asociar desde aquí los archivos importados de HubSpot.');
-        $canShareWithClient = HubspotService::isClientEligibleFileSource($file->source, $file->source_reference);
-
-        $documentKinds = array_keys(GenealogyDocumentService::kinds());
-        $data = $request->validate([
-            'person_id' => ['required', 'integer'],
-            'document_kind' => ['required', 'string', 'in:' . implode(',', $documentKinds)],
-            'spouse_id' => ['nullable', 'integer'],
-            'share_with_client' => ['nullable', 'boolean'],
-        ]);
-
-        $person = Agcliente::query()
-            ->where('IDCliente', $file->IDCliente)
-            ->findOrFail($data['person_id']);
-
-        abort_unless(
-            array_key_exists($data['document_kind'], GenealogyDocumentService::allowedKindsForPerson($person)),
-            422,
-            'Este documento no se solicita para la persona principal.'
-        );
-
-        // A curated association replaces a prior automatic or legacy one. In
-        // particular, this prevents a marriage certificate from remaining tied
-        // to just one spouse after it is linked to the union.
-        $file->people()->detach();
-        $file->genealogyUnions()->detach();
-        $file->forceFill(['IDPersonaNew' => null, 'IDPersona' => 0])->save();
-
-        if ($data['document_kind'] === GenealogyDocumentService::KIND_MARRIAGE) {
-            abort_unless(filled($data['spouse_id'] ?? null), 422, 'Seleccione el otro cónyuge.');
-
-            $spouse = Agcliente::query()
-                ->where('IDCliente', $file->IDCliente)
-                ->findOrFail($data['spouse_id']);
-
-            abort_unless($spouse->id !== $person->id, 422, 'Seleccione dos personas distintas.');
-            $this->documents->associateUnion($file, $this->documents->findOrCreateUnion($person, $spouse));
-        } else {
-            $this->documents->associatePerson($file, $person);
-        }
-
-        $file->forceFill([
-            'document_kind' => $data['document_kind'],
-            'tipo' => GenealogyDocumentService::label($data['document_kind']),
-            'client_visible' => $canShareWithClient && $request->boolean('share_with_client'),
-        ])->save();
-
-        $message = ! $canShareWithClient
-            ? 'Archivo asociado. Este campo de HubSpot es exclusivamente interno.'
-            : ($request->boolean('share_with_client')
-                ? 'Archivo asociado y compartido con el cliente.'
-                : 'Archivo asociado. Sigue siendo privado para el cliente.');
-
-        return response()->json([
-            'message' => $message,
-            'file' => $this->documents->present($file->fresh()),
-        ]);
+        // Redirigir a la URL del archivo en S3
+        return redirect(Storage::disk('s3')->url($fileroute));
     }
 
     /**

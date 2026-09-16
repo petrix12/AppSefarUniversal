@@ -2,289 +2,273 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agcliente;
 use App\Models\DocumentRequest;
-use App\Models\File;
 use App\Models\User;
-use App\Services\GenealogyDocumentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Models\File;
+use App\Models\Agcliente;
 
 class DocumentRequestController extends Controller
 {
-    public function __construct(private GenealogyDocumentService $documents)
-    {
-    }
-
-    /** Crear una solicitud documental genealógica para una persona o unión. */
+    /**
+     * Crear una nueva solicitud de documento (Admin)
+     */
     public function store(Request $request, User $user)
     {
-        $this->requireInternalUser();
-
         $validated = $request->validate([
-            'document_kind' => 'required|in:' . implode(',', array_keys(GenealogyDocumentService::kinds())),
-            'person_id' => 'required|integer',
-            'spouse_id' => 'nullable|integer|different:person_id',
+            'document_name' => 'required|string|max:255',
+            'document_type' => 'required|in:juridico,genealogico',
         ]);
-
-        $person = $this->personForClient($user, (int) $validated['person_id']);
-        abort_unless(
-            array_key_exists($validated['document_kind'], GenealogyDocumentService::allowedKindsForPerson($person)),
-            422,
-            'El acta de defunción solo se solicita a antepasados.'
-        );
-        $union = null;
-
-        if ($validated['document_kind'] === GenealogyDocumentService::KIND_MARRIAGE) {
-            if (empty($validated['spouse_id'])) {
-                return response()->json(['message' => 'Selecciona el otro cónyuge para solicitar un acta de matrimonio.'], 422);
-            }
-
-            $spouse = $this->personForClient($user, (int) $validated['spouse_id']);
-            $union = $this->documents->findOrCreateUnion($person, $spouse);
-        }
 
         $documentRequest = DocumentRequest::create([
             'user_id' => $user->id,
             'requested_by' => auth()->id(),
-            'document_name' => GenealogyDocumentService::label($validated['document_kind']),
-            'document_type' => 'genealogico',
-            'document_kind' => $validated['document_kind'],
-            'person_id' => $person->id,
-            'genealogy_union_id' => $union?->id,
+            'document_name' => $validated['document_name'],
+            'document_type' => $validated['document_type'],
             'status' => 'en_espera_cliente',
             'no_document_button_at' => now()->addMonth(),
         ]);
 
-        return response()->json($documentRequest->load(['person', 'genealogyUnion']));
+        return response()->json($documentRequest);
     }
 
-    public function update(Request $request, DocumentRequest $documentRequest)
+    /**
+     * Actualizar una solicitud de documento (Admin)
+     */
+    public function update(Request $request, $id)
     {
-        $this->requireInternalUser();
+        // Primero encuentra el documento
+        $documentRequest = DocumentRequest::findOrFail($id);
 
-        if (! in_array($documentRequest->status, ['en_espera_cliente', 'resuelto', 'rechazada'], true)) {
-            return response()->json(['message' => 'No se puede editar una solicitud en este estado.'], 422);
+        // Validar que el usuario autenticado es quien creó la solicitud
+        if ($documentRequest->requested_by !== auth()->id()) {
+            return response()->json([
+                'message' => 'No tienes permiso para editar esta solicitud'
+            ], 403);
         }
 
         $validated = $request->validate([
-            'document_kind' => 'required|in:' . implode(',', array_keys(GenealogyDocumentService::kinds())),
+            'document_name' => 'required|string|max:255',
+            'document_type' => 'required|in:juridico,genealogico',
         ]);
 
-        if ($documentRequest->person) {
-            abort_unless(
-                array_key_exists($validated['document_kind'], GenealogyDocumentService::allowedKindsForPerson($documentRequest->person)),
-                422,
-                'El acta de defunción solo se solicita a antepasados.'
-            );
+        // Estados que permiten edición
+        $editableStatuses = ['en_espera_cliente', 'resuelto', 'rechazada'];
+
+        if (!in_array($documentRequest->status, $editableStatuses)) {
+            return response()->json([
+                'message' => 'No se puede editar una solicitud en estado: '.$documentRequest->status,
+                'current_status' => $documentRequest->status
+            ], 422);
         }
 
-        $documentRequest->update([
-            'document_kind' => $validated['document_kind'],
-            'document_name' => GenealogyDocumentService::label($validated['document_kind']),
-            'document_type' => 'genealogico',
-        ]);
-
-        return response()->json(['success' => true, 'data' => $documentRequest->fresh()]);
-    }
-
-    public function destroy(DocumentRequest $documentRequest)
-    {
-        $this->requireInternalUser();
-        $this->deleteSubmittedFile($documentRequest);
-        $documentRequest->delete();
-
-        return response()->json(['success' => true, 'message' => 'Solicitud eliminada correctamente']);
-    }
-
-    public function approve(DocumentRequest $documentRequest)
-    {
-        $this->requireInternalUser();
-
-        if (! in_array($documentRequest->status, ['en_espera_cliente', 'resuelto'], true)) {
-            return response()->json(['message' => 'No se puede aprobar una solicitud en este estado.'], 422);
-        }
-
-        $file = $this->fileForRequest($documentRequest);
-        if ($file) {
-            $file->update([
-                'document_kind' => $documentRequest->document_kind,
-                'client_visible' => true,
+        try {
+            $documentRequest->update([
+                'document_name' => $validated['document_name'],
+                'document_type' => $documentRequest->document_type, // Mantener el tipo original
             ]);
-            $this->associateRequestFile($documentRequest, $file);
+
+            return response()->json([
+                'success' => true,
+                'data' => $documentRequest->fresh(),
+                'message' => 'Solicitud actualizada correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar la solicitud',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $documentRequest->update(['status' => 'aprobada', 'status_changed_at' => now()]);
-
-        return response()->json($documentRequest->fresh());
     }
 
-    public function reject(DocumentRequest $documentRequest)
+    /**
+     * Eliminar una solicitud de documento (Admin)
+     */
+    public function destroy($id)
     {
-        $this->requireInternalUser();
+        try {
+            $documentRequest = DocumentRequest::findOrFail($id);
 
-        if (! in_array($documentRequest->status, ['en_espera_cliente', 'resuelto'], true)) {
-            return response()->json(['message' => 'No se puede rechazar una solicitud en este estado.'], 422);
+            // Opcional: Eliminar archivo asociado si existe
+            if ($documentRequest->file_path) {
+                Storage::disk('s3')->delete($documentRequest->file_path);
+            }
+
+            $documentRequest->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Solicitud eliminada correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar la solicitud',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Aprobar una solicitud de documento (Admin)
+     */
+    public function approve($id)
+    {
+        $requestModel = DocumentRequest::findOrFail($id);
+
+        // Estados desde los cuales se puede aprobar
+        $approvableStatuses = ['en_espera_cliente', 'resuelto'];
+
+        if (!in_array($requestModel->status, $approvableStatuses)) {
+            return response()->json([
+                'message' => 'No se puede aprobar una solicitud en estado: '.$requestModel->status,
+                'current_status' => $requestModel->status
+            ], 422);
         }
 
-        $this->deleteSubmittedFile($documentRequest);
-        $documentRequest->update([
-            'status' => 'rechazada',
-            'file_path' => null,
+        $user = User::findOrFail($requestModel->user_id);
+
+        // Buscar IDPersona en la tabla agclientes
+        $idPersona = 0;
+
+        // Actualizar la solicitud
+        $requestModel->update([
+            'status' => 'aprobada',
             'status_changed_at' => now(),
         ]);
 
-        return response()->json($documentRequest->fresh());
-    }
+        // Crear el registro en la tabla files
+        if ($requestModel->file_path) {
+            $fileName = basename($requestModel->file_path);
+            $location = dirname($requestModel->file_path);
 
-    /** El cliente sube un PDF o imagen a una solicitud que le pertenece. */
-    public function upload(Request $request, DocumentRequest $documentRequest)
-    {
-        $this->requireRequestOwner($documentRequest);
-
-        if (! in_array($documentRequest->status, ['en_espera_cliente', 'rechazada'], true)) {
-            return response()->json(['message' => 'No se puede subir un archivo en el estado actual.'], 422);
+            File::create([
+                'file' => $fileName,
+                'location' => $location,
+                'tipo' => null,
+                'IDCliente' => $user->passport,
+                'IDPersona' => $idPersona,
+                'migrado' => 0,
+                'user_id' => $user->id,
+                'document_request_id' => $requestModel->id // Opcional: relacionar con la solicitud
+            ]);
         }
 
-        $request->validate([
-            'file' => 'required|file|mimes:pdf,jpg,jpeg,png,webp,gif|max:10240',
+        return response()->json($requestModel);
+    }
+
+    /**
+     * Rechazar una solicitud de documento (Admin)
+     */
+    public function reject($id)
+    {
+        $requestModel = DocumentRequest::findOrFail($id);
+
+        // Estados desde los cuales se puede rechazar
+        $rejectableStatuses = ['en_espera_cliente', 'resuelto'];
+
+        if (!in_array($requestModel->status, $rejectableStatuses)) {
+            return response()->json([
+                'message' => 'No se puede rechazar una solicitud en estado: '.$requestModel->status,
+                'current_status' => $requestModel->status
+            ], 422);
+        }
+
+        if ($requestModel->file_path) {
+            Storage::disk('s3')->delete($requestModel->file_path);
+        }
+
+        $requestModel->update([
+            'status' => 'rechazada',
+            'file_path' => '',
+            'status_changed_at' => now(),
         ]);
 
-        $this->deleteSubmittedFile($documentRequest);
+        return response()->json($requestModel);
+    }
 
-        $uploaded = $request->file('file');
-        $passport = (string) auth()->user()->passport;
-        $extension = strtolower($uploaded->getClientOriginalExtension());
-        $name = preg_replace('/[^A-Za-z0-9_-]/', '_', pathinfo($uploaded->getClientOriginalName(), PATHINFO_FILENAME));
-        $fileName = $name . '_' . now()->format('Ymd_His') . '.' . $extension;
-        $location = 'public/doc/P' . $passport . '/solicitudes';
-        $path = $uploaded->storeAs($location, $fileName, 's3');
+    /**
+     * Subir archivo para una solicitud (Cliente)
+     */
+    public function upload(Request $request, $id)
+    {
+        $requestModel = DocumentRequest::findOrFail($id);
 
-        $file = File::create([
-            'file' => $fileName,
-            'location' => $location,
-            'tipo' => GenealogyDocumentService::label($documentRequest->document_kind),
-            'IDCliente' => $passport,
-            // The document is attached to its person (or marriage union) only
-            // once it is approved by the internal team.
-            'IDPersona' => 0,
-            'IDPersonaNew' => null,
-            'user_id' => auth()->id(),
-            'source' => 'solicitud_cliente',
-            'client_visible' => true,
-            'document_kind' => $documentRequest->document_kind,
-            'mime_type' => $uploaded->getMimeType(),
-            'size_bytes' => $uploaded->getSize(),
-            'document_request_id' => $documentRequest->id,
+        // Solo permitir subir archivo si está en espera o rechazada
+        if (!in_array($requestModel->status, ['en_espera_cliente', 'rechazada'])) {
+            return response()->json(['message' => 'No se puede subir archivo en el estado actual'], 422);
+        }
+
+        $validated = $request->validate([
+            'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
 
-        $documentRequest->update([
+        $passport = auth()->user()->passport;
+
+        // Eliminar archivo anterior si existe
+        if ($requestModel->file_path) {
+            Storage::disk('s3')->delete($requestModel->file_path);
+        }
+
+        // Generar nombre del archivo
+        $originalName = pathinfo($request->file('file')->getClientOriginalName(), PATHINFO_FILENAME);
+        $extension = $request->file('file')->getClientOriginalExtension();
+        $currentDate = now()->format('Ymd_His');
+
+        // Limpiar el nombre del documento para usarlo en el nombre del archivo
+        $cleanDocName = preg_replace('/[^a-zA-Z0-9]/', '_', $requestModel->document_name);
+        $fileName = "{$cleanDocName}_{$currentDate}.{$extension}";
+
+        $location = 'public/doc/P'.$passport.'/solicitudes';
+
+        // Subir el archivo con el nuevo nombre
+        $path = $request->file('file')->storeAs(
+            $location,
+            $fileName,
+            's3'
+        );
+
+        $requestModel->update([
             'file_path' => $path,
             'status' => 'resuelto',
             'status_changed_at' => now(),
         ]);
 
         return response()->json([
-            'request' => $documentRequest->fresh(),
-            'file' => $this->documents->present($file),
+            'file_url' => Storage::disk('s3')->url($path),
+            'request' => $requestModel
         ]);
     }
 
-    /** Reutiliza un documento que el cliente ya había cargado en la aplicación. */
-    public function associateExisting(Request $request, DocumentRequest $documentRequest)
+    /**
+     * Marcar como "no tengo documento" (Cliente)
+     */
+    public function noDocument(DocumentRequest $requestModel)
     {
-        $this->requireRequestOwner($documentRequest);
-
-        if (! in_array($documentRequest->status, ['en_espera_cliente', 'rechazada'], true)) {
-            return response()->json(['message' => 'No se puede asociar un archivo en el estado actual.'], 422);
+        // Verificar que el usuario autenticado es el dueño de la solicitud
+        if ($requestModel->user_id !== auth()->id()) {
+            abort(403, 'No autorizado');
         }
 
-        $validated = $request->validate(['file_id' => 'required|integer']);
-        $file = File::findOrFail($validated['file_id']);
+        // Verificar que el botón está disponible
+        if (!$requestModel->no_document_button_at || now()->lt($requestModel->no_document_button_at)) {
+            return response()->json(['message' => 'Esta acción no está disponible aún'], 422);
+        }
 
-        abort_unless($this->documents->canReuseForRequest(auth()->user(), $file), 403, 'Ese archivo no puede asociarse a esta solicitud.');
+        // Solo permitir si está en espera
+        if ($requestModel->status !== 'en_espera_cliente') {
+            return response()->json(['message' => 'No se puede realizar esta acción en el estado actual'], 422);
+        }
 
-        $file->update([
-            'document_kind' => $documentRequest->document_kind,
-            'tipo' => GenealogyDocumentService::label($documentRequest->document_kind),
-            'client_visible' => true,
-            'document_request_id' => $documentRequest->id,
-        ]);
-        $documentRequest->update([
-            'file_path' => trim((string) $file->location, '/') . '/' . ltrim((string) $file->file, '/'),
-            'status' => 'resuelto',
+        $requestModel->update([
+            'status' => 'no_documento',
             'status_changed_at' => now(),
         ]);
 
-        return response()->json(['request' => $documentRequest->fresh(), 'file' => $this->documents->present($file)]);
-    }
-
-    public function noDocument(DocumentRequest $documentRequest)
-    {
-        $this->requireRequestOwner($documentRequest);
-
-        if (! $documentRequest->no_document_button_at || now()->lt($documentRequest->no_document_button_at)) {
-            return response()->json(['message' => 'Esta acción no está disponible aún.'], 422);
-        }
-
-        if ($documentRequest->status !== 'en_espera_cliente') {
-            return response()->json(['message' => 'No se puede realizar esta acción en el estado actual.'], 422);
-        }
-
-        $documentRequest->update(['status' => 'no_documento', 'status_changed_at' => now()]);
-
-        return response()->json($documentRequest->fresh());
-    }
-
-    private function associateRequestFile(DocumentRequest $request, File $file): void
-    {
-        if ($request->person_id && $request->person) {
-            $this->documents->associatePerson($file, $request->person);
-        }
-
-        if ($request->genealogy_union_id && $request->genealogyUnion) {
-            $this->documents->associateUnion($file, $request->genealogyUnion);
-        }
-    }
-
-    private function fileForRequest(DocumentRequest $request): ?File
-    {
-        return File::where('document_request_id', $request->id)->latest('id')->first();
-    }
-
-    private function deleteSubmittedFile(DocumentRequest $request): void
-    {
-        $file = $this->fileForRequest($request);
-
-        // A file selected from the client's library belongs to that library.
-        // Rejecting or deleting a request must never erase the original upload.
-        if ($file && $file->source !== 'solicitud_cliente') {
-            $file->update(['document_request_id' => null]);
-
-            return;
-        }
-
-        $path = $request->file_path ?: ($file ? trim((string) $file->location, '/') . '/' . ltrim((string) $file->file, '/') : null);
-
-        if ($path) {
-            Storage::disk('s3')->delete($path);
-        }
-
-        $file?->delete();
-    }
-
-    private function personForClient(User $user, int $personId): Agcliente
-    {
-        return Agcliente::where('IDCliente', $user->passport)->findOrFail($personId);
-    }
-
-    private function requireInternalUser(): void
-    {
-        abort_unless(auth()->check() && $this->documents->isInternalUser(auth()->user()), 403);
-    }
-
-    private function requireRequestOwner(DocumentRequest $documentRequest): void
-    {
-        abort_unless(auth()->check() && $documentRequest->user_id === auth()->id(), 403, 'No autorizado.');
+        return response()->json($requestModel);
     }
 }

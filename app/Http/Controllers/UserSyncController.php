@@ -21,7 +21,6 @@ class UserSyncController extends Controller
         }
 
         \App\Jobs\RefreshClientCosSnapshot::dispatch($user->id, true);
-        app(\App\Services\ClientFileReviewService::class)->queueIfDue($user, 'cos_manual_refresh');
 
         $message = $rolId === 5
             ? 'La actualización de tu estatus está en cola. Recarga la página en unos minutos.'

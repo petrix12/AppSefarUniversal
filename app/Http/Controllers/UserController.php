@@ -1656,10 +1656,6 @@ class UserController extends Controller
                     'file' => $filename,
                     'location' => "public/doc/{$user->passport}/",
                     'IDCliente' => $user->passport,
-                    'user_id' => $user->id,
-                    'source' => 'hubspot',
-                    'client_visible' => false,
-                    'source_reference' => $fileUrl,
                 ]);
 
                 $processedFiles[] = $filename;
@@ -1672,10 +1668,9 @@ class UserController extends Controller
         return $processedFiles;
     }
 
-public function edit(User $user)
+    public function edit(User $user)
 {
     $startTime = microtime(true);
-    app(\App\Services\ClientFileReviewService::class)->queueIfDue($user, 'cos_open');
 
     // ==========================================
     // CACHE BÁSICO
@@ -1717,19 +1712,11 @@ public function edit(User $user)
         ->where('id_user', $user->id)
         ->get();
 
-    $documentService = app(\App\Services\GenealogyDocumentService::class);
-    $isClientFacing = auth()->user()?->roles->contains('id', 5) || request()->boolean('vista_cliente');
-    $documentRequestsQuery = DocumentRequest::where('user_id', $user->id);
-    if ($isClientFacing) {
-        $documentRequestsQuery->where('document_type', 'genealogico')
-            ->whereIn('document_kind', array_keys(\App\Services\GenealogyDocumentService::kinds()));
-    }
-    $documentRequests = $documentRequestsQuery->latest()->get();
-    $archivos = $isClientFacing
-        ? $documentService->visibleToClient($user->passport)->get()
-        : File::where('IDCliente', $user->passport)->get();
-    $documentPeople = Agcliente::where('IDCliente', $user->passport)->orderBy('Generacion')->orderBy('IDPersona')->get();
-    $documentKinds = \App\Services\GenealogyDocumentService::kinds();
+    $documentRequests = DocumentRequest::where('user_id', $user->id)
+        ->latest()
+        ->get();
+
+    $archivos = File::where("IDCliente", $user->passport)->get();
 
     $facturas = Factura::with('compras')
         ->where('id_cliente', $user->id)
@@ -1750,7 +1737,6 @@ public function edit(User $user)
         ->get();
 
     $teamleaderMigration = $this->getTeamleaderMigrationData($user);
-    $dealProjectLinking = app(\App\Services\HubspotDealTeamleaderProjectLinkService::class)->overview($user);
     $teamleaderProjectPayments = app(TeamleaderProjectPaymentAnalyzer::class)
         ->analyzeProjects($teamleaderMigration['projects'] ?? collect());
     app(TeamleaderPhasePaymentService::class)->sync($user, $teamleaderProjectPayments);
@@ -1921,8 +1907,6 @@ public function edit(User $user)
         'boardId',
         'boardName',
         'archivos',
-        'documentPeople',
-        'documentKinds',
         'user',
         'roles',
         'permissions',
@@ -1930,7 +1914,6 @@ public function edit(User $user)
         'clientTasks',
         'clientChatMessages',
         'teamleaderMigration',
-        'dealProjectLinking',
         'teamleaderProjectPayments',
         'servicios',
         'ownerOptions',
@@ -2497,14 +2480,6 @@ private function removeDuplicatesAndSort(array $cosuser): array
 
     private function syncDealFieldsBetweenPlatforms($hubspotDeals, $teamleaderDeals, $camposRelacionados, $user)
     {
-        if (config('services.teamleader.historical_mode', true)) {
-            Log::warning('Sincronización heredada de tratos omitida: Teamleader está en modo histórico local.', [
-                'user_id' => $user->id,
-            ]);
-
-            return;
-        }
-
         $updatesToHubspotAll = [];
         $updatesToTeamleaderAll = [];
         $updatesToDBAll = [];

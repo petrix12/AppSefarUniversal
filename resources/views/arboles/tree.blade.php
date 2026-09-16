@@ -311,12 +311,12 @@
                                                         <div style="width: 100%; height:0.5rem; border-bottom: #093143 1px solid ; margin-bottom:0.5rem;"></div>
                                                         @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
                                                             <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : json_encode($persona['Observaciones'])}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar</button>
-                                                            <button class="editperson" onclick="openTreePersonPanel('{{$persona["id"]}}')">Archivos</button>
+                                                            <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Archivos</button>
                                                             <button class="copydata" onclick="copydata('datacopy_{{ $nodeKey }}')">Copiar</button>
                                                             <button class="copydata" onclick="event.stopPropagation(); loadTreeBranch('{{$persona["id"]}}', '{{$persona["tree_generation"] ?? ($key1+$generacionBase)}}', '{{$persona["PersonaIDNew"] ?? $key2}}', '{{$persona["tree_inherited_color"] ?? '#B08A43'}}')">Extender</button>
                                                         @elseif(auth()->user() && auth()->user()->hasRole(['Cliente']))
                                                             <button class="editperson" onclick="callEdit('{{!isset($persona['Nombres']) ? '' : $persona['Nombres']}}','{{!isset($persona['Apellidos']) ? '' : $persona['Apellidos']}}','{{!isset($persona['AnhoNac']) ? '' : $persona['AnhoNac']}}','{{!isset($persona['MesNac']) ? '' : $persona['MesNac']}}','{{!isset($persona['DiaNac']) ? '' : $persona['DiaNac']}}','{{!isset($persona['LugarNac']) ? '' : $persona['LugarNac']}}','{{!isset($persona['PaisNac']) ? '' : $persona['PaisNac']}}','{{!isset($persona['AnhoBtzo']) ? '' : $persona['AnhoBtzo']}}','{{!isset($persona['MesBtzo']) ? '' : $persona['MesBtzo']}}','{{!isset($persona['DiaBtzo']) ? '' : $persona['DiaBtzo']}}','{{!isset($persona['LugarBtzo']) ? '' : $persona['LugarBtzo']}}','{{!isset($persona['PaisBtzo']) ? '' : $persona['PaisBtzo']}}','{{!isset($persona['AnhoMatr']) ? '' : $persona['AnhoMatr']}}','{{!isset($persona['MesMatr']) ? '' : $persona['MesMatr']}}','{{!isset($persona['DiaMatr']) ? '' : $persona['DiaMatr']}}','{{!isset($persona['LugarMatr']) ? '' : $persona['LugarMatr']}}','{{!isset($persona['PaisMatr']) ? '' : $persona['PaisMatr']}}','{{!isset($persona['AnhoDef']) ? '' : $persona['AnhoDef']}}','{{!isset($persona['MesDef']) ? '' : $persona['MesDef']}}','{{!isset($persona['DiaDef']) ? '' : $persona['DiaDef']}}','{{!isset($persona['LugarDef']) ? '' : $persona['LugarDef']}}','{{!isset($persona['PaisDef']) ? '' : $persona['PaisDef']}}','{{!isset($persona['Observaciones']) ? '' : json_encode($persona['Observaciones'])}}','{{$persona['id']}}','{{!isset($persona['NPasaporte']) ? '' : $persona['NPasaporte']}}','{{!isset($persona['PaisPasaporte']) ? '' : $persona['PaisPasaporte']}}','{{!isset($persona['NDocIdent']) ? '' : $persona['NDocIdent']}}','{{!isset($persona['PaisDocIdent']) ? '' : $persona['PaisDocIdent']}}')">Editar</button>
-                                                            <button class="editperson" onclick="openTreePersonPanel('{{$persona["id"]}}')">Archivos</button>
+                                                            <button class="editperson" onclick="callFiles('{{$persona["IDCliente"]}}', '{{$persona["id"]}}')">Archivos</button>
                                                         @endif
                                                     </div>
                                                     <div class="tree-lineage-strip">
@@ -412,7 +412,7 @@
         </div>
     </div>
 
-    @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista', 'Cliente']))
+    @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
     <aside id="treePersonPanel" class="tree-person-panel" aria-hidden="true">
         <div class="tree-person-panel-header">
             <div>
@@ -428,90 +428,6 @@
             <div class="tree-person-panel-empty">Haz click sobre una persona del arbol para ver su informacion y documentos.</div>
         </div>
     </aside>
-
-    <div class="tree-document-actions">
-        <button type="button" id="treeDocumentCatalogOpen" class="tree-document-action-button">
-            <i class="fa-regular fa-folder-open"></i> Catálogo documental
-        </button>
-    </div>
-
-    <dialog id="treeDocumentCatalog" class="tree-document-dialog">
-        <div class="tree-document-dialog-header">
-            <div>
-                <div class="tree-person-panel-eyebrow">Árbol completo</div>
-                <h3 class="tree-person-panel-title">Documentos por persona</h3>
-            </div>
-            <button type="button" class="tree-document-dialog-close" data-tree-dialog-close="treeDocumentCatalog"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div class="tree-document-catalog-body">
-            @forelse($documentCatalog['people'] as $group)
-                <section class="tree-document-group">
-                    <h4>{{ $group['person']['name'] }} <small>{{ $group['person']['relationship'] }}</small></h4>
-                    <div class="tree-document-card-grid">
-                        @foreach($group['files'] as $file)
-                            <button type="button" class="tree-document-card" data-document-preview='@json($file)'>
-                                <span class="tree-document-icon"><i class="fa-regular {{ $file['is_pdf'] ? 'fa-file-pdf' : ($file['is_image'] ? 'fa-file-image' : 'fa-file-lines') }}"></i></span>
-                                <span class="tree-document-card-copy">
-                                    <strong>{{ $file['document_label'] }}</strong>
-                                    <small>{{ $file['file'] }}</small>
-                                </span>
-                            </button>
-                        @endforeach
-                    </div>
-                </section>
-            @empty
-                <div class="tree-person-panel-empty">Aún no hay documentos vinculados a personas del árbol.</div>
-            @endforelse
-            @if(count($documentCatalog['unassigned']))
-                <section class="tree-document-group">
-                    <h4>Sin asociar</h4>
-                    <div class="tree-document-card-grid">
-                        @foreach($documentCatalog['unassigned'] as $file)
-                            <button type="button" class="tree-document-card" data-document-preview='@json($file)'>
-                                <span class="tree-document-icon"><i class="fa-regular fa-file"></i></span>
-                                <span class="tree-document-card-copy"><strong>{{ $file['document_label'] }}</strong><small>{{ $file['file'] }}</small></span>
-                            </button>
-                        @endforeach
-                    </div>
-                </section>
-            @endif
-        </div>
-    </dialog>
-
-    <dialog id="treeDocumentPreview" class="tree-document-dialog tree-document-preview-dialog">
-        <div class="tree-document-dialog-header">
-            <div><div class="tree-person-panel-eyebrow" id="treeDocumentPreviewKind"></div><h3 class="tree-person-panel-title" id="treeDocumentPreviewTitle">Documento</h3></div>
-            <button type="button" class="tree-document-dialog-close" data-tree-dialog-close="treeDocumentPreview"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div id="treeDocumentPreviewBody" class="tree-document-preview-body"></div>
-        <a id="treeDocumentPreviewOpen" class="tree-document-open-link" target="_blank" rel="noopener">Abrir en otra pestaña</a>
-    </dialog>
-
-    @if(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']))
-    <dialog id="treeDocumentRequest" class="tree-document-dialog">
-        <div class="tree-document-dialog-header">
-            <div><div class="tree-person-panel-eyebrow">Solicitud al cliente</div><h3 class="tree-person-panel-title">Solicitar documento</h3></div>
-            <button type="button" class="tree-document-dialog-close" data-tree-dialog-close="treeDocumentRequest"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <form id="treeDocumentRequestForm" class="tree-document-request-form" data-url="{{ route('admin.requests.store', $user) }}">
-            @csrf
-            <input id="treeDocumentRequestPerson" type="hidden" name="person_id">
-            <p id="treeDocumentRequestPersonName" class="tree-document-request-person"></p>
-            <label for="treeDocumentKind">Documento requerido</label>
-            <select id="treeDocumentKind" name="document_kind" required>
-                @foreach(\App\Services\GenealogyDocumentService::kinds() as $kind => $label)
-                    <option value="{{ $kind }}">{{ $label }}</option>
-                @endforeach
-            </select>
-            <div id="treeDocumentSpouseField" hidden>
-                <label for="treeDocumentSpouse">Cónyuge asociado</label>
-                <select id="treeDocumentSpouse" name="spouse_id"></select>
-                <small>El acta quedará vinculada a ambos cónyuges.</small>
-            </div>
-            <button type="submit" class="tree-document-submit">Enviar solicitud</button>
-        </form>
-    </dialog>
-    @endif
     @endif
 
     <div class="modaladdfamiliar" >
@@ -2424,22 +2340,6 @@ dialog::backdrop {
 .downloadgedcom:hover {
     background-color: rgb(247, 176, 52);
 }
-
-.tree-document-actions { position: fixed; right: 24px; bottom: 24px; z-index: 1001; }
-.tree-document-action-button, .tree-document-submit, .tree-document-open-link { border: 0; border-radius: 10px; background: #0b5b6f; color: #fff; padding: .72rem 1rem; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-block; }
-.tree-document-dialog { width: min(960px, calc(100vw - 32px)); max-height: min(86vh, 900px); padding: 0; border: 0; border-radius: 18px; box-shadow: 0 24px 70px rgba(0,0,0,.35); color: #19313c; }
-.tree-document-dialog::backdrop { background: rgba(10, 25, 32, .62); }
-.tree-document-dialog-header { display:flex; justify-content:space-between; align-items:center; gap:1rem; padding:1.25rem 1.5rem; border-bottom:1px solid #d9e2e5; }
-.tree-document-dialog-close { border:0; background:transparent; color:#51636b; font-size:1.25rem; cursor:pointer; }
-.tree-document-catalog-body { padding: 1.25rem 1.5rem 1.75rem; overflow-y:auto; max-height:70vh; }
-.tree-document-group + .tree-document-group { border-top: 1px solid #e2e9eb; margin-top: 1.2rem; padding-top: 1.2rem; }
-.tree-document-group h4 { margin:0 0 .7rem; font-size:1rem; }.tree-document-group h4 small { color:#687b84; font-weight:400; }
-.tree-document-card-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(235px,1fr)); gap:.7rem; }
-.tree-document-card { border:1px solid #d7e2e6; border-radius:12px; background:#fff; padding:.75rem; display:flex; align-items:center; gap:.75rem; text-align:left; cursor:pointer; transition:transform .15s, box-shadow .15s; }
-.tree-document-card:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(16,54,65,.12); }.tree-document-icon { color:#b55242; font-size:1.35rem; }.tree-document-card-copy { min-width:0; display:grid; gap:.15rem; }.tree-document-card-copy small { color:#63777e; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:175px; }
-.tree-document-preview-body { min-height: 55vh; padding: 0 1.25rem 1rem; display:flex; align-items:center; justify-content:center; background:#f4f7f8; }.tree-document-preview-body iframe { width:100%; height:55vh; border:0; border-radius:8px; background:#fff; }.tree-document-preview-body img { max-width:100%; max-height:55vh; object-fit:contain; border-radius:8px; }.tree-document-open-link { margin:0 1.25rem 1.25rem; }
-.tree-document-request-form { padding:1.25rem 1.5rem 1.5rem; display:grid; gap:.65rem; }.tree-document-request-form label { font-weight:700; }.tree-document-request-form select { width:100%; border:1px solid #c8d6da; border-radius:8px; padding:.65rem; background:white; }.tree-document-request-form small,.tree-document-request-person { color:#60757c; margin:0; }.tree-document-submit { justify-self:end; margin-top:.6rem; }
-@media (max-width: 700px) { .tree-document-actions { right:16px; bottom:16px; }.tree-document-action-button { font-size:.85rem; }.tree-document-card-grid { grid-template-columns:1fr; } }
     </style>
 @stop
 
@@ -2465,13 +2365,12 @@ dialog::backdrop {
     };
     const treeBranchBaseUrl = @json(url('/tree/' . $IDCliente . '/branch'));
     const treeColorBaseUrl = @json(url('/tree/' . $IDCliente . '/line-color'));
-    const treePersonDetailBaseUrl = @json(auth()->user() && auth()->user()->hasRole('Cliente') ? url('/tree/person') : url('/tree/' . $IDCliente . '/person'));
+    const treePersonDetailBaseUrl = @json(url('/tree/' . $IDCliente . '/person'));
     const treeRootUrl = @json(url('/tree/' . $IDCliente));
     const treeRootPersonId = @json($columnasparatabla[0][0]['id'] ?? null);
     const csrfToken = @json(csrf_token());
     const canManageTree = @json(auth()->user() && auth()->user()->hasRole(['Administrador', 'Genealogista', 'Documentalista']));
     const canEditClientTree = @json(auth()->user() && auth()->user()->hasRole(['Cliente']));
-    const canViewTreeDocuments = canManageTree || canEditClientTree;
     const treePersonPanel = document.getElementById('treePersonPanel');
     const treePersonPanelBody = document.getElementById('treePersonPanelBody');
     const treePersonPanelTitle = document.getElementById('treePersonPanelTitle');
@@ -2485,10 +2384,6 @@ dialog::backdrop {
     };
     let treePanelClickTimer = null;
     let treePersonPanelAbortController = null;
-    let currentTreePersonPayload = null;
-    const treeDocumentCatalog = document.getElementById('treeDocumentCatalog');
-    const treeDocumentPreview = document.getElementById('treeDocumentPreview');
-    const treeDocumentRequest = document.getElementById('treeDocumentRequest');
 
     let isDragging = false;
     let treeDragMoved = false;
@@ -2594,7 +2489,7 @@ dialog::backdrop {
     }
 
     function showTreePersonPanelShell(personId, nodeElement = null) {
-        if (!canViewTreeDocuments || !treePersonPanel || !treePersonPanelBody) {
+        if (!canManageTree || !treePersonPanel || !treePersonPanelBody) {
             return;
         }
 
@@ -2632,7 +2527,7 @@ dialog::backdrop {
     }
 
     async function openTreePersonPanel(personId, nodeElement = null) {
-        if (!canViewTreeDocuments || !personId) {
+        if (!canManageTree || !personId) {
             return;
         }
 
@@ -2672,7 +2567,6 @@ dialog::backdrop {
 
     function renderTreePersonPanel(payload) {
         const person = payload.person || {};
-        currentTreePersonPayload = payload;
         const fullName = [person.Nombres, person.Apellidos].filter(Boolean).join(' ') || 'Sin nombre';
 
         if (treePersonPanelTitle) {
@@ -2692,62 +2586,8 @@ dialog::backdrop {
         treePersonPanelBody.innerHTML = `
             ${renderTreePersonInfo(person)}
             ${renderTreePanelFileSection('Documentos de la persona', payload.files || [], 'No hay documentos asociados a esta persona.')}
-            ${canManageTree ? `<button type="button" class="tree-document-submit" data-tree-request-person="${escapeAttr(person.id || '')}">Solicitar documentos</button>` : ''}
+            ${renderTreePanelFileSection('Documentos del arbol', payload.tree_files || [], 'No hay documentos generales del arbol.')}
         `;
-    }
-
-    function openTreeDocumentPreview(file) {
-        if (!file || !treeDocumentPreview) return;
-
-        document.getElementById('treeDocumentPreviewKind').textContent = file.document_label || 'Documento';
-        document.getElementById('treeDocumentPreviewTitle').textContent = file.file || 'Documento';
-        const previewBody = document.getElementById('treeDocumentPreviewBody');
-        const openLink = document.getElementById('treeDocumentPreviewOpen');
-        openLink.href = file.preview_url || '#';
-
-        if (file.is_image) {
-            previewBody.innerHTML = `<img src="${escapeAttr(file.preview_url || '')}" alt="${escapeAttr(file.file || 'Documento')}">`;
-        } else if (file.is_pdf) {
-            previewBody.innerHTML = `<iframe src="${escapeAttr(file.preview_url || '')}" title="${escapeAttr(file.file || 'Documento PDF')}"></iframe>`;
-        } else {
-            previewBody.innerHTML = '<div class="tree-person-panel-empty">Este formato no admite vista previa integrada. Puedes abrirlo en otra pestaña.</div>';
-        }
-
-        treeDocumentPreview.showModal();
-    }
-
-    function openTreeDocumentRequest(personId) {
-        if (!canManageTree) return;
-        const payload = currentTreePersonPayload;
-        const person = payload?.person;
-        if (!person || String(person.id) !== String(personId) || !treeDocumentRequest) return;
-
-        document.getElementById('treeDocumentRequestPerson').value = person.id;
-        document.getElementById('treeDocumentRequestPersonName').textContent = `Persona: ${[person.Nombres, person.Apellidos].filter(Boolean).join(' ') || 'Sin nombre'}`;
-        const deathOption = document.querySelector('#treeDocumentKind option[value="death_certificate"]');
-        const isClientRoot = String(person.IDPersona || '') === '1';
-        if (deathOption) {
-            deathOption.disabled = isClientRoot;
-            deathOption.hidden = isClientRoot;
-            if (isClientRoot && document.getElementById('treeDocumentKind').value === 'death_certificate') {
-                document.getElementById('treeDocumentKind').value = 'passport';
-            }
-        }
-        const spouse = document.getElementById('treeDocumentSpouse');
-        spouse.innerHTML = '<option value="">Selecciona el cónyuge…</option>' + (payload.possible_spouses || [])
-            .map((candidate) => `<option value="${escapeAttr(candidate.id)}">${escapeHtml(candidate.name)}</option>`)
-            .join('');
-        toggleTreeDocumentSpouse();
-        treeDocumentRequest.showModal();
-    }
-
-    function toggleTreeDocumentSpouse() {
-        const kind = document.getElementById('treeDocumentKind');
-        const spouseField = document.getElementById('treeDocumentSpouseField');
-        const spouse = document.getElementById('treeDocumentSpouse');
-        const isMarriage = kind.value === 'marriage_certificate';
-        spouseField.hidden = !isMarriage;
-        spouse.required = isMarriage;
     }
 
     function renderTreePersonInfo(person) {
@@ -2856,7 +2696,7 @@ dialog::backdrop {
                     <div class="tree-panel-file-name">${escapeHtml(file.file || 'Archivo')}</div>
                     <div class="tree-panel-file-meta">${escapeHtml(meta || 'Sin tipo registrado')}</div>
                 </div>
-                <button type="button" class="tree-panel-file-button" data-tree-file-id="${escapeAttr(file.id || '')}">
+                <button type="button" class="tree-panel-file-button" data-tree-file-path="${escapeAttr(file.path || '')}">
                     Ver
                 </button>
             </div>
@@ -3347,46 +3187,6 @@ dialog::backdrop {
         hideTreePersonPanel();
     });
 
-    document.getElementById('treeDocumentCatalogOpen')?.addEventListener('click', function() {
-        treeDocumentCatalog?.showModal();
-    });
-
-    document.querySelectorAll('[data-tree-dialog-close]').forEach((button) => {
-        button.addEventListener('click', function() {
-            document.getElementById(this.dataset.treeDialogClose)?.close();
-        });
-    });
-
-    document.querySelectorAll('[data-document-preview]').forEach((button) => {
-        button.addEventListener('click', function() {
-            openTreeDocumentPreview(JSON.parse(this.dataset.documentPreview));
-        });
-    });
-
-    document.getElementById('treeDocumentKind')?.addEventListener('change', toggleTreeDocumentSpouse);
-
-    document.getElementById('treeDocumentRequestForm')?.addEventListener('submit', async function(event) {
-        event.preventDefault();
-        const form = event.currentTarget;
-        const response = await fetch(form.dataset.url, {
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
-            body: new FormData(form),
-        });
-        const payload = await response.json();
-        if (!response.ok) {
-            Swal.fire('No se pudo enviar', payload.message || 'Revisa los datos de la solicitud.', 'error');
-            return;
-        }
-        treeDocumentRequest.close();
-        Swal.fire('Solicitud enviada', 'El cliente podrá subir o asociar el documento desde su COS.', 'success');
-    });
-
-    $(document).on('click', '[data-tree-request-person]', function(event) {
-        event.preventDefault();
-        openTreeDocumentRequest(this.dataset.treeRequestPerson);
-    });
-
     $(document).ready(function() {
         reloadlines();
         centerInitialTree();
@@ -3681,7 +3481,7 @@ dialog::backdrop {
     });
 
     $(document).on("click", ".tree-person-node", function(e) {
-        if (!canViewTreeDocuments) {
+        if (!canManageTree) {
             return;
         }
 
@@ -3744,8 +3544,8 @@ dialog::backdrop {
             openEditFromPerson(person);
         }
 
-        if (action === "files" && person) {
-            openTreePersonPanel(person.id);
+        if (action === "files") {
+            callFiles(this.dataset.clientId, this.dataset.personId);
         }
 
         if (action === "copy") {
@@ -3757,12 +3557,12 @@ dialog::backdrop {
         }
     });
 
-    $(document).on("click", "[data-tree-file-id]", function(e) {
+    $(document).on("click", "[data-tree-file-path]", function(e) {
         e.preventDefault();
         e.stopPropagation();
 
-        if (this.dataset.treeFileId) {
-            verArchivo(this.dataset.treeFileId);
+        if (this.dataset.treeFilePath) {
+            verArchivo(this.dataset.treeFilePath);
         }
     });
 
@@ -3904,7 +3704,7 @@ dialog::backdrop {
 
                         html += "</select>";
                         html += "</td>";
-                        html += "<td class='fontwhite' style='width: 30%'><button class='filebtn mr1' onclick='verArchivo(" + archivo.id + ")'>Ver archivo</button>";
+                        html += "<td class='fontwhite' style='width: 30%'><button class='filebtn mr1' onclick='verArchivo(\"" + archivo.location+"/"+ archivo.file + "\")'>Ver archivo</button>";
 
                         <?php
                             if (auth()->user()->roles->pluck('name')[0] == "Administrador" || auth()->user()->roles->pluck('name')[0] == "Genealogista" || auth()->user()->roles->pluck('name')[0] == "Documentalista"){
@@ -3982,11 +3782,11 @@ dialog::backdrop {
 
 
 
-    function verArchivo(fileId){
+    function verArchivo(archivo){
         $.ajax({
             url: "{{ route('openfile') }}",
             method: 'POST',
-            data: { file_id: fileId, _token: '{{ csrf_token() }}' },
+            data: { path: archivo, _token: '{{ csrf_token() }}' },
             success: function(response) {
                 if (response.url) {
                     window.open(response.url, '_blank');

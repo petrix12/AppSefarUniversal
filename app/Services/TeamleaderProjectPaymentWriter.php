@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use InvalidArgumentException;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Performs the deliberately full project update required by Teamleader when a
@@ -33,16 +32,6 @@ class TeamleaderProjectPaymentWriter
         string $currency = 'EUR'
     ): void
     {
-        if ($this->historicalMode()) {
-            Log::channel('teamleader')->info('Actualización de pago omitida: Teamleader está en modo histórico local.', [
-                'project_id' => $projectId,
-                'phase' => $phase,
-                'reference' => $reference,
-            ]);
-
-            return;
-        }
-
         $fieldId = self::PAID_FIELD_IDS[$phase] ?? null;
 
         if (! $fieldId || $amount <= 0) {
@@ -141,22 +130,5 @@ class TeamleaderProjectPaymentWriter
             ->filter()
             ->values()
             ->all();
-    }
-
-    /**
-     * The service also has framework-free unit tests. If Laravel's config
-     * repository is not booted, retain the legacy writable behaviour solely
-     * for that isolated test context; the running application defaults to the
-     * historical, read-only mode configured in services.php.
-     */
-    private function historicalMode(): bool
-    {
-        try {
-            return app()->bound('config')
-                ? (bool) app('config')->get('services.teamleader.historical_mode', true)
-                : false;
-        } catch (\Throwable) {
-            return false;
-        }
     }
 }
