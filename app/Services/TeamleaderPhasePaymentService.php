@@ -241,59 +241,6 @@ class TeamleaderPhasePaymentService
     }
 
     /**
-     * Keeps historical balance records auditable while ensuring that only the
-     * source selected for the current COS is collectible in the portal.
-     */
-    public function prioritizeSource(User $user, string $source): void
-    {
-        if (! in_array($source, ['hubspot', 'teamleader', 'none'], true)) {
-            return;
-        }
-
-        Compras::query()
-            ->where('id_user', $user->id)
-            ->where('source', self::PURCHASE_SOURCE)
-            ->where('pagado', 0)
-            ->get()
-            ->each(function (Compras $purchase) use ($source): void {
-                $metadata = is_array($purchase->metadata) ? $purchase->metadata : [];
-                $paymentSource = (string) ($metadata['payment_source'] ?? 'teamleader');
-                $shouldHide = $source === 'none' || $paymentSource !== $source;
-                $hiddenByPriority = filter_var(
-                    $metadata['hidden_by_payment_source_priority'] ?? false,
-                    FILTER_VALIDATE_BOOLEAN
-                );
-
-                if ($shouldHide && ! $hiddenByPriority) {
-                    $metadata['hidden_from_client_before_source_priority'] = filter_var(
-                        $metadata['hidden_from_client'] ?? false,
-                        FILTER_VALIDATE_BOOLEAN
-                    );
-                    $metadata['hidden_by_payment_source_priority'] = true;
-                    $metadata['hidden_from_client'] = true;
-                    $purchase->forceFill(['metadata' => $metadata])->save();
-
-                    return;
-                }
-
-                if (! $shouldHide && $hiddenByPriority) {
-                    $wasHidden = filter_var(
-                        $metadata['hidden_from_client_before_source_priority'] ?? false,
-                        FILTER_VALIDATE_BOOLEAN
-                    );
-                    unset(
-                        $metadata['hidden_by_payment_source_priority'],
-                        $metadata['hidden_from_client_before_source_priority']
-                    );
-                    if (! $wasHidden) {
-                        unset($metadata['hidden_from_client']);
-                    }
-                    $purchase->forceFill(['metadata' => $metadata])->save();
-                }
-            });
-    }
-
-    /**
      * Rebuilds the totals after historical installments, dated currency
      * conversion and legacy payments have been reconciled per phase.
      */

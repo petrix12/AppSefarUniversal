@@ -66,7 +66,6 @@ use App\Services\TeamleaderClientHistoryService;
 use App\Services\TeamleaderPhasePaymentService;
 use App\Services\TeamleaderProjectPaymentAnalyzer;
 use App\Services\HubspotDealPaymentAnalyzer;
-use App\Services\ClientPaymentSourceResolver;
 use App\Services\TeamleaderProjectPaymentWriter;
 use App\Services\TeamleaderProjectFullUpdater;
 use Illuminate\Support\Facades\Cache;
@@ -225,14 +224,18 @@ class ClienteController extends Controller
 
         $hubspotPaymentAnalyzer = app(HubspotDealPaymentAnalyzer::class);
         $hubspotProjectPayments = $hubspotPaymentAnalyzer->analyzeFor($user);
-        $historicalProjectPayments = app(TeamleaderProjectPaymentAnalyzer::class)
-            ->analyzeProjects(collect($clientTeamleaderHistory['projects'] ?? collect()));
-        $paymentSourceDecision = app(ClientPaymentSourceResolver::class)
-            ->resolve($hubspotProjectPayments, $historicalProjectPayments);
-        $clientProjectPayments = $paymentSourceDecision['analysis'];
-        $phasePaymentService = app(TeamleaderPhasePaymentService::class);
-        $phasePaymentService->sync($user, $clientProjectPayments);
-        $phasePaymentService->prioritizeSource($user, $paymentSourceDecision['source']);
+        $linkedHistoricalProjectIds = collect($hubspotProjectPayments['projects'] ?? [])
+            ->pluck('legacy_teamleader_project_id')
+            ->filter()
+            ->map('strval');
+        $unlinkedHistoricalProjects = collect($clientTeamleaderHistory['projects'] ?? collect())
+            ->reject(fn ($project) => $linkedHistoricalProjectIds->contains((string) $project->id))
+            ->values();
+        $clientProjectPayments = $hubspotPaymentAnalyzer->combine(
+            $hubspotProjectPayments,
+            app(TeamleaderProjectPaymentAnalyzer::class)->analyzeProjects($unlinkedHistoricalProjects),
+        );
+        app(TeamleaderPhasePaymentService::class)->sync($user, $clientProjectPayments);
 
         // Re-read after CRM and historical phases have been translated to
         // individual portal records, so a debt is visible in this same COS request.
@@ -386,7 +389,6 @@ class ClienteController extends Controller
             'permissions',
             'facturas',
             'clientTeamleaderHistory',
-            'paymentSourceDecision',
             'servicios',
             'formulario001',
 'columnasparatabla'

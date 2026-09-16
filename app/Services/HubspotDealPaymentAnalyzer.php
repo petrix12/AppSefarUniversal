@@ -12,10 +12,9 @@ use Illuminate\Support\Facades\Schema;
 /**
  * Builds phase balances from the local projection of HubSpot deals.
  *
- * HubSpot values are deliberately kept independent from Teamleader's
- * historical projection. Source selection happens one level above this
- * analyzer, so an associated HubSpot deal can never silently inherit an old
- * Teamleader balance.
+ * HubSpot is the operational source. A linked Teamleader project is consulted
+ * only when the corresponding HubSpot phase has no value at all, preserving a
+ * migrated historical balance without ever updating Teamleader.
  */
 class HubspotDealPaymentAnalyzer
 {
@@ -73,10 +72,7 @@ class HubspotDealPaymentAnalyzer
                 ->keyBy('negocio_id')
             : collect();
 
-        return array_merge($this->analyzeDeals($deals, $links), [
-            'has_hubspot_deals' => $deals->isNotEmpty(),
-            'has_linked_deals' => $links->isNotEmpty(),
-        ]);
+        return $this->analyzeDeals($deals, $links);
     }
 
     /** @param Collection<int, Negocio> $deals */
@@ -106,17 +102,44 @@ class HubspotDealPaymentAnalyzer
         ];
     }
 
-    /**
-     * The optional historical argument is retained for callers that used this
-     * method before source selection was centralised. It is intentionally not
-     * used to fill a HubSpot phase.
-     */
+    /** Combines HubSpot operational balances with unlinked historical projects. */
+    public function combine(array ...$analyses): array
+    {
+        $projects = collect($analyses)
+            ->flatMap(fn (array $analysis) => $analysis['projects'] ?? [])
+            ->values();
+
+        return [
+            'projects' => $projects->all(),
+            'totals' => [
+                'projects' => $projects->count(),
+                'preestab_amount' => round($projects->sum('totals.preestab_amount'), 2),
+                'paid_amount' => round($projects->sum('totals.paid_amount'), 2),
+                'balance_amount' => round($projects->sum('totals.balance_amount'), 2),
+                'overpaid_amount' => round($projects->sum('totals.overpaid_amount'), 2),
+                'difference_amount' => round($projects->sum('totals.difference_amount'), 2),
+                'projects_to_review' => $projects->where('needs_review', true)->count(),
+            ],
+        ];
+    }
+
     public function analyzeDeal(Negocio $deal, ?TlProject $legacyProject = null): array
     {
+        $legacyPhases = $legacyProject
+            ? $this->rules->analyzeProject($legacyProject)['phases']
+            : [];
+
         $phases = collect(self::PHASE_FIELDS)
-            ->mapWithKeys(function (array $fields, int $phase) use ($deal): array {
+            ->mapWithKeys(function (array $fields, int $phase) use ($deal, $legacyPhases): array {
                 $preestablished = $this->firstValue($deal, $fields['preestablished']);
                 $paid = $this->bestPaidValue($deal, $fields['paid']);
+                $hasHubspotValue = $preestablished !== null || $paid !== null;
+
+                if (! $hasHubspotValue && isset($legacyPhases[$phase])) {
+                    return [$phase => array_merge($legacyPhases[$phase], [
+                        'payment_origin' => 'teamleader_history',
+                    ])];
+                }
 
                 return [$phase => array_merge($this->rules->analyzePaymentValues(
                     $phase,

@@ -35,6 +35,7 @@
         });
     </script>
 
+    <button id="back-to-top"><i class="fa-solid fa-arrow-up"></i></button>
     <div id="treeLoadingOverlay" class="tree-loading-overlay" aria-live="polite" aria-hidden="true">
         <div class="tree-loading-modal">
             <div class="tree-loading-spinner"></div>
@@ -1643,6 +1644,31 @@
     <link rel="stylesheet" href="{{ asset('css\cdn_tailwind.css') }}">
     <link rel="stylesheet" href="{{ asset('css\sefar.css') }}">
     <style>
+        #back-to-top {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: rgb(6, 194, 204);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 50%;
+    color: white;
+    font-size: 35px;
+    cursor: pointer;
+    width: 56px;
+    height: 56px;
+    transition: box-shadow 0.3s ease-in-out, background-color 0.3s ease-in-out;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 6555;
+}
+
+#back-to-top:hover {
+    background-color: rgb(4, 150, 158);
+    box-shadow: 0 0 25px rgb(6, 194, 204);
+}
+
 .glow-effect {
     box-shadow: 0 0 15px rgb(6, 194, 204);
     transition: box-shadow 0.5s ease-in-out;
@@ -2438,7 +2464,7 @@ input, textarea {
 }
 
 dialog[open] {
-    animation: tree-dialog-appear .15s ease-out;
+    animation: appear .15s cubic-bezier(0, 1.8, 1, 1.8);
 }
 
 dialog::backdrop {
@@ -2446,14 +2472,14 @@ dialog::backdrop {
     backdrop-filter: blur(3px);
 }
 
-@keyframes tree-dialog-appear {
+@keyframes appear {
     from {
         opacity: 0;
-        transform: translateY(10px) scale(.985);
+        transform: translateX(-3rem);
     }
     to {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: translateX(0);
     }
 }
 
@@ -2467,15 +2493,6 @@ dialog::backdrop {
 
 .tree-document-actions { position: fixed; right: 24px; bottom: 96px; z-index: 1001; }
 .tree-document-action-button, .tree-document-submit, .tree-document-open-link { border: 0; border-radius: 10px; background: #0b5b6f; color: #fff; padding: .72rem 1rem; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-block; }
-.tree-document-dialog,
-.tree-document-upload-dialog {
-    /* Native dialogs can inherit page-level positioning. Force both document
-       dialogs to use the viewport centre rather than the tree canvas. */
-    position: fixed;
-    inset: 0;
-    margin: auto;
-    box-sizing: border-box;
-}
 .tree-document-dialog { width: min(960px, calc(100vw - 32px)); max-height: min(86vh, 900px); padding: 0; border: 0; border-radius: 18px; box-shadow: 0 24px 70px rgba(0,0,0,.35); color: #19313c; }
 .tree-document-dialog::backdrop { background: rgba(10, 25, 32, .62); }
 .tree-document-dialog-header { display:flex; justify-content:space-between; align-items:center; gap:1rem; padding:1.25rem 1.5rem; border-bottom:1px solid #d9e2e5; }
@@ -3770,6 +3787,19 @@ dialog::backdrop {
         reloadlines();
         centerInitialTree();
 
+        $(window).scroll(function() {
+            if ($(this).scrollTop() > 10) { // Mostrar si el scroll es mayor a 100px
+                $('#back-to-top').fadeIn();
+            } else {
+                $('#back-to-top').fadeOut();
+            }
+        });
+
+        // Animación suave para volver al tope al hacer clic en el botón
+        $('#back-to-top').click(function() {
+            $('html, body').animate({scrollTop: 0}, 800); // Desplazamiento suave en 800ms
+            return false;
+        });
     });
 
     function copydata(elementId) {

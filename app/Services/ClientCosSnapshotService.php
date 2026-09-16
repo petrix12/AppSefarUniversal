@@ -42,33 +42,6 @@ class ClientCosSnapshotService
     /** Render from local data only, even when the global queue uses sync. */
     public function forPage(User $user): array
     {
-        $user = $user->fresh() ?? $user;
-        // The association uses only local HubSpot and migrated Teamleader data.
-        // It is deliberately synchronous here so the same COS request uses a
-        // newly found deterministic relationship; no external API is called.
-        try {
-            $this->dealLinks->detectAndLink($user);
-        } catch (\Throwable $exception) {
-            Log::warning('COS: no se pudo revisar el enlace HubSpot/Teamleader al abrir la página', [
-                'user_id' => $user->id,
-                'error' => $exception->getMessage(),
-            ]);
-        }
-
-        // Ambiguous similarities are handled later. The queued job sends only
-        // candidate business metadata to the configured AI provider and links
-        // only a clearly winning result.
-        if (filled(config('services.openrouter.key'))) {
-            try {
-                \App\Jobs\AnalyzeHubspotTeamleaderDealLinks::dispatch($user->id);
-            } catch (\Throwable $exception) {
-                Log::warning('COS: no se pudo encolar el análisis IA de enlaces', [
-                    'user_id' => $user->id,
-                    'error' => $exception->getMessage(),
-                ]);
-            }
-        }
-
         $negocios = Negocio::where('user_id', $user->id)->get();
         $stored = MondayData::where('user_id', $user->id)->value('data');
         $details = is_array($stored) ? $stored : json_decode($stored ?: 'null', true);
