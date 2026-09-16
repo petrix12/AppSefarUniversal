@@ -959,7 +959,6 @@ Route::middleware(['auth'])->prefix('admin/requests')->group(function () {
 
 // Rutas para clientes
 Route::middleware(['auth'])->prefix('client/requests')->group(function () {
-    Route::post('/tree-documents/self-submit', [DocumentRequestController::class, 'selfSubmit'])->name('client.requests.self-submit');
     Route::post('/{documentRequest}/upload', [DocumentRequestController::class, 'upload'])->name('upload');
     Route::post('/{documentRequest}/associate-existing', [DocumentRequestController::class, 'associateExisting'])->name('associate_existing');
     Route::post('/{documentRequest}/no-doc', [DocumentRequestController::class, 'noDocument'])->name('no_doc');

@@ -2790,7 +2790,7 @@ dialog::backdrop {
                 <div class="tree-person-detail-title">Documentos requeridos</div>
                 <p class="tree-document-checklist-intro">${canManageTree
                     ? 'Solicita cada documento desde esta lista. El cliente lo verá en su árbol y podrá cargarlo o asociar un archivo que ya haya subido.'
-                    : 'Aquí verás el avance de cada documento. Puedes cargar un PDF o imagen desde esta misma persona cuando lo tengas disponible.'}</p>
+                    : 'Aquí verás el avance de cada documento. Cuando el equipo lo solicite, podrás cargar un PDF o imagen desde esta misma persona.'}</p>
                 <div class="tree-document-checklist">
                     ${slots.map(([kind, label]) => renderTreeDocumentSlot({
                         kind,
@@ -2807,10 +2807,8 @@ dialog::backdrop {
 
     function renderTreeDocumentSlot({ kind, label, file, documentRequest, reusableFiles, personId }) {
         const requestStatus = documentRequest?.status;
-        let status = { label: 'Disponible para cargar', className: 'is-empty', icon: 'fa-cloud-arrow-up' };
-        let detail = canEditClientTree
-            ? 'Puedes cargarlo ahora o asociar un archivo que ya subiste en la aplicación.'
-            : 'El cliente puede cargarlo directamente cuando lo tenga disponible.';
+        let status = { label: 'Aún no solicitado', className: 'is-empty', icon: 'fa-circle-minus' };
+        let detail = 'El equipo aún no ha pedido este documento.';
 
         if (file) {
             status = { label: 'Documento asociado', className: 'is-approved', icon: 'fa-circle-check' };
@@ -2832,8 +2830,8 @@ dialog::backdrop {
             detail = 'Se informó que este documento no está disponible.';
         }
 
-        const canClientUpload = canEditClientTree && !file && (!documentRequest
-            || ['en_espera_cliente', 'rechazada', 'no_documento'].includes(requestStatus));
+        const canClientUpload = canEditClientTree && documentRequest
+            && ['en_espera_cliente', 'rechazada'].includes(requestStatus);
         const canRequest = canManageTree && (!documentRequest || requestStatus === 'no_documento') && !file;
         const matchingReusableFiles = (reusableFiles || []).filter((candidate) => candidate.id && (
             !candidate.document_kind || candidate.document_kind === kind
@@ -2848,29 +2846,25 @@ dialog::backdrop {
                 <div class="tree-document-slot-actions">
                     <span class="tree-document-slot-status ${status.className}"><i class="fa-solid ${status.icon}" aria-hidden="true"></i>${escapeHtml(status.label)}</span>
                     ${canRequest ? `<button type="button" class="tree-document-slot-button" data-tree-request-person="${escapeAttr(personId || '')}" data-tree-request-kind="${escapeAttr(kind)}">Solicitar ${escapeHtml(label)}</button>` : ''}
-                    ${canClientUpload ? renderTreeClientDocumentActions(documentRequest, label, kind, personId, matchingReusableFiles) : ''}
+                    ${canClientUpload ? renderTreeClientDocumentActions(documentRequest, label, matchingReusableFiles) : ''}
                 </div>
             </article>
         `;
     }
 
-    function renderTreeClientDocumentActions(documentRequest, label, kind, personId, reusableFiles) {
-        const pendingRequest = documentRequest && ['en_espera_cliente', 'rechazada'].includes(documentRequest.status)
-            ? documentRequest
-            : null;
-        const requestId = pendingRequest?.id || '';
-        const actionKey = `${requestId || 'self'}-${personId}-${kind}`;
-        const inputId = `treeDocumentUpload${actionKey.replace(/[^A-Za-z0-9_-]/g, '')}`;
+    function renderTreeClientDocumentActions(documentRequest, label, reusableFiles) {
+        const requestId = documentRequest.id;
+        const inputId = `treeDocumentUpload${requestId}`;
 
         return `
-            <input id="${escapeAttr(inputId)}" type="file" accept="application/pdf,image/jpeg,image/png,image/webp,image/gif" hidden data-tree-request-file data-tree-request-id="${escapeAttr(requestId)}" data-tree-person-id="${escapeAttr(personId || '')}" data-tree-document-kind="${escapeAttr(kind)}">
-            <button type="button" class="tree-document-slot-button" data-tree-request-upload data-tree-request-id="${escapeAttr(requestId)}" data-tree-person-id="${escapeAttr(personId || '')}" data-tree-document-kind="${escapeAttr(kind)}" data-tree-request-dropzone data-tree-request-input="${escapeAttr(inputId)}" title="También puedes arrastrar un archivo aquí"><i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i> Subir ${escapeHtml(label)}</button>
+            <input id="${escapeAttr(inputId)}" type="file" accept="application/pdf,image/jpeg,image/png,image/webp,image/gif" hidden data-tree-request-file="${escapeAttr(requestId)}">
+            <button type="button" class="tree-document-slot-button" data-tree-request-upload="${escapeAttr(requestId)}" data-tree-request-dropzone="${escapeAttr(requestId)}" data-tree-request-input="${escapeAttr(inputId)}" title="También puedes arrastrar un archivo aquí"><i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i> Subir ${escapeHtml(label)}</button>
             ${reusableFiles.length ? `
-                <select class="tree-document-slot-select" data-tree-request-existing="${escapeAttr(actionKey)}" aria-label="Archivo ya cargado para ${escapeAttr(label)}">
+                <select class="tree-document-slot-select" data-tree-request-existing="${escapeAttr(requestId)}" aria-label="Archivo ya cargado para ${escapeAttr(label)}">
                     <option value="">Usar archivo ya cargado…</option>
                     ${reusableFiles.map((file) => `<option value="${escapeAttr(file.id)}">${escapeHtml(file.file || label)}</option>`).join('')}
                 </select>
-                <button type="button" class="tree-document-slot-button is-secondary" data-tree-request-associate="${escapeAttr(actionKey)}" data-tree-request-id="${escapeAttr(requestId)}" data-tree-person-id="${escapeAttr(personId || '')}" data-tree-document-kind="${escapeAttr(kind)}">Asociar archivo</button>
+                <button type="button" class="tree-document-slot-button is-secondary" data-tree-request-associate="${escapeAttr(requestId)}">Asociar archivo</button>
             ` : ''}
         `;
     }
@@ -3578,71 +3572,26 @@ dialog::backdrop {
         document.getElementById(this.dataset.treeRequestInput)?.click();
     });
 
-    async function chooseTreeMarriageSpouse() {
-        const candidates = currentTreePersonPayload?.possible_spouses || [];
-        if (!candidates.length) {
-            Swal.fire('Falta el cónyuge', 'Añade o completa el otro cónyuge en el árbol antes de asociar un acta de matrimonio.', 'warning');
-            return false;
-        }
+    async function uploadTreeRequestedDocument(requestId, file) {
+        if (!file || !requestId) return false;
 
-        const inputOptions = candidates.reduce((options, candidate) => {
-            options[candidate.id] = candidate.name;
-            return options;
-        }, {});
-        const result = await Swal.fire({
-            title: 'Selecciona el otro cónyuge',
-            text: 'El acta de matrimonio quedará asociada a los dos nodos.',
-            input: 'select',
-            inputOptions,
-            inputPlaceholder: 'Selecciona un cónyuge…',
-            showCancelButton: true,
-            confirmButtonText: 'Continuar',
-            cancelButtonText: 'Cancelar',
-            inputValidator: (value) => value ? undefined : 'Selecciona un cónyuge.',
-        });
-
-        return result.isConfirmed ? result.value : false;
-    }
-
-    async function submitTreeDocument({ requestId, personId, kind }, { file = null, fileId = null } = {}) {
-        if (!file && !fileId) return false;
-        if (file && file.size > 10 * 1024 * 1024) {
+        if (file.size > 10 * 1024 * 1024) {
             Swal.fire('Archivo demasiado grande', 'El archivo no puede superar 10 MB.', 'warning');
             return false;
         }
 
         const formData = new FormData();
-        let endpoint;
-        if (requestId) {
-            endpoint = file
-                ? `${clientDocumentRequestBaseUrl}/${encodeURIComponent(requestId)}/upload`
-                : `${clientDocumentRequestBaseUrl}/${encodeURIComponent(requestId)}/associate-existing`;
-        } else {
-            endpoint = `${clientDocumentRequestBaseUrl}/tree-documents/self-submit`;
-            formData.append('person_id', personId);
-            formData.append('document_kind', kind);
-            if (kind === 'marriage_certificate') {
-                const spouseId = await chooseTreeMarriageSpouse();
-                if (!spouseId) return false;
-                formData.append('spouse_id', spouseId);
-            }
-        }
-
-        if (file) {
-            formData.append('file', file);
-        } else {
-            formData.append('file_id', fileId);
-        }
+        formData.append('file', file);
 
         try {
-            const response = await fetch(endpoint, {
+            const response = await fetch(`${clientDocumentRequestBaseUrl}/${encodeURIComponent(requestId)}/upload`, {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
                 body: formData,
             });
             const payload = await response.json().catch(() => ({}));
             if (!response.ok) {
-                throw new Error(payload.message || 'No se pudo enviar el documento.');
+                throw new Error(payload.message || 'No se pudo subir el archivo.');
             }
             Swal.fire('Documento enviado', 'Lo recibimos y el equipo lo revisará.', 'success');
             if (currentTreePersonPayload?.person?.id) {
@@ -3650,19 +3599,17 @@ dialog::backdrop {
             }
             return true;
         } catch (error) {
-            Swal.fire('No se pudo enviar', error.message || 'Intenta nuevamente.', 'error');
+            Swal.fire('No se pudo subir', error.message || 'Intenta nuevamente.', 'error');
             return false;
         }
     }
 
     $(document).on('change', '[data-tree-request-file]', async function() {
         const input = this;
-        const uploaded = await submitTreeDocument({
-            requestId: input.dataset.treeRequestId,
-            personId: input.dataset.treePersonId,
-            kind: input.dataset.treeDocumentKind,
-        }, { file: input.files?.[0] });
-        if (!uploaded) input.value = '';
+        const uploaded = await uploadTreeRequestedDocument(input.dataset.treeRequestFile, input.files?.[0]);
+        if (!uploaded) {
+            input.value = '';
+        }
     });
 
     $(document).on('dragenter dragover', '[data-tree-request-dropzone]', function(event) {
@@ -3681,26 +3628,39 @@ dialog::backdrop {
         event.preventDefault();
         event.stopPropagation();
         this.classList.remove('is-dragging');
-        await submitTreeDocument({
-            requestId: this.dataset.treeRequestId,
-            personId: this.dataset.treePersonId,
-            kind: this.dataset.treeDocumentKind,
-        }, { file: event.originalEvent.dataTransfer?.files?.[0] });
+        await uploadTreeRequestedDocument(this.dataset.treeRequestDropzone, event.originalEvent.dataTransfer?.files?.[0]);
     });
 
     $(document).on('click', '[data-tree-request-associate]', async function() {
-        const actionKey = this.dataset.treeRequestAssociate;
-        const select = document.querySelector(`[data-tree-request-existing="${actionKey}"]`);
+        const requestId = this.dataset.treeRequestAssociate;
+        const select = document.querySelector(`[data-tree-request-existing="${requestId}"]`);
         const fileId = select?.value;
         if (!fileId) {
             Swal.fire('Selecciona un archivo', 'Elige uno de los archivos que cargaste previamente en la aplicación.', 'warning');
             return;
         }
-        await submitTreeDocument({
-            requestId: this.dataset.treeRequestId,
-            personId: this.dataset.treePersonId,
-            kind: this.dataset.treeDocumentKind,
-        }, { fileId });
+
+        try {
+            const response = await fetch(`${clientDocumentRequestBaseUrl}/${encodeURIComponent(requestId)}/associate-existing`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ file_id: fileId }),
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(payload.message || 'No se pudo asociar el archivo.');
+            }
+            Swal.fire('Archivo asociado', 'Lo enviamos al equipo para su revisión.', 'success');
+            if (currentTreePersonPayload?.person?.id) {
+                openTreePersonPanel(currentTreePersonPayload.person.id);
+            }
+        } catch (error) {
+            Swal.fire('No se pudo asociar', error.message || 'Intenta nuevamente.', 'error');
+        }
     });
 
     $(document).ready(function() {
