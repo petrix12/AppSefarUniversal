@@ -437,26 +437,22 @@ textarea {
 }
 
 @media (min-width: 992px) {
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar,
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar::before {
-    /* AdminLTE also has a generic `.sidebar-collapse` rule that moves the
-       entire sidebar -250px. Explicitly reset it so the icon rail remains
-       on-screen and can receive the hover that expands it. */
-    margin-left: 0 !important;
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar,
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar::before {
     width: var(--sefar-sidebar-mini-width) !important;
   }
 
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar {
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar {
     transition: width 180ms ease, box-shadow 180ms ease;
   }
 
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:hover {
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:hover {
     width: var(--sefar-sidebar-width) !important;
     z-index: 1045;
     box-shadow: 16px 0 34px rgba(0, 27, 39, 0.24);
   }
 
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .brand-link {
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .brand-link {
     justify-content: center;
     min-height: 0;
     height: 0;
@@ -467,7 +463,7 @@ textarea {
     pointer-events: none;
   }
 
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:focus-within .brand-link {
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:focus-within .brand-link {
     min-height: 4.15rem;
     height: auto;
     padding-inline: 0.9rem;
@@ -476,16 +472,16 @@ textarea {
     pointer-events: auto;
   }
 
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .brand-link .brand-image {
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .brand-link .brand-image {
     margin: 0 !important;
   }
 
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .brand-text,
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .user-panel .info,
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar .nav-link p,
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar .nav-header,
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar .right,
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-treeview {
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .brand-text,
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .user-panel .info,
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar .nav-link p,
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar .nav-header,
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar .right,
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-treeview {
     width: 0 !important;
     max-width: 0 !important;
     margin: 0 !important;
@@ -496,51 +492,27 @@ textarea {
     visibility: hidden;
   }
 
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .user-panel {
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .user-panel {
     justify-content: center;
     margin-inline: 0.4rem;
   }
 
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar {
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar {
     padding-inline: 0.45rem;
   }
 
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar .nav-link {
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar .nav-link {
     justify-content: center;
     padding-inline: 0.35rem;
   }
 
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar .nav-link > i:first-child {
+  body.sidebar-mini.sidebar-collapse:not(.sefar-sidebar-pinned) .main-sidebar:not(:hover) .nav-sidebar .nav-link > i:first-child {
     margin: 0 !important;
-  }
-
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .content-wrapper,
-  body.sidebar-collapse:not(.sefar-sidebar-pinned) .main-footer {
-    margin-left: var(--sefar-sidebar-mini-width) !important;
   }
 
   body.sefar-sidebar-pinned .main-sidebar,
   body.sefar-sidebar-pinned .main-sidebar::before {
-    margin-left: 0 !important;
     width: var(--sefar-sidebar-width) !important;
-  }
-}
-
-@media (max-width: 991.98px) {
-  /* There is no reliable hover interaction on touch devices. Keep the
-     standard drawer behaviour, but make the control visibly a hamburger and
-     large enough to be the obvious way to open it. */
-  .sefar-sidebar-pin-toggle {
-    min-width: 2.75rem;
-    min-height: 2.55rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  body.sidebar-open .main-sidebar,
-  body.sidebar-open .main-sidebar::before {
-    margin-left: 0 !important;
   }
 }
 
