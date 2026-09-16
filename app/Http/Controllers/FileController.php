@@ -12,15 +12,11 @@ use Illuminate\Support\Facades\Auth;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Support\Facades\Storage;
 use App\Services\GenealogyDocumentService;
-use App\Services\GenealogyDocumentUploadNotifier;
 use App\Services\HubspotService;
 
 class FileController extends Controller
 {
-    public function __construct(
-        private GenealogyDocumentService $documents,
-        private GenealogyDocumentUploadNotifier $uploadNotifier,
-    )
+    public function __construct(private GenealogyDocumentService $documents)
     {
     }
     /**
@@ -154,7 +150,7 @@ class FileController extends Controller
                     && Auth::id() === $user_id
                     && Auth::user()->hasRole('Cliente');
 
-                $storedFile = File::create([
+                File::create([
                     'file' => $fileName,
                     'location' => $location,
                     'tipo' => $request->tipo,
@@ -169,14 +165,6 @@ class FileController extends Controller
                     'mime_type' => $request->file('file')->getMimeType(),
                     'size_bytes' => $request->file('file')->getSize(),
                 ]);
-
-                if ($clientUpload) {
-                    $person = Agcliente::query()
-                        ->where('IDCliente', $IDCliente)
-                        ->where('IDPersona', $request->IDPersona)
-                        ->first();
-                    $this->uploadNotifier->notify(Auth::user(), $storedFile, $person);
-                }
 
                 // Mensaje
                 Alert::success('¡Éxito!', 'Se ha añadido el documento: ' . $fileName);

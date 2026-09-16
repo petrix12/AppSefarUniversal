@@ -7,16 +7,12 @@ use App\Models\DocumentRequest;
 use App\Models\File;
 use App\Models\User;
 use App\Services\GenealogyDocumentService;
-use App\Services\GenealogyDocumentUploadNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class DocumentRequestController extends Controller
 {
-    public function __construct(
-        private GenealogyDocumentService $documents,
-        private GenealogyDocumentUploadNotifier $uploadNotifier,
-    )
+    public function __construct(private GenealogyDocumentService $documents)
     {
     }
 
@@ -187,7 +183,6 @@ class DocumentRequestController extends Controller
             'status' => 'resuelto',
             'status_changed_at' => now(),
         ]);
-        $this->uploadNotifier->notify(auth()->user(), $file, $documentRequest->person);
 
         return response()->json([
             'request' => $documentRequest->fresh(),
@@ -283,9 +278,6 @@ class DocumentRequestController extends Controller
             'status' => 'resuelto',
             'status_changed_at' => now(),
         ]);
-        if ($request->hasFile('file')) {
-            $this->uploadNotifier->notify($user, $file, $person);
-        }
 
         return response()->json([
             'request' => $documentRequest->fresh(),

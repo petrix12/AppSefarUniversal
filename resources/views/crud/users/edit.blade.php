@@ -2731,11 +2731,7 @@
                                                     <select class="form-select form-select-sm" name="teamleader_project_id" aria-label="Proyecto Teamleader">
                                                         <option value="">Asociar manualmente…</option>
                                                         @foreach($historicalProjects as $project)
-                                                            @php
-                                                                $suggestion = $suggestions->first(
-                                                                    fn ($item) => (string) data_get($item, 'project.id') === (string) $project->id
-                                                                );
-                                                            @endphp
+                                                            @php($suggestion = $suggestions->first(fn ($item) => (string) data_get($item, 'project.id') === (string) $project->id))
                                                             <option value="{{ $project->id }}">
                                                                 {{ $project->title ?: $project->id }}@if($suggestion) — sugerido {{ $suggestion['confidence'] }}%@endif
                                                             </option>
