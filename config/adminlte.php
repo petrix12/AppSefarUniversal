@@ -985,14 +985,6 @@ return [
                     'can'           => 'cliente',
                 ],
                 [
-                    'text'          => 'Archivos subidos',
-                    'classes'       => 'btn_uploaded_files',
-                    'icon'          => 'fa-fw fas fa-folder-open',
-                    'icon_color'    => 'rgba(255,255,255,0.8)',
-                    'route'         => 'clientes.uploaded-files',
-                    'can'           => 'cliente',
-                ],
-                [
                     'text'          => 'Estatus de mi Proceso',
                     'classes'       => 'btn_status_loader',
                     'icon'          => 'fa-fw fas fa-exclamation',
