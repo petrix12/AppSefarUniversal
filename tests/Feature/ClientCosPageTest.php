@@ -69,21 +69,6 @@ class ClientCosPageTest extends TestCase
         Http::assertNothingSent();
     }
 
-    public function test_a_legacy_document_stage_snapshot_is_refreshed_once(): void
-    {
-        $user = $this->client();
-        $user->arraycos = [[
-            'servicio' => 'Española Sefardi',
-            'description' => 'Documentos en Revisión',
-            'currentStepName' => 'Cotejo de documentos',
-        ]];
-        $user->arraycos_expire = now()->addDay();
-
-        app(ClientCosSnapshotService::class)->forPage($user);
-
-        $this->assertSame(1, DB::table('jobs')->where('queue', 'cos-refresh')->count());
-    }
-
     public function test_first_load_uses_local_business_and_monday_without_remote_ai(): void
     {
         $user = $this->client();

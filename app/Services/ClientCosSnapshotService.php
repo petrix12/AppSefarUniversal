@@ -184,26 +184,7 @@ class ClientCosSnapshotService
             return false;
         }
 
-        if (! Carbon::parse($user->arraycos_expire)->isFuture()) {
-            return false;
-        }
-
-        // Los snapshots anteriores podían marcar el cotejo solo por tener
-        // archivos cargados. Recalculamos esos casos una única vez; el campo
-        // de versión evita que cada visita vuelva a invalidarlos.
-        foreach ((array) $user->arraycos as $status) {
-            $description = mb_strtolower((string) ($status['description'] ?? ''), 'UTF-8');
-            $stepName = mb_strtolower((string) ($status['currentStepName'] ?? ''), 'UTF-8');
-            $isDocumentStage = str_contains($description, 'documentos')
-                || str_contains($stepName, 'documento')
-                || str_contains($stepName, 'cotejo');
-
-            if ($isDocumentStage && (int) ($status['documentStageVersion'] ?? 0) < CosService::DOCUMENT_STAGE_VERSION) {
-                return false;
-            }
-        }
-
-        return true;
+        return Carbon::parse($user->arraycos_expire)->isFuture();
     }
 
     private function cacheTtlDays(): int

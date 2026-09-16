@@ -52,60 +52,6 @@ class GenealogyDocumentService
         return $kinds;
     }
 
-    /**
-     * Labels a person from the same binary ancestry order used by the tree.
-     * `IDPersona` is retained for legacy records, so this also works for
-     * ancestors that are outside the currently rendered tree segment.
-     */
-    public static function relationshipLabel(Agcliente $person): string
-    {
-        $legacyId = (int) $person->IDPersona;
-
-        if ($legacyId <= 1) {
-            return 'Cliente';
-        }
-
-        $generation = (int) floor(log($legacyId, 2));
-        $slot = $legacyId - (2 ** $generation);
-
-        if ($generation === 1) {
-            return $slot === 0 ? 'Padre' : 'Madre';
-        }
-
-        $stems = [
-            'Abuel', 'Bisabuel', 'Tatarabuel', 'Trastatarabuel',
-            'Retatarabuel', 'Sestarabuel', 'Setatarabuel', 'Octatarabuel',
-            'Nonatarabuel', 'Decatarabuel', 'Undecatarabuel', 'Duodecatarabuel',
-            'Trececatarabuel', 'Catorcatarabuel', 'Quincecatarabuel',
-            'Deciseiscatarabuel', 'Decisietecatarabuel', 'Deciochocatarabuel',
-            'Decinuevecatarabuel', 'Vigecatarabuel', 'Vigecimoprimocatarabuel',
-            'Vigecimosegundocatarabuel', 'Vigecimotercercatarabuel',
-            'Vigecimocuartocatarabuel', 'Vigecimoquintocatarabuel',
-            'Vigecimosextocatarabuel', 'Vigecimoseptimocatarabuel',
-            'Vigecimooctavocatarabuel', 'Vigecimonovenocatarabuel',
-            'Trigecatarabuel', 'Trigecimoprimocatarabuel',
-            'Trigecimosegundocatarabuel', 'Trigecimotercercatarabuel',
-            'Trigecimocuartocatarabuel', 'Trigecimoquintocatarabuel',
-            'Trigecimosextocatarabuel', 'Trigecimoseptimocatarabuel',
-            'Trigecimonovenocatarabuel', 'Cuarentacatarabuel',
-        ];
-
-        $level = $generation - 2;
-        $stem = $stems[$level] ?? ('Antepasado de generación ' . ($generation + 1));
-        $suffix = $slot % 2 === 0 ? 'o' : 'a';
-        $path = '';
-        $multiplier = 4;
-
-        for ($index = 1; $index <= $level; $index++) {
-            $path .= (($slot % $multiplier) < ($multiplier / 2) ? 'P ' : 'M ');
-            $multiplier *= 2;
-        }
-
-        $path .= $slot < 2 * ($level + 1) ? 'P' : 'M';
-
-        return trim($stem . $suffix . ' ' . $path);
-    }
-
     public static function inferKind(?string $legacyType): ?string
     {
         $value = Str::ascii(Str::lower(trim((string) $legacyType)));

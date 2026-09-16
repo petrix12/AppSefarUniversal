@@ -59,7 +59,6 @@ class DocumentRequestController extends Controller
             'status' => 'en_espera_cliente',
             'no_document_button_at' => now()->addMonth(),
         ]);
-        $this->invalidateCosSnapshot($user->id);
 
         return response()->json($documentRequest->load(['person', 'genealogyUnion']));
     }
@@ -96,10 +95,8 @@ class DocumentRequestController extends Controller
     public function destroy(DocumentRequest $documentRequest)
     {
         $this->requireInternalUser();
-        $userId = $documentRequest->user_id;
         $this->deleteSubmittedFile($documentRequest);
         $documentRequest->delete();
-        $this->invalidateCosSnapshot($userId);
 
         return response()->json(['success' => true, 'message' => 'Solicitud eliminada correctamente']);
     }
@@ -122,7 +119,6 @@ class DocumentRequestController extends Controller
         }
 
         $documentRequest->update(['status' => 'aprobada', 'status_changed_at' => now()]);
-        $this->invalidateCosSnapshot($documentRequest->user_id);
 
         return response()->json($documentRequest->fresh());
     }
@@ -141,7 +137,6 @@ class DocumentRequestController extends Controller
             'file_path' => null,
             'status_changed_at' => now(),
         ]);
-        $this->invalidateCosSnapshot($documentRequest->user_id);
 
         return response()->json($documentRequest->fresh());
     }
@@ -193,7 +188,6 @@ class DocumentRequestController extends Controller
             'status' => 'resuelto',
             'status_changed_at' => now(),
         ]);
-        $this->invalidateCosSnapshot($documentRequest->user_id);
         $this->uploadNotifier->notify(auth()->user(), $file, $documentRequest->person);
 
         return response()->json([
@@ -292,7 +286,6 @@ class DocumentRequestController extends Controller
             'status' => 'resuelto',
             'status_changed_at' => now(),
         ]);
-        $this->invalidateCosSnapshot($user->id);
         if ($request->hasFile('file')) {
             $this->uploadNotifier->notify($user, $file, $person);
         }
@@ -329,7 +322,6 @@ class DocumentRequestController extends Controller
             'status' => 'resuelto',
             'status_changed_at' => now(),
         ]);
-        $this->invalidateCosSnapshot($documentRequest->user_id);
 
         return response()->json(['request' => $documentRequest->fresh(), 'file' => $this->documents->present($file)]);
     }
@@ -347,7 +339,6 @@ class DocumentRequestController extends Controller
         }
 
         $documentRequest->update(['status' => 'no_documento', 'status_changed_at' => now()]);
-        $this->invalidateCosSnapshot($documentRequest->user_id);
 
         return response()->json($documentRequest->fresh());
     }
@@ -402,11 +393,5 @@ class DocumentRequestController extends Controller
     private function requireRequestOwner(DocumentRequest $documentRequest): void
     {
         abort_unless(auth()->check() && $documentRequest->user_id === auth()->id(), 403, 'No autorizado.');
-    }
-
-    private function invalidateCosSnapshot(int $userId): void
-    {
-        // Una solicitud documental cambia el COS; navegar por la aplicación no.
-        User::whereKey($userId)->update(['arraycos_expire' => null]);
     }
 }

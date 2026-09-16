@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Negocio;
-use App\Models\TlProject;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Models\Factura;
@@ -148,8 +147,8 @@ class NegocioController extends Controller
      */
     public function edit($id)
     {
-        $deal_db = Negocio::findOrFail($id);
-        $user = User::findOrFail($deal_db->user_id);
+        $deal_db = Negocio::find($id);
+        $user = User::find($deal_db->user_id);
 
         $camposDeTeamleader = [
             'n1__enviada_al_cliente' => '4203d8ab-f1de-0145-af52-1bb278951268',
@@ -202,21 +201,9 @@ class NegocioController extends Controller
             'servicio_solicitado' => 'fcd48891-20f6-049a-a05f-f78a6f951b4d'
         ];
 
-        if (! config('services.teamleader.historical_mode', true)) {
-            $this->syncDealIndividual($deal_db, $camposDeTeamleader, $user);
-            $TLdeals = $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id);
-        } else {
-            // Abrir la ficha local no debe consultar ni modificar Teamleader:
-            // la app trabaja sobre su histórico migrado de solo lectura.
-            $TLdeals = filled($user->tl_id)
-                ? TlProject::query()
-                    ->where('customer_id', $user->tl_id)
-                    ->orderBy('title')
-                    ->get(['id', 'title'])
-                    ->map(fn (TlProject $project) => ['id' => $project->id, 'title' => $project->title ?: $project->id])
-                    ->all()
-                : [];
-        }
+        $this->syncDealIndividual($deal_db, $camposDeTeamleader, $user);
+
+        $TLdeals = $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id);
 
         return view('crud.negocios.edit', compact('deal_db', 'user', 'TLdeals'));
     }
@@ -268,7 +255,7 @@ class NegocioController extends Controller
         $deal->monto_fase_1_pagado = null;
         $deal->save();
 
-        if ($deal->teamleader_id && ! config('services.teamleader.historical_mode', true)) {
+        if ($deal->teamleader_id) {
             $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
 
             // Conservar los campos existentes
@@ -341,7 +328,7 @@ class NegocioController extends Controller
         $deal->monto_fase_2_pagado = null;
         $deal->save();
 
-        if ($deal->teamleader_id && ! config('services.teamleader.historical_mode', true)) {
+        if ($deal->teamleader_id) {
             $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
 
             // Conservar los campos existentes
@@ -413,7 +400,7 @@ class NegocioController extends Controller
         $deal->monto_fase_3_pagado = null;
         $deal->save();
 
-        if ($deal->teamleader_id && ! config('services.teamleader.historical_mode', true)) {
+        if ($deal->teamleader_id) {
             $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
 
             // Conservar los campos existentes
@@ -481,7 +468,7 @@ class NegocioController extends Controller
         $deal->carta_nat_enviado = $fechaActual;
         $deal->save();
 
-        if ($deal->teamleader_id && ! config('services.teamleader.historical_mode', true)) {
+        if ($deal->teamleader_id) {
             $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
 
             // Conservar los campos existentes
@@ -549,7 +536,7 @@ class NegocioController extends Controller
         $deal->carta_cilfcje_enviado = $fechaActual;
         $deal->save();
 
-        if ($deal->teamleader_id && ! config('services.teamleader.historical_mode', true)) {
+        if ($deal->teamleader_id) {
             $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
 
             // Conservar los campos existentes
@@ -618,7 +605,7 @@ class NegocioController extends Controller
         $deal->monto_fase_1_pagado = 0;
         $deal->save();
 
-        if ($deal->teamleader_id && ! config('services.teamleader.historical_mode', true)) {
+        if ($deal->teamleader_id) {
             $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
 
             // Conservar los campos existentes
@@ -695,7 +682,7 @@ class NegocioController extends Controller
         $deal->monto_fase_2_pagado = 0;
         $deal->save();
 
-        if ($deal->teamleader_id && ! config('services.teamleader.historical_mode', true)) {
+        if ($deal->teamleader_id) {
             $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
 
             // Conservar los campos existentes
@@ -772,7 +759,7 @@ class NegocioController extends Controller
         $deal->monto_fase_3_pagado = 0;
         $deal->save();
 
-        if ($deal->teamleader_id && ! config('services.teamleader.historical_mode', true)) {
+        if ($deal->teamleader_id) {
             $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
 
             // Conservar los campos existentes
@@ -849,7 +836,7 @@ class NegocioController extends Controller
         $deal->carta_nat_montopagado = 0;
         $deal->save();
 
-        if ($deal->teamleader_id && ! config('services.teamleader.historical_mode', true)) {
+        if ($deal->teamleader_id) {
             $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
 
             // Conservar los campos existentes
@@ -923,7 +910,7 @@ class NegocioController extends Controller
         $deal->cilfcje_montopagado = 0;
         $deal->save();
 
-        if ($deal->teamleader_id && ! config('services.teamleader.historical_mode', true)) {
+        if ($deal->teamleader_id) {
             $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
 
             // Conservar los campos existentes
@@ -996,7 +983,7 @@ class NegocioController extends Controller
         $deal->cilfcje_montopagado = 0;
         $deal->save();
 
-        if ($deal->teamleader_id && ! config('services.teamleader.historical_mode', true)) {
+        if ($deal->teamleader_id) {
             $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
 
             // Conservar los campos existentes
@@ -1116,7 +1103,7 @@ class NegocioController extends Controller
         ]; // o defínelo local si prefieres
 
         // Actualizar en Teamleader
-        if ($deal->teamleader_id && ! config('services.teamleader.historical_mode', true)) {
+        if ($deal->teamleader_id) {
             app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id,
                 collect($request->all())->map(function ($value, $field) use ($camposRelacionados) {
                     return isset($camposRelacionados[$field]) ? [

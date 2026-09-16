@@ -72,13 +72,58 @@ class TeamleaderProjectPaymentAnalyzer
                 $preestabRaw = $this->customFieldValue($project, $fields['preestab']['id'], $fields['preestab']['label']);
                 $paidRaw = $this->customFieldValue($project, $fields['paid']['id'], $fields['paid']['label']);
 
-                return [$phase => $this->analyzePaymentValues(
-                    $phase,
-                    $preestabRaw,
-                    $paidRaw,
-                    $fields['key'] ?? "fase_{$phase}",
-                    $fields['label'] ?? "Fase {$phase}",
-                )];
+                $preestab = $this->parseMoneyText($preestabRaw);
+                $paid = $this->parseMoneyText($paidRaw);
+
+                $exonerated = $preestab['exonerated'] || $paid['exonerated'];
+                $included = $preestab['included'] || $paid['included'];
+                $effectivePreestab = ($exonerated || $included) ? 0.0 : $preestab['total'];
+                $effectivePaid = ($exonerated || $included) ? 0.0 : $paid['total'];
+                $balance = max($effectivePreestab - $effectivePaid, 0.0);
+                $overpaid = max($effectivePaid - $effectivePreestab, 0.0);
+                $difference = $effectivePreestab - $effectivePaid;
+                $reviewReasons = $this->reviewReasons(
+                    $preestab,
+                    $paid,
+                    $effectivePreestab,
+                    $effectivePaid,
+                    $overpaid
+                );
+
+                $status = $this->phaseStatus(
+                    $effectivePreestab,
+                    $effectivePaid,
+                    $balance,
+                    $overpaid,
+                    $exonerated,
+                    $included
+                );
+
+                if (in_array('currency_conversion_required', $reviewReasons, true)) {
+                    $status = 'review';
+                }
+
+                return [
+                    $phase => [
+                        'phase' => $phase,
+                        'payment_key' => $fields['key'] ?? "fase_{$phase}",
+                        'payment_label' => $fields['label'] ?? "Fase {$phase}",
+                        'preestab_raw' => $preestabRaw,
+                        'paid_raw' => $paidRaw,
+                        'preestab_amount' => round($preestab['total'], 2),
+                        'paid_amount' => round($paid['total'], 2),
+                        'effective_preestab_amount' => round($effectivePreestab, 2),
+                        'effective_paid_amount' => round($effectivePaid, 2),
+                        'balance_amount' => round($balance, 2),
+                        'overpaid_amount' => round($overpaid, 2),
+                        'difference_amount' => round($difference, 2),
+                        'status' => $status,
+                        'needs_review' => $reviewReasons !== [],
+                        'review_reasons' => $reviewReasons,
+                        'preestab_parse' => $preestab,
+                        'paid_parse' => $paid,
+                    ],
+                ];
             });
 
         return [
@@ -96,70 +141,6 @@ class TeamleaderProjectPaymentAnalyzer
                 'overpaid_amount' => round($phases->sum('overpaid_amount'), 2),
                 'difference_amount' => round($phases->sum('difference_amount'), 2),
             ],
-        ];
-    }
-
-    /**
-     * Applies the historical phase-payment rules to values supplied by another
-     * source. This lets the HubSpot deal projection use precisely the same
-     * balance, exemption and overpayment interpretation as Teamleader.
-     */
-    public function analyzePaymentValues(
-        int $phase,
-        ?string $preestabRaw,
-        ?string $paidRaw,
-        ?string $paymentKey = null,
-        ?string $paymentLabel = null,
-    ): array {
-        $preestab = $this->parseMoneyText($preestabRaw);
-        $paid = $this->parseMoneyText($paidRaw);
-
-        $exonerated = $preestab['exonerated'] || $paid['exonerated'];
-        $included = $preestab['included'] || $paid['included'];
-        $effectivePreestab = ($exonerated || $included) ? 0.0 : $preestab['total'];
-        $effectivePaid = ($exonerated || $included) ? 0.0 : $paid['total'];
-        $balance = max($effectivePreestab - $effectivePaid, 0.0);
-        $overpaid = max($effectivePaid - $effectivePreestab, 0.0);
-        $difference = $effectivePreestab - $effectivePaid;
-        $reviewReasons = $this->reviewReasons(
-            $preestab,
-            $paid,
-            $effectivePreestab,
-            $effectivePaid,
-            $overpaid
-        );
-
-        $status = $this->phaseStatus(
-            $effectivePreestab,
-            $effectivePaid,
-            $balance,
-            $overpaid,
-            $exonerated,
-            $included
-        );
-
-        if (in_array('currency_conversion_required', $reviewReasons, true)) {
-            $status = 'review';
-        }
-
-        return [
-            'phase' => $phase,
-            'payment_key' => $paymentKey ?? "fase_{$phase}",
-            'payment_label' => $paymentLabel ?? "Fase {$phase}",
-            'preestab_raw' => $preestabRaw,
-            'paid_raw' => $paidRaw,
-            'preestab_amount' => round($preestab['total'], 2),
-            'paid_amount' => round($paid['total'], 2),
-            'effective_preestab_amount' => round($effectivePreestab, 2),
-            'effective_paid_amount' => round($effectivePaid, 2),
-            'balance_amount' => round($balance, 2),
-            'overpaid_amount' => round($overpaid, 2),
-            'difference_amount' => round($difference, 2),
-            'status' => $status,
-            'needs_review' => $reviewReasons !== [],
-            'review_reasons' => $reviewReasons,
-            'preestab_parse' => $preestab,
-            'paid_parse' => $paid,
         ];
     }
 

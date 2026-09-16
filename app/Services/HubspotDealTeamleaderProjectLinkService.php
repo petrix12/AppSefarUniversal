@@ -18,10 +18,6 @@ use Illuminate\Support\Str;
  */
 class HubspotDealTeamleaderProjectLinkService
 {
-    private const AUTO_SIMILAR_MIN_CONFIDENCE = 70;
-
-    private const AUTO_SIMILAR_MIN_MARGIN = 10;
-
     public function overview(User $user): array
     {
         if (! $this->available()) {
@@ -65,12 +61,7 @@ class HubspotDealTeamleaderProjectLinkService
         ];
     }
 
-    /**
-     * Links an unambiguous exact match, legacy ID match or high-confidence
-     * similar title. Similar titles must have a decisive lead over the next
-     * candidate so common service names never bind two client projects by
-     * accident.
-     */
+    /** Auto-link only exact, single matches. Partial matches remain reviewable. */
     public function detectAndLink(User $user, ?int $linkedBy = null): array
     {
         $overview = $this->overview($user);
@@ -80,11 +71,15 @@ class HubspotDealTeamleaderProjectLinkService
 
         $linked = 0;
         foreach ($overview['candidates'] as $negocioId => $candidates) {
-            $candidate = $this->automaticCandidate(collect($candidates));
-            if (! $candidate) {
+            $automatic = collect($candidates)
+                ->filter(fn (array $candidate) => in_array($candidate['match_method'], ['exact_title', 'legacy_reference'], true))
+                ->values();
+
+            if ($automatic->count() !== 1) {
                 continue;
             }
 
+            $candidate = $automatic->first();
             $deal = $overview['deals']->firstWhere('id', $negocioId);
             if ($deal) {
                 $this->link($user, $deal, $candidate['project'], $candidate['match_method'], $candidate['confidence'], $candidate['evidence'], $linkedBy);
@@ -99,36 +94,6 @@ class HubspotDealTeamleaderProjectLinkService
             'review' => $after['summary']['pending_review'],
             'unavailable' => false,
         ];
-    }
-
-    private function automaticCandidate(Collection $candidates): ?array
-    {
-        $exact = $candidates
-            ->filter(fn (array $candidate) => in_array($candidate['match_method'], ['exact_title', 'legacy_reference'], true))
-            ->values();
-        if ($exact->count() === 1) {
-            return $exact->first();
-        }
-        if ($exact->isNotEmpty()) {
-            return null;
-        }
-
-        $similar = $candidates
-            ->filter(fn (array $candidate) => $candidate['match_method'] === 'similar_title'
-                && (int) $candidate['confidence'] >= self::AUTO_SIMILAR_MIN_CONFIDENCE)
-            ->sortByDesc('confidence')
-            ->values();
-        $winner = $similar->first();
-        if (! $winner) {
-            return null;
-        }
-
-        $runnerUp = $similar->get(1);
-        if ($runnerUp && ((int) $winner['confidence'] - (int) $runnerUp['confidence']) < self::AUTO_SIMILAR_MIN_MARGIN) {
-            return null;
-        }
-
-        return $winner;
     }
 
     public function link(

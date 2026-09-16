@@ -6,11 +6,8 @@ use App\Models\Agcliente;
 use App\Models\DocumentRequest;
 use App\Models\File;
 use App\Models\GenealogyUnion;
-use App\Models\Negocio;
 use App\Models\User;
 use App\Mail\GenealogyDocumentUploaded;
-use App\Services\CosService;
-use App\Services\GenealogyDocumentService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -121,10 +118,7 @@ class TreeDocumentChecklistTest extends TestCase
 
     public function test_client_can_associate_an_unclassified_app_upload_to_a_requested_document(): void
     {
-        $client = User::factory()->create([
-            'passport' => 'V22222222',
-            'arraycos_expire' => now()->addDay(),
-        ]);
+        $client = User::factory()->create(['passport' => 'V22222222']);
         $client->assignRole('Cliente');
         $person = Agcliente::create([
             'IDCliente' => $client->passport,
@@ -166,7 +160,6 @@ class TreeDocumentChecklistTest extends TestCase
             'file_id' => $uploadedFile->id,
             'person_id' => $person->id,
         ]);
-        $this->assertNull($client->fresh()->arraycos_expire);
     }
 
     public function test_client_can_submit_an_available_document_without_an_internal_request(): void
@@ -298,59 +291,5 @@ class TreeDocumentChecklistTest extends TestCase
             ->assertOk()
             ->assertJsonPath('document_requests.0.document_kind', 'marriage_certificate')
             ->assertJsonPath('document_requests.0.genealogy_union_id', $union->id);
-    }
-
-    public function test_document_stage_requires_approved_genealogy_but_not_a_phase_one_payment(): void
-    {
-        $client = User::factory()->create();
-        $deal = new Negocio([
-            'servicio_solicitado' => 'Española Sefardi',
-            'servicio_solicitado2' => 'Española Sefardi',
-        ]);
-        DocumentRequest::create([
-            'user_id' => $client->id,
-            'requested_by' => $client->id,
-            'document_name' => 'Pasaporte',
-            'document_type' => 'genealogico',
-            'document_kind' => 'passport',
-            'status' => 'resuelto',
-        ]);
-
-        $withoutApproval = (new CosService($deal, $client, collect([$deal]), ['etiquetas' => 'En proceso'], false))
-            ->calculateStatus();
-        $withApproval = (new CosService($deal, $client, collect([$deal]), ['etiquetas' => 'Aceptado'], false))
-            ->calculateStatus();
-
-        $this->assertNotSame('Documentos en Revisión', $withoutApproval['description']);
-        $this->assertSame('Documentos en Revisión', $withApproval['description']);
-    }
-
-    public function test_phase_one_exoneration_is_a_valid_cos_payment_state(): void
-    {
-        $client = User::factory()->create();
-        $deal = new Negocio([
-            'servicio_solicitado' => 'Española Sefardi',
-            'servicio_solicitado2' => 'Española Sefardi',
-            'fase_1_preestab' => 'EXONERADO 2026/09/14',
-            'fase_1_pagado' => 'EXONERADO 2026/09/14',
-        ]);
-
-        $status = (new CosService($deal, $client, collect([$deal]), ['etiquetas' => 'Aceptado'], false))
-            ->calculateStatus();
-
-        $this->assertSame('Fase 1 Exonerada', $status['description']);
-        $this->assertSame('Exonerada', $status['phasePayments'][0]['status']);
-        $this->assertSame('Sin información', $status['phasePayments'][1]['status']);
-    }
-
-    public function test_document_person_relationship_labels_cover_client_parents_and_grandparents(): void
-    {
-        $makePerson = fn (string $id) => new Agcliente(['IDPersona' => $id]);
-
-        $this->assertSame('Cliente', GenealogyDocumentService::relationshipLabel($makePerson('1')));
-        $this->assertSame('Padre', GenealogyDocumentService::relationshipLabel($makePerson('2')));
-        $this->assertSame('Madre', GenealogyDocumentService::relationshipLabel($makePerson('3')));
-        $this->assertSame('Abuelo P', GenealogyDocumentService::relationshipLabel($makePerson('4')));
-        $this->assertSame('Abuela M', GenealogyDocumentService::relationshipLabel($makePerson('7')));
     }
 }

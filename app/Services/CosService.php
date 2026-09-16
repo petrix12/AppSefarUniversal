@@ -18,8 +18,6 @@ use Illuminate\Support\Facades\Http;
  */
 class CosService
 {
-    public const DOCUMENT_STAGE_VERSION = 1;
-
     private const SERVICE_ALIASES = [
         'Española - Carta de Naturaleza General' => 'Nacionalidad por Carta de Naturaleza',
         'Portuguesa Sefardí' => 'Portuguesa Sefardi',
@@ -79,35 +77,6 @@ class CosService
         $status = $this->calculateCOS($certificadoDescargado);
 
         return CosPresentation::statuses([$status])[0];
-    }
-
-    /** A client-safe payment summary: states only, never amounts or notes. */
-    public static function phasePaymentStatuses(object|array $negocio): array
-    {
-        $value = static function (string $field) use ($negocio): mixed {
-            return is_object($negocio) && method_exists($negocio, 'getAttribute')
-                ? $negocio->getAttribute($field)
-                : data_get($negocio, $field);
-        };
-
-        $phases = [
-            ['label' => 'Fase 1', 'preestablished' => $value('fase_1_preestab'), 'paid' => [$value('fase_1_pagado'), $value('fase_1_pagado__teamleader_')]],
-            ['label' => 'Fase 2', 'preestablished' => $value('fase_2_preestab'), 'paid' => [$value('fase_2_pagado'), $value('fase_2_pagado__teamleader_')]],
-            ['label' => 'Fase 3', 'preestablished' => $value('fase_3_preestab'), 'paid' => [$value('fase_3_pagado'), $value('fase_3_pagado__teamleader_')]],
-        ];
-
-        return array_map(function (array $phase): array {
-            $values = array_merge([$phase['preestablished']], $phase['paid']);
-            $isExonerated = collect($values)->contains(fn ($item) => self::isExoneratedPaymentValue($item));
-            $isPaid = collect($phase['paid'])->contains(fn ($item) => filled($item));
-
-            return [
-                'label' => $phase['label'],
-                'status' => $isExonerated
-                    ? 'Exonerada'
-                    : ($isPaid ? 'Pagada' : (filled($phase['preestablished']) ? 'Pendiente de pago' : 'Sin información')),
-            ];
-        }, $phases);
     }
 
     // ============ MÉTODOS DE CÁLCULO DE ESTADO ============
@@ -286,9 +255,7 @@ class CosService
             // PASO 10: DOCUMENTOS APROBADOS
             [
                 'name' => 'Documentos Aprobados',
-                // Un archivo puede cargarse antes de tiempo, pero no debe
-                // adelantar el COS hasta aprobarse la genealogía.
-                'condition' => fn() => $this->canShowDocumentStage($resultadoIA) && $this->hasApprovedDocuments(),
+                'condition' => fn() => $this->hasApprovedDocuments(),
                 'stepGen' => 10,
                 'stepJur' => -1,
                 'warning' => null,
@@ -297,7 +264,7 @@ class CosService
             // PASO 9: DOCUMENTOS EN REVISIÓN
             [
                 'name' => 'Documentos en Revisión',
-                'condition' => fn() => $this->canShowDocumentStage($resultadoIA) && $this->hasDocumentsInReview(),
+                'condition' => fn() => $this->hasDocumentsInReview(),
                 'stepGen' => 9,
                 'stepJur' => -1,
                 'warning' => null,
@@ -306,7 +273,7 @@ class CosService
             // PASO 8: DOCUMENTOS PENDIENTES
             [
                 'name' => 'Documentos Pendientes',
-                'condition' => fn() => $this->canShowDocumentStage($resultadoIA) && $this->hasPendingDocuments(),
+                'condition' => fn() => $this->hasPendingDocuments(),
                 'stepGen' => 8,
                 'stepJur' => -1,
                 'warning' => "Tienes solicitudes de documentos pendientes. Para resolverlas, dirígete a la pestaña de 'Mis solicitudes de documentos'",
@@ -315,15 +282,6 @@ class CosService
             [
                 'name' => 'Enviado a Redacción de Informe',
                 'condition' => fn() => $this->hasEnviadoARedaccion(),
-                'stepGen' => 8,
-                'stepJur' => -1,
-                'warning' => null,
-            ],
-
-            // La exoneración es un estado de pago válido, no un pago pendiente.
-            [
-                'name' => 'Fase 1 Exonerada',
-                'condition' => fn() => $this->hasFase1Exonerada(),
                 'stepGen' => 8,
                 'stepJur' => -1,
                 'warning' => null,
@@ -486,8 +444,6 @@ class CosService
             'currentStepJur' => $currentStepJur,
             'subproceso' => $subproceso,
             'description' => $description,
-            'documentStageVersion' => self::DOCUMENT_STAGE_VERSION,
-            'phasePayments' => self::phasePaymentStatuses($this->negocio),
         ];
 
         // Obtener detalles del paso actual desde array_cos()
@@ -944,20 +900,8 @@ class CosService
 
     private function hasFase1Pagada(): bool
     {
-        return filled($this->negocio->getAttribute('fase_1_pagado'))
-            || filled($this->negocio->getAttribute('fase_1_pagado__teamleader_'));
-    }
-
-    private function hasFase1Exonerada(): bool
-    {
-        $phase = self::phasePaymentStatuses($this->negocio)[0];
-
-        return $phase['status'] === 'Exonerada';
-    }
-
-    private static function isExoneratedPaymentValue(mixed $value): bool
-    {
-        return str_contains(mb_strtoupper((string) $value, 'UTF-8'), 'EXONERAD');
+        return isset($this->negocio->fase_1_pagado)
+            || isset($this->negocio->fase_1_pagado__teamleader_);
     }
 
     private function hasFase1Preestablecida(): bool
@@ -966,11 +910,6 @@ class CosService
     }
 
     // ============ CONDICIONES DE DOCUMENTOS ============
-
-    private function canShowDocumentStage(array $resultadoIA): bool
-    {
-        return (bool) ($resultadoIA['genealogiaAprobada'] ?? false);
-    }
 
     private function hasApprovedDocuments(): bool
     {

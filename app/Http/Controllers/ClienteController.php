@@ -65,7 +65,6 @@ use App\Services\CosService;
 use App\Services\TeamleaderClientHistoryService;
 use App\Services\TeamleaderPhasePaymentService;
 use App\Services\TeamleaderProjectPaymentAnalyzer;
-use App\Services\HubspotDealPaymentAnalyzer;
 use App\Services\TeamleaderProjectPaymentWriter;
 use App\Services\TeamleaderProjectFullUpdater;
 use Illuminate\Support\Facades\Cache;
@@ -199,10 +198,7 @@ class ClienteController extends Controller
             $documentRequestsQuery->where('document_type', 'genealogico')
                 ->whereIn('document_kind', array_keys(\App\Services\GenealogyDocumentService::kinds()));
         }
-        $documentRequests = $documentRequestsQuery
-            ->with(['person', 'genealogyUnion.spouseOne', 'genealogyUnion.spouseTwo'])
-            ->latest()
-            ->get();
+        $documentRequests = $documentRequestsQuery->latest()->get();
         $archivos = $isClientFacing
             ? $documentService->visibleToClient($user->passport)->get()
             : File::where('IDCliente', $user->passport)->get();
@@ -222,23 +218,11 @@ class ClienteController extends Controller
         // contacto autenticado y no realiza cambios durante la consulta.
         $clientTeamleaderHistory = app(TeamleaderClientHistoryService::class)->for($user);
 
-        $hubspotPaymentAnalyzer = app(HubspotDealPaymentAnalyzer::class);
-        $hubspotProjectPayments = $hubspotPaymentAnalyzer->analyzeFor($user);
-        $linkedHistoricalProjectIds = collect($hubspotProjectPayments['projects'] ?? [])
-            ->pluck('legacy_teamleader_project_id')
-            ->filter()
-            ->map('strval');
-        $unlinkedHistoricalProjects = collect($clientTeamleaderHistory['projects'] ?? collect())
-            ->reject(fn ($project) => $linkedHistoricalProjectIds->contains((string) $project->id))
-            ->values();
-        $clientProjectPayments = $hubspotPaymentAnalyzer->combine(
-            $hubspotProjectPayments,
-            app(TeamleaderProjectPaymentAnalyzer::class)->analyzeProjects($unlinkedHistoricalProjects),
-        );
+        $clientProjectPayments = $clientTeamleaderHistory['project_payments'] ?? [];
         app(TeamleaderPhasePaymentService::class)->sync($user, $clientProjectPayments);
 
-        // Re-read after CRM and historical phases have been translated to
-        // individual portal records, so a debt is visible in this same COS request.
+        // Re-read after Teamleader phases have been translated to individual
+        // portal records, so a debt is visible in this same COS request.
         $comprasConDealNoPagadas = Compras::query()
             ->whereNotNull('deal_id')
             ->where('pagado', 0)
