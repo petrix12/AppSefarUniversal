@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Servicio;
+use App\Services\GenealogyTreeServiceMatcher;
 use App\Services\MondayCatalogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -247,6 +248,10 @@ class ServicioController extends Controller
         $data['requiere_agenda'] = $request->boolean('requiere_agenda');
         $data['monday_sync_enabled'] = $request->boolean('monday_sync_enabled');
         $data['orden'] = (int) ($data['orden'] ?? 0);
+
+        if (GenealogyTreeServiceMatcher::requiresGetInfo($data['id_hubspot'], $data['nombre'])) {
+            $data['monday_registration_timing'] = 'after_getinfo';
+        }
 
         if ($data['tipo'] === 'consulta') {
             $data['requiere_agenda'] = true;

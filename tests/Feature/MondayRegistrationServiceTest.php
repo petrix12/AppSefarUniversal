@@ -211,6 +211,41 @@ class MondayRegistrationServiceTest extends TestCase
         Http::assertSentCount(1);
     }
 
+    public function test_it_forces_genealogy_tree_processes_to_wait_for_getinfo(): void
+    {
+        Http::fake([
+            'api.monday.com/v2' => Http::response([
+                'data' => ['create_item' => ['id' => 'tree-987', 'name' => 'Perez Ana']],
+            ]),
+        ]);
+
+        $user = User::withoutEvents(fn () => User::create([
+            'name' => 'Ana Perez',
+            'passport' => 'TREE123',
+        ]));
+        $servicio = Servicio::create([
+            'id_hubspot' => 'Española - Carta de Naturaleza',
+            'nombre' => 'Nacionalidad Española por Carta de Naturaleza',
+            'precio' => 100,
+            'monday_sync_enabled' => true,
+            'monday_board_id' => '878831315',
+            'monday_group_id' => 'duplicate_of_en_proceso',
+            // Simulates a production value created before this rule.
+            'monday_registration_timing' => MondayRegistrationService::TIMING_AFTER_PAYMENT,
+        ]);
+
+        $registration = app(MondayRegistrationService::class);
+
+        $this->assertSame([], $registration->syncAfterPayment($user, [$servicio]));
+        Http::assertNothingSent();
+
+        $this->assertSame(
+            [$servicio->id => true],
+            $registration->syncAfterGetInfo($user, [$servicio])
+        );
+        Http::assertSentCount(1);
+    }
+
     public function test_it_sends_the_parents_saved_by_getinfo_to_monday(): void
     {
         Http::fake([
