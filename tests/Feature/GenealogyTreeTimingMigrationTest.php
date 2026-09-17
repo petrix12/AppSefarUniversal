@@ -55,6 +55,8 @@ class GenealogyTreeTimingMigrationTest extends TestCase
         $migration->up();
 
         $this->assertSame('after_getinfo', DB::table('servicios')->where('id', $cartaId)->value('monday_registration_timing'));
+        $this->assertSame(1, DB::table('servicios')->where('id', $cartaId)->value('requires_getinfo'));
         $this->assertSame('after_payment', DB::table('servicios')->where('id', $documentalId)->value('monday_registration_timing'));
+        $this->assertSame(0, DB::table('servicios')->where('id', $documentalId)->value('requires_getinfo'));
     }
 }

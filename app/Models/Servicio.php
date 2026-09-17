@@ -29,6 +29,7 @@ class Servicio extends Model
         'monday_board_id',
         'monday_group_id',
         'monday_registration_timing',
+        'requires_getinfo',
         'metadata',
     ];
 
@@ -37,6 +38,7 @@ class Servicio extends Model
         'visible_cliente' => 'boolean',
         'requiere_agenda' => 'boolean',
         'monday_sync_enabled' => 'boolean',
+        'requires_getinfo' => 'boolean',
         'metadata' => 'array',
         'precio' => 'integer',
         'duracion_minutos' => 'integer',

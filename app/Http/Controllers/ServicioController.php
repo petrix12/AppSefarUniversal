@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Servicio;
-use App\Services\GenealogyTreeServiceMatcher;
 use App\Services\MondayCatalogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -180,6 +179,7 @@ class ServicioController extends Controller
             'monday_board_id' => $request->filled('monday_board_id') ? $request->input('monday_board_id') : null,
             'monday_group_id' => $request->filled('monday_group_id') ? $request->input('monday_group_id') : null,
             'monday_registration_timing' => $request->input('monday_registration_timing', 'after_payment'),
+            'requires_getinfo' => $request->boolean('requires_getinfo'),
         ]);
 
         $data = $request->validate([
@@ -207,6 +207,7 @@ class ServicioController extends Controller
             'monday_board_id' => ['nullable', 'regex:/^\d+$/', 'max:255', 'required_if:monday_sync_enabled,1'],
             'monday_group_id' => ['nullable', 'string', 'max:255', 'required_if:monday_sync_enabled,1'],
             'monday_registration_timing' => ['required', 'string', Rule::in(['after_payment', 'after_getinfo'])],
+            'requires_getinfo' => ['nullable', 'boolean'],
         ], [
             'required' => 'El campo :attribute es obligatorio.',
             'required_if' => 'El campo :attribute es obligatorio cuando el envío a Monday está activo.',
@@ -236,6 +237,7 @@ class ServicioController extends Controller
             'monday_board_id' => 'tablero de Monday',
             'monday_group_id' => 'grupo/subtablero de Monday',
             'monday_registration_timing' => 'momento de registro en Monday',
+            'requires_getinfo' => 'requerimiento de GetInfo',
         ]);
 
         $data['id_hubspot'] = trim($data['id_hubspot']);
@@ -247,9 +249,10 @@ class ServicioController extends Controller
         $data['visible_cliente'] = $request->boolean('visible_cliente');
         $data['requiere_agenda'] = $request->boolean('requiere_agenda');
         $data['monday_sync_enabled'] = $request->boolean('monday_sync_enabled');
+        $data['requires_getinfo'] = $request->boolean('requires_getinfo');
         $data['orden'] = (int) ($data['orden'] ?? 0);
 
-        if (GenealogyTreeServiceMatcher::requiresGetInfo($data['id_hubspot'], $data['nombre'])) {
+        if ($data['requires_getinfo']) {
             $data['monday_registration_timing'] = 'after_getinfo';
         }
 

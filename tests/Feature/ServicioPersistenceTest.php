@@ -48,6 +48,7 @@ class ServicioPersistenceTest extends TestCase
             $table->string('monday_board_id')->nullable();
             $table->string('monday_group_id')->nullable();
             $table->string('monday_registration_timing')->default('after_payment');
+            $table->boolean('requires_getinfo')->default(false);
             $table->integer('tipov')->nullable();
             $table->timestamps();
         });
@@ -66,6 +67,7 @@ class ServicioPersistenceTest extends TestCase
         $servicio = Servicio::create($this->validPayload());
 
         $this->assertTrue($servicio->monday_sync_enabled);
+        $this->assertFalse($servicio->requires_getinfo);
         $this->assertSame('after_payment', $servicio->monday_registration_timing);
         $this->assertDatabaseHas('servicios', [
             'id_hubspot' => 'SERVICIO-PRUEBA',
@@ -89,6 +91,29 @@ class ServicioPersistenceTest extends TestCase
                 $exception->errors()['monday_board_id'][0]
             );
         }
+    }
+
+    public function test_catalogue_marks_getinfo_services_to_register_after_getinfo(): void
+    {
+        $payload = $this->validPayload();
+        $payload['id_hubspot'] = 'SERVICIO-ARBOL-PRUEBA';
+        $payload['nombre'] = 'Servicio con árbol';
+        $payload['requires_getinfo'] = 1;
+
+        $request = Request::create('/servicios', 'POST', $payload, [], [], [
+            'HTTP_REFERER' => '/servicios/create',
+        ]);
+        $session = app('session')->driver();
+        $session->start();
+        $request->setLaravelSession($session);
+
+        app(ServicioController::class)->store($request);
+
+        $this->assertDatabaseHas('servicios', [
+            'id_hubspot' => 'SERVICIO-ARBOL-PRUEBA',
+            'requires_getinfo' => 1,
+            'monday_registration_timing' => 'after_getinfo',
+        ]);
     }
 
     public function test_database_failures_include_technical_detail_and_a_reference(): void
@@ -135,6 +160,7 @@ class ServicioPersistenceTest extends TestCase
             'monday_board_id' => '878831315',
             'monday_group_id' => 'duplicate_of_en_proceso',
             'monday_registration_timing' => 'after_payment',
+            'requires_getinfo' => 0,
         ];
     }
 }

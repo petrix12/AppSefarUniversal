@@ -54,6 +54,7 @@ class MondayRegistrationServiceTest extends TestCase
             $table->string('monday_board_id')->nullable();
             $table->string('monday_group_id')->nullable();
             $table->string('monday_registration_timing')->default('after_payment');
+            $table->boolean('requires_getinfo')->default(false);
             $table->timestamps();
         });
 
@@ -232,6 +233,7 @@ class MondayRegistrationServiceTest extends TestCase
             'monday_group_id' => 'duplicate_of_en_proceso',
             // Simulates a production value created before this rule.
             'monday_registration_timing' => MondayRegistrationService::TIMING_AFTER_PAYMENT,
+            'requires_getinfo' => true,
         ]);
 
         $registration = app(MondayRegistrationService::class);

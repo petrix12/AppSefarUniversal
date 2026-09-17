@@ -47,14 +47,17 @@
         </div>
     </div>
 
-    @php($requiresGenealogyTree = \App\Services\GenealogyTreeServiceMatcher::requiresGetInfo($current->id_hubspot ?? null, $current->nombre ?? null))
+    <div class="col-md-3 py-2">
+        <div class="form-check mt-2">
+            <input type="hidden" name="requires_getinfo" value="0">
+            <input class="form-check-input" type="checkbox" name="requires_getinfo" value="1" id="requires_getinfo" {{ old('requires_getinfo', $current->requires_getinfo ?? false) ? 'checked' : '' }}>
+            <label class="form-check-label" for="requires_getinfo">Proceso genealógico: requiere completar GetInfo y el árbol</label>
+        </div>
+        <small class="text-muted">Al marcarlo, el registro en Monday se programa después de GetInfo.</small>
+    </div>
+
     <div class="col-md-3 py-2">
         <label class="block text-sm font-medium text-gray-700" for="monday_registration_timing">Registrar en Monday</label>
-        @if($requiresGenealogyTree)
-        <input id="monday_registration_timing" type="hidden" name="monday_registration_timing" value="after_getinfo">
-        <p class="form-control-plaintext mb-0">Después de completar GetInfo</p>
-        <small class="text-muted">Proceso genealógico: requiere los datos y el árbol del cliente.</small>
-        @else
         <select id="monday_registration_timing" name="monday_registration_timing" class="form-control">
             <option value="after_payment" {{ old('monday_registration_timing', $current->monday_registration_timing ?? 'after_payment') === 'after_payment' ? 'selected' : '' }}>Después de pagar</option>
             <option value="after_getinfo" {{ old('monday_registration_timing', $current->monday_registration_timing ?? 'after_payment') === 'after_getinfo' ? 'selected' : '' }}>Después de completar GetInfo</option>
@@ -63,7 +66,6 @@
         @error('monday_registration_timing')
             <small style="color:red">*{{ $message }}*</small>
         @enderror
-        @endif
     </div>
 
     <div class="col-md-3 py-2">

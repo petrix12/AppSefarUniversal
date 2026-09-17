@@ -84,10 +84,7 @@ class MondayRegistrationService
             ->filter(fn ($servicio): bool => $servicio instanceof Servicio)
             ->unique('id')
             ->filter(function (Servicio $servicio) use ($timing): bool {
-                $configuredTiming = GenealogyTreeServiceMatcher::requiresGetInfo(
-                    $servicio->id_hubspot,
-                    $servicio->nombre,
-                )
+                $configuredTiming = $servicio->requires_getinfo
                     ? self::TIMING_AFTER_GETINFO
                     : ($servicio->monday_registration_timing ?: self::TIMING_AFTER_PAYMENT);
 
