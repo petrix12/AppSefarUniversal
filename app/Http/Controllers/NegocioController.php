@@ -203,7 +203,12 @@ class NegocioController extends Controller
 
         $this->syncDealIndividual($deal_db, $camposDeTeamleader, $user);
 
-        $TLdeals = $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id);
+        // Algunos clientes históricos no están vinculados a Teamleader. En ese
+        // caso la ficha debe seguir siendo accesible, simplemente sin proyectos
+        // disponibles para seleccionar.
+        $TLdeals = filled($user->tl_id)
+            ? $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id)
+            : [];
 
         return view('crud.negocios.edit', compact('deal_db', 'user', 'TLdeals'));
     }

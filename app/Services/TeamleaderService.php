@@ -962,7 +962,7 @@ public function listProjectsByCustomerId(string $customerId)
     }
 
 
-public function getProjectsWithDetailsByCustomerId(string $customerId)
+public function getProjectsWithDetailsByCustomerId(?string $customerId)
 {
     try {
         if (!$this->isValidUuid($customerId)) {
