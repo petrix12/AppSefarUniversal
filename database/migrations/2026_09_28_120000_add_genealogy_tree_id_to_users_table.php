@@ -8,25 +8,27 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (! Schema::hasTable('users') || Schema::hasColumn('users', 'genealogy_tree_id')) {
+        if (Schema::hasTable('user_genealogy_tree_links')) {
             return;
         }
 
-        Schema::table('users', function (Blueprint $table) {
-            // users already has many legacy VARCHAR columns. TEXT keeps this
-            // optional local-only identifier out of the InnoDB row-size limit.
-            $table->text('genealogy_tree_id')
-                ->nullable()
-                ->after('passport');
+        Schema::create('user_genealogy_tree_links', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id')->unique();
+            $table->string('tree_id', 175);
+            $table->timestamps();
+
+            $table->foreign('user_id')
+                ->references('id')
+                ->on('users')
+                ->cascadeOnDelete();
         });
     }
 
     public function down(): void
     {
-        if (Schema::hasTable('users') && Schema::hasColumn('users', 'genealogy_tree_id')) {
-            Schema::table('users', function (Blueprint $table) {
-                $table->dropColumn('genealogy_tree_id');
-            });
+        if (Schema::hasTable('user_genealogy_tree_links')) {
+            Schema::drop('user_genealogy_tree_links');
         }
     }
 };

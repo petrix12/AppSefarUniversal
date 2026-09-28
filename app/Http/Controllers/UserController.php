@@ -24,6 +24,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Agcliente;
+use App\Models\UserGenealogyTreeLink;
 use Illuminate\Http\Request;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Spatie\Permission\Models\Permission;
@@ -2797,11 +2798,8 @@ private function removeDuplicatesAndSort(array $cosuser): array
             $filteredRequest['vinculo_antepasados'] = implode(';', $filteredRequest->get('vinculo_antepasados'));
         }
 
-        if ($filteredRequest->has('genealogy_tree_id')) {
-            $filteredRequest['genealogy_tree_id'] = filled($filteredRequest->get('genealogy_tree_id'))
-                ? trim($filteredRequest->get('genealogy_tree_id'))
-                : null;
-        }
+        $hasGenealogyTreeId = $filteredRequest->has('genealogy_tree_id');
+        $genealogyTreeId = $filteredRequest->pull('genealogy_tree_id');
 
         if ($filteredRequest->has('conyuge_interesado_en_proceso')) {
             $filteredRequest['conyuge_interesado_en_proceso'] = $request->boolean('conyuge_interesado_en_proceso') ? 1 : 0;
@@ -2823,6 +2821,9 @@ private function removeDuplicatesAndSort(array $cosuser): array
 
         // Inspeccionar resultados
         $user->update($filteredRequest->toArray());
+        if ($hasGenealogyTreeId) {
+            $this->syncGenealogyTreeId($user, $genealogyTreeId);
+        }
 
         // Llamar a la API de HubSpot para actualizar los datos
         $this->hubspotService->updateContact($user->hs_id, $hubspotData);
@@ -2861,11 +2862,6 @@ private function removeDuplicatesAndSort(array $cosuser): array
         $user->name = $request->name;
         $user->email = $request->email;
         $user->passport = $request->passport;
-        if ($request->has('genealogy_tree_id')) {
-            $user->genealogy_tree_id = $request->filled('genealogy_tree_id')
-                ? trim($request->genealogy_tree_id)
-                : null;
-        }
         $user->pay = $request->pay;
         $user->servicio = $request->servicio;
         $user->contrato = $request->contrato;
@@ -2879,6 +2875,9 @@ private function removeDuplicatesAndSort(array $cosuser): array
         }
 
         $user->save();
+        if ($request->has('genealogy_tree_id')) {
+            $this->syncGenealogyTreeId($user, $request->input('genealogy_tree_id'));
+        }
 
         // Actualizando los roles del usuario
         $roles = Role::all();
@@ -3142,9 +3141,6 @@ private function removeDuplicatesAndSort(array $cosuser): array
         $user->email     = $request->email;
         $user->phone     = $request->phone;
         $user->passport  = $request->passport;
-        $user->genealogy_tree_id = $request->filled('genealogy_tree_id')
-            ? trim($request->genealogy_tree_id)
-            : null;
         $user->hs_id     = $request->filled('hs_id') ? $request->hs_id : null;
         $user->tl_id     = $request->filled('tl_id') ? $request->tl_id : null;
 
@@ -3155,6 +3151,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
         }
 
         $user->save();
+        $this->syncGenealogyTreeId($user, $request->input('genealogy_tree_id'));
 
         // ✅ Roles: sync
         $roles = $request->input('roles', []);
@@ -3209,6 +3206,24 @@ private function removeDuplicatesAndSort(array $cosuser): array
     private function canManageGenealogyTreeLink(): bool
     {
         return auth()->check() && auth()->user()->can('genealogista');
+    }
+
+    private function syncGenealogyTreeId(User $user, mixed $treeId): void
+    {
+        $treeId = trim((string) $treeId);
+
+        if ($treeId === '') {
+            $user->genealogyTreeLink()->delete();
+            $user->unsetRelation('genealogyTreeLink');
+
+            return;
+        }
+
+        UserGenealogyTreeLink::updateOrCreate(
+            ['user_id' => $user->id],
+            ['tree_id' => $treeId]
+        );
+        $user->unsetRelation('genealogyTreeLink');
     }
 
 }

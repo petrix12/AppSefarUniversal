@@ -125,6 +125,20 @@ class User extends Authenticatable
         return $this->hasMany(Agcliente::class, 'IDCliente', 'passport');
     }
 
+    public function genealogyTreeLink()
+    {
+        return $this->hasOne(UserGenealogyTreeLink::class);
+    }
+
+    public function getGenealogyTreeIdAttribute(): ?string
+    {
+        $link = $this->relationLoaded('genealogyTreeLink')
+            ? $this->getRelation('genealogyTreeLink')
+            : $this->genealogyTreeLink()->first();
+
+        return $link?->tree_id;
+    }
+
     public function owner()
     {
         return $this->belongsTo(User::class, 'owner_id');

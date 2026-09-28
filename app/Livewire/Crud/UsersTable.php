@@ -84,7 +84,7 @@ class UsersTable extends Component
         $query = User::query()
             ->select([
                 'id', 'name', 'nombres', 'apellidos', 'email',
-                'passport', 'genealogy_tree_id', 'servicio', 'contrato', 'pay', 'created_at',
+                'passport', 'servicio', 'contrato', 'pay', 'created_at',
                 'owner_id',
                 'estado_vendedor',
                 'fecha_activacion_proveedor',
@@ -114,6 +114,7 @@ class UsersTable extends Component
                 'compras:id,id_user,servicio_id,source,servicio_hs_id,descripcion,pagado,hash_factura,metadata,paid_at,created_at,updated_at',
                 'compras.servicio:id,nombre',
                 'roles:id,name', // ✅ necesario para decidir botones sin queries extra
+                'genealogyTreeLink:id,user_id,tree_id',
             ]);
 
         $isAdmin = in_array(1, $rolesIds);

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Models\UserGenealogyTreeLink;
 use App\Services\GenealogyTreeResolver;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -31,10 +32,8 @@ class GenealogyTreeResolverTest extends TestCase
 
     public function test_it_prefers_the_passport_tree_when_both_identifiers_exist(): void
     {
-        $user = User::factory()->create([
-            'passport' => 'PASSPORT-001',
-            'genealogy_tree_id' => 'SECONDARY-001',
-        ]);
+        $user = User::factory()->create(['passport' => 'PASSPORT-001']);
+        UserGenealogyTreeLink::create(['user_id' => $user->id, 'tree_id' => 'SECONDARY-001']);
         $this->insertTree('PASSPORT-001');
         $this->insertTree('SECONDARY-001');
 
@@ -43,10 +42,8 @@ class GenealogyTreeResolverTest extends TestCase
 
     public function test_it_uses_the_secondary_identifier_when_the_passport_tree_is_missing(): void
     {
-        $user = User::factory()->create([
-            'passport' => 'PASSPORT-ABSENT',
-            'genealogy_tree_id' => 'SECONDARY-002',
-        ]);
+        $user = User::factory()->create(['passport' => 'PASSPORT-ABSENT']);
+        UserGenealogyTreeLink::create(['user_id' => $user->id, 'tree_id' => 'SECONDARY-002']);
         $this->insertTree('SECONDARY-002');
 
         $this->assertSame('SECONDARY-002', app(GenealogyTreeResolver::class)->resolveFor($user));
@@ -54,10 +51,8 @@ class GenealogyTreeResolverTest extends TestCase
 
     public function test_it_does_not_treat_an_incomplete_tree_as_a_valid_association(): void
     {
-        $user = User::factory()->create([
-            'passport' => 'PASSPORT-ABSENT',
-            'genealogy_tree_id' => 'INCOMPLETE-001',
-        ]);
+        $user = User::factory()->create(['passport' => 'PASSPORT-ABSENT']);
+        UserGenealogyTreeLink::create(['user_id' => $user->id, 'tree_id' => 'INCOMPLETE-001']);
 
         DB::table('agclientes')->insert([
             'IDCliente' => 'INCOMPLETE-001',
