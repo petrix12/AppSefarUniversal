@@ -13,7 +13,9 @@ return new class extends Migration
         }
 
         Schema::table('users', function (Blueprint $table) {
-            $table->string('genealogy_tree_id', 175)
+            // users already has many legacy VARCHAR columns. TEXT keeps this
+            // optional local-only identifier out of the InnoDB row-size limit.
+            $table->text('genealogy_tree_id')
                 ->nullable()
                 ->after('passport');
         });
