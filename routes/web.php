@@ -778,6 +778,8 @@ Route::group(['middleware' => ['auth', 'can:genealogista']], function(){
 Route::group(['middleware' => ['auth'], 'as' => 'arboles.'], function(){
     Route::get('albero/{IDCliente}', [AlberoController::class, 'arbelo'])->name('albero.index')
         ->middleware('can:genealogista');
+    Route::get('tree/user/{user}', [TreeController::class, 'treeForUser'])->name('tree.user')
+        ->middleware('can:genealogista');
     Route::get('tree/{IDCliente}', [TreeController::class, 'tree'])->name('tree.index')
         ->middleware('can:genealogista');
     Route::get('tree/{IDCliente}/branch/{id}/{gen}/{parent}', [TreeController::class, 'branch'])->name('tree.branch')

@@ -817,10 +817,10 @@
                                                 <span class="tooltip-text">Estatus del Cliente</span>
                                             </div>
 
-                                            @if (isset($user->passport))
+                                            @if ($user->passport || $user->genealogy_tree_id)
                                                 <div class="tooltip-container flex-1">
                                                     <a style="color:white!important;"
-                                                       href="{{ route('arboles.tree.index', $user->passport) }}"
+                                                       href="{{ route('arboles.tree.user', $user) }}"
                                                        class="btn btn-success w-full text-center">
                                                         <i class="fab fa-pagelines fa-fw"></i>
                                                     </a>
@@ -1005,10 +1005,10 @@
                                                             <span class="tooltip-text">Estatus del Cliente</span>
                                                         </div>
 
-                                                        @if (isset($user->passport))
+                                                        @if ($user->passport || $user->genealogy_tree_id)
                                                             <div class="tooltip-container">
                                                                 <a style="color:white!important;"
-                                                                   href="{{ route('arboles.tree.index', $user->passport) }}"
+                                                                   href="{{ route('arboles.tree.user', $user) }}"
                                                                    class="btn btn-success">
                                                                     <i class="fab fa-pagelines fa-fw"></i>
                                                                 </a>

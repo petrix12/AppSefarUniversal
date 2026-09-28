@@ -84,7 +84,7 @@ class UsersTable extends Component
         $query = User::query()
             ->select([
                 'id', 'name', 'nombres', 'apellidos', 'email',
-                'passport', 'servicio', 'contrato', 'pay', 'created_at',
+                'passport', 'genealogy_tree_id', 'servicio', 'contrato', 'pay', 'created_at',
                 'owner_id',
                 'estado_vendedor',
                 'fecha_activacion_proveedor',

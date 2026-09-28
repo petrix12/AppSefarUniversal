@@ -94,6 +94,19 @@
         </div>
 
         <div class="col-md-6 mt-3">
+          <label for="genealogy_tree_id">ID secundario del árbol</label>
+          <input
+              id="genealogy_tree_id"
+              class="form-control"
+              name="genealogy_tree_id"
+              value="{{ old('genealogy_tree_id', $user->genealogy_tree_id) }}"
+              placeholder="IDCliente del árbol, si es distinto al pasaporte"
+          >
+          <small class="form-text text-muted">Solo se usa si no existe un árbol con el número de pasaporte del cliente.</small>
+          @error('genealogy_tree_id') <small class="text-danger">{{ $message }}</small> @enderror
+        </div>
+
+        <div class="col-md-6 mt-3">
           <label>HubSpot ID</label>
           <input class="form-control" name="hs_id" value="{{ old('hs_id', $user->hs_id) }}">
           @error('hs_id') <small class="text-danger">{{ $message }}</small> @enderror

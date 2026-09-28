@@ -7,6 +7,7 @@ use App\Models\File as ClientFile;
 use App\Models\TFile;
 use App\Models\User;
 use App\Services\GenealogyService;
+use App\Services\GenealogyTreeResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -14,7 +15,10 @@ class TreeController extends Controller
 {
     private const VISIBLE_GENERATIONS = 6;
 
-    public function __construct(private GenealogyService $genealogyService)
+    public function __construct(
+        private GenealogyService $genealogyService,
+        private GenealogyTreeResolver $genealogyTreeResolver
+    )
     {
     }
 
@@ -51,6 +55,18 @@ class TreeController extends Controller
     public function tree(string $IDCliente)
     {
         return $this->renderTree($IDCliente);
+    }
+
+    public function treeForUser(User $user)
+    {
+        $treeId = $this->genealogyTreeResolver->resolveFor($user);
+
+        if ($treeId === null) {
+            return redirect()->route('crud.users.index')
+                ->with('info', 'El cliente no tiene un árbol asociado. Verifica el pasaporte o el ID secundario del árbol.');
+        }
+
+        return $this->renderTree($treeId, treeOwner: $user);
     }
 
     public function treepart(string $IDCliente, int $idToCheck, int $gentocheck, int $parenttocheck)
@@ -209,7 +225,8 @@ class TreeController extends Controller
         ?int $rootId = null,
         int $generacionBase = 0,
         int $parentnumber = 0,
-        string $checkBtn = 'no'
+        string $checkBtn = 'no',
+        ?User $treeOwner = null
     ) {
         if (!$this->verificarAutorizacion($IDCliente)) {
             return view('crud.agclientes.index');
@@ -247,8 +264,8 @@ class TreeController extends Controller
         $treeWarnings = $treeData['warnings'];
         $treeStats = $treeData['stats'];
         $tipoarchivos = TFile::all();
-        $cliente = json_decode(json_encode(User::where('passport', $IDCliente)->get()), true);
-        $user = User::where('passport', $IDCliente)->first();
+        $user = $treeOwner ?? User::where('passport', $IDCliente)->first();
+        $cliente = $user ? [$user->toArray()] : [];
         $htmlGenerado = '';
 
         return view('arboles.tree', compact(

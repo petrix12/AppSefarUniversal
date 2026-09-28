@@ -55,6 +55,7 @@ use App\Services\TeamleaderPhasePaymentService;
 use Illuminate\Support\Facades\Cache;  // ← AGREGAR ESTE
 use App\Services\UserSyncService;      // ← AGREGAR ESTE
 use App\Services\GenealogyService;     // ← AGREGAR ESTE
+use App\Services\GenealogyTreeResolver;
 use App\Jobs\SyncUserDealsJob;         // ← AGREGAR ESTE
 use App\Jobs\UpdateHubspotContactJob;  // ← AGREGAR ESTE
 use Illuminate\Support\Facades\Redis;
@@ -1686,7 +1687,8 @@ class UserController extends Controller
     // GENEALOGÍA (CON CACHE)
     // ==========================================
     $genealogyService = new GenealogyService();
-    $genealogyData = $genealogyService->getProcessedTree($user->passport);
+    $treeId = app(GenealogyTreeResolver::class)->resolveFor($user) ?? $user->passport;
+    $genealogyData = $genealogyService->getProcessedTree($treeId);
 
     $columnasparatabla = $genealogyData['columnasparatabla'];
     $hayTatarabuelo = $genealogyData['hayTatarabuelo'];
@@ -2753,6 +2755,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
             'apellidos' => 'required|string|max:255',
             'date_of_birth' => 'nullable',
             'passport' => 'required|string|max:20|unique:users,passport,' . $request->id,
+            'genealogy_tree_id' => $this->genealogyTreeIdRules(),
         ], [
             'correo.required' => 'El campo correo es obligatorio.',
             'correo.email' => 'El correo debe ser válido.',
@@ -2776,6 +2779,10 @@ private function removeDuplicatesAndSort(array $cosuser): array
 
         $user = User::findOrFail($request->id);
 
+        if ($request->has('genealogy_tree_id') && ! $this->canManageGenealogyTreeLink()) {
+            abort(403);
+        }
+
         // Obtener los datos actuales de la base de datos
         $currentData = $user->toArray();
 
@@ -2790,6 +2797,12 @@ private function removeDuplicatesAndSort(array $cosuser): array
             $filteredRequest['vinculo_antepasados'] = implode(';', $filteredRequest->get('vinculo_antepasados'));
         }
 
+        if ($filteredRequest->has('genealogy_tree_id')) {
+            $filteredRequest['genealogy_tree_id'] = filled($filteredRequest->get('genealogy_tree_id'))
+                ? trim($filteredRequest->get('genealogy_tree_id'))
+                : null;
+        }
+
         if ($filteredRequest->has('conyuge_interesado_en_proceso')) {
             $filteredRequest['conyuge_interesado_en_proceso'] = $request->boolean('conyuge_interesado_en_proceso') ? 1 : 0;
         }
@@ -2797,7 +2810,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
         $hubspotData = [];
 
         foreach ($filteredRequest as $key=>$data){
-            if ($key != "pay" && $key != "contrato"){
+            if ($key != "pay" && $key != "contrato" && $key != 'genealogy_tree_id'){
                 if (isset($hubspotFields[$key])){
                     $hubspotData[$hubspotFields[$key]] = $data;
                 } else {
@@ -2832,12 +2845,14 @@ private function removeDuplicatesAndSort(array $cosuser): array
         if (is_null($request->passport)){
             $request->validate([
                 'name' => 'required|max:254',
+                'genealogy_tree_id' => $this->genealogyTreeIdRules(),
                 'email' => 'email|required|unique:users,email,'.$user->id
             ]);
         }else{
             $request->validate([
                 'name' => 'required|max:254',
                 'passport' => 'unique:users,passport,'.$user->id,
+                'genealogy_tree_id' => $this->genealogyTreeIdRules(),
                 'email' => 'email|required|unique:users,email,'.$user->id
             ]);
         }
@@ -2846,6 +2861,11 @@ private function removeDuplicatesAndSort(array $cosuser): array
         $user->name = $request->name;
         $user->email = $request->email;
         $user->passport = $request->passport;
+        if ($request->has('genealogy_tree_id')) {
+            $user->genealogy_tree_id = $request->filled('genealogy_tree_id')
+                ? trim($request->genealogy_tree_id)
+                : null;
+        }
         $user->pay = $request->pay;
         $user->servicio = $request->servicio;
         $user->contrato = $request->contrato;
@@ -3107,6 +3127,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
             'password'  => 'nullable|string|min:8|confirmed',
 
             'passport'  => 'required|string|min:8|max:20|unique:users,passport,' . $user->id,
+            'genealogy_tree_id' => $this->genealogyTreeIdRules(),
 
             // Roles/Permisos opcionales
             'roles'         => 'array',
@@ -3121,6 +3142,9 @@ private function removeDuplicatesAndSort(array $cosuser): array
         $user->email     = $request->email;
         $user->phone     = $request->phone;
         $user->passport  = $request->passport;
+        $user->genealogy_tree_id = $request->filled('genealogy_tree_id')
+            ? trim($request->genealogy_tree_id)
+            : null;
         $user->hs_id     = $request->filled('hs_id') ? $request->hs_id : null;
         $user->tl_id     = $request->filled('tl_id') ? $request->tl_id : null;
 
@@ -3164,6 +3188,27 @@ private function removeDuplicatesAndSort(array $cosuser): array
 
         return auth()->user()->can('administrador')
             || auth()->user()->hasAnyRole($allowed);
+    }
+
+    private function genealogyTreeIdRules(): array
+    {
+        return [
+            'nullable',
+            'string',
+            'max:175',
+            function (string $attribute, mixed $value, \Closure $fail): void {
+                $treeId = trim((string) $value);
+
+                if ($treeId !== '' && ! Agcliente::where('IDCliente', $treeId)->where('IDPersona', 1)->exists()) {
+                    $fail('El ID secundario no corresponde a un árbol existente.');
+                }
+            },
+        ];
+    }
+
+    private function canManageGenealogyTreeLink(): bool
+    {
+        return auth()->check() && auth()->user()->can('genealogista');
     }
 
 }

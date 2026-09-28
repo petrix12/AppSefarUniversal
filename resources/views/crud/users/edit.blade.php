@@ -1824,6 +1824,20 @@
                                     placeholder="Ingrese el nombre tal como aparece en el pasaporte">
                             </div>
 
+                            @can('genealogista')
+                                <div style="flex: 1;" class="mb-3">
+                                    <label for="genealogy_tree_id" class="block text-sm font-medium text-gray-700">ID secundario del árbol</label>
+                                    <input
+                                        type="text"
+                                        class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                        id="genealogy_tree_id"
+                                        name="genealogy_tree_id"
+                                        value="{{ old('genealogy_tree_id', $user->genealogy_tree_id) }}"
+                                        placeholder="IDCliente del árbol, si es distinto al pasaporte">
+                                    <small class="text-muted">Se consulta únicamente si no existe árbol con el pasaporte.</small>
+                                </div>
+                            @endcan
+
                             <!-- Campo País de Expedición del Pasaporte -->
                             <div style="flex: 1;" class="mb-3">
                                 <label for="pais_de_expedicion_del_pasaporte" class="block text-sm font-medium text-gray-700">País de Expedición del Pasaporte</label>
@@ -2239,7 +2253,7 @@
                             Ir al Arbol
                         </a>
                         @else
-                        <a href="/tree/{{$user->passport}}" class="btn btn-primary mb-3">
+                        <a href="{{ route('arboles.tree.user', $user) }}" class="btn btn-primary mb-3">
                             Ir al Arbol
                         </a>
                         @endif

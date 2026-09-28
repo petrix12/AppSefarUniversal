@@ -1150,9 +1150,15 @@ class ClienteController extends Controller
         if ($redirect = $this->redirectClientUnlessOnboardingRoute('clientes.tree')) {
             return $redirect;
         }
-        $IDCliente = Auth::user()->passport;
         $user = Auth::user();
+        $IDCliente = app(\App\Services\GenealogyTreeResolver::class)->resolveFor($user);
         $cliente[0] = $user;
+
+        if ($IDCliente === null) {
+            return redirect()->route('clientes.getinfo')
+                ->with('force_getinfo', true)
+                ->with('info', 'No se pudo encontrar el árbol genealógico asociado a tu cuenta.');
+        }
 
         $genealogyService = app(GenealogyService::class);
         $treeData = $genealogyService->buildTree($IDCliente, null, 5, 0, 0, true);
