@@ -143,6 +143,6 @@
 @stop
 
 @section('js')
-<script>window.sefarMarketingTemplateBuilder={initialHtml:@json(old('body_html')),logoUrl:@json(asset('img/logo2.png'))};</script>
+<script>window.sefarMarketingTemplateBuilder={initialHtml:@json(old('body_html')),logoUrl:@json(asset('img/logo2.png')),imageUploadUrl:@json(route('marketing.templates.images.store')),csrfToken:@json(csrf_token())};</script>
 <script src="{{ asset('js/marketing-template-builder.js') }}?v={{ filemtime(public_path('js/marketing-template-builder.js')) }}"></script>
 @stop

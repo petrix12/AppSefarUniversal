@@ -200,6 +200,7 @@ Route::middleware(['auth', 'can:administrador'])
         Route::post('/lists/import', [MarketingCampaignController::class, 'importList'])->name('lists.import');
         Route::get('/templates', [MarketingCampaignController::class, 'templates'])->name('templates.index');
         Route::post('/templates', [MarketingCampaignController::class, 'storeTemplate'])->name('templates.store');
+        Route::post('/templates/images', [MarketingCampaignController::class, 'uploadTemplateImage'])->name('templates.images.store');
         Route::get('/setup', [MarketingCampaignController::class, 'setup'])->name('setup');
     });
 

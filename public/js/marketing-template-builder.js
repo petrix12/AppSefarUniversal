@@ -18,7 +18,7 @@
         heading: '<h2 style="margin:18px 0 10px;color:#073b4c;font-family:Arial,sans-serif;font-size:25px;line-height:1.25" contenteditable="true">Escribe un título</h2>',
         text: '<p style="margin:0 0 16px;color:#35424b;font-family:Arial,sans-serif;font-size:16px;line-height:1.65" contenteditable="true">Escribe aquí el contenido de tu correo. Puedes seleccionarlo, modificarlo y añadir variables de personalización.</p>',
         button: '<p style="margin:22px 0;text-align:center"><a href="https://example.com" style="display:inline-block;padding:13px 24px;border-radius:4px;background:#e5a326;color:#fff;font-family:Arial,sans-serif;font-size:16px;font-weight:700;text-decoration:none" contenteditable="true">Conocer más</a></p>',
-        image: '<p style="margin:20px 0;text-align:center"><img src="https://placehold.co/640x280/073b4c/ffffff?text=Tu+imagen" alt="Imagen de la campaña" style="display:block;max-width:100%;height:auto;margin:0 auto;border:0"></p>',
+        image: '<p style="margin:20px 0;text-align:center"><img src="https://placehold.co/640x280/f4f7f8/52636c?text=Selecciona+una+imagen" alt="Imagen de la campaña" style="display:block;max-width:100%;height:auto;margin:0 auto;border:0"></p>',
         columns: '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:20px 0;border-collapse:collapse"><tbody><tr><td width="50%" style="padding:14px;vertical-align:top;background:#f4f7f8"><h3 style="margin:0 0 8px;color:#073b4c;font-family:Arial,sans-serif;font-size:18px" contenteditable="true">Primera idea</h3><p style="margin:0;color:#35424b;font-family:Arial,sans-serif;font-size:14px;line-height:1.55" contenteditable="true">Explica aquí un beneficio o una noticia.</p></td><td width="50%" style="padding:14px;vertical-align:top"><h3 style="margin:0 0 8px;color:#073b4c;font-family:Arial,sans-serif;font-size:18px" contenteditable="true">Segunda idea</h3><p style="margin:0;color:#35424b;font-family:Arial,sans-serif;font-size:14px;line-height:1.55" contenteditable="true">Agrega otra información relevante.</p></td></tr></tbody></table>',
         highlight: '<div style="margin:20px 0;padding:20px;border-left:4px solid #e5a326;background:#fff8e8"><p style="margin:0;color:#5c4819;font-family:Arial,sans-serif;font-size:17px;line-height:1.55" contenteditable="true">Destaca aquí una fecha, condición o mensaje importante.</p></div>',
         divider: '<div style="margin:24px 0;border-top:1px solid #d9e1e4"></div>',
@@ -131,7 +131,7 @@
             <div class="form-group mb-2"><label class="template-builder-inspector-label">Fondo del bloque</label><input type="color" class="form-control" id="builder-background" value="${style.backgroundColor || '#ffffff'}"></div>
             <div class="form-group mb-2"><label class="template-builder-inspector-label">Espaciado interior</label><input type="range" class="custom-range" id="builder-padding" min="0" max="48" value="${padding}"><small class="text-muted" id="builder-padding-value">${padding} px</small></div>
             <div class="form-group mb-2"><label class="template-builder-inspector-label">Alineación</label><select class="form-control form-control-sm" id="builder-align"><option value="left">Izquierda</option><option value="center">Centro</option><option value="right">Derecha</option></select></div>
-            ${image ? `<div class="form-group mb-2"><label class="template-builder-inspector-label">URL de imagen</label><input type="url" class="form-control form-control-sm" id="builder-image-url" value="${escapeHtml(image.getAttribute('src') || '')}"><label class="template-builder-inspector-label mt-2">Texto alternativo</label><input type="text" class="form-control form-control-sm" id="builder-image-alt" value="${escapeHtml(image.getAttribute('alt') || '')}"></div>` : ''}
+            ${image ? `<div class="form-group mb-2"><label class="template-builder-inspector-label">Imagen</label><div class="d-flex align-items-center mb-2"><button type="button" class="btn btn-outline-primary btn-sm" id="builder-upload-image"><i class="fas fa-cloud-upload-alt mr-1"></i>Subir a S3</button><input type="file" class="d-none" id="builder-image-file" accept="image/jpeg,image/png,image/gif"><small class="text-muted ml-2" id="builder-image-upload-status">JPG, PNG o GIF · Máx. 5 MB</small></div><label class="template-builder-inspector-label">URL de imagen</label><input type="url" class="form-control form-control-sm" id="builder-image-url" value="${escapeHtml(image.getAttribute('src') || '')}"><label class="template-builder-inspector-label mt-2">Texto alternativo</label><input type="text" class="form-control form-control-sm" id="builder-image-alt" value="${escapeHtml(image.getAttribute('alt') || '')}"></div>` : ''}
             ${link ? `<div class="form-group mb-0"><label class="template-builder-inspector-label">URL del botón o enlace</label><input type="url" class="form-control form-control-sm" id="builder-link-url" value="${escapeHtml(link.getAttribute('href') || '')}"></div>` : ''}
         `;
         actions.classList.remove('d-none');
@@ -146,6 +146,32 @@
         inspector.querySelector('#builder-image-url')?.addEventListener('input', (event) => image.setAttribute('src', event.target.value));
         inspector.querySelector('#builder-image-alt')?.addEventListener('input', (event) => image.setAttribute('alt', event.target.value));
         inspector.querySelector('#builder-link-url')?.addEventListener('input', (event) => link.setAttribute('href', event.target.value));
+        inspector.querySelector('#builder-upload-image')?.addEventListener('click', () => inspector.querySelector('#builder-image-file').click());
+        inspector.querySelector('#builder-image-file')?.addEventListener('change', async (event) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+
+            const status = inspector.querySelector('#builder-image-upload-status');
+            status.textContent = 'Subiendo imagen a S3…';
+            try {
+                const payload = new FormData();
+                payload.append('image', file);
+                const response = await fetch(config.imageUploadUrl, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {'X-CSRF-TOKEN': config.csrfToken, Accept: 'application/json'},
+                    body: payload,
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(result.message || 'No se pudo cargar la imagen.');
+                image.setAttribute('src', result.url);
+                renderInspector();
+                inspector.querySelector('#builder-image-upload-status').textContent = 'Imagen cargada en S3.';
+            } catch (error) {
+                status.textContent = error.message || 'No se pudo cargar la imagen.';
+                status.classList.add('text-danger');
+            }
+        });
     };
 
     document.querySelectorAll('[data-block]').forEach((button) => {

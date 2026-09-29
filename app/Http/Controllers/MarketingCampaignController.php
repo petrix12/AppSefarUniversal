@@ -11,6 +11,7 @@ use App\Services\MarketingCampaignDispatcher;
 use App\Services\MarketingEmailRenderer;
 use App\Services\MarketingSesSender;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class MarketingCampaignController extends Controller
@@ -184,6 +185,38 @@ class MarketingCampaignController extends Controller
             'created_by_user_id' => $request->user()->id,
         ]);
         return back()->with('success', 'Plantilla guardada.');
+    }
+
+    public function uploadTemplateImage(Request $request)
+    {
+        $data = $request->validate([
+            'image' => ['required', 'image', 'mimes:jpg,jpeg,png,gif', 'max:5120'],
+        ]);
+
+        $image = $data['image'];
+        $path = 'marketing/templates/'.now()->format('Y/m');
+        $filename = (string) Str::uuid().'.'.$image->extension();
+
+        try {
+            $storedPath = Storage::disk('s3')->putFileAs($path, $image, $filename, [
+                'visibility' => 'public',
+                'ContentType' => $image->getMimeType(),
+                'CacheControl' => 'public, max-age=31536000, immutable',
+            ]);
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return response()->json(['message' => 'No se pudo cargar la imagen en S3.'], 422);
+        }
+
+        if ($storedPath === false) {
+            return response()->json(['message' => 'No se pudo cargar la imagen en S3.'], 422);
+        }
+
+        return response()->json([
+            'path' => $storedPath,
+            'url' => Storage::disk('s3')->url($storedPath),
+        ]);
     }
 
     public function setup()
