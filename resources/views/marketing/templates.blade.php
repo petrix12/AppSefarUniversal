@@ -79,6 +79,17 @@
             </div>
 
             <div class="col-xl-3">
+                <div class="card card-outline card-warning">
+                    <div class="card-header"><h3 class="card-title"><i class="fas fa-font mr-1"></i>Estilo de plantilla</h3></div>
+                    <div class="card-body">
+                        <label for="template-builder-global-text-color" class="mb-1">Color de todos los textos</label>
+                        <div class="input-group">
+                            <input type="color" class="form-control" id="template-builder-global-text-color" value="#35424b" aria-label="Color global de textos">
+                            <div class="input-group-append"><button type="button" class="btn btn-warning" id="template-builder-apply-text-color">Aplicar</button></div>
+                        </div>
+                        <small class="text-muted d-block mt-2">Actualiza títulos, párrafos, enlaces, botones y textos de columnas.</small>
+                    </div>
+                </div>
                 <div class="card card-outline card-info">
                     <div class="card-header"><h3 class="card-title"><i class="fas fa-sliders-h mr-1"></i>Bloque seleccionado</h3></div>
                     <div class="card-body" id="template-builder-inspector"><p class="text-muted mb-0">Selecciona un bloque para cambiar su estilo, enlace o imagen.</p></div>

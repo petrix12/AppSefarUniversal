@@ -10,6 +10,7 @@
     const actions = document.getElementById('template-builder-block-actions');
     const counter = document.getElementById('template-builder-count');
     const logoUrl = config.logoUrl || '/img/logonormal.png';
+    const globalTextColor = document.getElementById('template-builder-global-text-color');
     let selectedBlock = null, activeEditor = null, draggingBlock = null;
 
     const templates = {
@@ -62,6 +63,16 @@
         block.innerHTML = html || templates[type];
         return block;
     };
+    const applyTextColor = (root, color) => {
+        root.querySelectorAll('*').forEach((element) => {
+            const hasText = [...element.childNodes].some((node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+            if (hasText) element.style.color = color;
+        });
+    };
+    const applyGlobalTextColor = (color) => {
+        canvas.dataset.textColor = color;
+        applyTextColor(canvas, color);
+    };
     const count = () => {
         const total = canvas.querySelectorAll(':scope > .template-builder-block').length;
         counter.textContent = `${total} ${total === 1 ? 'bloque' : 'bloques'}`;
@@ -75,6 +86,7 @@
     const add = (type, before = null) => {
         if (!templates[type]) return;
         const block = makeBlock(type);
+        if (canvas.dataset.textColor) applyTextColor(block, canvas.dataset.textColor);
         canvas.insertBefore(block, before);
         select(block);
         count();
@@ -102,6 +114,7 @@
             return;
         }
         nodes.forEach((node) => canvas.appendChild(makeBlock('imported', node.outerHTML || escapeHtml(node.textContent))));
+        if (canvas.dataset.textColor) applyTextColor(canvas, canvas.dataset.textColor);
         select(null);
         count();
     };
@@ -176,6 +189,7 @@
         activeEditor.focus();
         document.execCommand('insertText', false, button.dataset.variable);
     }));
+    document.getElementById('template-builder-apply-text-color').addEventListener('click', () => applyGlobalTextColor(globalTextColor.value));
     document.getElementById('template-builder-duplicate').addEventListener('click', () => {
         if (!selectedBlock) return;
         const copy = selectedBlock.cloneNode(true);
