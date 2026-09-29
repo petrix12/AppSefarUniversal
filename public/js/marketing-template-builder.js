@@ -14,7 +14,7 @@
     let selectedBlock = null, activeEditor = null, draggingBlock = null;
 
     const templates = {
-        hero: '<div style="margin:0 0 18px;padding:36px 28px;background:#073b4c;color:#fff;text-align:center"><p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase" contenteditable="true">Sefar Universal</p><h1 style="margin:0;font-family:Arial,sans-serif;font-size:30px;line-height:1.2" contenteditable="true">Un mensaje importante para ti</h1></div>',
+        hero: '<div style="margin:0 0 18px;padding:36px 28px;background:#073b4c;color:#fff;text-align:center"><p style="margin:0 0 8px;color:#fff;font-family:Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase" contenteditable="true">Sefar Universal</p><h1 style="margin:0;color:#fff;font-family:Arial,sans-serif;font-size:30px;line-height:1.2" contenteditable="true">Un mensaje importante para ti</h1></div>',
         heading: '<h2 style="margin:18px 0 10px;color:#073b4c;font-family:Arial,sans-serif;font-size:25px;line-height:1.25" contenteditable="true">Escribe un título</h2>',
         text: '<p style="margin:0 0 16px;color:#35424b;font-family:Arial,sans-serif;font-size:16px;line-height:1.65" contenteditable="true">Escribe aquí el contenido de tu correo. Puedes seleccionarlo, modificarlo y añadir variables de personalización.</p>',
         button: '<p style="margin:22px 0;text-align:center"><a href="https://example.com" style="display:inline-block;padding:13px 24px;border-radius:4px;background:#e5a326;color:#fff;font-family:Arial,sans-serif;font-size:16px;font-weight:700;text-decoration:none" contenteditable="true">Conocer más</a></p>',
