@@ -59,6 +59,7 @@ use Illuminate\Support\Facades\Cache;  // ← AGREGAR ESTE
 use App\Services\UserSyncService;      // ← AGREGAR ESTE
 use App\Services\GenealogyService;     // ← AGREGAR ESTE
 use App\Services\GenealogyTreeResolver;
+use App\Services\GenealogyTreeIdMigrationService;
 use App\Services\UnifiedClientProfileService;
 use App\Jobs\SyncUserDealsJob;         // ← AGREGAR ESTE
 use App\Jobs\UpdateHubspotContactJob;  // ← AGREGAR ESTE
@@ -2998,31 +2999,44 @@ private function removeDuplicatesAndSort(array $cosuser): array
         return view('crud.users.fix');
     }
 
-    public function fixpassportprocess(Request $request)
+    public function fixpassportprocess(Request $request, GenealogyTreeIdMigrationService $treeIdMigration)
     {
-        $bad_passport = trim($request->oldpass);
-        $good_passport = trim($request->newpass);
+        $request->validate([
+            'old_id' => ['required', 'string', 'max:175'],
+            'new_id' => ['required', 'string', 'max:175'],
+            'action' => ['required', 'in:preview,migrate'],
+        ]);
 
-        $user = json_decode(json_encode(DB::table('users')->where('passport', $bad_passport)->get()), true);
+        $oldId = trim((string) $request->input('old_id'));
+        $newId = trim((string) $request->input('new_id'));
 
-        if ( count($user) == 0 ){
-            return redirect()->route('fixpassport')->with(['error' => 'No hay información registrada en la base de datos con el pasaporte '. $bad_passport ."."]);
+        try {
+            if ($request->input('action') === 'preview') {
+                return back()
+                    ->withInput()
+                    ->with('tree_id_migration_preview', $treeIdMigration->preview($oldId, $newId));
+            }
+
+            $request->validate([
+                'confirmation' => [
+                    'required',
+                    function (string $attribute, mixed $value, \Closure $fail) use ($newId): void {
+                        if (trim((string) $value) !== $newId) {
+                            $fail('Escribe exactamente el IDCliente nuevo para confirmar la migración.');
+                        }
+                    },
+                ],
+            ]);
+
+            $result = $treeIdMigration->migrate($oldId, $newId);
+
+            return redirect()
+                ->route('fixpassport')
+                ->with('tree_id_migration_result', $result)
+                ->with('success', 'El árbol se migró correctamente.');
+        } catch (\DomainException $exception) {
+            return back()->withInput()->with('error', $exception->getMessage());
         }
-
-        DB::table('users')->where('passport', $good_passport)->update(['passport' => $good_passport."X"]);
-        DB::table('users')->where('passport', $bad_passport)->update(['passport' => $good_passport]);
-
-        DB::table('agclientes')->where('IDCliente', $good_passport)->update(['IDCliente' => $good_passport."X"]);
-        DB::table('agclientes')->where('IDCliente', $bad_passport)->update(['IDCliente' => $good_passport]);
-
-        DB::table('files')->where('IDCliente', $good_passport)->update(['IDCliente' => $good_passport."X"]);
-        DB::table('files')->where('IDCliente', $bad_passport)->update(['IDCliente' => $good_passport]);
-
-        DB::table('users')->where('passport', $good_passport."X")->delete();
-        DB::table('agclientes')->where('IDCliente', $good_passport."X")->delete();
-        DB::table('files')->where('IDCliente', $good_passport."X")->delete();
-
-        return redirect()->route('fixpassport')->with(['success' => 'Se ha arreglado satisfactoriamente el pasaporte del cliente ' . $user[0]["name"] . '. Verifique su arbol <a href="/tree/'.$good_passport.'">aquí</a>.']);
     }
 
     public function getemail(Request $request)
