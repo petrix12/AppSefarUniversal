@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Agcliente;
 use App\Models\UserGenealogyTreeLink;
 use App\Models\UserChangeAudit;
+use App\Models\CustomFieldValue;
 use Illuminate\Http\Request;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Spatie\Permission\Models\Permission;
@@ -58,6 +59,7 @@ use Illuminate\Support\Facades\Cache;  // ← AGREGAR ESTE
 use App\Services\UserSyncService;      // ← AGREGAR ESTE
 use App\Services\GenealogyService;     // ← AGREGAR ESTE
 use App\Services\GenealogyTreeResolver;
+use App\Services\UnifiedClientProfileService;
 use App\Jobs\SyncUserDealsJob;         // ← AGREGAR ESTE
 use App\Jobs\UpdateHubspotContactJob;  // ← AGREGAR ESTE
 use Illuminate\Support\Facades\Redis;
@@ -1938,6 +1940,17 @@ class UserController extends Controller
         $formulario001 = $this->hubspotService->formulario001ForUser($user);
     }
 
+    $teamleaderProfileCustomValues = [];
+    if (Schema::hasTable('custom_field_values') && Schema::hasTable('custom_field_definitions')) {
+        $teamleaderProfileCustomValues = CustomFieldValue::query()
+            ->with('definition:id,key')
+            ->forEntity('client', $user->id)
+            ->whereHas('definition', fn ($query) => $query->whereIn('key', array_keys($this->teamleaderExtensibleProfileFields())))
+            ->get()
+            ->mapWithKeys(fn (CustomFieldValue $value) => [$value->definition->key => $value->decoded_value])
+            ->all();
+    }
+
     $html = view('crud.users.edit', compact(
         'clientTeamleaderHistory',
         'documentRequests',
@@ -1967,6 +1980,7 @@ class UserController extends Controller
         'userChangeAudits',
         'teamleaderMigration',
         'teamleaderProjectPayments',
+        'teamleaderProfileCustomValues',
         'servicios',
         'ownerOptions',
         'formulario001',
@@ -2870,8 +2884,12 @@ private function removeDuplicatesAndSort(array $cosuser): array
             }
         }
 
+        $teamleaderExtensibleFields = $filteredRequest->only(array_keys($this->teamleaderExtensibleProfileFields()));
+        $filteredRequest = $filteredRequest->except(array_keys($this->teamleaderExtensibleProfileFields()));
+
         // Inspeccionar resultados
         $user->update($filteredRequest->toArray());
+        $this->syncTeamleaderExtensibleProfileFields($user, $teamleaderExtensibleFields);
         if ($hasGenealogyTreeId) {
             $this->syncGenealogyTreeId($user, $genealogyTreeId);
         }
@@ -3292,6 +3310,53 @@ private function removeDuplicatesAndSort(array $cosuser): array
             && auth()->user()->getRoleNames()->contains(
                 fn (string $role): bool => mb_strtolower(trim($role)) !== 'cliente'
             );
+    }
+
+    /**
+     * Teamleader properties without a users-table column. They use the
+     * extensible profile store, keeping the legacy users row from growing.
+     */
+    private function teamleaderExtensibleProfileFields(): array
+    {
+        return [
+            'nombre_proyecto' => ['label' => 'Nombre proyecto', 'group' => '1.- Proyecto'],
+            'linaje' => ['label' => 'Linaje', 'group' => '4.- Familia'],
+            'linea_de_venezuela' => ['label' => 'Línea de Venezuela', 'group' => '4.- Familia'],
+            'numero_pasaporte_responsable_pago' => ['label' => 'N° pasaporte responsable pago', 'group' => 'Responsable del pago'],
+        ];
+    }
+
+    private function syncTeamleaderExtensibleProfileFields(User $user, array $values): void
+    {
+        if ($values === [] || ! Schema::hasTable('custom_field_values') || ! Schema::hasTable('custom_field_definitions')) {
+            return;
+        }
+
+        $profile = app(UnifiedClientProfileService::class);
+        $oldValues = [];
+        $newValues = [];
+
+        foreach ($values as $key => $value) {
+            $definition = $profile->defineField(array_merge(
+                ['key' => $key, 'data_type' => 'text'],
+                $this->teamleaderExtensibleProfileFields()[$key],
+            ));
+            $previous = CustomFieldValue::query()
+                ->where('custom_field_definition_id', $definition->id)
+                ->forEntity('client', $user->id)
+                ->first()?->decoded_value;
+
+            $profile->setValue($user, $definition, $value, 'app');
+
+            if ((string) $previous !== (string) $value) {
+                $oldValues[$key] = $previous;
+                $newValues[$key] = $value;
+            }
+        }
+
+        if ($newValues !== []) {
+            User::recordChangeAudit($user, $oldValues, $newValues);
+        }
     }
 
 }
