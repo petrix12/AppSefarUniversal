@@ -988,7 +988,7 @@ class HubspotService
     /**
      * Obtener un contacto por ID.
      */
-    public function getContactById($id)
+    public function getContactById($id, bool $includeAllProperties = false)
     {
         try {
             // Campos adicionales requeridos de HubSpot
@@ -1013,12 +1013,12 @@ class HubspotService
             });
 
             // Combinar los campos coincidentes con los requeridos
-            $propertyNames = array_merge(
-                array_map(function ($property) {
-                    return $property->getName();
-                }, $matchingFields),
-                $requiredHubspotFields
-            );
+            $propertyNames = $includeAllProperties
+                ? array_map(fn ($property) => $property->getName(), $allProperties)
+                : array_merge(
+                    array_map(fn ($property) => $property->getName(), $matchingFields),
+                    $requiredHubspotFields
+                );
 
             // Eliminar duplicados en las propiedades
             $propertyNames = array_unique($propertyNames);
@@ -1364,7 +1364,7 @@ class HubspotService
         return $updated;
     }
 
-    public function getDealsByContactId(string $contactId): array
+    public function getDealsByContactId(string $contactId, bool $includeSystemProperties = false): array
     {
         try {
             // 1. Obtener todas las propiedades de "deals"
@@ -1395,34 +1395,34 @@ class HubspotService
                 return [];
             }
 
-            // 4. Crear la request para leer en batch los negocios obtenidos
-            $batchRequest = new BatchReadInputSimplePublicObjectId([
-                'properties' => $properties, // las propiedades de deals que queremos
-                'inputs' => array_map(
-                    fn($id) => ['id' => $id],
-                    $dealIds
-                ),
-            ]);
+            // HubSpot batch endpoints accept up to 100 records per request.
+            $deals = [];
 
-            // 5. Hacemos la lectura batch de Deals
-            $dealsResponse = $this->hubspot->crm()->deals()->batchApi()->read($batchRequest);
+            foreach (array_chunk($dealIds, 100) as $dealIdChunk) {
+                $batchRequest = new BatchReadInputSimplePublicObjectId([
+                    'properties' => $properties,
+                    'inputs' => array_map(fn ($dealId) => ['id' => $dealId], $dealIdChunk),
+                ]);
 
-            // 6. Retornamos un array con la información filtrada de cada deal
-            return array_map(function ($deal) {
-                $allProperties = $deal->getProperties();
+                $dealsResponse = $this->hubspot->crm()->deals()->batchApi()->read($batchRequest);
+                foreach ($dealsResponse->getResults() as $deal) {
+                    $allProperties = $deal->getProperties();
+                    $filteredProperties = $includeSystemProperties
+                        ? $allProperties
+                        : array_filter(
+                            $allProperties,
+                            fn ($key) => strpos($key, 'hs_') !== 0,
+                            ARRAY_FILTER_USE_KEY
+                        );
 
-                // Filtrar propiedades que no comiencen con "hs_"
-                $filteredProperties = array_filter(
-                    $allProperties,
-                    fn($key) => strpos($key, 'hs_') !== 0,
-                    ARRAY_FILTER_USE_KEY
-                );
+                    $deals[] = [
+                        'id' => $deal->getId(),
+                        'properties' => $filteredProperties,
+                    ];
+                }
+            }
 
-                return [
-                    'id' => $deal->getId(),
-                    'properties' => $filteredProperties,
-                ];
-            }, $dealsResponse->getResults());
+            return $deals;
 
         } catch (\Exception $e) {
             throw new \Exception('Error al obtener los negocios asociados al contacto: ' . $e->getMessage());

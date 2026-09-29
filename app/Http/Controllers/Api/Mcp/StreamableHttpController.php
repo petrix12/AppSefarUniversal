@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\ClientCosSnapshotService;
 use App\Services\Mcp\McpAuditLogger;
+use App\Services\Mcp\SefarMcpAdminToolService;
 use App\Services\Mcp\SefarMcpReadToolService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -29,15 +30,18 @@ class StreamableHttpController extends Controller
     private ClientCosSnapshotService $snapshots;
     private McpAuditLogger $audit;
     private SefarMcpReadToolService $readTools;
+    private SefarMcpAdminToolService $adminTools;
 
     public function __invoke(
         Request $request,
         ClientCosSnapshotService $snapshots,
-        SefarMcpReadToolService $readTools
+        SefarMcpReadToolService $readTools,
+        SefarMcpAdminToolService $adminTools
     ): Response
     {
         $this->snapshots = $snapshots;
         $this->readTools = $readTools;
+        $this->adminTools = $adminTools;
         $this->audit = $this->auditLogger();
 
         if (! $this->originAllowed($request)) {
@@ -135,15 +139,16 @@ class StreamableHttpController extends Controller
                         'MCP privado de App Sefar ejecutado dentro de Laravel.',
                         'La autenticacion usa Bearer Token de Sanctum con permiso mcp:read.',
                         'Usuarios con rol Cliente no pueden usar este MCP.',
+                        'Las herramientas integrales y de edicion de perfiles solo estan disponibles para usuarios con rol Administrador.',
                         'Las consultas y herramientas se auditan antes y despues de ejecutarse.',
                     ]),
                 ]),
                 'ping' => $this->response($id, new \stdClass()),
                 'tools/list' => $this->response($id, [
                     'resultType' => 'complete',
-                    'tools' => $this->tools(),
+                    'tools' => $this->tools($request),
                     'ttlMs' => 300000,
-                    'cacheScope' => 'public',
+                    'cacheScope' => 'private',
                 ]),
                 'tools/call' => $this->handleToolCall($request, $id, $params),
                 'resources/list' => $this->response($id, [
@@ -161,9 +166,9 @@ class StreamableHttpController extends Controller
         }
     }
 
-    private function tools(): array
+    private function tools(Request $request): array
     {
-        return array_merge([
+        $tools = array_merge([
             [
                 'name' => 'estado_mcp',
                 'description' => 'Verifica que el token MCP esta autenticado y muestra el usuario interno asociado.',
@@ -244,6 +249,12 @@ class StreamableHttpController extends Controller
                 ],
             ],
         ], $this->readTools->tools());
+
+        if ($request->user() && $this->adminTools->isAdministrator($request->user())) {
+            $tools = array_merge($tools, $this->adminTools->tools());
+        }
+
+        return $tools;
     }
 
     private function handleToolCall(Request $request, mixed $id, array $params): array
@@ -260,7 +271,11 @@ class StreamableHttpController extends Controller
             'transport' => 'streamable_http',
             'actor' => $actor,
             'tool' => $name,
-            'arguments' => $this->audit->sanitize($arguments),
+            'arguments' => $this->audit->sanitize(
+                $this->adminTools->supports($name)
+                    ? $this->adminTools->auditArguments($name, $arguments)
+                    : $arguments
+            ),
             'target' => $this->auditTarget($name, $arguments),
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
@@ -308,6 +323,15 @@ class StreamableHttpController extends Controller
 
     private function callTool(Request $request, string $name, array $arguments): array
     {
+        if ($this->adminTools->supports($name)) {
+            $user = $request->user();
+            if (! $user || ! $this->adminTools->isAdministrator($user)) {
+                throw new RuntimeException('Esta herramienta solo esta disponible para usuarios con rol Administrador.');
+            }
+
+            return $this->adminTools->call($name, $arguments);
+        }
+
         if ($this->readTools->supports($name)) {
             return $this->readTools->call($name, $arguments);
         }
@@ -616,6 +640,10 @@ class StreamableHttpController extends Controller
             return $this->readTools->auditTarget($tool, $arguments);
         }
 
+        if ($this->adminTools->supports($tool)) {
+            return $this->adminTools->auditTarget($tool, $arguments);
+        }
+
         return match ($tool) {
             'buscar_cliente' => [
                 'type' => 'client_search',
@@ -657,6 +685,10 @@ class StreamableHttpController extends Controller
 
         if ($this->readTools->supports($tool)) {
             return array_merge($summary, $this->readTools->summarizeResult($tool, $result));
+        }
+
+        if ($this->adminTools->supports($tool)) {
+            return array_merge($summary, $this->adminTools->summarizeResult($tool, $result));
         }
 
         return array_merge($summary, match ($tool) {
