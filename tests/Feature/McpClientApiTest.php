@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\ClientCosSnapshotService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\Sanctum;
 use Mockery;
 use Spatie\Permission\Models\Role;
@@ -68,6 +69,52 @@ class McpClientApiTest extends TestCase
         $this->assertContains('listar_documentos_cliente', $toolNames);
         $this->assertContains('listar_tareas_cliente', $toolNames);
         $this->assertContains('buscar_servicios', $toolNames);
+        $this->assertContains('revisar_cliente_integral', $toolNames);
+        $this->assertContains('actualizar_cliente_app', $toolNames);
+    }
+
+    public function test_integral_admin_review_includes_all_safe_user_fields_and_genealogy_root(): void
+    {
+        Sanctum::actingAs($this->internalUser(), ['mcp:read']);
+
+        $client = User::factory()->create([
+            'name' => 'Cliente Integral MCP',
+            'email' => 'integral-mcp@example.test',
+            'passport' => 'TREE-MCP-123',
+            'phone' => '+10000000000',
+        ]);
+        $client->syncRoles(['Cliente']);
+
+        Schema::create('agclientes', function ($table): void {
+            $table->bigIncrements('id');
+            $table->string('IDCliente')->index();
+            $table->integer('IDPersona');
+            $table->string('Nombres')->nullable();
+            $table->string('Apellidos')->nullable();
+        });
+        Schema::table('agclientes', function ($table): void {
+            $table->unique(['IDCliente', 'IDPersona']);
+        });
+        \DB::table('agclientes')->insert([
+            'IDCliente' => 'TREE-MCP-123',
+            'IDPersona' => 1,
+            'Nombres' => 'Cliente',
+            'Apellidos' => 'Integral',
+        ]);
+
+        $this->postJson('/mcp', $this->mcpRequest('tools/call', [
+            'name' => 'revisar_cliente_integral',
+            'arguments' => ['id' => $client->id],
+        ]), $this->mcpHeaders('tools/call', 'revisar_cliente_integral'))
+            ->assertOk()
+            ->assertJsonPath('result.isError', false)
+            ->assertJsonPath('result.structuredContent.data.sources.app.data.client_record.fields.email', 'integral-mcp@example.test')
+            ->assertJsonPath('result.structuredContent.data.sources.app.data.client_record.fields.phone', '+10000000000')
+            ->assertJsonPath('result.structuredContent.data.sources.app.data.genealogy_tree.root_exists', true)
+            ->assertJsonPath('result.structuredContent.data.sources.app.data.genealogy_tree.roots.0.IDCliente', 'TREE-MCP-123')
+            ->assertJsonPath('result.structuredContent.data.sources.app.data.genealogy_tree.people_count', 1)
+            ->assertJsonMissingPath('result.structuredContent.data.sources.app.data.client_record.fields.password')
+            ->assertJsonPath('result.structuredContent.meta.authentication_secrets_included', false);
     }
 
     public function test_streamable_mcp_rejects_users_with_cliente_role(): void

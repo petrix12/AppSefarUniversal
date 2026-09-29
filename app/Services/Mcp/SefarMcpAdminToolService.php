@@ -2,6 +2,7 @@
 
 namespace App\Services\Mcp;
 
+use App\Models\Agcliente;
 use App\Models\TlContact;
 use App\Models\TlInvoice;
 use App\Models\User;
@@ -35,7 +36,7 @@ class SefarMcpAdminToolService
         return [
             [
                 'name' => 'revisar_cliente_integral',
-                'description' => 'Consulta, para un cliente, todos los datos relacionados que la app tiene disponibles en App Sefar, HubSpot y Teamleader. Es exclusiva para administradores; no incluye contrasenas ni descarga el contenido de archivos.',
+                'description' => 'Consulta la ficha completa disponible de un cliente en App Sefar, su arbol genealogico y los datos relacionados en HubSpot y Teamleader. Es exclusiva para administradores; omite secretos de autenticacion y no descarga el contenido de archivos.',
                 'inputSchema' => $this->clientIdSchema(),
             ],
             [
@@ -129,7 +130,9 @@ class SefarMcpAdminToolService
     {
         $client = $this->findClient($arguments['id'] ?? null);
         $app = [
+            'client_record' => $this->completeClientRecord($client),
             'profile' => $this->appData->call('resumen_cliente', ['id' => $client->id]),
+            'genealogy_tree' => $this->genealogyTreeSnapshot($client),
             'cos_cache' => [
                 'ready' => (bool) $client->cosready,
                 'expires_at' => $client->arraycos_expire?->toIso8601String(),
@@ -158,10 +161,91 @@ class SefarMcpAdminToolService
                 'external_sources_refreshed' => ['hubspot' => true, 'teamleader' => true],
                 'app_records_are_live' => true,
                 'passwords_included' => false,
+                'authentication_secrets_included' => false,
                 'file_contents_downloaded' => false,
-                'record_limits' => ['businesses' => 50, 'purchases' => 50, 'invoices' => 50, 'documents' => 100, 'tasks' => 50],
+                'record_limits' => ['businesses' => 50, 'purchases' => 50, 'invoices' => 50, 'documents' => 100, 'tasks' => 50, 'genealogy_tree_people' => 1000],
                 'app_records_truncated' => $this->appRecordsTruncated($app),
             ],
+        ];
+    }
+
+    private function completeClientRecord(User $client): array
+    {
+        $attributes = $client->getAttributes();
+        $omitted = array_values(array_intersect(array_keys($attributes), $client->getHidden()));
+
+        foreach ($client->getHidden() as $field) {
+            unset($attributes[$field]);
+        }
+
+        return [
+            'fields' => $attributes,
+            'roles' => $client->getRoleNames()->values()->all(),
+            'omitted_sensitive_fields' => $omitted,
+        ];
+    }
+
+    private function genealogyTreeSnapshot(User $client): array
+    {
+        if (! Schema::hasTable('agclientes')) {
+            return [
+                'status' => 'unavailable',
+                'reason' => 'La tabla agclientes no esta disponible.',
+                'tree_ids_checked' => [],
+                'roots' => [],
+                'people' => [],
+            ];
+        }
+
+        $treeIds = array_values(array_unique(array_filter([
+            trim((string) $client->passport),
+            trim((string) $client->genealogy_tree_id),
+        ], fn (string $id) => $id !== '')));
+
+        if ($treeIds === []) {
+            return [
+                'status' => 'unlinked',
+                'reason' => 'El perfil no tiene pasaporte ni ID alternativo de arbol.',
+                'tree_ids_checked' => [],
+                'roots' => [],
+                'people' => [],
+            ];
+        }
+
+        $query = Agcliente::query()->whereIn('IDCliente', $treeIds);
+        $total = (clone $query)->count();
+        $limit = 1000;
+        $people = $query
+            ->orderBy('IDCliente')
+            ->orderBy('IDPersona')
+            ->limit($limit)
+            ->get()
+            ->map(fn (Agcliente $person) => $person->getAttributes())
+            ->values()
+            ->all();
+
+        $roots = Agcliente::query()
+            ->whereIn('IDCliente', $treeIds)
+            ->where('IDPersona', 1)
+            ->get()
+            ->map(fn (Agcliente $person) => [
+                'IDCliente' => $person->IDCliente,
+                'IDPersona' => $person->IDPersona,
+                'Nombres' => $person->Nombres,
+                'Apellidos' => $person->Apellidos,
+            ])
+            ->values()
+            ->all();
+
+        return [
+            'status' => 'ok',
+            'tree_ids_checked' => $treeIds,
+            'roots' => $roots,
+            'root_exists' => $roots !== [],
+            'people_count' => $total,
+            'people_returned' => count($people),
+            'truncated' => $total > $limit,
+            'people' => $people,
         ];
     }
 
@@ -281,6 +365,7 @@ class SefarMcpAdminToolService
             'invoices' => ($counts['facturas'] ?? 0) > 50,
             'documents' => ($counts['documentos'] ?? 0) > 100 || ($counts['solicitudes_documentos'] ?? 0) > 100,
             'tasks' => ($counts['tareas'] ?? 0) > 50,
+            'genealogy_tree' => (bool) data_get($app, 'genealogy_tree.truncated', false),
         ];
     }
 
