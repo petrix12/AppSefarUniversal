@@ -9,6 +9,7 @@
     const inspector = document.getElementById('template-builder-inspector');
     const actions = document.getElementById('template-builder-block-actions');
     const counter = document.getElementById('template-builder-count');
+    const logoUrl = config.logoUrl || '/img/logonormal.png';
     let selectedBlock = null, activeEditor = null, draggingBlock = null;
 
     const templates = {
@@ -27,6 +28,22 @@
     const defaults = ['hero', 'heading', 'text', 'button'];
 
     const escapeHtml = (value) => String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
+    const brandMarkup = () => `<div data-sefar-brand-header="true" style="margin:0 0 22px;padding:24px 20px;border-bottom:3px solid #e5a326;background:#ffffff;text-align:center"><img src="${escapeHtml(logoUrl)}" alt="Sefar Universal" width="230" style="display:block;width:230px;max-width:100%;height:auto;margin:0 auto;border:0"></div>`;
+    const makeBrandHeader = () => {
+        const header = document.createElement('div');
+        header.className = 'template-builder-brand-header';
+        header.innerHTML = brandMarkup();
+        return header;
+    };
+    const ensureBrandHeader = () => {
+        const headers = [...canvas.querySelectorAll(':scope > .template-builder-brand-header')];
+        headers.slice(1).forEach((header) => header.remove());
+        if (headers[0]) {
+            canvas.prepend(headers[0]);
+        } else {
+            canvas.prepend(makeBrandHeader());
+        }
+    };
     const sanitizeHtml = (html) => {
         const doc = document.implementation.createHTMLDocument('email-template');
         doc.body.innerHTML = html;
@@ -64,6 +81,8 @@
     };
     const exportHtml = () => {
         const copy = canvas.cloneNode(true);
+        if (!copy.querySelector('[data-sefar-brand-header]')) copy.insertAdjacentHTML('afterbegin', brandMarkup());
+        copy.querySelectorAll('.template-builder-brand-header').forEach((header) => header.classList.remove('template-builder-brand-header'));
         copy.querySelectorAll('.template-builder-block').forEach((block) => {
             block.classList.remove('template-builder-block','is-selected','is-dragging');
             block.removeAttribute('data-block-type');
@@ -74,8 +93,10 @@
     const importHtml = (html) => {
         const doc = document.implementation.createHTMLDocument('email-template');
         doc.body.innerHTML = sanitizeHtml(html);
+        doc.querySelectorAll('[data-sefar-brand-header]').forEach((header) => header.remove());
         const nodes = [...doc.body.childNodes].filter((node) => node.nodeType === Node.ELEMENT_NODE || node.textContent.trim());
         canvas.innerHTML = '';
+        ensureBrandHeader();
         if (!nodes.length) {
             defaults.forEach((type) => add(type));
             return;
@@ -180,6 +201,7 @@
     document.querySelector('[data-dismiss-preview]').addEventListener('click', () => document.getElementById('template-builder-preview-card').classList.add('d-none'));
     document.getElementById('template-builder-reset').addEventListener('click', () => {
         canvas.innerHTML = '';
+        ensureBrandHeader();
         defaults.forEach((type) => add(type));
         select(null);
         source.value = '';
@@ -196,6 +218,7 @@
         source.value = config.initialHtml;
         importHtml(config.initialHtml);
     } else {
+        ensureBrandHeader();
         defaults.forEach((type) => add(type));
         select(null);
     }

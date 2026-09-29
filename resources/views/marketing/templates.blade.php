@@ -70,7 +70,7 @@
                         </div>
                     </div>
                     <div class="card-body template-builder-workspace"><div class="template-builder-dropzone" id="template-builder-canvas" aria-label="Lienzo de diseño de email"></div></div>
-                    <div class="card-footer text-muted small"><i class="fas fa-grip-vertical mr-1"></i>Arrastra los bloques para reorganizarlos. Haz clic en uno para editarlo.</div>
+                    <div class="card-footer text-muted small"><i class="fas fa-grip-vertical mr-1"></i>Arrastra los bloques para reorganizarlos. Haz clic en uno para editarlo. El logo de SEFAR queda siempre al inicio.</div>
                 </div>
                 <div class="card d-none" id="template-builder-preview-card">
                     <div class="card-header"><h3 class="card-title"><i class="far fa-eye mr-1"></i>Vista previa del correo</h3><div class="card-tools"><button type="button" class="btn btn-tool" data-dismiss-preview title="Cerrar"><i class="fas fa-times"></i></button></div></div>
@@ -132,6 +132,6 @@
 @stop
 
 @section('js')
-<script>window.sefarMarketingTemplateBuilder={initialHtml:@json(old('body_html'))};</script>
+<script>window.sefarMarketingTemplateBuilder={initialHtml:@json(old('body_html')),logoUrl:@json(asset('img/logonormal.png'))};</script>
 <script src="{{ asset('js/marketing-template-builder.js') }}?v={{ filemtime(public_path('js/marketing-template-builder.js')) }}"></script>
 @stop
