@@ -2865,7 +2865,9 @@ private function removeDuplicatesAndSort(array $cosuser): array
 
         $hasGenealogyTreeId = $filteredRequest->has('genealogy_tree_id');
         $genealogyTreeId = $filteredRequest->pull('genealogy_tree_id');
-        $teamleaderExtensibleFields = $filteredRequest->only(array_keys($this->teamleaderExtensibleProfileFields()));
+        $teamleaderExtensibleFields = $filteredRequest
+            ->only(array_keys($this->teamleaderExtensibleProfileFields()))
+            ->all();
         $filteredRequest = $filteredRequest->except(array_keys($this->teamleaderExtensibleProfileFields()));
 
         if ($filteredRequest->has('conyuge_interesado_en_proceso')) {
@@ -2888,7 +2890,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
 
         // Inspeccionar resultados
         $user->update($filteredRequest->toArray());
-        $this->syncTeamleaderExtensibleProfileFields($user, $teamleaderExtensibleFields);
+        $this->persistLocalExtensibleProfileFields($user, $teamleaderExtensibleFields);
         if ($hasGenealogyTreeId) {
             $this->syncGenealogyTreeId($user, $genealogyTreeId);
         }
@@ -3325,7 +3327,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
         ];
     }
 
-    private function syncTeamleaderExtensibleProfileFields(User $user, array $values): void
+    private function persistLocalExtensibleProfileFields(User $user, array $values): void
     {
         if ($values === [] || ! Schema::hasTable('custom_field_values') || ! Schema::hasTable('custom_field_definitions')) {
             return;
@@ -3345,7 +3347,10 @@ private function removeDuplicatesAndSort(array $cosuser): array
                 ->forEntity('client', $user->id)
                 ->first()?->decoded_value;
 
-            $profile->setValue($user, $definition, $value, 'app');
+            // These fields are displayed with Teamleader's taxonomy, but the
+            // COS is the local source of truth for this screen. Do not queue
+            // any outbound integration work (including Teamleader updates).
+            $profile->setValue($user, $definition, $value, 'legacy_app', null, false);
 
             if ((string) $previous !== (string) $value) {
                 $oldValues[$key] = $previous;
