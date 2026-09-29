@@ -1590,6 +1590,53 @@
 
 
                 <div class="tab-pane fade show" id="personal_data" role="tabpanel" aria-labelledby="personal-data-tab">
+                    @php
+                        $cosDisplayName = trim(($user->nombres ?? '') . ' ' . ($user->apellidos ?? '')) ?: $user->name;
+                    @endphp
+                    <style>
+                        .cos-personal-layout .cos-contact-card {
+                            position: sticky;
+                            top: 1rem;
+                        }
+                        .cos-personal-layout .cos-avatar {
+                            width: 80px;
+                            height: 80px;
+                            font-size: 2rem;
+                        }
+                        @media (max-width: 767.98px) {
+                            .cos-personal-layout .cos-contact-card { position: static; }
+                        }
+                    </style>
+                    <div class="row cos-personal-layout">
+                        <aside class="col-md-4 mb-4">
+                            <div class="card card-primary card-outline cos-contact-card">
+                                <div class="card-body text-center">
+                                    <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3 cos-avatar">
+                                        <span class="text-white font-weight-bold">{{ strtoupper(substr($cosDisplayName ?: '?', 0, 1)) }}</span>
+                                    </div>
+                                    <h4 class="mb-0">{{ $cosDisplayName ?: '(Sin nombre)' }}</h4>
+                                    <small class="text-muted">ID: <code>{{ $user->id }}</code></small>
+                                    <div class="mt-2"><span class="badge badge-success">Solicitante</span></div>
+                                </div>
+                                <div class="card-footer p-0">
+                                    <ul class="list-group list-group-flush">
+                                        @if($user->email)<li class="list-group-item"><i class="fas fa-envelope text-primary mr-2"></i><a href="mailto:{{ $user->email }}">{{ $user->email }}</a></li>@endif
+                                        @if($user->phone)<li class="list-group-item"><i class="fas fa-phone text-success mr-2"></i>{{ $user->phone }}</li>@endif
+                                        @if($user->passport)<li class="list-group-item"><i class="fas fa-passport text-warning mr-2"></i>Pasaporte: <code>{{ $user->passport }}</code></li>@endif
+                                        @if($user->date_of_birth)<li class="list-group-item"><i class="fas fa-birthday-cake text-danger mr-2"></i>{{ $user->date_of_birth }}</li>@endif
+                                        @if($user->genero)<li class="list-group-item"><i class="fas fa-venus-mars text-info mr-2"></i>{{ $user->genero }}</li>@endif
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="card card-outline card-secondary">
+                                <div class="card-header"><h6 class="mb-0"><i class="fas fa-clock mr-1"></i> Fechas</h6></div>
+                                <div class="card-body p-0"><ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between"><small class="text-muted">Registro</small><small>{{ $user->created_at?->format('d/m/Y H:i') ?? '—' }}</small></li>
+                                    <li class="list-group-item d-flex justify-content-between"><small class="text-muted">Actualizado</small><small>{{ $user->updated_at?->format('d/m/Y H:i') ?? '—' }}</small></li>
+                                </ul></div>
+                            </div>
+                        </aside>
+                        <div class="col-md-8">
                     <form id="datos-personales-form">
                         @csrf
                         <input type="hidden" id="id" name="id" value="{{$user->id}}" />
@@ -2220,6 +2267,8 @@
                             <button type="button" id="guardar-datos" class="cfrSefar btn btn-primary mt-3">Guardar</button>
                         @endif
                     </form>
+                        </div>
+                    </div>
                 </div>
 
                 @if($canEditCos)
