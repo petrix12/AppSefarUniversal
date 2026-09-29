@@ -7,6 +7,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
@@ -48,6 +49,52 @@ class User extends Authenticatable
     protected $appends = [
         'profile_photo_url',
     ];
+
+    private ?array $pendingChangeAudit = null;
+
+    private const AUDIT_REDACTED_FIELDS = [
+        'password',
+        'password_md5',
+        'remember_token',
+        'two_factor_recovery_codes',
+        'two_factor_secret',
+    ];
+
+    private static function registerChangeAuditObservers(): void
+    {
+        static::updating(function (self $user): void {
+            $changes = collect($user->getDirty())
+                ->except(['updated_at'])
+                ->all();
+
+            if ($changes === []) {
+                return;
+            }
+
+            $oldValues = [];
+            $newValues = [];
+
+            foreach ($changes as $field => $value) {
+                $oldValues[$field] = self::auditValue($field, $user->getRawOriginal($field));
+                $newValues[$field] = self::auditValue($field, $value);
+            }
+
+            $user->pendingChangeAudit = compact('oldValues', 'newValues');
+        });
+
+        static::updated(function (self $user): void {
+            if ($user->pendingChangeAudit === null) {
+                return;
+            }
+
+            self::recordChangeAudit(
+                $user,
+                $user->pendingChangeAudit['oldValues'],
+                $user->pendingChangeAudit['newValues'],
+            );
+            $user->pendingChangeAudit = null;
+        });
+    }
 
     public const SALES_PROFILE_ROLES = [
         'Coord. de Nacionalidad y Genealogía',
@@ -130,6 +177,43 @@ class User extends Authenticatable
         return $this->hasOne(UserGenealogyTreeLink::class);
     }
 
+    public function changeAudits()
+    {
+        return $this->hasMany(UserChangeAudit::class);
+    }
+
+    public static function recordChangeAudit(self $user, array $oldValues, array $newValues): void
+    {
+        if (! Schema::hasTable('user_change_audits')) {
+            return;
+        }
+
+        $request = app()->bound('request') ? app('request') : null;
+
+        UserChangeAudit::create([
+            'user_id' => $user->id,
+            'changed_by_user_id' => Auth::id(),
+            'old_values' => $oldValues,
+            'new_values' => $newValues,
+            'source' => $request?->route()?->getName() ?? (app()->runningInConsole() ? 'console' : 'system'),
+            'ip_address' => $request?->ip(),
+            'user_agent' => $request?->userAgent(),
+        ]);
+    }
+
+    private static function auditValue(string $field, mixed $value): mixed
+    {
+        if (in_array($field, self::AUDIT_REDACTED_FIELDS, true)) {
+            return '[oculto]';
+        }
+
+        if (is_string($value) && mb_strlen($value) > 4000) {
+            return mb_substr($value, 0, 4000) . '… [truncado]';
+        }
+
+        return $value;
+    }
+
     public function getGenealogyTreeIdAttribute(): ?string
     {
         $link = $this->relationLoaded('genealogyTreeLink')
@@ -208,8 +292,10 @@ class User extends Authenticatable
         return $this->hasAnyRole(self::SALES_PROFILE_ROLES);
     }
 
-    protected static function booted()
+    protected static function booted(): void
     {
+        self::registerChangeAuditObservers();
+
         static::created(function ($user) {
             if (!$user->roles()->exists()) {
                 $user->assignRole('Cliente');

@@ -783,6 +783,14 @@
                                                 </div>
                                             @endcan
 
+                                            <div class="tooltip-container flex-1">
+                                                <a href="{{ route('crud.users.information', $user) }}"
+                                                   class="btn btn-secondary w-full text-center">
+                                                    <i class="fas fa-user fa-fw"></i>
+                                                </a>
+                                                <span class="tooltip-text">Información del usuario</span>
+                                            </div>
+
                                             @role('Administrador')
                                                 <div class="tooltip-container flex-1">
                                                     <a href="{{ route('crud.users.editBasic', $user) }}"

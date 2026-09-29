@@ -403,6 +403,10 @@ Route::prefix('crud/lists')->name('crud.lists.')->group(function () {
 Route::get('/crud/users/{user}/edit-basic', [UserController::class, 'editBasic'])
     ->name('crud.users.editBasic');
 
+Route::get('/crud/users/{user}/information', [UserController::class, 'information'])
+    ->middleware(['auth', 'can:crud.users.index'])
+    ->name('crud.users.information');
+
 Route::put('/crud/users/{user}/update-basic', [UserController::class, 'updateBasic'])
     ->name('crud.users.updateBasic');
 
@@ -637,7 +641,9 @@ Route::get('/viewcomprobantecliente/{id}', [FacturaController::class, 'viewcompr
 //panel administrativo status
 Route::get('/users/status/{id}', [UserController::class, 'getuserstatus'])->name('getuserstatus');
 
-Route::post('/guardar-datos-personales', [UserController::class, 'savePersonalData'])->name('saveuserdata');
+Route::post('/guardar-datos-personales', [UserController::class, 'savePersonalData'])
+    ->middleware('auth')
+    ->name('saveuserdata');
 
 Route::prefix('banca-online-2026')
     ->name('banca-online.')

@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Agcliente;
 use App\Models\UserGenealogyTreeLink;
+use App\Models\UserChangeAudit;
 use Illuminate\Http\Request;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Spatie\Permission\Models\Permission;
@@ -79,6 +80,47 @@ class UserController extends Controller
     public function index()
     {
         return view('crud.users.index');
+    }
+
+    /**
+     * Internal client profile. Its composition intentionally mirrors the
+     * Teamleader contact detail screen while keeping COS editing separate.
+     */
+    public function information(User $user)
+    {
+        abort_if(auth()->user()?->hasRole('Cliente'), 403);
+
+        $purchases = $user->compras()
+            ->with('servicio:id,nombre')
+            ->latest()
+            ->get();
+        $negocios = Negocio::query()
+            ->where('user_id', $user->id)
+            ->latest()
+            ->get();
+        $facturas = Factura::query()
+            ->with('compras')
+            ->where('id_cliente', $user->id)
+            ->latest()
+            ->get();
+        $documents = File::query()
+            ->where('IDCliente', $user->passport)
+            ->latest()
+            ->get();
+        $changeAudits = $user->changeAudits()
+            ->with('changedBy:id,name,email')
+            ->latest()
+            ->limit(100)
+            ->get();
+
+        return view('crud.users.show', compact(
+            'user',
+            'purchases',
+            'negocios',
+            'facturas',
+            'documents',
+            'changeAudits',
+        ));
     }
 
     public function checkEmail(Request $request)
@@ -1739,6 +1781,12 @@ class UserController extends Controller
         ->limit(100)
         ->get();
 
+    $userChangeAudits = $user->changeAudits()
+        ->with('changedBy:id,name,email')
+        ->latest()
+        ->limit(100)
+        ->get();
+
     $teamleaderMigration = $this->getTeamleaderMigrationData($user);
     $teamleaderProjectPayments = app(TeamleaderProjectPaymentAnalyzer::class)
         ->analyzeProjects($teamleaderMigration['projects'] ?? collect());
@@ -1916,6 +1964,7 @@ class UserController extends Controller
         'facturas',
         'clientTasks',
         'clientChatMessages',
+        'userChangeAudits',
         'teamleaderMigration',
         'teamleaderProjectPayments',
         'servicios',
@@ -2749,6 +2798,8 @@ private function removeDuplicatesAndSort(array $cosuser): array
     }
 
     public function savePersonalData(Request $request){
+        abort_unless($this->canEditCosUserData(), 403, 'Solo el personal interno puede editar datos del COS.');
+
         $request->validate([
             'email' => 'required|email|unique:users,email,' . $request->id,
             'phone' => 'required|string|max:15',
@@ -3211,19 +3262,36 @@ private function removeDuplicatesAndSort(array $cosuser): array
     private function syncGenealogyTreeId(User $user, mixed $treeId): void
     {
         $treeId = trim((string) $treeId);
+        $previousTreeId = $user->genealogyTreeLink()->value('tree_id');
+
+        if ($previousTreeId === ($treeId === '' ? null : $treeId)) {
+            return;
+        }
 
         if ($treeId === '') {
             $user->genealogyTreeLink()->delete();
             $user->unsetRelation('genealogyTreeLink');
-
-            return;
+        } else {
+            UserGenealogyTreeLink::updateOrCreate(
+                ['user_id' => $user->id],
+                ['tree_id' => $treeId]
+            );
+            $user->unsetRelation('genealogyTreeLink');
         }
 
-        UserGenealogyTreeLink::updateOrCreate(
-            ['user_id' => $user->id],
-            ['tree_id' => $treeId]
+        User::recordChangeAudit(
+            $user,
+            ['genealogy_tree_id' => $previousTreeId],
+            ['genealogy_tree_id' => $treeId === '' ? null : $treeId],
         );
-        $user->unsetRelation('genealogyTreeLink');
+    }
+
+    private function canEditCosUserData(): bool
+    {
+        return auth()->check()
+            && auth()->user()->getRoleNames()->contains(
+                fn (string $role): bool => mb_strtolower(trim($role)) !== 'cliente'
+            );
     }
 
 }

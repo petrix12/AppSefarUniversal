@@ -45,6 +45,7 @@ class DeployController extends Controller
         $optimizeClearOut = null;
         $optimizeClearExitCode = null;
         $historyId = null;
+        $historyError = null;
 
         if ($pulledNewChanges) {
             $releaseVersion = $this->releaseVersion($afterHead);
@@ -61,21 +62,14 @@ class DeployController extends Controller
                 $summary = $this->buildFallbackSummary($changes, $releaseVersion);
             }
 
-            try {
-                $this->sendSummaryMail($summary, $modelUsed, $releaseVersion);
-                $mailSent = true;
-            } catch (\Throwable $e) {
-                $mailError = $e->getMessage();
-                Log::error('Error Mail', ['msg' => $mailError]);
-            }
-
-            // The updated commit is the deployment outcome. Migration, cache
-            // cleanup and mail diagnostics are kept as informational details;
-            // they must not turn a successfully deployed update into an error.
+            // Persist the exact text before sending mail. A mail transport
+            // failure, timeout, or later deploy step must never lose the
+            // release notes generated for the application history.
             $deployStatus = 'success';
+            $history = null;
 
             try {
-                $historyId = DeploymentHistory::create([
+                $history = DeploymentHistory::create([
                     'version' => $releaseVersion,
                     'status' => $deployStatus,
                     'before_commit' => $beforeHead,
@@ -87,15 +81,39 @@ class DeployController extends Controller
                     'migrate_output' => $migrateOut,
                     'optimize_exit_code' => $optimizeClearExitCode,
                     'optimize_output' => $optimizeClearOut,
-                    'mail_sent' => $mailSent,
-                    'mail_error' => $mailError,
+                    'mail_sent' => false,
                     'deployed_at' => now(),
-                ])->id;
-            } catch (\Throwable $exception) {
-                Log::error('No se pudo guardar el histórico del deploy', [
-                    'version' => $releaseVersion,
-                    'message' => $exception->getMessage(),
                 ]);
+                $historyId = $history->id;
+            } catch (\Throwable $exception) {
+                $historyError = $exception->getMessage();
+                Log::error('No se pudo guardar el histórico del deploy antes de enviar el correo', [
+                    'version' => $releaseVersion,
+                    'message' => $historyError,
+                ]);
+            }
+
+            try {
+                $this->sendSummaryMail($summary, $modelUsed, $releaseVersion);
+                $mailSent = true;
+            } catch (\Throwable $e) {
+                $mailError = $e->getMessage();
+                Log::error('Error Mail', ['msg' => $mailError]);
+            }
+
+            if ($history) {
+                try {
+                    $history->update([
+                        'mail_sent' => $mailSent,
+                        'mail_error' => $mailError,
+                    ]);
+                } catch (\Throwable $exception) {
+                    $historyError = $exception->getMessage();
+                    Log::error('No se pudo actualizar el resultado del correo en el histórico del deploy', [
+                        'deployment_history_id' => $history->id,
+                        'message' => $historyError,
+                    ]);
+                }
             }
         }
 
@@ -108,6 +126,7 @@ class DeployController extends Controller
             'mail_sent'        => $mailSent,
             'mail_error'       => $mailError,
             'history_id'       => $historyId,
+            'history_error'    => $historyError,
             'migrate_exit_code' => $migrateExitCode,
             'migrate_output'   => $migrateOut,
             'optimize_exit_code' => $optimizeClearExitCode,

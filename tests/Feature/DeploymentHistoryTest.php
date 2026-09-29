@@ -84,4 +84,22 @@ class DeploymentHistoryTest extends TestCase
         $this->assertTrue($deployments->first()->mail_sent);
         $this->assertSame("Hola a todos,\n\nNueva actualización disponible.", $deployments->first()->summary);
     }
+
+    public function test_the_release_text_remains_available_when_mail_delivery_is_recorded_later(): void
+    {
+        $deployment = DeploymentHistory::create([
+            'version' => '2026.09.29-test',
+            'summary' => 'Texto generado por IA y preparado para el correo.',
+            'mail_sent' => false,
+            'deployed_at' => now(),
+        ]);
+
+        $deployment->update([
+            'mail_sent' => true,
+            'mail_error' => null,
+        ]);
+
+        $this->assertSame('Texto generado por IA y preparado para el correo.', $deployment->fresh()->summary);
+        $this->assertTrue($deployment->fresh()->mail_sent);
+    }
 }

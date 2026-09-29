@@ -11,9 +11,15 @@
 @section('content')
 
 @php
-    $cosActualClient = auth()->user()->roles->contains('id', 5);
+    $cosHasInternalRole = auth()->user()->getRoleNames()
+        ->contains(fn ($role) => mb_strtolower(trim($role)) !== 'cliente');
+    $cosActualClient = ! $cosHasInternalRole && auth()->user()->roles->contains('id', 5);
     $cosClientPreview = ! $cosActualClient && request()->boolean('vista_cliente');
-    $cosViewRoleId = ($cosActualClient || $cosClientPreview) ? 5 : (int) (auth()->user()->roles->first()?->id ?? 0);
+    $cosInternalRole = auth()->user()->roles->first(
+        fn ($role) => mb_strtolower(trim($role->name)) !== 'cliente'
+    );
+    $cosViewRoleId = ($cosActualClient || $cosClientPreview) ? 5 : (int) ($cosInternalRole?->id ?? 0);
+    $canEditCos = $cosHasInternalRole && ! $cosClientPreview;
     $cosuser = \App\Services\CosPresentation::statuses($cosuser ?? []);
     foreach ($cos as $service => $definition) {
         if (str_starts_with(mb_strtolower(trim($service)), 'portuguesa sefardi')) {
@@ -274,6 +280,13 @@
                         Datos personales
                     </button>
                 </li>
+                @if($canEditCos)
+                <li class="nav-item" role="presentation">
+                    <button style="color:black" class="nav-link" id="change-history-tab" data-bs-toggle="tab" data-bs-target="#change-history" type="button" role="tab" aria-controls="change-history" aria-selected="false">
+                        Historial de cambios
+                    </button>
+                </li>
+                @endif
                 @if($cosViewRoleId !== 5)
                 <li class="nav-item" role="presentation">
                     <button style="color:black" class="nav-link" id="formulario-001-tab" data-bs-toggle="tab" data-bs-target="#formulario-001" type="button" role="tab" aria-controls="formulario-001" aria-selected="false">
@@ -2203,11 +2216,35 @@
 
                         @endif
 
-                        @if($cosViewRoleId == 1 || $cosViewRoleId == 15 || $cosViewRoleId == 4 || $cosViewRoleId == 17)
+                        @if($canEditCos)
                             <button type="button" id="guardar-datos" class="cfrSefar btn btn-primary mt-3">Guardar</button>
                         @endif
                     </form>
                 </div>
+
+                @if($canEditCos)
+                <div class="tab-pane fade" id="change-history" role="tabpanel" aria-labelledby="change-history-tab">
+                    <h3 class="h5 mb-3">Historial de cambios del usuario</h3>
+                    @forelse($userChangeAudits as $audit)
+                        <article class="border rounded p-3 mb-3 bg-light">
+                            <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
+                                <strong>{{ $audit->changedBy?->name ?? 'Sistema' }}</strong>
+                                <span class="text-muted small">{{ $audit->created_at?->format('d/m/Y H:i:s') }} · {{ $audit->source ?? 'sistema' }}</span>
+                            </div>
+                            @foreach($audit->new_values ?? [] as $field => $newValue)
+                                <div class="small mb-1">
+                                    <strong>{{ \Illuminate\Support\Str::headline($field) }}:</strong>
+                                    <span class="text-muted">{{ is_scalar(($audit->old_values ?? [])[$field] ?? null) || (($audit->old_values ?? [])[$field] ?? null) === null ? (($audit->old_values ?? [])[$field] ?? '—') : json_encode(($audit->old_values ?? [])[$field], JSON_UNESCAPED_UNICODE) }}</span>
+                                    <span aria-hidden="true">→</span>
+                                    <span>{{ is_scalar($newValue) || $newValue === null ? ($newValue ?? '—') : json_encode($newValue, JSON_UNESCAPED_UNICODE) }}</span>
+                                </div>
+                            @endforeach
+                        </article>
+                    @empty
+                        <p class="text-muted mb-0">Aún no hay cambios registrados. El historial comienza a partir de esta actualización.</p>
+                    @endforelse
+                </div>
+                @endif
 
                 @if($cosViewRoleId !== 5)
                     @include('crud.users.partials.formulario-001')
