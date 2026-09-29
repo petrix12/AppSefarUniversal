@@ -94,6 +94,8 @@ use App\Http\Controllers\RoleAiAssistantController;
 use App\Http\Controllers\AdminRoleAiAssistantController;
 use App\Http\Controllers\AutomationRuleController;
 use App\Http\Controllers\UnificationMapController;
+use App\Http\Controllers\MarketingCampaignController;
+use App\Http\Controllers\MarketingTrackingController;
 
 Route::get('/internal/tasks/daily-workflow', InternalTaskWorkflowController::class)
     ->name('internal.tasks.daily-workflow');
@@ -180,6 +182,31 @@ Route::middleware(['auth', 'can:administrador'])
         Route::get('/', [ExternalClientImportController::class, 'showImportForm'])->name('index');
         Route::post('/', [ExternalClientImportController::class, 'importClient'])->name('store');
     });
+
+Route::middleware(['auth', 'can:administrador'])
+    ->prefix('admin/marketing')
+    ->name('marketing.')
+    ->group(function () {
+        Route::get('/', [MarketingCampaignController::class, 'dashboard'])->name('dashboard');
+        Route::get('/campaigns/create', [MarketingCampaignController::class, 'create'])->name('campaigns.create');
+        Route::post('/campaigns', [MarketingCampaignController::class, 'store'])->name('campaigns.store');
+        Route::get('/campaigns/{campaign}', [MarketingCampaignController::class, 'show'])->name('campaigns.show');
+        Route::get('/campaigns/{campaign}/edit', [MarketingCampaignController::class, 'edit'])->name('campaigns.edit');
+        Route::put('/campaigns/{campaign}', [MarketingCampaignController::class, 'update'])->name('campaigns.update');
+        Route::post('/campaigns/{campaign}/send', [MarketingCampaignController::class, 'send'])->name('campaigns.send');
+        Route::post('/campaigns/{campaign}/pause', [MarketingCampaignController::class, 'pause'])->name('campaigns.pause');
+        Route::post('/campaigns/{campaign}/test', [MarketingCampaignController::class, 'sendTest'])->name('campaigns.test');
+        Route::get('/lists', [MarketingCampaignController::class, 'lists'])->name('lists.index');
+        Route::post('/lists/import', [MarketingCampaignController::class, 'importList'])->name('lists.import');
+        Route::get('/templates', [MarketingCampaignController::class, 'templates'])->name('templates.index');
+        Route::post('/templates', [MarketingCampaignController::class, 'storeTemplate'])->name('templates.store');
+        Route::get('/setup', [MarketingCampaignController::class, 'setup'])->name('setup');
+    });
+
+Route::get('/email/t/{recipient}/open', [MarketingTrackingController::class, 'open'])->name('marketing.track.open');
+Route::get('/email/t/{recipient}/click/{url}', [MarketingTrackingController::class, 'click'])->name('marketing.track.click');
+Route::get('/email/unsubscribe/{recipient}', [MarketingTrackingController::class, 'unsubscribeForm'])->name('marketing.unsubscribe.show');
+Route::post('/email/unsubscribe/{recipient}', [MarketingTrackingController::class, 'unsubscribe'])->name('marketing.unsubscribe');
 
 Route::middleware(['auth', 'can:administrador'])
     ->prefix('admin/automations')

@@ -9,6 +9,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AssistantController;
 use App\Http\Controllers\WhatsappController;
 use App\Http\Controllers\N8nTaskWebhookController;
+use App\Http\Controllers\MarketingSesWebhookController;
 use App\Http\Controllers\BancaOnlineStripeWebhookController;
 use App\Http\Controllers\Api\Mcp\ClientController as McpClientController;
 use App\Http\Middleware\AuditMcpRequests;
@@ -50,6 +51,10 @@ Route::post('/chat/enviar', [ChatController::class, 'enviarMensaje']);
 Route::post('/user/check-email', [UserController::class, 'checkEmail']);
 
 Route::post('/n8n/tasks', [N8nTaskWebhookController::class, 'store']);
+
+Route::post('/marketing/ses-events', MarketingSesWebhookController::class)
+    ->name('marketing.ses.webhook')
+    ->withoutMiddleware('throttle:api');
 
 Route::post('/stripe/banca-online/webhook', BancaOnlineStripeWebhookController::class);
 

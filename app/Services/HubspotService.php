@@ -1048,6 +1048,60 @@ class HubspotService
         }
     }
 
+    /**
+     * Obtiene los contactos de una lista de HubSpot usando Lists API v3.
+     * La lista puede ser estática o activa: HubSpot resuelve el segmento.
+     */
+    public function getMarketingListMembers(string $listId): array
+    {
+        if (!ctype_digit($listId)) {
+            throw new \InvalidArgumentException('El ID de la lista de HubSpot debe ser numérico.');
+        }
+
+        $contacts = [];
+        $after = null;
+
+        try {
+            do {
+                $this->hubspotThrottle();
+                $response = $this->hubspot->apiRequest([
+                    'method' => 'GET',
+                    'path' => "/crm/v3/lists/{$listId}/memberships/join-order",
+                    'qs' => array_filter(['limit' => 500, 'after' => $after]),
+                ]);
+                $page = json_decode((string) $response->getBody(), true) ?: [];
+                $ids = collect($page['results'] ?? [])
+                    ->map(fn (array $member) => $member['recordId'] ?? $member['id'] ?? null)
+                    ->filter()
+                    ->values();
+
+                foreach ($ids->chunk(100) as $chunk) {
+                    $this->hubspotThrottle();
+                    $batch = $this->hubspot->apiRequest([
+                        'method' => 'POST',
+                        'path' => '/crm/v3/objects/contacts/batch/read',
+                        'body' => [
+                            'properties' => ['email', 'firstname', 'lastname', 'phone'],
+                            'inputs' => $chunk->map(fn ($id) => ['id' => (string) $id])->all(),
+                        ],
+                    ]);
+                    $contacts = array_merge(
+                        $contacts,
+                        json_decode((string) $batch->getBody(), true)['results'] ?? []
+                    );
+                }
+
+                $after = data_get($page, 'paging.next.after');
+            } while ($after);
+        } catch (RequestException $e) {
+            $status = $e->getResponse()?->getStatusCode() ?: 0;
+            $body = $e->getResponse() ? (string) $e->getResponse()->getBody() : $e->getMessage();
+            throw new \RuntimeException("HubSpot no permitió importar la lista ({$status}): {$body}", $status, $e);
+        }
+
+        return $contacts;
+    }
+
     public function updateContact($hsId, $properties)
     {
         try {

@@ -14,7 +14,7 @@
         ]],
         ['title' => '2.- Filiaciones por producción', 'fields' => [
             ['1. F. Petición por genealogía', 'n1__f__peticion_por_genealogia', 'date'],
-            ['2. F. de solicitud al cliente', 'n2__f__de_solicitud_al_cliente', 'date'],
+            ['2. F. de solicitud al Representado', 'n2__f__de_solicitud_al_cliente', 'date'],
             ['3. F. recordatorio filiación', 'n3__f___recordatorio_filiacion', 'date'],
             ['4. F. entregado genealogía', 'n4__f__entregado_genealogia', 'date'],
         ]],
@@ -74,7 +74,7 @@
 <section class="cos-custom-groups" aria-label="Campos personalizados de Teamleader">
     <div class="d-flex justify-content-between align-items-start flex-wrap mb-2" style="gap:.75rem">
         <div>
-            <h2 class="h4 font-weight-bold text-gray-900 mb-1">Perfil y proceso</h2>
+            <h2 class="h4 font-weight-bold text-gray-900 mb-1">Perfil</h2>
             <p class="text-muted mb-0">Elige una sección para abrir solo los datos que necesitas revisar o actualizar.</p>
         </div>
         <span class="badge badge-light border px-3 py-2"><i class="fas fa-layer-group mr-1"></i> {{ count($tlCustomGroups) }} secciones</span>

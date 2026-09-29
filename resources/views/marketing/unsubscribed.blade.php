@@ -1,0 +1,2 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Suscripción cancelada</title><style>body{margin:0;background:#f4f6f9;font-family:Arial,sans-serif;color:#263238}.card{max-width:560px;margin:64px auto;background:#fff;padding:36px;border-radius:8px;box-shadow:0 2px 12px #0001}</style></head><body><main class="card"><h1>Suscripción cancelada</h1><p>Tu correo fue retirado de las campañas de email. No recibirás nuevas comunicaciones masivas.</p></main></body></html>

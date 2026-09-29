@@ -47,6 +47,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('automations:run --limit=100')
             ->everyMinute()
             ->withoutOverlapping();
+        $schedule->command('marketing:dispatch-scheduled')
+            ->everyMinute()
+            ->withoutOverlapping();
         // Ejecutar flujo diario de tareas en secuencia: primero reasignaciones, luego nuevas tareas.
        /* $schedule->command('tasks:daily-workflow --force-reassign')
                  ->weekdays()

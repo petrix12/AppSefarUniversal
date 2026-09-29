@@ -473,6 +473,19 @@ return [
         ],
 
         [
+            'text'        => 'Email marketing',
+            'icon'        => 'fa-fw fas fa-paper-plane',
+            'icon_color'  => 'white',
+            'can'         => 'administrador',
+            'submenu' => [
+                ['text' => 'Panel de campañas', 'route' => 'marketing.dashboard', 'icon' => 'fas fa-fw fa-chart-line'],
+                ['text' => 'Nueva campaña', 'route' => 'marketing.campaigns.create', 'icon' => 'fas fa-fw fa-plus'],
+                ['text' => 'Listas y segmentos', 'route' => 'marketing.lists.index', 'icon' => 'fas fa-fw fa-users'],
+                ['text' => 'Plantillas', 'route' => 'marketing.templates.index', 'icon' => 'fas fa-fw fa-palette'],
+                ['text' => 'Configurar Amazon SES', 'route' => 'marketing.setup', 'icon' => 'fas fa-fw fa-cog'],
+            ],
+        ],
+        [
             'text'        => 'Integraciones',
             'icon'        => 'fa-fw fas fa-plug',
             'icon_color'  => 'white',
