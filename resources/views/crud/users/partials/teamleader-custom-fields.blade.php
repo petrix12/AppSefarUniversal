@@ -72,12 +72,36 @@
 @endphp
 
 <section class="cos-custom-groups" aria-label="Campos personalizados de Teamleader">
-    <h2 class="h4 font-weight-bold text-gray-900 mb-2">Campos personalizados</h2>
-    <p class="text-muted mb-3">Organizados con los mismos grupos y el mismo orden de Teamleader.</p>
+    <div class="d-flex justify-content-between align-items-start flex-wrap mb-2" style="gap:.75rem">
+        <div>
+            <h2 class="h4 font-weight-bold text-gray-900 mb-1">Perfil y proceso</h2>
+            <p class="text-muted mb-0">Elige una sección para abrir solo los datos que necesitas revisar o actualizar.</p>
+        </div>
+        <span class="badge badge-light border px-3 py-2"><i class="fas fa-layer-group mr-1"></i> {{ count($tlCustomGroups) }} secciones</span>
+    </div>
 
-    @foreach($tlCustomGroups as $group)
-        <details @if($group['open'] ?? false) open @endif>
-            <summary>{{ $group['title'] }}</summary>
+    <nav class="cos-section-index" aria-label="Navegación rápida del perfil">
+        @foreach($tlCustomGroups as $index => $group)
+            <a href="#tl-group-{{ $index + 1 }}" data-cos-group="tl-group-{{ $index + 1 }}">
+                <span>{{ $group['title'] }}</span><i class="fas fa-chevron-right text-muted"></i>
+            </a>
+        @endforeach
+    </nav>
+
+    @foreach($tlCustomGroups as $index => $group)
+        @php
+            $completedFields = collect($group['fields'])->filter(function ($field) use ($user, $teamleaderProfileCustomValues) {
+                $fieldName = $field[1];
+                $value = ($teamleaderProfileCustomValues ?? [])[$fieldName] ?? data_get($user, $fieldName);
+
+                return filled($value);
+            })->count();
+        @endphp
+        <details id="tl-group-{{ $index + 1 }}" @if($group['open'] ?? false) open @endif>
+            <summary>
+                {{ $group['title'] }}
+                <span class="cos-field-count">{{ $completedFields }}/{{ count($group['fields']) }} registrados</span>
+            </summary>
             <div class="cos-group-body">
                 <div class="row">
                     @foreach($group['fields'] as $field)
@@ -117,3 +141,14 @@
         </details>
     @endforeach
 </section>
+
+@once
+    <script>
+        document.querySelectorAll('[data-cos-group]').forEach(function (link) {
+            link.addEventListener('click', function () {
+                var section = document.getElementById(link.dataset.cosGroup);
+                if (section) section.open = true;
+            });
+        });
+    </script>
+@endonce

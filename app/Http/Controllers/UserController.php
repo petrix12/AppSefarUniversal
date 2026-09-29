@@ -2865,6 +2865,8 @@ private function removeDuplicatesAndSort(array $cosuser): array
 
         $hasGenealogyTreeId = $filteredRequest->has('genealogy_tree_id');
         $genealogyTreeId = $filteredRequest->pull('genealogy_tree_id');
+        $teamleaderExtensibleFields = $filteredRequest->only(array_keys($this->teamleaderExtensibleProfileFields()));
+        $filteredRequest = $filteredRequest->except(array_keys($this->teamleaderExtensibleProfileFields()));
 
         if ($filteredRequest->has('conyuge_interesado_en_proceso')) {
             $filteredRequest['conyuge_interesado_en_proceso'] = $request->boolean('conyuge_interesado_en_proceso') ? 1 : 0;
@@ -2883,9 +2885,6 @@ private function removeDuplicatesAndSort(array $cosuser): array
                 }
             }
         }
-
-        $teamleaderExtensibleFields = $filteredRequest->only(array_keys($this->teamleaderExtensibleProfileFields()));
-        $filteredRequest = $filteredRequest->except(array_keys($this->teamleaderExtensibleProfileFields()));
 
         // Inspeccionar resultados
         $user->update($filteredRequest->toArray());

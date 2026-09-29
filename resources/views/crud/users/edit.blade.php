@@ -1592,15 +1592,43 @@
                 <div class="tab-pane fade show" id="personal_data" role="tabpanel" aria-labelledby="personal-data-tab">
                     <style>
                         .cos-custom-groups {
-                            border-top: 1px solid #e5e7eb;
-                            margin-top: 2rem;
-                            padding-top: 1.5rem;
+                            margin-top: 2.25rem;
+                            padding: 1.5rem;
+                            border: 1px solid #dce6ef;
+                            border-radius: .8rem;
+                            background: #f8fafc;
+                        }
+                        .cos-custom-groups .cos-section-index {
+                            display: grid;
+                            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+                            gap: .55rem;
+                            margin: 1.25rem 0;
+                        }
+                        .cos-custom-groups .cos-section-index a {
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            min-height: 48px;
+                            padding: .6rem .75rem;
+                            color: #173b57;
+                            background: #fff;
+                            border: 1px solid #dbe3ec;
+                            border-radius: .45rem;
+                            font-size: .86rem;
+                            font-weight: 600;
+                            text-decoration: none;
+                        }
+                        .cos-custom-groups .cos-section-index a:hover,
+                        .cos-custom-groups .cos-section-index a:focus {
+                            border-color: #1687b5;
+                            box-shadow: 0 0 0 .15rem rgba(22,135,181,.12);
                         }
                         .cos-custom-groups details {
                             border: 1px solid #dbe3ec;
-                            border-radius: .5rem;
+                            border-radius: .6rem;
                             background: #fff;
-                            margin-bottom: .75rem;
+                            margin-bottom: .9rem;
+                            scroll-margin-top: 1rem;
                         }
                         .cos-custom-groups summary {
                             cursor: pointer;
@@ -1614,7 +1642,32 @@
                         .cos-custom-groups details[open] summary::after { content: '⌃'; }
                         .cos-custom-groups .cos-group-body {
                             border-top: 1px solid #edf1f5;
+                            padding: 1.25rem;
+                        }
+                        .cos-custom-groups .cos-field-count {
+                            display: inline-block;
+                            margin-left: .5rem;
+                            padding: .1rem .45rem;
+                            border-radius: 999px;
+                            color: #52606d;
+                            background: #edf2f7;
+                            font-size: .75rem;
+                            font-weight: 600;
+                        }
+                        .cos-save-bar {
+                            position: sticky;
+                            bottom: 0;
+                            z-index: 10;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            gap: 1rem;
+                            margin: 1.5rem -1px -1px;
                             padding: 1rem;
+                            border: 1px solid #cbd5e1;
+                            border-radius: .6rem .6rem 0 0;
+                            background: rgba(255,255,255,.96);
+                            box-shadow: 0 -5px 16px rgba(15,23,42,.08);
                         }
                     </style>
                     <form id="datos-personales-form">
@@ -1701,7 +1754,8 @@
                                 <select
                                     class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                     id="edo_civil"
-                                    name="edo_civil">
+                                    name="edo_civil"
+                                    disabled>
                                     <option value="" {{ old('edo_civil', $user->edo_civil ?? '') === '' ? 'selected' : '' }}></option>
                                     <option value="SOLTERO (A)" {{ old('edo_civil', $user->edo_civil ?? '') === 'SOLTERO (A)' ? 'selected' : '' }}>SOLTERO (A)</option>
                                     <option value="CASADO (A)" {{ old('edo_civil', $user->edo_civil ?? '') === 'CASADO (A)' ? 'selected' : '' }}>CASADO (A)</option>
@@ -2244,12 +2298,16 @@
 
                         @endif
 
-                        @if($canEditCos)
-                            <button type="button" id="guardar-datos" class="cfrSefar btn btn-primary mt-3">Guardar</button>
-                        @endif
                         </fieldset>
 
                         @include('crud.users.partials.teamleader-custom-fields', ['user' => $user])
+
+                        @if($canEditCos)
+                            <div class="cos-save-bar">
+                                <span class="text-muted small"><i class="fas fa-history mr-1"></i> Cada cambio queda registrado con el usuario que lo realizó.</span>
+                                <button type="button" id="guardar-datos" class="cfrSefar btn btn-primary px-4"><i class="fas fa-save mr-1"></i> Guardar cambios</button>
+                            </div>
+                        @endif
                     </form>
                 </div>
 
