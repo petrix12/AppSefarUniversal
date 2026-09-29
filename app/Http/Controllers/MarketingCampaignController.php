@@ -6,6 +6,7 @@ use App\Models\MarketingCampaign;
 use App\Models\MarketingCampaignRecipient;
 use App\Models\MarketingList;
 use App\Models\MarketingTemplate;
+use App\Models\User;
 use App\Services\MarketingAudienceImporter;
 use App\Services\MarketingCampaignDispatcher;
 use App\Services\MarketingEmailRenderer;
@@ -121,6 +122,52 @@ class MarketingCampaignController extends Controller
         } catch (\Throwable $exception) {
             return back()->with('error', $exception->getMessage());
         }
+    }
+
+    public function previewWithRandomUser(Request $request, MarketingEmailRenderer $renderer)
+    {
+        $data = $request->validate([
+            'subject' => ['nullable', 'string', 'max:255'],
+            'body_html' => ['required', 'string', 'max:1000000'],
+            'body_text' => ['nullable', 'string', 'max:1000000'],
+        ]);
+
+        $user = User::query()
+            ->select(['id', 'nombres', 'apellidos', 'email'])
+            ->whereNotNull('nombres')->where('nombres', '!=', '')
+            ->whereNotNull('apellidos')->where('apellidos', '!=', '')
+            ->whereNotNull('email')->where('email', '!=', '')
+            ->inRandomOrder()
+            ->first();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'No hay usuarios con nombre, apellido y correo para generar la vista previa.',
+            ], 422);
+        }
+
+        $recipient = new MarketingCampaignRecipient([
+            'email' => $user->email,
+            'first_name' => trim($user->nombres),
+            'last_name' => trim($user->apellidos),
+        ]);
+        $recipient->setAttribute('attributes', []);
+
+        $preview = $renderer->preview(
+            $data['subject'] ?? '',
+            $data['body_html'],
+            $data['body_text'] ?? null,
+            $recipient,
+        );
+
+        return response()->json($preview + [
+            'recipient' => [
+                'first_name' => $recipient->first_name,
+                'last_name' => $recipient->last_name,
+                'full_name' => trim($recipient->first_name.' '.$recipient->last_name),
+                'email' => $recipient->email,
+            ],
+        ]);
     }
 
     public function lists()

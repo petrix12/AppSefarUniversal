@@ -9,6 +9,21 @@ use DOMElement;
 
 class MarketingEmailRenderer
 {
+    /**
+     * Render a draft for the campaign editor without creating tracking links or
+     * recording activity for the sample recipient.
+     */
+    public function preview(string $subject, string $html, ?string $text, MarketingCampaignRecipient $recipient): array
+    {
+        $sanitizedHtml = $this->sanitize($html);
+
+        return [
+            'subject' => $this->personalize($subject, $recipient, false),
+            'html' => $this->personalize($sanitizedHtml, $recipient),
+            'text' => $this->personalize($text ?: trim(strip_tags($sanitizedHtml)), $recipient, false),
+        ];
+    }
+
     public function render(MarketingCampaign $campaign, MarketingCampaignRecipient $recipient): array
     {
         $html = $this->personalize($campaign->body_html, $recipient);

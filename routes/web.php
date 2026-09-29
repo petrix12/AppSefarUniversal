@@ -189,6 +189,7 @@ Route::middleware(['auth', 'can:administrador'])
     ->group(function () {
         Route::get('/', [MarketingCampaignController::class, 'dashboard'])->name('dashboard');
         Route::get('/campaigns/create', [MarketingCampaignController::class, 'create'])->name('campaigns.create');
+        Route::post('/campaigns/preview-random-recipient', [MarketingCampaignController::class, 'previewWithRandomUser'])->name('campaigns.preview-random-recipient');
         Route::post('/campaigns', [MarketingCampaignController::class, 'store'])->name('campaigns.store');
         Route::get('/campaigns/{campaign}', [MarketingCampaignController::class, 'show'])->name('campaigns.show');
         Route::get('/campaigns/{campaign}/edit', [MarketingCampaignController::class, 'edit'])->name('campaigns.edit');

@@ -29,7 +29,7 @@
                 <div class="card card-outline card-secondary"><div class="card-header"><h3 class="card-title">Plantillas</h3></div><div class="card-body"><select class="form-control" id="template-select" name="marketing_template_id"><option value="">Sin plantilla guardada</option>@foreach($templates as $template)<option value="{{ $template->id }}" @selected(old('marketing_template_id', $campaign->marketing_template_id) == $template->id)>{{ $template->name }}</option>@endforeach</select><button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="load-template">Cargar plantilla en el lienzo</button><p class="text-muted small mt-2 mb-0">Variables disponibles: <code>&#123;&#123;first_name&#125;&#125;</code>, <code>&#123;&#123;last_name&#125;&#125;</code>, <code>&#123;&#123;full_name&#125;&#125;</code>, <code>&#123;&#123;email&#125;&#125;</code>.</p></div></div>
             </div>
             <div class="col-lg-8">
-                <div class="card card-outline card-primary"><div class="card-header"><h3 class="card-title">Arrastra bloques al correo</h3><div class="card-tools"><button type="button" class="btn btn-sm btn-outline-info" id="preview">Vista previa</button></div></div>
+                <div class="card card-outline card-primary"><div class="card-header"><h3 class="card-title">Arrastra bloques al correo</h3><div class="card-tools"><button type="button" class="btn btn-sm btn-outline-info" id="preview">Vista previa</button><button type="button" class="btn btn-sm btn-primary ml-1" id="preview-random-recipient"><i class="fas fa-user mr-1"></i>Probar variables</button></div></div>
                     <div class="card-body">
                         <div class="mb-3" id="palette">
                             <button type="button" draggable="true" data-block="heading" class="btn btn-outline-primary btn-sm mr-1">Título</button>
@@ -44,7 +44,7 @@
                     </div>
                     <div class="card-footer text-right"><button class="btn btn-primary"><i class="fas fa-save mr-1"></i>Guardar campaña</button></div>
                 </div>
-                <div class="card d-none" id="preview-card"><div class="card-header"><h3 class="card-title">Vista previa</h3></div><div class="card-body bg-light"><iframe id="preview-frame" title="Vista previa" class="w-100 border bg-white" style="min-height:500px"></iframe></div></div>
+                <div class="card d-none" id="preview-card"><div class="card-header"><h3 class="card-title">Vista previa</h3><div class="card-tools"><span class="text-muted small" id="preview-recipient"></span></div></div><div class="card-body bg-light"><p class="small text-muted mb-2 d-none" id="preview-subject"></p><iframe id="preview-frame" title="Vista previa" sandbox class="w-100 border bg-white" style="min-height:500px"></iframe></div></div>
             </div>
         </div>
     </form>
@@ -71,7 +71,43 @@
     document.getElementById('campaign-form').addEventListener('submit', () => input.value = canvas.innerHTML);
     const templates = JSON.parse(document.getElementById('templates-data').textContent);
     document.getElementById('load-template').addEventListener('click', () => { const template = templates.find(item => String(item.id) === document.getElementById('template-select').value); if (template) { canvas.innerHTML = template.body; if (template.subject) document.getElementById('subject').value = template.subject; } });
-    document.getElementById('preview').addEventListener('click', () => { document.getElementById('preview-card').classList.remove('d-none'); document.getElementById('preview-frame').srcdoc = canvas.innerHTML; });
+    const previewCard = document.getElementById('preview-card'), previewFrame = document.getElementById('preview-frame'), previewRecipient = document.getElementById('preview-recipient'), previewSubject = document.getElementById('preview-subject');
+    const showPreview = (html, recipient = '', subject = '') => {
+        previewCard.classList.remove('d-none');
+        previewRecipient.textContent = recipient;
+        previewSubject.textContent = subject ? 'Asunto: ' + subject : '';
+        previewSubject.classList.toggle('d-none', !subject);
+        previewFrame.srcdoc = '<!doctype html><html><head><meta charset="utf-8"></head><body>' + html + '</body></html>';
+        previewCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    document.getElementById('preview').addEventListener('click', () => showPreview(canvas.innerHTML));
+    document.getElementById('preview-random-recipient').addEventListener('click', async event => {
+        const button = event.currentTarget;
+        const token = document.querySelector('#campaign-form input[name="_token"]').value;
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Preparando...';
+
+        try {
+            const response = await fetch(@json(route('marketing.campaigns.preview-random-recipient')), {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+                body: JSON.stringify({
+                    subject: document.getElementById('subject').value,
+                    body_html: canvas.innerHTML,
+                    body_text: document.querySelector('textarea[name="body_text"]').value,
+                }),
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || 'No se pudo generar la vista previa.');
+            const recipient = result.recipient;
+            showPreview(result.html, 'Variables aplicadas: ' + recipient.full_name + ' · ' + recipient.email, result.subject);
+        } catch (error) {
+            window.alert(error.message || 'No se pudo generar la vista previa.');
+        } finally {
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-user mr-1"></i>Probar variables';
+        }
+    });
     const delivery = document.getElementById('delivery-mode'), scheduled = document.getElementById('scheduled-wrap'); const toggleSchedule = () => scheduled.classList.toggle('d-none', delivery.value !== 'scheduled'); delivery.addEventListener('change', toggleSchedule); toggleSchedule();
 })();
 </script>
