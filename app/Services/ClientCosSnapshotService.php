@@ -77,10 +77,14 @@ class ClientCosSnapshotService
 
         }
 
+        $refreshPending = false;
         if (! $this->hasFreshCachedCos($user) || ! \Illuminate\Support\Facades\Cache::has('cos.page_refreshed.' . $user->id)) {
             try {
+                Cache::put('cos.snapshot_refresh.pending.' . $user->id, true, 600);
                 \App\Jobs\RefreshClientCosSnapshot::dispatch($user->id, true);
+                $refreshPending = Cache::has('cos.snapshot_refresh.pending.' . $user->id);
             } catch (\Throwable $exception) {
+                Cache::forget('cos.snapshot_refresh.pending.' . $user->id);
                 Log::warning('COS: no se pudo encolar la actualización', [
                     'user_id' => $user->id,
                     'error' => $exception->getMessage(),
@@ -93,7 +97,12 @@ class ClientCosSnapshotService
             ! empty($status['servicio']) && array_key_exists($status['servicio'], $definitions)
         ));
 
-        return ['cos' => CosPresentation::statuses($statuses), 'negocios' => $negocios, 'monday_data' => $monday];
+        return [
+            'cos' => CosPresentation::statuses($statuses),
+            'negocios' => $negocios,
+            'monday_data' => $monday,
+            'refresh_pending' => $refreshPending,
+        ];
     }
 
     public function refresh(User $user, bool $syncExternal = true): array
@@ -275,6 +284,21 @@ class ClientCosSnapshotService
 
         if (! empty($hubspot['deals']) && is_array($hubspot['deals'])) {
             $sync['local_deals'] = $this->dealLocalSync->sync($user->fresh() ?? $user, $hubspot['deals']);
+
+            try {
+                $sync['automatic_associations'] = app(AutomaticTeamleaderDealAssociationService::class)->associate(
+                    $user->fresh() ?? $user,
+                    $hubspot['deals'],
+                    is_array($teamleader['deals'] ?? null) ? $teamleader['deals'] : null,
+                );
+            } catch (\Throwable $exception) {
+                // OpenRouter must never make the COS refresh fail.
+                Log::warning('COS: no se pudieron sugerir asociaciones automáticas', [
+                    'user_id' => $user->id,
+                    'error' => $exception->getMessage(),
+                ]);
+                $sync['automatic_associations'] = ['linked' => 0, 'error' => true];
+            }
         }
 
         return $sync;

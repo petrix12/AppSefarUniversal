@@ -9,6 +9,13 @@ use Illuminate\Http\Request;
 
 class UserSyncController extends Controller
 {
+    public function refreshStatus(User $user)
+    {
+        return response()->json([
+            'pending' => \Illuminate\Support\Facades\Cache::has('cos.snapshot_refresh.pending.' . $user->id),
+        ]);
+    }
+
     public function sync(Request $request, User $user, ClientCosSnapshotService $snapshots): RedirectResponse
     {
         // Solo roles autorizados pueden sincronizar/consultar el estatus.

@@ -508,6 +508,9 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
 			->middleware('can:crud.roles.index');
     Route::resource('users', UserController::class)->names('users')
 			->middleware('can:crud.users.index');
+    Route::get('users/{user}/cos-refresh-status', [UserSyncController::class, 'refreshStatus'])
+            ->name('users.cos-refresh-status')
+            ->middleware('can:crud.users.index');
     Route::post('users/{user}/support-ticket', [SupportTicketController::class, 'storeForUser'])
             ->name('users.support-ticket')
             ->middleware('can:crud.users.index');

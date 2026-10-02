@@ -1728,6 +1728,7 @@ class UserController extends Controller
     $pageSnapshot = app(\App\Services\ClientCosSnapshotService::class)->forPage($user);
     $negocios = $pageSnapshot['negocios'];
     $mondayData = $pageSnapshot['monday_data'];
+    $cosAutoRefreshPending = (bool) ($pageSnapshot['refresh_pending'] ?? false);
 
     // ==========================================
     // GENEALOGÍA (CON CACHE)
@@ -2156,6 +2157,7 @@ class UserController extends Controller
         'hubspotPaidPaymentRows',
         'hubspotPendingPaymentRows',
         'teamleaderProfileCustomValues',
+        'cosAutoRefreshPending',
         'servicios',
         'ownerOptions',
         'formulario001',

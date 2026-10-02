@@ -3888,6 +3888,30 @@
 @stop
 
 @section('js')
+    @if($cosAutoRefreshPending ?? false)
+        <script>
+            (function () {
+                const statusUrl = @json(route('crud.users.cos-refresh-status', $user));
+                let attempts = 0;
+                const maxAttempts = 36;
+                const timer = window.setInterval(async function () {
+                    attempts++;
+                    try {
+                        const response = await fetch(statusUrl, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+                        const status = await response.json();
+                        if (!status.pending) {
+                            window.clearInterval(timer);
+                            window.location.reload();
+                            return;
+                        }
+                    } catch (error) {
+                        // A temporary status check failure should not disrupt the COS page.
+                    }
+                    if (attempts >= maxAttempts) window.clearInterval(timer);
+                }, 5000);
+            })();
+        </script>
+    @endif
     @if($cosClientPreview)
         <script>
             // Preview keeps the authenticated staff identity; customer actions are read-only.

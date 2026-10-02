@@ -117,6 +117,9 @@ class NegocioController extends Controller
             $this->hubspotService->updateDeals($hubspotId, $updatesToHubspot);
         }
 
+        if (Schema::hasColumn((new Negocio)->getTable(), 'teamleader_comparisons')) {
+            $dealDb->teamleader_comparisons = $comparisons;
+        }
         $dealDb->save();
 
         return $comparisons;
@@ -190,6 +193,12 @@ class NegocioController extends Controller
         try {
             $fieldComparisons = $this->syncDealIndividual($deal_db, $camposDeTeamleader);
             $deal_db->refresh();
+            $savedComparisons = $deal_db->teamleader_comparisons;
+            if (is_string($savedComparisons)) {
+                $savedComparisons = json_decode($savedComparisons, true) ?: [];
+            }
+            $fieldComparisons = collect(array_merge(is_array($savedComparisons) ? $savedComparisons : [], $fieldComparisons))
+                ->keyBy('field')->values()->all();
         } catch (\Throwable $exception) {
             \Log::warning('No se pudo completar el enriquecimiento HubSpot desde Teamleader', [
                 'negocio_id' => $deal_db->id,

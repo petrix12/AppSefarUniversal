@@ -37,6 +37,7 @@ class RefreshClientCosSnapshot implements ShouldQueue, ShouldBeUnique
         $user = User::find($this->userId);
         if ($user) {
             $snapshots->get($user, $this->forceRefresh);
+            \Illuminate\Support\Facades\Cache::forget('cos.snapshot_refresh.pending.' . $user->id);
             \Illuminate\Support\Facades\Cache::put('cos.page_refreshed.' . $user->id, true, 300);
             \Illuminate\Support\Facades\Cache::remember('cos.monday_users', 3600, function () {
                 $result = \Monday::customQuery('users { id name email enabled }');

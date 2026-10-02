@@ -12,4 +12,9 @@ class Negocio extends Model
     protected $table = 'negocios';
 
     protected $guarded = [];
+
+    protected $casts = [
+        'teamleader_comparisons' => 'array',
+        'teamleader_matched_at' => 'datetime',
+    ];
 }

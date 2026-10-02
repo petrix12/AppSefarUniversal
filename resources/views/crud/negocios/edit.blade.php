@@ -57,6 +57,12 @@
                             @elseif (filled($deal_db->teamleader_id))
                                 <span class="badge badge-secondary">Fuente visible: Teamleader · solo lectura</span>
                             @endif
+                            @if (filled($deal_db->teamleader_match_confidence))
+                                <span class="badge badge-info">Asociación automática · {{ $deal_db->teamleader_match_confidence }}% de confianza</span>
+                                @if (filled($deal_db->teamleader_match_reason))
+                                    <small class="d-block text-muted mt-1">{{ $deal_db->teamleader_match_reason }}</small>
+                                @endif
+                            @endif
                         </div>
 
                         @if (!empty($fieldComparisons))

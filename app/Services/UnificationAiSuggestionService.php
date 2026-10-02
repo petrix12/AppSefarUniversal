@@ -23,7 +23,8 @@ class UnificationAiSuggestionService
     /**
      * Rank Teamleader projects as possible matches for one HubSpot deal.
      * The model sees only deal-level matching evidence and returns indexes;
-     * the caller resolves those indexes to IDs and asks a human to confirm.
+     * the caller resolves those indexes to IDs. Automatic callers must apply
+     * their own conservative confidence and uniqueness checks.
      */
     public function suggestDealAssociations(array $hubspotDeal, array $teamleaderDeals): array
     {
