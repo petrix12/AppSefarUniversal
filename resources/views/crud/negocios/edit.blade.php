@@ -89,7 +89,7 @@
                             </div>
                             <div style="flex: 1;" class="mb-3">
                                 <label for="teamleader_id" class="block text-sm font-medium text-gray-700">Proyecto (Teamleader)</label>
-                                <select class="select2 mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="teamleader_id" name="teamleader_id">
+                                <select class="select2 mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="teamleader_id" name="teamleader_id" data-deal-id="{{ $deal_db->id }}" data-csrf="{{ csrf_token() }}">
                                     <option value="" {{ old('teamleader_id', $deal_db->teamleader_id) == '' ? 'selected' : '' }}>Seleccione un proyecto</option>
                                     @foreach ($TLdeals as $tldeal)
                                         <option value='{{$tldeal["id"]}}' {{ old('teamleader_id', $deal_db->teamleader_id) == $tldeal["id"] ? 'selected' : '' }}>{{$tldeal["title"]}}</option>
@@ -847,81 +847,6 @@
 
                     <script>
                         $(document).ready(function () {
-                            let previousValue = "{{ $deal_db->teamleader_id }}"; // Guarda el valor inicial
-
-                            $('#suggest-teamleader-match').on('click', function () {
-                                const button = $(this);
-                                const results = $('#teamleader-ai-suggestions');
-                                button.prop('disabled', true);
-                                results.empty().append($('<div class="text-muted small">').text('Comparando el negocio con los proyectos de este cliente...'));
-
-                                $.ajax({
-                                    url: button.data('url'),
-                                    method: 'POST',
-                                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                                    success: function (response) {
-                                        results.empty();
-                                        if (!response.suggestions || response.suggestions.length === 0) {
-                                            results.append($('<div class="alert alert-light py-2 mb-0">').text('La IA no encontró candidatos con evidencia suficiente.'));
-                                            return;
-                                        }
-
-                                        results.append($('<div class="small text-muted mb-2">').text('Sugerencias de OpenRouter (' + response.model + '). Confirma la coincidencia antes de asociar.'));
-                                        response.suggestions.forEach(function (suggestion) {
-                                            const row = $('<div class="border rounded p-2 mb-2 d-flex justify-content-between align-items-center flex-wrap">');
-                                            const description = $('<div class="mr-2">');
-                                            description.append($('<strong>').text(suggestion.title + ' · ' + suggestion.confidence + '%'));
-                                            description.append($('<div class="small text-muted">').text(suggestion.reason));
-                                            const useButton = $('<button type="button" class="btn btn-sm btn-outline-primary use-ai-teamleader-suggestion">')
-                                                .text('Seleccionar')
-                                                .attr('data-teamleader-id', suggestion.id);
-                                            row.append(description, useButton);
-                                            results.append(row);
-                                        });
-                                    },
-                                    error: function (xhr) {
-                                        const message = xhr.responseJSON && xhr.responseJSON.message
-                                            ? xhr.responseJSON.message
-                                            : 'No se pudieron generar sugerencias de asociación.';
-                                        results.empty().append($('<div class="alert alert-danger py-2 mb-0">').text(message));
-                                    },
-                                    complete: function () {
-                                        button.prop('disabled', false);
-                                    }
-                                });
-                            });
-
-                            $('#teamleader-ai-suggestions').on('click', '.use-ai-teamleader-suggestion', function () {
-                                const teamleaderId = $(this).attr('data-teamleader-id');
-                                $('#teamleader_id').val(teamleaderId).trigger('change');
-                            });
-
-                            $('#teamleader_id').on('change', function () {
-                                const newValue = $(this).val();
-
-                                // Si el valor seleccionado no está vacío y es diferente al anterior, muestra la alerta
-                                if (previousValue !== newValue) {
-                                    Swal.fire({
-                                        title: '¿Estás seguro?',
-                                        text: "Se guardará la asociación de IDs. Los campos vacíos de HubSpot se completarán desde Teamleader; los valores existentes se conservarán para comparar.",
-                                        icon: 'warning',
-                                        showCancelButton: true,
-                                        confirmButtonColor: '#3085d6',
-                                        cancelButtonColor: '#d33',
-                                        confirmButtonText: 'Continuar',
-                                        cancelButtonText: 'Cancelar'
-                                    }).then((result) => {
-                                        if (result.isConfirmed) {
-                                            // Si el usuario elige "Continuar", llama al backend para sincronizar
-                                            synchronizeWithBackend(newValue);
-                                        } else {
-                                            // Si el usuario elige "Cancelar", restaura el valor anterior
-                                            $('#teamleader_id').val(previousValue);
-                                        }
-                                    });
-                                }
-                            });
-
                             $(`#exonerar_fase_1`).on('change', function () {
                                 if ($(`#exonerar_fase_1`).prop('checked')) {
                                     Swal.fire({
@@ -1412,37 +1337,6 @@
                                 });
                             });
 
-                            // Función para llamar al backend y sincronizar
-                            function synchronizeWithBackend(newValue) {
-                                // Aquí puedes hacer una llamada AJAX a tu backend usando jQuery
-                                $.ajax({
-                                    url: '/sincronizarhsytl',
-                                    method: 'POST',
-                                    headers: {
-                                        'X-CSRF-TOKEN': '{{ csrf_token() }}' // Asegúrate de incluir el token CSRF si usas Laravel
-                                    },
-                                    data: JSON.stringify({ teamleader_id: newValue, id: {{$deal_db->id}} }),
-                                    contentType: 'application/json',
-                                    success: function (data) {
-                                        if (data.success) {
-                                            Swal.fire({
-                                                title: 'Éxito',
-                                                text: 'La sincronización se completó correctamente.',
-                                                icon: 'success',
-                                                confirmButtonText: 'Aceptar'
-                                            }).then(() => {
-                                                // Recarga la página después de cerrar la alerta
-                                                window.location.reload();
-                                            });
-                                        } else {
-                                            Swal.fire('Error', 'Hubo un problema durante la sincronización.', 'error');
-                                        }
-                                    },
-                                    error: function () {
-                                        Swal.fire('Error', 'Hubo un problema durante la sincronización.', 'error');
-                                    }
-                                });
-                            }
                         });
                         document.addEventListener('DOMContentLoaded', () => {
                             const fase1PreestabInput = document.getElementById('fase_1_preestab');
@@ -1517,6 +1411,126 @@
             $('#servicio_solicitado').val($(this).val());
         });
     });
+</script>
+
+<script>
+    (() => {
+        const button = document.getElementById('suggest-teamleader-match');
+        const results = document.getElementById('teamleader-ai-suggestions');
+        const teamleaderSelect = document.getElementById('teamleader_id');
+        if (!button || !results || !teamleaderSelect) return;
+
+        const csrfToken = teamleaderSelect.dataset.csrf;
+        const dealId = teamleaderSelect.dataset.dealId;
+        let previousValue = teamleaderSelect.value;
+
+        const showMessage = (className, message) => {
+            const alert = document.createElement('div');
+            alert.className = className;
+            alert.textContent = message;
+            results.replaceChildren(alert);
+        };
+
+        const postJson = async (url, payload) => {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: JSON.stringify(payload),
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || data.success === false) {
+                throw new Error(data.message || `Error HTTP ${response.status}. Recarga la página e inténtalo de nuevo.`);
+            }
+            return data;
+        };
+
+        button.addEventListener('click', async () => {
+            button.disabled = true;
+            showMessage('text-muted small', 'Comparando el negocio con los proyectos de este cliente...');
+
+            try {
+                const response = await postJson(button.dataset.url, {});
+                results.replaceChildren();
+                if (!response.suggestions || response.suggestions.length === 0) {
+                    showMessage('alert alert-light py-2 mb-0', 'La IA no encontró candidatos con evidencia suficiente.');
+                    return;
+                }
+
+                const heading = document.createElement('div');
+                heading.className = 'small text-muted mb-2';
+                heading.textContent = `Sugerencias de OpenRouter (${response.model}). Confirma la coincidencia antes de asociar.`;
+                results.append(heading);
+
+                response.suggestions.forEach((suggestion) => {
+                    const row = document.createElement('div');
+                    row.className = 'border rounded p-2 mb-2 d-flex justify-content-between align-items-center flex-wrap';
+                    const description = document.createElement('div');
+                    description.className = 'mr-2';
+                    const title = document.createElement('strong');
+                    title.textContent = `${suggestion.title} · ${suggestion.confidence}%`;
+                    const reason = document.createElement('div');
+                    reason.className = 'small text-muted';
+                    reason.textContent = suggestion.reason;
+                    description.append(title, reason);
+
+                    const selectButton = document.createElement('button');
+                    selectButton.type = 'button';
+                    selectButton.className = 'btn btn-sm btn-outline-primary use-ai-teamleader-suggestion';
+                    selectButton.textContent = 'Seleccionar';
+                    selectButton.dataset.teamleaderId = suggestion.id;
+                    row.append(description, selectButton);
+                    results.append(row);
+                });
+            } catch (error) {
+                showMessage('alert alert-danger py-2 mb-0', error.message || 'No se pudieron generar sugerencias de asociación.');
+            } finally {
+                button.disabled = false;
+            }
+        });
+
+        results.addEventListener('click', (event) => {
+            const selectButton = event.target.closest('.use-ai-teamleader-suggestion');
+            if (!selectButton) return;
+
+            teamleaderSelect.value = selectButton.dataset.teamleaderId;
+            teamleaderSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+
+        teamleaderSelect.addEventListener('change', async () => {
+            const newValue = teamleaderSelect.value;
+            if (newValue === previousValue) return;
+
+            const confirmation = await Swal.fire({
+                title: '¿Confirmas esta asociación?',
+                text: 'Se guardarán los IDs. Los campos vacíos de HubSpot se completarán desde Teamleader; los valores existentes se conservarán para comparar.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Asociar',
+                cancelButtonText: 'Cancelar',
+            });
+
+            if (!confirmation.isConfirmed) {
+                teamleaderSelect.value = previousValue;
+                if (window.jQuery) window.jQuery(teamleaderSelect).trigger('change.select2');
+                return;
+            }
+
+            try {
+                await postJson('/sincronizarhsytl', { id: dealId, teamleader_id: newValue || null });
+                previousValue = newValue;
+                await Swal.fire('Asociación guardada', 'Al recargar se actualizarán en HubSpot los campos vacíos.', 'success');
+                window.location.reload();
+            } catch (error) {
+                teamleaderSelect.value = previousValue;
+                if (window.jQuery) window.jQuery(teamleaderSelect).trigger('change.select2');
+                await Swal.fire('No se pudo asociar', error.message || 'Error al guardar la asociación.', 'error');
+            }
+        });
+    })();
 </script>
 
 @stop

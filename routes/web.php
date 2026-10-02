@@ -647,7 +647,7 @@ Route::get('/checkMondayTest', [ClienteController::class, 'checkMondayTest'])->n
 Route::get('/deal/{id}/edit', [NegocioController::class, 'edit'])->name('deals.edit');
 Route::post('/deals/{id}/teamleader-suggestions', [NegocioController::class, 'sugerirAsociacionesTeamleader'])
     ->name('deals.teamleader.suggestions')
-    ->middleware(['auth', 'can:administrador']);
+    ->middleware(['auth', 'can:crud.users.index']);
 
 Route::get('/prompttreena', [TreenaController::class, 'index'])->name('treena.index');
 
