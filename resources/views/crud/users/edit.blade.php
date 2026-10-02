@@ -605,7 +605,7 @@
                                 return collect($factura->compras ?? [])->sum('monto');
                             }) + collect($comprasPagadasSinFactura ?? [])
                                 ->filter(fn ($purchase) => strtoupper((string) data_get($purchase->metadata, 'display_currency', 'EUR')) === 'EUR')
-                                ->sum('monto');
+                                ->sum('monto') + collect($hubspotPaidPaymentRows ?? [])->sum('display_amount');
                             $allPendingPurchases = $comprasConDealNoPagadas->merge($comprasSinDealNoPagadas);
                             $portalPhasePaymentService = app(\App\Services\TeamleaderPhasePaymentService::class);
                             $visiblePhasePurchases = $portalPhasePaymentService
@@ -613,7 +613,8 @@
                                 ->filter(fn ($purchase) => $purchase->source === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE);
                             $portalOutstandingAmount = $allPendingPurchases
                                 ->reject(fn ($purchase) => $purchase->source === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE)
-                                ->sum('monto') + $visiblePhasePurchases->sum('monto');
+                                ->sum('monto') + $visiblePhasePurchases->sum('monto')
+                                + collect($hubspotPendingPaymentRows ?? [])->sum('display_amount');
 
                             // The payment summary is deliberately calculated
                             // from the exact same portal records rendered in
@@ -791,22 +792,12 @@
                     @if($rolId !== 5)
                         @php
                             $tlPaymentTotals = $teamleaderProjectPayments['totals'] ?? [];
-                            $tlPaymentProjects = collect($teamleaderProjectPayments['projects'] ?? []);
-                            $tlPaymentRows = $tlPaymentProjects
-                                ->flatMap(function ($project) {
-                                    return collect($project['phases'] ?? [])
-                                        ->filter(function ($phase) {
-                                            return ($phase['status'] ?? 'empty') !== 'empty'
-                                                || (float) ($phase['effective_preestab_amount'] ?? 0) > 0
-                                                || (float) ($phase['effective_paid_amount'] ?? 0) > 0
-                                                || trim((string) ($phase['preestab_raw'] ?? '')) !== ''
-                                                || trim((string) ($phase['paid_raw'] ?? '')) !== '';
-                                        })
-                                        ->map(function ($phase) use ($project) {
-                                            $phase['project_title'] = $project['project_title'] ?? $project['project_id'] ?? '-';
-                                            return $phase;
-                                        });
-                                })
+                            $tlPaymentRows = collect($statusPaymentRows ?? [])
+                                ->filter(fn ($phase) => ($phase['status'] ?? 'empty') !== 'empty'
+                                    || (float) ($phase['effective_preestab_amount'] ?? 0) > 0
+                                    || (float) ($phase['effective_paid_amount'] ?? 0) > 0
+                                    || trim((string) ($phase['preestab_raw'] ?? '')) !== ''
+                                    || trim((string) ($phase['paid_raw'] ?? '')) !== '')
                                 ->values();
                             $tlPhasePurchases = $comprasSinDealNoPagadas
                                 ->filter(fn ($purchase) => $purchase->source === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE)
@@ -828,6 +819,7 @@
                                 'paid' => 'Pagado',
                                 'partial' => 'Parcial',
                                 'pending' => 'Pendiente',
+                                'review' => 'Revisar',
                                 'exonerated' => 'Exonerado',
                                 'included' => 'Incluido',
                                 'empty' => 'Sin datos',
@@ -836,6 +828,7 @@
                                 'paid' => 'bg-success',
                                 'partial' => 'bg-warning text-dark',
                                 'pending' => 'bg-danger',
+                                'review' => 'bg-danger',
                                 'exonerated' => 'bg-info text-dark',
                                 'included' => 'bg-secondary',
                                 'empty' => 'bg-light text-dark',
@@ -846,18 +839,18 @@
                             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.75rem; padding:1rem 1.25rem; background:#eff6ff; border-bottom:1px solid #dbeafe;">
                                 <div>
                                     <div style="font-size:.78rem; font-weight:700; color:#1d4ed8; text-transform:uppercase; letter-spacing:.04em;">
-                                        Finanzas Teamleader
+                                        Finanzas por negocio
                                     </div>
                                     <h3 style="font-size:1.1rem; font-weight:800; color:#111827; margin:0;">
-                                        Resumen global por proyectos
+                                        Resumen de pagos por negocio
                                     </h3>
                                 </div>
                                 @if(($teamleaderMigration['contact'] ?? null))
                                     <span class="badge bg-primary" style="font-size:.78rem;">
-                                        {{ $tlPaymentTotals['projects'] ?? 0 }} proyecto(s)
+                                        {{ $tlPaymentTotals['projects'] ?? 0 }} negocio(s)
                                     </span>
                                 @else
-                                    <span class="badge bg-secondary" style="font-size:.78rem;">Sin contacto TL asociado</span>
+                                    <span class="badge bg-secondary" style="font-size:.78rem;">{{ $tlPaymentTotals['projects'] ?? 0 }} negocio(s)</span>
                                 @endif
                             </div>
 
@@ -905,10 +898,11 @@
                                                     <th>Proyecto</th>
                                                     <th>Fase</th>
                                                     <th>Estado</th>
+                                                    <th>Fuente</th>
                                                     <th class="text-end">Preestab</th>
                                                     <th class="text-end">Pagado</th>
                                                     <th class="text-end">Saldo</th>
-                                                    <th>Valor TL</th>
+                                                    <th>Valor en HubSpot / Teamleader</th>
                                                     <th>Vista del solicitante</th>
                                                     <th class="text-end">Acción</th>
                                                 </tr>
@@ -930,6 +924,7 @@
                                                                 {{ $tlStatusLabels[$status] ?? $status }}
                                                             </span>
                                                         </td>
+                                                        <td><span class="badge {{ ($phase['source'] ?? '') === 'HubSpot' ? 'bg-primary' : 'bg-secondary' }}">{{ $phase['source'] ?? 'Teamleader' }}</span></td>
                                                         <td class="text-end">{{ $tlMoney($phase['effective_preestab_amount'] ?? 0) }}</td>
                                                         <td class="text-end">
                                                             {{ $tlMoney($phase['effective_paid_amount'] ?? 0) }}
@@ -944,7 +939,9 @@
                                                         </td>
                                                         <td class="small text-muted">{{ \Illuminate\Support\Str::limit(implode(' | ', $rawPieces), 70) ?: '-' }}</td>
                                                         <td>
-                                                            @if($phase['visibility_purchase_id'] ?? null)
+                                                            @if(($phase['source'] ?? '') === 'HubSpot')
+                                                                <span class="badge bg-primary">Según HubSpot</span>
+                                                            @elseif($phase['visibility_purchase_id'] ?? null)
                                                                 <span class="badge {{ !empty($phase['hidden_from_client']) ? 'bg-secondary' : 'bg-success' }}">
                                                                     {{ !empty($phase['hidden_from_client']) ? 'Oculta' : 'Visible' }}
                                                                 </span>
@@ -953,7 +950,9 @@
                                                             @endif
                                                         </td>
                                                         <td class="text-end">
-                                                            @if($phase['visibility_purchase_id'] ?? null)
+                                                            @if(($phase['source'] ?? '') === 'HubSpot')
+                                                                <span class="text-muted small">Dato sincronizado</span>
+                                                            @elseif($phase['visibility_purchase_id'] ?? null)
                                                                 <form method="POST" action="{{ route('crud.users.update-phase-payment-visibility', ['user' => $user->id]) }}" class="d-inline" @if(empty($phase['hidden_from_client'])) onsubmit="return confirm('Ocultar esta fase al solicitante? El saldo seguirá visible internamente.');" @endif>
                                                                     @csrf
                                                                     @method('PATCH')
@@ -976,7 +975,7 @@
 
                                 @else
                                     <div class="alert alert-light border mt-3 mb-0">
-                                        No hay montos detectados en los campos Fase 1/2/3 Preestab y Pagado de los proyectos Teamleader asociados.
+                                        No hay montos de pago detectados en tratos HubSpot ni en proyectos Teamleader sin asociación.
                                     </div>
                                 @endif
                             </div>
@@ -2356,7 +2355,10 @@
 
                         </fieldset>
 
-                        @include('crud.users.partials.teamleader-custom-fields', ['user' => $user])
+                        @include('crud.users.partials.teamleader-custom-fields', [
+                            'user' => $user,
+                            'teamleaderProfileCustomValues' => $teamleaderProfileCustomValues ?? [],
+                        ])
 
                         @if($canEditCos)
                             <div class="cos-save-bar">
@@ -2594,10 +2596,20 @@
                                     <td>—</td>
                                 </tr>
                             @endforeach
+                            @foreach(($hubspotPaidPaymentRows ?? collect()) as $payment)
+                                <tr>
+                                    <td>HubSpot</td>
+                                    <td>—</td>
+                                    <td>Pago registrado en el trato</td>
+                                    <td>{{ $payment['project_title'] }} · {{ $payment['payment_label'] }}<div class="small text-muted">{{ $payment['paid_raw'] }}</div></td>
+                                    <td>{{ format_money((float) $payment['display_amount'], 2, ',', '.') }} €</td>
+                                    <td>—</td>
+                                </tr>
+                            @endforeach
                         </tbody>
                     </table>
 
-                    @if($facturas->isEmpty() && collect($comprasPagadasSinFactura ?? [])->isEmpty())
+                    @if($facturas->isEmpty() && collect($comprasPagadasSinFactura ?? [])->isEmpty() && collect($hubspotPaidPaymentRows ?? [])->isEmpty())
                         <div class="alert alert-light border mt-3 mb-0">
                             Aún no hay comprobantes de pago registrados directamente en el portal.
                         </div>
@@ -2617,9 +2629,10 @@
                             ? $paymentPhasePaymentService->visiblePortalPurchases($allPendingPurchasesForCos)
                             : $allPendingPurchasesForCos;
                         $hasPendingPayments = $portalPendingPurchases->isNotEmpty();
+                        $hasHubspotPendingPayments = collect($hubspotPendingPaymentRows ?? [])->isNotEmpty();
                     @endphp
 
-                    @if($hasPendingPayments)
+                    @if($hasPendingPayments || $hasHubspotPendingPayments)
                     <table id="paymentsPenTable" class="min-w-full divide-y divide-gray-200 w-100">
                         <thead class="bg-gray-50">
                             <tr>
@@ -2662,6 +2675,18 @@
                                         </a>
                                         @endif
                                     </td>
+                                    @endif
+                                </tr>
+                            @endforeach
+                            @foreach(($hubspotPendingPaymentRows ?? collect()) as $payment)
+                                <tr>
+                                    <td>
+                                        {{ $payment['project_title'] }} · {{ $payment['payment_label'] }}
+                                        <div class="small text-muted">Pendiente según los campos de pago del trato HubSpot.</div>
+                                    </td>
+                                    <td>{{ format_money((float) $payment['display_amount'], 2, ',', '.') }} €</td>
+                                    @if($cosViewRoleId == 5)
+                                        <td><span class="text-muted small">Verificar en HubSpot</span></td>
                                     @endif
                                 </tr>
                             @endforeach

@@ -1,4 +1,8 @@
 @php
+    $teamleaderProfileCustomValues = is_array($teamleaderProfileCustomValues ?? null)
+        ? $teamleaderProfileCustomValues
+        : [];
+
     $tlCustomGroups = [
         ['title' => 'Campos personalizados', 'open' => true, 'fields' => [
             ['Acta notarial', 'n1__acta_notarial'],

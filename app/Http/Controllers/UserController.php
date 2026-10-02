@@ -1804,6 +1804,53 @@ class UserController extends Controller
         ->map(fn ($id) => trim((string) $id))
         ->unique()
         ->values();
+    $hubspotPaymentAnalyzer = app(TeamleaderProjectPaymentAnalyzer::class);
+    $hubspotPaymentFields = [
+        1 => ['label' => 'Fase 1', 'preestab' => 'fase_1_preestab', 'paid' => 'fase_1_pagado'],
+        2 => ['label' => 'Fase 2', 'preestab' => 'fase_2_preestab', 'paid' => 'fase_2_pagado'],
+        3 => ['label' => 'Fase 3', 'preestab' => 'fase_3_preestab', 'paid' => 'fase_3_pagado'],
+        98 => ['label' => 'Carta de Naturaleza', 'preestab' => 'carta_nat_preestab', 'paid' => 'carta_nat_pagado'],
+        99 => ['label' => 'CIL / FCJE', 'preestab' => 'cil___fcje_preestab', 'paid' => 'cil___fcje_pagado'],
+    ];
+    $hubspotPaymentRows = $negocios
+        ->filter(fn (Negocio $deal) => filled($deal->hubspot_id))
+        ->flatMap(function (Negocio $deal) use ($hubspotPaymentFields, $hubspotPaymentAnalyzer): array {
+            $rows = [];
+            foreach ($hubspotPaymentFields as $phase => $fields) {
+                $preestabRaw = trim((string) $deal->{$fields['preestab']});
+                $paidRaw = trim((string) $deal->{$fields['paid']});
+                if ($preestabRaw === '' && $paidRaw === '') {
+                    continue;
+                }
+
+                $preestab = $hubspotPaymentAnalyzer->parseMoneyText($preestabRaw);
+                $paid = $hubspotPaymentAnalyzer->parseMoneyText($paidRaw);
+                $exoneratedOrIncluded = $preestab['exonerated'] || $paid['exonerated'] || $preestab['included'] || $paid['included'];
+                $preestablishedAmount = $exoneratedOrIncluded ? 0.0 : (float) $preestab['total'];
+                $paidAmount = $exoneratedOrIncluded ? 0.0 : (float) $paid['total'];
+                $balance = round(max($preestablishedAmount - $paidAmount, 0), 2);
+                $overpaid = round(max($paidAmount - $preestablishedAmount, 0), 2);
+
+                $rows[] = [
+                    'source' => 'HubSpot',
+                    'project_id' => (string) $deal->hubspot_id,
+                    'deal_id' => $deal->id,
+                    'project_title' => $deal->servicio_solicitado2 ?: $deal->servicio_solicitado ?: 'Trato HubSpot ' . $deal->hubspot_id,
+                    'phase' => $phase,
+                    'payment_label' => $fields['label'],
+                    'preestab_raw' => $preestabRaw,
+                    'paid_raw' => $paidRaw,
+                    'effective_preestab_amount' => round($preestablishedAmount, 2),
+                    'effective_paid_amount' => round($paidAmount, 2),
+                    'balance_amount' => $balance,
+                    'overpaid_amount' => $overpaid,
+                    'status' => $exoneratedOrIncluded ? 'exonerated' : ($overpaid > 0.01 ? 'review' : ($balance <= 0.01 ? 'paid' : ($paidAmount > 0 ? 'partial' : 'pending'))),
+                ];
+            }
+
+            return $rows;
+        })
+        ->values();
     $teamleaderStatusMigration = $teamleaderMigration;
     $teamleaderStatusMigration['projects'] = collect($teamleaderMigration['projects'] ?? [])
         ->reject(fn ($project) => $linkedTeamleaderProjectIds->contains(trim((string) ($project->id ?? ''))))
@@ -1844,9 +1891,21 @@ class UserController extends Controller
         ->values()
         ->all();
     $visibleTeamleaderProjects = collect($teamleaderProjectPayments['projects']);
-    $visibleTeamleaderPhases = $visibleTeamleaderProjects->flatMap(fn ($project) => $project['phases'] ?? []);
+    $teamleaderOnlyPaymentRows = $visibleTeamleaderProjects
+        ->flatMap(function (array $project): array {
+            return collect($project['phases'] ?? [])
+                ->map(function (array $phase) use ($project): array {
+                    $phase['source'] = 'Teamleader';
+                    $phase['project_id'] = (string) ($project['project_id'] ?? '');
+                    $phase['project_title'] = $project['project_title'] ?? $phase['project_id'];
+                    return $phase;
+                })
+                ->all();
+        });
+    $statusPaymentRows = $hubspotPaymentRows->concat($teamleaderOnlyPaymentRows)->values();
+    $visibleTeamleaderPhases = $statusPaymentRows;
     $teamleaderProjectPayments['totals'] = [
-        'projects' => $visibleTeamleaderProjects->count(),
+        'projects' => $negocios->filter(fn (Negocio $deal) => filled($deal->hubspot_id))->count() + $visibleTeamleaderProjects->count(),
         'preestab_amount' => round((float) $visibleTeamleaderPhases->sum('effective_preestab_amount'), 2),
         'paid_amount' => round((float) $visibleTeamleaderPhases->sum('effective_paid_amount'), 2),
         'balance_amount' => round((float) $visibleTeamleaderPhases->sum('balance_amount'), 2),
@@ -1913,6 +1972,33 @@ class UserController extends Controller
 
         return $original->isEmpty() || $visible->isNotEmpty();
     })->values();
+
+    $paidPurchaseRecords = $facturas->flatMap(fn (Factura $factura) => $factura->compras ?? [])
+        ->concat($comprasPagadasSinFactura);
+    $paidByDealPhase = $paidPurchaseRecords
+        ->filter(fn (Compras $purchase) => filled($purchase->deal_id))
+        ->groupBy(fn (Compras $purchase) => $purchase->deal_id . ':' . (int) $purchase->phasenum)
+        ->map(fn ($purchases) => (float) $purchases->sum('monto'));
+    $pendingByDealPhase = $comprasConDealNoPagadas
+        ->filter(fn (Compras $purchase) => filled($purchase->deal_id))
+        ->groupBy(fn (Compras $purchase) => $purchase->deal_id . ':' . (int) $purchase->phasenum)
+        ->map(fn ($purchases) => (float) $purchases->sum('monto'));
+    $hubspotPaidPaymentRows = $hubspotPaymentRows
+        ->map(function (array $row) use ($paidByDealPhase): array {
+            $key = $row['deal_id'] . ':' . (int) $row['phase'];
+            $row['display_amount'] = round(max((float) $row['effective_paid_amount'] - (float) $paidByDealPhase->get($key, 0), 0), 2);
+            return $row;
+        })
+        ->filter(fn (array $row) => $row['display_amount'] > 0.01)
+        ->values();
+    $hubspotPendingPaymentRows = $hubspotPaymentRows
+        ->map(function (array $row) use ($pendingByDealPhase): array {
+            $key = $row['deal_id'] . ':' . (int) $row['phase'];
+            $row['display_amount'] = round(max((float) $row['balance_amount'] - (float) $pendingByDealPhase->get($key, 0), 0), 2);
+            return $row;
+        })
+        ->filter(fn (array $row) => $row['display_amount'] > 0.01)
+        ->values();
 
 
     // ==========================================
@@ -2066,6 +2152,9 @@ class UserController extends Controller
         'teamleaderMigration',
         'teamleaderStatusMigration',
         'teamleaderProjectPayments',
+        'statusPaymentRows',
+        'hubspotPaidPaymentRows',
+        'hubspotPendingPaymentRows',
         'teamleaderProfileCustomValues',
         'servicios',
         'ownerOptions',
