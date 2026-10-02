@@ -51,6 +51,34 @@
                         <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
                             <span class="ctvSefar block text-indigo-600">DATOS GENERALES:</span>
                         </h2>
+                        <div class="mb-3">
+                            @if (filled($deal_db->hubspot_id))
+                                <span class="badge badge-primary">Fuente visible: HubSpot</span>
+                            @elseif (filled($deal_db->teamleader_id))
+                                <span class="badge badge-secondary">Fuente visible: Teamleader · solo lectura</span>
+                            @endif
+                        </div>
+
+                        @if (!empty($fieldComparisons))
+                            <div class="alert alert-warning mt-3" role="status">
+                                <strong>Campos para comparar.</strong>
+                                Los dos sistemas tienen un valor. Se conserva HubSpot; revisa estas diferencias antes de corregir el dato.
+                            </div>
+                            <div class="table-responsive mb-4">
+                                <table class="table table-sm table-bordered">
+                                    <thead><tr><th>Campo</th><th>HubSpot (se conserva)</th><th>Teamleader (solo consulta)</th></tr></thead>
+                                    <tbody>
+                                        @foreach ($fieldComparisons as $comparison)
+                                            <tr>
+                                                <th>{{ $comparison['field'] }}</th>
+                                                <td>{{ is_scalar($comparison['hubspot']) ? $comparison['hubspot'] : json_encode($comparison['hubspot'], JSON_UNESCAPED_UNICODE) }}</td>
+                                                <td>{{ is_scalar($comparison['teamleader']) ? $comparison['teamleader'] : json_encode($comparison['teamleader'], JSON_UNESCAPED_UNICODE) }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
 
                         <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
                             <div style="flex: 1;" class="mb-3">
@@ -67,6 +95,12 @@
                                         <option value='{{$tldeal["id"]}}' {{ old('teamleader_id', $deal_db->teamleader_id) == $tldeal["id"] ? 'selected' : '' }}>{{$tldeal["title"]}}</option>
                                     @endforeach
                                 </select>
+                                <button type="button" id="suggest-teamleader-match" class="btn btn-sm btn-outline-info mt-2"
+                                    data-url="{{ route('deals.teamleader.suggestions', $deal_db->id) }}"
+                                    @if(blank(config('services.openrouter.key'))) disabled title="Configura OPENROUTER_API_KEY para habilitar sugerencias" @endif>
+                                    <i class="fas fa-magic mr-1"></i>Sugerir asociación con IA
+                                </button>
+                                <div id="teamleader-ai-suggestions" class="mt-2" aria-live="polite"></div>
                             </div>
                             <div style="flex: 1;" class="mb-3">
                                 <label for="servicio_solicitado2" class="block text-sm font-medium text-gray-700">Servicio Solicitado</label>
@@ -815,6 +849,53 @@
                         $(document).ready(function () {
                             let previousValue = "{{ $deal_db->teamleader_id }}"; // Guarda el valor inicial
 
+                            $('#suggest-teamleader-match').on('click', function () {
+                                const button = $(this);
+                                const results = $('#teamleader-ai-suggestions');
+                                button.prop('disabled', true);
+                                results.empty().append($('<div class="text-muted small">').text('Comparando el negocio con los proyectos de este cliente...'));
+
+                                $.ajax({
+                                    url: button.data('url'),
+                                    method: 'POST',
+                                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                                    success: function (response) {
+                                        results.empty();
+                                        if (!response.suggestions || response.suggestions.length === 0) {
+                                            results.append($('<div class="alert alert-light py-2 mb-0">').text('La IA no encontró candidatos con evidencia suficiente.'));
+                                            return;
+                                        }
+
+                                        results.append($('<div class="small text-muted mb-2">').text('Sugerencias de OpenRouter (' + response.model + '). Confirma la coincidencia antes de asociar.'));
+                                        response.suggestions.forEach(function (suggestion) {
+                                            const row = $('<div class="border rounded p-2 mb-2 d-flex justify-content-between align-items-center flex-wrap">');
+                                            const description = $('<div class="mr-2">');
+                                            description.append($('<strong>').text(suggestion.title + ' · ' + suggestion.confidence + '%'));
+                                            description.append($('<div class="small text-muted">').text(suggestion.reason));
+                                            const useButton = $('<button type="button" class="btn btn-sm btn-outline-primary use-ai-teamleader-suggestion">')
+                                                .text('Seleccionar')
+                                                .attr('data-teamleader-id', suggestion.id);
+                                            row.append(description, useButton);
+                                            results.append(row);
+                                        });
+                                    },
+                                    error: function (xhr) {
+                                        const message = xhr.responseJSON && xhr.responseJSON.message
+                                            ? xhr.responseJSON.message
+                                            : 'No se pudieron generar sugerencias de asociación.';
+                                        results.empty().append($('<div class="alert alert-danger py-2 mb-0">').text(message));
+                                    },
+                                    complete: function () {
+                                        button.prop('disabled', false);
+                                    }
+                                });
+                            });
+
+                            $('#teamleader-ai-suggestions').on('click', '.use-ai-teamleader-suggestion', function () {
+                                const teamleaderId = $(this).attr('data-teamleader-id');
+                                $('#teamleader_id').val(teamleaderId).trigger('change');
+                            });
+
                             $('#teamleader_id').on('change', function () {
                                 const newValue = $(this).val();
 
@@ -822,7 +903,7 @@
                                 if (previousValue !== newValue) {
                                     Swal.fire({
                                         title: '¿Estás seguro?',
-                                        text: "El cambio va a sincronizar información entre Hubspot y Teamleader.",
+                                        text: "Se guardará la asociación de IDs. Los campos vacíos de HubSpot se completarán desde Teamleader; los valores existentes se conservarán para comparar.",
                                         icon: 'warning',
                                         showCancelButton: true,
                                         confirmButtonColor: '#3085d6',

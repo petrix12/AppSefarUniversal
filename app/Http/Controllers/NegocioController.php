@@ -9,6 +9,7 @@ use App\Models\Factura;
 use App\Models\Compras;
 use App\Services\TeamleaderService;
 use App\Services\HubspotService;
+use App\Services\UnificationAiSuggestionService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Schema;
 
@@ -64,77 +65,61 @@ class NegocioController extends Controller
         //
     }
 
-    private function syncDealIndividual($dealDb, $camposRelacionados, $user)
+    private function syncDealIndividual($dealDb, $camposRelacionados)
     {
         $hubspotId = $dealDb->hubspot_id;
         $teamleaderId = $dealDb->teamleader_id;
 
-        // Obtener deal específico de HubSpot
-        $hubspotDeal = $this->hubspotService->getDealById($hubspotId);
-        if (!$hubspotDeal || !isset($hubspotDeal['properties'])) {
-            return dd("❌ No se encontró el trato en HubSpot con ID {$hubspotId}");
+        if (blank($teamleaderId)) {
+            return [];
         }
 
-        // Obtener deal específico de Teamleader (solo si tiene ID)
-        $TLdeal = $teamleaderId ? $this->teamleaderService->getProjectDetails($teamleaderId) : null;
-
-        $hubspotLastMod = new \DateTime($hubspotDeal['properties']['lastmodifieddate'] ?? '1970-01-01');
-        $teamleaderLastMod = $TLdeal ? new \DateTime($TLdeal['updated_at'] ?? '1970-01-01') : null;
-
-        $hsProps = $hubspotDeal['properties'];
-        $tlFields = $TLdeal['custom_fields'] ?? [];
-
+        $teamleaderDeal = $this->teamleaderService->getProjectDetails((string) $teamleaderId);
+        $tlFields = collect($teamleaderDeal['custom_fields'] ?? []);
         $updatesToHubspot = [];
-        $updatesToTeamleader = [];
-        $updatesToDB = [];
+        $comparisons = [];
+        $hubspotDeal = blank($hubspotId) ? null : $this->hubspotService->getDealById((string) $hubspotId);
+
+        if (filled($hubspotId) && (! $hubspotDeal || ! isset($hubspotDeal['properties']))) {
+            return [];
+        }
+
+        // A Teamleader-only record remains Teamleader-sourced and is never
+        // created in HubSpot. On linked records, HubSpot is the display source.
+        $hsProps = $hubspotDeal['properties'] ?? [];
 
         foreach ($camposRelacionados as $hsField => $tlFieldId) {
             $hsValue = $hsProps[$hsField] ?? null;
-            $tlValue = collect($tlFields)->firstWhere('definition.id', $tlFieldId)['value'] ?? null;
+            $tlValue = $tlFields->first(fn ($field) => ($field['definition']['id'] ?? $field['id'] ?? null) === $tlFieldId)['value'] ?? null;
 
-            // Determinar valor final por frescura
-            if ($hsValue && (!$tlValue || ($teamleaderLastMod && $hubspotLastMod > $teamleaderLastMod))) {
-                $finalValue = $hsValue;
-            } elseif ($tlValue) {
-                $finalValue = $tlValue;
-            } else {
+            if (blank($hubspotId)) {
+                if (filled($tlValue) && Schema::hasColumn((new Negocio)->getTable(), $hsField)) {
+                    $dealDb->{$hsField} = $tlValue;
+                }
                 continue;
             }
 
-            // Teamleader solo si existe y requiere actualización
-            if ($teamleaderId && $tlValue !== $finalValue) {
-                $updatesToTeamleader[] = [
-                    'id' => $tlFieldId,
-                    'value' => $finalValue
+            if (blank($hsValue) && filled($tlValue)) {
+                $updatesToHubspot[$hsField] = $tlValue;
+                if (Schema::hasColumn((new Negocio)->getTable(), $hsField)) {
+                    $dealDb->{$hsField} = $tlValue;
+                }
+            } elseif (filled($hsValue) && filled($tlValue) && (string) $hsValue !== (string) $tlValue) {
+                $comparisons[] = [
+                    'field' => $hsField,
+                    'hubspot' => $hsValue,
+                    'teamleader' => $tlValue,
                 ];
             }
-
-            // HubSpot solo si TL tiene algo más reciente
-            if ($tlValue && (!$hsValue || ($teamleaderLastMod && $teamleaderLastMod > $hubspotLastMod))) {
-                $updatesToHubspot[$hsField] = $tlValue;
-            }
-
-            // Base de datos
-            $updatesToDB[$hsField] = $finalValue;
         }
 
-        // Actualizar HubSpot
-        if (!empty($updatesToHubspot)) {
+        if (filled($hubspotId) && ! empty($updatesToHubspot)) {
             $this->hubspotService->updateDeals($hubspotId, $updatesToHubspot);
         }
 
-        // Actualizar Teamleader
-        if ($teamleaderId && !empty($updatesToTeamleader)) {
-            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($teamleaderId, $updatesToTeamleader, $TLdeal);
-        }
-
-        // Actualizar base de datos
-        foreach ($updatesToDB as $campo => $valor) {
-            if (Schema::hasColumn((new Negocio)->getTable(), $campo)) {
-                $dealDb->{$campo} = $valor;
-            }
-        }
         $dealDb->save();
+
+        return $comparisons;
 
     }
 
@@ -201,7 +186,18 @@ class NegocioController extends Controller
             'servicio_solicitado' => 'fcd48891-20f6-049a-a05f-f78a6f951b4d'
         ];
 
-        $this->syncDealIndividual($deal_db, $camposDeTeamleader, $user);
+        $fieldComparisons = [];
+        try {
+            $fieldComparisons = $this->syncDealIndividual($deal_db, $camposDeTeamleader);
+            $deal_db->refresh();
+        } catch (\Throwable $exception) {
+            \Log::warning('No se pudo completar el enriquecimiento HubSpot desde Teamleader', [
+                'negocio_id' => $deal_db->id,
+                'hubspot_id' => $deal_db->hubspot_id,
+                'teamleader_id' => $deal_db->teamleader_id,
+                'error' => $exception->getMessage(),
+            ]);
+        }
 
         // Algunos clientes históricos no están vinculados a Teamleader. En ese
         // caso la ficha debe seguir siendo accesible, simplemente sin proyectos
@@ -210,7 +206,7 @@ class NegocioController extends Controller
             ? $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id)
             : [];
 
-        return view('crud.negocios.edit', compact('deal_db', 'user', 'TLdeals'));
+        return view('crud.negocios.edit', compact('deal_db', 'user', 'TLdeals', 'fieldComparisons'));
     }
 
     public function sincronizarhsytl(Request $request){
@@ -223,12 +219,43 @@ class NegocioController extends Controller
             ], 404); // Código HTTP 404: No encontrado
         }
 
-        $deal->teamleader_id = $request->teamleader_id;
+        $request->validate([
+            'teamleader_id' => ['nullable', 'uuid'],
+        ]);
+
+        $teamleaderId = $request->input('teamleader_id');
+        if (filled($teamleaderId)) {
+            $alreadyLinked = Negocio::where('teamleader_id', $teamleaderId)
+                ->where('id', '!=', $deal->id)
+                ->exists();
+
+            if ($alreadyLinked) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ese proyecto de Teamleader ya está asociado a otro negocio.',
+                ], 422);
+            }
+
+            $user = User::find($deal->user_id);
+            $userProjects = $user && filled($user->tl_id)
+                ? $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id)
+                : [];
+
+            if (! collect($userProjects)->contains(fn ($project) => ($project['id'] ?? null) === $teamleaderId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El proyecto seleccionado no pertenece al cliente de este negocio.',
+                ], 422);
+            }
+        }
+
+        // Persist the IDs first. The next edit read enriches HubSpot only.
+        $deal->teamleader_id = $teamleaderId;
 
         if ($deal->save()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Sincronización completada correctamente.'
+                'message' => 'Asociación guardada. Se completarán en HubSpot los campos vacíos y se mostrarán las diferencias para revisión.'
             ], 200); // Código HTTP 200: OK
         } else {
             return response()->json([
@@ -236,6 +263,104 @@ class NegocioController extends Controller
                 'message' => 'Error al guardar los cambios.'
             ], 500); // Código HTTP 500: Error interno del servidor
         }
+    }
+
+    public function sugerirAsociacionesTeamleader($id, UnificationAiSuggestionService $ai)
+    {
+        $deal = Negocio::findOrFail($id);
+        if (blank($deal->hubspot_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Este negocio no tiene un trato de HubSpot para comparar.',
+            ], 422);
+        }
+
+        if (! $ai->available()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'OpenRouter no está configurado. Define OPENROUTER_API_KEY para solicitar sugerencias.',
+            ], 503);
+        }
+
+        $user = User::find($deal->user_id);
+        if (! $user || blank($user->tl_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El cliente no tiene un contacto asociado en Teamleader.',
+            ], 422);
+        }
+
+        try {
+            $hubspotDeal = $this->hubspotService->getDealById((string) $deal->hubspot_id);
+            if (! $hubspotDeal || ! isset($hubspotDeal['properties'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pudo leer el trato de HubSpot.',
+                ], 502);
+            }
+
+            $sourceName = (string) ($hubspotDeal['properties']['dealname'] ?? '');
+            $sourceNormalized = $this->normaliseDealTitle($sourceName);
+            $projects = $this->teamleaderService->getProjectsWithDetailsByCustomerId((string) $user->tl_id);
+            $linkedProjectIds = Negocio::whereNotNull('teamleader_id')
+                ->where('id', '!=', $deal->id)
+                ->pluck('teamleader_id')
+                ->map(fn ($projectId) => (string) $projectId)
+                ->all();
+
+            $candidates = collect($projects)
+                ->filter(fn ($project) => is_array($project) && filled($project['id'] ?? null))
+                ->reject(fn ($project) => in_array((string) $project['id'], $linkedProjectIds, true))
+                ->map(function (array $project) use ($sourceNormalized): array {
+                    $serviceField = collect($project['custom_fields'] ?? [])->first(
+                        fn ($field) => ($field['definition']['id'] ?? $field['id'] ?? null) === 'fcd48891-20f6-049a-a05f-f78a6f951b4d'
+                    );
+
+                    $title = (string) ($project['title'] ?? '');
+                    $normalizedTitle = $this->normaliseDealTitle($title);
+                    similar_text($sourceNormalized, $normalizedTitle, $nameSimilarity);
+
+                    return [
+                        'id' => (string) $project['id'],
+                        'title' => $title,
+                        'status' => (string) ($project['status'] ?? ''),
+                        'estimated_value' => $project['estimated_value'] ?? [],
+                        'service' => (string) ($serviceField['value'] ?? ''),
+                        '_name_similarity' => $nameSimilarity ?? 0,
+                    ];
+                })
+                ->sortByDesc('_name_similarity')
+                ->take(40)
+                ->map(fn (array $project) => collect($project)->except('_name_similarity')->all())
+                ->values()
+                ->all();
+
+            $suggestion = $ai->suggestDealAssociations($hubspotDeal['properties'], $candidates);
+
+            return response()->json([
+                'success' => true,
+                'suggestions' => $suggestion['suggestions'],
+                'model' => $suggestion['model'],
+            ]);
+        } catch (\Throwable $exception) {
+            \Log::warning('Falló la sugerencia OpenRouter para asociar negocios', [
+                'negocio_id' => $deal->id,
+                'hubspot_id' => $deal->hubspot_id,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudieron generar sugerencias: '.$exception->getMessage(),
+            ], 502);
+        }
+    }
+
+    private function normaliseDealTitle(string $title): string
+    {
+        $title = \Illuminate\Support\Str::ascii(mb_strtolower($title));
+
+        return trim(preg_replace('/[^a-z0-9]+/', ' ', $title) ?: '');
     }
 
     public function guardarfase1(Request $request){
@@ -259,30 +384,6 @@ class NegocioController extends Controller
         $deal->fecha_fase_1_pagado = null;
         $deal->monto_fase_1_pagado = null;
         $deal->save();
-
-        if ($deal->teamleader_id) {
-            $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
-
-            // Conservar los campos existentes
-            $existingFields = $currentProject['custom_fields'];
-
-            // Actualizar solo el campo necesario sin borrar los demás
-            $updatedFields = array_map(function($field) use ($request, $fechaActual) {
-                if ($field['definition']['id'] === '73173887-a0e8-0f4f-bb55-b61f33d3c6e9') {
-                    $field['value'] = $request->fase_1_preestab . " " . $fechaActual;
-                }
-
-                $field['id'] = $field['definition']['id'];
-
-                unset($field['definition']);
-
-                return $field;
-            }, $existingFields);
-
-            $campoTeamleader = ['custom_fields' => $updatedFields];
-
-            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id, $campoTeamleader["custom_fields"], $currentProject);
-        }
 
         if($deal->hubspot_id){
             $campoHubspot = [
@@ -333,29 +434,6 @@ class NegocioController extends Controller
         $deal->monto_fase_2_pagado = null;
         $deal->save();
 
-        if ($deal->teamleader_id) {
-            $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
-
-            // Conservar los campos existentes
-            $existingFields = $currentProject['custom_fields'];
-
-            // Actualizar solo el campo necesario sin borrar los demás
-            $updatedFields = array_map(function($field) use ($request, $fechaActual) {
-                if ($field['definition']['id'] === 'c66a9c15-c965-0812-ad5b-7e48f183c6f9') {
-                    $field['value'] = $request->fase_2_preestab . " " . $fechaActual;
-                }
-                $field['id'] = $field['definition']['id'];
-
-                unset($field['definition']);
-
-                return $field;
-            }, $existingFields);
-
-            $campoTeamleader = ['custom_fields' => $updatedFields];
-
-            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id, $campoTeamleader["custom_fields"], $currentProject);
-        }
-
         if($deal->hubspot_id){
             $campoHubspot = [
                 'fase_2_preestab' => $request->fase_2_preestab . " " . $fechaActual
@@ -405,29 +483,6 @@ class NegocioController extends Controller
         $deal->monto_fase_3_pagado = null;
         $deal->save();
 
-        if ($deal->teamleader_id) {
-            $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
-
-            // Conservar los campos existentes
-            $existingFields = $currentProject['custom_fields'];
-
-            // Actualizar solo el campo necesario sin borrar los demás
-            $updatedFields = array_map(function($field) use ($request, $fechaActual) {
-                if ($field['definition']['id'] === 'e41fdbbb-a25a-005b-af56-9f3ca623c700') {
-                    $field['value'] = $request->fase_3_preestab . " " . $fechaActual;
-                }
-                $field['id'] = $field['definition']['id'];
-
-                unset($field['definition']);
-
-                return $field;
-            }, $existingFields);
-
-            $campoTeamleader = ['custom_fields' => $updatedFields];
-
-            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id, $campoTeamleader["custom_fields"], $currentProject);
-        }
-
         if($deal->hubspot_id){
             $campoHubspot = [
                 'fase_3_preestab' => $request->fase_3_preestab . " " . $fechaActual
@@ -472,29 +527,6 @@ class NegocioController extends Controller
         $deal->carta_nat_preestab = $request->carta_nat_preestab . " " . $fechaActual;
         $deal->carta_nat_enviado = $fechaActual;
         $deal->save();
-
-        if ($deal->teamleader_id) {
-            $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
-
-            // Conservar los campos existentes
-            $existingFields = $currentProject['custom_fields'];
-
-            // Actualizar solo el campo necesario sin borrar los demás
-            $updatedFields = array_map(function($field) use ($request, $fechaActual) {
-                if ($field['definition']['id'] === 'a42ed217-b570-0973-9052-fab97214c229') {
-                    $field['value'] = $request->carta_nat_preestab . " " . $fechaActual;
-                }
-                $field['id'] = $field['definition']['id'];
-
-                unset($field['definition']);
-
-                return $field;
-            }, $existingFields);
-
-            $campoTeamleader = ['custom_fields' => $updatedFields];
-
-            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id, $campoTeamleader["custom_fields"], $currentProject);
-        }
 
         if($deal->hubspot_id){
             $campoHubspot = [
@@ -541,29 +573,6 @@ class NegocioController extends Controller
         $deal->carta_cilfcje_enviado = $fechaActual;
         $deal->save();
 
-        if ($deal->teamleader_id) {
-            $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
-
-            // Conservar los campos existentes
-            $existingFields = $currentProject['custom_fields'];
-
-            // Actualizar solo el campo necesario sin borrar los demás
-            $updatedFields = array_map(function($field) use ($request, $fechaActual) {
-                if ($field['definition']['id'] === 'aa1ce4b9-a410-00f2-a953-5f8c2713dc35') {
-                    $field['value'] = $request->cil___fcje_preestab . " " . $fechaActual;
-                }
-                $field['id'] = $field['definition']['id'];
-
-                unset($field['definition']);
-
-                return $field;
-            }, $existingFields);
-
-            $campoTeamleader = ['custom_fields' => $updatedFields];
-
-            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id, $campoTeamleader["custom_fields"], $currentProject);
-        }
-
         if($deal->hubspot_id){
             $campoHubspot = [
                 'cil___fcje_preestab' => $request->cil___fcje_preestab . " " . $fechaActual
@@ -609,34 +618,6 @@ class NegocioController extends Controller
         $deal->fecha_fase_1_pagado = $fechaActual;
         $deal->monto_fase_1_pagado = 0;
         $deal->save();
-
-        if ($deal->teamleader_id) {
-            $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
-
-            // Conservar los campos existentes
-            $existingFields = $currentProject['custom_fields'];
-
-            // Actualizar solo el campo necesario sin borrar los demás
-            $updatedFields = array_map(function($field) use ($request, $fechaActual) {
-                if ($field['definition']['id'] === '73173887-a0e8-0f4f-bb55-b61f33d3c6e9') {
-                    $field['value'] = "EXONERADO " . $fechaActual;
-                }
-
-                if ($field['definition']['id'] === "a1b50c58-8175-0d13-9856-f661e783dc08") {
-                    $field['value'] = "EXONERADO " . $fechaActual;
-                }
-
-                $field['id'] = $field['definition']['id'];
-
-                unset($field['definition']);
-
-                return $field;
-            }, $existingFields);
-
-            $campoTeamleader = ['custom_fields' => $updatedFields];
-
-            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id, $campoTeamleader["custom_fields"], $currentProject);
-        }
 
         if ($deal->hubspot_id) {
             // Establecer la zona horaria en UTC
@@ -687,34 +668,6 @@ class NegocioController extends Controller
         $deal->monto_fase_2_pagado = 0;
         $deal->save();
 
-        if ($deal->teamleader_id) {
-            $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
-
-            // Conservar los campos existentes
-            $existingFields = $currentProject['custom_fields'];
-
-            // Actualizar solo el campo necesario sin borrar los demás
-            $updatedFields = array_map(function($field) use ($request, $fechaActual) {
-                if ($field['definition']['id'] === 'a5b94ccc-3ea8-06fc-b259-0a487073dc0d') {
-                    $field['value'] = "EXONERADO " . $fechaActual;
-                }
-
-                if ($field['definition']['id'] === "c66a9c15-c965-0812-ad5b-7e48f183c6f9") {
-                    $field['value'] = "EXONERADO " . $fechaActual;
-                }
-
-                $field['id'] = $field['definition']['id'];
-
-                unset($field['definition']);
-
-                return $field;
-            }, $existingFields);
-
-            $campoTeamleader = ['custom_fields' => $updatedFields];
-
-            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id, $campoTeamleader["custom_fields"], $currentProject);
-        }
-
         if ($deal->hubspot_id) {
             // Establecer la zona horaria en UTC
             $utcTimezone = new \DateTimeZone('UTC');
@@ -763,34 +716,6 @@ class NegocioController extends Controller
         $deal->fecha_fase_3_pagado = $fechaActual;
         $deal->monto_fase_3_pagado = 0;
         $deal->save();
-
-        if ($deal->teamleader_id) {
-            $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
-
-            // Conservar los campos existentes
-            $existingFields = $currentProject['custom_fields'];
-
-            // Actualizar solo el campo necesario sin borrar los demás
-            $updatedFields = array_map(function($field) use ($request, $fechaActual) {
-                if ($field['definition']['id'] === '9a1df9b7-c92f-09e5-b156-96af3f83dc0e') {
-                    $field['value'] = "EXONERADO " . $fechaActual;
-                }
-
-                if ($field['definition']['id'] === "e41fdbbb-a25a-005b-af56-9f3ca623c700") {
-                    $field['value'] = "EXONERADO " . $fechaActual;
-                }
-
-                $field['id'] = $field['definition']['id'];
-
-                unset($field['definition']);
-
-                return $field;
-            }, $existingFields);
-
-            $campoTeamleader = ['custom_fields' => $updatedFields];
-
-            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id, $campoTeamleader["custom_fields"], $currentProject);
-        }
 
         if ($deal->hubspot_id) {
             // Establecer la zona horaria en UTC
@@ -841,34 +766,6 @@ class NegocioController extends Controller
         $deal->carta_nat_montopagado = 0;
         $deal->save();
 
-        if ($deal->teamleader_id) {
-            $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
-
-            // Conservar los campos existentes
-            $existingFields = $currentProject['custom_fields'];
-
-            // Actualizar solo el campo necesario sin borrar los demás
-            $updatedFields = array_map(function($field) use ($request, $fechaActual) {
-                if ($field['definition']['id'] === '4339375f-ed77-02d9-a157-7da9f9e4bfac') {
-                    $field['value'] = "EXONERADO " . $fechaActual;
-                }
-
-                if ($field['definition']['id'] === "a42ed217-b570-0973-9052-fab97214c229") {
-                    $field['value'] = "EXONERADO " . $fechaActual;
-                }
-
-                $field['id'] = $field['definition']['id'];
-
-                unset($field['definition']);
-
-                return $field;
-            }, $existingFields);
-
-            $campoTeamleader = ['custom_fields' => $updatedFields];
-
-            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id, $campoTeamleader["custom_fields"], $currentProject);
-        }
-
         if ($deal->hubspot_id) {
             // Establecer la zona horaria en UTC
             $utcTimezone = new \DateTimeZone('UTC');
@@ -915,34 +812,6 @@ class NegocioController extends Controller
         $deal->cilfcje_montopagado = 0;
         $deal->save();
 
-        if ($deal->teamleader_id) {
-            $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
-
-            // Conservar los campos existentes
-            $existingFields = $currentProject['custom_fields'];
-
-            // Actualizar solo el campo necesario sin borrar los demás
-            $updatedFields = array_map(function($field) use ($request, $fechaActual) {
-                if ($field['definition']['id'] === 'f23fbe3b-5d13-0a41-a857-e9ab1c63dc42') {
-                    $field['value'] = "EXONERADO " . $fechaActual;
-                }
-
-                if ($field['definition']['id'] === "aa1ce4b9-a410-00f2-a953-5f8c2713dc35") {
-                    $field['value'] = "EXONERADO " . $fechaActual;
-                }
-
-                $field['id'] = $field['definition']['id'];
-
-                unset($field['definition']);
-
-                return $field;
-            }, $existingFields);
-
-            $campoTeamleader = ['custom_fields' => $updatedFields];
-
-            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id, $campoTeamleader["custom_fields"], $currentProject);
-        }
-
         if ($deal->hubspot_id) {
             // Establecer la zona horaria en UTC
             $utcTimezone = new \DateTimeZone('UTC');
@@ -987,34 +856,6 @@ class NegocioController extends Controller
         $deal->cilfcje_fechapagado = $fechaActual;
         $deal->cilfcje_montopagado = 0;
         $deal->save();
-
-        if ($deal->teamleader_id) {
-            $currentProject = $this->teamleaderService->getProjectDetails($deal->teamleader_id);
-
-            // Conservar los campos existentes
-            $existingFields = $currentProject['custom_fields'];
-
-            // Actualizar solo el campo necesario sin borrar los demás
-            $updatedFields = array_map(function($field) use ($request, $fechaActual) {
-                if ($field['definition']['id'] === 'f23fbe3b-5d13-0a41-a857-e9ab1c63dc42') {
-                    $field['value'] = "INCLUIDO EN FASE 1 " . $fechaActual;
-                }
-
-                if ($field['definition']['id'] === "aa1ce4b9-a410-00f2-a953-5f8c2713dc35") {
-                    $field['value'] = "INCLUIDO EN FASE 1 " . $fechaActual;
-                }
-
-                $field['id'] = $field['definition']['id'];
-
-                unset($field['definition']);
-
-                return $field;
-            }, $existingFields);
-
-            $campoTeamleader = ['custom_fields' => $updatedFields];
-
-            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id, $campoTeamleader["custom_fields"], $currentProject);
-        }
 
         if ($deal->hubspot_id) {
             // Establecer la zona horaria en UTC
@@ -1108,16 +949,6 @@ class NegocioController extends Controller
         ]; // o defínelo local si prefieres
 
         // Actualizar en Teamleader
-        if ($deal->teamleader_id) {
-            app(\App\Services\TeamleaderProjectFullUpdater::class)->updateCustomFields($deal->teamleader_id,
-                collect($request->all())->map(function ($value, $field) use ($camposRelacionados) {
-                    return isset($camposRelacionados[$field]) ? [
-                        'id' => $camposRelacionados[$field],
-                        'value' => $value
-                    ] : null;
-                })->filter()->values()->all());
-        }
-
         // Actualizar en HubSpot
         if ($deal->hubspot_id) {
             $hsPayload = [];

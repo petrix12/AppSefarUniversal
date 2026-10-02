@@ -645,6 +645,9 @@ Route::get('/teamleader/success', [TeamleaderController::class, 'success'])->nam
 Route::get('/checkMondayTest', [ClienteController::class, 'checkMondayTest'])->name('checkMondayTest');
 
 Route::get('/deal/{id}/edit', [NegocioController::class, 'edit'])->name('deals.edit');
+Route::post('/deals/{id}/teamleader-suggestions', [NegocioController::class, 'sugerirAsociacionesTeamleader'])
+    ->name('deals.teamleader.suggestions')
+    ->middleware(['auth', 'can:administrador']);
 
 Route::get('/prompttreena', [TreenaController::class, 'index'])->name('treena.index');
 
