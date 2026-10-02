@@ -669,6 +669,62 @@
                                 @endforeach
                             </div>
                         </section>
+
+                        @if(collect($teamleaderStatusMigration['projects'] ?? [])->isNotEmpty() || collect($teamleaderStatusMigration['deals'] ?? [])->isNotEmpty())
+                            <section class="mb-4" aria-labelledby="teamleader-only-status-title">
+                                <h2 id="teamleader-only-status-title" class="h5 fw-bold mb-3">Estatus en Teamleader</h2>
+                                <p class="small text-muted">Estos proyectos no están asociados a un trato de HubSpot, por eso su información y pagos se muestran desde Teamleader.</p>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Proyecto</th>
+                                                <th>Estado</th>
+                                                <th>Servicio</th>
+                                                <th class="text-end">Presupuesto</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($teamleaderStatusMigration['projects'] as $project)
+                                                <tr>
+                                                    <td>{{ $project->title ?: $project->id }}</td>
+                                                    <td>{{ $project->status ?: '-' }}</td>
+                                                    <td>{{ $project->custom_field_value ?: '-' }}</td>
+                                                    <td class="text-end">
+                                                        {{ $project->budget_amount !== null ? format_money((float) $project->budget_amount, 2, ',', '.') . ' ' . ($project->budget_currency ?: 'EUR') : '-' }}
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                                @if(collect($teamleaderStatusMigration['deals'] ?? [])->isNotEmpty())
+                                    <h3 class="h6 fw-bold mt-3">Negocios de Teamleader</h3>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover align-middle mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Negocio</th>
+                                                    <th>Estado</th>
+                                                    <th class="text-end">Monto</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($teamleaderStatusMigration['deals'] as $deal)
+                                                    <tr>
+                                                        <td>{{ $deal->title ?: $deal->id }}</td>
+                                                        <td>{{ $deal->status ?: '-' }}</td>
+                                                        <td class="text-end">
+                                                            {{ $deal->amount !== null ? format_money((float) $deal->amount, 2, ',', '.') . ' ' . ($deal->currency ?: 'EUR') : '-' }}
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                @endif
+                            </section>
+                        @endif
                     @endif
 
                     @if($rolId !== 5)
@@ -929,13 +985,13 @@
 
                     @if($rolId !== 5)
                         @php
-                            $tlContactMain = $teamleaderMigration['contact'] ?? null;
-                            $tlSummaryMain = $teamleaderMigration['summary'] ?? [];
-                            $tlProjectsMain = collect($teamleaderMigration['projects'] ?? []);
-                            $tlDealsMain = collect($teamleaderMigration['deals'] ?? []);
-                            $tlInvoicesMain = collect($teamleaderMigration['invoices'] ?? []);
-                            $tlDocumentsMain = collect($teamleaderMigration['documents'] ?? []);
-                            $tlMatchLabelsMain = $teamleaderMigration['match_labels'] ?? [];
+                            $tlContactMain = $teamleaderStatusMigration['contact'] ?? null;
+                            $tlSummaryMain = $teamleaderStatusMigration['summary'] ?? [];
+                            $tlProjectsMain = collect($teamleaderStatusMigration['projects'] ?? []);
+                            $tlDealsMain = collect($teamleaderStatusMigration['deals'] ?? []);
+                            $tlInvoicesMain = collect($teamleaderStatusMigration['invoices'] ?? []);
+                            $tlDocumentsMain = collect($teamleaderStatusMigration['documents'] ?? []);
+                            $tlMatchLabelsMain = $teamleaderStatusMigration['match_labels'] ?? [];
                             $canViewTeamleader = auth()->user()->can('tl.view');
 
                             $tlAssociatedRows = collect()

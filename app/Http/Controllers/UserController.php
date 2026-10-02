@@ -1795,6 +1795,64 @@ class UserController extends Controller
         ->analyzeProjects($teamleaderMigration['projects'] ?? collect());
     app(TeamleaderPhasePaymentService::class)->sync($user, $teamleaderProjectPayments);
 
+    // In the applicant status window, HubSpot is the display source once a
+    // Teamleader project has been linked to a HubSpot deal. Keep unlinked
+    // Teamleader projects visible as Teamleader-only records.
+    $linkedTeamleaderProjectIds = $negocios
+        ->pluck('teamleader_id')
+        ->filter(fn ($id) => filled($id))
+        ->map(fn ($id) => trim((string) $id))
+        ->unique()
+        ->values();
+    $teamleaderStatusMigration = $teamleaderMigration;
+    $teamleaderStatusMigration['projects'] = collect($teamleaderMigration['projects'] ?? [])
+        ->reject(fn ($project) => $linkedTeamleaderProjectIds->contains(trim((string) ($project->id ?? ''))))
+        ->values();
+    $teamleaderStatusMigration['deals'] = collect($teamleaderMigration['deals'] ?? [])
+        ->reject(fn ($deal) => $linkedTeamleaderProjectIds->contains(trim((string) ($deal->id ?? ''))))
+        ->values();
+    $teamleaderStatusMigration['invoices'] = collect($teamleaderMigration['invoices'] ?? [])
+        ->reject(fn ($invoice) => $linkedTeamleaderProjectIds->contains(trim((string) ($invoice->project_id ?? $invoice->deal_id ?? ''))))
+        ->values();
+    $teamleaderStatusMigration['documents'] = collect($teamleaderMigration['documents'] ?? [])
+        ->reject(fn ($document) => $linkedTeamleaderProjectIds->contains(trim((string) ($document->entity_id ?? ''))))
+        ->values();
+    $teamleaderStatusMigration['summary'] = array_merge($teamleaderMigration['summary'] ?? [], [
+        'projects' => $teamleaderStatusMigration['projects']->count(),
+        'deals' => $teamleaderStatusMigration['deals']->count(),
+        'invoices' => $teamleaderStatusMigration['invoices']->count(),
+        'documents' => $teamleaderStatusMigration['documents']->count(),
+        'open_deals' => $teamleaderStatusMigration['deals']->where('status', 'open')->count(),
+        'active_projects' => $teamleaderStatusMigration['projects']->where('status', 'active')->count(),
+        'outstanding_invoices' => $teamleaderStatusMigration['invoices']->whereIn('status', ['outstanding', 'late'])->count(),
+        'total_invoiced' => $teamleaderStatusMigration['invoices']->sum(fn (TlInvoice $invoice) => (float) $invoice->total_price_incl_tax),
+        'currency' => $teamleaderStatusMigration['invoices']->pluck('currency')->filter()->first()
+            ?: $teamleaderStatusMigration['deals']->pluck('currency')->filter()->first()
+            ?: $teamleaderStatusMigration['projects']->pluck('budget_currency')->filter()->first(),
+    ]);
+    $hasHubspotDeals = $negocios->contains(fn (Negocio $deal) => filled($deal->hubspot_id));
+    $hasTeamleaderOnlyDeals = $teamleaderStatusMigration['projects']->isNotEmpty()
+        || $teamleaderStatusMigration['deals']->isNotEmpty();
+    if (! $hasHubspotDeals && $hasTeamleaderOnlyDeals) {
+        // Do not render the generic HubSpot fallback status when this client
+        // has Teamleader-only projects; the status pane will show those TL
+        // records and their payments as the authoritative source.
+        $cosuserFinal = [];
+    }
+    $teamleaderProjectPayments['projects'] = collect($teamleaderProjectPayments['projects'] ?? [])
+        ->reject(fn ($project) => $linkedTeamleaderProjectIds->contains(trim((string) ($project['project_id'] ?? ''))))
+        ->values()
+        ->all();
+    $visibleTeamleaderProjects = collect($teamleaderProjectPayments['projects']);
+    $visibleTeamleaderPhases = $visibleTeamleaderProjects->flatMap(fn ($project) => $project['phases'] ?? []);
+    $teamleaderProjectPayments['totals'] = [
+        'projects' => $visibleTeamleaderProjects->count(),
+        'preestab_amount' => round((float) $visibleTeamleaderPhases->sum('effective_preestab_amount'), 2),
+        'paid_amount' => round((float) $visibleTeamleaderPhases->sum('effective_paid_amount'), 2),
+        'balance_amount' => round((float) $visibleTeamleaderPhases->sum('balance_amount'), 2),
+        'overpaid_amount' => round((float) $visibleTeamleaderPhases->sum('overpaid_amount'), 2),
+    ];
+
     // The source of truth is Teamleader. Re-read purchases after creating or
     // closing each independent phase record so internal COS shows the same
     // debts the public COS will show.
@@ -1829,6 +1887,32 @@ class UserController extends Controller
         ->reject(fn (Compras $purchase) => data_get($purchase->metadata, 'portal_record_kind') === 'balance')
         ->filter(fn (Compras $purchase) => (float) $purchase->monto > 0.01)
         ->values();
+
+    $isLinkedTeamleaderPurchase = function (Compras $purchase) use ($linkedTeamleaderProjectIds): bool {
+        $source = (string) ($purchase->source ?? '');
+        if (! in_array($source, [
+            TeamleaderPhasePaymentService::PURCHASE_SOURCE,
+            TeamleaderPhasePaymentService::INSTALLMENT_SOURCE,
+            TeamleaderPhasePaymentService::HISTORY_SOURCE,
+        ], true)) {
+            return false;
+        }
+
+        return $linkedTeamleaderProjectIds->contains(
+            trim((string) data_get($purchase->metadata, 'teamleader_project_id', ''))
+        );
+    };
+    $comprasConDealNoPagadas = $comprasConDealNoPagadas->reject($isLinkedTeamleaderPurchase)->values();
+    $comprasSinDealNoPagadas = $comprasSinDealNoPagadas->reject($isLinkedTeamleaderPurchase)->values();
+    $activePhasePurchases = $activePhasePurchases->reject($isLinkedTeamleaderPurchase)->values();
+    $comprasPagadasSinFactura = $comprasPagadasSinFactura->reject($isLinkedTeamleaderPurchase)->values();
+    $facturas = $facturas->filter(function (Factura $factura) use ($isLinkedTeamleaderPurchase): bool {
+        $original = collect($factura->compras ?? []);
+        $visible = $original->reject($isLinkedTeamleaderPurchase)->values();
+        $factura->setRelation('compras', $visible);
+
+        return $original->isEmpty() || $visible->isNotEmpty();
+    })->values();
 
 
     // ==========================================
@@ -1980,6 +2064,7 @@ class UserController extends Controller
         'clientChatMessages',
         'userChangeAudits',
         'teamleaderMigration',
+        'teamleaderStatusMigration',
         'teamleaderProjectPayments',
         'teamleaderProfileCustomValues',
         'servicios',
