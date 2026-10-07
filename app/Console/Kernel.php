@@ -50,6 +50,12 @@ class Kernel extends ConsoleKernel
         $schedule->command('marketing:dispatch-scheduled')
             ->everyMinute()
             ->withoutOverlapping();
+        $schedule->command('systems:activity-report')
+            ->dailyAt((string) config('systems_activity_report.run_at', '08:00'))
+            ->timezone((string) config('systems_activity_report.timezone', 'America/Caracas'))
+            ->when(fn () => (bool) config('systems_activity_report.enabled'))
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/systems-activity-report.log'));
         // Ejecutar flujo diario de tareas en secuencia: primero reasignaciones, luego nuevas tareas.
        /* $schedule->command('tasks:daily-workflow --force-reassign')
                  ->weekdays()

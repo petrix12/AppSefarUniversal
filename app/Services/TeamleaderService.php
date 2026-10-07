@@ -813,29 +813,77 @@ public function listProjectsByCustomerId(string $customerId)
 
     public function getUserIdByEmail($email)
     {
-        // Llama al endpoint users.list
-        $response = Http::withToken($this->getAccessToken())
-            ->post('https://api.focus.teamleader.eu/users.list', [
-                'page' => [
-                    'size' => 100, // Ajusta el tamaño según la cantidad de usuarios
-                    'number' => 1,
-                ],
-            ]);
+        $user = $this->getUserByEmail((string) $email);
 
-        if ($response->successful()) {
-            $users = $response->json()['data'];
-
-            // Buscar el usuario por correo
-            foreach ($users as $user) {
-                if ($user['email'] === $email) {
-                    return $user['id'];
-                }
-            }
-
+        if ($user === null) {
             throw new \Exception("No se encontró un usuario con el correo: $email");
         }
 
-        throw new \Exception('Error al obtener la lista de usuarios.');
+        return $user['id'];
+    }
+
+    public function getUserByEmail(string $email): ?array
+    {
+        $email = strtolower(trim($email));
+        $pageNumber = 1;
+        $pageSize = 100;
+
+        do {
+            $response = $this->teamleaderPost('users.list', [
+                'page' => ['size' => $pageSize, 'number' => $pageNumber],
+            ]);
+
+            if (! $response->successful()) {
+                throw new \RuntimeException('Error al obtener usuarios de Teamleader: '.$response->status());
+            }
+
+            $users = $response->json('data', []);
+            foreach ($users as $user) {
+                if (strtolower(trim((string) ($user['email'] ?? ''))) === $email) {
+                    return $user;
+                }
+            }
+
+            $pageNumber++;
+        } while (count($users) === $pageSize);
+
+        return null;
+    }
+
+    /**
+     * List calendar events assigned to the given Teamleader user in a period.
+     * The caller must compare the returned creator.id with the target id
+     * before treating the event as an action performed by that user.
+     */
+    public function listCalendarEventsForUserBetween(
+        string $userId,
+        \DateTimeInterface $from,
+        \DateTimeInterface $to
+    ): array {
+        $events = [];
+        $pageNumber = 1;
+        $pageSize = 100;
+
+        do {
+            $response = $this->teamleaderPost('events.list', [
+                'filter' => [
+                    'user_id' => $userId,
+                    'ends_after' => $from->format(DATE_ATOM),
+                    'starts_before' => $to->format(DATE_ATOM),
+                ],
+                'page' => ['size' => $pageSize, 'number' => $pageNumber],
+            ]);
+
+            if (! $response->successful()) {
+                throw new \RuntimeException('Error al obtener eventos de Teamleader: '.$response->status());
+            }
+
+            $page = $response->json('data', []);
+            $events = array_merge($events, $page);
+            $pageNumber++;
+        } while (count($page) === $pageSize);
+
+        return $events;
     }
 
 

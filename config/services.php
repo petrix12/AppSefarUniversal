@@ -69,6 +69,10 @@ return [
         'key' => env('OPENROUTER_API_KEY'),
         'url' => 'https://openrouter.ai/api/v1/chat/completions',
         'model' => 'openai/gpt-4o-mini',
+        // Dedicated model for factual Systems activity summaries. Keep this
+        // separate from the application's existing OpenRouter use cases.
+        'systems_activity_model' => env('OPENROUTER_SYSTEMS_ACTIVITY_MODEL', 'qwen/qwen3-32b'),
+        'systems_activity_timeout' => env('OPENROUTER_SYSTEMS_ACTIVITY_TIMEOUT', 45),
         // More capable than the previous small model while keeping the field
         // audit inexpensive. It is scoped only to the unification screen.
         'unification_model' => env('OPENROUTER_UNIFICATION_MODEL', 'qwen/qwen3-32b'),
@@ -95,6 +99,7 @@ return [
     ],
 
     'hubspot' => [
+        'key' => env('HUBSPOT_KEY'),
         'coordinator_user_provisioning' => [
             'enabled' => env('HUBSPOT_COORDINATOR_USER_PROVISIONING', true),
             'role_id' => env('HUBSPOT_COORDINATOR_ROLE_ID'),

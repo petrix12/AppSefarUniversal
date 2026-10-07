@@ -173,20 +173,47 @@ class CosService
                 'warning' => null,
             ],
 
-            // PASO 0: FASE 3 PAGADA
+            // El envío a legales marca la presentación de la solicitud (hito jurídico 3).
+            // Debe ganar frente a los hitos anteriores de informe cargado y redacción.
             [
-                'name' => 'Fase 3 Pagada',
-                'condition' => fn() => $this->hasFase3Pagada(),
-                'stepJur' => 0,
+                'name' => 'Presentación de la solicitud de nacionalidad',
+                'condition' => fn() => $this->isSpanishService()
+                    && filled($this->negocio->n9__enviado_a_legales ?? null),
+                'stepJur' => 2,
                 'stepGen' => $certificadoDescargado == 1 ? $this->getLastGenStep($certificadoDescargado) : $this->getLastGenStep($certificadoDescargado) - 1,
                 'warning' => null,
             ],
 
-            // PASO 0: FASE 3 PAGADA
+            // La fecha de carga del informe inicia la revisión del expediente (hito 2).
+            [
+                'name' => 'Informe Cargado Recientemente',
+                'condition' => fn() => $this->isInformeCargadoReciente(),
+                'stepGen' => 15,
+                'stepJur' => 1,
+                'warning' => null,
+            ],
+            [
+                'name' => 'Informe Cargado - En Revisión',
+                'condition' => fn() => filled($this->negocio->n3__informe_cargado ?? null),
+                'stepGen' => 16,
+                'stepJur' => 1,
+                'warning' => null,
+            ],
+
+            // Solicitud de documentos jurídicos (hito 1) requiere pago y envío a redacción.
+            [
+                'name' => 'Solicitud de documentos jurídicos',
+                'condition' => fn() => $this->hasEnviadoARedaccion() && $this->hasPaidGenealogicalBudget(),
+                'stepGen' => 8,
+                'stepJur' => 0,
+                'warning' => null,
+            ],
+
+            // El pago de fase 3 completa genealogía, pero no inicia jurídica sin redacción.
             [
                 'name' => 'Fase 3 Pagada',
                 'condition' => fn() => $this->hasFase3Pagada(),
-                'stepJur' => 0,
+                'stepJur' => -1,
                 'stepGen' => $certificadoDescargado == 1 ? $this->getLastGenStep($certificadoDescargado) : $this->getLastGenStep($certificadoDescargado) - 1,
                 'warning' => null,
             ],
@@ -205,24 +232,6 @@ class CosService
                 'stepGen'   => $this->totalStepsGen - 1,   // ← TODA la línea gen completa
                 'stepJur'   => -1,
                 'warning'   => null,
-            ],
-
-            // PASO 16: INFORME CARGADO (< 1 MES)
-            [
-                'name' => 'Informe Cargado Recientemente',
-                'condition' => fn() => $this->isInformeCargadoReciente(),
-                'stepGen' => 15,
-                'stepJur' => -1,
-                'warning' => null,
-            ],
-
-            // PASO 16: INFORME CARGADO (> 1 MES)
-            [
-                'name' => 'Informe Cargado - En Revisión',
-                'condition' => fn() => isset($this->negocio->n3__informe_cargado),
-                'stepGen' => 16,
-                'stepJur' => -1,
-                'warning' => null,
             ],
 
             // PASO 15: ESPERANDO PAGO FASE 2
@@ -878,7 +887,7 @@ class CosService
 
     private function isInformeCargadoReciente(): bool
     {
-        if (!isset($this->negocio->n3__informe_cargado)) {
+        if (!filled($this->negocio->n3__informe_cargado ?? null)) {
             return false;
         }
 
@@ -895,7 +904,26 @@ class CosService
 
     private function hasEnviadoARedaccion(): bool
     {
-        return isset($this->negocio->n2__enviado_a_redaccion_informe);
+        return filled($this->negocio->n2__enviado_a_redaccion_informe ?? null);
+    }
+
+    private function hasPaidGenealogicalBudget(): bool
+    {
+        foreach ([
+            'fase_1_pagado',
+            'fase_1_pagado__teamleader_',
+            'fase_2_pagado',
+            'fase_2_pagado__teamleader_',
+            'fase_3_pagado',
+            'fase_3_pagado__teamleader_',
+            'carta_nat_pagado',
+        ] as $field) {
+            if (filled($this->negocio->getAttribute($field))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function hasFase1Pagada(): bool
@@ -968,6 +996,15 @@ class CosService
             'Española - Carta de Naturaleza General',
             'Nacionalidad por Carta de Naturaleza'
         ]);
+    }
+
+    private function isSpanishService(): bool
+    {
+        return in_array($this->serviceName, [
+            'Española Sefardi',
+            'Nacionalidad por Carta de Naturaleza',
+            'Española - Carta de Naturaleza General',
+        ], true);
     }
 
     private function isPortuguesaSefardi(): bool
