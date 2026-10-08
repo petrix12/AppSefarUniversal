@@ -1807,19 +1807,54 @@ class UserController extends Controller
         ->values();
     $hubspotPaymentAnalyzer = app(TeamleaderProjectPaymentAnalyzer::class);
     $hubspotPaymentFields = [
-        1 => ['label' => 'Fase 1', 'preestab' => 'fase_1_preestab', 'paid' => 'fase_1_pagado'],
-        2 => ['label' => 'Fase 2', 'preestab' => 'fase_2_preestab', 'paid' => 'fase_2_pagado'],
-        3 => ['label' => 'Fase 3', 'preestab' => 'fase_3_preestab', 'paid' => 'fase_3_pagado'],
+        1 => ['label' => 'Fase 1', 'preestab' => 'fase_1_preestab', 'paid' => 'fase_1_pagado', 'paid_amount' => 'monto_fase_1_pagado'],
+        2 => ['label' => 'Fase 2', 'preestab' => 'fase_2_preestab', 'paid' => 'fase_2_pagado', 'paid_amount' => 'monto_fase_2_pagado'],
+        3 => ['label' => 'Fase 3', 'preestab' => 'fase_3_preestab', 'paid' => 'fase_3_pagado', 'paid_amount' => 'monto_fase_3_pagado'],
         98 => ['label' => 'Carta de Naturaleza', 'preestab' => 'carta_nat_preestab', 'paid' => 'carta_nat_pagado'],
         99 => ['label' => 'CIL / FCJE', 'preestab' => 'cil___fcje_preestab', 'paid' => 'cil___fcje_pagado'],
     ];
+    $teamleaderPaymentProjects = collect($teamleaderProjectPayments['projects'] ?? []);
+    $teamleaderProjectHasPayments = function (array $project): bool {
+        return collect($project['phases'] ?? [])->contains(function (array $phase): bool {
+            return trim((string) ($phase['preestab_raw'] ?? '')) !== ''
+                || trim((string) ($phase['paid_raw'] ?? '')) !== ''
+                || (float) ($phase['effective_preestab_amount'] ?? 0) > 0
+                || (float) ($phase['effective_paid_amount'] ?? 0) > 0;
+        });
+    };
+    $teamleaderPaymentProjects = $teamleaderPaymentProjects
+        ->filter($teamleaderProjectHasPayments)
+        ->values();
+    $teamleaderPaymentProjectsById = $teamleaderPaymentProjects->keyBy(
+        fn (array $project) => trim((string) ($project['project_id'] ?? ''))
+    );
     $hubspotPaymentRows = $negocios
         ->filter(fn (Negocio $deal) => filled($deal->hubspot_id))
-        ->flatMap(function (Negocio $deal) use ($hubspotPaymentFields, $hubspotPaymentAnalyzer): array {
+        ->flatMap(function (Negocio $deal) use ($hubspotPaymentFields, $hubspotPaymentAnalyzer, $teamleaderPaymentProjectsById): array {
             $rows = [];
+            $linkedTeamleaderProject = $teamleaderPaymentProjectsById->get(trim((string) ($deal->teamleader_id ?? '')));
             foreach ($hubspotPaymentFields as $phase => $fields) {
                 $preestabRaw = trim((string) $deal->{$fields['preestab']});
                 $paidRaw = trim((string) $deal->{$fields['paid']});
+                $paidAmountField = $fields['paid_amount'] ?? null;
+                $adminPaidAmountRaw = $paidAmountField ? trim((string) $deal->{$paidAmountField}) : '';
+                $teamleaderPhase = $linkedTeamleaderProject['phases'][$phase] ?? null;
+                if ($teamleaderPhase) {
+                    // For an explicitly linked business, use its Teamleader-preestablished
+                    // amount, but keep the amount entered by Administration as the paid total.
+                    $teamleaderPreestabRaw = trim((string) ($teamleaderPhase['preestab_raw'] ?? ''));
+                    $preestabRaw = $teamleaderPreestabRaw !== '' ? $teamleaderPreestabRaw : $preestabRaw;
+                }
+
+                if ($adminPaidAmountRaw !== ''
+                    && (float) ($hubspotPaymentAnalyzer->parseMoneyText($adminPaidAmountRaw)['total'] ?? 0) > 0) {
+                    // These numeric fields are the amounts Administration uses
+                    // to reconcile payments; phase labels and TL mirrors are fallbacks.
+                    $paidRaw = $adminPaidAmountRaw;
+                } elseif ($teamleaderPhase && filled($teamleaderPhase['paid_raw'] ?? null)) {
+                    $paidRaw = trim((string) $teamleaderPhase['paid_raw']);
+                }
+
                 if ($preestabRaw === '' && $paidRaw === '') {
                     continue;
                 }
@@ -1835,6 +1870,7 @@ class UserController extends Controller
                 $rows[] = [
                     'source' => 'HubSpot',
                     'project_id' => (string) $deal->hubspot_id,
+                    'teamleader_project_id' => $linkedTeamleaderProject['project_id'] ?? null,
                     'deal_id' => $deal->id,
                     'project_title' => $deal->servicio_solicitado2 ?: $deal->servicio_solicitado ?: 'Trato HubSpot ' . $deal->hubspot_id,
                     'phase' => $phase,
@@ -1887,11 +1923,12 @@ class UserController extends Controller
         // records and their payments as the authoritative source.
         $cosuserFinal = [];
     }
-    $teamleaderProjectPayments['projects'] = collect($teamleaderProjectPayments['projects'] ?? [])
-        ->reject(fn ($project) => $linkedTeamleaderProjectIds->contains(trim((string) ($project['project_id'] ?? ''))))
-        ->values()
-        ->all();
-    $visibleTeamleaderProjects = collect($teamleaderProjectPayments['projects']);
+    // A directly linked business is represented by its HubSpot row, enriched
+    // with Teamleader phase values above. Only unlinked Teamleader projects get
+    // a separate row in this summary.
+    $visibleTeamleaderProjects = $teamleaderPaymentProjects
+        ->reject(fn (array $project) => $linkedTeamleaderProjectIds->contains(trim((string) ($project['project_id'] ?? ''))))
+        ->values();
     $teamleaderOnlyPaymentRows = $visibleTeamleaderProjects
         ->flatMap(function (array $project): array {
             return collect($project['phases'] ?? [])
@@ -1906,7 +1943,8 @@ class UserController extends Controller
     $statusPaymentRows = $hubspotPaymentRows->concat($teamleaderOnlyPaymentRows)->values();
     $visibleTeamleaderPhases = $statusPaymentRows;
     $teamleaderProjectPayments['totals'] = [
-        'projects' => $negocios->filter(fn (Negocio $deal) => filled($deal->hubspot_id))->count() + $visibleTeamleaderProjects->count(),
+        'projects' => $hubspotPaymentRows->pluck('project_id')->filter()->unique()->count()
+            + $visibleTeamleaderProjects->pluck('project_id')->filter()->unique()->count(),
         'preestab_amount' => round((float) $visibleTeamleaderPhases->sum('effective_preestab_amount'), 2),
         'paid_amount' => round((float) $visibleTeamleaderPhases->sum('effective_paid_amount'), 2),
         'balance_amount' => round((float) $visibleTeamleaderPhases->sum('balance_amount'), 2),
