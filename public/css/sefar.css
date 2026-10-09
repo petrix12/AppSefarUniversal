@@ -142,6 +142,48 @@ textarea {
   z-index: 1;
 }
 
+.sefar-sidebar .form-control-sidebar {
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-right: 0 !important;
+  border-radius: 8px 0 0 8px !important;
+  background: rgba(3, 25, 37, 0.68) !important;
+  color: #ffffff !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.16);
+}
+
+.sefar-sidebar .form-control-sidebar::placeholder {
+  color: rgba(255, 255, 255, 0.7) !important;
+  opacity: 1;
+}
+
+.sefar-sidebar .form-control-sidebar:focus {
+  border-color: rgba(143, 216, 255, 0.72) !important;
+  background: rgba(3, 25, 37, 0.88) !important;
+  box-shadow: 0 0 0 0.15rem rgba(143, 216, 255, 0.16);
+}
+
+.sefar-sidebar .input-group .btn-sidebar {
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 0 8px 8px 0 !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+
+.sefar-sidebar .input-group .btn-sidebar:hover,
+.sefar-sidebar .input-group .btn-sidebar:focus {
+  background: rgba(219, 186, 114, 0.2) !important;
+  color: #ffffff !important;
+}
+
+.sefar-sidebar .nav-sidebar .nav-item.sefar-search-hidden {
+  display: none !important;
+}
+
+.sefar-sidebar .nav-sidebar .nav-item.sefar-search-open > .nav-treeview {
+  display: block !important;
+  height: auto !important;
+}
+
 .sefar-nav-canvas {
   position: absolute;
   inset: 0;

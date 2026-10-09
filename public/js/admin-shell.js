@@ -84,6 +84,67 @@
 
   };
 
+  const setupSidebarMenuSearch = (sidebar) => {
+    const search = sidebar.querySelector('[data-widget="sidebar-search"] input[type="search"]');
+    const menu = sidebar.querySelector('.nav-sidebar');
+
+    if (!search || !menu || search.dataset.sefarSearchReady === 'true') {
+      return;
+    }
+
+    search.dataset.sefarSearchReady = 'true';
+    search.setAttribute('aria-label', 'Buscar opciones del menú');
+
+    const normalize = (value) => (value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLocaleLowerCase()
+      .trim();
+
+    const directChild = (element, selector) => Array.from(element.children)
+      .find((child) => child.matches(selector));
+
+    const filterItem = (item, query, parentMatches = false) => {
+      const link = directChild(item, '.nav-link');
+      const label = normalize(link ? link.textContent : '');
+      const ownMatches = parentMatches || label.includes(query);
+      const submenu = directChild(item, '.nav-treeview');
+      const children = submenu
+        ? Array.from(submenu.children).filter((child) => child.matches('.nav-item'))
+        : [];
+
+      let childMatches = false;
+      children.forEach((child) => {
+        childMatches = filterItem(child, query, ownMatches) || childMatches;
+      });
+
+      const visible = ownMatches || childMatches;
+      item.classList.toggle('sefar-search-hidden', !visible);
+      item.classList.toggle('sefar-search-open', Boolean(query && submenu && visible));
+
+      return visible;
+    };
+
+    const applyFilter = () => {
+      const query = normalize(search.value);
+      Array.from(menu.children)
+        .filter((item) => item.matches('.nav-item'))
+        .forEach((item) => filterItem(item, query));
+    };
+
+    search.addEventListener('input', applyFilter);
+    search.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        search.value = '';
+        applyFilter();
+        search.blur();
+      }
+    });
+
+    const button = sidebar.querySelector('[data-widget="sidebar-search"] button');
+    button?.addEventListener('click', () => search.focus());
+  };
+
   const animateNavigation = async (sidebar) => {
     const gsap = await loadScript(assets.gsap, 'gsap');
 
@@ -434,6 +495,7 @@
     }
 
     setupSidebarStructure(sidebar);
+    setupSidebarMenuSearch(sidebar);
     animateNavigation(sidebar);
     setupSidebarScene(sidebar);
   });
