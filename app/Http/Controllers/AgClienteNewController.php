@@ -416,7 +416,7 @@ class AgClienteNewController extends Controller
         $dateParts = $this->datePartsFromRequest($request);
         $agcliente = Agcliente::findOrFail($request->id);
 
-        $agcliente->update([
+        $attributes = [
             'AnhoNac' => $dateParts['AnhoNac'],
             'MesNac' => $dateParts['MesNac'],
             'DiaNac' => $dateParts['DiaNac'],
@@ -449,7 +449,17 @@ class AgClienteNewController extends Controller
             'Observaciones' => $request->Observaciones,
             'Nombres' => trim($request->Nombres),
             'Apellidos' => trim($request->Apellidos),
-        ]);
+        ];
+
+        if ($request->user()?->hasRole('Cliente')) {
+            foreach ($attributes as $field => $value) {
+                if (blank($value) && filled($agcliente->{$field})) {
+                    $attributes[$field] = $agcliente->{$field};
+                }
+            }
+        }
+
+        $agcliente->update($attributes);
 
         app(GenealogyService::class)->forgetProcessedTree($agcliente->IDCliente);
 
@@ -638,6 +648,8 @@ class AgClienteNewController extends Controller
 
     public function deletefile(Request $request)
     {
+        abort_unless($request->user()?->can('crud.files.destroy'), 403);
+
         $fileId = $request->input('fileId');
 
         $file = File::findOrFail($fileId);

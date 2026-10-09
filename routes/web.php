@@ -598,13 +598,19 @@ Route::get('generalcoupons/create', [GeneralCouponController::class, 'create'])-
 Route::post('generalcoupons', [GeneralCouponController::class, 'store'])->name('generalcoupons.store')->middleware('can:generalcoupons.create');
 Route::delete('generalcoupons/{generalCoupon}', [GeneralCouponController::class, 'destroy'])->name('generalcoupons.destroy')->middleware('can:generalcoupons.delete');
 
-Route::post('agclientesnew', [AgClienteNewController::class, 'storeNotCliente'])->name('agclientesnew.store');
-Route::post('agclientesupdate', [AgClienteNewController::class, 'updateNotCliente'])->name('agclientesnew.update');
+Route::post('agclientesnew', [AgClienteNewController::class, 'storeNotCliente'])
+    ->name('agclientesnew.store')
+    ->middleware('auth');
+Route::post('agclientesupdate', [AgClienteNewController::class, 'updateNotCliente'])
+    ->name('agclientesnew.update')
+    ->middleware('auth');
 Route::post('getclientfiles', [AgClienteNewController::class, 'getClientFiles'])->name('getclientfiles');
 Route::post('updatefiletype', [AgClienteNewController::class, 'updatefiletype'])->name('updatefiletype');
 Route::post('storefile', [AgClienteNewController::class, 'storefile'])->name('storefile');
 Route::post('openfile', [AgClienteNewController::class, 'openfile'])->name('openfile');
-Route::post('deletefile', [AgClienteNewController::class, 'deletefile'])->name('deletefile');
+Route::post('deletefile', [AgClienteNewController::class, 'deletefile'])
+    ->name('deletefile')
+    ->middleware(['auth', 'can:crud.files.destroy']);
 Route::post('getfileedit', [AgClienteNewController::class, 'getfileedit'])->name('getfileedit');
 Route::post('getfileupdate', [AgClienteNewController::class, 'getfileupdate'])->name('getfileupdate');
 

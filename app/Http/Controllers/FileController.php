@@ -390,6 +390,8 @@ class FileController extends Controller
      */
     public function destroy(File $file)
     {
+        abort_unless(auth()->user()->can('crud.files.destroy'), 403);
+
         try {
             $nombre = $file->file;
 

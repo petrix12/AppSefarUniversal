@@ -324,6 +324,16 @@ class AgclienteController extends Controller
             $agcliente->Enlace = $request->Enlace;
         }
 
+        if (auth()->user()->hasRole('Cliente')) {
+            foreach ($agcliente->getDirty() as $field => $value) {
+                $original = $agcliente->getOriginal($field);
+
+                if (blank($value) && filled($original)) {
+                    $agcliente->{$field} = $original;
+                }
+            }
+        }
+
         $agcliente->save();
 
         // Mensaje
@@ -346,6 +356,8 @@ class AgclienteController extends Controller
      */
     public function destroy(Agcliente $agcliente)
     {
+        abort_unless(auth()->user()->can('crud.agclientes.destroy'), 403);
+
         $nombre = $agcliente->Nombres . ' ' . $agcliente->Apellidos;
 
         $agcliente->delete();
