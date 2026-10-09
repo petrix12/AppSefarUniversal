@@ -2902,17 +2902,48 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th scope="col">Nombre del Negocio</th>
+                                <th scope="col">Servicio solicitado</th>
+                                <th scope="col">Teamleader</th>
                                 <th scope="col">Ver info</th>
+                                <th scope="col">Asociar con IA</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach ( $negocios as $negocio )
                                 <tr>
-                                    <td>{{$negocio["servicio_solicitado2"]}}<br>{!!$negocio["hubspot_id"] ? "<small>Se encuentra en <b><a target='_blank' href='https://app.hubspot.com/contacts/20053496/record/0-3/".$negocio['hubspot_id']."'>Hubspot</a></b></small>" : ''!!}{!! $negocio["teamleader_id"] ? "<small> y en <b><a target='_blank' href='https://focus.teamleader.eu/web/projects/".$negocio['teamleader_id']."'>Teamleader</a></b></small>" : '' !!}</td>
                                     <td>
-                                        <a href="/deal/{{$negocio['id']}}/edit" target="_blank" class="btn btn-primary">
+                                        <strong>{{ $negocio->dealname ?: (filled($negocio->hubspot_id) ? 'Trato HubSpot '.$negocio->hubspot_id : 'Negocio '.$negocio->id) }}</strong>
+                                        @if($negocio->hubspot_id)
+                                            <div class="small"><a target="_blank" rel="noopener" href="https://app.hubspot.com/contacts/20053496/record/0-3/{{ $negocio->hubspot_id }}">Ver en HubSpot</a></div>
+                                        @endif
+                                    </td>
+                                    <td>{{ $negocio->servicio_solicitado2 ?: ($negocio->servicio_solicitado ?: '—') }}</td>
+                                    <td>
+                                        @if($negocio->teamleader_id)
+                                            <a target="_blank" rel="noopener" href="https://focus.teamleader.eu/web/projects/{{ $negocio->teamleader_id }}">Asociado · ver proyecto</a>
+                                        @else
+                                            <span class="text-muted">Sin asociar</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <a href="{{ route('deals.edit', $negocio->id) }}" target="_blank" rel="noopener" class="btn btn-primary" title="Ver información del negocio">
                                             <i class="fas fa-eye"></i>
                                         </a>
+                                    </td>
+                                    <td style="min-width: 210px;">
+                                        @if(filled($negocio->hubspot_id) && blank($negocio->teamleader_id))
+                                            <button type="button" class="btn btn-sm btn-outline-info suggest-teamleader-from-list"
+                                                data-url="{{ route('deals.teamleader.suggestions', $negocio->id) }}"
+                                                data-deal-id="{{ $negocio->id }}"
+                                                data-csrf="{{ csrf_token() }}">
+                                                <i class="fas fa-magic mr-1"></i>Asociar con IA
+                                            </button>
+                                            <div class="teamleader-list-suggestions small mt-2" aria-live="polite"></div>
+                                        @elseif($negocio->teamleader_id)
+                                            <span class="badge bg-success">Asociado</span>
+                                        @else
+                                            <span class="text-muted">Sin trato de HubSpot</span>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
@@ -4190,6 +4221,111 @@
                 "zeroRecords": "No hay resultados",
                 "info": "Página _PAGE_ de _PAGES_",
                 "infoEmpty": "No hay resultados"
+            }
+        });
+        document.addEventListener('click', async function (event) {
+            const suggestButton = event.target.closest('.suggest-teamleader-from-list');
+            const associateButton = event.target.closest('.associate-ai-candidate');
+            if (!suggestButton && !associateButton) return;
+
+            const button = suggestButton || associateButton;
+            const row = button.closest('tr');
+            const resultBox = row.querySelector('.teamleader-list-suggestions');
+            const csrfToken = button.dataset.csrf;
+            const dealId = button.dataset.dealId;
+
+            const postJson = async (url, payload) => {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                    },
+                    body: JSON.stringify(payload),
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || data.success === false) {
+                    throw new Error(data.message || `Error HTTP ${response.status}.`);
+                }
+                return data;
+            };
+
+            if (suggestButton) {
+                suggestButton.disabled = true;
+                resultBox.textContent = 'Comparando campos del trato con Teamleader…';
+                try {
+                    const response = await postJson(suggestButton.dataset.url, {});
+                    resultBox.replaceChildren();
+                    if (!response.suggestions || response.suggestions.length === 0) {
+                        resultBox.textContent = 'La IA no encontró una coincidencia con evidencia suficiente.';
+                        return;
+                    }
+
+                    response.suggestions.forEach((suggestion) => {
+                        const candidate = document.createElement('div');
+                        candidate.className = 'border rounded p-2 mb-2';
+                        const title = document.createElement('strong');
+                        title.textContent = `${suggestion.title} · ${suggestion.confidence}%`;
+                        const service = document.createElement('div');
+                        service.className = 'text-muted';
+                        service.textContent = `Servicio: ${suggestion.service || 'No indicado'}`;
+                        const reason = document.createElement('div');
+                        reason.className = 'text-muted';
+                        reason.textContent = suggestion.reason || '';
+                        const choose = document.createElement('button');
+                        choose.type = 'button';
+                        choose.className = 'btn btn-sm btn-primary mt-2 associate-ai-candidate';
+                        choose.textContent = 'Asociar este trato';
+                        choose.dataset.csrf = csrfToken;
+                        choose.dataset.dealId = dealId;
+                        choose.dataset.teamleaderId = suggestion.id;
+                        choose.dataset.teamleaderTitle = suggestion.title;
+                        candidate.append(title, service, reason, choose);
+                        resultBox.append(candidate);
+                    });
+                } catch (error) {
+                    resultBox.textContent = error.message || 'No se pudieron generar sugerencias.';
+                } finally {
+                    suggestButton.disabled = false;
+                }
+                return;
+            }
+
+            const confirmation = await Swal.fire({
+                title: '¿Asociar este trato?',
+                text: `${button.dataset.teamleaderTitle}. Se conservarán los datos existentes y se completarán los campos vacíos al actualizar la información del negocio.`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Asociar',
+                cancelButtonText: 'Cancelar',
+            });
+            if (!confirmation.isConfirmed) return;
+
+            button.disabled = true;
+            try {
+                await postJson('/sincronizarhsytl', {
+                    id: dealId,
+                    teamleader_id: button.dataset.teamleaderId,
+                });
+
+                const teamleaderCell = row.children[2];
+                const projectLink = document.createElement('a');
+                projectLink.href = `https://focus.teamleader.eu/web/projects/${button.dataset.teamleaderId}`;
+                projectLink.target = '_blank';
+                projectLink.rel = 'noopener';
+                projectLink.textContent = 'Asociado · ver proyecto';
+                teamleaderCell.replaceChildren(projectLink);
+
+                const actionCell = row.children[4];
+                const badge = document.createElement('span');
+                badge.className = 'badge bg-success';
+                badge.textContent = 'Asociado';
+                actionCell.replaceChildren(badge);
+                await Swal.fire('Asociación guardada', 'El trato quedó vinculado con Teamleader.', 'success');
+            } catch (error) {
+                button.disabled = false;
+                await Swal.fire('No se pudo asociar', error.message || 'Error al guardar la asociación.', 'error');
             }
         });
         $('#dealsTable').DataTable({

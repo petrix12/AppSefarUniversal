@@ -107,6 +107,7 @@ class UnificationAiSuggestionService
                 return [
                     'id' => (string) ($deal['id'] ?? ''),
                     'title' => $this->safeText($deal['title'] ?? ''),
+                    'service' => $this->safeText($deal['service'] ?? ''),
                     'confidence' => max(0, min(100, (int) ($item['confidence'] ?? 0))),
                     'reason' => Str::limit(trim((string) ($item['reason'] ?? '')), 500, ''),
                 ];

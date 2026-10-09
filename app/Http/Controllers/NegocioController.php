@@ -308,7 +308,8 @@ class NegocioController extends Controller
                 ], 502);
             }
 
-            $sourceName = (string) ($hubspotDeal['properties']['dealname'] ?? '');
+            $hubspotProperties = $hubspotDeal['properties'];
+            $sourceName = (string) ($hubspotProperties['dealname'] ?? '');
             $sourceNormalized = $this->normaliseDealTitle($sourceName);
             $projects = $this->teamleaderService->getProjectsWithDetailsByCustomerId((string) $user->tl_id);
             $linkedProjectIds = Negocio::whereNotNull('teamleader_id')
@@ -320,27 +321,69 @@ class NegocioController extends Controller
             $candidates = collect($projects)
                 ->filter(fn ($project) => is_array($project) && filled($project['id'] ?? null))
                 ->reject(fn ($project) => in_array((string) $project['id'], $linkedProjectIds, true))
-                ->map(function (array $project) use ($sourceNormalized): array {
-                    $serviceField = collect($project['custom_fields'] ?? [])->first(
-                        fn ($field) => ($field['definition']['id'] ?? $field['id'] ?? null) === 'fcd48891-20f6-049a-a05f-f78a6f951b4d'
-                    );
+                ->map(function (array $project) use ($sourceNormalized, $hubspotProperties): array {
+                    $customFields = collect($project['custom_fields'] ?? []);
+                    $fieldValue = fn (string $id) => $customFields->first(
+                        fn ($field) => (string) ($field['definition']['id'] ?? $field['id'] ?? '') === $id
+                    )['value'] ?? null;
 
                     $title = (string) ($project['title'] ?? '');
                     $normalizedTitle = $this->normaliseDealTitle($title);
                     similar_text($sourceNormalized, $normalizedTitle, $nameSimilarity);
+                    $phaseFields = [];
+                    $fieldScore = 0;
+                    $normaliseField = fn ($value) => trim(preg_replace('/[^a-z0-9]+/', ' ', \Illuminate\Support\Str::ascii(mb_strtolower((string) $value))) ?: '');
+                    $hubspotCode = $normaliseField($hubspotProperties['codigo_de_proceso'] ?? '');
+                    $teamleaderCode = $normaliseField($fieldValue('a42f63f5-d527-0544-ab50-9c03857707f2'));
+                    if ($hubspotCode !== '' && $hubspotCode === $teamleaderCode) {
+                        $fieldScore += 60;
+                    }
+                    $hubspotService = $normaliseField($hubspotProperties['servicio_solicitado2'] ?? $hubspotProperties['servicio_solicitado'] ?? '');
+                    $teamleaderService = $normaliseField($fieldValue('fcd48891-20f6-049a-a05f-f78a6f951b4d'));
+                    if ($hubspotService !== '' && $hubspotService === $teamleaderService) {
+                        $fieldScore += 25;
+                    }
+                    foreach (\App\Services\TeamleaderProjectPaymentAnalyzer::PHASE_FIELDS as $phase => $fields) {
+                        $phaseFields[$phase] = [
+                            'preestab' => $fieldValue($fields['preestab']['id']),
+                            'paid' => $fieldValue($fields['paid']['id']),
+                        ];
+                        $phaseProperties = match ((int) $phase) {
+                            1 => ['preestab' => 'fase_1_preestab', 'paid' => 'fase_1_pagado__teamleader_'],
+                            2 => ['preestab' => 'fase_2_preestab', 'paid' => 'fase_2_pagado__teamleader_'],
+                            3 => ['preestab' => 'fase_3_preestab', 'paid' => 'fase_3_pagado__teamleader_'],
+                            98 => ['preestab' => 'carta_nat_preestab', 'paid' => 'carta_nat_pagado'],
+                            99 => ['preestab' => 'cil___fcje_preestab', 'paid' => 'cil___fcje_pagado'],
+                            default => [],
+                        };
+                        foreach ($phaseProperties as $kind => $property) {
+                            $hsValue = $normaliseField($hubspotProperties[$property] ?? '');
+                            $tlValue = $normaliseField($phaseFields[$phase][$kind] ?? '');
+                            if ($hsValue !== '' && $hsValue === $tlValue) {
+                                $fieldScore += 10;
+                                break;
+                            }
+                        }
+                    }
 
                     return [
                         'id' => (string) $project['id'],
                         'title' => $title,
                         'status' => (string) ($project['status'] ?? ''),
                         'estimated_value' => $project['estimated_value'] ?? [],
-                        'service' => (string) ($serviceField['value'] ?? ''),
+                        'service' => (string) ($fieldValue('fcd48891-20f6-049a-a05f-f78a6f951b4d') ?? ''),
+                        'process_code' => (string) ($fieldValue('a42f63f5-d527-0544-ab50-9c03857707f2') ?? ''),
+                        'phase_fields' => $phaseFields,
+                        '_field_score' => $fieldScore,
                         '_name_similarity' => $nameSimilarity ?? 0,
                     ];
                 })
-                ->sortByDesc('_name_similarity')
+                ->sortBy([
+                    ['_field_score', 'desc'],
+                    ['_name_similarity', 'desc'],
+                ])
                 ->take(40)
-                ->map(fn (array $project) => collect($project)->except('_name_similarity')->all())
+                ->map(fn (array $project) => collect($project)->except(['_field_score', '_name_similarity'])->all())
                 ->values()
                 ->all();
 
