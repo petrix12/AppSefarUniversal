@@ -3,6 +3,7 @@
 use App\Http\Controllers\AgclienteController;
 use App\Http\Controllers\AdminConsultationCalendarController;
 use App\Http\Controllers\AdminIntegrationTokenController;
+use App\Http\Controllers\AdminAiModelSettingsController;
 use App\Http\Controllers\AlberoController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\ClienteController;
@@ -159,6 +160,8 @@ Route::middleware(['auth', 'can:integrations.manage'])
     ->prefix('admin/integrations')
     ->name('admin.integrations.')
     ->group(function () {
+        Route::get('/ai-models', [AdminAiModelSettingsController::class, 'show'])->name('ai-models.index');
+        Route::put('/ai-models', [AdminAiModelSettingsController::class, 'update'])->name('ai-models.update');
         Route::get('/api-tokens', [AdminIntegrationTokenController::class, 'apiTokens'])->name('api-tokens.index');
         Route::post('/api-tokens', [AdminIntegrationTokenController::class, 'storeApiToken'])->name('api-tokens.store');
         Route::get('/mcp', [AdminIntegrationTokenController::class, 'mcp'])->name('mcp.index');

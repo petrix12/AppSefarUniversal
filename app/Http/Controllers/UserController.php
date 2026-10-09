@@ -2949,7 +2949,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
 
     private function analizarEtiquetasYDevolverJSON($mondaydataforAI)
     {
-        $apiKey = env('OPENROUTER_API_KEY');
+        $apiKey = config('services.openrouter.key');
 
         // Construye el prompt dinámicamente con los valores actuales del arreglo
         $inputJSON = json_encode([
@@ -3000,12 +3000,17 @@ private function removeDuplicatesAndSort(array $cosuser): array
         ];
 
         // Llamada a OpenRouter
-        $response = Http::withHeaders([
+        $processSettings = app(\App\Services\AiProcessSettingsService::class)->get('cos_classifier');
+        $response = Http::timeout((int) $processSettings['timeout_seconds'])->withHeaders([
             'Authorization' => "Bearer $apiKey",
             'Content-Type' => 'application/json',
-        ])->post("https://openrouter.ai/api/v1/chat/completions", [
-            'model' => 'openai/gpt-4.1-mini', // o GPT compatible
-            'messages' => $mensaje
+        ])->post((string) config('services.openrouter.url'), [
+            'models' => array_values(array_unique(array_merge(
+                [$processSettings['model']],
+                $processSettings['fallback_models'] ?? []
+            ))),
+            'messages' => $mensaje,
+            'max_tokens' => (int) $processSettings['max_tokens'],
         ]);
 
         if ($response->successful()) {

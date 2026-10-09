@@ -11,12 +11,6 @@ use Illuminate\Support\Facades\Log;
 
 class DeployController extends Controller
 {
-    // Modelos baratos en orden de prioridad
-    private const MODELS = [
-        'google/gemini-2.0-flash-lite-001',
-        'google/gemini-2.5-flash-lite',
-    ];
-
     public function deploy(Request $request)
     {
         $projectPath = base_path();
@@ -321,7 +315,8 @@ class DeployController extends Controller
     // ── OpenRouter con fallback entre modelos ─────────────────
     private function callOpenRouterSummary(string $changes, string $version): array
     {
-        $apiKey = config('services.openrouter.key') ?? env('OPENROUTER_API_KEY');
+        $apiKey = config('services.openrouter.key');
+        $processSettings = app(\App\Services\AiProcessSettingsService::class)->get('deployment_summary');
 
         if (! $apiKey) {
             throw new \Exception("Falta OPENROUTER_API_KEY");
@@ -329,16 +324,20 @@ class DeployController extends Controller
 
         $lastException = null;
 
-        foreach (self::MODELS as $model) {
+        $models = array_values(array_unique(array_merge(
+            [$processSettings['model']],
+            $processSettings['fallback_models'] ?? []
+        )));
+        foreach ($models as $model) {
             try {
-                $response = Http::timeout(30)
+                $response = Http::timeout((int) $processSettings['timeout_seconds'])
                     ->withHeaders([
                         'Authorization' => "Bearer {$apiKey}",
                         'Content-Type'  => 'application/json',
                         'HTTP-Referer'  => config('app.url'),
                         'X-Title'       => config('app.name'),
                     ])
-                    ->post('https://openrouter.ai/api/v1/chat/completions', [
+                    ->post((string) config('services.openrouter.url'), [
                         'model'       => $model,
                         'messages'    => [
                             [
@@ -351,6 +350,7 @@ class DeployController extends Controller
                             ],
                         ],
                         'temperature' => 0.1,  // Muy determinista para resumenes tecnicos
+                        'max_tokens' => (int) $processSettings['max_tokens'],
                     ]);
 
                 if (! $response->successful()) {

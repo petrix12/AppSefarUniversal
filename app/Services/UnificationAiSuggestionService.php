@@ -28,6 +28,8 @@ class UnificationAiSuggestionService
      */
     public function suggestDealAssociations(array $hubspotDeal, array $teamleaderDeals): array
     {
+        $process = 'teamleader_association';
+        $processSettings = app(AiProcessSettingsService::class)->get($process);
         $apiKey = config('services.openrouter.key');
         if (blank($apiKey)) {
             throw new RuntimeException('Falta configurar OPENROUTER_API_KEY para solicitar sugerencias de asociación.');
@@ -35,10 +37,10 @@ class UnificationAiSuggestionService
 
         $teamleaderDeals = array_values(array_slice($teamleaderDeals, 0, 40));
         if ($teamleaderDeals === []) {
-            return ['suggestions' => [], 'model' => $this->primaryModel()];
+            return ['suggestions' => [], 'model' => $this->primaryModel($process)];
         }
 
-        $response = Http::timeout((int) config('services.openrouter.unification_timeout', 30))
+        $response = Http::timeout((int) $processSettings['timeout_seconds'])
             ->retry(1, 250, throw: false)
             ->withHeaders([
                 'Authorization' => "Bearer {$apiKey}",
@@ -47,7 +49,7 @@ class UnificationAiSuggestionService
                 'X-Title' => config('app.name').' · Asociación de negocios',
             ])
             ->post(config('services.openrouter.url'), [
-                'models' => $this->models(),
+                'models' => $this->models($process),
                 'messages' => [
                     [
                         'role' => 'system',
@@ -79,14 +81,14 @@ class UnificationAiSuggestionService
                     ],
                 ],
                 'temperature' => 0.1,
-                'max_tokens' => 900,
+                'max_tokens' => (int) $processSettings['max_tokens'],
                 'provider' => ['require_parameters' => true],
                 'response_format' => ['type' => 'json_object'],
             ]);
 
         if (! $response->successful()) {
-            $models = $this->models();
-            throw new RuntimeException($this->apiErrorMessage($response->status(), $response->json(), $response->body(), $apiKey, $models));
+            $models = $this->models($process);
+            throw new RuntimeException($this->apiErrorMessage($response->status(), $response->json(), $response->body(), $apiKey, $models, $process));
         }
 
         $content = trim((string) data_get($response->json(), 'choices.0.message.content', ''));
@@ -120,7 +122,7 @@ class UnificationAiSuggestionService
 
         return [
             'suggestions' => $suggestions,
-            'model' => (string) data_get($response->json(), 'model', $this->primaryModel()),
+            'model' => (string) data_get($response->json(), 'model', $this->primaryModel($process)),
         ];
     }
 
@@ -159,6 +161,8 @@ class UnificationAiSuggestionService
      */
     public function suggestPlatformPair(string $leftProvider, string $rightProvider, array $candidates): array
     {
+        $process = 'data_unification';
+        $processSettings = app(AiProcessSettingsService::class)->get($process);
         $apiKey = config('services.openrouter.key');
 
         if (blank($apiKey)) {
@@ -170,14 +174,14 @@ class UnificationAiSuggestionService
         if ($candidates === []) {
             return [
                 'suggestions' => [],
-                'model' => $this->primaryModel(),
+                'model' => $this->primaryModel($process),
                 'candidate_limit' => $candidateLimit,
                 'used_ai' => false,
             ];
         }
 
-        $models = $this->models();
-        $response = Http::timeout((int) config('services.openrouter.unification_timeout', 30))
+        $models = $this->models($process);
+        $response = Http::timeout((int) $processSettings['timeout_seconds'])
             ->retry(1, 250, throw: false)
             ->withHeaders([
                 'Authorization' => "Bearer {$apiKey}",
@@ -192,14 +196,14 @@ class UnificationAiSuggestionService
                 'models' => $models,
                 'messages' => $this->pairMessages($leftProvider, $rightProvider, $candidates),
                 'temperature' => 0.1,
-                'max_tokens' => 700,
+                'max_tokens' => (int) $processSettings['max_tokens'],
                 // This rejects providers that cannot honor the requested JSON mode.
                 'provider' => ['require_parameters' => true],
-                'response_format' => $this->responseFormat(),
+                'response_format' => $this->responseFormat($process),
             ]);
 
         if (! $response->successful()) {
-            throw new RuntimeException($this->apiErrorMessage($response->status(), $response->json(), $response->body(), $apiKey, $models));
+            throw new RuntimeException($this->apiErrorMessage($response->status(), $response->json(), $response->body(), $apiKey, $models, $process));
         }
 
         $content = trim((string) data_get($response->json(), 'choices.0.message.content', ''));
@@ -216,7 +220,7 @@ class UnificationAiSuggestionService
             $suggestion,
             $candidates,
             $candidateLimit,
-            (string) data_get($response->json(), 'model', $this->primaryModel()),
+            (string) data_get($response->json(), 'model', $this->primaryModel($process)),
         );
     }
 
@@ -241,7 +245,7 @@ class UnificationAiSuggestionService
         if ($candidates === []) {
             return [
                 'suggestions' => [],
-                'model' => $this->primaryModel(),
+                'model' => $this->primaryModel('data_unification'),
                 'candidate_limit' => $this->perRequestCandidateLimit(),
                 'candidate_count' => 0,
                 'batch_count' => 0,
@@ -258,7 +262,7 @@ class UnificationAiSuggestionService
 
         return [
             'suggestions' => collect($suggestions)->unique('identity')->values()->all(),
-            'model' => $this->primaryModel(),
+            'model' => $this->primaryModel('data_unification'),
             'candidate_limit' => $this->perRequestCandidateLimit(),
             'candidate_count' => $candidateCount,
             'batch_count' => count($chunks),
@@ -351,7 +355,7 @@ class UnificationAiSuggestionService
             .$this->contentPreview($content));
     }
 
-    private function responseFormat(): array
+    private function responseFormat(string $process): array
     {
         // Some low-cost routes accept JSON mode but reject a strict JSON
         // Schema even when the model catalogue advertises structured output.
@@ -418,14 +422,11 @@ class UnificationAiSuggestionService
     }
 
     /** @return array<int, string> */
-    private function models(): array
+    private function models(string $process): array
     {
-        $fallbacks = config('services.openrouter.unification_fallback_models', []);
-        if (is_string($fallbacks)) {
-            $fallbacks = preg_split('/\s*,\s*/', trim($fallbacks)) ?: [];
-        }
+        $fallbacks = app(AiProcessSettingsService::class)->get($process)['fallback_models'] ?? [];
 
-        return collect(array_merge([$this->primaryModel()], is_array($fallbacks) ? $fallbacks : []))
+        return collect(array_merge([$this->primaryModel($process)], is_array($fallbacks) ? $fallbacks : []))
             ->map(fn (mixed $model) => trim((string) $model))
             ->filter()
             ->unique()
@@ -433,12 +434,17 @@ class UnificationAiSuggestionService
             ->all();
     }
 
-    private function primaryModel(): string
+    private function primaryModel(string $process): string
     {
-        return trim((string) config('services.openrouter.unification_model', 'qwen/qwen3-32b')) ?: 'qwen/qwen3-32b';
+        $default = match ($process) {
+            'teamleader_association' => 'qwen/qwen3-8b',
+            default => 'qwen/qwen3-32b',
+        };
+
+        return trim((string) (app(AiProcessSettingsService::class)->get($process)['model'] ?? $default)) ?: $default;
     }
 
-    private function apiErrorMessage(int $status, mixed $payload, string $body, string $apiKey, array $models): string
+    private function apiErrorMessage(int $status, mixed $payload, string $body, string $apiKey, array $models, string $process): string
     {
         $providerMessage = is_array($payload)
             ? (string) (data_get($payload, 'error.message') ?: data_get($payload, 'message') ?: '')
@@ -448,7 +454,7 @@ class UnificationAiSuggestionService
         $providerMessage = preg_replace('/Bearer\s+\S+/i', 'Bearer [clave oculta]', $providerMessage) ?: '';
         $providerMessage = Str::limit(trim($providerMessage), 900, '');
 
-        $model = implode(' → ', $models ?: [$this->primaryModel()]);
+        $model = implode(' → ', $models ?: [$this->primaryModel($process)]);
 
         return "OpenRouter HTTP {$status} con {$model}: ".($providerMessage ?: 'sin detalle adicional del proveedor.');
     }

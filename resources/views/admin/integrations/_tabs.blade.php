@@ -8,4 +8,7 @@
     <a href="{{ route('admin.integrations.audit.index') }}" class="btn {{ request()->routeIs('admin.integrations.audit.*') ? 'btn-primary' : 'btn-outline-primary' }}">
         <i class="fas fa-clipboard-list mr-1"></i> Auditoria
     </a>
+    <a href="{{ route('admin.integrations.ai-models.index') }}" class="btn {{ request()->routeIs('admin.integrations.ai-models.*') ? 'btn-primary' : 'btn-outline-primary' }}">
+        <i class="fas fa-brain mr-1"></i> Modelos de IA
+    </a>
 </div>

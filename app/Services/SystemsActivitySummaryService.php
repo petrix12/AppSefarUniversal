@@ -16,6 +16,7 @@ class SystemsActivitySummaryService
      */
     public function summarize(CarbonInterface $day, array $events): string
     {
+        $processSettings = app(AiProcessSettingsService::class)->get('systems_activity');
         $apiKey = (string) config('services.openrouter.key');
         if ($apiKey === '') {
             throw new RuntimeException('OPENROUTER_API_KEY is not configured.');
@@ -29,11 +30,14 @@ class SystemsActivitySummaryService
         $response = Http::withToken($apiKey)
             ->acceptJson()
             ->asJson()
-            ->timeout((int) config('services.openrouter.systems_activity_timeout', 45))
+            ->timeout((int) $processSettings['timeout_seconds'])
             ->post((string) config('services.openrouter.url'), [
-                'model' => config('services.openrouter.systems_activity_model', 'qwen/qwen3-32b'),
+                'models' => array_values(array_unique(array_merge(
+                    [$processSettings['model']],
+                    $processSettings['fallback_models'] ?? []
+                ))),
                 'temperature' => 0.2,
-                'max_tokens' => 500,
+                'max_tokens' => (int) $processSettings['max_tokens'],
                 'messages' => [
                     [
                         'role' => 'system',

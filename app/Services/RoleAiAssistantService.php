@@ -200,13 +200,14 @@ PROMPT);
 
     private function callOpenRouter(RoleAiAssistant $assistant, array $messages): string
     {
+        $processSettings = app(AiProcessSettingsService::class)->get('role_assistants');
         $apiKey = config('services.openrouter.key') ?: env('OPENROUTER_API_KEY');
 
         if (! $apiKey) {
             throw new RuntimeException('Falta configurar OPENROUTER_API_KEY.');
         }
 
-        $response = Http::timeout((int) config('services.openrouter.timeout', 60))
+        $response = Http::timeout((int) $processSettings['timeout_seconds'])
             ->withHeaders([
                 'Authorization' => "Bearer {$apiKey}",
                 'Content-Type' => 'application/json',
@@ -214,10 +215,10 @@ PROMPT);
                 'X-Title' => config('app.name'),
             ])
             ->post(config('services.openrouter.url', 'https://openrouter.ai/api/v1/chat/completions'), [
-                'model' => $assistant->model ?: config('services.openrouter.model', 'openai/gpt-4o-mini'),
+                'model' => $assistant->model ?: $processSettings['model'],
                 'messages' => $messages,
                 'temperature' => (float) config('services.openrouter.temperature', 0.25),
-                'max_tokens' => (int) config('services.openrouter.max_tokens', 1200),
+                'max_tokens' => (int) $processSettings['max_tokens'],
             ]);
 
         if (! $response->successful()) {

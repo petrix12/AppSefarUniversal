@@ -1426,7 +1426,8 @@ class CosService
 
     private function callOpenRouterAI($mondaydataforAI): array
     {
-        $apiKey = env('OPENROUTER_API_KEY');
+        $processSettings = app(AiProcessSettingsService::class)->get('cos_classifier');
+        $apiKey = config('services.openrouter.key');
 
         if (empty($apiKey)) {
             throw new \Exception("OPENROUTER_API_KEY no configurada");
@@ -1446,17 +1447,20 @@ class CosService
             ]
         ];
 
-        $response = Http::timeout(15)
+        $response = Http::timeout((int) $processSettings['timeout_seconds'])
             ->retry(2, 100)
             ->withHeaders([
                 'Authorization' => "Bearer $apiKey",
                 'Content-Type' => 'application/json',
             ])
-            ->post("https://openrouter.ai/api/v1/chat/completions", [
-                'model' => 'openai/gpt-4o-mini',
+            ->post((string) config('services.openrouter.url'), [
+                'models' => array_values(array_unique(array_merge(
+                    [$processSettings['model']],
+                    $processSettings['fallback_models'] ?? []
+                ))),
                 'messages' => $mensaje,
                 'temperature' => 0.1,
-                'max_tokens' => 200,
+                'max_tokens' => (int) $processSettings['max_tokens'],
             ]);
 
         if (!$response->successful()) {

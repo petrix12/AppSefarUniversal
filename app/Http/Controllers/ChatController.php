@@ -47,7 +47,8 @@ class ChatController extends Controller
             return response()->json(['error' => 'Sesión no encontrada'], 404);
         }
 
-        $apiKey = env('OPENROUTER_API_KEY');
+        $apiKey = config('services.openrouter.key');
+        $processSettings = app(\App\Services\AiProcessSettingsService::class)->get('assistant_chat');
 
         // Obtener el historial de mensajes y añadir el nuevo mensaje del usuario
         $mensajes = $chatSession->messages;
@@ -57,12 +58,16 @@ class ChatController extends Controller
         ];
 
         // Llamar a la API de OpenRouter
-        $response = Http::withHeaders([
+        $response = Http::timeout((int) $processSettings['timeout_seconds'])->withHeaders([
             'Authorization' => "Bearer $apiKey",
             'Content-Type' => 'application/json',
-        ])->post("https://openrouter.ai/api/v1/chat/completions", [
-            'model' => 'openai/gpt-4o-mini',
+        ])->post((string) config('services.openrouter.url'), [
+            'models' => array_values(array_unique(array_merge(
+                [$processSettings['model']],
+                $processSettings['fallback_models'] ?? []
+            ))),
             'messages' => $mensajes,
+            'max_tokens' => (int) $processSettings['max_tokens'],
         ]);
 
         if ($response->successful()) {
