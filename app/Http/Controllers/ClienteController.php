@@ -2188,7 +2188,7 @@ class ClienteController extends Controller
 
                         foreach ($compras as $key => $compra) {
                             $dealInput->setProperties([
-                                'dealname' => auth()->user()->name . ' - ' . $compra['servicio_hs_id'],
+                                'dealname' => $compra['servicio_hs_id'] . ' - ' . auth()->user()->name,
                                 'pipeline' => "94794",
                                 'dealstage' => "429097",
                                 'servicio_solicitado' => $compra['servicio_hs_id'],
@@ -2471,7 +2471,7 @@ class ClienteController extends Controller
 
             foreach ($compras as $key => $compra) {
                 $dealInput->setProperties([
-                    'dealname' => auth()->user()->name . ' - ' . $compra['servicio_hs_id'],
+                    'dealname' => $compra['servicio_hs_id'] . ' - ' . auth()->user()->name,
                     'pipeline' => "94794",
                     'dealstage' => "429097",
                     'servicio_solicitado' => $compra['servicio_hs_id'],
@@ -3193,7 +3193,7 @@ class ClienteController extends Controller
 
                     foreach ($compras as $key => $compra) {
                         $dealInput->setProperties([
-                            'dealname' => auth()->user()->name . ' - ' . $compra['servicio_hs_id'],
+                            'dealname' => $compra['servicio_hs_id'] . ' - ' . auth()->user()->name,
                             'pipeline' => "94794",
                             'dealstage' => "429097",
                             'servicio_solicitado' => $compra['servicio_hs_id'],
@@ -4110,7 +4110,7 @@ class ClienteController extends Controller
 
                             $dealInput = new \HubSpot\Client\Crm\Deals\Model\SimplePublicObjectInput();
                             $dealInput->setProperties([
-                                'dealname'             => auth()->user()->name . ' - ' . $compra->servicio_hs_id,
+                                'dealname'             => $compra->servicio_hs_id . ' - ' . auth()->user()->name,
                                 'pipeline'             => $pipelineId,
                                 'dealstage'            => $stageId,
                                 'amount'               => $compra->monto,
