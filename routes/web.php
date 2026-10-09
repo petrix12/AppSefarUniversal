@@ -614,7 +614,9 @@ Route::post('deletefile', [AgClienteNewController::class, 'deletefile'])
 Route::post('getfileedit', [AgClienteNewController::class, 'getfileedit'])->name('getfileedit');
 Route::post('getfileupdate', [AgClienteNewController::class, 'getfileupdate'])->name('getfileupdate');
 
-Route::post('/sincronizarhsytl', [NegocioController::class, 'sincronizarhsytl'])->name('sincronizarhsytl');
+Route::post('/sincronizarhsytl', [NegocioController::class, 'sincronizarhsytl'])
+    ->name('sincronizarhsytl')
+    ->middleware(['auth', 'can:crud.users.index']);
 Route::post('/guardarfase1', [NegocioController::class, 'guardarfase1'])->name('guardarfase1');
 Route::post('/guardarfase2', [NegocioController::class, 'guardarfase2'])->name('guardarfase2');
 Route::post('/guardarfase3', [NegocioController::class, 'guardarfase3'])->name('guardarfase3');

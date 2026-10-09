@@ -2898,6 +2898,7 @@
                 </div>
 
                 <div class="tab-pane fade" id="negocios" role="tabpanel" aria-labelledby="negocios-tab">
+                    @php($manualTeamleaderProjects = collect($teamleaderStatusMigration['projects'] ?? []))
                     <table id="dealsTable" class="min-w-full divide-y divide-gray-200 w-100">
                         <thead class="bg-gray-50">
                             <tr>
@@ -2905,7 +2906,7 @@
                                 <th scope="col">Servicio solicitado</th>
                                 <th scope="col">Teamleader</th>
                                 <th scope="col">Ver info</th>
-                                <th scope="col">Asociar con IA</th>
+                                <th scope="col">Asociación HubSpot–Teamleader</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -2930,14 +2931,37 @@
                                             <i class="fas fa-eye"></i>
                                         </a>
                                     </td>
-                                    <td style="min-width: 210px;">
+                                    <td style="min-width: 300px;">
                                         @if(filled($negocio->hubspot_id) && blank($negocio->teamleader_id))
-                                            <button type="button" class="btn btn-sm btn-outline-info suggest-teamleader-from-list"
-                                                data-url="{{ route('deals.teamleader.suggestions', $negocio->id) }}"
-                                                data-deal-id="{{ $negocio->id }}"
-                                                data-csrf="{{ csrf_token() }}">
-                                                <i class="fas fa-magic mr-1"></i>Asociar con IA
-                                            </button>
+                                            <div class="d-flex flex-wrap gap-1">
+                                                <button type="button" class="btn btn-sm btn-outline-info suggest-teamleader-from-list"
+                                                    data-url="{{ route('deals.teamleader.suggestions', $negocio->id) }}"
+                                                    data-deal-id="{{ $negocio->id }}"
+                                                    data-csrf="{{ csrf_token() }}">
+                                                    <i class="fas fa-magic mr-1"></i>Asociar con IA
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-primary manual-teamleader-toggle"
+                                                    @if($manualTeamleaderProjects->isEmpty()) disabled title="No hay proyectos de Teamleader disponibles para este cliente" @endif>
+                                                    <i class="fas fa-hand-pointer mr-1"></i>Asociar manualmente
+                                                </button>
+                                            </div>
+                                            <div class="manual-teamleader-picker mt-2 d-none">
+                                                <select class="form-control form-control-sm manual-teamleader-select" aria-label="Seleccionar proyecto de Teamleader">
+                                                    <option value="">Selecciona el proyecto correcto…</option>
+                                                    @foreach($manualTeamleaderProjects as $project)
+                                                        @if(filled($project->id) && filled($project->title))
+                                                            <option value="{{ $project->id }}">
+                                                                {{ $project->title }}{{ filled($project->custom_field_value) ? ' · '.$project->custom_field_value : '' }}{{ filled($project->status) ? ' · '.$project->status : '' }}
+                                                            </option>
+                                                        @endif
+                                                    @endforeach
+                                                </select>
+                                                <button type="button" class="btn btn-sm btn-primary mt-2 save-manual-teamleader"
+                                                    data-deal-id="{{ $negocio->id }}"
+                                                    data-csrf="{{ csrf_token() }}">
+                                                    Asociar proyecto seleccionado
+                                                </button>
+                                            </div>
                                             <div class="teamleader-list-suggestions small mt-2" aria-live="polite"></div>
                                         @elseif($negocio->teamleader_id)
                                             <span class="badge bg-success">Asociado</span>
@@ -4226,9 +4250,11 @@
         document.addEventListener('click', async function (event) {
             const suggestButton = event.target.closest('.suggest-teamleader-from-list');
             const associateButton = event.target.closest('.associate-ai-candidate');
-            if (!suggestButton && !associateButton) return;
+            const manualToggleButton = event.target.closest('.manual-teamleader-toggle');
+            const manualSaveButton = event.target.closest('.save-manual-teamleader');
+            if (!suggestButton && !associateButton && !manualToggleButton && !manualSaveButton) return;
 
-            const button = suggestButton || associateButton;
+            const button = suggestButton || associateButton || manualToggleButton || manualSaveButton;
             const row = button.closest('tr');
             const resultBox = row.querySelector('.teamleader-list-suggestions');
             const csrfToken = button.dataset.csrf;
@@ -4250,6 +4276,63 @@
                 }
                 return data;
             };
+
+            const markAsAssociated = (teamleaderId) => {
+                const teamleaderCell = row.children[2];
+                const projectLink = document.createElement('a');
+                projectLink.href = `https://focus.teamleader.eu/web/projects/${teamleaderId}`;
+                projectLink.target = '_blank';
+                projectLink.rel = 'noopener';
+                projectLink.textContent = 'Asociado · ver proyecto';
+                teamleaderCell.replaceChildren(projectLink);
+
+                const actionCell = row.children[4];
+                const badge = document.createElement('span');
+                badge.className = 'badge bg-success';
+                badge.textContent = 'Asociado';
+                actionCell.replaceChildren(badge);
+            };
+
+            if (manualToggleButton) {
+                const picker = row.querySelector('.manual-teamleader-picker');
+                picker?.classList.toggle('d-none');
+                picker?.querySelector('.manual-teamleader-select')?.focus();
+                return;
+            }
+
+            if (manualSaveButton) {
+                const select = row.querySelector('.manual-teamleader-select');
+                const teamleaderId = select?.value;
+                if (!teamleaderId) {
+                    await Swal.fire('Selecciona un proyecto', 'Elige el proyecto de Teamleader que corresponde a este negocio.', 'info');
+                    return;
+                }
+
+                const selectedTitle = select.options[select.selectedIndex]?.textContent || 'el proyecto seleccionado';
+                const confirmation = await Swal.fire({
+                    title: '¿Asociar manualmente?',
+                    text: `${selectedTitle}. Se conservarán los datos existentes y podrás revisar diferencias en la ficha del negocio.`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Asociar',
+                    cancelButtonText: 'Cancelar',
+                });
+                if (!confirmation.isConfirmed) return;
+
+                manualSaveButton.disabled = true;
+                try {
+                    await postJson('/sincronizarhsytl', {
+                        id: dealId,
+                        teamleader_id: teamleaderId,
+                    });
+                    markAsAssociated(teamleaderId);
+                    await Swal.fire('Asociación guardada', 'El trato quedó vinculado con Teamleader.', 'success');
+                } catch (error) {
+                    manualSaveButton.disabled = false;
+                    await Swal.fire('No se pudo asociar', error.message || 'Error al guardar la asociación.', 'error');
+                }
+                return;
+            }
 
             if (suggestButton) {
                 suggestButton.disabled = true;
@@ -4308,20 +4391,7 @@
                     id: dealId,
                     teamleader_id: button.dataset.teamleaderId,
                 });
-
-                const teamleaderCell = row.children[2];
-                const projectLink = document.createElement('a');
-                projectLink.href = `https://focus.teamleader.eu/web/projects/${button.dataset.teamleaderId}`;
-                projectLink.target = '_blank';
-                projectLink.rel = 'noopener';
-                projectLink.textContent = 'Asociado · ver proyecto';
-                teamleaderCell.replaceChildren(projectLink);
-
-                const actionCell = row.children[4];
-                const badge = document.createElement('span');
-                badge.className = 'badge bg-success';
-                badge.textContent = 'Asociado';
-                actionCell.replaceChildren(badge);
+                markAsAssociated(button.dataset.teamleaderId);
                 await Swal.fire('Asociación guardada', 'El trato quedó vinculado con Teamleader.', 'success');
             } catch (error) {
                 button.disabled = false;
