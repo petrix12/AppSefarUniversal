@@ -2898,7 +2898,9 @@
                 </div>
 
                 <div class="tab-pane fade" id="negocios" role="tabpanel" aria-labelledby="negocios-tab">
-                    @php($manualTeamleaderProjects = collect($teamleaderStatusMigration['projects'] ?? []))
+                    @php
+                        $manualTeamleaderProjects = collect($teamleaderStatusMigration['projects'] ?? []);
+                    @endphp
                     <table id="dealsTable" class="min-w-full divide-y divide-gray-200 w-100">
                         <thead class="bg-gray-50">
                             <tr>
