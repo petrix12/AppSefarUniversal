@@ -51,17 +51,32 @@ class HubspotDealLocalSyncService
             Negocio::where('id', $dealUpdate['id'])->update($dealUpdate['data']);
         }
 
+        // HubSpot is the source of truth for which deals belong in the COS.
+        // The endpoint returns the complete active association list (or throws
+        // on API failure), so remove local HubSpot deals that are no longer
+        // associated with this contact. Keep records without a HubSpot ID and
+        // records belonging to other users untouched.
+        $deleted = Negocio::where('user_id', $user->id)
+            ->whereNotNull('hubspot_id')
+            ->when(
+                ! empty($hubspotIds),
+                fn ($query) => $query->whereNotIn('hubspot_id', $hubspotIds)
+            )
+            ->delete();
+
         Log::info('HubSpot deals sincronizados localmente para COS/MCP', [
             'user_id' => $user->id,
             'received' => count($deals),
             'inserted' => count($newDeals),
             'updated' => count($dealsToUpdate),
+            'deleted' => $deleted,
         ]);
 
         return [
             'received' => count($deals),
             'inserted' => count($newDeals),
             'updated' => count($dealsToUpdate),
+            'deleted' => $deleted,
         ];
     }
 

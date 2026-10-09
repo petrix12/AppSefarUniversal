@@ -24,9 +24,13 @@ class UserSyncService
      * Sincroniza datos del usuario con HubSpot
      * Usa cache de 5 minutos
      */
-    public function syncWithHubspot(User $user): array
+    public function syncWithHubspot(User $user, bool $forceRefresh = false): array
     {
         $cacheKey = "hubspot_data_{$user->hs_id}";
+
+        if ($forceRefresh) {
+            Cache::forget($cacheKey);
+        }
 
         return Cache::remember($cacheKey, 300, function () use ($user) {
             if (is_null($user->hs_id)) {

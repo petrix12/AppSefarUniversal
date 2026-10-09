@@ -35,7 +35,7 @@ class ClientCosSnapshotService
             return $this->fromCache($user, $startedAt);
         }
 
-        return $this->refresh($user, $syncExternal);
+        return $this->refresh($user, $syncExternal, $forceRefresh);
     }
 
     /** Render from local data only, even when the global queue uses sync. */
@@ -105,7 +105,7 @@ class ClientCosSnapshotService
         ];
     }
 
-    public function refresh(User $user, bool $syncExternal = true): array
+    public function refresh(User $user, bool $syncExternal = true, bool $forceExternalRefresh = false): array
     {
         $startedAt = microtime(true);
         $user = $user->fresh() ?? $user;
@@ -119,7 +119,7 @@ class ClientCosSnapshotService
         ];
 
         if ($syncExternal) {
-            $sync = $this->refreshExternalData($user, $sync);
+            $sync = $this->refreshExternalData($user, $sync, $forceExternalRefresh);
             if (! empty($sync['error']) || (filled($user->hs_id) && empty($sync['hubspot']['contact']))) {
                 throw new \RuntimeException('No se pudo actualizar HubSpot; se conserva el COS anterior para reintentar.');
             }
@@ -231,7 +231,7 @@ class ClientCosSnapshotService
         ];
     }
 
-    private function refreshExternalData(User $user, array $sync): array
+    private function refreshExternalData(User $user, array $sync, bool $forceExternalRefresh = false): array
     {
         $syncService = new UserSyncService($this->hubspotService, $this->teamleaderService);
 
@@ -250,7 +250,7 @@ class ClientCosSnapshotService
         ];
 
         if (filled($user->hs_id)) {
-            $callbacks['hubspot'] = fn () => $syncService->syncWithHubspot($user);
+            $callbacks['hubspot'] = fn () => $syncService->syncWithHubspot($user, $forceExternalRefresh);
         } else {
             $sync['hubspot']['skipped'] = 'missing_hs_id_no_existing_contact';
         }
@@ -282,7 +282,7 @@ class ClientCosSnapshotService
             $sync['user_fields_updated'] = $this->applyHubspotUpdatesToUser($user, $hubspot['contact'], $syncService);
         }
 
-        if (! empty($hubspot['deals']) && is_array($hubspot['deals'])) {
+        if (is_array($hubspot['deals'] ?? null)) {
             $sync['local_deals'] = $this->dealLocalSync->sync($user->fresh() ?? $user, $hubspot['deals']);
 
             try {
