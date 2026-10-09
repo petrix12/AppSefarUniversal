@@ -231,9 +231,8 @@ return [
             'topnav_right' => true,     // Or "topnav => true" to place on the left.
         ],
         [
-            'text' => 'search',
-            'search' => false,
-            'topnav' => true,
+            'type' => 'sidebar-menu-search',
+            'text' => 'Buscar en el menú...',
         ],
         /* [
             'text' => 'Al lado de search',

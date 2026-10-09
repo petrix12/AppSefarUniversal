@@ -16,11 +16,15 @@ class AuditRequests
         try {
             $user = auth()->user();
 
+            if (! $user) {
+                return $response;
+            }
+
             RequestAudit::create([
-                'user_id'          => $user?->id,
-                'name'             => $user?->name,
-                'email'            => $user?->email,
-                'is_authenticated' => auth()->check(),
+                'user_id'          => $user->id,
+                'name'             => $user->name,
+                'email'            => $user->email,
+                'is_authenticated' => true,
                 'method'           => $request->method(),
                 'route_name'       => optional($request->route())->getName(),
                 'url'              => $request->fullUrl(),
