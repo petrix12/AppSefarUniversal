@@ -86,6 +86,8 @@ return [
         'unification_max_batch_candidates' => env('OPENROUTER_UNIFICATION_MAX_BATCH_CANDIDATES', 200),
         'unification_response_format' => env('OPENROUTER_UNIFICATION_RESPONSE_FORMAT', 'json_object'),
         'auto_association_min_confidence' => env('OPENROUTER_AUTO_ASSOCIATION_MIN_CONFIDENCE', 95),
+        'auto_association_min_field_confidence' => env('TEAMLEADER_AUTO_ASSOCIATION_MIN_FIELD_CONFIDENCE', 80),
+        'auto_association_min_field_signals' => env('TEAMLEADER_AUTO_ASSOCIATION_MIN_FIELD_SIGNALS', 2),
         'auto_association_min_margin' => env('OPENROUTER_AUTO_ASSOCIATION_MIN_MARGIN', 15),
         'auto_association_cooldown_minutes' => env('OPENROUTER_AUTO_ASSOCIATION_COOLDOWN_MINUTES', 1440),
         'timeout' => 45,
