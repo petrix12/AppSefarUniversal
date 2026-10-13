@@ -10,15 +10,36 @@
 @stop
 
 @section('content')
+    @if (session('status'))
+        <div class="alert alert-success">{{ session('status') }}</div>
+    @endif
+
     @if ($connectionError)
         <div class="alert alert-warning">
-            No se pudo conectar con Trello. Configura <code>TRELLO_API_KEY</code> y <code>TRELLO_API_TOKEN</code> en <code>.env</code>, verifica <code>TRELLO_SYSTEMS_BOARD_SHORTLINK</code> y limpia la caché de configuración con <code>php artisan config:clear</code>.
-            <div class="small mt-1">{{ $connectionError }}</div>
+            {{ $connectionError }}
         </div>
     @endif
 
     @if ($errors->has('trello'))
         <div class="alert alert-danger">{{ $errors->first('trello') }}</div>
+    @endif
+
+    @if ($oauthConfigured)
+        <div class="card">
+            <div class="card-body d-flex justify-content-between align-items-center flex-wrap">
+                <div class="mb-2 mb-md-0">
+                    <strong>Conexión con Trello:</strong>
+                    @if ($trelloConnected)
+                        <span class="text-success">Conectada</span>
+                    @else
+                        <span class="text-muted">Pendiente</span>
+                    @endif
+                </div>
+                <a href="{{ route('trello.oauth.start') }}" class="btn btn-outline-primary">
+                    {{ $trelloConnected ? 'Volver a conectar Trello' : 'Conectar con Trello' }}
+                </a>
+            </div>
+        </div>
     @endif
 
     <div class="card">

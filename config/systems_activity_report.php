@@ -10,10 +10,9 @@ return [
     ))),
     'sources' => ['app', 'monday', 'hubspot', 'teamleader'],
     'trello' => [
-        'key' => env('TRELLO_API_KEY'),
-        'token' => env('TRELLO_API_TOKEN'),
+        'oauth_client_id' => env('TRELLO_OAUTH_CLIENT_ID'),
+        'oauth_client_secret' => env('TRELLO_OAUTH_CLIENT_SECRET'),
+        'oauth_redirect_uri' => env('TRELLO_OAUTH_REDIRECT_URI', 'https://app.sefaruniversal.com/integraciones/trello/oauth/callback'),
         'board_shortlink' => env('TRELLO_SYSTEMS_BOARD_SHORTLINK', 'MCT8q89x'),
-        'list_name' => env('TRELLO_SYSTEMS_REPORT_LIST', 'weekly'),
-        'member_ids' => json_decode((string) env('TRELLO_SYSTEMS_MEMBER_IDS', '{}'), true) ?: [],
     ],
 ];

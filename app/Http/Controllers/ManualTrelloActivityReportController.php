@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\SystemsActivitySources\TrelloActivitySource;
+use App\Services\TrelloOAuthService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -11,20 +12,26 @@ use RuntimeException;
 
 class ManualTrelloActivityReportController extends Controller
 {
-    public function create(TrelloActivitySource $trello): View
+    public function create(TrelloActivitySource $trello, TrelloOAuthService $oauth): View
     {
         $lists = [];
         $connectionError = null;
 
-        try {
-            $lists = $trello->availableLists();
-        } catch (RuntimeException $exception) {
-            $connectionError = $exception->getMessage();
+        if (! $oauth->isConfigured()) {
+            $connectionError = 'Configura TRELLO_OAUTH_CLIENT_ID en el .env y ejecuta php artisan config:clear.';
+        } elseif ($oauth->isConnected()) {
+            try {
+                $lists = $trello->availableLists();
+            } catch (RuntimeException $exception) {
+                $connectionError = $exception->getMessage();
+            }
         }
 
         return view('systems-activity.manual-trello-report', [
             'lists' => $lists,
             'connectionError' => $connectionError,
+            'oauthConfigured' => $oauth->isConfigured(),
+            'trelloConnected' => $oauth->isConnected(),
             'report' => session('manual_trello_report'),
         ]);
     }

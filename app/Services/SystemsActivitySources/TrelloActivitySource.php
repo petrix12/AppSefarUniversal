@@ -3,6 +3,7 @@
 namespace App\Services\SystemsActivitySources;
 
 use App\Models\User;
+use App\Services\TrelloOAuthService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -11,12 +12,17 @@ use RuntimeException;
 class TrelloActivitySource implements SystemsActivitySource
 {
     private const API_URL = 'https://api.trello.com/1';
+    private const OAUTH_API_URL = 'https://trello.com/1';
+
+    public function __construct(private TrelloOAuthService $oauth)
+    {
+    }
 
     /** @return array<int, array{id:string,name:string}> */
     public function availableLists(): array
     {
-        [$auth, $board] = $this->credentials();
-        $response = Http::timeout(30)->get(self::API_URL.'/boards/'.rawurlencode($board).'/lists', $auth + [
+        $board = (string) config('systems_activity_report.trello.board_shortlink');
+        $response = $this->oauthGet('/boards/'.rawurlencode($board).'/lists', [
             'filter' => 'open',
             'fields' => 'id,name,closed',
         ]);
@@ -34,22 +40,22 @@ class TrelloActivitySource implements SystemsActivitySource
     /** @return array{name:string,cards:array<int,array{name:string,description:string}>} */
     public function cardsInList(string $listId): array
     {
-        [$auth, $board] = $this->credentials();
+        $board = (string) config('systems_activity_report.trello.board_shortlink');
 
         // Confirm the submitted list belongs to the configured board before reading it.
-        $listResponse = Http::timeout(30)->get(self::API_URL.'/lists/'.rawurlencode($listId), $auth + [
+        $listResponse = $this->oauthGet('/lists/'.rawurlencode($listId), [
             'fields' => 'id,name,idBoard,closed',
         ]);
         if (! $listResponse->successful()) {
             throw new RuntimeException('Trello list lookup failed with HTTP '.$listResponse->status().'.');
         }
         $list = (array) $listResponse->json();
-        $boardResponse = Http::timeout(30)->get(self::API_URL.'/boards/'.rawurlencode($board), $auth + ['fields' => 'id']);
+        $boardResponse = $this->oauthGet('/boards/'.rawurlencode($board), ['fields' => 'id']);
         if (! $boardResponse->successful() || (string) data_get($list, 'idBoard') !== (string) $boardResponse->json('id')) {
             throw new RuntimeException('The selected Trello list does not belong to the configured board.');
         }
 
-        $cardsResponse = Http::timeout(30)->get(self::API_URL.'/lists/'.rawurlencode($listId).'/cards', $auth + [
+        $cardsResponse = $this->oauthGet('/lists/'.rawurlencode($listId).'/cards', [
             'filter' => 'open',
             'fields' => 'id,name,desc',
         ]);
@@ -69,18 +75,17 @@ class TrelloActivitySource implements SystemsActivitySource
         ];
     }
 
-    /** @return array{0:array{key:string,token:string},1:string} */
-    private function credentials(): array
+    private function oauthGet(string $path, array $query = []): \Illuminate\Http\Client\Response
     {
-        $trello = (array) config('systems_activity_report.trello');
-        $key = (string) ($trello['key'] ?? '');
-        $token = (string) ($trello['token'] ?? '');
-        $board = (string) ($trello['board_shortlink'] ?? '');
-        if ($key === '' || $token === '' || $board === '') {
-            throw new RuntimeException('Trello API credentials or board are not configured.');
+        $board = trim((string) config('systems_activity_report.trello.board_shortlink', ''));
+        if ($board === '') {
+            throw new RuntimeException('Configura TRELLO_SYSTEMS_BOARD_SHORTLINK en el archivo .env.');
         }
 
-        return [['key' => $key, 'token' => $token], $board];
+        return Http::withToken($this->oauth->accessToken())
+            ->acceptJson()
+            ->timeout(30)
+            ->get(self::OAUTH_API_URL.$path, $query);
     }
 
     public function collect(string $email, CarbonImmutable $from, CarbonImmutable $to): array
