@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class TrelloOAuthToken extends Model
 {
+    protected $table = 'trello_oauth_tokens';
+
     protected $guarded = [];
 
     protected $hidden = ['access_token', 'refresh_token'];
