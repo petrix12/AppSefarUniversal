@@ -90,6 +90,10 @@ class TrelloActivitySource implements SystemsActivitySource
 
     public function collect(string $email, CarbonImmutable $from, CarbonImmutable $to): array
     {
+        if ($this->oauth->isConfigured() && $this->oauth->isConnected()) {
+            return $this->collectWithOAuth($email, $from, $to);
+        }
+
         $trello = (array) config('systems_activity_report.trello');
         $key = (string) ($trello['key'] ?? '');
         $token = (string) ($trello['token'] ?? '');
@@ -105,6 +109,73 @@ class TrelloActivitySource implements SystemsActivitySource
         return collect($actions)
             ->filter(fn (array $action): bool => (string) ($action['idMemberCreator'] ?? '') === $userId)
             ->map(fn (array $action): array => $this->normalizeAction($action, $from->getTimezone()->getName()))
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function collectWithOAuth(string $email, CarbonImmutable $from, CarbonImmutable $to): array
+    {
+        $board = (string) config('systems_activity_report.trello.board_shortlink');
+        $response = $this->oauthGet('/boards/'.rawurlencode($board).'/members', [
+            'fields' => 'id,fullName,username,email',
+        ]);
+        if (! $response->successful()) {
+            throw new RuntimeException('Trello board member lookup failed with HTTP '.$response->status().'.');
+        }
+
+        $members = (array) $response->json();
+        $member = collect($members)->first(fn (array $candidate): bool =>
+            strtolower((string) ($candidate['email'] ?? '')) === strtolower(trim($email))
+        );
+        if ($member === null) {
+            $localName = trim((string) User::query()
+                ->whereRaw('LOWER(email) = ?', [strtolower(trim($email))])
+                ->value('name'));
+            if ($localName !== '') {
+                $member = collect($members)->first(fn (array $candidate): bool =>
+                    mb_strtolower(trim((string) ($candidate['fullName'] ?? ''))) === mb_strtolower($localName)
+                );
+            }
+        }
+        if (! is_array($member) || empty($member['id'])) {
+            return [];
+        }
+
+        $actions = [];
+        $before = null;
+        do {
+            $query = [
+                'since' => $from->utc()->toIso8601String(),
+                'before' => $to->utc()->toIso8601String(),
+                'limit' => 1000,
+                'fields' => 'id,type,date,idMemberCreator,data,display',
+            ];
+            if ($before !== null) {
+                $query['before'] = $before;
+            }
+            $pageResponse = $this->oauthGet('/boards/'.rawurlencode($board).'/actions', $query);
+            if (! $pageResponse->successful()) {
+                throw new RuntimeException('Trello activity query failed with HTTP '.$pageResponse->status().'.');
+            }
+            $page = (array) $pageResponse->json();
+            $actions = array_merge($actions, $page);
+            $last = end($page);
+            $before = count($page) === 1000 && is_array($last) && ! empty($last['id'])
+                ? (string) $last['id']
+                : null;
+        } while ($before !== null);
+
+        return collect($actions)
+            ->filter(function (array $action) use ($member, $from, $to): bool {
+                if ((string) ($action['idMemberCreator'] ?? '') !== (string) $member['id'] || empty($action['date'])) {
+                    return false;
+                }
+                $occurredAt = CarbonImmutable::parse((string) $action['date']);
+
+                return $occurredAt->greaterThanOrEqualTo($from->utc()) && $occurredAt->lessThan($to->utc());
+            })
+            ->map(fn (array $action): ?array => $this->normalizeAction($action, $from->getTimezone()->getName()))
             ->filter()
             ->values()
             ->all();

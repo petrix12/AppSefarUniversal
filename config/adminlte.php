@@ -525,7 +525,7 @@ return [
                     'can'           => 'administrador',
                 ],
                 [
-                    'text'          => 'Informe manual de Trello',
+                    'text'          => 'Informe unificado de Sistemas',
                     'icon'          => 'fa-fw fab fa-trello',
                     'icon_color'    => 'white',
                     'route'         => 'systems-activity.manual-trello.index',
