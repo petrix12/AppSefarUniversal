@@ -13,6 +13,7 @@ return [
         'key' => env('TRELLO_API_KEY'),
         'token' => env('TRELLO_API_TOKEN'),
         'board_shortlink' => env('TRELLO_SYSTEMS_BOARD_SHORTLINK', 'MCT8q89x'),
-        'list_name' => env('TRELLO_SYSTEMS_REPORT_LIST', 'Hecho'),
+        'list_name' => env('TRELLO_SYSTEMS_REPORT_LIST', 'weekly'),
+        'member_ids' => json_decode((string) env('TRELLO_SYSTEMS_MEMBER_IDS', '{}'), true) ?: [],
     ],
 ];

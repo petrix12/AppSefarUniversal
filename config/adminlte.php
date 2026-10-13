@@ -525,6 +525,13 @@ return [
                     'can'           => 'administrador',
                 ],
                 [
+                    'text'          => 'Informe manual de Trello',
+                    'icon'          => 'fa-fw fab fa-trello',
+                    'icon_color'    => 'white',
+                    'route'         => 'systems-activity.manual-trello.index',
+                    'can'           => 'administrador',
+                ],
+                [
                     'text'        => 'Teamleader',
                     'icon'        => 'fa-fw fas fa-database',
                     'icon_color'  => 'white',

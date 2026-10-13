@@ -1046,6 +1046,10 @@ Route::get('/cron/followups-registration-payment', function () {
 Route::get('/deploy', [DeployController::class, 'deploy'])->name('deploy.run');
 
 Route::middleware(['auth', 'can:administrador'])->group(function () {
+    Route::get('/informes/actividad/trello', [\App\Http\Controllers\ManualTrelloActivityReportController::class, 'create'])
+        ->name('systems-activity.manual-trello.index');
+    Route::post('/informes/actividad/trello', [\App\Http\Controllers\ManualTrelloActivityReportController::class, 'generate'])
+        ->name('systems-activity.manual-trello.generate');
     Route::get('/actualizaciones', [DeploymentHistoryController::class, 'history'])
         ->name('deployment-histories.index');
     Route::get('/actualizaciones/{deploymentHistory}', [DeploymentHistoryController::class, 'show'])

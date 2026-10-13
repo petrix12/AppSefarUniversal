@@ -21,6 +21,17 @@
     </div>
 
     <div class="card">
+        <div class="card-header"><h3 class="card-title">Cambios detectados en el despliegue</h3></div>
+        <div class="card-body">
+            @if ($deploymentHistory->changes)
+                <pre class="mb-0" style="white-space: pre-wrap; overflow-wrap: anywhere;">{{ $deploymentHistory->changes }}</pre>
+            @else
+                <p class="text-muted mb-0">Este registro no tiene commits asociados desde los que recuperar los cambios.</p>
+            @endif
+        </div>
+    </div>
+
+    <div class="card">
         <div class="card-header"><h3 class="card-title">Información de la actualización</h3></div>
         <div class="card-body">
             <p class="mb-2"><strong>Versión:</strong> {{ $deploymentHistory->version ?: 'Sin versión' }}</p>
