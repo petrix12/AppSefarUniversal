@@ -290,6 +290,12 @@ return [
             'icon_color'  => 'white',
             'submenu' => [
                 [
+                    'text'    => 'Tableros Kanban',
+                    'url'     => 'tableros',
+                    'icon'    => 'fas fa-fw fa-columns',
+                    'can'     => 'tasks.view',
+                ],
+                [
                     'text'          => 'Clientes (COS)',
                     'icon'          => 'fa-fw fas fa-users',
                     'icon_color'    => 'white',

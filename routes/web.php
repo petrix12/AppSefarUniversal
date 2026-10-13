@@ -90,6 +90,7 @@ use App\Http\Controllers\ExternalClientImportController;
 use App\Http\Controllers\TeamleaderCronController;
 use App\Http\Controllers\TeamleaderJobController;
 use App\Http\Controllers\TaskCronController;
+use App\Http\Controllers\KanbanBoardController;
 use App\Http\Controllers\JotformCouponCronController;
 use App\Http\Controllers\RoleAiAssistantController;
 use App\Http\Controllers\AdminRoleAiAssistantController;
@@ -256,6 +257,27 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // ─── TAREAS ───────────────────────────────────────────────
+Route::middleware(['auth', 'can:tasks.view'])->prefix('tableros')->name('kanban.')->group(function () {
+    Route::get('/', [KanbanBoardController::class, 'index'])->name('index');
+    Route::post('/', [KanbanBoardController::class, 'store'])->name('store');
+    Route::middleware('can:administrador')->group(function () {
+        Route::get('/organigrama', [KanbanBoardController::class, 'orgChart'])->name('org-chart');
+        Route::post('/organigrama', [KanbanBoardController::class, 'storeReportingLine'])->name('org-chart.store');
+        Route::delete('/organigrama/{line}', [KanbanBoardController::class, 'destroyReportingLine'])->name('org-chart.destroy');
+    });
+    Route::get('/{board}', [KanbanBoardController::class, 'show'])->name('show');
+    Route::patch('/{board}', [KanbanBoardController::class, 'update'])->name('update');
+    Route::delete('/{board}', [KanbanBoardController::class, 'destroy'])->name('destroy');
+    Route::post('/{board}/columns', [KanbanBoardController::class, 'storeColumn'])->name('columns.store');
+    Route::patch('/{board}/columns/order', [KanbanBoardController::class, 'reorderColumns'])->name('columns.reorder');
+    Route::patch('/{board}/columns/{column}', [KanbanBoardController::class, 'updateColumn'])->name('columns.update');
+    Route::delete('/{board}/columns/{column}', [KanbanBoardController::class, 'destroyColumn'])->name('columns.destroy');
+    Route::post('/{board}/columns/{column}/cards', [KanbanBoardController::class, 'storeCard'])->name('cards.store');
+    Route::patch('/{board}/cards/{card}', [KanbanBoardController::class, 'updateCard'])->name('cards.update');
+    Route::delete('/{board}/cards/{card}', [KanbanBoardController::class, 'destroyCard'])->name('cards.destroy');
+    Route::patch('/{board}/cards/{card}/move', [KanbanBoardController::class, 'moveCard'])->name('cards.move');
+});
+
 Route::middleware(['auth'])->prefix('tasks')->name('tasks.')->group(function () {
 
     Route::middleware('can:administrador')
