@@ -55,6 +55,7 @@ use App\Models\DocumentRequest;
 use App\Services\CustomerOrderStatusService;
 use App\Services\TeamleaderProjectPaymentAnalyzer;
 use App\Services\TeamleaderPhasePaymentService;
+use App\Services\TeamleaderHistoricalExchangeRateService;
 use Illuminate\Support\Facades\Cache;  // ← AGREGAR ESTE
 use App\Services\UserSyncService;      // ← AGREGAR ESTE
 use App\Services\GenealogyService;     // ← AGREGAR ESTE
@@ -1861,11 +1862,16 @@ class UserController extends Controller
 
                 $preestab = $hubspotPaymentAnalyzer->parseMoneyText($preestabRaw);
                 $paid = $hubspotPaymentAnalyzer->parseMoneyText($paidRaw);
+                $foreignPaymentConversion = app(TeamleaderHistoricalExchangeRateService::class)
+                    ->convertForeignEntriesToEuro($paid['dated_entries'] ?? []);
                 $exoneratedOrIncluded = $preestab['exonerated'] || $paid['exonerated'] || $preestab['included'] || $paid['included'];
                 $preestablishedAmount = $exoneratedOrIncluded ? 0.0 : (float) $preestab['total'];
-                $paidAmount = $exoneratedOrIncluded ? 0.0 : (float) $paid['total'];
+                $paidAmount = $exoneratedOrIncluded
+                    ? 0.0
+                    : round((float) $paid['total'] + (float) ($foreignPaymentConversion['converted_amount'] ?? 0), 2);
                 $balance = round(max($preestablishedAmount - $paidAmount, 0), 2);
                 $overpaid = round(max($paidAmount - $preestablishedAmount, 0), 2);
+                $hasUnconvertedCurrency = ! empty($foreignPaymentConversion['unconverted_entries']);
 
                 $rows[] = [
                     'source' => 'HubSpot',
@@ -1879,9 +1885,11 @@ class UserController extends Controller
                     'paid_raw' => $paidRaw,
                     'effective_preestab_amount' => round($preestablishedAmount, 2),
                     'effective_paid_amount' => round($paidAmount, 2),
+                    'converted_foreign_paid_amount' => $exoneratedOrIncluded ? 0.0 : (float) ($foreignPaymentConversion['converted_amount'] ?? 0),
+                    'foreign_payment_conversions' => $foreignPaymentConversion['conversions'] ?? [],
                     'balance_amount' => $balance,
                     'overpaid_amount' => $overpaid,
-                    'status' => $exoneratedOrIncluded ? 'exonerated' : ($overpaid > 0.01 ? 'review' : ($balance <= 0.01 ? 'paid' : ($paidAmount > 0 ? 'partial' : 'pending'))),
+                    'status' => $exoneratedOrIncluded ? 'exonerated' : ($hasUnconvertedCurrency || $overpaid > 0.01 ? 'review' : ($balance <= 0.01 ? 'paid' : ($paidAmount > 0 ? 'partial' : 'pending'))),
                 ];
             }
 
