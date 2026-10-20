@@ -850,7 +850,7 @@
 
                                             @if(auth()->user()->hasRole('Administrador'))
                                                 <div class="tooltip-container flex-1">
-                                                    @if($user->is_blocked)
+                                                    @if($user->hasIndividualClientBlock())
                                                         <button type="button" class="btn btn-success w-full" wire:click="unblockUser({{ $user->id }})" wire:confirm="¿Quitar el bloqueo individual de este cliente?">
                                                             <i class="fas fa-unlock fa-fw"></i>
                                                         </button>
@@ -1032,7 +1032,7 @@
 
                                                         @if(auth()->user()->hasRole('Administrador'))
                                                             <div class="tooltip-container">
-                                                                @if($user->is_blocked)
+                                                                @if($user->hasIndividualClientBlock())
                                                                     <button type="button" class="btn btn-success" wire:click="unblockUser({{ $user->id }})" wire:confirm="¿Quitar el bloqueo individual de este cliente?">
                                                                         <i class="fas fa-unlock fa-fw"></i>
                                                                     </button>

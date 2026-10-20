@@ -8,7 +8,7 @@
     >
         @php($blockedUser = auth()->user())
 
-        @if($blockedUser?->is_blocked)
+        @if($blockedUser?->hasIndividualClientBlock())
             <div role="alert" style="margin:18px 0; padding:16px; border:1px solid #fecaca; border-radius:10px; background:#fef2f2; color:#7f1d1d;">
                 <strong>Motivo del bloqueo</strong>
                 <p style="margin:6px 0 0; white-space:pre-line;">{{ $blockedUser->clientBlockReasonDescription() }}</p>

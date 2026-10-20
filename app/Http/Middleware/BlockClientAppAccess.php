@@ -22,7 +22,7 @@ class BlockClientAppAccess
             return $next($request);
         }
 
-        $blocked = (bool) ($user->is_blocked ?? false);
+        $blocked = $user->hasIndividualClientBlock();
         $globallyDisabled = ! config('app.client_app_access_enabled');
 
         if (! $blocked && ! $globallyDisabled) {

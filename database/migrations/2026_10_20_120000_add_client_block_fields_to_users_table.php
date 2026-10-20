@@ -8,27 +8,26 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->boolean('is_blocked')->default(false)->index();
-            $table->string('blocked_reason', 64)->nullable();
-            $table->text('blocked_reason_other')->nullable();
-            $table->timestamp('blocked_at')->nullable();
-            $table->foreignId('blocked_by_user_id')->nullable()->constrained('users')->nullOnDelete();
-        });
+        if (! Schema::hasTable('user_access_blocks')) {
+            Schema::create('user_access_blocks', function (Blueprint $table) {
+                $table->foreignId('user_id')->primary()->constrained('users')->cascadeOnDelete();
+                $table->string('reason', 64);
+                $table->text('reason_other')->nullable();
+                $table->timestamp('blocked_at')->nullable();
+                $table->foreignId('blocked_by_user_id')->nullable()->constrained('users')->nullOnDelete();
+            });
+        }
+
+        // A previous attempt may have added this column before hitting MySQL's row-size limit.
+        if (Schema::hasColumn('users', 'is_blocked')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->dropColumn('is_blocked');
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropForeign(['blocked_by_user_id']);
-            $table->dropIndex(['is_blocked']);
-            $table->dropColumn([
-                'is_blocked',
-                'blocked_reason',
-                'blocked_reason_other',
-                'blocked_at',
-                'blocked_by_user_id',
-            ]);
-        });
+        Schema::dropIfExists('user_access_blocks');
     }
 };

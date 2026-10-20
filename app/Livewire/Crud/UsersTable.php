@@ -96,7 +96,6 @@ class UsersTable extends Component
                 'estado_vendedor',
                 'fecha_activacion_proveedor',
                 'profile_photo_path',
-                'is_blocked', 'blocked_reason', 'blocked_reason_other', 'blocked_at',
 
                 // ✅ Modal (solo si existen en users)
                 'email_2', 'phone', 'pais_de_residencia', 'city', 'address',
@@ -119,6 +118,7 @@ class UsersTable extends Component
                 'latest_internal_chat_message'
             )
             ->with([
+                'accessBlock',
                 'compras:id,id_user,servicio_id,source,servicio_hs_id,descripcion,pagado,hash_factura,metadata,paid_at,created_at,updated_at',
                 'compras.servicio:id,nombre',
                 'roles:id,name', // ✅ necesario para decidir botones sin queries extra
@@ -198,10 +198,10 @@ class UsersTable extends Component
         $query->when($this->filterBlockStatus === 'blocked', function ($q) use ($globalClientAccessDisabled) {
             $q->whereHas('roles', fn ($roles) => $roles->where('name', 'Cliente'));
             if (! $globalClientAccessDisabled) {
-                $q->where('is_blocked', true);
+                $q->whereHas('accessBlock');
             }
         })->when($this->filterBlockStatus === 'active', function ($q) use ($globalClientAccessDisabled) {
-            $q->where('is_blocked', false);
+            $q->whereDoesntHave('accessBlock');
             if ($globalClientAccessDisabled) {
                 $q->whereDoesntHave('roles', fn ($roles) => $roles->where('name', 'Cliente'));
             }
@@ -271,20 +271,24 @@ class UsersTable extends Component
         $user = User::with('roles')->findOrFail((int) ($this->blockModalData['id'] ?? 0));
         abort_unless($user->isCliente(), 403);
 
-        if ($user->is_blocked) {
+        if ($user->hasIndividualClientBlock()) {
             $this->closeBlockModal();
             return;
         }
 
-        $user->forceFill([
-            'is_blocked' => true,
-            'blocked_reason' => $validated['blockReason'],
-            'blocked_reason_other' => $validated['blockReason'] === 'other'
-                ? trim($validated['blockReasonOther'] ?? '')
-                : null,
-            'blocked_at' => now(),
-            'blocked_by_user_id' => Auth::id(),
-        ])->save();
+        DB::transaction(function () use ($user, $validated) {
+            $user->accessBlock()->updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'reason' => $validated['blockReason'],
+                    'reason_other' => $validated['blockReason'] === 'other'
+                        ? trim($validated['blockReasonOther'] ?? '')
+                        : null,
+                    'blocked_at' => now(),
+                    'blocked_by_user_id' => Auth::id(),
+                ]
+            );
+        });
 
         $this->closeBlockModal();
         $this->dispatch('swal:toast', [
@@ -300,13 +304,7 @@ class UsersTable extends Component
         $user = User::with('roles')->findOrFail($userId);
         abort_unless($user->isCliente(), 403);
 
-        $user->forceFill([
-            'is_blocked' => false,
-            'blocked_reason' => null,
-            'blocked_reason_other' => null,
-            'blocked_at' => null,
-            'blocked_by_user_id' => null,
-        ])->save();
+        DB::transaction(fn () => $user->accessBlock()->delete());
 
         $this->dispatch('swal:toast', [
             'icon' => 'success',

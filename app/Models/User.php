@@ -45,8 +45,6 @@ class User extends Authenticatable
 
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'is_blocked' => 'boolean',
-        'blocked_at' => 'datetime',
         'arraycos' => 'array',
         'arraycos_expire' => 'datetime',
         'contrato' => 'boolean',
@@ -57,26 +55,42 @@ class User extends Authenticatable
         'google_review_completed_at' => 'datetime',
     ];
 
+    public function accessBlock()
+    {
+        return $this->hasOne(UserAccessBlock::class, 'user_id');
+    }
+
+    public function hasIndividualClientBlock(): bool
+    {
+        return $this->relationLoaded('accessBlock')
+            ? $this->getRelation('accessBlock') !== null
+            : $this->accessBlock()->exists();
+    }
+
     public function clientBlockReasonDescription(): ?string
     {
-        if (! $this->is_blocked) {
+        $block = $this->relationLoaded('accessBlock')
+            ? $this->getRelation('accessBlock')
+            : $this->accessBlock()->first();
+
+        if (! $block) {
             return $this->isCliente() && ! config('app.client_app_access_enabled')
                 ? 'Acceso temporalmente deshabilitado para todas las cuentas de cliente.'
                 : null;
         }
 
-        if ($this->blocked_reason === 'other') {
-            return filled($this->blocked_reason_other)
-                ? 'Otro: ' . $this->blocked_reason_other
+        if ($block->reason === 'other') {
+            return filled($block->reason_other)
+                ? 'Otro: ' . $block->reason_other
                 : self::CLIENT_BLOCK_REASONS['other'];
         }
 
-        return self::CLIENT_BLOCK_REASONS[$this->blocked_reason] ?? $this->blocked_reason;
+        return self::CLIENT_BLOCK_REASONS[$block->reason] ?? $block->reason;
     }
 
     public function isClientAppAccessBlocked(): bool
     {
-        return $this->isCliente() && ((bool) $this->is_blocked || ! config('app.client_app_access_enabled'));
+        return $this->isCliente() && ($this->hasIndividualClientBlock() || ! config('app.client_app_access_enabled'));
     }
 
     protected $appends = [
