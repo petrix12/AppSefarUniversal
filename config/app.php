@@ -56,6 +56,16 @@ return [
 
     'asset_url' => env('ASSET_URL', null),
 
+    // false blocks all client windows; true enables access unless a user has an individual block.
+    'client_app_access_enabled' => (bool) env('CLIENT_APP_ACCESS_ENABLED', false),
+    'client_access_support_email' => env('CLIENT_ACCESS_SUPPORT_EMAIL', 'info@sefaruniversal.com'),
+    'client_access_support_phones' => [
+        ['label' => 'USA', 'number' => '+1 603 2621727', 'link' => '+16032621727'],
+        ['label' => 'España', 'number' => '+34 911 980993', 'link' => '+34911980993'],
+        ['label' => 'Venezuela', 'number' => '+58 212 7201170', 'link' => '+582127201170'],
+        ['label' => 'Colombia', 'number' => '+57 035 3195843', 'link' => '+570353195843'],
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

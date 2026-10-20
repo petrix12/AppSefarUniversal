@@ -1,4 +1,46 @@
 <div>
+    @if($blockModalOpen)
+        <div class="modal-backdrop" wire:click="closeBlockModal"></div>
+        <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="block-user-title">
+            <div class="modal-content">
+                <div style="padding:16px 24px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between;">
+                    <h3 id="block-user-title" style="font-size:1.1rem; font-weight:600; color:#111827; margin:0;">
+                        <i class="fas fa-user-lock mr-2 text-danger"></i> Bloquear cliente
+                    </h3>
+                    <button type="button" wire:click="closeBlockModal" aria-label="Cerrar" style="background:none; border:0; font-size:1.25rem; color:#6b7280; cursor:pointer;">✕</button>
+                </div>
+
+                <form wire:submit="blockUser">
+                    <div class="modal-body" style="padding:24px;">
+                        <p style="margin-top:0; color:#4b5563;">Indica el motivo por el que se bloqueará a <strong>{{ $blockModalData['name'] ?? 'este cliente' }}</strong>. El cliente podrá iniciar sesión, pero no entrar a las ventanas de la aplicación.</p>
+
+                        <label for="blockReason" style="display:block; font-weight:600; margin-bottom:6px;">Motivo del bloqueo</label>
+                        <select id="blockReason" wire:model.live="blockReason" class="form-control">
+                            <option value="">Selecciona un motivo</option>
+                            @foreach($clientBlockReasons as $reasonKey => $reasonLabel)
+                                <option value="{{ $reasonKey }}">{{ $reasonLabel }}</option>
+                            @endforeach
+                        </select>
+                        @error('blockReason') <div class="text-danger mt-1" role="alert">{{ $message }}</div> @enderror
+
+                        @if($blockReason === 'other')
+                            <label for="blockReasonOther" style="display:block; font-weight:600; margin:16px 0 6px;">Explica el motivo</label>
+                            <textarea id="blockReasonOther" wire:model="blockReasonOther" rows="4" maxlength="2000" class="form-control" placeholder="Describe por qué se bloquea el acceso"></textarea>
+                            @error('blockReasonOther') <div class="text-danger mt-1" role="alert">{{ $message }}</div> @enderror
+                        @endif
+                    </div>
+
+                    <div style="padding:12px 24px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:8px;">
+                        <button type="button" class="btn btn-secondary" wire:click="closeBlockModal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger" wire:loading.attr="disabled" wire:target="blockUser">
+                            <i class="fas fa-lock mr-1"></i> Confirmar bloqueo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
+
     {{-- Estilos CSS puros para responsive --}}
     @if($proveedorModalOpen)
         {{-- Backdrop --}}
@@ -611,6 +653,16 @@
                                     </select>
                                 </div>
 
+                                <div>
+                                    <label for="filterBlockStatus" class="block text-xs font-medium text-gray-700 mb-1">Estado de acceso</label>
+                                    <select wire:model.live="filterBlockStatus" id="filterBlockStatus"
+                                            class="block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <option value="all">Todos los usuarios</option>
+                                        <option value="active">Con acceso permitido</option>
+                                        <option value="blocked">Acceso restringido</option>
+                                    </select>
+                                </div>
+
                                 <!-- Proveedores -->
                                 <div>
                                     <label class="block text-xs font-medium text-gray-700 mb-1">Pendientes por aprobar</label>
@@ -644,6 +696,7 @@
                                     || ($filterContrato !== '')
                                     || ($filterPago !== '')
                                     || ($filterChatActivity !== '')
+                                    || ($filterBlockStatus !== 'all')
                                     || ($filterProveedor !== '')
                                     || ($filterOwner !== '')
                                     || (!empty($filterRoles));
@@ -690,6 +743,10 @@
                                                 </span>
                                             @endif
 
+                                            @if($user->isClientAppAccessBlocked())
+                                                <span class="badge badge-danger ml-2">Acceso restringido</span>
+                                            @endif
+
                                             <h3 class="text-lg font-semibold text-gray-900">
                                                 {{ \Illuminate\Support\Str::limit($user->name, 30) }}
                                             </h3>
@@ -697,6 +754,10 @@
                                             <p class="text-sm text-gray-600 mt-1">
                                                 <i class="fas fa-envelope mr-1"></i> {{ $user->email }}
                                             </p>
+
+                                            @if($user->isClientAppAccessBlocked())
+                                                <p class="text-sm text-danger mt-1"><strong>Motivo:</strong> {{ $user->clientBlockReasonDescription() }}</p>
+                                            @endif
 
                                             @if($user->passport)
                                                 <p class="text-sm text-gray-600">
@@ -736,7 +797,7 @@
                                     {{-- ✅ Acciones --}}
                                     <div class="flex flex-wrap gap-2 justify-center pt-3 border-t border-gray-200">
 
-                                        {{-- NO cliente: solo editBasic + eliminar --}}
+                                        {{-- NO cliente: solo editBasic --}}
                                         @if(!$isCliente)
                                             @role('Administrador')
                                                 <div class="tooltip-container flex-1">
@@ -747,20 +808,6 @@
                                                     <span class="tooltip-text">Edición básica (sin COS)</span>
                                                 </div>
                                             @endrole
-
-                                            @if(auth()->user()->roles[0]->id == 1)
-                                                <div class="tooltip-container flex-1">
-                                                    <form action="{{ route('crud.users.destroy', $user) }}" method="POST" class="w-full">
-                                                        @csrf
-                                                        @method('delete')
-                                                        <button type="submit" class="btn btn-danger w-full"
-                                                                onclick="return confirm('¿Está seguro que desea eliminar a este usuario?')">
-                                                            <i class="fas fa-trash fa-fw"></i>
-                                                        </button>
-                                                    </form>
-                                                    <span class="tooltip-text">Eliminar Usuario</span>
-                                                </div>
-                                            @endif
 
                                             <div class="tooltip-container flex-1">
                                                 <button type="button"
@@ -801,17 +848,19 @@
                                                 </div>
                                             @endrole
 
-                                            @if(auth()->user()->roles[0]->id == 1)
+                                            @if(auth()->user()->hasRole('Administrador'))
                                                 <div class="tooltip-container flex-1">
-                                                    <form action="{{ route('crud.users.destroy', $user) }}" method="POST" class="w-full">
-                                                        @csrf
-                                                        @method('delete')
-                                                        <button type="submit" class="btn btn-danger w-full"
-                                                                onclick="return confirm('¿Está seguro que desea eliminar a este usuario?')">
-                                                            <i class="fas fa-trash fa-fw"></i>
+                                                    @if($user->is_blocked)
+                                                        <button type="button" class="btn btn-success w-full" wire:click="unblockUser({{ $user->id }})" wire:confirm="¿Quitar el bloqueo individual de este cliente?">
+                                                            <i class="fas fa-unlock fa-fw"></i>
                                                         </button>
-                                                    </form>
-                                                    <span class="tooltip-text">Eliminar Usuario</span>
+                                                        <span class="tooltip-text">Quitar bloqueo individual</span>
+                                                    @else
+                                                        <button type="button" class="btn btn-danger w-full" wire:click="openBlockModal({{ $user->id }})">
+                                                            <i class="fas fa-lock fa-fw"></i>
+                                                        </button>
+                                                        <span class="tooltip-text">Bloquear cliente</span>
+                                                    @endif
                                                 </div>
                                             @endif
 
@@ -902,10 +951,16 @@
                                                         <i class="fas fa-clock mr-1"></i> Pendiente
                                                     </span>
                                                 @endif
+                                                @if($user->isClientAppAccessBlocked())
+                                                    <span class="badge badge-danger ml-2">Acceso restringido</span>
+                                                @endif
 
                                                 <p class="user-name">{{ \Illuminate\Support\Str::limit($user->name, 25) }}</p>
                                                 <p class="user-info">{{ $user->email }}</p>
                                                 <p class="user-info">{{ $user->passport }}</p>
+                                                @if($user->isClientAppAccessBlocked())
+                                                    <p class="user-info text-danger"><strong>Motivo del bloqueo:</strong> {{ $user->clientBlockReasonDescription() }}</p>
+                                                @endif
                                                 @if($user->latest_internal_chat_at)
                                                     <a href="{{ route('crud.users.edit', $user) }}#client-chat"
                                                        class="badge badge-warning mt-1"
@@ -935,7 +990,7 @@
                                             <td class="actions-cell" style="vertical-align:middle;">
                                                 <div class="action-buttons">
 
-                                                    {{-- NO cliente: solo editBasic + eliminar --}}
+                                                    {{-- NO cliente: solo editBasic --}}
                                                     @if(!$isCliente)
                                                         @role('Administrador')
                                                             <div class="tooltip-container">
@@ -946,20 +1001,6 @@
                                                                 <span class="tooltip-text">Edición básica (sin COS)</span>
                                                             </div>
                                                         @endrole
-
-                                                        @if(auth()->user()->roles[0]->id == 1)
-                                                            <div class="tooltip-container">
-                                                                <form action="{{ route('crud.users.destroy', $user) }}" method="POST" style="display:inline-block;">
-                                                                    @csrf
-                                                                    @method('delete')
-                                                                    <button type="submit" class="btn btn-danger"
-                                                                            onclick="return confirm('¿Está seguro que desea eliminar a este usuario?')">
-                                                                        <i class="fas fa-trash fa-fw"></i>
-                                                                    </button>
-                                                                </form>
-                                                                <span class="tooltip-text">Eliminar Usuario</span>
-                                                            </div>
-                                                        @endif
 
                                                         <button type="button"
                                                                 class="btn btn-secondary"
@@ -989,17 +1030,19 @@
                                                             </div>
                                                         @endrole
 
-                                                        @if(auth()->user()->roles[0]->id == 1)
+                                                        @if(auth()->user()->hasRole('Administrador'))
                                                             <div class="tooltip-container">
-                                                                <form action="{{ route('crud.users.destroy', $user) }}" method="POST" style="display:inline-block;">
-                                                                    @csrf
-                                                                    @method('delete')
-                                                                    <button type="submit" class="btn btn-danger"
-                                                                            onclick="return confirm('¿Está seguro que desea eliminar a este usuario?')">
-                                                                        <i class="fas fa-trash fa-fw"></i>
+                                                                @if($user->is_blocked)
+                                                                    <button type="button" class="btn btn-success" wire:click="unblockUser({{ $user->id }})" wire:confirm="¿Quitar el bloqueo individual de este cliente?">
+                                                                        <i class="fas fa-unlock fa-fw"></i>
                                                                     </button>
-                                                                </form>
-                                                                <span class="tooltip-text">Eliminar Usuario</span>
+                                                                    <span class="tooltip-text">Quitar bloqueo individual</span>
+                                                                @else
+                                                                    <button type="button" class="btn btn-danger" wire:click="openBlockModal({{ $user->id }})">
+                                                                        <i class="fas fa-lock fa-fw"></i>
+                                                                    </button>
+                                                                    <span class="tooltip-text">Bloquear cliente</span>
+                                                                @endif
                                                             </div>
                                                         @endif
 

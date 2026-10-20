@@ -32,6 +32,7 @@ class UsersTable extends Component
         'filterContrato' => ['except' => ''],
         'filterPago' => ['except' => ''],
         'filterChatActivity' => ['except' => ''],
+        'filterBlockStatus' => ['except' => 'all'],
         'filterRoles' => ['except' => []], // ✅ multi
     ];
 
@@ -40,6 +41,7 @@ class UsersTable extends Component
     public $filterContrato = '';
     public $filterPago = '';
     public $filterChatActivity = '';
+    public $filterBlockStatus = 'all';
     public $perPage = 10;
     public $filterProveedor = '';
     public $filterOwner = '';
@@ -57,6 +59,11 @@ class UsersTable extends Component
     /** ✅ Modal */
     public bool $proveedorModalOpen = false;
     public array $proveedorModalData = [];
+
+    public bool $blockModalOpen = false;
+    public array $blockModalData = [];
+    public string $blockReason = '';
+    public string $blockReasonOther = '';
 
     public function mount()
     {
@@ -89,6 +96,7 @@ class UsersTable extends Component
                 'estado_vendedor',
                 'fecha_activacion_proveedor',
                 'profile_photo_path',
+                'is_blocked', 'blocked_reason', 'blocked_reason_other', 'blocked_at',
 
                 // ✅ Modal (solo si existen en users)
                 'email_2', 'phone', 'pais_de_residencia', 'city', 'address',
@@ -186,6 +194,19 @@ class UsersTable extends Component
             });
         });
 
+        $globalClientAccessDisabled = ! config('app.client_app_access_enabled');
+        $query->when($this->filterBlockStatus === 'blocked', function ($q) use ($globalClientAccessDisabled) {
+            $q->whereHas('roles', fn ($roles) => $roles->where('name', 'Cliente'));
+            if (! $globalClientAccessDisabled) {
+                $q->where('is_blocked', true);
+            }
+        })->when($this->filterBlockStatus === 'active', function ($q) use ($globalClientAccessDisabled) {
+            $q->where('is_blocked', false);
+            if ($globalClientAccessDisabled) {
+                $q->whereDoesntHave('roles', fn ($roles) => $roles->where('name', 'Cliente'));
+            }
+        });
+
         logger()->info('AUTH roles', $rolesIds);
 
         logger()->info('PENDIENTES total', [
@@ -211,7 +232,102 @@ class UsersTable extends Component
             'rolesList' => $this->rolesList,
             'owners' => $this->owners,
             'phasePaymentSources' => self::PHASE_PAYMENT_SOURCES,
+            'clientBlockReasons' => User::CLIENT_BLOCK_REASONS,
         ]);
+    }
+
+    public function openBlockModal(int $userId): void
+    {
+        $this->authorizeUserBlocking();
+
+        $user = User::with('roles')->findOrFail($userId);
+        abort_unless($user->isCliente(), 403);
+
+        $this->blockModalData = [
+            'id' => $user->id,
+            'name' => $user->name,
+        ];
+        $this->blockReason = '';
+        $this->blockReasonOther = '';
+        $this->resetValidation();
+        $this->blockModalOpen = true;
+    }
+
+    public function blockUser(): void
+    {
+        $this->authorizeUserBlocking();
+
+        $validReasons = implode(',', array_keys(User::CLIENT_BLOCK_REASONS));
+        $validated = $this->validate([
+            'blockReason' => 'required|in:' . $validReasons,
+            'blockReasonOther' => 'nullable|required_if:blockReason,other|string|max:2000',
+        ], [
+            'blockReason.required' => 'Selecciona el motivo del bloqueo.',
+            'blockReason.in' => 'Selecciona uno de los motivos disponibles.',
+            'blockReasonOther.required_if' => 'Describe el motivo del bloqueo.',
+            'blockReasonOther.max' => 'La explicación no puede superar los 2000 caracteres.',
+        ]);
+
+        $user = User::with('roles')->findOrFail((int) ($this->blockModalData['id'] ?? 0));
+        abort_unless($user->isCliente(), 403);
+
+        if ($user->is_blocked) {
+            $this->closeBlockModal();
+            return;
+        }
+
+        $user->forceFill([
+            'is_blocked' => true,
+            'blocked_reason' => $validated['blockReason'],
+            'blocked_reason_other' => $validated['blockReason'] === 'other'
+                ? trim($validated['blockReasonOther'] ?? '')
+                : null,
+            'blocked_at' => now(),
+            'blocked_by_user_id' => Auth::id(),
+        ])->save();
+
+        $this->closeBlockModal();
+        $this->dispatch('swal:toast', [
+            'icon' => 'success',
+            'title' => 'Cliente bloqueado.',
+        ]);
+    }
+
+    public function unblockUser(int $userId): void
+    {
+        $this->authorizeUserBlocking();
+
+        $user = User::with('roles')->findOrFail($userId);
+        abort_unless($user->isCliente(), 403);
+
+        $user->forceFill([
+            'is_blocked' => false,
+            'blocked_reason' => null,
+            'blocked_reason_other' => null,
+            'blocked_at' => null,
+            'blocked_by_user_id' => null,
+        ])->save();
+
+        $this->dispatch('swal:toast', [
+            'icon' => 'success',
+            'title' => config('app.client_app_access_enabled')
+                ? 'Cliente desbloqueado.'
+                : 'Se quitó el bloqueo individual; la restricción global para clientes sigue activa.',
+        ]);
+    }
+
+    public function closeBlockModal(): void
+    {
+        $this->blockModalOpen = false;
+        $this->blockModalData = [];
+        $this->blockReason = '';
+        $this->blockReasonOther = '';
+        $this->resetValidation();
+    }
+
+    private function authorizeUserBlocking(): void
+    {
+        abort_unless(Auth::user()?->hasRole('Administrador'), 403);
     }
 
     /** ✅ Modal */
@@ -388,6 +504,7 @@ class UsersTable extends Component
             'filterContrato',
             'filterPago',
             'filterChatActivity',
+            'filterBlockStatus',
             'filterProveedor',
             'filterOwner',
             'filterRoles',
@@ -396,6 +513,11 @@ class UsersTable extends Component
     }
 
     public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilterBlockStatus(): void
     {
         $this->resetPage();
     }

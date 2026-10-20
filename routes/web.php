@@ -514,6 +514,16 @@ Route::middleware(['auth', 'can:docs.delete'])
     ->delete('/admin/docs/{id}', [DocumentController::class, 'destroy'])
     ->name('docs.destroy');
 
+Route::get('/acceso-restringido', function () {
+    $user = auth()->user();
+    abort_unless($user?->hasRole('Cliente'), 403);
+    abort_unless($user->isClientAppAccessBlocked(), 404);
+
+    return view('client-access-blocked');
+})
+    ->middleware('auth')
+    ->name('client-access-blocked');
+
 // Vista inicio
 Route::get('/', [Controller::class, 'index'])->name('inicio')->middleware(['auth', 'verified']);
 

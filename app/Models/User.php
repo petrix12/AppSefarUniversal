@@ -24,6 +24,15 @@ class User extends Authenticatable
     use TwoFactorAuthenticatable;
     use HasRoles;
 
+    public const CLIENT_BLOCK_REASONS = [
+        'payment_default' => 'Pagos pendientes o incumplidos',
+        'documentation_issues' => 'Documentación pendiente o inconsistente',
+        'terms_violation' => 'Incumplimiento de términos y condiciones',
+        'inappropriate_behavior' => 'Conducta inadecuada o uso indebido de la plataforma',
+        'security_review' => 'Revisión de seguridad de la cuenta',
+        'other' => 'Otro',
+    ];
+
     protected $guarded = [];
 
     protected $hidden = [
@@ -36,6 +45,8 @@ class User extends Authenticatable
 
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'is_blocked' => 'boolean',
+        'blocked_at' => 'datetime',
         'arraycos' => 'array',
         'arraycos_expire' => 'datetime',
         'contrato' => 'boolean',
@@ -45,6 +56,28 @@ class User extends Authenticatable
         'task_reassignment_locked_at' => 'datetime',
         'google_review_completed_at' => 'datetime',
     ];
+
+    public function clientBlockReasonDescription(): ?string
+    {
+        if (! $this->is_blocked) {
+            return $this->isCliente() && ! config('app.client_app_access_enabled')
+                ? 'Acceso temporalmente deshabilitado para todas las cuentas de cliente.'
+                : null;
+        }
+
+        if ($this->blocked_reason === 'other') {
+            return filled($this->blocked_reason_other)
+                ? 'Otro: ' . $this->blocked_reason_other
+                : self::CLIENT_BLOCK_REASONS['other'];
+        }
+
+        return self::CLIENT_BLOCK_REASONS[$this->blocked_reason] ?? $this->blocked_reason;
+    }
+
+    public function isClientAppAccessBlocked(): bool
+    {
+        return $this->isCliente() && ((bool) $this->is_blocked || ! config('app.client_app_access_enabled'));
+    }
 
     protected $appends = [
         'profile_photo_url',
