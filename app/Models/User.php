@@ -62,6 +62,10 @@ class User extends Authenticatable
 
     public function hasIndividualClientBlock(): bool
     {
+        if (! Schema::hasTable('user_access_blocks')) {
+            return false;
+        }
+
         return $this->relationLoaded('accessBlock')
             ? $this->getRelation('accessBlock') !== null
             : $this->accessBlock()->exists();
@@ -69,14 +73,16 @@ class User extends Authenticatable
 
     public function clientBlockReasonDescription(): ?string
     {
+        if (! Schema::hasTable('user_access_blocks')) {
+            return null;
+        }
+
         $block = $this->relationLoaded('accessBlock')
             ? $this->getRelation('accessBlock')
             : $this->accessBlock()->first();
 
         if (! $block) {
-            return $this->isCliente() && ! config('app.client_app_access_enabled')
-                ? 'Acceso temporalmente deshabilitado para todas las cuentas de cliente.'
-                : null;
+            return null;
         }
 
         if ($block->reason === 'other') {
@@ -90,7 +96,7 @@ class User extends Authenticatable
 
     public function isClientAppAccessBlocked(): bool
     {
-        return $this->isCliente() && ($this->hasIndividualClientBlock() || ! config('app.client_app_access_enabled'));
+        return $this->isCliente() && $this->hasIndividualClientBlock();
     }
 
     protected $appends = [

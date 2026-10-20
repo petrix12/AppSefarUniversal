@@ -13,11 +13,6 @@
                 <strong>Motivo del bloqueo</strong>
                 <p style="margin:6px 0 0; white-space:pre-line;">{{ $blockedUser->clientBlockReasonDescription() }}</p>
             </div>
-        @else
-            <div role="alert" style="margin:18px 0; padding:16px; border:1px solid #fed7aa; border-radius:10px; background:#fff7ed; color:#7c2d12;">
-                <strong>Acceso temporalmente restringido</strong>
-                <p style="margin:6px 0 0;">En este momento las ventanas de la aplicación no están habilitadas para clientes.</p>
-            </div>
         @endif
 
         <div style="margin:18px 0; padding:16px; border:1px solid #dbe5e9; border-radius:10px; color:#526b77;">

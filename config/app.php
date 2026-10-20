@@ -56,8 +56,6 @@ return [
 
     'asset_url' => env('ASSET_URL', null),
 
-    // false blocks all client windows; true enables access unless a user has an individual block.
-    'client_app_access_enabled' => (bool) env('CLIENT_APP_ACCESS_ENABLED', false),
     'client_access_support_email' => env('CLIENT_ACCESS_SUPPORT_EMAIL', 'info@sefaruniversal.com'),
     'client_access_support_phones' => [
         ['label' => 'USA', 'number' => '+1 603 2621727', 'link' => '+16032621727'],

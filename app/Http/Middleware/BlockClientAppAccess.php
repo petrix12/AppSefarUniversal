@@ -23,15 +23,12 @@ class BlockClientAppAccess
         }
 
         $blocked = $user->hasIndividualClientBlock();
-        $globallyDisabled = ! config('app.client_app_access_enabled');
 
-        if (! $blocked && ! $globallyDisabled) {
+        if (! $blocked) {
             return $next($request);
         }
 
-        $message = $blocked
-            ? 'El acceso a tu cuenta está bloqueado. Motivo: ' . ($user->clientBlockReasonDescription() ?? 'comunícate con atención al cliente.')
-            : 'El acceso a la aplicación está temporalmente restringido para clientes.';
+        $message = 'El acceso a tu cuenta está bloqueado. Motivo: ' . ($user->clientBlockReasonDescription() ?? 'comunícate con atención al cliente.');
 
         if ($request->expectsJson() || $request->is('api/*')) {
             return response()->json([

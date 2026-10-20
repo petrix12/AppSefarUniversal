@@ -11,6 +11,7 @@ use App\Services\TeamleaderPhasePaymentService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Role;
 
 class UsersTable extends Component
@@ -88,6 +89,8 @@ class UsersTable extends Component
         $authUser = Auth::user()->load('roles');
         $rolesIds = $authUser->roles->pluck('id')->toArray();
 
+        $hasAccessBlockTable = Schema::hasTable('user_access_blocks');
+
         $query = User::query()
             ->select([
                 'id', 'name', 'nombres', 'apellidos', 'email',
@@ -118,12 +121,15 @@ class UsersTable extends Component
                 'latest_internal_chat_message'
             )
             ->with([
-                'accessBlock',
                 'compras:id,id_user,servicio_id,source,servicio_hs_id,descripcion,pagado,hash_factura,metadata,paid_at,created_at,updated_at',
                 'compras.servicio:id,nombre',
                 'roles:id,name', // ✅ necesario para decidir botones sin queries extra
                 'genealogyTreeLink:id,user_id,tree_id',
             ]);
+
+        if ($hasAccessBlockTable) {
+            $query->with('accessBlock');
+        }
 
         $isAdmin = in_array(1, $rolesIds);
         $isVentasOrCoord = !empty(array_intersect($rolesIds, [15, 17]));
@@ -194,18 +200,14 @@ class UsersTable extends Component
             });
         });
 
-        $globalClientAccessDisabled = ! config('app.client_app_access_enabled');
-        $query->when($this->filterBlockStatus === 'blocked', function ($q) use ($globalClientAccessDisabled) {
-            $q->whereHas('roles', fn ($roles) => $roles->where('name', 'Cliente'));
-            if (! $globalClientAccessDisabled) {
-                $q->whereHas('accessBlock');
-            }
-        })->when($this->filterBlockStatus === 'active', function ($q) use ($globalClientAccessDisabled) {
-            $q->whereDoesntHave('accessBlock');
-            if ($globalClientAccessDisabled) {
-                $q->whereDoesntHave('roles', fn ($roles) => $roles->where('name', 'Cliente'));
-            }
-        });
+        if ($hasAccessBlockTable) {
+            $query->when($this->filterBlockStatus === 'blocked', function ($q) {
+                $q->whereHas('roles', fn ($roles) => $roles->where('name', 'Cliente'))
+                    ->whereHas('accessBlock');
+            })->when($this->filterBlockStatus === 'active', fn ($q) => $q->whereDoesntHave('accessBlock'));
+        } elseif ($this->filterBlockStatus === 'blocked') {
+            $query->whereRaw('1 = 0');
+        }
 
         logger()->info('AUTH roles', $rolesIds);
 
@@ -308,9 +310,7 @@ class UsersTable extends Component
 
         $this->dispatch('swal:toast', [
             'icon' => 'success',
-            'title' => config('app.client_app_access_enabled')
-                ? 'Cliente desbloqueado.'
-                : 'Se quitó el bloqueo individual; la restricción global para clientes sigue activa.',
+            'title' => 'Cliente desbloqueado.',
         ]);
     }
 
@@ -326,6 +326,7 @@ class UsersTable extends Component
     private function authorizeUserBlocking(): void
     {
         abort_unless(Auth::user()?->hasRole('Administrador'), 403);
+        abort_unless(Schema::hasTable('user_access_blocks'), 503, 'La migración del bloqueo de clientes aún no está aplicada.');
     }
 
     /** ✅ Modal */
