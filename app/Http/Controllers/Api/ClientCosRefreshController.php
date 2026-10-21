@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\CosSourceRefreshException;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\ClientCosSnapshotService;
@@ -74,11 +75,32 @@ class ClientCosRefreshController extends Controller
         } catch (\Throwable $exception) {
             report($exception);
 
-            return response()->json([
+            $error = [
                 'message' => 'No se pudo completar la actualización del COS. Reintenta la solicitud.',
                 'error' => 'cos_refresh_failed',
                 'data' => ['client_id' => $cliente->id],
-            ], 502)->header('Cache-Control', 'no-store, private');
+                'meta' => ['found' => true, 'refreshed' => false, 'matched_by' => $matchedBy],
+            ];
+
+            if ($exception instanceof CosSourceRefreshException) {
+                $error['message'] = $exception->getMessage();
+                $error['source'] = $exception->source;
+                $error['reason'] = $exception->reason();
+
+                if ($exception->source === 'teamleader') {
+                    if ($exception->reason() === 'authentication_required') {
+                        $error['message'] = 'Teamleader requiere reconectar la integración antes de actualizar el COS.';
+                        $error['retryable'] = false;
+                        $error['action'] = ['type' => 'reconnect_teamleader', 'url' => route('teamleader.redirect')];
+                    } elseif (in_array($exception->reason(), ['service_unavailable', 'invalid_authorization_response'], true)) {
+                        $error['message'] = 'Teamleader no está disponible o no devolvió una respuesta válida. Se conserva el COS anterior; reintenta más tarde.';
+                        $error['retryable'] = true;
+                        $error['action'] = ['type' => 'retry_later'];
+                    }
+                }
+            }
+
+            return response()->json($error, 502)->header('Cache-Control', 'no-store, private');
         }
 
         return response()->json([

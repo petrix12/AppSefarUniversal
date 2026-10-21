@@ -93,16 +93,36 @@ Los límites de peticiones y las reglas de asociación automática existentes si
 | `404` | En la ruta por ID, el cliente no existe o el usuario destino no tiene rol `Cliente`. La búsqueda sin coincidencias devuelve `200` con alerta. |
 | `422` | No se envió correo ni pasaporte, o alguno de los identificadores tiene un formato inválido. |
 | `429` | Se alcanzó el límite general de la API. |
-| `502` | No se pudo completar el refresco; `error` es `cos_refresh_failed`. Consultar el log del servidor y reintentar. |
+| `502` | No se pudo completar el refresco; `error` es `cos_refresh_failed`. Cuando se conoce la fuente, `source` indica `hubspot`, `teamleader` o `monday`. |
 
 Ante un fallo del refresco, no se reemplaza ni se renueva la fecha del COS anterior. Las sincronizaciones que se hayan completado antes del fallo pueden haber actualizado contactos, negocios o datos Monday: no hay una transacción distribuida entre las fuentes. Ajustar el timeout del consumidor/proxy para esperar las consultas externas.
 
 Cuando el cliente se identificó, un fallo de refresco también incluye `data.client_id`. Si no hay coincidencias, `data` sigue siendo `null`. El [módulo y endpoint de notas](client-notes-api.md) permite usar ese ID para añadir una nota al cliente.
 
+Una caída temporal de Teamleader, un timeout o una respuesta de autorización que no sea JSON no invalidan sus tokens almacenados ni requieren reconectar la cuenta. La respuesta distingue estos casos de un refresh token rechazado:
+
+```json
+{
+  "message": "Teamleader no está disponible o no devolvió una respuesta válida. Se conserva el COS anterior; reintenta más tarde.",
+  "error": "cos_refresh_failed",
+  "source": "teamleader",
+  "reason": "service_unavailable",
+  "retryable": true,
+  "action": {"type": "retry_later"},
+  "data": {"client_id": 123},
+  "meta": {"found": true, "refreshed": false, "matched_by": "email"}
+}
+```
+
+`reason: invalid_authorization_response` también permite reintentar más tarde. Si Teamleader rechaza la autorización, se devuelve `reason: authentication_required`, `retryable: false` y `action.type: reconnect_teamleader`, con la URL de reconexión en `action.url`. No se debe reconectar por una caída temporal ni interpretar un `502` como un COS actualizado. Otros errores conservan `reason: upstream_error`; revisar el log para determinar la causa.
+
+En n8n, el `502` detiene por defecto el flujo antes del nodo de notas. Para guardar una nota independientemente del resultado del COS, seguir la [configuración de n8n del módulo de notas](client-notes-api.md#configurar-el-flujo-en-n8n): activar **Never Error** en el nodo del COS y continuar únicamente si existe `data.client_id`.
+
 ## Verificación
 
 ```sh
 php vendor/phpunit/phpunit/phpunit tests/Feature/ClientCosRefreshApiTest.php tests/Feature/CosMondayLookupTest.php
+php vendor/phpunit/phpunit/phpunit tests/Unit/TeamleaderFocusProviderTest.php tests/Feature/TeamleaderAuthorizationTest.php tests/Feature/TeamleaderForcedRefreshTest.php
 php vendor/phpunit/phpunit/phpunit --filter test_forced_classification_ignores_cached_ai_results_on_every_call tests/Unit/CosServiceTest.php
 ```
 

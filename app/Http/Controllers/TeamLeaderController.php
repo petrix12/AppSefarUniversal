@@ -17,9 +17,9 @@ class TeamleaderController extends Controller
     public function __construct()
     {
         $this->provider = new TeamleaderFocusProvider([
-            'clientId'     => env('TEAMLEADER_CLIENT_ID'),
-            'clientSecret' => env('TEAMLEADER_CLIENT_SECRET'),
-            'redirectUri'  => env('TEAMLEADER_REDIRECT_URI'),
+            'clientId'     => config('services.teamleader.client_id'),
+            'clientSecret' => config('services.teamleader.client_secret'),
+            'redirectUri'  => config('services.teamleader.redirect'),
         ]);
     }
 

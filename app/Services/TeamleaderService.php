@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Exceptions\TeamleaderAuthenticationException;
 use App\Exceptions\TeamleaderRateLimitException;
+use App\Exceptions\TeamleaderServiceUnavailableException;
 use App\Models\TeamleaderToken;
 use App\Services\Teamleader\TeamleaderFocusProvider;
 use Illuminate\Http\Client\Response;
@@ -34,6 +35,10 @@ class TeamleaderService
         $response = $request->post("https://api.focus.teamleader.eu/{$endpoint}", $payload);
 
         $this->throwIfRateLimited($response);
+
+        if ($response->serverError()) {
+            throw new TeamleaderServiceUnavailableException($response->status());
+        }
 
         return $response;
     }
@@ -404,9 +409,9 @@ class TeamleaderService
     public function __construct()
     {
         $this->provider = new TeamleaderFocusProvider([
-            'clientId'     => env('TEAMLEADER_CLIENT_ID'),
-            'clientSecret' => env('TEAMLEADER_CLIENT_SECRET'),
-            'redirectUri'  => env('TEAMLEADER_REDIRECT_URI'),
+            'clientId'     => config('services.teamleader.client_id'),
+            'clientSecret' => config('services.teamleader.client_secret'),
+            'redirectUri'  => config('services.teamleader.redirect'),
         ]);
     }
 
@@ -554,10 +559,7 @@ class TeamleaderService
     public function searchContactByEmail($email)
     {
         try {
-            $accessToken = $this->getAccessToken();
-
-            $response = Http::withToken($accessToken)
-                ->post('https://api.focus.teamleader.eu/contacts.list', [
+            $response = $this->teamleaderPost('contacts.list', [
                     'filter' => [
                         'email' => [
                             'type' => 'primary',
@@ -586,7 +588,7 @@ class TeamleaderService
             }
         } catch (\Exception $e) {
             // Manejar excepciones generales
-            throw new \Exception('Error: ' . $e->getMessage());
+            throw new \Exception('Error: ' . $e->getMessage(), previous: $e);
         }
     }
 
@@ -618,9 +620,9 @@ public function getContactById($id)
         ]);
 
         return null;
-    } catch (TeamleaderRateLimitException $e) {
-        throw $e;
-    } catch (TeamleaderAuthenticationException $e) {
+    } catch (TeamleaderRateLimitException | TeamleaderAuthenticationException
+        | TeamleaderServiceUnavailableException | \UnexpectedValueException
+        | \GuzzleHttp\Exception\ConnectException | \Illuminate\Http\Client\ConnectionException $e) {
         throw $e;
     } catch (\Throwable $e) {
         \Log::channel('teamleader')->error('Teamleader: excepción al obtener contacto', [
@@ -1092,10 +1094,7 @@ public function getProjectsWithDetailsByCustomerId(?string $customerId, bool $fa
     public function searchContactByPassport($passportNumber)
     {
         try {
-            $accessToken = $this->getAccessToken();
-
-            $response = Http::withToken($accessToken)
-                ->post('https://api.focus.teamleader.eu/contacts.list', [
+            $response = $this->teamleaderPost('contacts.list', [
                     'filter' => [
                         'custom_fields' => [
                             [
@@ -1139,7 +1138,7 @@ public function getProjectsWithDetailsByCustomerId(?string $customerId, bool $fa
                 throw new \Exception('Teamleader API error: '.($error['errors'][0]['title'] ?? 'Unknown error'));
             }
         } catch (\Exception $e) {
-            throw new \Exception('Failed to search contact by passport: '.$e->getMessage());
+            throw new \Exception('Failed to search contact by passport: '.$e->getMessage(), previous: $e);
         }
     }
 

@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Exceptions\TeamleaderAuthenticationException;
+use App\Exceptions\TeamleaderServiceUnavailableException;
 use App\Models\MondayData;
 use App\Models\Negocio;
 use App\Models\User;
@@ -354,6 +356,8 @@ class ClientCosRefreshApiTest extends TestCase
         $this->withToken($token)->postJson($this->url($client))
             ->assertStatus(502)
             ->assertJsonPath('error', 'cos_refresh_failed')
+            ->assertJsonPath('source', 'monday')
+            ->assertJsonPath('reason', 'upstream_error')
             ->assertJsonPath('data.client_id', $client->id)
             ->assertJsonMissing(['meta' => ['forced_refresh' => true]]);
 
@@ -426,6 +430,61 @@ class ClientCosRefreshApiTest extends TestCase
 
         $this->withToken($token)->postJson($this->url($client))->assertStatus(502);
         $this->assertTrue($previousExpiry->equalTo($client->fresh()->arraycos_expire));
+    }
+
+    #[DataProvider('teamleaderFailures')]
+    public function test_teamleader_failures_identify_the_source_and_preserve_the_client_id_and_previous_cos(string $failure, string $reason, bool $retryable, string $action): void
+    {
+        $client = $this->linkedClient();
+        $previousCos = $client->arraycos;
+        $previousExpiry = $client->arraycos_expire;
+        Negocio::create(['user_id' => $client->id, 'hubspot_id' => '10', 'dealname' => 'Previous deal']);
+        $token = $this->internalUser()->createToken('Refresh', ['cos:refresh'])->plainTextToken;
+        $exception = match ($failure) {
+            'unavailable' => new TeamleaderServiceUnavailableException(504),
+            'invalid_response' => new \UnexpectedValueException('Invalid response received from Authorization Server. Expected JSON.'),
+            'connection' => new \Illuminate\Http\Client\ConnectionException('Connection timeout'),
+            'authentication' => new TeamleaderAuthenticationException('Invalid refresh token'),
+        };
+        $this->mock(TeamleaderService::class, fn ($mock) => $mock
+            ->shouldReceive('getContactById')->with($client->tl_id)->once()->andThrow($exception));
+        $this->mock(HubspotService::class, function ($mock) use ($client) {
+            $mock->shouldReceive('executeConcurrent')->once()->andReturnUsing(
+                fn (array $callbacks) => array_map(fn ($callback) => $callback(), $callbacks)
+            );
+            $mock->shouldReceive('getContactById')->with($client->hs_id)->once()
+                ->andReturn(['id' => $client->hs_id, 'properties' => []]);
+            $mock->shouldReceive('getContactFileFields')->with($client->hs_id)->once()->andReturn([]);
+            $mock->shouldReceive('getDealsByContactId')->with($client->hs_id)->once()->andReturn([]);
+        });
+
+        $response = $this->withToken($token)->postJson('/api/v1/clientes/cos/refresh', ['email' => $client->email])
+            ->assertStatus(502)
+            ->assertJsonPath('error', 'cos_refresh_failed')
+            ->assertJsonPath('source', 'teamleader')
+            ->assertJsonPath('reason', $reason)
+            ->assertJsonPath('retryable', $retryable)
+            ->assertJsonPath('action.type', $action)
+            ->assertJsonPath('data.client_id', $client->id)
+            ->assertJsonPath('meta.found', true)
+            ->assertJsonPath('meta.refreshed', false)
+            ->assertJsonPath('meta.matched_by', 'email');
+
+        $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
+        $this->assertStringNotContainsString($exception->getMessage(), $response->getContent());
+        $this->assertSame($previousCos, $client->fresh()->arraycos);
+        $this->assertTrue($previousExpiry->equalTo($client->fresh()->arraycos_expire));
+        $this->assertDatabaseHas('negocios', ['user_id' => $client->id, 'hubspot_id' => '10', 'dealname' => 'Previous deal']);
+    }
+
+    public static function teamleaderFailures(): array
+    {
+        return [
+            'temporary outage' => ['unavailable', 'service_unavailable', true, 'retry_later'],
+            'invalid OAuth response' => ['invalid_response', 'invalid_authorization_response', true, 'retry_later'],
+            'network timeout' => ['connection', 'service_unavailable', true, 'retry_later'],
+            'rejected refresh token' => ['authentication', 'authentication_required', false, 'reconnect_teamleader'],
+        ];
     }
 
     private function fakeCompleteExternalResults(User $client): void

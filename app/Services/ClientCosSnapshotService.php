@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\CosSourceRefreshException;
 use App\Models\MondayData;
 use App\Models\MondayFormBuilder;
 use App\Models\Negocio;
@@ -121,14 +122,18 @@ class ClientCosSnapshotService
         if ($syncExternal) {
             $sync = $this->refreshExternalData($user, $sync, $forceExternalRefresh);
             if (! empty($sync['error']) || (filled($user->hs_id) && empty($sync['hubspot']['contact']))) {
-                throw new \RuntimeException('No se pudo actualizar HubSpot; se conserva el COS anterior para reintentar.');
+                throw new CosSourceRefreshException('hubspot');
             }
             $user = $user->fresh() ?? $user;
         }
 
         $cos = $this->cosHelper->get(! $forceExternalRefresh);
         $negocios = Negocio::where('user_id', $user->id)->get();
-        $mondayData = $this->refreshMondayData($user, $forceExternalRefresh);
+        try {
+            $mondayData = $this->refreshMondayData($user, $forceExternalRefresh);
+        } catch (\Throwable $exception) {
+            throw new CosSourceRefreshException('monday', $exception);
+        }
         $servicename = $user->servicio
             ? Servicio::where('id_hubspot', 'like', $user->servicio . '%')->first()
             : null;
@@ -238,7 +243,11 @@ class ClientCosSnapshotService
         $syncService = new UserSyncService($this->hubspotService, $this->teamleaderService);
 
         if (! filled($user->hs_id)) {
-            $linkedContact = $this->linkExistingHubspotContact($user, $forceExternalRefresh);
+            try {
+                $linkedContact = $this->linkExistingHubspotContact($user, $forceExternalRefresh);
+            } catch (\Throwable $exception) {
+                throw new CosSourceRefreshException('hubspot', $exception);
+            }
 
             if ($linkedContact) {
                 $sync['hubspot']['linked_contact'] = true;
@@ -257,17 +266,35 @@ class ClientCosSnapshotService
             $sync['hubspot']['skipped'] = 'missing_hs_id_no_existing_contact';
         }
 
+        $sourceErrors = [];
+        $guardedCallbacks = [];
+        foreach ($callbacks as $source => $callback) {
+            $guardedCallbacks[$source] = function () use ($callback, $source, &$sourceErrors) {
+                try {
+                    return $callback();
+                } catch (\Throwable $exception) {
+                    $sourceErrors[$source] = $exception;
+
+                    return null;
+                }
+            };
+        }
+
         try {
-            $apiResults = $this->hubspotService->executeConcurrent($callbacks);
+            $apiResults = $this->hubspotService->executeConcurrent($guardedCallbacks);
         } catch (\Throwable $e) {
             Log::error('COS/MCP: error refrescando fuentes externas', [
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
             ]);
 
-            $sync['error'] = $e->getMessage();
+            throw new CosSourceRefreshException('external', $e);
+        }
 
-            return $sync;
+        if ($sourceErrors !== []) {
+            $source = array_key_first($sourceErrors);
+
+            throw new CosSourceRefreshException($source, $sourceErrors[$source]);
         }
 
         $hubspot = $apiResults['hubspot'] ?? [];
@@ -275,12 +302,12 @@ class ClientCosSnapshotService
 
         // Never reconcile deals or renew a snapshot after an incomplete fetch.
         if (filled($user->hs_id) && (empty($hubspot['contact']) || ! is_array($hubspot['deals'] ?? null))) {
-            throw new \RuntimeException('HubSpot no devolvió el contacto y sus negocios completos.');
+            throw new CosSourceRefreshException('hubspot');
         }
 
         if ($forceExternalRefresh && filled($user->tl_id)
             && (empty($teamleader['contact']) || ! is_array($teamleader['deals'] ?? null))) {
-            throw new \RuntimeException('Teamleader no devolvió el contacto y sus proyectos completos.');
+            throw new CosSourceRefreshException('teamleader');
         }
 
         $sync['hubspot']['attempted'] = filled($user->hs_id);

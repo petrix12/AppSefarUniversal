@@ -3,8 +3,8 @@
 namespace Tests\Unit;
 
 use App\Services\TeamleaderService;
-use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
+use Tests\TestCase;
 
 class TeamleaderServiceTest extends TestCase
 {

@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Services\TeamleaderService;
-use Illuminate\Http\Client\RequestException;
+use App\Exceptions\TeamleaderServiceUnavailableException;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -38,8 +38,16 @@ class TeamleaderForcedRefreshTest extends TestCase
     {
         Http::fake(['api.focus.teamleader.eu/projects.list' => Http::response(['errors' => [['title' => 'Unavailable']]], 503)]);
 
-        $this->expectException(RequestException::class);
+        $this->expectException(TeamleaderServiceUnavailableException::class);
         app(TeamleaderService::class)->listProjectsByCustomerId(self::CUSTOMER_ID, true);
+    }
+
+    public function test_a_contact_lookup_does_not_treat_a_gateway_failure_as_a_missing_contact(): void
+    {
+        Http::fake(['api.focus.teamleader.eu/contacts.info' => Http::response('<html>Gateway timeout</html>', 504)]);
+
+        $this->expectException(TeamleaderServiceUnavailableException::class);
+        app(TeamleaderService::class)->getContactById(self::CUSTOMER_ID);
     }
 
     public function test_forced_project_fetch_rejects_malformed_success_responses(): void
