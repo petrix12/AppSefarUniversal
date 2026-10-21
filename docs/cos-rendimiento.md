@@ -1,5 +1,7 @@
 # Carga del COS
 
+Para forzar una actualización síncrona desde una integración, usar el [endpoint de refresco COS con token](cos-refresh-api.md). Esa ruta omite las cachés de datos en cada llamada.
+
 ## Optimización de las consultas Monday (7 de septiembre de 2026)
 
 Las tres rutas de búsqueda comparten `CosMondayLookup`. Consulta los 12 tableros configurados mediante peticiones HTTP concurrentes, con máximo 12 simultáneas, límite de conexión de 5 segundos y timeout de 20 segundos. No requiere colas para el paralelismo. Conserva la prioridad de la configuración cuando aparecen varias coincidencias y trata los errores o resultados incompletos como fallos, no como ausencia de cliente. Una búsqueda completa sin resultados se recuerda 60 segundos; la clave incorpora usuario, pasaporte y lista de tableros.

@@ -126,9 +126,9 @@ class ClientCosSnapshotService
             $user = $user->fresh() ?? $user;
         }
 
-        $cos = $this->cosHelper->get();
+        $cos = $this->cosHelper->get(! $forceExternalRefresh);
         $negocios = Negocio::where('user_id', $user->id)->get();
-        $mondayData = $this->getMondayDataCached($user);
+        $mondayData = $this->refreshMondayData($user, $forceExternalRefresh);
         $servicename = $user->servicio
             ? Servicio::where('id_hubspot', 'like', $user->servicio . '%')->first()
             : null;
@@ -141,14 +141,16 @@ class ClientCosSnapshotService
                     $negocio,
                     $user,
                     $negocios,
-                    $mondayData['mondaydataforAI'] ?? []
+                    $mondayData['mondaydataforAI'] ?? [],
+                    forceRefresh: $forceExternalRefresh,
+                    cos: $forceExternalRefresh ? $cos : null,
                 );
 
                 $status = $statusService->calculateStatus();
                 $cosuser[] = $statusService->calculateProgress($status);
             }
         } else {
-            $cosuser[] = $this->handleNoNegocios($servicename);
+            $cosuser[] = $this->handleNoNegocios($servicename, $cos);
         }
 
         $cosuserFinal = $this->removeDuplicatesAndSort($cosuser);
@@ -236,7 +238,7 @@ class ClientCosSnapshotService
         $syncService = new UserSyncService($this->hubspotService, $this->teamleaderService);
 
         if (! filled($user->hs_id)) {
-            $linkedContact = $this->linkExistingHubspotContact($user);
+            $linkedContact = $this->linkExistingHubspotContact($user, $forceExternalRefresh);
 
             if ($linkedContact) {
                 $sync['hubspot']['linked_contact'] = true;
@@ -246,7 +248,7 @@ class ClientCosSnapshotService
         }
 
         $callbacks = [
-            'teamleader' => fn () => $syncService->syncWithTeamleader($user),
+            'teamleader' => fn () => $syncService->syncWithTeamleader($user, $forceExternalRefresh),
         ];
 
         if (filled($user->hs_id)) {
@@ -270,6 +272,16 @@ class ClientCosSnapshotService
 
         $hubspot = $apiResults['hubspot'] ?? [];
         $teamleader = $apiResults['teamleader'] ?? [];
+
+        // Never reconcile deals or renew a snapshot after an incomplete fetch.
+        if (filled($user->hs_id) && (empty($hubspot['contact']) || ! is_array($hubspot['deals'] ?? null))) {
+            throw new \RuntimeException('HubSpot no devolvió el contacto y sus negocios completos.');
+        }
+
+        if ($forceExternalRefresh && filled($user->tl_id)
+            && (empty($teamleader['contact']) || ! is_array($teamleader['deals'] ?? null))) {
+            throw new \RuntimeException('Teamleader no devolvió el contacto y sus proyectos completos.');
+        }
 
         $sync['hubspot']['attempted'] = filled($user->hs_id);
         $sync['hubspot']['contact'] = ! empty($hubspot['contact']);
@@ -304,17 +316,19 @@ class ClientCosSnapshotService
         return $sync;
     }
 
-    private function linkExistingHubspotContact(User $user): ?array
+    private function linkExistingHubspotContact(User $user, bool $failOnError = false): ?array
     {
         $lookups = [
             'email' => fn () => filled($user->email) ? $this->hubspotService->searchContactByEmail($user->email) : null,
             'passport' => fn () => filled($user->passport) ? $this->hubspotService->searchContactByPassport($user->passport) : null,
         ];
 
+        $lookupError = null;
         foreach ($lookups as $source => $lookup) {
             try {
                 $contact = $lookup();
             } catch (\Throwable $e) {
+                $lookupError = $e;
                 Log::warning('COS/MCP: no se pudo buscar contacto existente en HubSpot', [
                     'user_id' => $user->id,
                     'source' => $source,
@@ -341,6 +355,10 @@ class ClientCosSnapshotService
                 'source' => $source,
                 'contact' => $contact,
             ];
+        }
+
+        if ($failOnError && $lookupError) {
+            throw new \RuntimeException('No se pudo comprobar el contacto del cliente en HubSpot.', 0, $lookupError);
         }
 
         return null;
@@ -383,22 +401,20 @@ class ClientCosSnapshotService
         return array_keys($updatesToDB);
     }
 
-    private function getMondayDataCached(User $user): array
+    private function refreshMondayData(User $user, bool $forceRefresh = false): array
     {
         $cacheKey = "monday_data_{$user->id}_{$user->monday_id}";
 
-        // El estatus del COS debe reflejar el ítem actual de Monday. Al
-        // actualizarlo, se invalida la respuesta anterior antes de consultar.
-        Cache::forget($cacheKey);
-
-        return Cache::remember($cacheKey, 600, function () use ($user) {
+        $fetch = function () use ($user, $forceRefresh) {
             $mondayUserDetailsPre = null;
             if (! $user->monday_id) {
-                $mondayUserDetailsPre = $this->searchUserInMonday($user->passport, $user);
+                $mondayUserDetailsPre = $this->searchUserInMonday($user->passport, $user, $forceRefresh);
                 $user->refresh();
             }
 
             if (! $user->monday_id) {
+                $this->storeMondayUserData($user, null);
+
                 return [
                     'mondayUserDetails' => null,
                     'mondaydataforAI' => [],
@@ -427,15 +443,18 @@ class ClientCosSnapshotService
 
             if ($mondayUserDetailsPre === null) {
                 $result = json_decode(json_encode(Monday::customQuery($query)), true);
+                if (! empty($result['errors']) || ! is_array($result['items'] ?? null)) {
+                    throw new \RuntimeException('Monday no devolvió los datos del cliente; se conserva el COS anterior.');
+                }
                 $mondayUserDetailsPre = $result['items'][0] ?? null;
             }
 
+            $this->storeMondayUserData($user, $mondayUserDetailsPre);
             if ($mondayUserDetailsPre) {
-                $this->storeMondayUserData($user, $mondayUserDetailsPre);
                 $boardId = $mondayUserDetailsPre['board']['id'] ?? null;
 
                 if ($boardId) {
-                    $this->storeMondayBoardColumns($boardId);
+                    $this->storeMondayBoardColumns($boardId, $forceRefresh);
                 }
             }
 
@@ -456,15 +475,21 @@ class ClientCosSnapshotService
                 'mondayUserDetails' => $mondayUserDetailsPre,
                 'mondaydataforAI' => $mondaydataforAI,
             ];
-        });
+        };
+
+        // Fetch directly: even a concurrently populated cache must not skip Monday.
+        $data = $fetch();
+        Cache::put($cacheKey, $data, 600);
+
+        return $data;
     }
 
-    private function searchUserInMonday(?string $passport, User $user): ?array
+    private function searchUserInMonday(?string $passport, User $user, bool $forceRefresh = false): ?array
     {
-        return app(\App\Services\CosMondayLookup::class)->find($passport, $user);
+        return app(CosMondayLookup::class)->find($passport, $user, $forceRefresh);
     }
 
-    private function storeMondayUserData(User $user, array $mondayUserDetailsPre): void
+    private function storeMondayUserData(User $user, ?array $mondayUserDetailsPre): void
     {
         MondayData::updateOrCreate(
             ['user_id' => $user->id],
@@ -472,9 +497,9 @@ class ClientCosSnapshotService
         );
     }
 
-    private function storeMondayBoardColumns($boardId): void
+    private function storeMondayBoardColumns($boardId, bool $forceRefresh = false): void
     {
-        Cache::remember('cos.monday.columns.' . $boardId, 3600, function () use ($boardId) {
+        $fetch = function () use ($boardId) {
             $query = "
                 boards(ids: [$boardId]) {
                     columns {
@@ -487,7 +512,7 @@ class ClientCosSnapshotService
             ";
 
             $result = json_decode(json_encode(Monday::customQuery($query)), true);
-            if (! is_array($result['boards'][0]['columns'] ?? null)) {
+            if (! empty($result['errors']) || ! is_array($result['boards'][0]['columns'] ?? null)) {
                 throw new \RuntimeException('Monday no devolvió las columnas del tablero; se reintentará su actualización.');
             }
             $columns = $result['boards'][0]['columns'];
@@ -511,12 +536,19 @@ class ClientCosSnapshotService
                 );
             }
             return true;
-        });
+        };
+
+        $cacheKey = 'cos.monday.columns.' . $boardId;
+        if ($forceRefresh) {
+            Cache::put($cacheKey, $fetch(), 3600);
+        } else {
+            Cache::remember($cacheKey, 3600, $fetch);
+        }
     }
 
-    private function handleNoNegocios(?Servicio $servicename): array
+    private function handleNoNegocios(?Servicio $servicename, ?array $cos = null): array
     {
-        $cos = $this->cosHelper->get();
+        $cos ??= $this->cosHelper->get();
         $serviceName = $servicename['id_hubspot'] ?? null;
 
         if (! $serviceName) {

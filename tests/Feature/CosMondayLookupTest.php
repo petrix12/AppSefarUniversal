@@ -49,6 +49,24 @@ class CosMondayLookupTest extends TestCase
         $this->assertSame('111', $user->monday_id);
     }
 
+    public function test_forced_lookup_ignores_cached_absence_on_every_call(): void
+    {
+        config(['cos_snapshot.monday_search_boards' => [11 => 'First']]);
+        Http::fake(['api.monday.com/*' => Http::sequence()
+            ->push(['data' => ['b0' => ['items' => []]]])
+            ->push(['data' => ['b0' => ['items' => [['id' => '111']]]]])
+            ->push(['data' => ['b0' => ['items' => [['id' => '222']]]]])]);
+        $user = Mockery::mock(User::class)->makePartial();
+        $user->id = 123;
+        $user->shouldReceive('save')->twice()->andReturnTrue();
+        $service = app(CosMondayLookup::class);
+
+        $this->assertNull($service->find('TEST', $user));
+        $this->assertSame('111', $service->find('TEST', $user, true)['id']);
+        $this->assertSame('222', $service->find('TEST', $user, true)['id']);
+        Http::assertSentCount(3);
+    }
+
     public function test_partial_failure_is_not_cached_as_absence(): void
     {
         Http::fake(['api.monday.com/*' => Http::response(['errors' => [['message' => 'Rate limit']]])]);

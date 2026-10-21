@@ -42,13 +42,21 @@ class CosService
     /**
      * Constructor del servicio
      */
-    public function __construct($negocio, $user, $negocios, $mondayData = [], private bool $allowRemoteAI = true)
+    public function __construct(
+        $negocio,
+        $user,
+        $negocios,
+        $mondayData = [],
+        private bool $allowRemoteAI = true,
+        private bool $forceRefresh = false,
+        ?array $cos = null,
+    )
     {
         $this->negocio = $negocio;
         $this->user = $user;
         $this->negocios = $negocios;
         $this->mondayData = $mondayData;
-        $this->cos = array_cos();
+        $this->cos = $cos ?? array_cos();
         $this->negocio->servicio_solicitado2 = $this->resolveServiceName($this->getServiceName());
         $this->serviceName = $this->negocio->servicio_solicitado2;
         $this->calculateTotalSteps();
@@ -1377,7 +1385,7 @@ class CosService
         }
 
         $cacheKey = $this->generateAICacheKey($mondaydataforAI);
-        $cachedResult = Cache::get($cacheKey);
+        $cachedResult = $this->forceRefresh ? null : Cache::get($cacheKey);
 
         if ($cachedResult !== null) {
             Log::info("COS IA: Usando resultado cacheado", ['cache_key' => $cacheKey]);

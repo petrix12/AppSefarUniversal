@@ -56,6 +56,11 @@
                                     <label class="custom-control-label" for="ability_{{ $ability }}">{{ $label }}</label>
                                 </div>
                             @endforeach
+                            <small class="form-text text-muted mt-2">
+                                Para actualizar un COS siempre desde sus fuentes, usa el permiso
+                                <code>cos:refresh</code> y <code>POST /api/v1/clientes/cos/refresh</code>,
+                                enviando <code>email</code> y/o <code>passport</code>.
+                            </small>
                         </div>
                     </div>
                     <div class="card-footer text-right">

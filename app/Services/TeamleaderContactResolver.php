@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Schema;
 
 class TeamleaderContactResolver
 {
-    public function resolve(User $user, TeamleaderService $teamleaderService): ?string
+    public function resolve(User $user, TeamleaderService $teamleaderService, bool $failOnError = false): ?string
     {
         $user->refresh();
 
@@ -36,10 +36,12 @@ class TeamleaderContactResolver
             return $this->linkUser($user, (string) $localContact->id, 'local_backup');
         }
 
+        $lookupError = null;
         foreach ($this->candidateEmails($user) as $email) {
             try {
                 $apiContact = $teamleaderService->searchContactByEmail($email);
             } catch (\Throwable $e) {
+                $lookupError = $e;
                 Log::channel('teamleader')->warning('Teamleader: no se pudo buscar contacto por email', [
                     'user_id' => $user->id,
                     'email' => $email,
@@ -54,6 +56,10 @@ class TeamleaderContactResolver
 
                 return $this->linkUser($user, (string) $apiContact['id'], 'api_email');
             }
+        }
+
+        if ($failOnError && $lookupError) {
+            throw new \RuntimeException('No se pudo comprobar el contacto del cliente en Teamleader.', 0, $lookupError);
         }
 
         Log::channel('teamleader')->info('Teamleader: contacto no encontrado; se omite sincronizacion TL', [

@@ -28,11 +28,7 @@ class UserSyncService
     {
         $cacheKey = "hubspot_data_{$user->hs_id}";
 
-        if ($forceRefresh) {
-            Cache::forget($cacheKey);
-        }
-
-        return Cache::remember($cacheKey, 300, function () use ($user) {
+        $fetch = function () use ($user) {
             if (is_null($user->hs_id)) {
                 $this->ensureHubspotContact($user);
             }
@@ -42,21 +38,30 @@ class UserSyncService
                 'files' => $this->hubspotService->getContactFileFields($user->hs_id),
                 'deals' => $this->hubspotService->getDealsByContactId($user->hs_id),
             ];
-        });
+        };
+
+        if ($forceRefresh) {
+            $data = $fetch();
+            Cache::put($cacheKey, $data, 300);
+
+            return $data;
+        }
+
+        return Cache::remember($cacheKey, 300, $fetch);
     }
 
     /**
      * Sincroniza datos del usuario con Teamleader
      * Usa cache de 5 minutos
      */
-public function syncWithTeamleader(User $user): array
+public function syncWithTeamleader(User $user, bool $forceRefresh = false): array
 {
     $cacheKey = "teamleader_data_{$user->id}";
 
-    return Cache::remember($cacheKey, 300, function () use ($user) {
+    $fetch = function () use ($user, $forceRefresh) {
         try {
             if (empty($user->tl_id)) {
-                $this->ensureTeamleaderContact($user);
+                $this->ensureTeamleaderContact($user, $forceRefresh);
             }
 
             // Si sigue vacío o inválido, no frenar el sistema
@@ -68,7 +73,9 @@ public function syncWithTeamleader(User $user): array
             }
 
             $contact = $this->teamleaderService->getContactById($user->tl_id);
-            $deals = $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id);
+            $deals = $forceRefresh
+                ? $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id, true)
+                : $this->teamleaderService->getProjectsWithDetailsByCustomerId($user->tl_id);
 
             return [
                 'contact' => $contact,
@@ -81,12 +88,25 @@ public function syncWithTeamleader(User $user): array
                 'error' => $e->getMessage(),
             ]);
 
+            if ($forceRefresh) {
+                throw $e;
+            }
+
             return [
                 'contact' => null,
                 'deals' => [],
             ];
         }
-    });
+    };
+
+    if ($forceRefresh) {
+        $data = $fetch();
+        Cache::put($cacheKey, $data, 300);
+
+        return $data;
+    }
+
+    return Cache::remember($cacheKey, 300, $fetch);
 }
 
     /**
@@ -151,9 +171,9 @@ public function syncWithTeamleader(User $user): array
     /**
      * Asegura que el usuario tenga un contacto en Teamleader
      */
-private function ensureTeamleaderContact(User $user): void
+private function ensureTeamleaderContact(User $user, bool $failOnError = false): void
 {
-    app(TeamleaderContactResolver::class)->resolve($user, $this->teamleaderService);
+    app(TeamleaderContactResolver::class)->resolve($user, $this->teamleaderService, $failOnError);
 }
 
     /**

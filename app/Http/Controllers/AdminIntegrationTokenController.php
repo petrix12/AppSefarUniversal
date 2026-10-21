@@ -15,6 +15,7 @@ class AdminIntegrationTokenController extends Controller
         'read' => 'Lectura',
         'create' => 'Crear',
         'update' => 'Actualizar',
+        'cos:refresh' => 'Actualizar COS sin caché',
         'delete' => 'Eliminar',
     ];
 

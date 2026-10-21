@@ -670,10 +670,13 @@ public function getContactById($id)
         }
     }
 
-public function listProjectsByCustomerId(string $customerId)
+public function listProjectsByCustomerId(string $customerId, bool $failOnError = false)
 {
     try {
         if (!$this->isValidUuid($customerId)) {
+            if ($failOnError) {
+                throw new \InvalidArgumentException('ID de contacto Teamleader inválido.');
+            }
             \Log::channel('teamleader')->warning('Teamleader: customerId inválido al listar proyectos', [
                 'customer_id' => $customerId,
             ]);
@@ -694,6 +697,22 @@ public function listProjectsByCustomerId(string $customerId)
                 'number' => 1,
             ],
         ];
+
+        if ($failOnError) {
+            $projects = [];
+            do {
+                $response = $this->teamleaderPost('projects.list', $payload);
+                $response->throw();
+                $page = $response->json('data');
+                if (! is_array($page) || $response->json('errors')) {
+                    throw new \RuntimeException('Teamleader no devolvió la lista completa de proyectos.');
+                }
+                $projects = array_merge($projects, $page);
+                $payload['page']['number']++;
+            } while (count($page) === $payload['page']['size']);
+
+            return $projects;
+        }
 
         $response = Http::withToken($accessToken)
             ->withHeaders([
@@ -722,6 +741,10 @@ public function listProjectsByCustomerId(string $customerId)
             'customer_id' => $customerId,
             'error' => $e->getMessage(),
         ]);
+
+        if ($failOnError) {
+            throw $e;
+        }
 
         return [];
     }
@@ -1010,17 +1033,22 @@ public function listProjectsByCustomerId(string $customerId)
     }
 
 
-public function getProjectsWithDetailsByCustomerId(?string $customerId)
+public function getProjectsWithDetailsByCustomerId(?string $customerId, bool $failOnError = false)
 {
     try {
         if (!$this->isValidUuid($customerId)) {
+            if ($failOnError) {
+                throw new \InvalidArgumentException('ID de contacto Teamleader inválido.');
+            }
             \Log::channel('teamleader')->warning('Teamleader: customerId inválido al obtener proyectos con detalle', [
                 'customer_id' => $customerId,
             ]);
             return [];
         }
 
-        $projects = $this->listProjectsByCustomerId($customerId);
+        $projects = $failOnError
+            ? $this->listProjectsByCustomerId($customerId, true)
+            : $this->listProjectsByCustomerId($customerId);
 
         $detailedProjects = [];
         foreach ($projects as $project) {
@@ -1034,6 +1062,10 @@ public function getProjectsWithDetailsByCustomerId(?string $customerId)
                     'error' => $e->getMessage(),
                 ]);
 
+                if ($failOnError) {
+                    throw $e;
+                }
+
                 $detailedProjects[] = $project;
             }
         }
@@ -1044,6 +1076,10 @@ public function getProjectsWithDetailsByCustomerId(?string $customerId)
             'customer_id' => $customerId,
             'error' => $e->getMessage(),
         ]);
+
+        if ($failOnError) {
+            throw $e;
+        }
 
         return [];
     }

@@ -10,7 +10,7 @@ use RuntimeException;
 
 class CosMondayLookup
 {
-    public function find(?string $passport, User $user): ?array
+    public function find(?string $passport, User $user, bool $forceRefresh = false): ?array
     {
         $passport = trim((string) $passport);
         $ids = array_keys(config('cos_snapshot.monday_search_boards', []));
@@ -20,7 +20,7 @@ class CosMondayLookup
 
         $key = 'cos.monday.lookup.' . hash('sha256', json_encode([$user->id, $passport, $ids]));
         // Wrap null so a successful search with no matches is cached too.
-        $result = Cache::remember($key, 60, function () use ($passport, $ids) {
+        $search = function () use ($passport, $ids) {
             $token = config('services.monday.token');
             if (blank($token)) {
                 throw new RuntimeException('Falta configurar MONDAY_TOKEN.');
@@ -74,7 +74,14 @@ class CosMondayLookup
             }
 
             return ['item' => null];
-        });
+        };
+
+        if ($forceRefresh) {
+            $result = $search();
+            Cache::put($key, $result, 60);
+        } else {
+            $result = Cache::remember($key, 60, $search);
+        }
 
         if ($item = $result['item']) {
             $user->monday_id = $item['id'];

@@ -5,12 +5,47 @@ namespace Tests\Unit;
 use App\Models\Negocio;
 use App\Services\CosHelperService;
 use App\Services\CosService;
+use App\Services\AiProcessSettingsService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use ReflectionClass;
 use Tests\TestCase;
 
 class CosServiceTest extends TestCase
 {
+    public function test_forced_classification_ignores_cached_ai_results_on_every_call(): void
+    {
+        config([
+            'cache.default' => 'array',
+            'services.openrouter.key' => 'test-key',
+            'services.openrouter.url' => 'https://openrouter.ai/api/v1/chat/completions',
+        ]);
+        $this->mock(AiProcessSettingsService::class, fn ($mock) => $mock->shouldReceive('get')
+            ->with('cos_classifier')->twice()->andReturn([
+                'timeout_seconds' => 10, 'model' => 'test-model', 'max_tokens' => 500,
+            ]));
+        Http::preventStrayRequests();
+        Http::fake(['openrouter.ai/*' => Http::sequence()
+            ->push(['choices' => [['message' => ['content' => '{"inicioInvestigacion":true}']]]])
+            ->push(['choices' => [['message' => ['content' => '{"inicioInvestigacion":false}']]]])]);
+        $data = ['tablero' => 'ANALISIS', 'etiquetas' => 'Investigación'];
+        $negocio = new Negocio(['servicio_solicitado' => 'Española Sefardi']);
+        $user = (object) ['id' => 23681];
+        $cached = new CosService($negocio, $user, collect([$negocio]), $data);
+        $forced = new CosService($negocio, $user, collect([$negocio]), $data, forceRefresh: true);
+        $class = new ReflectionClass(CosService::class);
+        $key = $class->getMethod('generateAICacheKey')->invoke($cached, $data);
+        Cache::put($key, ['inicioInvestigacion' => false], 1800);
+        $method = $class->getMethod('analizarEtiquetasYDevolverJSON');
+
+        $this->assertFalse($method->invoke($cached, $data)['inicioInvestigacion']);
+        Http::assertNothingSent();
+        $this->assertTrue($method->invoke($forced, $data)['inicioInvestigacion']);
+        $this->assertFalse($method->invoke($forced, $data)['inicioInvestigacion']);
+        Http::assertSentCount(2);
+    }
+
     public function test_it_keeps_requested_carta_de_naturaleza_service_name(): void
     {
         $this->assertSame(

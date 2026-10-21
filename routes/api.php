@@ -12,7 +12,9 @@ use App\Http\Controllers\N8nTaskWebhookController;
 use App\Http\Controllers\MarketingSesWebhookController;
 use App\Http\Controllers\BancaOnlineStripeWebhookController;
 use App\Http\Controllers\Api\Mcp\ClientController as McpClientController;
+use App\Http\Controllers\Api\ClientCosRefreshController;
 use App\Http\Middleware\AuditMcpRequests;
+use App\Http\Middleware\EnsureCosRefreshToken;
 use App\Http\Middleware\EnsureMcpReadToken;
 
 /*
@@ -29,6 +31,15 @@ use App\Http\Middleware\EnsureMcpReadToken;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+Route::post('/v1/clientes/{cliente}/cos/refresh', ClientCosRefreshController::class)
+    ->middleware(['auth:sanctum', EnsureCosRefreshToken::class])
+    ->whereNumber('cliente')
+    ->name('api.clientes.cos.refresh');
+
+Route::post('/v1/clientes/cos/refresh', [ClientCosRefreshController::class, 'lookup'])
+    ->middleware(['auth:sanctum', EnsureCosRefreshToken::class])
+    ->name('api.clientes.cos.refresh.lookup');
 
 Route::middleware(['auth:sanctum', AuditMcpRequests::class, EnsureMcpReadToken::class])
     ->prefix('mcp/v1')
