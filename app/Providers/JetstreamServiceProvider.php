@@ -44,6 +44,7 @@ class JetstreamServiceProvider extends ServiceProvider
             'read',
             'mcp:read',
             'cos:refresh',
+            'client-notes:create',
             'update',
             'delete',
         ]);

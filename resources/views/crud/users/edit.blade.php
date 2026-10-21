@@ -379,6 +379,13 @@
                         <span id="clientInternalChatBadge" class="badge bg-danger ms-1 d-none">0</span>
                     </button>
                 </li>
+                @if(!auth()->user()->hasRole('Cliente') && $user->hasRole('Cliente'))
+                <li class="nav-item">
+                    <a style="color:black" class="nav-link" href="{{ route('crud.users.notes.index', $user) }}">
+                        Notas
+                    </a>
+                </li>
+                @endif
                 @endif
             </ul>
             <style>
@@ -818,6 +825,7 @@
                             $tlStatusLabels = [
                                 'paid' => 'Pagado',
                                 'partial' => 'Parcial',
+                                'small_balance_ignored' => 'No cobrable',
                                 'pending' => 'Pendiente',
                                 'review' => 'Revisar',
                                 'exonerated' => 'Exonerado',
@@ -827,6 +835,7 @@
                             $tlStatusClasses = [
                                 'paid' => 'bg-success',
                                 'partial' => 'bg-warning text-dark',
+                                'small_balance_ignored' => 'bg-secondary',
                                 'pending' => 'bg-danger',
                                 'review' => 'bg-danger',
                                 'exonerated' => 'bg-info text-dark',
@@ -878,6 +887,11 @@
                                             <div style="font-size:1.15rem; font-weight:800; color:#9a3412;">
                                                 {{ $tlMoney($tlPaymentTotals['balance_amount'] ?? 0) }}
                                             </div>
+                                            @if((float) ($tlPaymentTotals['non_collectible_balance_amount'] ?? 0) > 0)
+                                                <div class="small text-muted">
+                                                    Diferenciales no cobrables: {{ $tlMoney($tlPaymentTotals['non_collectible_balance_amount']) }}
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                     <div class="col-md-3">
@@ -910,7 +924,8 @@
                                             <tbody>
                                                 @foreach($tlPaymentRows as $phase)
                                                     @php
-                                                        $status = $phase['status'] ?? 'empty';
+                                                        $status = $phase['display_status'] ?? $phase['status'] ?? 'empty';
+                                                        $collectibleBalance = (float) ($phase['collectible_balance_amount'] ?? $phase['balance_amount'] ?? 0);
                                                         $rawPieces = array_filter([
                                                             trim((string) ($phase['preestab_raw'] ?? '')),
                                                             trim((string) ($phase['paid_raw'] ?? '')),
@@ -934,8 +949,13 @@
                                                                 </div>
                                                             @endif
                                                         </td>
-                                                        <td class="text-end fw-bold {{ ((float) ($phase['balance_amount'] ?? 0)) > 0 ? 'text-danger' : 'text-success' }}">
-                                                            {{ $tlMoney($phase['balance_amount'] ?? 0) }}
+                                                        <td class="text-end fw-bold {{ $collectibleBalance > 0 ? 'text-danger' : 'text-success' }}">
+                                                            {{ $tlMoney($collectibleBalance) }}
+                                                            @if((float) ($phase['non_collectible_balance_amount'] ?? 0) > 0)
+                                                                <div class="small text-muted fw-normal">
+                                                                    Diferencial no cobrable: {{ $tlMoney($phase['non_collectible_balance_amount']) }}
+                                                                </div>
+                                                            @endif
                                                         </td>
                                                         <td class="small text-muted">{{ \Illuminate\Support\Str::limit(implode(' | ', $rawPieces), 70) ?: '-' }}</td>
                                                         <td>

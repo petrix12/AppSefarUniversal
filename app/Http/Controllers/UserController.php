@@ -1795,7 +1795,8 @@ class UserController extends Controller
     $teamleaderMigration = $this->getTeamleaderMigrationData($user);
     $teamleaderProjectPayments = app(TeamleaderProjectPaymentAnalyzer::class)
         ->analyzeProjects($teamleaderMigration['projects'] ?? collect());
-    app(TeamleaderPhasePaymentService::class)->sync($user, $teamleaderProjectPayments);
+    $phasePaymentService = app(TeamleaderPhasePaymentService::class);
+    $phasePaymentService->sync($user, $teamleaderProjectPayments);
 
     // In the applicant status window, HubSpot is the display source once a
     // Teamleader project has been linked to a HubSpot deal. Keep unlinked
@@ -1895,6 +1896,7 @@ class UserController extends Controller
 
             return $rows;
         })
+        ->map([$phasePaymentService, 'paymentSummaryRow'])
         ->values();
     $teamleaderStatusMigration = $teamleaderMigration;
     $teamleaderStatusMigration['projects'] = collect($teamleaderMigration['projects'] ?? [])
@@ -1947,7 +1949,8 @@ class UserController extends Controller
                     return $phase;
                 })
                 ->all();
-        });
+        })
+        ->map([$phasePaymentService, 'paymentSummaryRow']);
     $statusPaymentRows = $hubspotPaymentRows->concat($teamleaderOnlyPaymentRows)->values();
     $visibleTeamleaderPhases = $statusPaymentRows;
     $teamleaderProjectPayments['totals'] = [
@@ -1955,7 +1958,8 @@ class UserController extends Controller
             + $visibleTeamleaderProjects->pluck('project_id')->filter()->unique()->count(),
         'preestab_amount' => round((float) $visibleTeamleaderPhases->sum('effective_preestab_amount'), 2),
         'paid_amount' => round((float) $visibleTeamleaderPhases->sum('effective_paid_amount'), 2),
-        'balance_amount' => round((float) $visibleTeamleaderPhases->sum('balance_amount'), 2),
+        'balance_amount' => round((float) $visibleTeamleaderPhases->sum('collectible_balance_amount'), 2),
+        'non_collectible_balance_amount' => round((float) $visibleTeamleaderPhases->sum('non_collectible_balance_amount'), 2),
         'overpaid_amount' => round((float) $visibleTeamleaderPhases->sum('overpaid_amount'), 2),
     ];
 
@@ -2041,7 +2045,7 @@ class UserController extends Controller
     $hubspotPendingPaymentRows = $hubspotPaymentRows
         ->map(function (array $row) use ($pendingByDealPhase): array {
             $key = $row['deal_id'] . ':' . (int) $row['phase'];
-            $row['display_amount'] = round(max((float) $row['balance_amount'] - (float) $pendingByDealPhase->get($key, 0), 0), 2);
+            $row['display_amount'] = round(max((float) $row['collectible_balance_amount'] - (float) $pendingByDealPhase->get($key, 0), 0), 2);
             return $row;
         })
         ->filter(fn (array $row) => $row['display_amount'] > 0.01)

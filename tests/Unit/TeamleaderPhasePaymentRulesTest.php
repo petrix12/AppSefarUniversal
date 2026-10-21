@@ -135,6 +135,59 @@ class TeamleaderPhasePaymentRulesTest extends TestCase
         $this->assertSame(750.0, $recordAmount->invoke($service, 0.0, 750.0));
     }
 
+    public function test_converted_payment_residuals_are_not_pending_debts_in_either_source(): void
+    {
+        $service = new TeamleaderPhasePaymentService();
+
+        foreach (['HubSpot', 'Teamleader'] as $source) {
+            $payment = [
+                'source' => $source,
+                'phase' => 98,
+                'effective_preestab_amount' => 3000.0,
+                'effective_paid_amount' => 2997.33,
+                'converted_foreign_paid_amount' => 2997.33,
+                'balance_amount' => 2.67,
+                'status' => 'partial',
+            ];
+
+            $row = $service->paymentSummaryRow($payment);
+
+            $this->assertSame(0.0, $row['collectible_balance_amount']);
+            $this->assertSame(2.67, $row['non_collectible_balance_amount']);
+            $this->assertSame('small_balance_ignored', $row['display_status']);
+            $this->assertSame($payment, array_intersect_key($row, $payment));
+        }
+    }
+
+    public function test_summary_uses_the_existing_minimum_charge_per_payment(): void
+    {
+        $service = new TeamleaderPhasePaymentService();
+        $rows = collect([2.67, 49.99, 50.0, 1586.0])->map(fn (float $balance) => $service->paymentSummaryRow([
+            'balance_amount' => $balance,
+            'status' => 'partial',
+        ]));
+
+        $this->assertSame([0.0, 0.0, 50.0, 1586.0], $rows->pluck('collectible_balance_amount')->all());
+        $this->assertSame(1636.0, $rows->sum('collectible_balance_amount'));
+        $this->assertSame(52.66, $rows->sum('non_collectible_balance_amount'));
+        $this->assertSame('partial', $rows[2]['display_status']);
+    }
+
+    public function test_summary_does_not_hide_small_balances_that_still_require_review(): void
+    {
+        $service = new TeamleaderPhasePaymentService();
+
+        foreach ([['status' => 'review'], ['status' => 'partial', 'needs_review' => true]] as $review) {
+            $row = $service->paymentSummaryRow(array_merge([
+                'balance_amount' => 2.67,
+            ], $review));
+
+            $this->assertSame(2.67, $row['collectible_balance_amount']);
+            $this->assertSame(0.0, $row['non_collectible_balance_amount']);
+            $this->assertSame($review['status'], $row['display_status']);
+        }
+    }
+
     public function test_portal_exposes_only_the_next_sequential_phase_for_each_project(): void
     {
         $service = new TeamleaderPhasePaymentService();

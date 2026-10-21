@@ -286,6 +286,11 @@ class User extends Authenticatable
         return $this->hasMany(User::class, 'owner_id');
     }
 
+    public function notes()
+    {
+        return $this->hasMany(ClientNote::class, 'client_id');
+    }
+
     public function listas()
     {
         return $this->belongsToMany(\App\Models\Lista::class, 'list_user', 'user_id', 'list_id')

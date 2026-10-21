@@ -77,11 +77,13 @@ class ClientCosRefreshController extends Controller
             return response()->json([
                 'message' => 'No se pudo completar la actualización del COS. Reintenta la solicitud.',
                 'error' => 'cos_refresh_failed',
+                'data' => ['client_id' => $cliente->id],
             ], 502)->header('Cache-Control', 'no-store, private');
         }
 
         return response()->json([
             'data' => [
+                'client_id' => $snapshot['client']->id,
                 'client' => $snapshot['client']->only(['id', 'name', 'email', 'hs_id', 'tl_id', 'monday_id']),
                 'cos' => $snapshot['cos'],
                 'cosready' => $snapshot['cosready'],

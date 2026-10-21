@@ -228,6 +228,25 @@ class TeamleaderPhasePaymentService
     }
 
     /**
+     * Applies the portal's minimum charge to summary rows without changing
+     * the recorded payment or its financial difference.
+     */
+    public function paymentSummaryRow(array $payment): array
+    {
+        $status = $payment['status'] ?? 'empty';
+        $balance = round((float) ($payment['balance_amount'] ?? 0), 2);
+        $isNonCollectible = $this->isSmallBalance($payment)
+            && empty($payment['needs_review'])
+            && in_array($status, ['partial', 'pending'], true);
+
+        return array_merge($payment, [
+            'collectible_balance_amount' => $isNonCollectible ? 0.0 : $balance,
+            'non_collectible_balance_amount' => $isNonCollectible ? $balance : 0.0,
+            'display_status' => $isNonCollectible ? 'small_balance_ignored' : $status,
+        ]);
+    }
+
+    /**
      * Rebuilds the totals after historical installments, dated currency
      * conversion and legacy payments have been reconciled per phase.
      */

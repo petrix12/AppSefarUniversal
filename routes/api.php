@@ -13,8 +13,10 @@ use App\Http\Controllers\MarketingSesWebhookController;
 use App\Http\Controllers\BancaOnlineStripeWebhookController;
 use App\Http\Controllers\Api\Mcp\ClientController as McpClientController;
 use App\Http\Controllers\Api\ClientCosRefreshController;
+use App\Http\Controllers\Api\ClientNoteController;
 use App\Http\Middleware\AuditMcpRequests;
 use App\Http\Middleware\EnsureCosRefreshToken;
+use App\Http\Middleware\EnsureInternalApiToken;
 use App\Http\Middleware\EnsureMcpReadToken;
 
 /*
@@ -40,6 +42,11 @@ Route::post('/v1/clientes/{cliente}/cos/refresh', ClientCosRefreshController::cl
 Route::post('/v1/clientes/cos/refresh', [ClientCosRefreshController::class, 'lookup'])
     ->middleware(['auth:sanctum', EnsureCosRefreshToken::class])
     ->name('api.clientes.cos.refresh.lookup');
+
+Route::post('/v1/clientes/{cliente}/notas', [ClientNoteController::class, 'store'])
+    ->middleware(['auth:sanctum', EnsureInternalApiToken::class . ':client-notes:create'])
+    ->whereNumber('cliente')
+    ->name('api.clientes.notes.store');
 
 Route::middleware(['auth:sanctum', AuditMcpRequests::class, EnsureMcpReadToken::class])
     ->prefix('mcp/v1')

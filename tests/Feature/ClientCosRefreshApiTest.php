@@ -112,6 +112,7 @@ class ClientCosRefreshApiTest extends TestCase
         $this->withToken($token)->postJson('/api/v1/clientes/cos/refresh', $input)
             ->assertOk()
             ->assertJsonPath('data.client.id', $client->id)
+            ->assertJsonPath('data.client_id', $client->id)
             ->assertJsonPath('meta.found', true)
             ->assertJsonPath('meta.refreshed', true)
             ->assertJsonPath('meta.matched_by', $matchedBy)
@@ -211,13 +212,33 @@ class ClientCosRefreshApiTest extends TestCase
 
         $this->actingAs($admin)->from('/admin/integrations/api-tokens')
             ->post(route('admin.integrations.api-tokens.store'), [
-                'user_id' => $owner->id, 'name' => 'Refresh integration', 'abilities' => ['cos:refresh'],
+                'user_id' => $owner->id, 'name' => 'Refresh integration',
+                'abilities' => ['cos:refresh', 'client-notes:create'],
             ])
             ->assertRedirect('/admin/integrations/api-tokens')
             ->assertSessionHasNoErrors()
             ->assertSessionHas('created_token');
 
-        $this->assertSame(['cos:refresh'], $owner->tokens()->firstOrFail()->abilities);
+        $this->assertSame(['cos:refresh', 'client-notes:create'], $owner->tokens()->firstOrFail()->abilities);
+    }
+
+    public function test_the_cos_client_id_can_be_used_to_create_a_note_with_the_same_token(): void
+    {
+        $client = User::factory()->create(['passport' => 'COS-NOTE-FLOW']);
+        $actor = $this->internalUser();
+        $token = $actor->createToken('n8n', ['cos:refresh', 'client-notes:create'])->plainTextToken;
+        $this->expectForcedRefresh($client);
+
+        $response = $this->withToken($token)->postJson('/api/v1/clientes/cos/refresh', ['passport' => $client->passport])
+            ->assertOk()->assertJsonPath('data.client_id', $client->id);
+        $clientId = $response->json('data.client_id');
+
+        $this->withToken($token)->postJson("/api/v1/clientes/{$clientId}/notas", ['note' => 'COS revisado por n8n.'])
+            ->assertCreated()->assertJsonPath('data.client_id', $client->id);
+
+        $this->assertDatabaseHas('client_notes', [
+            'client_id' => $client->id, 'user_id' => $actor->id, 'note' => 'COS revisado por n8n.',
+        ]);
     }
 
     public function test_every_call_refreshes_external_data_local_deals_and_cos_despite_fresh_caches(): void
@@ -280,6 +301,7 @@ class ClientCosRefreshApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('meta.matched_by', 'passport')
             ->assertJsonPath('data.cos.0.certificadoDescargado', 1)
+            ->assertJsonPath('data.client_id', $client->id)
             ->assertJsonPath('data.negocios_count', 1)
             ->assertJsonPath('data.monday.board', 'ANALISIS');
 
@@ -306,6 +328,7 @@ class ClientCosRefreshApiTest extends TestCase
         $this->withToken($token)->postJson($this->url($client))
             ->assertStatus(502)
             ->assertJsonPath('error', 'cos_refresh_failed')
+            ->assertJsonPath('data.client_id', $client->id)
             ->assertJsonMissing(['meta' => ['forced_refresh' => true]]);
 
         $this->assertSame($previousCos, $client->fresh()->arraycos);

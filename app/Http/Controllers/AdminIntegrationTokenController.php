@@ -16,6 +16,7 @@ class AdminIntegrationTokenController extends Controller
         'create' => 'Crear',
         'update' => 'Actualizar',
         'cos:refresh' => 'Actualizar COS sin caché',
+        'client-notes:create' => 'Crear notas de clientes',
         'delete' => 'Eliminar',
     ];
 

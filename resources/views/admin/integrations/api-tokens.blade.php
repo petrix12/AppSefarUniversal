@@ -60,6 +60,8 @@
                                 Para actualizar un COS siempre desde sus fuentes, usa el permiso
                                 <code>cos:refresh</code> y <code>POST /api/v1/clientes/cos/refresh</code>,
                                 enviando <code>email</code> y/o <code>passport</code>.
+                                Para añadir notas al cliente, usa <code>client-notes:create</code> y
+                                <code>POST /api/v1/clientes/{id}/notas</code>.
                             </small>
                         </div>
                     </div>

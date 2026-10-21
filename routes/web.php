@@ -85,6 +85,7 @@ use App\Http\Controllers\UserSyncController;
 use App\Http\Controllers\SupportTicketController;
 use App\Http\Controllers\InternalTaskWorkflowController;
 use App\Http\Controllers\ClientChatController;
+use App\Http\Controllers\ClientNoteController;
 use App\Http\Controllers\ClientNotificationController;
 use App\Http\Controllers\ExternalClientImportController;
 use App\Http\Controllers\TeamleaderCronController;
@@ -557,6 +558,12 @@ Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
             ->middleware('can:crud.users.index');
     Route::get('users/{user}/internal-chat', [ClientChatController::class, 'messages'])
             ->name('users.internal-chat.index')
+            ->middleware('can:crud.users.index');
+    Route::get('users/{user}/notes', [ClientNoteController::class, 'listing'])
+            ->name('users.notes.index')
+            ->middleware('can:crud.users.index');
+    Route::post('users/{user}/notes', [ClientNoteController::class, 'store'])
+            ->name('users.notes.store')
             ->middleware('can:crud.users.index');
     Route::get('users/{user}/internal-chat/mentions', [ClientChatController::class, 'mentionableUsers'])
             ->name('users.internal-chat.mentions')

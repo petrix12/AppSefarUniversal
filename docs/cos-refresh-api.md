@@ -65,6 +65,7 @@ curl --request POST 'https://app.sefaruniversal.com/api/v1/clientes/cos/refresh'
 
 Cuando se actualiza el COS, la respuesta incluye:
 
+- `data.client_id`: ID numérico del cliente para crear notas u otras operaciones; se conserva también en `data.client.id`.
 - `data.client`: identificación del cliente y sus vínculos con las integraciones.
 - `data.cos`, `data.cosready` y `data.arraycos_expire`: el resultado recién guardado.
 - `data.negocios_count` y `data.monday`: negocios locales y resultado de Monday.
@@ -95,6 +96,8 @@ Los límites de peticiones y las reglas de asociación automática existentes si
 | `502` | No se pudo completar el refresco; `error` es `cos_refresh_failed`. Consultar el log del servidor y reintentar. |
 
 Ante un fallo del refresco, no se reemplaza ni se renueva la fecha del COS anterior. Las sincronizaciones que se hayan completado antes del fallo pueden haber actualizado contactos, negocios o datos Monday: no hay una transacción distribuida entre las fuentes. Ajustar el timeout del consumidor/proxy para esperar las consultas externas.
+
+Cuando el cliente se identificó, un fallo de refresco también incluye `data.client_id`. Si no hay coincidencias, `data` sigue siendo `null`. El [módulo y endpoint de notas](client-notes-api.md) permite usar ese ID para añadir una nota al cliente.
 
 ## Verificación
 
