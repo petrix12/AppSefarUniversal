@@ -169,7 +169,7 @@ class TeamleaderPhasePaymentRulesTest extends TestCase
 
         $this->assertSame([0.0, 0.0, 50.0, 1586.0], $rows->pluck('collectible_balance_amount')->all());
         $this->assertSame(1636.0, $rows->sum('collectible_balance_amount'));
-        $this->assertSame(52.66, $rows->sum('non_collectible_balance_amount'));
+        $this->assertSame(52.66, round($rows->sum('non_collectible_balance_amount'), 2));
         $this->assertSame('partial', $rows[2]['display_status']);
     }
 

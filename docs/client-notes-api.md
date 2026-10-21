@@ -60,6 +60,27 @@ Ejemplo reducido del refresco exitoso:
 }
 ```
 
+## Configurar el flujo en n8n
+
+Una respuesta `cos_refresh_failed` viene del endpoint `/cos/refresh`, no del endpoint `/notas`. Si n8n se detiene en el `502` del COS, el siguiente nodo no ejecuta la petición para crear la nota y no habrá respuesta de ese nodo.
+
+Para guardar la nota aunque el refresco del COS haya fallado, manteniendo visible el error de sincronización:
+
+1. En el nodo **HTTP Request del COS**, abrir **Options → Response**, activar **Never Error** y seleccionar **Response Format: JSON**. Mantener desactivado **Include Response Headers and Status** para recibir el cuerpo directamente en `$json`. Estas opciones están descritas en la [documentación oficial de HTTP Request de n8n](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.httprequest/#response).
+2. Añadir una condición **IF** que compruebe que `data.client_id` existe. Si no existe, terminar esa rama sin crear notas.
+3. En la rama con cliente identificado, usar otro nodo **HTTP Request**, método **POST**, con esta URL en modo **Expression**:
+
+   ```text
+   {{ 'https://app.sefaruniversal.com/api/v1/clientes/' + $json.data.client_id + '/notas' }}
+   ```
+
+4. Enviar `Authorization: Bearer <TOKEN>`, `Accept: application/json` y un body JSON con el campo `note`. El token necesita `client-notes:create`, además de `cos:refresh` para la primera llamada.
+5. Comprobar que el nodo de notas devuelve `201` y `data.id`. Conservar el resultado del COS para distinguir un refresco exitoso de uno pendiente.
+
+Si se activa **Include Response Headers and Status**, n8n devuelve el cuerpo dentro de `body`: usar `body.data.client_id` en la condición y `$json.body.data.client_id` en la URL. Activar **Never Error** permite manejar el `502`; la sincronización sigue habiendo fallado y la nota se guarda de forma independiente.
+
+Para aislar un problema, ejecutar solo el nodo de notas con un ID de cliente conocido y el ejemplo cURL anterior. El endpoint de notas no consulta HubSpot, Teamleader ni Monday.
+
 ## Errores
 
 | HTTP | Significado |

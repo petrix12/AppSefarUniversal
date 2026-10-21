@@ -241,6 +241,32 @@ class ClientCosRefreshApiTest extends TestCase
         ]);
     }
 
+    public function test_a_note_can_be_saved_using_the_client_id_returned_after_a_cos_refresh_failure(): void
+    {
+        $client = $this->linkedClient();
+        $previousCos = $client->arraycos;
+        $previousExpiry = $client->arraycos_expire;
+        $actor = $this->internalUser();
+        $token = $actor->createToken('n8n', ['cos:refresh', 'client-notes:create'])->plainTextToken;
+        $this->mock(ClientCosSnapshotService::class, fn ($mock) => $mock
+            ->shouldReceive('get')->once()->andThrow(new \RuntimeException('Upstream unavailable')));
+
+        $response = $this->withToken($token)->postJson('/api/v1/clientes/cos/refresh', ['email' => $client->email])
+            ->assertStatus(502)
+            ->assertJsonPath('error', 'cos_refresh_failed')
+            ->assertJsonPath('data.client_id', $client->id);
+        $clientId = $response->json('data.client_id');
+
+        $this->withToken($token)->postJson("/api/v1/clientes/{$clientId}/notas", ['note' => 'Seguimiento pendiente de sincronización.'])
+            ->assertCreated()->assertJsonPath('data.client_id', $client->id);
+
+        $this->assertSame($previousCos, $client->fresh()->arraycos);
+        $this->assertTrue($previousExpiry->equalTo($client->fresh()->arraycos_expire));
+        $this->assertDatabaseHas('client_notes', [
+            'client_id' => $client->id, 'user_id' => $actor->id, 'note' => 'Seguimiento pendiente de sincronización.',
+        ]);
+    }
+
     public function test_every_call_refreshes_external_data_local_deals_and_cos_despite_fresh_caches(): void
     {
         $client = $this->linkedClient();
