@@ -13,17 +13,23 @@
             <div x-data="{photoName: null, photoPreview: null}" class="col-span-6 sm:col-span-4">
                 <!-- Profile Photo File Input -->
                 <input
+                    id="photo"
                     type="file"
+                    accept="image/jpeg,image/png"
                     class="hidden"
                     wire:model="photo"
                     x-ref="photo"
                     x-on:change="
-                        photoName = $refs.photo.files[0].name;
+                        const photo = $refs.photo.files[0];
+                        if (! photo) {
+                            return;
+                        }
+                        photoName = photo.name;
                         const reader = new FileReader();
                         reader.onload = (e) => {
                             photoPreview = e.target.result;
                         };
-                        reader.readAsDataURL($refs.photo.files[0]);
+                        reader.readAsDataURL(photo);
                     "
                 />
 

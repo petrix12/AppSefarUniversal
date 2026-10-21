@@ -7,7 +7,6 @@
 @stop
 
 @section('content')
-<x-app-layout>
     <div>
         <div class="max-w-7xl mx-auto py-10 sm:px-6 lg:px-8">
             @if (Laravel\Fortify\Features::canUpdateProfileInformation())
@@ -45,13 +44,14 @@
             @endif
         </div>
     </div>
-</x-app-layout>
 @stop
 
 @section('css')
-    <link rel="stylesheet" href="/css/admin_custom.css">
+    <link rel="stylesheet" href="{{ asset('/css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}">
+    @livewireStyles
 @stop
 
 @section('js')
-
+    {{-- Livewire 3 supplies Alpine; layouts.app loads a separate Alpine runtime. --}}
+    @livewireScripts
 @stop

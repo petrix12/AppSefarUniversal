@@ -250,7 +250,31 @@
                             <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
                                 <span class="ctvSefar block text-indigo-600">{{$user->nombres}} {{$user->apellidos}}</span>
                             </h2>
-                            <div class="mt-8 flex lg:mt-0 lg:flex-shrink-0">
+                            <div class="mt-8 flex flex-wrap items-center gap-2 lg:mt-0 lg:flex-shrink-0">
+                                @php
+                                    $teamleaderContactId = filled($user->tl_id)
+                                        ? $user->tl_id
+                                        : data_get($teamleaderMigration ?? [], 'contact.id');
+                                    $externalProfiles = [
+                                        'HubSpot' => filled($user->hs_id)
+                                            ? 'https://app.hubspot.com/contacts/20053496/record/0-1/' . rawurlencode(trim((string) $user->hs_id))
+                                            : null,
+                                        'Teamleader' => filled($teamleaderContactId)
+                                            ? 'https://focus.teamleader.eu/contacts/' . rawurlencode(trim((string) $teamleaderContactId))
+                                            : null,
+                                    ];
+                                @endphp
+                                @foreach($externalProfiles as $platform => $profileUrl)
+                                    @if($profileUrl)
+                                        <a href="{{ $profileUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary">
+                                            <i class="fas fa-external-link-alt mr-1" aria-hidden="true"></i> Ver en {{ $platform }}
+                                        </a>
+                                    @else
+                                        <button type="button" class="btn btn-outline-secondary" disabled title="Sin contacto vinculado en {{ $platform }}">
+                                            <i class="fas fa-external-link-alt mr-1" aria-hidden="true"></i> Ver en {{ $platform }}
+                                        </button>
+                                    @endif
+                                @endforeach
                                 <div class="inline-flex rounded-md shadow">
                                     <a href="{{ route('crud.users.index') }}" class="cfrSefar inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
                                         Volver a {{ __('Users list') }}
