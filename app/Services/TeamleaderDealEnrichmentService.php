@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Negocio;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
@@ -60,7 +61,35 @@ class TeamleaderDealEnrichmentService
         'servicio_solicitado' => 'fcd48891-20f6-049a-a05f-f78a6f951b4d',
     ];
 
-    public function sync(Negocio $deal, array $teamleaderProject, ?array $hubspotDeal = null): array
+    /** Refresh information for existing links without writing to either CRM. */
+    public function refreshLinkedDeals(User $user, array $hubspotDeals, array $teamleaderProjects): void
+    {
+        $hubspotById = collect($hubspotDeals)->keyBy('id');
+        $projectsById = collect($teamleaderProjects)->keyBy('id');
+        $deals = Negocio::where('user_id', $user->id)
+            ->whereIn('hubspot_id', $hubspotById->keys())
+            ->whereIn('teamleader_id', $projectsById->keys())
+            ->get();
+
+        foreach ($deals as $deal) {
+            try {
+                $this->sync(
+                    $deal,
+                    $projectsById->get($deal->teamleader_id),
+                    $hubspotById->get($deal->hubspot_id),
+                    writeToHubspot: false,
+                );
+            } catch (\Throwable $exception) {
+                Log::warning('COS: no se pudo actualizar la información del trato asociado', [
+                    'user_id' => $user->id,
+                    'negocio_id' => $deal->id,
+                    'error' => $exception->getMessage(),
+                ]);
+            }
+        }
+    }
+
+    public function sync(Negocio $deal, array $teamleaderProject, ?array $hubspotDeal = null, bool $writeToHubspot = true): array
     {
         $hubspotId = $deal->hubspot_id;
         $teamleaderFields = collect($teamleaderProject['custom_fields'] ?? []);
@@ -103,7 +132,7 @@ class TeamleaderDealEnrichmentService
             }
         }
 
-        if (filled($hubspotId) && $updates !== []) {
+        if ($writeToHubspot && filled($hubspotId) && $updates !== []) {
             app(HubspotService::class)->updateDeals($hubspotId, $updates);
         }
 

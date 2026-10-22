@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Negocio;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
@@ -12,72 +13,103 @@ class HubspotDealLocalSyncService
     public function sync(User $user, array $deals): array
     {
         $columns = Schema::getColumnListing((new Negocio)->getTable());
-        $excludedColumns = ['id', 'created_at', 'updated_at', 'hubspot_id', 'teamleader_id', 'user_id'];
+        $excludedColumns = [
+            'id',
+            'created_at',
+            'updated_at',
+            'hubspot_id',
+            'teamleader_id',
+            'teamleader_comparisons',
+            'teamleader_match_confidence',
+            'teamleader_match_reason',
+            'teamleader_matched_at',
+            'user_id',
+        ];
         $fillableColumns = array_diff($columns, $excludedColumns);
 
-        $hubspotIds = array_values(array_filter(array_column($deals, 'id')));
-
-        $existingDeals = Negocio::where('user_id', $user->id)
-            ->whereIn('hubspot_id', $hubspotIds)
-            ->get()
-            ->keyBy('hubspot_id');
-
-        $newDeals = [];
-        $dealsToUpdate = [];
-
+        $dealsById = [];
         foreach ($deals as $deal) {
-            if (empty($deal['id'])) {
+            $id = $deal['id'] ?? null;
+            if (! is_scalar($id) || trim((string) $id) === '') {
                 continue;
             }
 
-            $data = $this->processDealData($deal, $fillableColumns);
+            // Association pages can repeat a deal. Its external ID, not its
+            // title, identifies the local record across every refresh.
+            $id = trim((string) $id);
+            $dealsById[$id] = $deal;
+        }
 
-            if ($existingDeals->has($deal['id'])) {
-                $this->queueUpdateWhenChanged($existingDeals->get($deal['id']), $data, $dealsToUpdate);
-                continue;
+        $result = DB::transaction(function () use ($user, $deals, $dealsById, $fillableColumns): array {
+            // All local deal syncs share this lock, including the legacy job.
+            // Serialize the lookup + insert when refreshes overlap for a user.
+            User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+
+            $existingDeals = Negocio::whereIn('hubspot_id', array_keys($dealsById))
+                ->lockForUpdate()
+                ->get()
+                ->groupBy('hubspot_id');
+
+            $inserted = 0;
+            $dealsToUpdate = [];
+            foreach ($dealsById as $hubspotId => $deal) {
+                $data = $this->processDealData($deal, $fillableColumns);
+
+                if ($existingDeals->has($hubspotId)) {
+                    $clientDeals = $existingDeals->get($hubspotId)->where('user_id', $user->id);
+                    if ($clientDeals->isEmpty()) {
+                        // A remote deal already owned locally by another
+                        // client requires review, not a copy or reassignment.
+                        Log::warning('COS: trato HubSpot ya registrado para otro solicitante', [
+                            'user_id' => $user->id,
+                            'hubspot_id' => $hubspotId,
+                        ]);
+                        continue;
+                    }
+                    // Preserve every existing association if legacy duplicate
+                    // rows already exist; refresh is not a deduplication tool.
+                    foreach ($clientDeals as $existingDeal) {
+                        $this->queueUpdateWhenChanged($existingDeal, $data, $dealsToUpdate);
+                    }
+                    continue;
+                }
+
+                // Cache a deal that already exists in HubSpot once. This
+                // service never creates deals in either external platform.
+                Negocio::create(array_merge($data, [
+                    'hubspot_id' => (string) $hubspotId,
+                    'user_id' => $user->id,
+                ]));
+                $inserted++;
             }
 
-            $newDeals[] = array_merge([
-                'hubspot_id' => $deal['id'],
-                'user_id' => $user->id,
-            ], $data);
-        }
+            foreach ($dealsToUpdate as $dealUpdate) {
+                Negocio::where('id', $dealUpdate['id'])->update($dealUpdate['data']);
+            }
 
-        if (! empty($newDeals)) {
-            Negocio::insert($newDeals);
-        }
+            // Missing remote records are retained, including their local IDs
+            // and Teamleader links, so their return updates the same rows.
+            $preservedAssociations = Negocio::where('user_id', $user->id)
+                ->whereNotNull('hubspot_id')
+                ->whereNotIn('hubspot_id', array_keys($dealsById))
+                ->whereNotNull('teamleader_id')
+                ->where('teamleader_id', '!=', '')
+                ->count();
 
-        foreach ($dealsToUpdate as $dealUpdate) {
-            Negocio::where('id', $dealUpdate['id'])->update($dealUpdate['data']);
-        }
+            return [
+                'received' => count($deals),
+                'inserted' => $inserted,
+                'updated' => count($dealsToUpdate),
+                'deleted' => 0,
+                'preserved_associations' => $preservedAssociations,
+            ];
+        }, 3);
 
-        // HubSpot is the source of truth for which deals belong in the COS.
-        // The endpoint returns the complete active association list (or throws
-        // on API failure), so remove local HubSpot deals that are no longer
-        // associated with this contact. Keep records without a HubSpot ID and
-        // records belonging to other users untouched.
-        $deleted = Negocio::where('user_id', $user->id)
-            ->whereNotNull('hubspot_id')
-            ->when(
-                ! empty($hubspotIds),
-                fn ($query) => $query->whereNotIn('hubspot_id', $hubspotIds)
-            )
-            ->delete();
-
-        Log::info('HubSpot deals sincronizados localmente para COS/MCP', [
+        Log::info('HubSpot deals sincronizados localmente para COS/MCP', array_merge([
             'user_id' => $user->id,
-            'received' => count($deals),
-            'inserted' => count($newDeals),
-            'updated' => count($dealsToUpdate),
-            'deleted' => $deleted,
-        ]);
+        ], $result));
 
-        return [
-            'received' => count($deals),
-            'inserted' => count($newDeals),
-            'updated' => count($dealsToUpdate),
-            'deleted' => $deleted,
-        ];
+        return $result;
     }
 
     private function processDealData(array $deal, array $fillableColumns): array
@@ -90,10 +122,13 @@ class HubspotDealLocalSyncService
             }
         }
 
-        $data = ['dealname' => $properties['dealname'] ?? null];
+        $data = [];
 
         foreach ($fillableColumns as $column) {
-            $data[$column] = $properties[$column] ?? null;
+            // An omitted property is not a request to erase local data.
+            if (array_key_exists($column, $properties)) {
+                $data[$column] = $properties[$column];
+            }
         }
 
         return $data;

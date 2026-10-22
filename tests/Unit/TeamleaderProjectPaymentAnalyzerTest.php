@@ -135,6 +135,36 @@ class TeamleaderProjectPaymentAnalyzerTest extends TestCase
         $this->assertTrue($analysis['needs_review']);
     }
 
+    public function test_it_uses_the_teamleader_mirror_for_an_unlinked_historic_deal(): void
+    {
+        $paidRaw = $this->analyzer()->resolvePaidRaw(
+            null,
+            '1250€ 20/06/2022',
+            null,
+        );
+
+        $this->assertSame('1250€ 20/06/2022', $paidRaw);
+        $this->assertSame(1250.0, $this->analyzer()->parseMoneyText($paidRaw)['total']);
+    }
+
+    public function test_live_or_administrative_payments_take_priority_over_the_mirror(): void
+    {
+        $analyzer = $this->analyzer();
+
+        $this->assertSame('1200 EUR', $analyzer->resolvePaidRaw(
+            '1000 EUR',
+            '900 EUR',
+            null,
+            '1200 EUR',
+        ));
+        $this->assertSame('1250', $analyzer->resolvePaidRaw(
+            '1000 EUR',
+            '900 EUR',
+            '1250',
+            '1200 EUR',
+        ));
+    }
+
     private function analyzer(): TeamleaderProjectPaymentAnalyzer
     {
         return new TeamleaderProjectPaymentAnalyzer();
