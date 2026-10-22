@@ -57,6 +57,12 @@
       <h5 class="mb-3">Datos básicos</h5>
 
       <div class="row">
+        <div class="col-md-12">
+          <label>Nombre visible (name)</label>
+          <input class="form-control" name="name" value="{{ old('name', $user->name) }}" required>
+          @error('name') <small class="text-danger">{{ $message }}</small> @enderror
+        </div>
+
         <div class="col-md-6">
           <label>Nombres</label>
           <input class="form-control" name="nombres" value="{{ old('nombres', $user->nombres) }}" required>

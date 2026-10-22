@@ -3430,6 +3430,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
         $this->authorizeAdminOnly();
 
         $request->validate([
+            'name'      => 'required|string|max:255',
             'nombres'   => 'required|string|max:255',
             'apellidos' => 'required|string|max:255',
             'email'     => 'required|email|unique:users,email,' . $user->id,
@@ -3451,6 +3452,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
         ]);
 
         // ✅ Datos básicos
+        $user->name      = $request->name;
         $user->nombres   = $request->nombres;
         $user->apellidos = $request->apellidos;
         $user->email     = $request->email;
