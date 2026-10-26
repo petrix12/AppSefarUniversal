@@ -49,7 +49,8 @@ class Controller extends BaseController
         return ClientOnboardingFlow::destination(
             (int) $user->pay,
             (bool) $user->contrato,
-            $this->clientHasPendingInitialPayment($user)
+            $this->clientHasPendingInitialPayment($user),
+            filled($user->servicio)
         );
     }
 
