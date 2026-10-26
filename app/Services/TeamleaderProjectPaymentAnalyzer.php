@@ -219,6 +219,37 @@ class TeamleaderProjectPaymentAnalyzer
     }
 
     /**
+     * Choose the confirmed payment text rendered by the internal summary.
+     * Numeric Administration totals and a live linked Teamleader project have
+     * priority. The persisted Teamleader mirror is the fallback for historic
+     * HubSpot deals which have not yet been associated with a project ID.
+     */
+    public function resolvePaidRaw(
+        ?string $hubspotPaid,
+        ?string $teamleaderMirror,
+        ?string $adminPaidAmount,
+        ?string $linkedTeamleaderPaid = null
+    ): string {
+        $adminPaidAmount = trim((string) $adminPaidAmount);
+        if ($adminPaidAmount !== ''
+            && (float) ($this->parseMoneyText($adminPaidAmount)['total'] ?? 0) > 0) {
+            return $adminPaidAmount;
+        }
+
+        $linkedTeamleaderPaid = trim((string) $linkedTeamleaderPaid);
+        if ($linkedTeamleaderPaid !== '') {
+            return $linkedTeamleaderPaid;
+        }
+
+        $hubspotPaid = trim((string) $hubspotPaid);
+        if ($hubspotPaid !== '') {
+            return $hubspotPaid;
+        }
+
+        return trim((string) $teamleaderMirror);
+    }
+
+    /**
      * In Teamleader, values such as "2500€/2" mean a 2-installment plan
      * for a EUR 2500 phase. The suffix is not a second monetary amount and
      * must never turn the phase into EUR 2502 or divide its agreed total.

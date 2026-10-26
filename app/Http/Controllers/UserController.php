@@ -1809,9 +1809,9 @@ class UserController extends Controller
         ->values();
     $hubspotPaymentAnalyzer = app(TeamleaderProjectPaymentAnalyzer::class);
     $hubspotPaymentFields = [
-        1 => ['label' => 'Fase 1', 'preestab' => 'fase_1_preestab', 'paid' => 'fase_1_pagado', 'paid_amount' => 'monto_fase_1_pagado'],
-        2 => ['label' => 'Fase 2', 'preestab' => 'fase_2_preestab', 'paid' => 'fase_2_pagado', 'paid_amount' => 'monto_fase_2_pagado'],
-        3 => ['label' => 'Fase 3', 'preestab' => 'fase_3_preestab', 'paid' => 'fase_3_pagado', 'paid_amount' => 'monto_fase_3_pagado'],
+        1 => ['label' => 'Fase 1', 'preestab' => 'fase_1_preestab', 'paid' => 'fase_1_pagado', 'teamleader_paid' => 'fase_1_pagado__teamleader_', 'paid_amount' => 'monto_fase_1_pagado'],
+        2 => ['label' => 'Fase 2', 'preestab' => 'fase_2_preestab', 'paid' => 'fase_2_pagado', 'teamleader_paid' => 'fase_2_pagado__teamleader_', 'paid_amount' => 'monto_fase_2_pagado'],
+        3 => ['label' => 'Fase 3', 'preestab' => 'fase_3_preestab', 'paid' => 'fase_3_pagado', 'teamleader_paid' => 'fase_3_pagado__teamleader_', 'paid_amount' => 'monto_fase_3_pagado'],
         98 => ['label' => 'Carta de Naturaleza', 'preestab' => 'carta_nat_preestab', 'paid' => 'carta_nat_pagado'],
         99 => ['label' => 'CIL / FCJE', 'preestab' => 'cil___fcje_preestab', 'paid' => 'cil___fcje_pagado'],
     ];
@@ -1837,7 +1837,11 @@ class UserController extends Controller
             $linkedTeamleaderProject = $teamleaderPaymentProjectsById->get(trim((string) ($deal->teamleader_id ?? '')));
             foreach ($hubspotPaymentFields as $phase => $fields) {
                 $preestabRaw = trim((string) $deal->{$fields['preestab']});
-                $paidRaw = trim((string) $deal->{$fields['paid']});
+                $hubspotPaidRaw = trim((string) $deal->{$fields['paid']});
+                $teamleaderPaidField = $fields['teamleader_paid'] ?? null;
+                $teamleaderPaidRaw = $teamleaderPaidField
+                    ? trim((string) $deal->{$teamleaderPaidField})
+                    : '';
                 $paidAmountField = $fields['paid_amount'] ?? null;
                 $adminPaidAmountRaw = $paidAmountField ? trim((string) $deal->{$paidAmountField}) : '';
                 $teamleaderPhase = $linkedTeamleaderProject['phases'][$phase] ?? null;
@@ -1848,14 +1852,15 @@ class UserController extends Controller
                     $preestabRaw = $teamleaderPreestabRaw !== '' ? $teamleaderPreestabRaw : $preestabRaw;
                 }
 
-                if ($adminPaidAmountRaw !== ''
-                    && (float) ($hubspotPaymentAnalyzer->parseMoneyText($adminPaidAmountRaw)['total'] ?? 0) > 0) {
-                    // These numeric fields are the amounts Administration uses
-                    // to reconcile payments; phase labels and TL mirrors are fallbacks.
-                    $paidRaw = $adminPaidAmountRaw;
-                } elseif ($teamleaderPhase && filled($teamleaderPhase['paid_raw'] ?? null)) {
-                    $paidRaw = trim((string) $teamleaderPhase['paid_raw']);
-                }
+                // Historic/unlinked deals can contain a confirmed Teamleader
+                // mirror even when no project ID is associated. Use it as the
+                // final fallback so the summary does not recreate a paid debt.
+                $paidRaw = $hubspotPaymentAnalyzer->resolvePaidRaw(
+                    $hubspotPaidRaw,
+                    $teamleaderPaidRaw,
+                    $adminPaidAmountRaw,
+                    $teamleaderPhase['paid_raw'] ?? null,
+                );
 
                 if ($preestabRaw === '' && $paidRaw === '') {
                     continue;
@@ -3430,6 +3435,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
         $this->authorizeAdminOnly();
 
         $request->validate([
+            'name'      => 'required|string|max:255',
             'nombres'   => 'required|string|max:255',
             'apellidos' => 'required|string|max:255',
             'email'     => 'required|email|unique:users,email,' . $user->id,
@@ -3451,6 +3457,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
         ]);
 
         // ✅ Datos básicos
+        $user->name      = $request->name;
         $user->nombres   = $request->nombres;
         $user->apellidos = $request->apellidos;
         $user->email     = $request->email;

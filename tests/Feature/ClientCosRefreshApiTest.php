@@ -275,12 +275,12 @@ class ClientCosRefreshApiTest extends TestCase
         $token = $this->internalUser()->createToken('Refresh', ['cos:refresh'])->plainTextToken;
         $other = User::factory()->create();
         Negocio::create(['user_id' => $client->id, 'hubspot_id' => '10', 'dealname' => 'Old']);
-        Negocio::create(['user_id' => $client->id, 'hubspot_id' => '99', 'dealname' => 'Removed']);
+        Negocio::create(['user_id' => $client->id, 'hubspot_id' => '99', 'dealname' => 'Not returned']);
         Negocio::create(['user_id' => $other->id, 'hubspot_id' => '77', 'dealname' => 'Other client']);
         $this->mock(CosHelperService::class, fn ($mock) => $mock->shouldReceive('get')
             ->with(false)->twice()->andReturn(array_cos()));
         $this->mock(AutomaticTeamleaderDealAssociationService::class, fn ($mock) => $mock
-            ->shouldReceive('associate')->twice()->andReturn(['linked' => 0]));
+            ->shouldNotReceive('associate'));
 
         $this->mock(HubspotService::class, function ($mock) use ($client) {
             $mock->shouldReceive('executeConcurrent')->twice()->andReturnUsing(
@@ -330,14 +330,14 @@ class ClientCosRefreshApiTest extends TestCase
             ->assertJsonPath('meta.matched_by', 'passport')
             ->assertJsonPath('data.cos.0.certificadoDescargado', 1)
             ->assertJsonPath('data.client_id', $client->id)
-            ->assertJsonPath('data.negocios_count', 1)
+            ->assertJsonPath('data.negocios_count', 2)
             ->assertJsonPath('data.monday.board', 'ANALISIS');
 
         $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
         $this->assertSame($response->json('data.cos'), $client->fresh()->arraycos);
         $this->assertTrue($client->fresh()->arraycos_expire->isFuture());
         $this->assertDatabaseHas('negocios', ['user_id' => $client->id, 'hubspot_id' => '10', 'dealname' => 'Updated']);
-        $this->assertDatabaseMissing('negocios', ['user_id' => $client->id, 'hubspot_id' => '99']);
+        $this->assertDatabaseHas('negocios', ['user_id' => $client->id, 'hubspot_id' => '99']);
         $this->assertDatabaseHas('negocios', ['user_id' => $other->id, 'hubspot_id' => '77']);
         $this->assertSame($item, json_decode(MondayData::where('user_id', $client->id)->value('data'), true));
         Http::assertNothingSent();
@@ -497,7 +497,7 @@ class ClientCosRefreshApiTest extends TestCase
                 'teamleader' => ['contact' => ['id' => $client->tl_id], 'deals' => []],
             ]));
         $this->mock(AutomaticTeamleaderDealAssociationService::class, fn ($mock) => $mock
-            ->shouldReceive('associate')->andReturn(['linked' => 0]));
+            ->shouldNotReceive('associate'));
     }
 
     private function expectForcedRefresh(User $client): void

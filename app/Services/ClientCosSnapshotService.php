@@ -115,7 +115,7 @@ class ClientCosSnapshotService
             'cache' => ['hit' => false, 'ttl_days' => $this->cacheTtlDays()],
             'hubspot' => ['attempted' => false, 'contact' => false, 'deals' => 0, 'linked_contact' => false],
             'teamleader' => ['attempted' => false, 'contact' => false, 'deals' => 0],
-            'local_deals' => ['received' => 0, 'inserted' => 0, 'updated' => 0],
+            'local_deals' => ['received' => 0, 'inserted' => 0, 'updated' => 0, 'deleted' => 0, 'preserved_associations' => 0],
             'user_fields_updated' => [],
         ];
 
@@ -225,7 +225,7 @@ class ClientCosSnapshotService
                 ],
                 'hubspot' => ['attempted' => false, 'contact' => false, 'deals' => 0, 'skipped' => 'cache_fresh'],
                 'teamleader' => ['attempted' => false, 'contact' => false, 'deals' => 0, 'skipped' => 'cache_fresh'],
-                'local_deals' => ['received' => 0, 'inserted' => 0, 'updated' => 0],
+                'local_deals' => ['received' => 0, 'inserted' => 0, 'updated' => 0, 'deleted' => 0, 'preserved_associations' => 0],
                 'user_fields_updated' => [],
             ],
             'monday' => [
@@ -324,20 +324,15 @@ class ClientCosSnapshotService
         if (is_array($hubspot['deals'] ?? null)) {
             $sync['local_deals'] = $this->dealLocalSync->sync($user->fresh() ?? $user, $hubspot['deals']);
 
-            try {
-                $sync['automatic_associations'] = app(AutomaticTeamleaderDealAssociationService::class)->associate(
-                    $user->fresh() ?? $user,
-                    $hubspot['deals'],
-                    is_array($teamleader['deals'] ?? null) ? $teamleader['deals'] : null,
-                );
-            } catch (\Throwable $exception) {
-                // OpenRouter must never make the COS refresh fail.
-                Log::warning('COS: no se pudieron sugerir asociaciones automáticas', [
-                    'user_id' => $user->id,
-                    'error' => $exception->getMessage(),
-                ]);
-                $sync['automatic_associations'] = ['linked' => 0, 'error' => true];
-            }
+            // Refresh only reads the external platforms and updates local
+            // information. Association changes belong to the explicit linking
+            // action, never to a COS refresh or its enrichment side effects.
+            $sync['automatic_associations'] = ['linked' => 0, 'skipped' => 'refresh_only'];
+            app(TeamleaderDealEnrichmentService::class)->refreshLinkedDeals(
+                $user,
+                $hubspot['deals'],
+                $teamleader['deals'] ?? [],
+            );
         }
 
         return $sync;
