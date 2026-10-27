@@ -61,7 +61,11 @@ return [
         'mirror_enabled' => env('MONDAY_MIRROR_ENABLED', false),
         'mirror_page_size' => env('MONDAY_MIRROR_PAGE_SIZE', 100),
         'mirror_reads' => env('MONDAY_MIRROR_READS', true),
-        'webhook_secret' => env('MONDAY_WEBHOOK_SECRET'),
+        'webhook_secret' => env('MONDAY_WEBHOOK_SECRET') ?: (
+            env('APP_KEY')
+                ? hash_hmac('sha256', 'monday-webhook', (string) env('APP_KEY'))
+                : null
+        ),
     ],
 
     'stripe' => [

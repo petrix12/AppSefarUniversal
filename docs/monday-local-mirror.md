@@ -53,6 +53,7 @@ MONDAY_API_VERSION=2026-10
 MONDAY_MIRROR_ENABLED=true
 MONDAY_MIRROR_READS=true
 MONDAY_MIRROR_PAGE_SIZE=100
+# Opcional. Si se omite, la aplicación deriva un token estable desde APP_KEY.
 MONDAY_WEBHOOK_SECRET=una-cadena-larga-aleatoria
 MONDAY_QUEUE_CONNECTION=database
 ```
@@ -84,10 +85,10 @@ El servidor debe seguir ejecutando `php artisan schedule:run` cada minuto, igual
 El endpoint receptor es:
 
 ```text
-POST /api/webhooks/monday?token=MONDAY_WEBHOOK_SECRET
+POST /api/webhooks/monday?token=TOKEN_DEL_WEBHOOK
 ```
 
-`APP_URL` debe ser una URL HTTPS pública. Para crear las suscripciones en todos los tableros locales activos:
+`APP_URL` debe ser una URL HTTPS pública. `MONDAY_WEBHOOK_SECRET` permite rotar o compartir un valor explícito; si no se define, la aplicación deriva mediante HMAC un token exclusivo para Monday desde `APP_KEY`, sin exponer esa clave. Para crear las suscripciones en todos los tableros locales activos:
 
 ```bash
 php artisan monday:webhooks
