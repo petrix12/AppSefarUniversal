@@ -77,4 +77,25 @@ class ResetMondayMirrorCommandTest extends TestCase
 
         $this->assertDatabaseHas('monday_boards', ['id' => '10']);
     }
+
+    public function test_it_requires_an_explicit_override_for_a_recently_reserved_job(): void
+    {
+        config()->set('services.monday.mirror_enabled', false);
+        MondayBoard::create(['id' => '10', 'name' => 'Ventas', 'state' => 'active']);
+        SyncMondayBoardJob::dispatch('10')->onConnection('monday')->onQueue('monday-sync');
+        DB::table('jobs')->update([
+            'reserved_at' => now()->timestamp,
+            'attempts' => 1,
+        ]);
+
+        $this->artisan('monday:reset', ['--force' => true])->assertFailed();
+        $this->assertDatabaseHas('monday_boards', ['id' => '10']);
+
+        $this->artisan('monday:reset', [
+            '--force' => true,
+            '--release-reserved' => true,
+        ])->assertSuccessful();
+        $this->assertDatabaseCount('monday_boards', 0);
+        $this->assertDatabaseCount('jobs', 0);
+    }
 }

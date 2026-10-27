@@ -16,7 +16,8 @@ use RuntimeException;
 class ResetMondayMirrorCommand extends Command
 {
     protected $signature = 'monday:reset
-                            {--force : Confirmar el borrado sin interacción}';
+                            {--force : Confirmar el borrado sin interacción}
+                            {--release-reserved : Liberar trabajos reservados después de confirmar que no queda ningún worker activo}';
 
     protected $description = 'Vacía únicamente la réplica local de Monday y su cola para comenzar una importación desde cero.';
 
@@ -93,9 +94,16 @@ class ResetMondayMirrorCommand extends Command
             $table = (string) ($queueConfig['table'] ?? 'jobs');
             if (Schema::connection($connectionName)->hasTable($table)) {
                 $query = DB::connection($connectionName)->table($table)->where('queue', $queueName);
-                if ((clone $query)->whereNotNull('reserved_at')->exists()) {
+                $retryAfter = max(1, (int) ($queueConfig['retry_after'] ?? 90));
+                $activeReservation = (clone $query)
+                    ->whereNotNull('reserved_at')
+                    ->where('reserved_at', '>', now()->timestamp - $retryAfter)
+                    ->orderByDesc('reserved_at')
+                    ->first(['id', 'reserved_at']);
+                if ($activeReservation !== null && ! $this->option('release-reserved')) {
+                    $remaining = max(1, $retryAfter - (now()->timestamp - (int) $activeReservation->reserved_at));
                     throw new RuntimeException(
-                        'Hay un trabajo monday-sync reservado por un worker. Detén el worker y espera a que libere el trabajo antes de reiniciar.'
+                        "Hay un trabajo monday-sync reservado recientemente. Si el worker ya está detenido, espera {$remaining} segundos o repite con --release-reserved."
                     );
                 }
                 $jobs = (clone $query)->get(['payload']);
