@@ -44,6 +44,17 @@ class Kernel extends ConsoleKernel
             ->timezone('America/Caracas')
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/cos-refresh-active-clients.log'));
+        $schedule->command('monday:sync --queue')
+            ->everySixHours()
+            ->when(fn () => (bool) config('services.monday.mirror_enabled'))
+            ->withoutOverlapping(30)
+            ->appendOutputTo(storage_path('logs/monday-mirror.log'));
+        $schedule->command('queue:work monday --queue=monday-sync --stop-when-empty --max-time=50 --timeout=1800 --tries=3')
+            ->everyMinute()
+            ->when(fn () => (bool) config('services.monday.mirror_enabled'))
+            ->withoutOverlapping(35)
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/monday-worker.log'));
         $schedule->command('automations:run --limit=100')
             ->everyMinute()
             ->withoutOverlapping();

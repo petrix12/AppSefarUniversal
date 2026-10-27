@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Monday;
 use App\Models\Factura;
 use App\Models\Compras;
 use App\Models\Agcliente;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use App\Models\MondayBoard;
+use App\Models\MondayItemValue;
 
 class MondayController extends Controller
 {
@@ -34,67 +36,38 @@ class MondayController extends Controller
 
         $etiquetadovsefar = "765394861";
 
-        //me traigo todas las tablas de monday
-        $mondayboards_temp = json_decode(json_encode(Monday::customQuery("boards (limit: 1000) { id name }")),true);
-
-        $mondayboards = $mondayboards_temp["boards"];
-
-        $usuario_mdy = [];
-
-        $vartest = 0;
-
-        //proceso la informacion
-
         $stats = [];
         $eventas = [];
 
-        foreach ($analisis as $value) {
-
-            //me traigo toda la informacion de una tabla en especifico
-
-            $mondayboards_temp = json_decode(json_encode(Monday::customQuery('boards (ids: ' . $value . ', limit: 500000)  { id name items { name column_values (ids: ["status"] ) { title text id } } }')),true);
-
-            //proceso la informacion
-
-            foreach ($mondayboards_temp["boards"][0]["items"] as $value) {
-
-                $table = $mondayboards_temp["boards"][0]["name"];
-
-                foreach ($value["column_values"] as $value2) {
-                    if ($value2["id"]=="status") {
-                        if (isset($stats[$mondayboards_temp["boards"][0]["name"]][$value2["text"]])){
-                            $stats[$mondayboards_temp["boards"][0]["name"]][$value2["text"]]++;
-                        } else {
-                            $stats[$mondayboards_temp["boards"][0]["name"]][$value2["text"]] = 1;
-                        }
-                    }
-                }
-            }
-        }
-
-        //Etiquetado Ventas Sefar
-
-        $mondayboards_temp = json_decode(json_encode(Monday::customQuery('boards (ids: ' . $etiquetadovsefar . ')  { id name items { name column_values (ids: ["status"] ) { title text id } } }')),true);
-
-        //proceso la informacion
-
-        foreach ($mondayboards_temp["boards"][0]["items"] as $value) {
-
-            $table = $mondayboards_temp["boards"][0]["name"];
-
-            foreach ($value["column_values"] as $value2) {
-                if ($value2["id"]=="status") {
-                    if (isset($eventas[$mondayboards_temp["boards"][0]["name"]][$value2["text"]])){
-                        $eventas[$mondayboards_temp["boards"][0]["name"]][$value2["text"]]++;
-                    } else {
-                        $eventas[$mondayboards_temp["boards"][0]["name"]][$value2["text"]] = 1;
-                    }
-                }
-            }
-        }
+        $stats = $this->statusCountsForBoards($analisis);
+        $eventas = $this->statusCountsForBoards([$etiquetadovsefar]);
 
         return view('crud.monday.stats', compact('stats', 'eventas'));
 
+    }
+
+    private function statusCountsForBoards(array $boardIds): array
+    {
+        if (! Schema::hasTable('monday_boards') || ! Schema::hasTable('monday_item_values')) {
+            return [];
+        }
+
+        $names = MondayBoard::query()->whereIn('id', $boardIds)->pluck('name', 'id');
+
+        return MondayItemValue::query()
+            ->select(['board_id', 'text', DB::raw('COUNT(*) as total')])
+            ->whereIn('board_id', $boardIds)
+            ->where('monday_column_id', 'status')
+            ->whereNotNull('text')
+            ->whereHas('item')
+            ->groupBy('board_id', 'text')
+            ->get()
+            ->reduce(function (array $result, MondayItemValue $value) use ($names): array {
+                $boardName = (string) ($names[$value->board_id] ?? $value->board_id);
+                $result[$boardName][(string) $value->text] = (int) $value->total;
+
+                return $result;
+            }, []);
     }
 
     public function mondayregistrar()

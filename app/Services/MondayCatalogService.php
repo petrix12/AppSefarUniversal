@@ -2,8 +2,13 @@
 
 namespace App\Services;
 
+use App\Models\MondayBoard;
+use App\Models\MondayColumn;
+use App\Models\MondayGroup;
+use App\Models\MondaySyncRun;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 
 class MondayCatalogService
@@ -14,6 +19,17 @@ class MondayCatalogService
     {
         if ($refresh) {
             Cache::forget('monday.catalog.boards');
+        }
+
+        if ($this->mirrorAvailable()) {
+            return MondayBoard::available()
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->map(fn (MondayBoard $board): array => [
+                    'id' => (string) $board->id,
+                    'name' => (string) $board->name,
+                ])
+                ->all();
         }
 
         return Cache::remember('monday.catalog.boards', now()->addMinutes(10), function () use ($refresh): array {
@@ -40,6 +56,18 @@ class MondayCatalogService
 
     public function groups(string $boardId): array
     {
+        if ($this->mirrorBoardReady($boardId)) {
+            return MondayGroup::query()
+                ->where('board_id', $boardId)
+                ->orderBy('id')
+                ->get(['monday_id', 'title'])
+                ->map(fn (MondayGroup $group): array => [
+                    'id' => (string) $group->monday_id,
+                    'name' => (string) $group->title,
+                ])
+                ->all();
+        }
+
         return Cache::remember("monday.catalog.board.{$boardId}.groups", now()->addMinutes(10), function () use ($boardId): array {
             $data = $this->query(<<<'GRAPHQL'
                 query ($boardId: ID!) {
@@ -70,6 +98,19 @@ class MondayCatalogService
     {
         if ($refresh) {
             Cache::forget("monday.catalog.board.{$boardId}.columns");
+        }
+
+        if ($this->mirrorBoardReady($boardId)) {
+            return MondayColumn::query()
+                ->where('board_id', $boardId)
+                ->orderBy('title')
+                ->get(['monday_id', 'title', 'type'])
+                ->map(fn (MondayColumn $column): array => [
+                    'id' => (string) $column->monday_id,
+                    'name' => (string) $column->title,
+                    'type' => (string) $column->type,
+                ])
+                ->all();
         }
 
         return Cache::remember("monday.catalog.board.{$boardId}.columns", now()->addMinutes(10), function () use ($boardId): array {
@@ -113,6 +154,18 @@ class MondayCatalogService
             Cache::forget($cacheKey);
         }
 
+        if ($this->mirrorAvailable()) {
+            return MondayBoard::available()
+                ->orderBy('name')
+                ->forPage($page, 100)
+                ->get(['id', 'name'])
+                ->map(fn (MondayBoard $board): array => [
+                    'id' => (string) $board->id,
+                    'name' => (string) $board->name,
+                ])
+                ->all();
+        }
+
         return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($page): array {
             $data = $this->query(<<<'GRAPHQL'
                 query ($page: Int!) {
@@ -146,6 +199,7 @@ class MondayCatalogService
         $response = Http::withHeaders([
             'Authorization' => $token,
             'Content-Type' => 'application/json',
+            'API-Version' => (string) config('services.monday.api_version', '2026-10'),
         ])->timeout(20)->post(self::API_URL, [
             'query' => $query,
             'variables' => $variables,
@@ -173,5 +227,24 @@ class MondayCatalogService
         }
 
         return (array) data_get($data, 'data', []);
+    }
+
+    private function mirrorAvailable(): bool
+    {
+        return (bool) config('services.monday.mirror_reads', true)
+            && Schema::hasTable('monday_boards')
+            && Schema::hasTable('monday_sync_runs')
+            && MondaySyncRun::query()->where('scope', 'account')->where('status', 'completed')->exists()
+            && MondayBoard::available()->exists();
+    }
+
+    private function mirrorBoardReady(string $boardId): bool
+    {
+        return (bool) config('services.monday.mirror_reads', true)
+            && Schema::hasTable('monday_boards')
+            && MondayBoard::available()
+                ->whereKey($boardId)
+                ->whereNotNull('last_synced_at')
+                ->exists();
     }
 }

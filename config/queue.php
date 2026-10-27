@@ -30,6 +30,15 @@ return [
 
     'connections' => [
 
+        'monday' => [
+            'driver' => env('MONDAY_QUEUE_CONNECTION', 'database'),
+            'connection' => env('DB_QUEUE_CONNECTION'),
+            'table' => 'jobs',
+            'queue' => 'monday-sync',
+            'retry_after' => 1900,
+            'after_commit' => true,
+        ],
+
         'cos' => [
             'driver' => 'database',
             'connection' => env('DB_QUEUE_CONNECTION'),

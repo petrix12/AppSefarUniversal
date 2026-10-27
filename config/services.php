@@ -55,6 +55,13 @@ return [
 
     'monday' => [
         'token' => env('MONDAY_TOKEN'),
+        'api_version' => env('MONDAY_API_VERSION', '2026-10'),
+        'connect_timeout' => env('MONDAY_CONNECT_TIMEOUT', 10),
+        'timeout' => env('MONDAY_TIMEOUT', 45),
+        'mirror_enabled' => env('MONDAY_MIRROR_ENABLED', false),
+        'mirror_page_size' => env('MONDAY_MIRROR_PAGE_SIZE', 100),
+        'mirror_reads' => env('MONDAY_MIRROR_READS', true),
+        'webhook_secret' => env('MONDAY_WEBHOOK_SECRET'),
     ],
 
     'stripe' => [

@@ -11,6 +11,7 @@ use App\Http\Controllers\WhatsappController;
 use App\Http\Controllers\N8nTaskWebhookController;
 use App\Http\Controllers\MarketingSesWebhookController;
 use App\Http\Controllers\BancaOnlineStripeWebhookController;
+use App\Http\Controllers\MondayWebhookController;
 use App\Http\Controllers\Api\Mcp\ClientController as McpClientController;
 use App\Http\Controllers\Api\ClientCosRefreshController;
 use App\Http\Controllers\Api\ClientNoteController;
@@ -75,6 +76,10 @@ Route::post('/marketing/ses-events', MarketingSesWebhookController::class)
     ->withoutMiddleware('throttle:api');
 
 Route::post('/stripe/banca-online/webhook', BancaOnlineStripeWebhookController::class);
+
+Route::post('/webhooks/monday', MondayWebhookController::class)
+    ->name('api.monday.webhook')
+    ->withoutMiddleware('throttle:api');
 
 Route::get('/whatsapp-requests/pending', [WhatsappController::class, 'pending'])->withoutMiddleware('auth:sanctum');
 Route::post('/whatsapp-requests/{id}/success', [WhatsappController::class, 'success'])->withoutMiddleware('auth:sanctum');

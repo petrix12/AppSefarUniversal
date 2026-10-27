@@ -2,10 +2,14 @@
 
 namespace App\Services;
 
+use App\Models\MondayBoard;
+use App\Models\MondayColumn;
+use App\Models\MondayItem;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 
 class CosMondayLookup
@@ -18,9 +22,15 @@ class CosMondayLookup
             return null;
         }
 
+        $mirrorReady = $this->mirrorReady($ids);
+
         $key = 'cos.monday.lookup.' . hash('sha256', json_encode([$user->id, $passport, $ids]));
         // Wrap null so a successful search with no matches is cached too.
-        $search = function () use ($passport, $ids) {
+        $search = function () use ($passport, $ids, $mirrorReady) {
+            if ($mirrorReady) {
+                return ['item' => $this->findLocally($passport, $ids)];
+            }
+
             $token = config('services.monday.token');
             if (blank($token)) {
                 throw new RuntimeException('Falta configurar MONDAY_TOKEN.');
@@ -40,7 +50,9 @@ class CosMondayLookup
             // Bounded concurrency: never start more than 12 requests at once.
             foreach (array_chunk($fields, 12) as $chunk) {
                 $responses = Http::pool(function (\Illuminate\Http\Client\Pool $pool) use ($chunk, $token) {
-                    return array_map(fn ($field) => $pool->withToken($token)->connectTimeout(5)->timeout(20)
+                    return array_map(fn ($field) => $pool->withToken($token)
+                        ->withHeaders(['API-Version' => (string) config('services.monday.api_version', '2026-10')])
+                        ->connectTimeout(5)->timeout(20)
                         ->post('https://api.monday.com/v2', ['query' => 'query { ' . $field . ' }']), $chunk);
                 });
                 foreach ($responses as $response) {
@@ -89,5 +101,67 @@ class CosMondayLookup
         }
 
         return $item;
+    }
+
+    private function mirrorReady(array $boardIds): bool
+    {
+        if (! (bool) config('services.monday.mirror_reads', true) || ! Schema::hasTable('monday_boards')) {
+            return false;
+        }
+
+        return MondayBoard::available()
+            ->whereIn('id', $boardIds)
+            ->whereNotNull('last_synced_at')
+            ->count() === count(array_unique($boardIds));
+    }
+
+    private function findLocally(string $passport, array $boardIds): ?array
+    {
+        $url = 'https://app.sefaruniversal.com/tree/'.$passport;
+
+        foreach ($boardIds as $boardId) {
+            $item = MondayItem::query()
+                ->with('values')
+                ->where('board_id', (string) $boardId)
+                ->whereHas('values', function ($query) use ($url): void {
+                    $query->where('monday_column_id', 'enlace')
+                        ->where('text', 'like', '%'.$url.'%');
+                })
+                ->first();
+
+            if ($item === null) {
+                continue;
+            }
+
+            $board = MondayBoard::find((string) $boardId);
+            $columns = MondayColumn::query()
+                ->where('board_id', (string) $boardId)
+                ->get()
+                ->keyBy('monday_id');
+
+            return [
+                'id' => (string) $item->id,
+                'name' => (string) $item->name,
+                'board' => [
+                    'id' => (string) $boardId,
+                    'name' => (string) ($board?->name ?? ''),
+                ],
+                'column_values' => $item->values->map(function ($value) use ($columns): array {
+                    $column = $columns->get($value->monday_column_id);
+
+                    return [
+                        'id' => (string) $value->monday_column_id,
+                        'text' => $value->text,
+                        'value' => $value->value,
+                        'column' => [
+                            'title' => (string) ($column?->title ?? $value->monday_column_id),
+                            'type' => (string) ($column?->type ?? $value->type),
+                        ],
+                    ];
+                })->values()->all(),
+            ];
+        }
+
+        return null;
     }
 }

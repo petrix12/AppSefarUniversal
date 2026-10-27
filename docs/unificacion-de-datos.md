@@ -24,6 +24,7 @@ Una coincidencia de nombre no habilita un cruce entre ambos carriles. Los campos
 | Correspondencia de campos | `integration_field_mappings` | Declara plataforma, entidad, campo externo, dirección, transformación y política de conflicto. |
 | Sincronización confiable | `integration_sync_runs`, `integration_outbox` | Las escrituras externas quedan en cola y son reintentables; una pantalla no llama a una API externa directamente. |
 | Monday multi-tablero | `workflow_boards`, `workflow_stages`, `workflow_memberships`, `workflow_transitions` | Un cliente puede pertenecer a varios tableros sin duplicarse. Todo cambio queda auditado. |
+| Réplica operativa de Monday | `monday_boards`, `monday_groups`, `monday_columns`, `monday_items`, `monday_item_values`, `monday_item_movements` | Copia local de lectura, actualizada principalmente por webhooks y con reconciliación cada 6 horas; audita movimientos y no activa mapeos ni escrituras externas. |
 | Mapa de auditoría | `unification_audit_links`, `unification_audit_relations` | Registra propuestas y decisiones de diseño; permite asociar cualquier par de plataformas sin activar mapeos ni sincronizar datos. |
 
 El servicio `UnifiedClientProfileService` es la vía de escritura para los campos y enlaces. `WorkflowTransferService` mueve un cliente entre tableros/etapas y encola la operación remota correspondiente.
@@ -34,6 +35,7 @@ El servicio `UnifiedClientProfileService` es la vía de escritura para los campo
 - El catálogo histórico `assoc_tl_hs` contiene 103 correspondencias Teamleader–HubSpot, con 100 propiedades HubSpot distintas y tres propiedades repetidas con más de un campo Teamleader. El informe de la base local encontró solo 45 de esas propiedades todavía como columnas en `users`; las 55 restantes se crearán igualmente como campos configurables, sin volver a ampliar esa tabla.
 - Teamleader ya se respalda localmente (`tl_contacts`, proyectos, facturas y documentos) y se trata inicialmente como fuente de consulta: sus mapeos se importan en dirección `pull`.
 - Monday ya registra clientes por servicio. Al completarse correctamente un registro, ahora también se refleja como una membresía de flujo local.
+- Monday dispone además de una réplica operativa local para tableros, grupos, columnas, items, subitems y valores. Su despliegue y sus límites están documentados en `docs/monday-local-mirror.md`.
 
 ## Política de sincronización
 
