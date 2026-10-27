@@ -594,6 +594,27 @@ return [
                     'can'  => 'administrador',
                     'submenu' => [
                         [
+                            'text'          => 'Tableros',
+                            'icon'          => 'fa-fw fas fa-table',
+                            'icon_color'    => 'white',
+                            'route'         => 'admin.monday.index',
+                            'can'           => 'crud.mondayreportes.index',
+                        ],
+                        [
+                            'text'          => 'Actividad y sincronización',
+                            'icon'          => 'fa-fw fas fa-exchange-alt',
+                            'icon_color'    => 'white',
+                            'route'         => 'admin.monday.activity',
+                            'can'           => 'crud.mondayreportes.index',
+                        ],
+                        [
+                            'text'          => 'Reportes',
+                            'icon'          => 'fa-fw fas fa-chart-pie',
+                            'icon_color'    => 'white',
+                            'route'         => 'mondayreportes',
+                            'can'           => 'crud.mondayreportes.index',
+                        ],
+                        [
                             'text'          => 'Registrar en Monday',
                             'icon'          => 'fa-fw fas fa-calendar-check',
                             'icon_color'    => 'white',

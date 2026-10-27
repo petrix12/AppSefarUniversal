@@ -34,6 +34,7 @@ use App\Http\Controllers\ServiceStoreController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\HsReferidoController;
 use App\Http\Controllers\MondayController;
+use App\Http\Controllers\MondayMirrorController;
 use App\Http\Controllers\FacturaController;
 use App\Http\Controllers\CorreoController;
 use App\Http\Controllers\GedcomController;
@@ -802,6 +803,16 @@ Route::post('/listLatestStripeData/getStripeAJAX', [StripeController::class, 'ge
 //Rutas para Monday:
 Route::get('/mondayreportes', [MondayController::class, 'mondayreportes'])->name('mondayreportes')
         ->middleware('can:crud.mondayreportes.index');
+
+Route::middleware('can:crud.mondayreportes.index')
+    ->prefix('admin/monday')
+    ->name('admin.monday.')
+    ->group(function () {
+        Route::get('/', [MondayMirrorController::class, 'dashboard'])->name('index');
+        Route::get('/actividad', [MondayMirrorController::class, 'activity'])->name('activity');
+        Route::get('/tableros/{board}', [MondayMirrorController::class, 'showBoard'])->name('boards.show');
+        Route::get('/elementos/{item}', [MondayMirrorController::class, 'showItem'])->name('items.show');
+    });
 
 Route::get('/mondayregistrar', [MondayController::class, 'mondayregistrar'])->name('mondayregistrar')
         ->middleware('can:crud.mondayreportes.index');

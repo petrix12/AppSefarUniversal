@@ -108,15 +108,21 @@ class MondayMirrorService
             DB::transaction(function () use ($snapshot, $run, $boardId): void {
                 $this->persistBoard($snapshot, $run->token, false);
                 $this->persistStructure($boardId, $snapshot, $run->token, $run->started_at);
-            });
+            }, 5);
 
             $page = (array) ($snapshot['items_page'] ?? []);
             while (true) {
-                DB::transaction(function () use ($page, $boardId, $run, &$counts): void {
+                $pageCounts = DB::transaction(function () use ($page, $boardId, $run): array {
+                    $pageCounts = ['items' => 0, 'subitems' => 0, 'values' => 0];
                     foreach ((array) ($page['items'] ?? []) as $item) {
-                        $this->persistItem($boardId, (array) $item, $run->token, null, $counts, 'reconciliation');
+                        $this->persistItem($boardId, (array) $item, $run->token, null, $pageCounts, 'reconciliation');
                     }
-                });
+
+                    return $pageCounts;
+                }, 5);
+                foreach ($pageCounts as $key => $value) {
+                    $counts[$key] += $value;
+                }
 
                 $cursor = trim((string) ($page['cursor'] ?? ''));
                 if ($cursor === '') {
@@ -142,7 +148,7 @@ class MondayMirrorService
                     'last_synced_at' => now(),
                     'remote_deleted_at' => null,
                 ]);
-            });
+            }, 5);
 
             $run->complete(array_merge($counts, [
                 'boards' => 1,
@@ -198,7 +204,10 @@ class MondayMirrorService
 
         $counts = ['items' => 0, 'subitems' => 0, 'values' => 0];
         $token = (string) Str::uuid();
-        DB::transaction(fn () => $this->persistItem($boardId, $item, $token, $parentItemId, $counts, $source));
+        DB::transaction(
+            fn () => $this->persistItem($boardId, $item, $token, $parentItemId, $counts, $source),
+            5
+        );
 
         return MondayItem::query()->find($itemId);
     }
