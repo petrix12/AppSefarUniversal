@@ -41,6 +41,9 @@ class MondayBoard extends Model
         return $query
             ->whereNull('remote_deleted_at')
             ->where(function ($query): void {
+                $query->whereNull('object_type')->orWhere('object_type', '!=', 'sub_items_board');
+            })
+            ->where(function ($query): void {
                 $query->whereNull('state')->orWhere('state', 'active');
             });
     }

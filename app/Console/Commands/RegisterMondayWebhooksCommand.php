@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\MondayBoard;
 use App\Services\MondayWebhookSubscriptionService;
 use Illuminate\Console\Command;
+use Throwable;
 
 class RegisterMondayWebhooksCommand extends Command
 {
@@ -44,15 +45,29 @@ class RegisterMondayWebhooksCommand extends Command
         }
 
         $created = 0;
+        $skipped = 0;
+        $failed = 0;
         foreach ($boardIds as $boardId) {
-            foreach ($subscriptions->ensure((string) $boardId, $events->all()) as $event) {
-                $created++;
-                $this->line("Tablero {$boardId}: {$event}");
+            try {
+                $createdEvents = $subscriptions->ensure((string) $boardId, $events->all());
+                if ($subscriptions->skippedAsSubitemsBoard((string) $boardId)) {
+                    $skipped++;
+                    $this->warn("Tablero {$boardId}: omitido porque es el tablero interno de subelementos.");
+                    continue;
+                }
+
+                foreach ($createdEvents as $event) {
+                    $created++;
+                    $this->line("Tablero {$boardId}: {$event}");
+                }
+            } catch (Throwable $exception) {
+                $failed++;
+                $this->error("Tablero {$boardId}: {$exception->getMessage()}");
             }
         }
 
-        $this->info("Webhooks creados: {$created}. Los ya existentes se conservaron.");
+        $this->info("Webhooks creados: {$created}. Tableros internos omitidos: {$skipped}. Fallos: {$failed}. Los ya existentes se conservaron.");
 
-        return self::SUCCESS;
+        return $failed === 0 ? self::SUCCESS : self::FAILURE;
     }
 }

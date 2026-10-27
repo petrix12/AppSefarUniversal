@@ -2,10 +2,14 @@
 
 namespace App\Services;
 
+use App\Models\MondayBoard;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class MondayWebhookSubscriptionService
 {
+    private array $skippedSubitemsBoards = [];
+
     public const DEFAULT_EVENTS = [
         'change_column_value',
         'change_name',
@@ -32,25 +36,56 @@ class MondayWebhookSubscriptionService
 
     public function ensure(string $boardId, ?array $events = null): array
     {
-        $url = $this->callbackUrl();
-        $events = array_values(array_unique($events ?: self::DEFAULT_EVENTS));
-        $existing = collect($this->client->webhooks($boardId))
-            ->pluck('event')
-            ->filter()
-            ->map(fn ($event): string => (string) $event)
-            ->all();
-        $created = [];
+        unset($this->skippedSubitemsBoards[$boardId]);
+        if (MondayBoard::query()
+            ->whereKey($boardId)
+            ->where('object_type', 'sub_items_board')
+            ->exists()) {
+            $this->markSubitemsBoardSkipped($boardId);
 
-        foreach ($events as $event) {
-            if (in_array($event, $existing, true)) {
-                continue;
-            }
-
-            $this->client->createWebhook($boardId, $url, (string) $event);
-            $created[] = (string) $event;
+            return [];
         }
 
-        return $created;
+        $url = $this->callbackUrl();
+        $events = array_values(array_unique($events ?: self::DEFAULT_EVENTS));
+        try {
+            $existing = collect($this->client->webhooks($boardId))
+                ->pluck('event')
+                ->filter()
+                ->map(fn ($event): string => (string) $event)
+                ->all();
+            $created = [];
+
+            foreach ($events as $event) {
+                if (in_array($event, $existing, true)) {
+                    continue;
+                }
+
+                $this->client->createWebhook($boardId, $url, (string) $event);
+                $created[] = (string) $event;
+            }
+
+            return $created;
+        } catch (RuntimeException $exception) {
+            if (! str_contains(strtolower($exception->getMessage()), "creating webhook on subitems board isn't allowed")) {
+                throw $exception;
+            }
+
+            $this->markSubitemsBoardSkipped($boardId);
+
+            return [];
+        }
+    }
+
+    public function skippedAsSubitemsBoard(string $boardId): bool
+    {
+        return isset($this->skippedSubitemsBoards[$boardId]);
+    }
+
+    private function markSubitemsBoardSkipped(string $boardId): void
+    {
+        $this->skippedSubitemsBoards[$boardId] = true;
+        Log::info('Monday webhook skipped for internal subitems board', ['board_id' => $boardId]);
     }
 
     private function callbackUrl(): string

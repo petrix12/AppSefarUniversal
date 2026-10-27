@@ -121,8 +121,9 @@ class MondayMirrorServiceTest extends TestCase
     {
         MondayBoard::create(['id' => '99', 'name' => 'Antiguo', 'state' => 'active']);
         Http::fake(Http::response(['data' => ['boards' => [
-            ['id' => '10', 'name' => 'Activo', 'state' => 'active'],
-            ['id' => '20', 'name' => 'Archivado', 'state' => 'archived'],
+            ['id' => '10', 'name' => 'Activo', 'state' => 'active', 'type' => 'board'],
+            ['id' => '20', 'name' => 'Archivado', 'state' => 'archived', 'type' => 'board'],
+            ['id' => '30', 'name' => 'Subitems', 'state' => 'active', 'type' => 'sub_items_board'],
         ]]]));
 
         $ids = app(MondayMirrorService::class)->discoverBoards();
@@ -130,10 +131,11 @@ class MondayMirrorServiceTest extends TestCase
         $this->assertSame(['10'], $ids);
         $this->assertNotNull(MondayBoard::findOrFail('99')->remote_deleted_at);
         $this->assertSame('archived', MondayBoard::findOrFail('20')->state);
+        $this->assertSame('sub_items_board', MondayBoard::findOrFail('30')->object_type);
         $this->assertDatabaseHas('monday_sync_runs', [
             'scope' => 'account',
             'status' => 'completed',
-            'boards' => 2,
+            'boards' => 3,
         ]);
     }
 

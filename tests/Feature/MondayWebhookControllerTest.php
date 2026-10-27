@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Jobs\Monday\ProcessMondayWebhookEventJob;
+use App\Models\MondayBoard;
 use App\Services\MondayWebhookSubscriptionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -72,6 +73,44 @@ class MondayWebhookControllerTest extends TestCase
             ->ensure('10', ['change_name', 'create_item']);
 
         $this->assertSame(['create_item'], $created);
+        Http::assertSentCount(2);
+    }
+
+    public function test_it_skips_a_known_internal_subitems_board_without_calling_monday(): void
+    {
+        MondayBoard::create([
+            'id' => '10031441047',
+            'name' => 'Subitems of board',
+            'state' => 'active',
+            'object_type' => 'sub_items_board',
+        ]);
+        Http::fake();
+
+        $subscriptions = app(MondayWebhookSubscriptionService::class);
+        $created = $subscriptions->ensure('10031441047');
+
+        $this->assertSame([], $created);
+        $this->assertTrue($subscriptions->skippedAsSubitemsBoard('10031441047'));
+        Http::assertNothingSent();
+    }
+
+    public function test_it_recognizes_mondays_subitems_board_error_and_continues(): void
+    {
+        Http::fake(function ($request) {
+            if (str_contains($request->data()['query'], 'MirrorWebhooks')) {
+                return Http::response(['data' => ['webhooks' => []]]);
+            }
+
+            return Http::response(['errors' => [[
+                'message' => "Creating webhook on subitems board isn't allowed",
+            ]]], 200);
+        });
+
+        $subscriptions = app(MondayWebhookSubscriptionService::class);
+        $created = $subscriptions->ensure('10031441047', ['change_column_value']);
+
+        $this->assertSame([], $created);
+        $this->assertTrue($subscriptions->skippedAsSubitemsBoard('10031441047'));
         Http::assertSentCount(2);
     }
 }

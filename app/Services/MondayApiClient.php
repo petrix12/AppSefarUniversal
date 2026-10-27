@@ -27,6 +27,8 @@ class MondayApiClient
                 id
                 name
                 state
+                type
+                hierarchy_type
                 board_kind
                 permissions
                 items_count
@@ -54,6 +56,8 @@ class MondayApiClient
                 id
                 name
                 state
+                type
+                hierarchy_type
                 board_kind
                 permissions
                 items_count
@@ -74,6 +78,8 @@ class MondayApiClient
                 id
                 name
                 state
+                type
+                hierarchy_type
                 board_kind
                 permissions
                 items_count

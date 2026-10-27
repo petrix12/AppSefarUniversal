@@ -59,6 +59,9 @@ class MondayMirrorService
                 ->whereIn('id', $seen)
                 ->whereNull('remote_deleted_at')
                 ->where(function ($query): void {
+                    $query->whereNull('object_type')->orWhere('object_type', '!=', 'sub_items_board');
+                })
+                ->where(function ($query): void {
                     $query->whereNull('state')->orWhere('state', 'active');
                 })
                 ->pluck('id')
@@ -231,6 +234,8 @@ class MondayMirrorService
         return MondayBoard::query()->updateOrCreate(['id' => $id], [
             'name' => $data['name'] ?? null,
             'state' => $data['state'] ?? null,
+            'object_type' => $data['type'] ?? null,
+            'hierarchy_type' => $data['hierarchy_type'] ?? null,
             'kind' => $data['board_kind'] ?? null,
             'permissions' => $data['permissions'] ?? null,
             'workspace_id' => data_get($data, 'workspace.id'),
