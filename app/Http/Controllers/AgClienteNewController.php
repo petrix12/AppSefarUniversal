@@ -343,35 +343,20 @@ class AgClienteNewController extends Controller
             }
         }
 
-        // $mail_sefar = new CargaSefar(auth()->user());
-        // Mail2::to([
-        //     'pedro.bazo@sefarvzla.com',
-        //     'sistemasccs@sefarvzla.com',
-        //     'automatizacion@sefarvzla.com',
-        //     'sistemascol@sefarvzla.com',
-        //     /* 'egonzalez@sefarvzla.com', */
-        //     /* 'arosales@sefarvzla.com', */
-        //     'asistentedeproduccion@sefarvzla.com',
-        //     'organizacionrrhh@sefarvzla.com',
-        //     'arodriguez@sefarvzla.com',
-        //     '20053496@bcc.hubspot.com'
-        //     /* 'organizacionrrhh@sefarvzla.com' */
-        // ])->send($mail_sefar);
+        $user = $request->user();
 
-        $user = auth()->user();
-        $recipients = [
-            'pedro.bazo@sefarvzla.com',
-            'sistemasccs@sefarvzla.com',
-            'automatizacion@sefarvzla.com',
-            'sistemascol@sefarvzla.com',
-            'asistentedeproduccion@sefarvzla.com',
-            'organizacionrrhh@sefarvzla.com',
-            'arodriguez@sefarvzla.com',
-            '20053496@bcc.hubspot.com'
-        ];
-
-        // Verifica si el usuario es un cliente
         if ($user->hasRole('Cliente')) {
+            $recipients = [
+                'pedro.bazo@sefarvzla.com',
+                'sistemasccs@sefarvzla.com',
+                'automatizacion@sefarvzla.com',
+                'sistemascol@sefarvzla.com',
+                'asistentedeproduccion@sefarvzla.com',
+                'organizacionrrhh@sefarvzla.com',
+                'arodriguez@sefarvzla.com',
+                '20053496@bcc.hubspot.com'
+            ];
+
             // Verifica si el usuario cumple con las condiciones del servicio "Española LMD"
             if (
                 $user->servicio == "Española LMD" ||
@@ -382,30 +367,8 @@ class AgClienteNewController extends Controller
                 $additionalEmail = 'lguzmanposso@sefarvzla.com';
                 $recipients[] = $additionalEmail;
             }
-            // Genera el objeto $mail_sefar para un cliente
-            $mail_sefar = new CargaSefar($user);
-        } else {
-            // Busca el usuario que tenga el elemento passport igual a $request->IDCliente
-            $clientUser = User::where('passport', $request->IDCliente)->first();
-            if ($clientUser) {
-                // Verifica si el cliente cumple con las condiciones del servicio "Española LMD"
-                if (
-                    $clientUser->servicio == "Española LMD" ||
-                    Compra::where('id_user', $clientUser->id)
-                        ->where('servicio_hs_id', "Española LMD")
-                        ->exists()
-                ) {
-                    $additionalEmail = 'lguzmanposso@sefarvzla.com';
-                    $recipients[] = $additionalEmail;
-                }
-                // Genera el objeto $mail_sefar para un usuario que no es el loggeado
-                $mail_sefar = new CargaSefar($clientUser);
-            }
-        }
 
-        // Enviar el correo si $mail_sefar está definido
-        if (isset($mail_sefar)) {
-            Mail2::to($recipients)->send($mail_sefar);
+            Mail2::to($recipients)->send(new CargaSefar($user));
         }
 
         return redirect()->back()->withInput()->with('refresh', true);

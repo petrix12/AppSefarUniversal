@@ -180,18 +180,19 @@ class AgclienteController extends Controller
             ])->assignRole('Cliente');
         }
 
-        $mail_sefar = new CargaSefar(Auth::user());
-        Mail2::to([
-            'pedro.bazo@sefarvzla.com',
-            'sistemasccs@sefarvzla.com',
-            'automatizacion@sefarvzla.com',
-            'sistemascol@sefarvzla.com',
-            'asistentedeproduccion@sefarvzla.com',
-            'organizacionrrhh@sefarvzla.com',
-            'arodriguez@sefarvzla.com',
-            '20053496@bcc.hubspot.com'
-            /* 'organizacionrrhh@sefarvzla.com' */
-        ])->send($mail_sefar);
+        $user = $request->user();
+        if ($user->hasRole('Cliente')) {
+            Mail2::to([
+                'pedro.bazo@sefarvzla.com',
+                'sistemasccs@sefarvzla.com',
+                'automatizacion@sefarvzla.com',
+                'sistemascol@sefarvzla.com',
+                'asistentedeproduccion@sefarvzla.com',
+                'organizacionrrhh@sefarvzla.com',
+                'arodriguez@sefarvzla.com',
+                '20053496@bcc.hubspot.com'
+            ])->send(new CargaSefar($user));
+        }
 
         // Mensaje
         Alert::success('¡Éxito!', 'Se ha añadido a la lista: ' . $request->Nombres . ' ' . $request->Apellidos);
