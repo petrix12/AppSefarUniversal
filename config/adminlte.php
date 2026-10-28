@@ -268,6 +268,12 @@ return [
                     'can'           => 'crud.users.index',
                 ],
                 [
+                    'text'          => 'Cartera y certificados',
+                    'icon'          => 'fa-fw fas fa-file-invoice-dollar',
+                    'url'           => 'cos/cartera',
+                    'can'           => 'crud.users.index',
+                ],
+                [
                     'text'          => 'Roles',
                     'icon'          => 'fa-fw fas fa-user-tag',
                     'icon_color'    => 'white',

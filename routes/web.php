@@ -539,6 +539,10 @@ Route::prefix('admin/procesos')->middleware(['auth'])->group(function () {
 
 // Grupo de rutas CRUD
 Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
+    Route::get('cos/cartera', [\App\Http\Controllers\CosPortfolioController::class, 'listing'])
+        ->name('cos.portfolio')->middleware('can:crud.users.index');
+    Route::post('cos/cartera/asociaciones', [\App\Http\Controllers\CosPortfolioController::class, 'associate'])
+        ->name('cos.portfolio.associate')->middleware('can:crud.users.index');
     Route::resource('permissions', PermissionController::class)->names('permissions')
 			->middleware('can:crud.permissions.index');
     Route::resource('roles', RoleController::class)->names('roles')
