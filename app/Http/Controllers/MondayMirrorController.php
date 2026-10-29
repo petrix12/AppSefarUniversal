@@ -9,6 +9,7 @@ use App\Models\MondayItemMovement;
 use App\Models\MondayItemValue;
 use App\Models\MondaySyncRun;
 use App\Models\MondayWebhookEvent;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -62,13 +63,13 @@ class MondayMirrorController extends Controller
         return view('admin.monday.index', compact('installed', 'boards', 'metrics', 'recentRuns'));
     }
 
-    public function showBoard(Request $request, MondayBoard $board): View
+    public function showBoard(Request $request, MondayBoard $board): View|JsonResponse
     {
         $columns = MondayColumn::query()
             ->where('board_id', $board->id)
             ->orderBy('id')
-            ->get();
-        $groups = $board->groups()->orderBy('id')->get();
+            ->get(['id', 'monday_id', 'title', 'type']);
+        $groups = $board->groups()->orderBy('id')->get(['id', 'monday_id', 'title', 'color']);
 
         $search = trim((string) $request->query('q'));
         $groupId = trim((string) $request->query('group'));
@@ -86,7 +87,12 @@ class MondayMirrorController extends Controller
             });
         }
 
+        // Exclude raw_data: each item stores a full remote payload, including
+        // values and subitems that would otherwise be loaded repeatedly.
+        $itemFields = ['id', 'board_id', 'group_id', 'parent_item_id', 'name', 'monday_updated_at'];
+        $valueFields = ['id', 'item_id', 'monday_column_id', 'type', 'text', 'value'];
         $items = $itemsQuery
+            ->select($itemFields)
             ->where('board_id', $board->id)
             ->whereNull('parent_item_id')
             ->when($groupId !== '', fn ($query) => $query->where('group_id', $groupId))
@@ -101,14 +107,30 @@ class MondayMirrorController extends Controller
                         });
                 });
             })
+            ->withCount('subitems')
             ->with([
-                'values',
-                'subitems' => fn ($query) => $query->orderBy('id'),
-                'subitems.values',
+                'values' => fn ($query) => $query->select($valueFields),
+                'subitems' => fn ($query) => $query->select($itemFields)->orderBy('id')->limit(5),
+                'subitems.values' => fn ($query) => $query->select($valueFields),
             ])
             ->orderBy('group_id')
             ->orderBy('id')
-            ->get();
+            ->paginate(100)
+            ->withQueryString();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'groups' => $items->getCollection()
+                    ->groupBy(fn ($item) => (string) ($item->group_id ?? ''))
+                    ->map(fn ($groupItems, $groupId) => [
+                        'id' => (string) $groupId,
+                        'html' => view('admin.monday.partials.board-item-rows', ['items' => $groupItems, 'columns' => $columns])->render(),
+                    ])->values(),
+                'next_page_url' => $items->nextPageUrl(),
+                'loaded' => $items->lastItem() ?? 0,
+                'total' => $items->total(),
+            ]);
+        }
 
         $groupCounts = MondayItem::query()
             ->select(['group_id', DB::raw('COUNT(*) as total')])
@@ -132,8 +154,14 @@ class MondayMirrorController extends Controller
     public function showItem(string $item): View
     {
         $item = MondayItem::withTrashed()
-            ->with(['board', 'values', 'parent', 'subitems.values', 'movements'])
+            ->with(['board:id,name', 'values:id,item_id,monday_column_id,type,text', 'parent:id,name', 'movements'])
             ->findOrFail($item);
+        $subitems = $item->subitems()
+            ->select(['id', 'parent_item_id', 'name'])
+            ->withCount(['values as populated_values_count' => fn ($query) => $query->whereNotNull('text')])
+            ->orderBy('id')
+            ->paginate(50)
+            ->withQueryString();
         $columns = MondayColumn::withTrashed()
             ->where('board_id', $item->board_id)
             ->orderBy('id')
@@ -141,7 +169,7 @@ class MondayMirrorController extends Controller
             ->keyBy('monday_id');
         $boardsById = MondayBoard::query()->pluck('name', 'id');
 
-        return view('admin.monday.item', compact('item', 'columns', 'boardsById'));
+        return view('admin.monday.item', compact('item', 'columns', 'boardsById', 'subitems'));
     }
 
     public function activity(Request $request): View

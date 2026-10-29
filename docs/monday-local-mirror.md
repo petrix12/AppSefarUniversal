@@ -118,6 +118,14 @@ Estas funciones ya prefieren la réplica cuando el tablero terminó al menos una
 
 Si las tablas aún no existen o un tablero todavía no terminó su primera copia, los servicios de catálogo y COS conservan temporalmente su comportamiento anterior y consultan Monday. Esto permite desplegar el código antes de ejecutar la migración/importación sin romper esas pantallas.
 
+## Tableros grandes
+
+La vista de un tablero consulta como máximo **100 elementos principales por petición**. El primer lote se entrega con la página y JavaScript añade automáticamente los siguientes, manteniendo los grupos, la búsqueda y los filtros de estado. Durante la carga muestra un icono animado y el avance; si una petición falla, conserva las filas cargadas y permite reintentar el mismo lote. Sin JavaScript se dispone de enlaces de paginación.
+
+Las consultas de la cuadrícula excluyen los JSON técnicos `raw_data` de elementos y valores y muestran como máximo cinco subelementos de cada elemento. El enlace al detalle permite recorrer todos sus subelementos, paginados de 50 en 50, sin cargar los valores completos de cada hijo. La búsqueda sigue abarcando todos los elementos y subelementos, incluidos los que aún no se han mostrado.
+
+Esto corrige la carga ilimitada que podía agotar los 512 MB de PHP al abrir un tablero grande. Se verifica con pruebas de lotes, filtros, grupos y subelementos, además de una comprobación en navegador del indicador de carga y la recuperación tras un fallo simulado.
+
 ## Operación
 
 ```bash

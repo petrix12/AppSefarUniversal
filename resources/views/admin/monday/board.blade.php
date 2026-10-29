@@ -53,16 +53,22 @@
     </div>
 
     @php
-        $itemsByGroup = $items->groupBy(fn ($row) => (string) ($row->group_id ?? ''));
+        $itemsByGroup = $items->getCollection()->groupBy(fn ($row) => (string) ($row->group_id ?? ''));
         $visibleGroups = $groupId !== '' ? $groups->where('monday_id', $groupId) : $groups;
     @endphp
 
-    <div class="monday-board-shell">
+    <div class="d-flex align-items-center mb-3" id="monday-batch-loader" role="status" aria-live="polite" data-next-url="{{ $items->nextPageUrl() }}" data-loaded="{{ $items->lastItem() ?? 0 }}" data-total="{{ $items->total() }}">
+        <i class="fas fa-spinner fa-spin text-primary mr-2 d-none" id="monday-batch-spinner" aria-hidden="true"></i>
+        <span id="monday-batch-status">Mostrando {{ number_format($items->count()) }} de {{ number_format($items->total()) }} elementos principales</span>
+        <button type="button" id="monday-batch-retry" class="btn btn-outline-primary btn-sm ml-2 d-none">Reintentar</button>
+    </div>
+
+    <div class="monday-board-shell" id="monday-board-content">
         @foreach($visibleGroups as $group)
             @php
                 $groupItems = $itemsByGroup->get((string) $group->monday_id, collect());
             @endphp
-            <section class="monday-group mb-4">
+            <section class="monday-group mb-4 {{ $groupItems->isEmpty() && $items->total() > 0 ? 'd-none' : '' }}">
                 <div class="monday-group-title" style="--group-color: {{ $group->color ?: '#579bfc' }}">
                     <span class="monday-group-dot"></span>
                     <strong>{{ $group->title ?: 'Grupo sin nombre' }}</strong>
@@ -71,15 +77,11 @@
                 <div class="table-responsive monday-grid-wrap">
                     <table class="table table-bordered table-sm monday-grid mb-0">
                         <thead><tr><th class="item-column sticky-col">Elemento</th>@foreach($columns as $column)<th title="{{ $column->type }} · {{ $column->monday_id }}">{{ $column->title ?: $column->monday_id }}</th>@endforeach<th>Actualizado</th></tr></thead>
-                        <tbody>
-                        @forelse($groupItems as $row)
-                            @include('admin.monday.partials.item-row', ['row' => $row, 'columns' => $columns, 'subitem' => false])
-                            @foreach($row->subitems as $subitem)
-                                @include('admin.monday.partials.item-row', ['row' => $subitem, 'columns' => $columns, 'subitem' => true])
-                            @endforeach
-                        @empty
-                            <tr><td colspan="{{ $columns->count() + 2 }}" class="text-muted text-center py-3">Este grupo no tiene elementos para los filtros seleccionados.</td></tr>
-                        @endforelse
+                        <tbody data-monday-group-items="{{ $group->monday_id }}">
+                        @include('admin.monday.partials.board-item-rows', ['items' => $groupItems, 'columns' => $columns])
+                        @if($groupItems->isEmpty())
+                            <tr data-empty-message><td colspan="{{ $columns->count() + 2 }}" class="text-muted text-center py-3">Este grupo no tiene elementos para los filtros seleccionados.</td></tr>
+                        @endif
                         </tbody>
                     </table>
                 </div>
@@ -87,24 +89,84 @@
         @endforeach
 
         @php
-            $ungrouped = $itemsByGroup->get('', collect());
+            $knownGroupIds = $visibleGroups->pluck('monday_id')->map(fn ($id) => (string) $id)->all();
+            $ungrouped = $items->getCollection()->filter(fn ($row) => !in_array((string) ($row->group_id ?? ''), $knownGroupIds, true));
         @endphp
-        @if($ungrouped->isNotEmpty())
-            <section class="monday-group mb-4">
+            <section class="monday-group mb-4 {{ $ungrouped->isEmpty() ? 'd-none' : '' }}">
                 <div class="monday-group-title" style="--group-color:#6c757d"><span class="monday-group-dot"></span><strong>Sin grupo</strong></div>
-                <div class="table-responsive monday-grid-wrap"><table class="table table-bordered table-sm monday-grid mb-0"><thead><tr><th class="item-column sticky-col">Elemento</th>@foreach($columns as $column)<th>{{ $column->title ?: $column->monday_id }}</th>@endforeach<th>Actualizado</th></tr></thead><tbody>
-                @foreach($ungrouped as $row)
-                    @include('admin.monday.partials.item-row', ['row' => $row, 'columns' => $columns, 'subitem' => false])
-                    @foreach($row->subitems as $subitem)
-                        @include('admin.monday.partials.item-row', ['row' => $subitem, 'columns' => $columns, 'subitem' => true])
-                    @endforeach
-                @endforeach
+                <div class="table-responsive monday-grid-wrap"><table class="table table-bordered table-sm monday-grid mb-0"><thead><tr><th class="item-column sticky-col">Elemento</th>@foreach($columns as $column)<th>{{ $column->title ?: $column->monday_id }}</th>@endforeach<th>Actualizado</th></tr></thead><tbody data-monday-group-items="">
+                @include('admin.monday.partials.board-item-rows', ['items' => $ungrouped, 'columns' => $columns])
                 </tbody></table></div>
             </section>
-        @endif
     </div>
 
-    <div class="text-muted small mb-4">Mostrando {{ number_format($items->count()) }} elementos principales</div>
+    <noscript>{{ $items->links('pagination::bootstrap-4') }}</noscript>
+@stop
+
+@section('js')
+<script>
+(() => {
+    const loader = document.getElementById('monday-batch-loader');
+    const content = document.getElementById('monday-board-content');
+    const spinner = document.getElementById('monday-batch-spinner');
+    const status = document.getElementById('monday-batch-status');
+    const retry = document.getElementById('monday-batch-retry');
+    const bodies = new Map(Array.from(content.querySelectorAll('[data-monday-group-items]'), body => [body.dataset.mondayGroupItems, body]));
+    const controller = new AbortController();
+    let nextUrl = loader.dataset.nextUrl;
+    let loaded = Number(loader.dataset.loaded);
+    let total = Number(loader.dataset.total);
+    let running = false;
+    const count = number => number.toLocaleString('es');
+
+    async function loadBatches() {
+        if (running || !nextUrl) return;
+        running = true;
+        retry.classList.add('d-none');
+        spinner.classList.remove('d-none');
+        content.setAttribute('aria-busy', 'true');
+        status.textContent = `Cargando elementos: ${count(loaded)} de ${count(total)}…`;
+        try {
+            while (nextUrl) {
+                const response = await fetch(nextUrl, {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin',
+                    signal: controller.signal,
+                });
+                if (!response.ok) throw new Error('No se pudo cargar el lote.');
+                const batch = await response.json();
+                if (!Array.isArray(batch.groups)) throw new Error('Respuesta incompleta.');
+                for (const group of batch.groups) {
+                    const body = bodies.get(String(group.id)) || bodies.get('');
+                    body.querySelector('[data-empty-message]')?.remove();
+                    body.insertAdjacentHTML('beforeend', group.html);
+                    body.closest('.monday-group').classList.remove('d-none');
+                }
+                nextUrl = batch.next_page_url;
+                loaded = batch.loaded;
+                total = batch.total;
+                status.textContent = nextUrl
+                    ? `Cargando elementos: ${count(loaded)} de ${count(total)}…`
+                    : `Mostrando ${count(loaded)} de ${count(total)} elementos principales`;
+                await new Promise(resolve => requestAnimationFrame(resolve));
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                status.textContent = `Se cargaron ${count(loaded)} de ${count(total)} elementos. No se pudo completar la carga.`;
+                retry.classList.remove('d-none');
+            }
+        } finally {
+            running = false;
+            spinner.classList.add('d-none');
+            content.setAttribute('aria-busy', 'false');
+        }
+    }
+
+    retry.addEventListener('click', loadBatches);
+    window.addEventListener('pagehide', () => controller.abort(), { once: true });
+    loadBatches();
+})();
+</script>
 @stop
 
 @section('css')

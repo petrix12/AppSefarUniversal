@@ -36,16 +36,20 @@
                 </div>
             </div>
 
-            @if($item->subitems->isNotEmpty())
+            @if($subitems->total() > 0)
                 <div class="card card-outline card-info">
                     <div class="card-header"><h3 class="card-title font-weight-bold"><i class="fas fa-level-down-alt mr-2"></i>Subelementos</h3></div>
                     <div class="list-group list-group-flush">
-                        @foreach($item->subitems as $subitem)
+                        @foreach($subitems as $subitem)
                             <a href="{{ route('admin.monday.items.show', $subitem->id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                                 <span><i class="far fa-square text-muted mr-2"></i>{{ $subitem->name }}</span>
-                                <span class="badge badge-light">{{ $subitem->values->whereNotNull('text')->count() }} valores</span>
+                                <span class="badge badge-light">{{ $subitem->populated_values_count }} valores</span>
                             </a>
                         @endforeach
+                    </div>
+                    <div class="card-footer">
+                        <div class="small text-muted mb-2">Mostrando {{ number_format($subitems->firstItem()) }}–{{ number_format($subitems->lastItem()) }} de {{ number_format($subitems->total()) }} subelementos</div>
+                        {{ $subitems->links('pagination::bootstrap-4') }}
                     </div>
                 </div>
             @endif
