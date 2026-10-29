@@ -1793,10 +1793,15 @@ class UserController extends Controller
         ->get();
 
     $teamleaderMigration = $this->getTeamleaderMigrationData($user);
+    $processGrouping = app(\App\Services\CosProcessGroupingService::class)->forClient(
+        $user, $negocios, collect($teamleaderMigration['projects'] ?? []),
+    );
+    $negocios = $processGrouping['deals'];
+    $teamleaderMigration['projects'] = $processGrouping['projects'];
     $teamleaderProjectPayments = app(TeamleaderProjectPaymentAnalyzer::class)
         ->analyzeProjects($teamleaderMigration['projects'] ?? collect());
     $phasePaymentService = app(TeamleaderPhasePaymentService::class);
-    $phasePaymentService->sync($user, $teamleaderProjectPayments);
+    $phasePaymentService->sync($user, $teamleaderProjectPayments, $negocios);
 
     // In the applicant status window, HubSpot is the display source once a
     // Teamleader project has been linked to a HubSpot deal. Keep unlinked
@@ -1845,13 +1850,17 @@ class UserController extends Controller
                 $paidAmountField = $fields['paid_amount'] ?? null;
                 $adminPaidAmountRaw = $paidAmountField ? trim((string) $deal->{$paidAmountField}) : '';
                 $teamleaderPhase = $linkedTeamleaderProject['phases'][$phase] ?? null;
-                if ($teamleaderPhase) {
-                    // For an explicitly linked business, use its Teamleader-preestablished
-                    // amount, but keep the amount entered by Administration as the paid total.
-                    $teamleaderPreestabRaw = trim((string) ($teamleaderPhase['preestab_raw'] ?? ''));
-                    $preestabRaw = $teamleaderPreestabRaw !== '' ? $teamleaderPreestabRaw : $preestabRaw;
+                if ($teamleaderPhase && filled($teamleaderPhase['preestab_raw'] ?? null)) {
+                    // The reconciled phase already includes historic receipts and recent portal abonos.
+                    $rows[] = array_merge($teamleaderPhase, [
+                        'source' => 'HubSpot',
+                        'project_id' => (string) $deal->hubspot_id,
+                        'teamleader_project_id' => (string) $linkedTeamleaderProject['project_id'],
+                        'deal_id' => $deal->id,
+                        'project_title' => $deal->dealname ?: $linkedTeamleaderProject['project_title'],
+                    ]);
+                    continue;
                 }
-
                 // Historic/unlinked deals can contain a confirmed Teamleader
                 // mirror even when no project ID is associated. Use it as the
                 // final fallback so the summary does not recreate a paid debt.
@@ -1884,7 +1893,7 @@ class UserController extends Controller
                     'project_id' => (string) $deal->hubspot_id,
                     'teamleader_project_id' => $linkedTeamleaderProject['project_id'] ?? null,
                     'deal_id' => $deal->id,
-                    'project_title' => $deal->servicio_solicitado2 ?: $deal->servicio_solicitado ?: 'Trato HubSpot ' . $deal->hubspot_id,
+                    'project_title' => $deal->dealname ?: $deal->servicio_solicitado2 ?: $deal->servicio_solicitado ?: 'Trato HubSpot ' . $deal->hubspot_id,
                     'phase' => $phase,
                     'payment_label' => $fields['label'],
                     'preestab_raw' => $preestabRaw,
@@ -2003,59 +2012,35 @@ class UserController extends Controller
         ->filter(fn (Compras $purchase) => (float) $purchase->monto > 0.01)
         ->values();
 
-    $isLinkedTeamleaderPurchase = function (Compras $purchase) use ($linkedTeamleaderProjectIds): bool {
-        $source = (string) ($purchase->source ?? '');
-        if (! in_array($source, [
-            TeamleaderPhasePaymentService::PURCHASE_SOURCE,
-            TeamleaderPhasePaymentService::INSTALLMENT_SOURCE,
-            TeamleaderPhasePaymentService::HISTORY_SOURCE,
-        ], true)) {
-            return false;
-        }
-
-        return $linkedTeamleaderProjectIds->contains(
-            trim((string) data_get($purchase->metadata, 'teamleader_project_id', ''))
-        );
-    };
-    $comprasConDealNoPagadas = $comprasConDealNoPagadas->reject($isLinkedTeamleaderPurchase)->values();
-    $comprasSinDealNoPagadas = $comprasSinDealNoPagadas->reject($isLinkedTeamleaderPurchase)->values();
-    $activePhasePurchases = $activePhasePurchases->reject($isLinkedTeamleaderPurchase)->values();
-    $comprasPagadasSinFactura = $comprasPagadasSinFactura->reject($isLinkedTeamleaderPurchase)->values();
-    $facturas = $facturas->filter(function (Factura $factura) use ($isLinkedTeamleaderPurchase): bool {
+    $paidRecords = $facturas->flatMap(fn (Factura $factura) => $factura->compras ?? [])
+        ->concat($comprasPagadasSinFactura);
+    $reconciled = app(\App\Services\CosPaymentReconciliationService::class)->reconcile(
+        $negocios, $comprasConDealNoPagadas->merge($comprasSinDealNoPagadas), $paidRecords, $statusPaymentRows,
+    );
+    $comprasConDealNoPagadas = $reconciled['pending']->filter(fn ($purchase) => filled($purchase->deal_id))->values();
+    $comprasSinDealNoPagadas = $reconciled['pending']->filter(fn ($purchase) => blank($purchase->deal_id))->values();
+    $activePhasePurchases = $phasePaymentService->currentPortalPurchases($reconciled['pending'])
+        ->where('source', TeamleaderPhasePaymentService::PURCHASE_SOURCE)->values();
+    $paidIds = $reconciled['paid']->pluck('id')->flip();
+    $comprasPagadasSinFactura = $comprasPagadasSinFactura->filter(fn ($purchase) => $paidIds->has($purchase->id))->values();
+    $facturas = $facturas->filter(function (Factura $factura) use ($paidIds): bool {
         $original = collect($factura->compras ?? []);
-        $visible = $original->reject($isLinkedTeamleaderPurchase)->values();
+        $visible = $original->filter(fn ($purchase) => $paidIds->has($purchase->id))->values();
         $factura->setRelation('compras', $visible);
-
         return $original->isEmpty() || $visible->isNotEmpty();
     })->values();
-
-    $paidPurchaseRecords = $facturas->flatMap(fn (Factura $factura) => $factura->compras ?? [])
-        ->concat($comprasPagadasSinFactura);
-    $paidByDealPhase = $paidPurchaseRecords
-        ->filter(fn (Compras $purchase) => filled($purchase->deal_id))
-        ->groupBy(fn (Compras $purchase) => $purchase->deal_id . ':' . (int) $purchase->phasenum)
-        ->map(fn ($purchases) => (float) $purchases->sum('monto'));
-    $pendingByDealPhase = $comprasConDealNoPagadas
-        ->filter(fn (Compras $purchase) => filled($purchase->deal_id))
-        ->groupBy(fn (Compras $purchase) => $purchase->deal_id . ':' . (int) $purchase->phasenum)
-        ->map(fn ($purchases) => (float) $purchases->sum('monto'));
-    $hubspotPaidPaymentRows = $hubspotPaymentRows
-        ->map(function (array $row) use ($paidByDealPhase): array {
-            $key = $row['deal_id'] . ':' . (int) $row['phase'];
-            $row['display_amount'] = round(max((float) $row['effective_paid_amount'] - (float) $paidByDealPhase->get($key, 0), 0), 2);
-            return $row;
-        })
-        ->filter(fn (array $row) => $row['display_amount'] > 0.01)
-        ->values();
-    $hubspotPendingPaymentRows = $hubspotPaymentRows
-        ->map(function (array $row) use ($pendingByDealPhase): array {
-            $key = $row['deal_id'] . ':' . (int) $row['phase'];
-            $row['display_amount'] = round(max((float) $row['collectible_balance_amount'] - (float) $pendingByDealPhase->get($key, 0), 0), 2);
-            return $row;
-        })
-        ->filter(fn (array $row) => $row['display_amount'] > 0.01)
-        ->values();
-
+    $hubspotPaidPaymentRows = $reconciled['paid_rows'];
+    $hubspotPendingPaymentRows = $reconciled['pending_rows'];
+    $paymentSummaryByCurrency = $reconciled['summary'];
+    $statusPaymentRows = $reconciled['rows'];
+    $teamleaderProjectPayments['totals'] = [
+        'projects' => count($processGrouping['groups']),
+        'preestab_amount' => round($statusPaymentRows->sum('effective_preestab_amount'), 2),
+        'paid_amount' => round($statusPaymentRows->sum('effective_paid_amount'), 2),
+        'balance_amount' => round($statusPaymentRows->sum('collectible_balance_amount'), 2),
+        'non_collectible_balance_amount' => round($statusPaymentRows->sum('non_collectible_balance_amount'), 2),
+        'overpaid_amount' => round($statusPaymentRows->sum('overpaid_amount'), 2),
+    ];
 
     // ==========================================
     // PREPARAR DATOS PARA VISTA
@@ -2159,7 +2144,6 @@ class UserController extends Controller
         $clientTeamleaderHistory = app(\App\Services\TeamleaderClientHistoryService::class)->for($user);
         $comprasConDealNoPagadas = $comprasConDealNoPagadas->filter(fn ($purchase) => $purchase->monto > 0);
         $comprasSinDealNoPagadas = $comprasSinDealNoPagadas->filter(fn ($purchase) => $purchase->monto > 0);
-        $facturas = Factura::with('compras')->where('id_cliente', $user->id)->orderByDesc('created_at')->get();
     }
 
     $formulario001 = null;
@@ -2209,6 +2193,8 @@ class UserController extends Controller
         'teamleaderStatusMigration',
         'teamleaderProjectPayments',
         'statusPaymentRows',
+        'processGrouping',
+        'paymentSummaryByCurrency',
         'hubspotPaidPaymentRows',
         'hubspotPendingPaymentRows',
         'teamleaderProfileCustomValues',

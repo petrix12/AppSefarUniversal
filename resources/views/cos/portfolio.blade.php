@@ -76,27 +76,5 @@
         </div>
         {{ $clients->links() }}
     </div></div>
-    <div class="card"><div class="card-body">
-        <h2 class="h5">Asociación automática sin IA</h2>
-        <p>Se detectaron {{ $report['summary']['automatic_matches'] }} asociaciones claras por código de proceso, nombre, servicio o importes. El informe ya usa esas coincidencias para evitar duplicar saldos. Las coincidencias ambiguas se conservan para revisión.</p>
-        @if($report['summary']['automatic_matches'] > 0)
-            <details class="mb-3">
-                <summary>Revisar las asociaciones propuestas</summary>
-                <div class="table-responsive mt-2"><table class="table table-sm">
-                    <thead><tr><th>Cliente</th><th>Trato HubSpot</th><th>Proyecto Teamleader</th><th>Coincidencia</th></tr></thead>
-                    <tbody>
-                        @foreach($report['associations'] as $association)
-                            @if($association['status'] === 'matched')
-                                <tr><td>{{ $association['client_name'] }}</td><td>{{ $association['deal_title'] }}</td><td>{{ $association['project_title'] }}</td><td>{{ $association['reason'] }}</td></tr>
-                            @endif
-                        @endforeach
-                    </tbody>
-                </table></div>
-            </details>
-        @endif
-        <form method="POST" action="{{ route('crud.cos.portfolio.associate') }}">
-            @csrf
-            <button class="btn btn-outline-success" @disabled($report['summary']['automatic_matches'] === 0)>Guardar asociaciones claras</button>
-        </form>
-    </div></div>
+    <p class="text-muted">Para agrupar negocios de HubSpot con proyectos de Teamleader, abre el cliente y utiliza «Procesos del solicitante» en su ventana de estatus.</p>
 @stop

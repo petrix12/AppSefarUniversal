@@ -96,6 +96,10 @@ class ClienteController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
+        $context = app(\App\Services\CosProcessGroupingService::class)->loadForClient(Auth::user());
+        $compras = app(\App\Services\CosPaymentReconciliationService::class)
+            ->reconcile($context['deals'], $compras, $this->settledTeamleaderPhasePurchases(), collect())['pending'];
+
         $phasePaymentService = app(TeamleaderPhasePaymentService::class);
         $payablePurchaseIds = $phasePaymentService
             ->currentPortalPurchases($compras)
@@ -208,8 +212,12 @@ class ClienteController extends Controller
         // contacto autenticado y no realiza cambios durante la consulta.
         $clientTeamleaderHistory = app(TeamleaderClientHistoryService::class)->for($user);
 
+        $processGrouping = app(\App\Services\CosProcessGroupingService::class)->forClient(
+            $user, $negocios, collect($clientTeamleaderHistory['projects'] ?? []),
+        );
+        $negocios = $processGrouping['deals'];
         $clientProjectPayments = $clientTeamleaderHistory['project_payments'] ?? [];
-        app(TeamleaderPhasePaymentService::class)->sync($user, $clientProjectPayments);
+        app(TeamleaderPhasePaymentService::class)->sync($user, $clientProjectPayments, $negocios);
 
         // Re-read after Teamleader phases have been translated to individual
         // portal records, so a debt is visible in this same COS request.
@@ -244,6 +252,32 @@ class ClienteController extends Controller
             ->filter(fn (Compras $purchase) => (float) $purchase->monto > 0.01)
             ->values();
 
+
+        $clientPaymentRows = collect($clientProjectPayments['projects'] ?? [])->flatMap(function ($project) {
+            return collect($project['phases'] ?? [])->map(fn ($phase) => array_merge($phase, [
+                'source' => 'Teamleader', 'project_id' => (string) $project['project_id'],
+                'project_title' => $project['project_title'] ?? $project['project_id'],
+            ]))->values();
+        })->map([app(TeamleaderPhasePaymentService::class), 'paymentSummaryRow'])->values();
+        $paidRecords = $facturas->flatMap(fn ($invoice) => $invoice->compras ?? [])->concat($comprasPagadasSinFactura);
+        $reconciled = app(\App\Services\CosPaymentReconciliationService::class)->reconcile(
+            $negocios, $comprasConDealNoPagadas->merge($comprasSinDealNoPagadas), $paidRecords, $clientPaymentRows,
+        );
+        $comprasConDealNoPagadas = $reconciled['pending']->filter(fn ($purchase) => filled($purchase->deal_id))->values();
+        $comprasSinDealNoPagadas = $reconciled['pending']->filter(fn ($purchase) => blank($purchase->deal_id))->values();
+        $activePhasePurchases = app(TeamleaderPhasePaymentService::class)->currentPortalPurchases($reconciled['pending'])
+            ->where('source', TeamleaderPhasePaymentService::PURCHASE_SOURCE)->values();
+        $paidIds = $reconciled['paid']->pluck('id')->flip();
+        $comprasPagadasSinFactura = $comprasPagadasSinFactura->filter(fn ($purchase) => $paidIds->has($purchase->id))->values();
+        $facturas = $facturas->filter(function ($invoice) use ($paidIds) {
+            $original = collect($invoice->compras ?? []);
+            $visible = $original->filter(fn ($purchase) => $paidIds->has($purchase->id))->values();
+            $invoice->setRelation('compras', $visible);
+            return $original->isEmpty() || $visible->isNotEmpty();
+        })->values();
+        $paymentSummaryByCurrency = $reconciled['summary'];
+        $hubspotPaidPaymentRows = $reconciled['paid_rows'];
+        $hubspotPendingPaymentRows = $reconciled['pending_rows'];
 
         // ==========================================
         // PREPARAR DATOS PARA VISTA
@@ -337,6 +371,10 @@ class ClienteController extends Controller
         }
 
         $html = view('crud.users.edit', compact(
+            'processGrouping',
+            'paymentSummaryByCurrency',
+            'hubspotPaidPaymentRows',
+            'hubspotPendingPaymentRows',
             'documentRequests',
             'comprasConDealNoPagadas',
             'comprasPagadasSinFactura',
@@ -1841,6 +1879,17 @@ class ClienteController extends Controller
                     ->orWhere('source', TeamleaderPhasePaymentService::PURCHASE_SOURCE);
             })
             ->get();
+
+        if ($compras->isNotEmpty()) {
+            $context = app(\App\Services\CosProcessGroupingService::class)->loadForClient(Auth::user());
+            $allPending = Compras::where('id_user', auth()->id())->where('pagado', 0)->where('monto', '>', 0)->get();
+            $canonicalPending = app(\App\Services\CosPaymentReconciliationService::class)
+                ->reconcile($context['deals'], $allPending, $this->settledTeamleaderPhasePurchases(), collect())['pending'];
+            if (! $canonicalPending->contains('id', $compras->first()->id)) {
+                return redirect()->route('clientes.pagospendientes')
+                    ->with('info', 'Este pago corresponde a un proceso ya agrupado. Utiliza su saldo pendiente actualizado.');
+            }
+        }
 
         $phasePurchase = $compras->firstWhere('source', TeamleaderPhasePaymentService::PURCHASE_SOURCE);
         if ($phasePurchase && ! app(TeamleaderPhasePaymentService::class)->canPayPortalPurchase($phasePurchase)) {
@@ -4273,6 +4322,17 @@ class ClienteController extends Controller
     private function checkoutTeamleaderPhasePurchases(Request $request, $purchases)
     {
         $purchases = collect($purchases);
+        if ($purchases->isNotEmpty()) {
+            $context = app(\App\Services\CosProcessGroupingService::class)->loadForClient(Auth::user());
+            $allPending = Compras::where('id_user', auth()->id())->where('pagado', 0)->where('monto', '>', 0)->get();
+            $canonicalIds = app(\App\Services\CosPaymentReconciliationService::class)
+                ->reconcile($context['deals'], $allPending, $this->settledTeamleaderPhasePurchases(), collect())['pending']->pluck('id');
+            if ($purchases->contains(fn ($purchase) => ! $canonicalIds->contains($purchase->id))) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'compraid' => 'Este pago ya está agrupado. Recarga los pagos pendientes para utilizar el saldo actualizado.',
+                ]);
+            }
+        }
         $anchor = $purchases->firstWhere('source', TeamleaderPhasePaymentService::PURCHASE_SOURCE);
 
         if (! $anchor) {
@@ -4305,6 +4365,12 @@ class ClienteController extends Controller
         }
 
         return $remainingPurchases;
+    }
+
+    private function settledTeamleaderPhasePurchases()
+    {
+        return Compras::where('id_user', auth()->id())->where('source', TeamleaderPhasePaymentService::PURCHASE_SOURCE)
+            ->where('pagado', 1)->get();
     }
 
     /**

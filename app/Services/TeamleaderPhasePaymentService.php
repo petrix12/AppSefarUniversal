@@ -32,7 +32,7 @@ class TeamleaderPhasePaymentService
 
     private const OVERPAYMENT_RECIPIENTS = TeamleaderPhasePaymentRecipients::ADDRESSES;
 
-    public function sync(User $user, array &$analysis): Collection
+    public function sync(User $user, array &$analysis, ?Collection $processDeals = null): Collection
     {
         $existing = Compras::query()
             ->where('id_user', $user->id)
@@ -49,7 +49,7 @@ class TeamleaderPhasePaymentService
             ->keyBy(fn (Compras $purchase) => (string) data_get($purchase->metadata, 'teamleader_payment_reference'));
 
         $records = collect();
-        $historicalPaidAmounts = $this->historicalPaidAmounts($user);
+        $historicalPaidAmounts = $this->historicalPaidAmounts($user, $processDeals);
 
         if (! isset($analysis['projects']) || ! is_array($analysis['projects'])) {
             return $records;
@@ -528,7 +528,7 @@ class TeamleaderPhasePaymentService
      *
      * @return array<string, float>
      */
-    private function historicalPaidAmounts(User $user): array
+    private function historicalPaidAmounts(User $user, ?Collection $processDeals = null): array
     {
         $fieldsByPhase = [
             1 => ['monto_fase_1_pagado', 'fase_1_pagado'],
@@ -539,7 +539,9 @@ class TeamleaderPhasePaymentService
         ];
         $analyzer = app(TeamleaderProjectPaymentAnalyzer::class);
         $amounts = [];
-        $deals = Negocio::query()
+        $deals = $processDeals !== null
+            ? $processDeals->filter(fn ($deal) => (int) $deal->user_id === (int) $user->id && filled($deal->teamleader_id))
+            : Negocio::query()
             ->where('user_id', $user->id)
             ->whereNotNull('teamleader_id')
             ->get();
@@ -589,7 +591,7 @@ class TeamleaderPhasePaymentService
                     $query->whereNull('source')
                         ->orWhereNotIn('source', [self::PURCHASE_SOURCE, self::INSTALLMENT_SOURCE]);
                 })
-                ->get(['deal_id', 'phasenum', 'monto']);
+                ->get(['deal_id', 'phasenum', 'monto', 'source']);
 
             foreach ($historicalPurchases as $purchase) {
                 $projectId = (string) $projectByDealId->get($purchase->deal_id);
@@ -598,15 +600,16 @@ class TeamleaderPhasePaymentService
                 }
 
                 $key = $this->purchaseKey($projectId, (int) $purchase->phasenum);
-                $paidPurchaseAmounts[$key] = round(
-                    (float) ($paidPurchaseAmounts[$key] ?? 0) + (float) $purchase->monto,
+                $channel = $purchase->source === self::HISTORY_SOURCE ? 'imported' : 'portal';
+                $paidPurchaseAmounts[$key][$channel] = round(
+                    (float) ($paidPurchaseAmounts[$key][$channel] ?? 0) + (float) $purchase->monto,
                     2
                 );
             }
         }
 
-        foreach ($paidPurchaseAmounts as $key => $amount) {
-            $amounts[$key] = max((float) ($amounts[$key] ?? 0), $amount);
+        foreach ($paidPurchaseAmounts as $key => $channels) {
+            $amounts[$key] = max((float) ($amounts[$key] ?? 0), max($channels));
         }
 
         return $amounts;

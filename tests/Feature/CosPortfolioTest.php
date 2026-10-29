@@ -208,8 +208,124 @@ class CosPortfolioTest extends TestCase
         $portfolio = app(LocalCosPortfolioService::class);
         $report = $portfolio->generate();
         $this->assertSame(1, $report['summary']['automatic_matches']);
-        $this->deal($client);
+        $this->deal($client)->update(['hubspot_id' => 'HS-another-process']);
         $this->assertSame(0, $portfolio->applyMatches($report['associations']));
         $this->assertNull($deal->fresh()->teamleader_id);
+    }
+
+    public function test_status_groups_remote_deal_duplicates_and_provides_association_controls_in_the_status_panel(): void
+    {
+        $client = $this->client(1);
+        $first = $this->deal($client);
+        $this->deal($client);
+        $grouping = app(\App\Services\CosProcessGroupingService::class);
+        $context = $grouping->loadForClient($client);
+        $this->assertCount(1, $context['groups']);
+        $this->assertCount(1, $context['proposals']);
+        $this->assertSame(['project-1', 'project-1'], $context['deals']->pluck('teamleader_id')->all());
+        $this->assertNull($first->fresh()->teamleader_id);
+        $html = view('crud.users.partials.process-groups', [
+            'processGrouping' => $context, 'user' => $client,
+            'errors' => new \Illuminate\Support\ViewErrorBag(),
+        ])->render();
+        $this->assertStringContainsString('Procesos del solicitante', $html);
+        $this->assertStringContainsString(route('crud.users.process-associations', $client), $html);
+        $this->assertStringContainsString('Asociar un proceso manualmente', $html);
+    }
+
+    public function test_associating_from_status_only_changes_that_client_and_returns_to_status(): void
+    {
+        $client = $this->client(1);
+        $other = $this->client(2);
+        $deal = $this->deal($client);
+        $otherDeal = $this->deal($other);
+        $this->actingAs($this->actor())->post(route('crud.users.process-associations', $client), ['mode' => 'automatic'])
+            ->assertRedirect(route('crud.users.edit', $client).'#mystatus');
+        $this->assertSame('project-1', $deal->fresh()->teamleader_id);
+        $this->assertNull($otherDeal->fresh()->teamleader_id);
+        $this->assertDatabaseCount('compras', 0);
+        Http::assertNothingSent();
+        Mail::assertNothingOutgoing();
+    }
+
+    public function test_manual_status_association_rejects_other_clients_projects_and_records(): void
+    {
+        $client = $this->client(1);
+        $other = $this->client(2);
+        $deal = $this->deal($client);
+        $otherDeal = $this->deal($other);
+        $this->actingAs($this->actor())->postJson(route('crud.users.process-associations', $client), [
+            'mode' => 'manual', 'deal_id' => $deal->id, 'teamleader_id' => 'project-2',
+        ])->assertUnprocessable();
+        $this->postJson(route('crud.users.process-associations', $client), [
+            'mode' => 'manual', 'deal_id' => $otherDeal->id, 'teamleader_id' => 'project-1',
+        ])->assertNotFound();
+        $this->assertNull($deal->fresh()->teamleader_id);
+    }
+
+    public function test_status_manual_association_and_owner_permissions(): void
+    {
+        $actor = $this->actor('Ventas');
+        $client = $this->client(1, $actor->id);
+        $other = $this->client(2, $actor->id + 100);
+        $deal = $this->deal($client);
+        $this->actingAs($actor)->post(route('crud.users.process-associations', $other), ['mode' => 'automatic'])->assertForbidden();
+        $this->post(route('crud.users.process-associations', $client), [
+            'mode' => 'manual', 'deal_id' => $deal->id, 'teamleader_id' => 'project-1',
+        ])->assertRedirect(route('crud.users.edit', $client).'#mystatus');
+        $this->assertSame('project-1', $deal->fresh()->teamleader_id);
+        $client->givePermissionTo('crud.users.index');
+        $this->actingAs($client)->post(route('crud.users.process-associations', $client), ['mode' => 'automatic'])->assertForbidden();
+    }
+
+    public function test_virtual_process_grouping_reconciles_receipts_without_counting_the_imported_mirror_twice(): void
+    {
+        $client = $this->client(1);
+        $deal = $this->deal($client);
+        $context = app(\App\Services\CosProcessGroupingService::class)->loadForClient($client);
+        foreach ([null, 'teamleader_phase_history'] as $source) {
+            \App\Models\Compras::create(['id_user' => $client->id, 'deal_id' => $deal->id, 'phasenum' => 1, 'monto' => 1000, 'pagado' => 1, 'source' => $source]);
+        }
+        $method = new \ReflectionMethod(\App\Services\TeamleaderPhasePaymentService::class, 'historicalPaidAmounts');
+        $amounts = $method->invoke(app(\App\Services\TeamleaderPhasePaymentService::class), $client, $context['deals']);
+        $this->assertSame(1000.0, $amounts['project-1:1']);
+        $this->assertNull($deal->fresh()->teamleader_id);
+    }
+
+    public function test_an_old_link_to_a_mirrored_charge_redirects_to_the_grouped_pending_balance(): void
+    {
+        $client = $this->client(1);
+        $client->update(['pay' => 2]);
+        Permission::findOrCreate('cliente', 'web');
+        $client->givePermissionTo('cliente');
+        $deal = $this->deal($client);
+        $mirror = \App\Models\Compras::create(['id_user' => $client->id, 'deal_id' => $deal->id, 'phasenum' => 1, 'monto' => 2000, 'pagado' => 0]);
+        \App\Models\Compras::create([
+            'id_user' => $client->id, 'source' => 'teamleader_phase', 'phasenum' => 1, 'monto' => 2000, 'pagado' => 0,
+            'metadata' => ['teamleader_project_id' => 'project-1', 'phase' => 1],
+        ]);
+        $this->actingAs($client)->post(route('gotopayfases'), ['id' => $mirror->id])
+            ->assertRedirect(route('clientes.pagospendientes'))->assertSessionHas('info');
+        $this->assertDatabaseCount('compras', 2);
+        $this->assertFalse((bool) $mirror->fresh()->pagado);
+        Http::assertNothingSent();
+        Mail::assertNothingOutgoing();
+    }
+
+    public function test_a_payment_form_opened_before_grouping_cannot_pay_the_old_mirrored_charge(): void
+    {
+        $client = $this->client(1);
+        $deal = $this->deal($client);
+        $mirror = \App\Models\Compras::create(['id_user' => $client->id, 'deal_id' => $deal->id, 'phasenum' => 1, 'monto' => 2000, 'pagado' => 0]);
+        \App\Models\Compras::create([
+            'id_user' => $client->id, 'source' => 'teamleader_phase', 'phasenum' => 1, 'monto' => 2000, 'pagado' => 1,
+            'metadata' => ['teamleader_project_id' => 'project-1', 'phase' => 1],
+        ]);
+        $this->actingAs($client)->postJson(route('procesarpaypalfases'), ['compraid' => $mirror->id])
+            ->assertUnprocessable()->assertJsonValidationErrors('compraid');
+        $this->assertDatabaseCount('compras', 2);
+        $this->assertFalse((bool) $mirror->fresh()->pagado);
+        Http::assertNothingSent();
+        Mail::assertNothingOutgoing();
     }
 }

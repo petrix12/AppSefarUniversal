@@ -1,6 +1,6 @@
 # Tarjeta 108: cartera global y asociaciones sin IA
 
-Revisión del 28 de octubre de 2026.
+Revisión del 29 de octubre de 2026.
 
 Tarea: [Revisar si desde el COS se puede obtener los clientes que tienen el certificado y si deben dinero](https://trello.com/c/oeqp4Y2S/108-revisar-si-desde-el-cos-se-puede-obtener-los-clientes-que-tienen-el-certificado-y-si-deben-dinero).
 
@@ -15,7 +15,7 @@ Se implementó **Cartera y certificados**, un listado global de clientes con fil
 
 El listado debe cruzar expedientes y finanzas. El JSON `users.arraycos` por sí solo no permite determinar de forma fiable quién tiene certificado y cuánto debe: no guarda el detalle de deuda, puede estar vencido y agrupa resultados por servicio, perdiendo el vínculo individual con cada negocio.
 
-El listado consulta directamente los proyectos Teamleader importados. Por eso puede obtener clientes con certificado y saldo aunque sus proyectos todavía no estén asociados a HubSpot. Para combinar las dos fuentes sin duplicar saldos, también calcula asociaciones inequívocas sin IA y permite guardarlas en lote mediante **Guardar asociaciones claras**.
+El listado consulta directamente los proyectos Teamleader importados. Por eso puede obtener clientes con certificado y saldo aunque sus proyectos todavía no estén asociados a HubSpot. Para combinar las dos fuentes sin duplicar saldos, también calcula asociaciones inequívocas sin IA. Las asociaciones se revisan y guardan desde **Procesos del solicitante**, en la ventana **Estatus de Solicitante** de cada cliente.
 
 ## Asociación automática por reglas
 
@@ -31,6 +31,18 @@ Dentro del mismo cliente, se consideran suficientes estas coincidencias:
 Los nombres se comparan normalizando mayúsculas, acentos y separadores. Un nombre parecido o un importe cero no bastan. Los códigos contradictorios, servicios distintos o preestablecidos distintos impiden el enlace por nombre/importes. La coincidencia debe ser única en ambas direcciones, con margen frente al segundo candidato; se evalúa el conjunto completo para evitar decisiones arbitrarias según el orden.
 
 Las asociaciones existentes se conservan. Un proyecto reservado para otro cliente queda excluido. Guardar el lote actualiza solo `teamleader_id` y los metadatos de la decisión en la base local, bajo transacción y bloqueo por proyecto. No rellena campos remotos ni llama al servicio antiguo que puede recurrir a IA.
+
+## Agrupación y pagos en el estatus del cliente
+
+El panel **Procesos del solicitante** muestra juntos el negocio HubSpot y el proyecto Teamleader de cada proceso. Permite guardar las coincidencias claras del cliente sin IA y seleccionar manualmente un negocio y un proyecto de ese mismo cliente. Los registros locales con un mismo ID remoto HubSpot se consideran copias del mismo negocio; los enlaces contradictorios no se resuelven automáticamente. Guardar vuelve a abrir el estatus y recalcula los pagos.
+
+La conciliación utiliza proceso, fase y moneda, tanto en el estatus interno como en el del cliente y en los pagos pendientes. Una obligación de 2.000 en HubSpot y su saldo de fase de 2.000 en Teamleader se muestran como **2.000**, conservando el ID del registro realmente cobrable. Dos procesos distintos o dos fases diferentes de 2.000 mantienen su total de 4.000. Los cargos genéricos sin fase o sin proceso no se agrupan por importe.
+
+Los saldos de fase conciliados incorporan los abonos históricos y los pagos recientes del portal. Los campos antiguos del CRM no vuelven a sumar deuda sobre ese saldo, y una fase pagada no reaparece por su copia pendiente antigua. Los enlaces y formularios de cobro antiguos rechazan el registro sustituido y remiten al saldo actualizado.
+
+Los abonos y comprobantes reales permanecen en la base. La vista elimina la repetición entre el resumen importado y los recibos que representa, preserva los abonos individuales aunque tengan el mismo importe y muestra cualquier importe histórico restante. No se borran compras ni facturas. Se mantienen las reglas existentes de fases ocultas, revisión y orden de pago.
+
+Las coincidencias inequívocas se agrupan provisionalmente al consultar; guardar persiste el enlace. La consulta no escribe asociaciones. El nuevo guardado de asociaciones tampoco envía correos, crea compras ni actualiza los CRM externos.
 
 ## Cómo identificar el certificado
 
@@ -67,7 +79,7 @@ Una fase oculta conserva su saldo financiero interno, pero su importe no se inco
 
 ## Comprobación con la base local
 
-Se realizaron consultas de lectura sobre la base configurada en este entorno. **Estos números describen la copia local, sin sincronización; no constituyen un padrón actualizado de producción ni un listado de cobro.**
+Se realizaron consultas de lectura el 28 de octubre sobre la base configurada en este entorno. **Estos números describen la copia local, sin sincronización; no constituyen un padrón actualizado de producción ni un listado de cobro.**
 
 | Comprobación | Resultado |
 | --- | ---: |
@@ -86,7 +98,7 @@ Los grupos de la tabla se solapan. Un cliente con saldo conocido puede tener otr
 
 Menú **Usuarios y permisos → Cartera y certificados**. Requiere permiso `crud.users.index` y un usuario interno. Ventas y coordinación mantienen el filtro por su propio owner; Administrador puede consultar el conjunto completo. La descarga aplica los mismos filtros y alcance. Se neutralizan fórmulas en los campos de texto del CSV.
 
-El informe visible se conserva cinco minutos en caché. Guardar asociaciones recalcula las decisiones desde la base, sin confiar en IDs enviados por el navegador, y descarta las que ya se hayan asociado. Consultar la página o exportarla no modifica asociaciones.
+El informe visible se conserva cinco minutos en caché. Para asociar se abre el cliente desde el listado y se utiliza su ventana de estatus. Guardar asociaciones recalcula las decisiones desde la base, sin confiar en IDs enviados por el navegador, descarta las que ya se hayan asociado e invalida la caché de cartera. Consultar la página o exportarla no modifica asociaciones.
 
 También puede ejecutarse por consola:
 
@@ -101,8 +113,11 @@ El directorio de salida debe existir. `--owner=ID` limita el informe. Solo `--ap
 
 ## Validación realizada
 
-- `DeterministicTeamleaderDealMatcherTest`, `LocalCosPortfolioTest`, `CosPortfolioTest` y `TeamleaderProjectPaymentAnalyzerTest`: **44 pruebas y 123 aserciones satisfactorias**.
+- `CosPaymentReconciliationTest`, `DeterministicTeamleaderDealMatcherTest`, `LocalCosPortfolioTest`, `CosPortfolioTest` y `TeamleaderProjectPaymentAnalyzerTest`: **63 pruebas y 198 aserciones satisfactorias**.
+- `TeamleaderPhasePaymentRulesTest`, con Laravel inicializado para resolver su dependencia de configuración: **18 pruebas y 67 aserciones satisfactorias**. En total, **81 pruebas y 265 aserciones** relacionadas.
 - Cobertura de múltiples clientes, exportación completa de más de una página, roles y owner, coincidencias ambiguas en ambas direcciones, monedas distintas, importes cero, recibos históricos, abonos recientes, fases ocultas, duplicados e idempotencia del guardado. Las pruebas impiden peticiones HTTP y verifican que no se envían correos ni se crean compras.
 - Comprobación retrospectiva sobre 210 enlaces existentes, ocultando su enlace al comparador: recuperó 67, dejó 143 sin resolver automáticamente y no propuso un enlace distinto para ninguno. Esta comprobación no garantiza la corrección de todas las propuestas nuevas.
 - Generación real del informe completo y de los CSV con los datos locales, sin aplicar asociaciones.
+- Regresiones de deuda 2.000 + 2.000, fases y procesos distintos, pagos reales de igual importe, saldos antiguos frente a fases pagadas, historial parcialmente reflejado en recibos y rechazo del cobro de copias antiguas.
+- Sintaxis PHP y compilación de las tres plantillas Blade modificadas verificadas; revisión de espacios con `git diff --check`.
 - PHPUnit también advierte sobre una configuración obsoleta existente.

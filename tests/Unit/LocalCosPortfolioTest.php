@@ -128,4 +128,16 @@ class LocalCosPortfolioTest extends TestCase
         $this->assertSame(0.0, $row['known_balance_eur']);
         $this->assertSame('review', $row['status']);
     }
+
+    public function test_the_global_report_does_not_add_imported_payment_totals_to_their_portal_receipts(): void
+    {
+        $row = app(LocalCosPortfolioService::class)->clientRow($this->client(), [[
+            'id' => 5, 'teamleader_id' => 'project-1',
+        ]], [$this->project(['phase_fields' => [1 => ['preestab' => '2000 EUR', 'paid' => '1000 EUR']]])], [], [
+            ['deal_id' => 5, 'phasenum' => 1, 'pagado' => 1, 'source' => null, 'monto' => 1000],
+            ['deal_id' => 5, 'phasenum' => 1, 'pagado' => 1, 'source' => 'teamleader_phase_history', 'monto' => 1000],
+        ]);
+        $this->assertSame(1000.0, $row['known_balance_eur']);
+        $this->assertSame('debt', $row['status']);
+    }
 }

@@ -47,6 +47,20 @@ class DeterministicTeamleaderDealMatcher
         ];
     }
 
+    /** Legacy local duplicates of the same remote deal are one process. */
+    public function canonicalDeals(array $deals): array
+    {
+        return collect($deals)->groupBy(fn ($deal) => filled($deal['hubspot_id'] ?? null)
+            ? 'hs:'.$deal['hubspot_id'] : 'local:'.$deal['id'])
+            ->flatMap(function ($group) {
+                $links = $group->pluck('teamleader_id')->filter()->unique();
+                if ($links->count() > 1) {
+                    return $group->all(); // Conflicting existing links require review.
+                }
+                return [$group->sortByDesc(fn ($deal) => filled($deal['teamleader_id'] ?? null))->first()];
+            })->values()->all();
+    }
+
     /** Mutual, unique matches only. Decisions use the whole set, never greedy elimination. */
     public function plan(array $deals, array $projects, array $reservedProjectIds = []): array
     {

@@ -425,6 +425,9 @@
                 @php $rolId = $cosViewRoleId; @endphp
 
                 <div class="tab-pane fade show active" id="mystatus" role="tabpanel" aria-labelledby="mystatus-tab">
+                    @if($canEditCos && isset($processGrouping))
+                        @include('crud.users.partials.process-groups')
+                    @endif
                     {{-- ══ BOTÓN DE SINCRONIZACIÓN ══ --}}
                     @php
                         $isClientRole = $rolId === 5;
@@ -632,33 +635,6 @@
 
                     @if($rolId === 5)
                         @php
-                            $portalPaymentAmount = $facturas->sum(function ($factura) {
-                                return collect($factura->compras ?? [])->sum('monto');
-                            }) + collect($comprasPagadasSinFactura ?? [])
-                                ->filter(fn ($purchase) => strtoupper((string) data_get($purchase->metadata, 'display_currency', 'EUR')) === 'EUR')
-                                ->sum('monto') + collect($hubspotPaidPaymentRows ?? [])->sum('display_amount');
-                            $allPendingPurchases = $comprasConDealNoPagadas->merge($comprasSinDealNoPagadas);
-                            $portalPhasePaymentService = app(\App\Services\TeamleaderPhasePaymentService::class);
-                            $visiblePhasePurchases = $portalPhasePaymentService
-                                ->visiblePortalPurchases($allPendingPurchases)
-                                ->filter(fn ($purchase) => $purchase->source === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE);
-                            $portalOutstandingAmount = $allPendingPurchases
-                                ->reject(fn ($purchase) => $purchase->source === \App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE)
-                                ->sum('monto') + $visiblePhasePurchases->sum('monto')
-                                + collect($hubspotPendingPaymentRows ?? [])->sum('display_amount');
-
-                            // The payment summary is deliberately calculated
-                            // from the exact same portal records rendered in
-                            // the completed and pending payment tabs.
-                            $paymentSummaryByCurrency = collect([[
-                                'currency' => 'EUR',
-                                'paid' => round((float) $portalPaymentAmount, 2),
-                                'owed' => round((float) $portalOutstandingAmount, 2),
-                                'debt' => round(max((float) $portalOutstandingAmount, 0), 2),
-                            ]]);
-                        @endphp
-
-                        @php
                             $nextPhasePurchase = collect($activePhasePurchases ?? [])->first();
                         @endphp
                         @if($nextPhasePurchase)
@@ -835,7 +811,7 @@
                                 ->keyBy(fn ($purchase) => (string) data_get($purchase->metadata, 'teamleader_project_id')
                                     . ':' . (int) data_get($purchase->metadata, 'phase', $purchase->phasenum));
                             $tlPaymentRows = $tlPaymentRows->map(function ($phase) use ($tlPhasePurchases) {
-                                $key = (string) ($phase['project_id'] ?? '') . ':' . (int) ($phase['phase'] ?? 0);
+                                $key = (string) (($phase['teamleader_project_id'] ?? null) ?: ($phase['project_id'] ?? '')) . ':' . (int) ($phase['phase'] ?? 0);
                                 $purchase = $tlPhasePurchases->get($key);
                                 $phase['visibility_purchase_id'] = $purchase?->id;
                                 $phase['hidden_from_client'] = $purchase
@@ -872,10 +848,10 @@
                             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.75rem; padding:1rem 1.25rem; background:#eff6ff; border-bottom:1px solid #dbeafe;">
                                 <div>
                                     <div style="font-size:.78rem; font-weight:700; color:#1d4ed8; text-transform:uppercase; letter-spacing:.04em;">
-                                        Finanzas por negocio
+                                        Finanzas por proceso
                                     </div>
                                     <h3 style="font-size:1.1rem; font-weight:800; color:#111827; margin:0;">
-                                        Resumen de pagos por negocio
+                                        Resumen de pagos por proceso
                                     </h3>
                                 </div>
                                 @if(($teamleaderMigration['contact'] ?? null))
@@ -2642,9 +2618,9 @@
                             @endforeach
                             @foreach(($hubspotPaidPaymentRows ?? collect()) as $payment)
                                 <tr>
-                                    <td>HubSpot</td>
+                                    <td>{{ $payment['source'] ?? 'HubSpot' }}</td>
                                     <td>—</td>
-                                    <td>Pago registrado en el trato</td>
+                                    <td>Pago registrado en el proceso</td>
                                     <td>{{ $payment['project_title'] }} · {{ $payment['payment_label'] }}<div class="small text-muted">{{ $payment['paid_raw'] }}</div></td>
                                     <td>{{ format_money((float) $payment['display_amount'], 2, ',', '.') }} €</td>
                                     <td>—</td>
@@ -2726,11 +2702,11 @@
                                 <tr>
                                     <td>
                                         {{ $payment['project_title'] }} · {{ $payment['payment_label'] }}
-                                        <div class="small text-muted">Pendiente según los campos de pago del trato HubSpot.</div>
+                                        <div class="small text-muted">Pendiente según los campos de pago del proceso.</div>
                                     </td>
                                     <td>{{ format_money((float) $payment['display_amount'], 2, ',', '.') }} €</td>
                                     @if($cosViewRoleId == 5)
-                                        <td><span class="text-muted small">Verificar en HubSpot</span></td>
+                                        <td><span class="text-muted small">Verificar en el proceso</span></td>
                                     @endif
                                 </tr>
                             @endforeach
@@ -4372,7 +4348,9 @@
                         teamleader_id: teamleaderId,
                     });
                     markAsAssociated(teamleaderId);
-                    await Swal.fire('Asociación guardada', 'El trato quedó vinculado con Teamleader.', 'success');
+                    await Swal.fire('Asociación guardada', 'El proceso quedó agrupado y sus pagos se recalcularán.', 'success');
+                    window.location.hash = 'mystatus';
+                    window.location.reload();
                 } catch (error) {
                     manualSaveButton.disabled = false;
                     await Swal.fire('No se pudo asociar', error.message || 'Error al guardar la asociación.', 'error');
@@ -4438,7 +4416,9 @@
                     teamleader_id: button.dataset.teamleaderId,
                 });
                 markAsAssociated(button.dataset.teamleaderId);
-                await Swal.fire('Asociación guardada', 'El trato quedó vinculado con Teamleader.', 'success');
+                await Swal.fire('Asociación guardada', 'El proceso quedó agrupado y sus pagos se recalcularán.', 'success');
+                window.location.hash = 'mystatus';
+                window.location.reload();
             } catch (error) {
                 button.disabled = false;
                 await Swal.fire('No se pudo asociar', error.message || 'Error al guardar la asociación.', 'error');

@@ -179,7 +179,7 @@ class LocalCosPortfolioService
                     || User::role('Cliente')->where('tl_id', $contactId)->where('id', '!=', $client->id)->exists()) {
                     return 0;
                 }
-                $peers = Negocio::where('user_id', $client->id)->get()->map->toArray()->all();
+                $peers = $this->matcher->canonicalDeals(Negocio::where('user_id', $client->id)->get()->map->toArray()->all());
                 $projects = TlProject::where('customer_type', 'contact')->where('customer_id', $contactId)->get()
                     ->map(fn ($candidate) => $this->matcher->projectFacts($candidate->toArray()))->all();
                 $reserved = Negocio::whereNotNull('teamleader_id')->pluck('teamleader_id')->all();
@@ -323,14 +323,16 @@ class LocalCosPortfolioService
                 $deal[$fields[3]] ?? null, $raw['paid'] ?? null,
             );
             // Reconcile confirmed legacy receipts with the mirrored phase total, never add both.
-            $legacyPaid = 0.0;
+            $legacyPaidChannels = ['portal' => 0.0, 'imported' => 0.0];
             foreach ($purchases as $purchase) {
                 if ($deal && (int) ($purchase['deal_id'] ?? 0) === (int) $deal['id']
                     && (int) ($purchase['phasenum'] ?? 0) === $phase && ! empty($purchase['pagado'])
                     && ! in_array($purchase['source'] ?? null, [TeamleaderPhasePaymentService::PURCHASE_SOURCE, TeamleaderPhasePaymentService::INSTALLMENT_SOURCE], true)) {
-                    $legacyPaid += (float) $purchase['monto'];
+                    $channel = ($purchase['source'] ?? null) === TeamleaderPhasePaymentService::HISTORY_SOURCE ? 'imported' : 'portal';
+                    $legacyPaidChannels[$channel] += (float) $purchase['monto'];
                 }
             }
+            $legacyPaid = max($legacyPaidChannels);
             $parsedPaid = $this->payments->parseMoneyText($paid);
             if (! $parsedPaid['requires_currency_conversion'] && ! $parsedPaid['exonerated'] && ! $parsedPaid['included']
                 && $legacyPaid > $parsedPaid['total']) {

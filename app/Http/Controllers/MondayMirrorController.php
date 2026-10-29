@@ -73,9 +73,6 @@ class MondayMirrorController extends Controller
         $search = trim((string) $request->query('q'));
         $groupId = trim((string) $request->query('group'));
         $state = (string) $request->query('state', 'active');
-        $perPage = in_array((int) $request->query('per_page', 25), [25, 50, 100], true)
-            ? (int) $request->query('per_page', 25)
-            : 25;
 
         $itemsQuery = MondayItem::query();
         if (in_array($state, ['all', 'archived', 'deleted'], true)) {
@@ -111,8 +108,7 @@ class MondayMirrorController extends Controller
             ])
             ->orderBy('group_id')
             ->orderBy('id')
-            ->paginate($perPage)
-            ->withQueryString();
+            ->get();
 
         $groupCounts = MondayItem::query()
             ->select(['group_id', DB::raw('COUNT(*) as total')])
@@ -129,8 +125,7 @@ class MondayMirrorController extends Controller
             'groupCounts',
             'search',
             'groupId',
-            'state',
-            'perPage'
+            'state'
         ));
     }
 

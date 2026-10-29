@@ -26,7 +26,7 @@
                     <label class="small mb-1">Buscar dentro del tablero</label>
                     <input type="search" class="form-control form-control-sm" name="q" value="{{ $search }}" placeholder="Elemento, ID o valor de columna">
                 </div>
-                <div class="col-md-3 mb-2">
+                <div class="col-md-4 mb-2">
                     <label class="small mb-1">Grupo</label>
                     <select name="group" class="form-control form-control-sm">
                         <option value="">Todos los grupos</option>
@@ -44,12 +44,6 @@
                         <option value="all" @selected($state === 'all')>Todos</option>
                     </select>
                 </div>
-                <div class="col-md-1 mb-2">
-                    <label class="small mb-1">Filas</label>
-                    <select name="per_page" class="form-control form-control-sm">
-                        @foreach([25, 50, 100] as $size)<option value="{{ $size }}" @selected($perPage === $size)>{{ $size }}</option>@endforeach
-                    </select>
-                </div>
                 <div class="col-md-2 mb-2 d-flex">
                     <button class="btn btn-primary btn-sm flex-grow-1"><i class="fas fa-filter mr-1"></i>Aplicar</button>
                     <a href="{{ route('admin.monday.boards.show', $board) }}" class="btn btn-default btn-sm ml-1" title="Limpiar"><i class="fas fa-times"></i></a>
@@ -59,14 +53,14 @@
     </div>
 
     @php
-        $pageGroups = $items->getCollection()->groupBy(fn ($row) => (string) ($row->group_id ?? ''));
+        $itemsByGroup = $items->groupBy(fn ($row) => (string) ($row->group_id ?? ''));
         $visibleGroups = $groupId !== '' ? $groups->where('monday_id', $groupId) : $groups;
     @endphp
 
     <div class="monday-board-shell">
         @foreach($visibleGroups as $group)
             @php
-                $groupItems = $pageGroups->get((string) $group->monday_id, collect());
+                $groupItems = $itemsByGroup->get((string) $group->monday_id, collect());
             @endphp
             <section class="monday-group mb-4">
                 <div class="monday-group-title" style="--group-color: {{ $group->color ?: '#579bfc' }}">
@@ -84,7 +78,7 @@
                                 @include('admin.monday.partials.item-row', ['row' => $subitem, 'columns' => $columns, 'subitem' => true])
                             @endforeach
                         @empty
-                            <tr><td colspan="{{ $columns->count() + 2 }}" class="text-muted text-center py-3">{{ $items->total() ? 'No hay elementos de este grupo en la página actual.' : 'Este grupo no tiene elementos para los filtros seleccionados.' }}</td></tr>
+                            <tr><td colspan="{{ $columns->count() + 2 }}" class="text-muted text-center py-3">Este grupo no tiene elementos para los filtros seleccionados.</td></tr>
                         @endforelse
                         </tbody>
                     </table>
@@ -93,22 +87,24 @@
         @endforeach
 
         @php
-            $ungrouped = $pageGroups->get('', collect());
+            $ungrouped = $itemsByGroup->get('', collect());
         @endphp
         @if($ungrouped->isNotEmpty())
             <section class="monday-group mb-4">
                 <div class="monday-group-title" style="--group-color:#6c757d"><span class="monday-group-dot"></span><strong>Sin grupo</strong></div>
                 <div class="table-responsive monday-grid-wrap"><table class="table table-bordered table-sm monday-grid mb-0"><thead><tr><th class="item-column sticky-col">Elemento</th>@foreach($columns as $column)<th>{{ $column->title ?: $column->monday_id }}</th>@endforeach<th>Actualizado</th></tr></thead><tbody>
-                @foreach($ungrouped as $row) @include('admin.monday.partials.item-row', ['row' => $row, 'columns' => $columns, 'subitem' => false]) @endforeach
+                @foreach($ungrouped as $row)
+                    @include('admin.monday.partials.item-row', ['row' => $row, 'columns' => $columns, 'subitem' => false])
+                    @foreach($row->subitems as $subitem)
+                        @include('admin.monday.partials.item-row', ['row' => $subitem, 'columns' => $columns, 'subitem' => true])
+                    @endforeach
+                @endforeach
                 </tbody></table></div>
             </section>
         @endif
     </div>
 
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
-        <div class="text-muted small">Mostrando {{ $items->firstItem() ?: 0 }}–{{ $items->lastItem() ?: 0 }} de {{ number_format($items->total()) }} elementos principales</div>
-        {{ $items->links() }}
-    </div>
+    <div class="text-muted small mb-4">Mostrando {{ number_format($items->count()) }} elementos principales</div>
 @stop
 
 @section('css')
