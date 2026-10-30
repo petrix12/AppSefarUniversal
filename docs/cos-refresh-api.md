@@ -78,7 +78,9 @@ Cuando se actualiza el COS, la respuesta incluye:
 
 En cada llamada se omite el COS almacenado, la caché de contacto/negocios de HubSpot y la de contacto/proyectos de Teamleader. Se reconcilian los negocios en la app con la lista actual de HubSpot y se ejecuta la asociación/enriquecimiento existente con Teamleader. En el modo forzado se recorren todas las páginas de proyectos y los errores de lista o detalle se propagan.
 
-Se vuelve a consultar el ítem de Monday vinculado al cliente. Si falta `monday_id`, se busca por el enlace del pasaporte en los tableros de `config/cos_snapshot.php`, ignorando incluso una ausencia cacheada. También se refrescan las columnas del tablero. Una ausencia confirmada limpia los datos Monday locales; una respuesta incompleta o con errores no se interpreta como ausencia.
+Para Monday se prefiere el ítem de la réplica local, incluso en el refresco forzado. Si falta `monday_id`, se busca el enlace exacto del pasaporte en los tableros de `config/cos_snapshot.php`, con la prioridad configurada y sin reutilizar una ausencia cacheada. Cuando la réplica no puede resolverlo, se consulta la API y se refrescan las columnas como antes. Una ausencia confirmada limpia el JSON Monday del usuario; una réplica incompleta o una respuesta con errores no se interpreta como ausencia.
+
+Si falla la API y existe una copia `monday_data` válida del mismo cliente y asociación, el cálculo continúa con ese respaldo y vence en cinco minutos para reintentarlo. `data.monday.source` distingue `local_mirror`, `api` y `stored_snapshot_fallback`; `synced_at` indica la fecha de los datos utilizados y `fallback` identifica el respaldo. Si tampoco hay copia válida, el refresco falla y conserva el COS anterior.
 
 Las definiciones del COS se leen desde la base de datos sin caché y se recalcula el resultado. Cuando las reglas requieren clasificación por IA, se omite el resultado cacheado; si la IA falla, se conserva el análisis manual existente sobre los datos actuales. Se actualizan las cachés de datos obtenidos para las lecturas habituales, pero esta ruta nunca las utiliza para saltarse el refresco.
 

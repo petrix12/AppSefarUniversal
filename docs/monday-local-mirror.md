@@ -114,9 +114,20 @@ Estas funciones ya prefieren la réplica cuando el tablero terminó al menos una
 
 - selector de tableros, grupos y columnas (`MondayCatalogService`);
 - búsqueda Monday usada por el COS (`CosMondayLookup`);
+- lectura del ítem vinculado y cálculo del COS (`ClientCosSnapshotService`), también en el refresco forzado;
 - estadísticas de Monday (`MondayController::mondayreportes`).
 
 Si las tablas aún no existen o un tablero todavía no terminó su primera copia, los servicios de catálogo y COS conservan temporalmente su comportamiento anterior y consultan Monday. Esto permite desplegar el código antes de ejecutar la migración/importación sin romper esas pantallas.
+
+### Cálculo del COS con datos locales
+
+El COS lee el tablero y las etiquetas del ítem vinculado directamente de la réplica, sin consultar la API de Monday ni descargar de nuevo las columnas. Un ítem ya recibido completo por webhook también puede utilizarse antes de terminar el primer barrido del tablero. Si falta `monday_id`, se busca el enlace exacto del pasaporte en los tableros configurados, manteniendo su prioridad; la ausencia solo es concluyente cuando todos esos tableros terminaron su copia.
+
+La ficha también prefiere la réplica sobre el antiguo JSON `monday_data`. Si cambiaron el tablero o las etiquetas, solicita recalcular el snapshot en segundo plano, incluso si su caché seguía vigente. La primera vista, cuando no hay COS guardado, puede calcularse con datos locales y reglas manuales sin llamadas externas.
+
+Cuando falta información en la réplica, se conserva la consulta a la API. Si esta falla, se utiliza como respaldo un JSON `monday_data` completo del mismo usuario y de la misma asociación Monday. El resultado incluye `monday.source`, `monday.synced_at` y `monday.fallback`; el COS calculado con ese respaldo vence en cinco minutos para volver a intentar la actualización. Si no hay respaldo válido, se conserva el COS anterior. Un ítem eliminado o archivado conocido por la réplica no se recupera de una copia antigua.
+
+El worker omite la descarga opcional del directorio de usuarios Monday cuando calcula con datos locales. Ese directorio se actualiza con un job independiente en `monday-sync`, cada hora con la réplica habilitada o al detectar que falta su caché. Se conserva la última copia válida si falla su actualización, para mantener disponible el selector de empleados. HubSpot, Teamleader y la clasificación existente del COS conservan sus propias políticas; este cambio elimina las llamadas a **Monday** del cálculo cuando la réplica contiene los datos necesarios.
 
 ## Tableros grandes
 

@@ -2,6 +2,14 @@
 
 Para forzar una actualización síncrona desde una integración, usar el [endpoint de refresco COS con token](cos-refresh-api.md). Esa ruta omite las cachés de datos en cada llamada.
 
+## Cálculo con la réplica Monday (29 de octubre de 2026)
+
+La ficha y el refresco del COS leen primero el ítem, tablero y etiquetas de las tablas locales de Monday, también al forzar el recálculo. Cuando no hay ítem vinculado, la búsqueda local respeta los tableros configurados y exige su copia completa para confirmar una ausencia. No se consulta la API de Monday cuando la réplica ya permite resolver el cliente.
+
+Si falta el dato local, se mantiene la consulta remota. Si esta falla, una copia válida `monday_data` del mismo cliente sirve como respaldo, con origen y fecha en el resultado y una vigencia del COS de cinco minutos. Sin copia válida se conserva el COS anterior. Los cambios de tablero o etiquetas en la réplica solicitan un recálculo aunque el snapshot anterior aún esté vigente. El worker no descarga el directorio opcional de usuarios Monday durante los cálculos locales.
+
+`CosMondayLocalDataTest` cubre el recálculo real, primeras cargas, cambios de etiquetas, búsqueda exacta, prioridad, ausencias, eliminaciones, fallback y preservación del COS ante un fallo sin respaldo.
+
 ## Optimización de las consultas Monday (7 de septiembre de 2026)
 
 Las tres rutas de búsqueda comparten `CosMondayLookup`. Consulta los 12 tableros configurados mediante peticiones HTTP concurrentes, con máximo 12 simultáneas, límite de conexión de 5 segundos y timeout de 20 segundos. No requiere colas para el paralelismo. Conserva la prioridad de la configuración cuando aparecen varias coincidencias y trata los errores o resultados incompletos como fallos, no como ausencia de cliente. Una búsqueda completa sin resultados se recuerda 60 segundos; la clave incorpora usuario, pasaporte y lista de tableros.
@@ -26,7 +34,7 @@ Las rutas de estado del cliente y de ficha administrativa utilizan `ClientCosSna
 
 Al visitar la ficha se solicita una actualización como máximo cada cinco minutos por usuario, deduplicada mediante `ShouldBeUnique`. Mientras se procesa se conserva visible el snapshot anterior. El botón de sincronización solicita la actualización en segundo plano y avisa que debe recargarse la página.
 
-`RefreshClientCosSnapshot` utiliza explícitamente la conexión `cos`, con driver database y cola `cos-refresh`, incluso cuando la conexión global es `sync`. Actualiza el snapshot, el catálogo compartido de usuarios Monday y la importación de archivos HubSpot (una vez por hora por cliente). Las consultas a fuentes externas y la importación de documentos ya no se realizan en la petición que renderiza la ficha. Los errores de HubSpot impiden marcar como renovado el snapshot anterior.
+`RefreshClientCosSnapshot` utiliza explícitamente la conexión `cos`, con driver database y cola `cos-refresh`, incluso cuando la conexión global es `sync`. Actualiza el snapshot y la importación de archivos HubSpot (una vez por hora por cliente); el directorio compartido de usuarios Monday solo se consulta cuando el cálculo ya necesitó su API. Las consultas a fuentes externas y la importación de documentos ya no se realizan en la petición que renderiza la ficha. Los errores de HubSpot impiden marcar como renovado el snapshot anterior.
 
 ## Operación
 

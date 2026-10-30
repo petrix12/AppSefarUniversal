@@ -36,17 +36,22 @@ class RefreshClientCosSnapshot implements ShouldQueue, ShouldBeUnique
     {
         $user = User::find($this->userId);
         if ($user) {
-            $snapshots->get($user, $this->forceRefresh);
+            $snapshot = $snapshots->get($user, $this->forceRefresh);
             \Illuminate\Support\Facades\Cache::forget('cos.snapshot_refresh.pending.' . $user->id);
             \Illuminate\Support\Facades\Cache::put('cos.page_refreshed.' . $user->id, true, 300);
-            \Illuminate\Support\Facades\Cache::remember('cos.monday_users', 3600, function () {
-                $result = \Monday::customQuery('users { id name email enabled }');
+            // The user directory is optional UI data, not a prerequisite for a local COS calculation.
+            if (($snapshot['monday']['source'] ?? 'api') === 'api') {
+                \Illuminate\Support\Facades\Cache::remember('cos.monday_users', 3600, function () {
+                    $result = \Monday::customQuery('users { id name email enabled }');
 
-                return collect($result['users'] ?? [])
-                    ->filter(fn ($user) => $user['enabled'] ?? false)
-                    ->map(fn ($user) => array_intersect_key($user, array_flip(['id', 'name', 'email'])))
-                    ->values()->all();
-            });
+                    return collect($result['users'] ?? [])
+                        ->filter(fn ($user) => $user['enabled'] ?? false)
+                        ->map(fn ($user) => array_intersect_key($user, array_flip(['id', 'name', 'email'])))
+                        ->values()->all();
+                });
+            } elseif (! \Illuminate\Support\Facades\Cache::has('cos.monday_users')) {
+                \App\Jobs\Monday\RefreshMondayUsersJob::dispatch();
+            }
             $user->refresh();
             if (filled($user->hs_id) && filled($user->passport)) {
                 \Illuminate\Support\Facades\Cache::remember('cos.documents_imported.' . $user->id, 3600, function () use ($user, $hubspot) {

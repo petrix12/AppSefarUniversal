@@ -14,6 +14,35 @@ use RuntimeException;
 
 class CosMondayLookup
 {
+    /** Null means incomplete/unavailable replica; an item=null result confirms absence. */
+    public function localFor(User $user): ?array
+    {
+        if (! (bool) config('services.monday.mirror_reads', true)) return null;
+        foreach (['monday_boards', 'monday_items', 'monday_item_values', 'monday_columns'] as $table) {
+            if (! Schema::hasTable($table)) return null;
+        }
+
+        if (filled($user->monday_id)) {
+            $item = MondayItem::withTrashed()->find((string) $user->monday_id, ['id', 'board_id', 'name', 'state', 'deleted_at', 'last_synced_at']);
+            $board = $item ? MondayBoard::find($item->board_id) : null;
+            if (! $board || (! $board->last_synced_at && ! $item->last_synced_at)) return null;
+            $active = ! $item->trashed() && in_array($item->state, [null, 'active'], true)
+                && ! $board->remote_deleted_at && in_array($board->state, [null, 'active'], true);
+            return [
+                'item' => $active ? $this->itemPayload($item, $board) : null,
+                'synced_at' => ($item->last_synced_at ?? $board->last_synced_at)?->toIso8601String(),
+            ];
+        }
+
+        $ids = array_keys(config('cos_snapshot.monday_search_boards', []));
+        if (blank($user->passport) || $ids === [] || ! $this->mirrorReady($ids)) return null;
+        $boards = MondayBoard::whereIn('id', $ids)->get(['id', 'last_synced_at']);
+        return [
+            'item' => $this->findLocally(trim($user->passport), $ids),
+            'synced_at' => $boards->min('last_synced_at')?->toIso8601String(),
+        ];
+    }
+
     public function find(?string $passport, User $user, bool $forceRefresh = false): ?array
     {
         $passport = trim((string) $passport);
@@ -120,48 +149,49 @@ class CosMondayLookup
         $url = 'https://app.sefaruniversal.com/tree/'.$passport;
 
         foreach ($boardIds as $boardId) {
-            $item = MondayItem::query()
-                ->with('values')
+            $candidates = MondayItem::query()
                 ->where('board_id', (string) $boardId)
                 ->whereHas('values', function ($query) use ($url): void {
                     $query->where('monday_column_id', 'enlace')
                         ->where('text', 'like', '%'.$url.'%');
                 })
-                ->first();
+                ->where(fn ($query) => $query->whereNull('state')->orWhere('state', 'active'))
+                ->orderBy('id')
+                ->select(['id', 'board_id', 'name'])
+                ->cursor();
 
-            if ($item === null) {
-                continue;
+            foreach ($candidates as $item) {
+                // A passport prefix (ABC versus ABC123) is not the same client.
+                $links = $item->values()->where('monday_column_id', 'enlace')->pluck('text');
+                if ($links->contains(fn ($text) => preg_match('~'.preg_quote($url, '~').'/?(?=$|[?#\s"<>),])~u', (string) $text))) {
+                    return $this->itemPayload($item, MondayBoard::find((string) $boardId));
+                }
             }
-
-            $board = MondayBoard::find((string) $boardId);
-            $columns = MondayColumn::query()
-                ->where('board_id', (string) $boardId)
-                ->get()
-                ->keyBy('monday_id');
-
-            return [
-                'id' => (string) $item->id,
-                'name' => (string) $item->name,
-                'board' => [
-                    'id' => (string) $boardId,
-                    'name' => (string) ($board?->name ?? ''),
-                ],
-                'column_values' => $item->values->map(function ($value) use ($columns): array {
-                    $column = $columns->get($value->monday_column_id);
-
-                    return [
-                        'id' => (string) $value->monday_column_id,
-                        'text' => $value->text,
-                        'value' => $value->value,
-                        'column' => [
-                            'title' => (string) ($column?->title ?? $value->monday_column_id),
-                            'type' => (string) ($column?->type ?? $value->type),
-                        ],
-                    ];
-                })->values()->all(),
-            ];
         }
 
         return null;
+    }
+
+    private function itemPayload(MondayItem $item, MondayBoard $board): array
+    {
+        $item->load(['values' => fn ($query) => $query->select(['id', 'item_id', 'monday_column_id', 'type', 'text', 'value'])]);
+        $columns = MondayColumn::where('board_id', $board->id)->get(['monday_id', 'title', 'type'])->keyBy('monday_id');
+        return [
+            'id' => (string) $item->id,
+            'name' => (string) $item->name,
+            'board' => ['id' => (string) $board->id, 'name' => (string) ($board->name ?? '')],
+            'column_values' => $item->values->map(function ($value) use ($columns): array {
+                $column = $columns->get($value->monday_column_id);
+                return [
+                    'id' => (string) $value->monday_column_id,
+                    'text' => $value->text,
+                    'value' => $value->value,
+                    'column' => [
+                        'title' => (string) ($column?->title ?? $value->monday_column_id),
+                        'type' => (string) ($column?->type ?? $value->type),
+                    ],
+                ];
+            })->values()->all(),
+        ];
     }
 }

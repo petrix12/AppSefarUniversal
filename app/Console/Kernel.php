@@ -49,6 +49,9 @@ class Kernel extends ConsoleKernel
             ->when(fn () => (bool) config('services.monday.mirror_enabled'))
             ->withoutOverlapping(30)
             ->appendOutputTo(storage_path('logs/monday-mirror.log'));
+        $schedule->job(new \App\Jobs\Monday\RefreshMondayUsersJob())
+            ->hourly()
+            ->when(fn () => (bool) config('services.monday.mirror_enabled'));
         $schedule->command('queue:work monday --queue=monday-sync --stop-when-empty --max-time=50 --timeout=1800 --tries=3')
             ->everyMinute()
             ->when(fn () => (bool) config('services.monday.mirror_enabled'))

@@ -46,13 +46,11 @@ class ClientCosSnapshotService
         $stored = MondayData::where('user_id', $user->id)->value('data');
         $details = is_array($stored) ? $stored : json_decode($stored ?: 'null', true);
         $details = is_array($details) ? $details : null;
-        $monday = [
-            'mondayUserDetails' => $details,
-            'mondaydataforAI' => [
-                'tablero' => $details['board']['name'] ?? '',
-                'etiquetas' => collect($details['column_values'] ?? [])->firstWhere('id', 'men__desplegable')['text'] ?? '',
-            ],
-        ];
+        $localMonday = app(CosMondayLookup::class)->localFor($user);
+        $monday = $localMonday !== null
+            ? $this->mondayCalculationData($localMonday['item'], 'local_mirror', $localMonday['synced_at'])
+            : $this->mondayCalculationData($details, 'stored_snapshot');
+        $mondayChanged = $monday['mondaydataforAI'] !== $this->mondayCalculationData($details, 'stored_snapshot')['mondaydataforAI'];
 
         if ($this->hasFreshCachedCos($user)) {
             $statuses = is_array($user->arraycos) ? $user->arraycos : [];
@@ -79,7 +77,7 @@ class ClientCosSnapshotService
         }
 
         $refreshPending = false;
-        if (! $this->hasFreshCachedCos($user) || ! \Illuminate\Support\Facades\Cache::has('cos.page_refreshed.' . $user->id)) {
+        if ($mondayChanged || ! $this->hasFreshCachedCos($user) || ! \Illuminate\Support\Facades\Cache::has('cos.page_refreshed.' . $user->id)) {
             try {
                 Cache::put('cos.snapshot_refresh.pending.' . $user->id, true, 600);
                 \App\Jobs\RefreshClientCosSnapshot::dispatch($user->id, true);
@@ -164,7 +162,9 @@ class ClientCosSnapshotService
         });
 
         $user->arraycos = array_values($cosuserFinal);
-        $user->arraycos_expire = Carbon::now()->addDays($this->cacheTtlDays());
+        $user->arraycos_expire = $mondayData['fallback']
+            ? Carbon::now()->addMinutes(5)
+            : Carbon::now()->addDays($this->cacheTtlDays());
         $user->cosready = $this->checkCosReady($cosuserFinal, $cos);
         $user->save();
 
@@ -186,6 +186,9 @@ class ClientCosSnapshotService
                 'id' => $user->monday_id,
                 'board' => $mondayData['mondayUserDetails']['board']['name'] ?? null,
                 'has_data' => ! empty($mondayData['mondayUserDetails']),
+                'source' => $mondayData['source'],
+                'synced_at' => $mondayData['synced_at'],
+                'fallback' => $mondayData['fallback'],
             ],
             'generated_at' => Carbon::now()->toIso8601String(),
             'duration_ms' => (int) round((microtime(true) - $startedAt) * 1000),
@@ -232,6 +235,7 @@ class ClientCosSnapshotService
                 'id' => $user->monday_id,
                 'board' => $mondayUserDetails['board']['name'] ?? null,
                 'has_data' => ! empty($mondayUserDetails),
+                'source' => 'stored_snapshot',
             ],
             'generated_at' => Carbon::now()->toIso8601String(),
             'duration_ms' => (int) round((microtime(true) - $startedAt) * 1000),
@@ -426,6 +430,18 @@ class ClientCosSnapshotService
     private function refreshMondayData(User $user, bool $forceRefresh = false): array
     {
         $cacheKey = "monday_data_{$user->id}_{$user->monday_id}";
+        $local = app(CosMondayLookup::class)->localFor($user);
+        if ($local !== null) {
+            $details = $local['item'];
+            if ($details && blank($user->monday_id)) {
+                $user->monday_id = $details['id'];
+                $user->save();
+            }
+            $this->storeMondayUserData($user, $details);
+            $data = $this->mondayCalculationData($details, 'local_mirror', $local['synced_at']);
+            Cache::put("monday_data_{$user->id}_{$user->monday_id}", $data, 600);
+            return $data;
+        }
 
         $fetch = function () use ($user, $forceRefresh) {
             $mondayUserDetailsPre = null;
@@ -499,11 +515,38 @@ class ClientCosSnapshotService
             ];
         };
 
-        // Fetch directly: even a concurrently populated cache must not skip Monday.
-        $data = $fetch();
+        try {
+            $data = $fetch();
+            $data += ['source' => 'api', 'synced_at' => now()->toIso8601String(), 'fallback' => false];
+        } catch (\Throwable $exception) {
+            $stored = MondayData::where('user_id', $user->id)->first();
+            $details = $stored ? (is_array($stored->data) ? $stored->data : json_decode($stored->data ?: 'null', true)) : null;
+            // Never substitute a previous association or an empty/invalid record for a failed refresh.
+            if (! is_array($details) || blank($details['id'] ?? null) || blank($details['board']['name'] ?? null)
+                || ! is_array($details['column_values'] ?? null)
+                || (filled($user->monday_id) && (string) $details['id'] !== (string) $user->monday_id)) {
+                throw $exception;
+            }
+            $data = $this->mondayCalculationData($details, 'stored_snapshot_fallback', $stored->updated_at?->toIso8601String(), true);
+            Log::warning('COS: se utiliza la última copia local de Monday', [
+                'user_id' => $user->id, 'synced_at' => $data['synced_at'], 'error' => $exception->getMessage(),
+            ]);
+        }
         Cache::put($cacheKey, $data, 600);
 
         return $data;
+    }
+
+    private function mondayCalculationData(?array $details, string $source, ?string $syncedAt = null, bool $fallback = false): array
+    {
+        return [
+            'mondayUserDetails' => $details,
+            'mondaydataforAI' => $details ? [
+                'tablero' => $details['board']['name'] ?? '',
+                'etiquetas' => collect($details['column_values'] ?? [])->firstWhere('id', 'men__desplegable')['text'] ?? '',
+            ] : [],
+            'source' => $source, 'synced_at' => $syncedAt, 'fallback' => $fallback,
+        ];
     }
 
     private function searchUserInMonday(?string $passport, User $user, bool $forceRefresh = false): ?array
