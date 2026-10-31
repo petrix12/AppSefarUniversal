@@ -47,11 +47,12 @@ class EventServiceProvider extends ServiceProvider
     }
     public function handleReadingDarkModeEvt(ReadingDarkModePreference $event)
     {
-        // TODO: Implement the next method to get the dark mode preference for the
-        // current authenticated user. Usually this preference will be stored on a database,
-        // it is your task to get it.
+        $user = Auth::user();
+        if ($user === null) {
+            return;
+        }
 
-        $darkModeCfg = Auth::user()->dark_mode;
+        $darkModeCfg = $user->dark_mode;
 
         // Setup initial dark mode preference.
 
@@ -70,6 +71,11 @@ class EventServiceProvider extends ServiceProvider
      */
     public function handleDarkModeWasToggledEvt(DarkModeWasToggled $event)
     {
+        $user = Auth::user();
+        if ($user === null) {
+            return;
+        }
+
         $darkModeCfg = $event->darkMode->isEnabled();
 
         if ($darkModeCfg) {
@@ -78,6 +84,6 @@ class EventServiceProvider extends ServiceProvider
             $updatedb = 0;
         }
 
-        Auth::user()->update(['dark_mode' => $updatedb]);
+        $user->update(['dark_mode' => $updatedb]);
     }
 }

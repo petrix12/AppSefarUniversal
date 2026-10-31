@@ -668,7 +668,9 @@ Route::post('/guardarfase2', [NegocioController::class, 'guardarfase2'])->name('
 Route::post('/guardarfase3', [NegocioController::class, 'guardarfase3'])->name('guardarfase3');
 Route::post('/guardarcartanat', [NegocioController::class, 'guardarcartanat'])->name('guardarcartanat');
 Route::post('/guardarfcjecil', [NegocioController::class, 'guardarfcjecil'])->name('guardarfcjecil');
-Route::post('/deals/{id}/update', [NegocioController::class, 'update'])->name('deals.update');
+Route::post('/deals/{id}/update', [NegocioController::class, 'update'])
+    ->name('deals.update')
+    ->middleware(['auth', 'can:notCliente', 'can:crud.users.index']);
 
 Route::post('/exonerarfase1', [NegocioController::class, 'exonerarfase1'])->name('exonerarfase1');
 Route::post('/exonerarfase2', [NegocioController::class, 'exonerarfase2'])->name('exonerarfase2');
@@ -704,10 +706,12 @@ Route::get('/teamleader/success', [TeamleaderController::class, 'success'])->nam
 //checkRegMondayTest
 Route::get('/checkMondayTest', [ClienteController::class, 'checkMondayTest'])->name('checkMondayTest');
 
-Route::get('/deal/{id}/edit', [NegocioController::class, 'edit'])->name('deals.edit');
+Route::get('/deal/{id}/edit', [NegocioController::class, 'edit'])
+    ->name('deals.edit')
+    ->middleware(['auth', 'can:notCliente', 'can:crud.users.index']);
 Route::post('/deals/{id}/teamleader-suggestions', [NegocioController::class, 'sugerirAsociacionesTeamleader'])
     ->name('deals.teamleader.suggestions')
-    ->middleware(['auth', 'can:crud.users.index']);
+    ->middleware(['auth', 'can:notCliente', 'can:crud.users.index']);
 
 Route::get('/prompttreena', [TreenaController::class, 'index'])->name('treena.index');
 

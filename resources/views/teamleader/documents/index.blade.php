@@ -195,7 +195,7 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if($localDeal)
+                                    @if($localDeal && auth()->user()->can('notCliente') && auth()->user()->can('crud.users.index'))
                                         <a href="{{ route('deals.edit', $localDeal->id) }}" target="_blank" class="btn btn-xs btn-outline-success">
                                             <i class="fas fa-briefcase mr-1"></i> Ver negocio
                                         </a>
