@@ -13,6 +13,28 @@ class DeployController extends Controller
 {
     public function deploy(Request $request)
     {
+        // Keep the lock outside the cache: optimize:clear runs during a deployment.
+        $lock = fopen(storage_path('framework/deploy.lock'), 'c');
+        if ($lock === false) {
+            return response()->json(['message' => 'No se pudo obtener el bloqueo de despliegue.'], 503);
+        }
+
+        if (! flock($lock, LOCK_EX | LOCK_NB)) {
+            fclose($lock);
+
+            return response()->json(['message' => 'Ya hay un despliegue en curso.'], 409);
+        }
+
+        try {
+            return $this->performDeployment($request);
+        } finally {
+            flock($lock, LOCK_UN);
+            fclose($lock);
+        }
+    }
+
+    protected function performDeployment(Request $request)
+    {
         $projectPath = base_path();
 
         $beforeHead = trim(shell_exec(

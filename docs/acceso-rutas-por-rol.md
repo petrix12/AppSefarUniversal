@@ -2,7 +2,7 @@
 
 Revisión del 2 de noviembre de 2026. Se consultaron únicamente roles y permisos de la base configurada en este entorno; no se modificaron asignaciones ni se consultaron datos de personas. Corresponde al código local, pendiente de despliegue.
 
-La matriz cubre las 527 entradas registradas desde `routes/web.php`. GET y HEAD se cuentan juntos; métodos distintos se cuentan por separado. El registro global contiene 614 entradas.
+La matriz cubre las 527 entradas registradas desde `routes/web.php`. GET y HEAD se cuentan juntos; métodos distintos se cuentan por separado. El registro global contiene ahora 615 entradas; la API de despliegue añadida después de esta revisión requiere un token exclusivo de Administrador y se documenta en `seguridad-rutas-web.md`.
 
 Esta tabla evalúa sesión, barrera de Cliente y permisos `can:*` de ruta. Propiedad del expediente, contrato del coordinador, bloqueo individual, verificación del email y controles del controlador siguen aplicando. No incluye permisos directos de personas ni combinaciones de roles. Si una cuenta tiene Cliente junto a otro rol, prevalece la restricción de Cliente.
 

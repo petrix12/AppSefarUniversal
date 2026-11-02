@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Http\Controllers\AdminIntegrationTokenController;
+use App\Http\Controllers\DeployController;
 use App\Http\Controllers\InternalTaskWorkflowController;
 use App\Http\Controllers\JotformCouponCronController;
 use App\Http\Controllers\N8nTaskWebhookController;
@@ -106,6 +107,9 @@ class PlatformIntegrationTokensTest extends TestCase
         string $method, string $uri, string $ability, ?string $controller, ?string $action
     ): void {
         $token = $this->internalUser()->createToken('Integration worker', [$ability]);
+        if ($ability === 'deploy:run') {
+            $token->accessToken->tokenable->assignRole(Role::findOrCreate('Administrador', 'web'));
+        }
         if ($controller !== null) {
             $this->partialMock($controller)->shouldReceive($action)->once()
                 ->andReturn(response()->json(['ok' => true]));
@@ -130,6 +134,7 @@ class PlatformIntegrationTokensTest extends TestCase
     public static function integrationEndpoints(): array
     {
         return [
+            ['POST', '/api/deploy', 'deploy:run', DeployController::class, 'deploy'],
             ['GET', '/api/whatsapp-requests/pending', 'whatsapp:read', WhatsappController::class, 'pending'],
             ['POST', '/api/whatsapp-requests/1/success', 'whatsapp:update', WhatsappController::class, 'success'],
             ['POST', '/api/whatsapp-requests/1/fail', 'whatsapp:update', WhatsappController::class, 'fail'],
@@ -153,6 +158,76 @@ class PlatformIntegrationTokensTest extends TestCase
         $this->actingAs($user, 'web')->getJson('/cron/scheduler-run')->assertUnauthorized();
         $this->withHeader('X-Webhook-Token', 'old-static-secret')->postJson('/api/n8n/tasks')->assertUnauthorized();
         $this->getJson('/cron/teamleader/sync?token=old-static-secret')->assertUnauthorized();
+    }
+
+    public function test_deploy_requires_an_admin_owner_and_an_exclusive_deployment_token(): void
+    {
+        $this->partialMock(DeployController::class)->shouldNotReceive('deploy');
+        $owner = $this->internalUser();
+        $token = $owner->createToken('Not an administrator', ['deploy:run']);
+        $this->request('POST', '/api/deploy', $token->plainTextToken)->assertForbidden();
+
+        $owner->assignRole(Role::findOrCreate('Administrador', 'web'));
+        foreach ([['*'], ['deploy:run', 'read'], ['cron:scheduler:run']] as $abilities) {
+            Cache::flush();
+            $token = $owner->createToken('Not a dedicated deploy token', $abilities);
+            $this->request('POST', '/api/deploy', $token->plainTextToken)->assertForbidden();
+        }
+
+        Cache::flush();
+        $token = $owner->createToken('Administrator removed after issue', ['deploy:run']);
+        $owner->removeRole('Administrador');
+        $this->request('POST', '/api/deploy', $token->plainTextToken)->assertForbidden();
+        Http::assertNothingSent();
+    }
+
+    public function test_deploy_never_accepts_get_query_tokens_or_browser_sessions(): void
+    {
+        $this->partialMock(DeployController::class)->shouldNotReceive('deploy');
+        $owner = $this->internalUser();
+        $owner->assignRole(Role::findOrCreate('Administrador', 'web'));
+        $token = $owner->createToken('Deployment', ['deploy:run']);
+        $this->actingAs($owner)->postJson('/api/deploy')->assertUnauthorized();
+        $this->request('POST', '/api/deploy?token='.urlencode($token->plainTextToken))->assertUnauthorized();
+        $this->request('GET', '/api/deploy', $token->plainTextToken)->assertStatus(405);
+        $this->request('GET', '/deploy', $token->plainTextToken)->assertStatus(405);
+    }
+
+    public function test_deploy_token_creation_enforces_admin_ownership_and_exclusive_scope(): void
+    {
+        $admin = $this->internalUser('admin@example.test');
+        $admin->assignRole(Role::findOrCreate('Administrador', 'web'));
+        $operator = $this->internalUser();
+        $this->actingAs($admin);
+        $this->postJson(route('admin.integrations.api-tokens.store'), [
+            'user_id' => $operator->id, 'name' => 'Deploy', 'abilities' => ['deploy:run'],
+        ])->assertUnprocessable()->assertJsonValidationErrors('user_id');
+        $this->postJson(route('admin.integrations.api-tokens.store'), [
+            'user_id' => $admin->id, 'name' => 'Deploy', 'abilities' => ['read', 'deploy:run'],
+        ])->assertUnprocessable()->assertJsonValidationErrors('abilities');
+        $this->assertSame(0, PersonalAccessToken::count());
+
+        $view = app(AdminIntegrationTokenController::class)->apiTokens();
+        $this->assertArrayHasKey('deploy:run', $view->getData()['abilities']);
+        $this->post(route('admin.integrations.api-tokens.store'), [
+            'user_id' => $admin->id, 'name' => 'cron-job.org Deploy', 'abilities' => ['deploy:run'],
+        ])->assertRedirect()->assertSessionHas('created_token');
+        $token = PersonalAccessToken::findToken(session('created_token'));
+        $this->assertSame(['deploy:run'], $token->abilities);
+        $this->assertSame($admin->id, $token->tokenable_id);
+    }
+
+    public function test_deployment_requests_are_limited_to_one_per_minute_per_owner(): void
+    {
+        $owner = $this->internalUser();
+        $owner->assignRole(Role::findOrCreate('Administrador', 'web'));
+        $token = $owner->createToken('Deployment', ['deploy:run']);
+        $this->partialMock(DeployController::class)->shouldReceive('deploy')->once()
+            ->andReturn(response()->json(['ok' => true]));
+
+        $this->request('POST', '/api/deploy', $token->plainTextToken)->assertOk();
+        $this->request('POST', '/api/deploy', $token->plainTextToken)->assertStatus(429);
+        $this->assertStringNotContainsString($token->plainTextToken, file_get_contents($this->auditPath));
     }
 
     public function test_read_and_update_permissions_do_not_grant_each_other(): void

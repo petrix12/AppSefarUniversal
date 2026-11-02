@@ -8,6 +8,7 @@ use App\Support\ApiTokenAbilities;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\PersonalAccessToken;
 
 class AdminIntegrationTokenController extends Controller
@@ -84,6 +85,20 @@ class AdminIntegrationTokenController extends Controller
 
         $user = $this->findInternalUser((int) $data['user_id']);
         $abilities = array_values(array_unique($data['abilities']));
+
+        if (in_array('deploy:run', $abilities, true)) {
+            if (! $user->hasRole('Administrador')) {
+                throw ValidationException::withMessages([
+                    'user_id' => 'El token de despliegue debe pertenecer a un usuario con rol Administrador.',
+                ]);
+            }
+            if ($abilities !== ['deploy:run']) {
+                throw ValidationException::withMessages([
+                    'abilities' => 'Crea un token exclusivo para desplegar, seleccionando solo el permiso Deploy.',
+                ]);
+            }
+        }
+
         $callId = bin2hex(random_bytes(8));
         $logger = $this->auditLogger();
 

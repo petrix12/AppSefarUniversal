@@ -350,6 +350,8 @@ Las rutas de `web.php` requieren sesión por defecto y bloquean al rol Cliente s
 
 WhatsApp, n8n y todos los cron HTTP utilizan tokens de **Integraciones → Tokens API**, con un permiso específico por operación y el header `Authorization: Bearer <token>`. La plataforma permite revocarlos y consultar su uso en Auditoría. Ya no usan secretos estáticos de `.env`, tokens en URL ni `X-Webhook-Token`. Stripe, Monday y SES conservan sus firmas o credenciales de proveedor.
 
+El despliegue automático usa **POST `/api/deploy`** con un token exclusivo `deploy:run` cuyo propietario debe tener rol Administrador y no Cliente. Ese token se configura como header en cron-job.org; no es el token del scheduler ni va en `.env`. La ruta manual **POST `/deploy`** conserva sesión administrativa y CSRF. La API tiene auditoría, límite de una llamada por minuto y bloqueo de ejecuciones simultáneas en el mismo servidor.
+
 Consultar [Protección de rutas web](seguridad-rutas-web.md) para métodos, permisos y configuración de despliegue. Para problemas de caché, preferir pasos controlados y confirmar el ambiente; activar la caché de configuración requiere revisar antes las integraciones que aún usan `env()` fuera de los archivos de configuración.
 
 ## Diagnosticos Frecuentes

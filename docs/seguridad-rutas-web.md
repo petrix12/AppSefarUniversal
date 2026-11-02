@@ -20,7 +20,7 @@ Las actualizaciones, cargas y previsualizaciones de Livewire requieren sesión. 
 
 ## Tokens de la plataforma central
 
-WhatsApp, n8n y todos los cron HTTP utilizan la plataforma existente **Integraciones → Tokens API** (`/admin/integrations/api-tokens`). Se reutilizan Sanctum, el almacenamiento del hash, la validación de caducidad, el último uso, la revocación y la auditoría de altas/bajas.
+WhatsApp, n8n, todos los cron HTTP y el despliegue automático utilizan la plataforma existente **Integraciones → Tokens API** (`/admin/integrations/api-tokens`). Se reutilizan Sanctum, el almacenamiento del hash, la validación de caducidad, el último uso, la revocación y la auditoría de altas/bajas.
 
 Un administrador debe crear un token por consumidor, asignarlo a un usuario interno y marcar únicamente sus permisos. El token completo se muestra una sola vez. Una sesión web no lo sustituye y los usuarios con rol Cliente no pueden usarlo, aunque dispongan del permiso.
 
@@ -38,6 +38,7 @@ Un administrador debe crear un token por consumidor, asignarlo a un usuario inte
 | `GET /cron/tasks/work` | `cron:tasks:work` |
 | `GET /cron/jotform/coupons` | `cron:jotform:sync` |
 | `GET /internal/tasks/daily-workflow` | `tasks:workflow` |
+| `POST /api/deploy` | `deploy:run`, exclusivo, de un usuario con rol Administrador |
 
 Todas estas llamadas deben enviar, por HTTPS:
 
@@ -78,9 +79,31 @@ Las siguientes URLs ahora aceptan **POST**, requieren sesión y permiso `adminis
 
 Los GET de mantenimiento devuelven 405 y no ejecutan comandos. `/key-generate` fue eliminado del router; la rotación de `APP_KEY` debe hacerse mediante CLI con un procedimiento específico.
 
-Una llamada anterior a `GET /deploy` debe sustituirse por el flujo administrativo autenticado con POST y CSRF, o por un despliegue mediante CLI. Un token de cron no concede permiso para desplegar ni para limpiar cachés. No se añadió ninguna excepción CSRF.
+Una llamada anterior a `GET /deploy` debe sustituirse por `POST /api/deploy` con el token exclusivo de despliegue, o por el flujo administrativo autenticado con POST y CSRF. Un token de cron no concede permiso para desplegar ni para limpiar cachés. No se añadió ninguna excepción CSRF al grupo web.
 
 Este cambio no ejecuta `config:cache` automáticamente. Antes de activarlo en producción deben corregirse las lecturas de `env()` que aún estén fuera de los archivos de configuración de las integraciones.
+
+## Despliegue automático desde cron-job.org
+
+Primero subir esta actualización al servidor por el procedimiento manual existente. La pantalla anterior todavía no permite emitir `deploy:run`, y la URL nueva no existe antes de actualizar las rutas. Si se usan rutas cacheadas, regenerar la caché durante esa actualización.
+
+1. En **Integraciones → Tokens API**, seleccionar un usuario con rol **Administrador** (el rol `Admin` no es equivalente).
+2. Crear un token llamado, por ejemplo, `cron-job.org Deploy`, seleccionando únicamente **Deploy: ejecutar despliegue (solo administradores)**. El formulario desmarca los otros permisos al elegir Deploy; el servidor también rechaza combinaciones o propietarios que no sean Administrador.
+3. En cron-job.org, cambiar la URL de la tarea de despliegue a `https://app.sefaruniversal.com/api/deploy`.
+4. En **Avanzado**, usar método **POST**, cuerpo vacío y dejar apagada la autenticación de usuario/contraseña. En **Encabezados**, añadir:
+
+| Clave | Valor |
+| --- | --- |
+| `Authorization` | `Bearer TOKEN_COMPLETO_DEL_DEPLOY` |
+| `Accept` | `application/json` |
+
+El token va en el encabezado del job; no se guarda en la URL ni se necesita un nuevo secreto en `.env` de Laravel. No reutilizar el token del scheduler o de la cola. Revocar el token de despliegue en la plataforma impide las siguientes llamadas.
+
+La API exige un token Sanctum real con exactamente `deploy:run` y que su propietario conserve el rol Administrador y no tenga rol Cliente. Rechaza tokens generales `read`, `*`, tokens con permisos mezclados y sesiones de navegador. El registro de auditoría conserva el usuario, ID y nombre del token, ruta y resultado, sin headers ni token completo.
+
+Hay un máximo de una llamada por minuto por propietario. La ejecución usa un bloqueo de archivo en `storage/framework/deploy.lock`, fuera de la caché que el propio deploy limpia. En el mismo servidor, otra ejecución simultánea recibe 409. El archivo permanece; el bloqueo del proceso se libera al terminar o fallar.
+
+Respuestas de autenticación/configuración: 401 para credencial ausente, revocada o vencida; 403 para permisos/propietario incorrectos; 405 si se usa GET; 429 si se supera el límite. Un 409 indica una ejecución en curso. La respuesta del controlador conserva el comportamiento anterior (`changes_detected`, resultados de migración y caché, histórico y correo); esta actualización no ejecuta ningún despliegue real durante las pruebas.
 
 ## Operación de cron
 
@@ -124,11 +147,12 @@ php vendor/bin/phpunit tests/Feature/WebRouteSecurityTest.php
 php vendor/bin/phpunit tests/Feature/RouteAuthenticationCoverageTest.php
 php vendor/bin/phpunit tests/Feature/PlatformIntegrationTokensTest.php
 php vendor/bin/phpunit tests/Feature/ClientRouteAccessTest.php
+php vendor/bin/phpunit tests/Feature/DeploymentLockTest.php
 php artisan route:list --json
 ```
 
 Las pruebas usan SQLite en memoria, permisos y servicios simulados, y almacenamiento S3 falso. No ejecutan migraciones generales, despliegues, comandos de mantenimiento reales ni llamadas a integraciones externas. Comprueban visitantes, usuarios sin permisos, administradores, CSRF, tokens ausentes/incorrectos/válidos, páginas públicas y propiedad de documentos.
 
-Resultado del 2 de noviembre de 2026, incluyendo la restricción por rol Cliente: pasan 185 pruebas específicas con 1.752 aserciones; también pasan 54 comprobaciones con caché de rutas aislada (1.172 aserciones). La cobertura de autenticación revisa las 614 rutas registradas y exige autenticación o una excepción revisada. La cobertura de acceso de clientes ejecuta las 479 entradas internas bloqueadas incluso con permisos administrativos, verifica que los otros 18 roles pasan la nueva barrera sin restricciones añadidas, comprueba actualizaciones Livewire y acceso a personas y documentos propios. Las pruebas de plataforma usan tokens Sanctum reales y verifican permisos por operación, revocación, vencimiento, rechazo de clientes y sesiones web, creación/revocación desde la plataforma y auditoría sin secretos.
+Resultado del 2 de noviembre de 2026, incluyendo la restricción por rol Cliente y el token de despliegue: pasan 194 pruebas específicas con 1.810 aserciones. Las 58 pruebas de plataforma, bloqueo de despliegue y autenticación también pasan con caché de rutas aislada (912 aserciones); la comprobación anterior de acceso de clientes con caché también pasó. La cobertura de autenticación revisa las 615 rutas registradas y exige autenticación o una excepción revisada. La cobertura de acceso de clientes ejecuta las 479 entradas internas bloqueadas incluso con permisos administrativos, verifica que los otros 18 roles pasan la nueva barrera sin restricciones añadidas, comprueba actualizaciones Livewire y acceso a personas y documentos propios. Las pruebas de plataforma usan tokens Sanctum reales y verifican permisos por operación, revocación, vencimiento, rechazo de clientes y sesiones web, creación/revocación desde la plataforma y auditoría sin secretos. El despliegue está simulado en las pruebas; se verifica el bloqueo de concurrencia y su liberación al terminar o fallar sin ejecutar git, migraciones ni correos reales.
 
 La comprobación adicional de dos pruebas del catálogo de banca online produce un fallo en `test_selected_components_override_seeded_features_and_fixed_prices`: espera omitir beneficios sembrados y el servicio aún los devuelve. El servicio del catálogo, su configuración y esa prueba no se modificaron. PHPUnit también informa una deprecación de la configuración XML existente.

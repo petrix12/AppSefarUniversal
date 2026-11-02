@@ -23,5 +23,6 @@ class ApiTokenAbilities
         'cron:tasks:work' => 'Cron: procesar la cola de tareas',
         'cron:jotform:sync' => 'Cron: sincronizar cupones Jotform',
         'tasks:workflow' => 'Cron: ejecutar el workflow diario de tareas',
+        'deploy:run' => 'Deploy: ejecutar despliegue (solo administradores)',
     ];
 }

@@ -63,6 +63,11 @@
                                 Puedes revocarlos desde esta pantalla y consultar su uso en Auditoría.
                             </small>
                             <small class="form-text text-muted mt-2">
+                                Para cron-job.org y despliegues automáticos, selecciona un usuario con rol
+                                Administrador y marca únicamente <strong>Deploy: ejecutar despliegue</strong>.
+                                Usa ese token en <code>POST /api/deploy</code>, separado de los tokens de cron.
+                            </small>
+                            <small class="form-text text-muted mt-2">
                                 Para actualizar un COS siempre desde sus fuentes, usa el permiso
                                 <code>cos:refresh</code> y <code>POST /api/v1/clientes/cos/refresh</code>,
                                 enviando <code>email</code> y/o <code>passport</code>.
@@ -97,6 +102,19 @@
 
 @section('js')
     <script>
+        const abilityInputs = [...document.querySelectorAll('input[name="abilities[]"]')];
+        const deployAbility = abilityInputs.find(input => input.value === 'deploy:run');
+        abilityInputs.forEach(function (input) {
+            input.addEventListener('change', function () {
+                if (! input.checked) return;
+                if (input === deployAbility) {
+                    abilityInputs.forEach(other => { if (other !== input) other.checked = false; });
+                } else if (deployAbility) {
+                    deployAbility.checked = false;
+                }
+            });
+        });
+
         document.querySelectorAll('[data-copy-token]').forEach(function (button) {
             button.addEventListener('click', function () {
                 const input = document.querySelector('[data-created-token]');

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BancaOnlineStripeWebhookController;
+use App\Http\Controllers\DeployController;
 use App\Http\Controllers\MarketingSesWebhookController;
 use App\Http\Controllers\MondayWebhookController;
 use App\Http\Controllers\N8nTaskWebhookController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\WhatsappController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\AuditIntegrationTokenRequests;
 use App\Http\Middleware\EnsureInternalApiToken;
+use App\Http\Middleware\EnsureDeploymentToken;
 
 // Tokens creados y revocados desde Integraciones → Tokens API.
 $tokenMiddleware = fn (string $ability): array => [
@@ -15,6 +17,10 @@ $tokenMiddleware = fn (string $ability): array => [
     AuditIntegrationTokenRequests::class . ':' . $ability,
     EnsureInternalApiToken::class . ':' . $ability,
 ];
+
+Route::post('/deploy', [DeployController::class, 'deploy'])
+    ->name('api.deploy.run')
+    ->middleware([...$tokenMiddleware('deploy:run'), EnsureDeploymentToken::class, 'throttle:1,1,deploy-api']);
 
 Route::post('/n8n/tasks', [N8nTaskWebhookController::class, 'store'])
     ->middleware($tokenMiddleware('tasks:create'));
