@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\URL;
 use RealRashid\SweetAlert\Facades\Alert;
 use App\Mail\CargaSefar;
 use App\Services\GenealogyService;
+use App\Services\ClientTreeAccess;
 use Illuminate\Support\Facades\Mail as Mail2;
 use Illuminate\Validation\ValidationException;
 
@@ -39,6 +40,12 @@ class AgClienteNewController extends Controller
 
     public function storeNotCliente(Request $request)
     {
+        if ($request->user()->hasRole('Cliente')) {
+            app(ClientTreeAccess::class)->authorize($request->user(), $request->input('IDCliente'));
+            $child = Agcliente::findOrFail($request->input('id_hijo'));
+            app(ClientTreeAccess::class)->authorize($request->user(), $child->IDCliente);
+        }
+
         $dateParts = $this->datePartsFromRequest($request);
 
         // Determinar quien llamó a este método
@@ -376,8 +383,9 @@ class AgClienteNewController extends Controller
 
     public function updateNotCliente(Request $request)
     {
-        $dateParts = $this->datePartsFromRequest($request);
         $agcliente = Agcliente::findOrFail($request->id);
+        app(ClientTreeAccess::class)->authorize($request->user(), $agcliente->IDCliente);
+        $dateParts = $this->datePartsFromRequest($request);
 
         $attributes = [
             'AnhoNac' => $dateParts['AnhoNac'],
@@ -541,7 +549,15 @@ class AgClienteNewController extends Controller
         $familiar = $request->familiarid;
         $clienteid = $request->clienteid;
 
-        $firstcheck = File::where("IDPersonaNew", $familiar)->get();
+        $isClient = $request->user()->hasRole('Cliente');
+        if ($isClient) {
+            app(ClientTreeAccess::class)->authorize($request->user(), $clienteid);
+            $person = Agcliente::findOrFail($familiar);
+            app(ClientTreeAccess::class)->authorize($request->user(), $person->IDCliente);
+        }
+
+        $firstcheck = File::where("IDPersonaNew", $familiar)
+            ->when($isClient, fn ($query) => $query->where('IDCliente', $clienteid))->get();
 
         if (sizeof(json_decode(json_encode($firstcheck),true))==0){
             $datosag = json_decode(json_encode(Agcliente::find($familiar)),true);
@@ -556,7 +572,8 @@ class AgClienteNewController extends Controller
                 $file->save();
             }
 
-            $firstcheck = File::where("IDPersonaNew", $familiar)->get();
+            $firstcheck = File::where("IDPersonaNew", $familiar)
+                ->when($isClient, fn ($query) => $query->where('IDCliente', $clienteid))->get();
         }
 
         $final = array();
@@ -570,7 +587,8 @@ class AgClienteNewController extends Controller
 
     public function updatefiletype(Request $request)
     {
-        $archivo = File::find($request->id);
+        $archivo = File::findOrFail($request->id);
+        app(ClientTreeAccess::class)->authorize($request->user(), $archivo->IDCliente);
         $archivo->tipo = $request->tipo;
         $archivo->save();
 
@@ -580,7 +598,14 @@ class AgClienteNewController extends Controller
     }
 
     public function storefile(Request $request){
-        $user = User::where('passport', $request->IDCliente)->firstOrFail();
+        if ($request->user()->hasRole('Cliente')) {
+            app(ClientTreeAccess::class)->authorize($request->user(), $request->input('IDCliente'));
+            $person = Agcliente::findOrFail($request->input('IDPersonaNew'));
+            app(ClientTreeAccess::class)->authorize($request->user(), $person->IDCliente);
+            $user = $request->user();
+        } else {
+            $user = User::where('passport', $request->IDCliente)->firstOrFail();
+        }
 
         $originalFileName = $request->file('archivo')->getClientOriginalName();
 
@@ -602,7 +627,15 @@ class AgClienteNewController extends Controller
     }
 
     public function openfile(Request $request){
+        $request->validate(['path' => ['required', 'string', 'max:2048']]);
         $path = $request->path;
+
+        if ($request->user()->hasRole('Cliente')) {
+            // A client-supplied S3 path alone never grants access to an object.
+            $file = File::where('location', dirname($path))->where('file', basename($path))->first();
+            abort_unless($file && $file->location.'/'.$file->file === $path, 403);
+            app(ClientTreeAccess::class)->authorize($request->user(), $file->IDCliente);
+        }
 
         $url = Storage::disk('s3')->temporaryUrl($path, now()->addMinutes(5));
 

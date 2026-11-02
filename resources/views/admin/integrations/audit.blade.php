@@ -1,16 +1,25 @@
 @extends('adminlte::page')
 
-@section('title', 'Auditoria MCP y Tokens')
+@section('title', 'Auditoría de integraciones y tokens')
 
 @section('content_header')
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
-        <h1>Auditoria MCP y Tokens</h1>
+        <h1>Auditoría de integraciones y tokens</h1>
         @include('admin.integrations._tabs')
     </div>
 @stop
 
 @section('content')
     <div class="row">
+        <div class="col-md-3">
+            <div class="info-box">
+                <span class="info-box-icon bg-info"><i class="fas fa-plug"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Integraciones HTTP</span>
+                    <span class="info-box-number">{{ $summary['integrations'] }}</span>
+                </div>
+            </div>
+        </div>
         <div class="col-md-3">
             <div class="info-box">
                 <span class="info-box-icon bg-primary"><i class="fas fa-clipboard-list"></i></span>
@@ -63,6 +72,7 @@
                         <select id="source" name="source" class="form-control">
                             <option value="all" @selected($source === 'all')>Todas</option>
                             <option value="tokens" @selected($source === 'tokens')>Tokens</option>
+                            <option value="integration_http" @selected($source === 'integration_http')>Integraciones HTTP</option>
                             <option value="mcp_http" @selected($source === 'mcp_http')>MCP HTTP</option>
                             <option value="mcp_stdio" @selected($source === 'mcp_stdio')>MCP stdio</option>
                         </select>
@@ -116,6 +126,7 @@
                             @php
                                 $sourceLabels = [
                                     'tokens' => ['Tokens', 'badge-info'],
+                                    'integration_http' => ['Integración HTTP', 'badge-info'],
                                     'mcp_http' => ['MCP HTTP', 'badge-success'],
                                     'mcp_stdio' => ['MCP stdio', 'badge-primary'],
                                     'other' => ['Otro', 'badge-secondary'],

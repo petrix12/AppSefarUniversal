@@ -10,8 +10,6 @@ class TeamleaderCronController extends Controller
 {
     public function sync(Request $request): JsonResponse
     {
-        $this->authorizeCron($request);
-
         $exitCode = Artisan::call('teamleader:sync', [
             '--entity' => 'all',
             '--force' => $request->boolean('force'),
@@ -25,8 +23,6 @@ class TeamleaderCronController extends Controller
 
     public function work(Request $request): JsonResponse
     {
-        $this->authorizeCron($request);
-
         $jobs = min(200, max(1, (int) $request->query('jobs', $request->query('limit', 10))));
         $timeout = min(60, max(10, (int) $request->query('timeout', 45)));
 
@@ -48,13 +44,6 @@ class TeamleaderCronController extends Controller
         ], $exitCode === 0 ? 200 : 500);
     }
 
-    private function authorizeCron(Request $request): void
-    {
-        $expected = config('services.teamleader.cron_token');
-        $provided = (string) $request->query('token', '');
-
-        abort_if(blank($expected) || !hash_equals((string) $expected, $provided), 403);
-    }
 
     private function artisanResponse(int $exitCode): JsonResponse
     {

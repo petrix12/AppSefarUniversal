@@ -19,24 +19,18 @@ class BancaOnlineStripeWebhookController extends Controller
         $signature = (string) $request->header('Stripe-Signature');
         $secret = (string) config('services.stripe.banca_online_webhook_secret');
 
-        if ($secret !== '') {
-            try {
-                $event = \Stripe\Webhook::constructEvent($payload, $signature, $secret);
-            } catch (\Throwable $e) {
-                Log::warning('Banca Online Stripe webhook signature rejected.', [
-                    'error' => $e->getMessage(),
-                ]);
+        if ($secret === '') {
+            return response()->json(['received' => false], 503);
+        }
 
-                return response()->json(['received' => false], 400);
-            }
-        } else {
-            $decoded = json_decode($payload, true);
+        try {
+            $event = \Stripe\Webhook::constructEvent($payload, $signature, $secret);
+        } catch (\Throwable $e) {
+            Log::warning('Banca Online Stripe webhook signature rejected.', [
+                'error' => $e->getMessage(),
+            ]);
 
-            if (! is_array($decoded)) {
-                return response()->json(['received' => false], 400);
-            }
-
-            $event = \Stripe\Event::constructFrom($decoded);
+            return response()->json(['received' => false], 400);
         }
 
         $object = $event->data->object ?? null;

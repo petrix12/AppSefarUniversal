@@ -12,8 +12,6 @@ class JotformCouponCronController extends Controller
 
     public function __invoke(Request $request): JsonResponse
     {
-        $this->authorizeCron($request);
-
         $exitCode = Artisan::call('jotform:obtener-datos', [
             'formId' => self::FORM_ID,
             '--no-interaction' => true,
@@ -26,13 +24,5 @@ class JotformCouponCronController extends Controller
             'output' => trim(Artisan::output()),
             'time' => now()->toDateTimeString(),
         ], $exitCode === 0 ? 200 : 500);
-    }
-
-    private function authorizeCron(Request $request): void
-    {
-        $expected = (string) config('services.jotform.cron_token', '');
-        $provided = (string) ($request->bearerToken() ?: $request->query('token', ''));
-
-        abort_if($expected === '' || ! hash_equals($expected, $provided), 403);
     }
 }

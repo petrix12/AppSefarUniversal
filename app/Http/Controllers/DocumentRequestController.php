@@ -198,6 +198,9 @@ class DocumentRequestController extends Controller
     {
         $requestModel = DocumentRequest::findOrFail($id);
 
+        // Check ownership before deleting an existing object or writing to S3.
+        abort_unless((int) $requestModel->user_id === (int) $request->user()->id, 403);
+
         // Solo permitir subir archivo si está en espera o rechazada
         if (!in_array($requestModel->status, ['en_espera_cliente', 'rechazada'])) {
             return response()->json(['message' => 'No se puede subir archivo en el estado actual'], 422);

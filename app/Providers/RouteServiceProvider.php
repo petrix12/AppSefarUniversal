@@ -43,11 +43,31 @@ class RouteServiceProvider extends ServiceProvider
                 ->group(base_path('routes/mcp.php'));
 
             Route::prefix('api')
-                ->middleware('api')
+                ->middleware(['api', 'auth:sanctum'])
                 ->namespace($this->namespace)
                 ->group(base_path('routes/api.php'));
 
+            Route::prefix('api')
+                ->middleware('api')
+                ->namespace($this->namespace)
+                ->group(base_path('routes/integrations.php'));
+
+            Route::prefix('api')
+                ->middleware('api')
+                ->namespace($this->namespace)
+                ->group(base_path('routes/public-api.php'));
+
             Route::middleware('web')
+                ->namespace($this->namespace)
+                ->group(base_path('routes/public.php'));
+
+            // Machine endpoints authenticate with their own tokens, not browser sessions.
+            Route::middleware('web')
+                ->namespace($this->namespace)
+                ->group(base_path('routes/cron.php'));
+
+            // New application routes require a session unless explicitly made public.
+            Route::middleware(['web', 'auth'])
                 ->namespace($this->namespace)
                 ->group(base_path('routes/web.php'));
 

@@ -11,20 +11,6 @@ class InternalTaskWorkflowController extends Controller
 {
     public function __invoke(Request $request)
     {
-        $expectedToken = (string) config('services.tasks_daily_workflow.token', '');
-        $providedToken = (string) ($request->bearerToken() ?: $request->query('token', ''));
-
-        if ($expectedToken === '') {
-            return response()->json([
-                'ok' => false,
-                'message' => 'TASKS_DAILY_WORKFLOW_TOKEN no esta configurado.',
-            ], 503);
-        }
-
-        if (! hash_equals($expectedToken, $providedToken)) {
-            abort(403);
-        }
-
         if (! Schema::hasTable('jobs')) {
             return response()->json([
                 'ok' => false,

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\Mcp\McpAuditLogger;
+use App\Support\ApiTokenAbilities;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -11,14 +12,7 @@ use Laravel\Sanctum\PersonalAccessToken;
 
 class AdminIntegrationTokenController extends Controller
 {
-    private const API_ABILITIES = [
-        'read' => 'Lectura',
-        'create' => 'Crear',
-        'update' => 'Actualizar',
-        'cos:refresh' => 'Actualizar COS sin caché',
-        'client-notes:create' => 'Crear notas de clientes',
-        'delete' => 'Eliminar',
-    ];
+    private const API_ABILITIES = ApiTokenAbilities::LABELS;
 
     public function apiTokens()
     {
@@ -71,6 +65,7 @@ class AdminIntegrationTokenController extends Controller
             'summary' => [
                 'total' => $events->count(),
                 'tokens' => $events->where('source', 'tokens')->count(),
+                'integrations' => $events->where('source', 'integration_http')->count(),
                 'mcp_http' => $events->where('source', 'mcp_http')->count(),
                 'mcp_stdio' => $events->where('source', 'mcp_stdio')->count(),
                 'errors' => $events->where('status', 'error')->count(),
@@ -335,6 +330,10 @@ class AdminIntegrationTokenController extends Controller
 
     private function auditSource(string $eventName, array $event): string
     {
+        if (($event['transport'] ?? null) === 'integration_http') {
+            return 'integration_http';
+        }
+
         if (str_starts_with($eventName, 'token_')) {
             return 'tokens';
         }

@@ -57,6 +57,12 @@
                                 </div>
                             @endforeach
                             <small class="form-text text-muted mt-2">
+                                Crea un token por integración y selecciona solo las operaciones que necesita.
+                                WhatsApp, n8n y los cron usan estos tokens mediante
+                                <code>Authorization: Bearer &lt;token&gt;</code>.
+                                Puedes revocarlos desde esta pantalla y consultar su uso en Auditoría.
+                            </small>
+                            <small class="form-text text-muted mt-2">
                                 Para actualizar un COS siempre desde sus fuentes, usa el permiso
                                 <code>cos:refresh</code> y <code>POST /api/v1/clientes/cos/refresh</code>,
                                 enviando <code>email</code> y/o <code>passport</code>.

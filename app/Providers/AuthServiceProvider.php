@@ -48,6 +48,15 @@ class AuthServiceProvider extends ServiceProvider
         Gate::define('integrations.manage', function ($user) {
             return $user->hasRole('Administrador');
         });
+
+        // Shared tree requests: clients are scoped to their assigned tree in the controller.
+        // Internal users keep the same genealogy and file permission requirements.
+        foreach (['view' => 'index', 'create' => 'create', 'edit' => 'edit'] as $action => $permission) {
+            Gate::define('tree-files.'.$action, function ($user) use ($permission) {
+                return $user->hasRole('Cliente') ||
+                    ($user->can('genealogista') && $user->can('crud.files.'.$permission));
+            });
+        }
         //
     }
 }

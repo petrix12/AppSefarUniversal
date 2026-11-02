@@ -10,14 +10,6 @@ class N8nTaskWebhookController extends Controller
 {
     public function store(Request $request)
     {
-        // 🔐 Seguridad básica
-        if ($request->header('X-Webhook-Token') !== env('N8N_WEBHOOK_TOKEN')) {
-            return response()->json([
-                'ok' => false,
-                'message' => 'No autorizado',
-            ], 401);
-        }
-
         // ✅ Validación
         $data = $request->validate([
             'hubspot_owner_id' => ['required', 'string', 'exists:hubspot_owners,id'],

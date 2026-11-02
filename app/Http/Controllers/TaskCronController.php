@@ -12,8 +12,6 @@ class TaskCronController extends Controller
 
     public function work(Request $request): JsonResponse
     {
-        $this->authorizeCron($request);
-
         $jobs = 1;
         $timeout = min(1800, max(60, (int) $request->query('timeout', 600)));
         $maxTime = min(1800, max(30, (int) $request->query('max_time', 600)));
@@ -39,13 +37,5 @@ class TaskCronController extends Controller
             'queues' => [self::QUEUE],
             'output' => trim(Artisan::output()),
         ], $exitCode === 0 ? 200 : 500);
-    }
-
-    private function authorizeCron(Request $request): void
-    {
-        $expected = config('services.teamleader.cron_token');
-        $provided = (string) $request->query('token', '');
-
-        abort_if(blank($expected) || ! hash_equals((string) $expected, $provided), 403);
     }
 }

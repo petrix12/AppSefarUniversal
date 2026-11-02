@@ -346,20 +346,11 @@ El rol Cliente debe quedar fuera de asistentes IA internos.
 
 ### Seguridad y mantenimiento
 
-La app tiene rutas de mantenimiento como:
+Las rutas de `web.php` requieren sesión por defecto y bloquean al rol Cliente salvo las entradas revisadas de su portal. El bloqueo no cambia los permisos de otros roles. Consultar la [matriz de rutas por rol](acceso-rutas-por-rol.md) para cada método y URL. El mantenimiento manual y el despliegue requieren permiso `administrador`, POST y CSRF; no se ejecutan abriendo una URL GET. La ruta HTTP `key-generate` fue eliminada.
 
-- `key-generate`.
-- `storage-link`.
-- `config-cache`.
-- `cache-clear`.
-- `route-clear`.
-- `config-clear`.
-- `view-clear`.
-- `cron/scheduler-run`.
-- `cron/queue-worker`.
-- `deploy`.
+WhatsApp, n8n y todos los cron HTTP utilizan tokens de **Integraciones → Tokens API**, con un permiso específico por operación y el header `Authorization: Bearer <token>`. La plataforma permite revocarlos y consultar su uso en Auditoría. Ya no usan secretos estáticos de `.env`, tokens en URL ni `X-Webhook-Token`. Stripe, Monday y SES conservan sus firmas o credenciales de proveedor.
 
-Estas rutas son delicadas. Antes de recomendar su uso, advertir que pueden afectar produccion o cache/configuracion. Para problemas de cache, preferir pasos controlados y confirmar ambiente.
+Consultar [Protección de rutas web](seguridad-rutas-web.md) para métodos, permisos y configuración de despliegue. Para problemas de caché, preferir pasos controlados y confirmar el ambiente; activar la caché de configuración requiere revisar antes las integraciones que aún usan `env()` fuera de los archivos de configuración.
 
 ## Diagnosticos Frecuentes
 

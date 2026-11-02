@@ -208,6 +208,8 @@ return [
     |
     */
 
+    // La aplicación registra esta ruta con auth en routes/web.php.
+    'disable_darkmode_routes' => true,
     'enabled_laravel_mix' => false,
     'laravel_mix_css_path' => 'css/app.css',
     'laravel_mix_js_path' => 'js/app.js',

@@ -56,6 +56,11 @@ class TreeUpdateMailTest extends TestCase
             }
             $table->timestamps();
         });
+        Schema::create('user_genealogy_tree_links', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->string('tree_id');
+        });
 
         Role::findOrCreate('Cliente', 'web');
         Role::findOrCreate('Genealogista', 'web');
@@ -95,9 +100,19 @@ class TreeUpdateMailTest extends TestCase
             'PersonaIDNew' => 0,
         ]);
 
-        $this->actingAs($actor)->from('/tree/'.$client->passport)
-            ->post(route($route), $this->personInput($client, $root))
-            ->assertRedirect('/tree/'.$client->passport);
+        $response = $this->actingAs($actor)->from('/tree/'.$client->passport)
+            ->post(route($route), $this->personInput($client, $root));
+
+        if ($clientActor && $route === 'crud.agclientes.store') {
+            // Clients use the portal's scoped tree requests, never the internal CRUD.
+            $response->assertForbidden();
+            $this->assertDatabaseMissing('agclientes', ['IDCliente' => $client->passport, 'IDPersona' => 2]);
+            Mail::assertNothingOutgoing();
+
+            return;
+        }
+
+        $response->assertRedirect('/tree/'.$client->passport);
 
         $this->assertDatabaseHas('agclientes', [
             'IDCliente' => $client->passport,

@@ -39,7 +39,7 @@ class JetstreamServiceProvider extends ServiceProvider
     {
         Jetstream::defaultApiTokenPermissions(['read']);
 
-        Jetstream::permissions([
+        Jetstream::permissions(array_values(array_unique(array_merge([
             'create',
             'read',
             'mcp:read',
@@ -47,6 +47,6 @@ class JetstreamServiceProvider extends ServiceProvider
             'client-notes:create',
             'update',
             'delete',
-        ]);
+        ], array_keys(\App\Support\ApiTokenAbilities::LABELS)))));
     }
 }

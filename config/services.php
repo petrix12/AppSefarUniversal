@@ -40,17 +40,12 @@ return [
         'client_id' => env('TEAMLEADER_CLIENT_ID'),
         'client_secret' => env('TEAMLEADER_CLIENT_SECRET'),
         'redirect' => env('TEAMLEADER_REDIRECT_URI'),
-        'cron_token' => env('TEAMLEADER_CRON_TOKEN'),
         'min_request_gap_ms' => env('TEAMLEADER_MIN_REQUEST_GAP_MS', 800),
         'sync_pages_per_job' => env('TEAMLEADER_SYNC_PAGES_PER_JOB', 2),
         'sync_chunk_size' => env('TEAMLEADER_SYNC_CHUNK_SIZE', 5),
         'sync_chunk_delay_seconds' => env('TEAMLEADER_SYNC_CHUNK_DELAY_SECONDS', 12),
         'sync_documents' => env('TEAMLEADER_SYNC_DOCUMENTS', false),
         'download_invoice_pdfs' => env('TEAMLEADER_DOWNLOAD_INVOICE_PDFS', false),
-    ],
-
-    'n8n' => [
-        'webhook_token' => env('N8N_WEBHOOK_TOKEN'),
     ],
 
     'monday' => [
@@ -70,10 +65,6 @@ return [
 
     'stripe' => [
         'banca_online_webhook_secret' => env('STRIPE_BANCA_ONLINE_WEBHOOK_SECRET', env('STRIPE_WEBHOOK_SECRET')),
-    ],
-
-    'jotform' => [
-        'cron_token' => env('JOTFORM_CRON_TOKEN'),
     ],
 
     'openrouter' => [
@@ -105,10 +96,6 @@ return [
         'temperature' => 0.2,
         'max_tokens' => 900,
         'role_ai_session_minutes' => 120,
-    ],
-
-    'tasks_daily_workflow' => [
-        'token' => env('TASKS_DAILY_WORKFLOW_TOKEN'),
     ],
 
     'hubspot' => [

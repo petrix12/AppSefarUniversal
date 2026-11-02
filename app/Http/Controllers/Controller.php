@@ -67,6 +67,11 @@ class Controller extends BaseController
 
     public function index()
     {
+        // A Cliente must never receive an internal home screen through another role.
+        if (Auth::user()->hasRole('Cliente')) {
+            return $this->clientHome();
+        }
+
         if (Auth::user()->hasRole('Administrador')) {
             return view('crud.users.index');
         }
@@ -126,6 +131,11 @@ class Controller extends BaseController
             return redirect()->route('docs.index');
         }
 
+        return $this->clientHome();
+    }
+
+    private function clientHome()
+    {
         if ($destination = $this->clientOnboardingRoute(Auth::user())) {
             return redirect()->route($destination);
         }
