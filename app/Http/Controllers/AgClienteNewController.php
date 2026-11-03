@@ -40,7 +40,7 @@ class AgClienteNewController extends Controller
 
     public function storeNotCliente(Request $request)
     {
-        if ($request->user()->hasRole('Cliente')) {
+        if (app(ClientTreeAccess::class)->isClientScoped($request->user())) {
             app(ClientTreeAccess::class)->authorize($request->user(), $request->input('IDCliente'));
             $child = Agcliente::findOrFail($request->input('id_hijo'));
             app(ClientTreeAccess::class)->authorize($request->user(), $child->IDCliente);
@@ -352,7 +352,7 @@ class AgClienteNewController extends Controller
 
         $user = $request->user();
 
-        if ($user->hasRole('Cliente')) {
+        if (app(ClientTreeAccess::class)->isClientScoped($user)) {
             $recipients = [
                 'pedro.bazo@sefarvzla.com',
                 'sistemasccs@sefarvzla.com',
@@ -422,7 +422,7 @@ class AgClienteNewController extends Controller
             'Apellidos' => trim($request->Apellidos),
         ];
 
-        if ($request->user()?->hasRole('Cliente')) {
+        if (app(ClientTreeAccess::class)->isClientScoped($request->user())) {
             foreach ($attributes as $field => $value) {
                 if (blank($value) && filled($agcliente->{$field})) {
                     $attributes[$field] = $agcliente->{$field};
@@ -549,7 +549,7 @@ class AgClienteNewController extends Controller
         $familiar = $request->familiarid;
         $clienteid = $request->clienteid;
 
-        $isClient = $request->user()->hasRole('Cliente');
+        $isClient = app(ClientTreeAccess::class)->isClientScoped($request->user());
         if ($isClient) {
             app(ClientTreeAccess::class)->authorize($request->user(), $clienteid);
             $person = Agcliente::findOrFail($familiar);
@@ -598,7 +598,7 @@ class AgClienteNewController extends Controller
     }
 
     public function storefile(Request $request){
-        if ($request->user()->hasRole('Cliente')) {
+        if (app(ClientTreeAccess::class)->isClientScoped($request->user())) {
             app(ClientTreeAccess::class)->authorize($request->user(), $request->input('IDCliente'));
             $person = Agcliente::findOrFail($request->input('IDPersonaNew'));
             app(ClientTreeAccess::class)->authorize($request->user(), $person->IDCliente);
@@ -630,7 +630,7 @@ class AgClienteNewController extends Controller
         $request->validate(['path' => ['required', 'string', 'max:2048']]);
         $path = $request->path;
 
-        if ($request->user()->hasRole('Cliente')) {
+        if (app(ClientTreeAccess::class)->isClientScoped($request->user())) {
             // A client-supplied S3 path alone never grants access to an object.
             $file = File::where('location', dirname($path))->where('file', basename($path))->first();
             abort_unless($file && $file->location.'/'.$file->file === $path, 403);

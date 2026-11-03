@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\ClientTreeAccess;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 
@@ -53,7 +54,7 @@ class AuthServiceProvider extends ServiceProvider
         // Internal users keep the same genealogy and file permission requirements.
         foreach (['view' => 'index', 'create' => 'create', 'edit' => 'edit'] as $action => $permission) {
             Gate::define('tree-files.'.$action, function ($user) use ($permission) {
-                return $user->hasRole('Cliente') ||
+                return app(ClientTreeAccess::class)->isClientScoped($user) ||
                     ($user->can('genealogista') && $user->can('crud.files.'.$permission));
             });
         }

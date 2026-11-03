@@ -6,9 +6,14 @@ use App\Models\User;
 
 class ClientTreeAccess
 {
+    public function isClientScoped(User $user): bool
+    {
+        return $user->hasRole('Cliente') && ! $user->hasRole('Genealogista');
+    }
+
     public function authorize(User $user, ?string $treeId): void
     {
-        if (! $user->hasRole('Cliente')) {
+        if (! $this->isClientScoped($user)) {
             return;
         }
 

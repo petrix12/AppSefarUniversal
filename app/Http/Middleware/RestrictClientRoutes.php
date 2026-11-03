@@ -26,10 +26,23 @@ class RestrictClientRoutes
         'getclientfiles', 'updatefiletype', 'storefile', 'openfile',
     ];
 
+    // A Genealogista may also be a client. Only their tree work gets this exception;
+    // each route still enforces its existing genealogy and document permissions.
+    public const GENEALOGIST_ROUTES = [
+        'arboles.albero.index', 'arboles.tree.user', 'arboles.tree.index',
+        'arboles.tree.branch', 'arboles.tree.line-color', 'arboles.tree.person-detail',
+        'arboles.tree.treepart', 'arboles.olivo.index',
+        'getfileedit', 'getfileupdate', 'deletefile',
+    ];
+
     public function handle(Request $request, Closure $next)
     {
         if ($request->user()?->hasRole('Cliente')) {
-            abort_unless(in_array($request->route()?->getName(), self::ALLOWED_ROUTES, true), 403,
+            $route = $request->route()?->getName();
+            $genealogistTreeAccess = $request->user()->hasRole('Genealogista')
+                && in_array($route, self::GENEALOGIST_ROUTES, true);
+
+            abort_unless($genealogistTreeAccess || in_array($route, self::ALLOWED_ROUTES, true), 403,
                 'Esta ruta es de uso interno y no está disponible para clientes.');
         }
 

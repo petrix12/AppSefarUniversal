@@ -2,8 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\AlberoController;
 use App\Http\Controllers\ClienteController;
+use App\Http\Controllers\OlivoController;
 use App\Http\Controllers\RegisterV2Controller;
+use App\Http\Controllers\TreeController;
 use App\Http\Middleware\AuditRequests;
 use App\Http\Middleware\RestrictClientRoutes;
 use App\Models\Agcliente;
@@ -140,6 +143,132 @@ class ClientRouteAccessTest extends TestCase
             'Traviesoevans', 'Vargassequera', 'BadellLaw', 'P&V-Abogados', 'Mujica-Coto',
             'German-Fleitas', 'Soma-Consultores', 'MG-Tours',
         ]);
+    }
+
+    #[DataProvider('genealogistTreeRequests')]
+    public function test_genealogists_can_use_tree_routes_even_with_an_additional_client_role(
+        string $method,
+        string $uri,
+        string $controller,
+        string $action,
+        bool $alsoClient
+    ): void {
+        $genealogist = $this->actor('Genealogista');
+        if ($alsoClient) {
+            $genealogist->assignRole('Cliente');
+        }
+        $owner = $this->actor();
+        $uri = str_replace('{user}', (string) $owner->id, $uri);
+        $this->partialMock($controller)->shouldReceive($action)->once()
+            ->andReturn(response()->json(null, 204));
+
+        $this->actingAs($genealogist)->json($method, $uri)->assertNoContent();
+    }
+
+    public static function genealogistTreeRequests(): array
+    {
+        $requests = [
+            ['GET', '/tree/user/{user}', TreeController::class, 'treeForUser'],
+            ['GET', '/tree/OTHER-TREE', TreeController::class, 'tree'],
+            ['GET', '/tree/OTHER-TREE/1/0/0', TreeController::class, 'treepart'],
+            ['GET', '/tree/OTHER-TREE/branch/1/0/0', TreeController::class, 'branch'],
+            ['GET', '/tree/OTHER-TREE/person/1/detail', TreeController::class, 'personDetail'],
+            ['POST', '/tree/OTHER-TREE/line-color/1', TreeController::class, 'updateLineColor'],
+            ['GET', '/albero/OTHER-TREE', AlberoController::class, 'arbelo'],
+            ['GET', '/olivo/OTHER-TREE', OlivoController::class, 'olivo'],
+        ];
+        $cases = [];
+        foreach ($requests as $request) {
+            foreach ([false, true] as $alsoClient) {
+                $cases[$request[1].($alsoClient ? ' with Cliente' : ' without Cliente')] = [...$request, $alsoClient];
+            }
+        }
+
+        return $cases;
+    }
+
+    public function test_an_additional_genealogist_role_does_not_unlock_unrelated_internal_routes(): void
+    {
+        $actor = $this->actor('Genealogista')->assignRole('Cliente');
+        $actor->givePermissionTo(['administrador', 'crud.users.index']);
+
+        $this->actingAs($actor)->get('/request-audits')->assertForbidden();
+        $this->get(route('crud.users.index'))->assertForbidden();
+    }
+
+    public function test_genealogists_with_a_client_role_can_work_on_another_clients_tree(): void
+    {
+        $actor = $this->actor('Genealogista')->assignRole('Cliente');
+        $person = $this->person('OTHER-TREE');
+        $file = $this->document($person);
+        $this->mock(GenealogyService::class)->shouldReceive('forgetProcessedTree')->once()->with('OTHER-TREE');
+        $this->actingAs($actor);
+
+        $this->postJson('/getclientfiles', ['clienteid' => 'OTHER-TREE', 'familiarid' => $person->id])
+            ->assertOk()->assertJsonPath('archivos.0.id', $file->id);
+        $this->postJson('/updatefiletype', ['id' => $file->id, 'tipo' => 'Pasaporte'])->assertOk();
+        $this->post('/agclientesupdate', ['id' => $person->id, 'Nombres' => 'Updated'])->assertRedirect();
+
+        $this->assertSame('Updated', $person->fresh()->Nombres);
+        $this->assertSame('Pasaporte', $file->fresh()->tipo);
+        Mail::assertNothingSent();
+    }
+
+    public function test_genealogists_with_a_client_role_keep_the_internal_file_permission_checks(): void
+    {
+        $actor = $this->actor('Genealogista')->assignRole('Cliente');
+        Role::findByName('Genealogista')->revokePermissionTo('crud.files.edit');
+        Role::findByName('Cliente')->revokePermissionTo('crud.files.edit');
+        $file = $this->document($this->person('OTHER-TREE'));
+
+        $this->actingAs($actor)->postJson('/updatefiletype', ['id' => $file->id, 'tipo' => 'Changed'])
+            ->assertForbidden();
+        $this->postJson('/getfileedit', ['fileId' => $file->id])->assertForbidden();
+        $this->post('/getfileupdate', ['id' => $file->id, 'tipo' => 'Changed'])->assertForbidden();
+        $this->assertSame('Original', $file->fresh()->tipo);
+    }
+
+    public function test_genealogists_with_a_client_role_can_edit_tree_file_metadata(): void
+    {
+        $actor = $this->actor('Genealogista')->assignRole('Cliente');
+        $file = $this->document($this->person('OTHER-TREE'));
+        $this->actingAs($actor)->postJson('/getfileedit', ['fileId' => $file->id])
+            ->assertOk()->assertJsonPath('id', $file->id);
+        $this->post('/getfileupdate', ['id' => $file->id, 'tipo' => 'Pasaporte', 'notas' => 'Verified'])
+            ->assertRedirect();
+
+        $this->assertSame('Pasaporte', $file->fresh()->tipo);
+        $this->assertSame('Verified', $file->fresh()->notas);
+    }
+
+    public function test_genealogists_with_a_client_role_can_open_another_clients_tree_document(): void
+    {
+        $actor = $this->actor('Genealogista')->assignRole('Cliente');
+        $file = $this->document($this->person('OTHER-TREE'));
+        $path = $file->location.'/'.$file->file;
+        Storage::shouldReceive('disk')->once()->with('s3')->andReturnSelf();
+        Storage::shouldReceive('temporaryUrl')->once()->with($path, \Mockery::any())
+            ->andReturn('https://example.test/signed-document');
+
+        $this->actingAs($actor)->postJson('/openfile', ['path' => $path])->assertOk()
+            ->assertJsonPath('url', 'https://example.test/signed-document');
+    }
+
+    public function test_genealogists_with_a_client_role_upload_documents_for_the_tree_owner(): void
+    {
+        $actor = $this->actor('Genealogista')->assignRole('Cliente');
+        $owner = $this->actor();
+        $owner->update(['passport' => 'OTHER-TREE']);
+        $person = $this->person('OTHER-TREE');
+        Storage::fake('s3');
+
+        $this->actingAs($actor)->post('/storefile', [
+            'IDCliente' => 'OTHER-TREE', 'IDPersonaNew' => $person->id, 'tipo' => 'Pasaporte',
+            'archivo' => UploadedFile::fake()->create('passport.pdf', 5, 'application/pdf'),
+        ])->assertRedirect();
+
+        Storage::disk('s3')->assertExists('public/doc/POTHER-TREE/passport.pdf');
+        $this->assertSame($owner->id, File::firstOrFail()->user_id);
     }
 
     #[DataProvider('portalScreens')]

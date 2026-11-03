@@ -73,7 +73,8 @@ class TreeUpdateMailTest extends TestCase
     public function test_tree_additions_only_send_mail_when_the_actor_is_a_client(
         string $route,
         bool $clientActor,
-        string $lmdSource
+        string $lmdSource,
+        bool $alsoClient = false
     ): void {
         $client = User::factory()->create([
             'passport' => 'TREE-MAIL-001',
@@ -91,6 +92,9 @@ class TreeUpdateMailTest extends TestCase
         }
 
         $actor = $clientActor ? $client : User::factory()->create()->syncRoles(['Genealogista']);
+        if ($alsoClient) {
+            $actor->assignRole('Cliente');
+        }
         $actor->givePermissionTo('crud.agclientes.index');
         $root = Agcliente::create([
             'IDCliente' => $client->passport,
@@ -144,6 +148,7 @@ class TreeUpdateMailTest extends TestCase
         return [
             'internal user adding to a client tree' => ['agclientesnew.store', false, 'none'],
             'internal user adding to an LMD client tree' => ['agclientesnew.store', false, 'profile'],
+            'genealogist with an additional client role' => ['agclientesnew.store', false, 'none', true],
             'client adding to own tree' => ['agclientesnew.store', true, 'none'],
             'LMD client from profile' => ['agclientesnew.store', true, 'profile'],
             'LMD client from purchase' => ['agclientesnew.store', true, 'purchase'],
@@ -152,10 +157,14 @@ class TreeUpdateMailTest extends TestCase
         ];
     }
 
-    public function test_an_internal_user_can_edit_a_tree_person_without_sending_mail(): void
+    #[DataProvider('internalActors')]
+    public function test_an_internal_user_can_edit_a_tree_person_without_sending_mail(bool $alsoClient): void
     {
         $client = User::factory()->create(['passport' => 'TREE-MAIL-002'])->assignRole('Cliente');
         $actor = User::factory()->create()->syncRoles(['Genealogista']);
+        if ($alsoClient) {
+            $actor->assignRole('Cliente');
+        }
         $person = Agcliente::create([
             'IDCliente' => $client->passport,
             'IDPersona' => 2,
@@ -171,6 +180,11 @@ class TreeUpdateMailTest extends TestCase
 
         $this->assertSame('Padre', $person->fresh()->Nombres);
         Mail::assertNothingOutgoing();
+    }
+
+    public static function internalActors(): array
+    {
+        return ['genealogist' => [false], 'genealogist also with Cliente' => [true]];
     }
 
     private function personInput(User $client, Agcliente $child): array
