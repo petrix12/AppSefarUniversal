@@ -74,7 +74,7 @@ class InvoicePdfController extends Controller
 
         // Días de pago desde fecha factura a fecha vencimiento
         $paymentDays = $invoice->expiry_date && $invoice->invoice_date
-            ? $invoice->invoice_date->diffInDays($invoice->expiry_date)
+            ? (int) $invoice->invoice_date->diffInDays($invoice->expiry_date, true)
             : 14;
 
         return [

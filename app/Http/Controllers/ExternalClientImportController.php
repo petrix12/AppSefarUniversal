@@ -431,7 +431,7 @@ class ExternalClientImportController extends Controller
         try {
             if (is_numeric($value)) {
                 $timestamp = ((int) $value) > 9999999999 ? ((int) $value) / 1000 : (int) $value;
-                return Carbon::createFromTimestamp((int) $timestamp)->format('Y-m-d');
+                return Carbon::createFromTimestamp((int) $timestamp, config('app.timezone'))->format('Y-m-d');
             }
 
             return Carbon::parse($value)->format('Y-m-d');

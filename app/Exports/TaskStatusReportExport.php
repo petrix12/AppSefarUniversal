@@ -298,7 +298,7 @@ class TaskReportDetailSheet implements FromQuery, WithHeadings, WithMapping, Wit
             $this->dateLabel($task->due_date),
             $this->statusLabel($task->status) ?? $task->status,
             $isOverdue ? 'Si' : 'No',
-            $isOverdue ? $task->due_date->diffInDays(today()) : 0,
+            $isOverdue ? (int) $task->due_date->diffInDays(today(), true) : 0,
             $task->assignee?->name,
             $task->assignee?->email,
             $task->contact?->name,

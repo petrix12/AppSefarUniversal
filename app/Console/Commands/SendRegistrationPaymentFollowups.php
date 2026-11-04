@@ -38,7 +38,7 @@ class SendRegistrationPaymentFollowups extends Command
             $created = Carbon::parse($user->created_at)->startOfDay();
             if ($created->gt($today)) { $skipped++; continue; }
 
-            $daysSince = $created->diffInDays($today);
+            $daysSince = (int) $created->diffInDays($today, true);
 
             // Día 0, 15, 30, 45...
             if ($daysSince % 15 !== 0) { $skipped++; continue; }

@@ -22,7 +22,7 @@
         "jotform/jotform-api-php": "dev-master",
         "justijndepover/teamleader-api": "^0.7.0",
         "laravel-lang/lang": "~7.0",
-        "laravel/framework": "^11.0",
+        "laravel/framework": "^12.69",
         "laravel/jetstream": "^5.0",
         "laravel/sanctum": "^4.0",
         "laravel/socialite": "^5.23",
@@ -46,10 +46,13 @@
         "laravel/sail": "^1.0.1",
         "mockery/mockery": "^1.4.2",
         "nunomaduro/collision": "^8.1",
-        "phpunit/phpunit": "^10.0"
+        "phpunit/phpunit": "^11.5"
     },
     "config": {
         "optimize-autoloader": true,
+        "platform": {
+            "php": "8.2.0"
+        },
         "preferred-install": "dist",
         "sort-packages": true
     },

@@ -3,13 +3,12 @@
 namespace Tests\Unit;
 
 use App\Http\Controllers\AgClienteNewController;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class TreeDatePrecisionTest extends TestCase
 {
-    /**
-     * @dataProvider acceptedDates
-     */
+    #[DataProvider('acceptedDates')]
     public function test_tree_dates_keep_the_precision_supplied_by_the_source(string $date, array $expected): void
     {
         $controller = new AgClienteNewController();
@@ -31,9 +30,7 @@ class TreeDatePrecisionTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider invalidDates
-     */
+    #[DataProvider('invalidDates')]
     public function test_tree_dates_reject_impossible_or_ambiguous_values(string $date): void
     {
         $controller = new AgClienteNewController();
