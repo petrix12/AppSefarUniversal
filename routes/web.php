@@ -138,6 +138,8 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
         ->prefix('admin/integrations')
         ->name('admin.integrations.')
         ->group(function () {
+            Route::get('/brightbean', [\App\Http\Controllers\BrightbeanInboxController::class, 'inbox'])->name('brightbean.index');
+            Route::put('/brightbean', [\App\Http\Controllers\BrightbeanInboxController::class, 'update'])->name('brightbean.update');
             Route::get('/ai-models', [AdminAiModelSettingsController::class, 'show'])->name('ai-models.index');
             Route::put('/ai-models', [AdminAiModelSettingsController::class, 'update'])->name('ai-models.update');
             Route::get('/api-tokens', [AdminIntegrationTokenController::class, 'apiTokens'])->name('api-tokens.index');

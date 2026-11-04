@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BancaOnlineStripeWebhookController;
+use App\Http\Controllers\Api\BrightbeanController;
 use App\Http\Controllers\DeployController;
 use App\Http\Controllers\MarketingSesWebhookController;
 use App\Http\Controllers\MondayWebhookController;
@@ -24,6 +25,10 @@ Route::post('/deploy', [DeployController::class, 'deploy'])
 
 Route::post('/n8n/tasks', [N8nTaskWebhookController::class, 'store'])
     ->middleware($tokenMiddleware('tasks:create'));
+Route::post('/brightbean/messages', [BrightbeanController::class, 'sync'])
+    ->name('api.brightbean.messages.sync')->middleware($tokenMiddleware('brightbean:sync'));
+Route::post('/brightbean/messages/{message}/reply', [BrightbeanController::class, 'reply'])
+    ->whereNumber('message')->name('api.brightbean.messages.reply')->middleware($tokenMiddleware('brightbean:ai'));
 Route::get('/whatsapp-requests/pending', [WhatsappController::class, 'pending'])
     ->middleware($tokenMiddleware('whatsapp:read'));
 Route::post('/whatsapp-requests/{id}/success', [WhatsappController::class, 'success'])

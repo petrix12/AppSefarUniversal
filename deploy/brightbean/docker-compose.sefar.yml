@@ -1,0 +1,21 @@
+# Apply alongside upstream docker-compose.prod.yml and its external-TLS override.
+services:
+  sefar-bridge:
+    image: ${IMAGE_REPOSITORY:-brightbean-chat}:${IMAGE_TAG:-latest}
+    profiles: [sefar]
+    command: [python, /app/sefar_bridge.py]
+    env_file: [.env]
+    volumes:
+      - ./deploy/sefar_bridge.py:/app/sefar_bridge.py:ro
+      # A separate volume seeded with the image's uid-1001 /app/media permissions.
+      # The web container never mounts it, so the cursor cannot be served as media.
+      - sefar_bridge_state:/app/media
+    depends_on:
+      app:
+        condition: service_healthy
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+
+volumes:
+  sefar_bridge_state:

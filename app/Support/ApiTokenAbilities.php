@@ -10,6 +10,8 @@ class ApiTokenAbilities
         'update' => 'Actualizar',
         'cos:refresh' => 'Actualizar COS sin caché',
         'client-notes:create' => 'Crear notas de clientes',
+        'brightbean:sync' => 'BrightBean: sincronizar mensajes',
+        'brightbean:ai' => 'BrightBean: generar respuestas con IA',
         'delete' => 'Eliminar',
         'whatsapp:read' => 'WhatsApp: consultar mensajes pendientes',
         'whatsapp:update' => 'WhatsApp: registrar envíos y errores',

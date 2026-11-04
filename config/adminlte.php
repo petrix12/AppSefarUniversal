@@ -511,6 +511,12 @@ return [
                     'can'           => 'integrations.manage',
                 ],
                 [
+                    'text'          => 'Mensajes BrightBean',
+                    'icon'          => 'fa-fw fas fa-comments',
+                    'route'         => 'admin.integrations.brightbean.index',
+                    'can'           => 'integrations.manage',
+                ],
+                [
                     'text'          => 'MCP privado',
                     'icon'          => 'fa-fw fas fa-shield-alt',
                     'icon_color'    => 'white',

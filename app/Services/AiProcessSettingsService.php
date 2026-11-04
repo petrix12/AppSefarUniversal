@@ -8,6 +8,14 @@ use Illuminate\Support\Facades\DB;
 class AiProcessSettingsService
 {
     private const DEFAULTS = [
+        'brightbean_chat' => [
+            'label' => 'BrightBean: atención al cliente',
+            'description' => 'Respuestas a mensajes de clientes desde BrightBean con la integración OpenRouter de la App.',
+            'model' => 'qwen/qwen3.8-flash',
+            'fallback_models' => ['qwen/qwen3-8b'],
+            'timeout_seconds' => 60,
+            'max_tokens' => 1200,
+        ],
         'teamleader_association' => [
             'label' => 'Asociación HubSpot ↔ Teamleader',
             'description' => 'Compara código, servicio e importes del trato para sugerir el proyecto Teamleader.',
