@@ -85,6 +85,54 @@ def api_post(client, path, payload):
     return response.json()
 
 
+def process_manual_outbox(client, workspace_id, conversation_id=None):
+    """Claim operator replies and send through BrightBean's agent service."""
+    from django.core.exceptions import ObjectDoesNotExist
+    from apps.channels.events import OutboundMessage, TextBlock
+    from apps.messaging.models import Conversation
+    from apps.messaging.services import send_as_agent
+
+    payload = {"workspace_id": str(workspace_id)}
+    if conversation_id:
+        payload["conversation_id"] = str(conversation_id)
+    try:
+        result = api_post(client, "outbox/claim", payload)
+    except AppApiError as error:
+        if error.status == 404:
+            # The bridge can be deployed before the App's Git release.
+            return 0
+        raise
+    count = 0
+    for row in result["data"]:
+        acknowledgement = {"workspace_id": str(workspace_id), "lease_token": row["lease_token"]}
+        try:
+            if str(row["workspace_id"]) != str(workspace_id):
+                raise ValueError("workspace_mismatch")
+            conversation = Conversation.objects.for_workspace(workspace_id).select_related(
+                "workspace", "contact", "channel_connection",
+            ).get(pk=row["conversation_id"])
+            if str(conversation.contact_id) != row["contact_id"] or str(conversation.channel_connection_id) != row["connection_id"]:
+                raise ValueError("target_mismatch")
+        except (ObjectDoesNotExist, ValueError):
+            acknowledgement.update(status="failed", error_code="invalid_target")
+        else:
+            outgoing = send_as_agent(
+                workspace=conversation.workspace,
+                contact=conversation.contact,
+                connection=conversation.channel_connection,
+                outbound=OutboundMessage(blocks=(TextBlock(text=row["text"]),)),
+                idempotency_key="sefar-manual:" + row["request_id"],
+            )
+            acknowledgement.update(status="failed" if outgoing.status == "failed" else "submitted", external_id=str(outgoing.pk))
+            if outgoing.status == "failed":
+                acknowledgement["error_code"] = "brightbean_rejected"
+        # Other failures leave the lease retryable. An uncertain ACK must reuse
+        # the same request_id on retry; never generate another outbound key.
+        api_post(client, f"outbox/{row['id']}/ack", acknowledgement)
+        count += 1
+    return count
+
+
 def sync_batch(client, state, messages):
     from apps.channels.events import OutboundMessage, TextBlock
     from apps.messaging.services import send_via_api
@@ -95,6 +143,10 @@ def sync_batch(client, state, messages):
         if may_reply(message) and message_payload(message)["text"]:
             result = api_post(client, f"messages/{identifiers[str(message.pk)]}/reply", {})
             answer = result["data"]["reply"]
+            if isinstance(answer, str) and answer.strip():
+                # An operator may have queued a reply while the model ran.
+                # Sending it as an agent applies BrightBean's automation pause.
+                process_manual_outbox(client, message.workspace_id, message.conversation_id)
             # Re-check after the model call: an agent may have taken over meanwhile.
             if isinstance(answer, str) and answer.strip() and may_reply(message):
                 conversation = message.conversation
@@ -174,6 +226,13 @@ def main():
         timeout=httpx.Timeout(120, connect=10), follow_redirects=False,
     ) as client:
         while not STOP.is_set():
+            try:
+                count = process_manual_outbox(client, workspace)
+                if count:
+                    LOG.info("Processed %d operator replies", count)
+            except Exception as error:
+                detail = str(error) if isinstance(error, AppApiError) else type(error).__name__
+                LOG.warning("Operator replies pending (%s)", detail)
             try:
                 count = cycle(client, state, workspace)
                 if count:

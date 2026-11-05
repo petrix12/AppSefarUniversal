@@ -31,12 +31,44 @@
     </div>
     @if($conversation)
         <p><a href="{{ route('admin.integrations.brightbean.index') }}">Ver todos los mensajes</a></p>
+        @if($replyTarget)
+            <div class="card">
+                <div class="card-header"><h2 class="h5 mb-0">Responder al cliente</h2></div>
+                <div class="card-body">
+                    <form method="POST" action="{{ route('admin.integrations.brightbean.send', $replyTarget) }}">
+                        @csrf
+                        <input type="hidden" name="request_id" value="{{ old('request_id', $replyRequestId) }}">
+                        <label for="brightbean-reply">Tu respuesta</label>
+                        <textarea id="brightbean-reply" name="text" rows="4" class="form-control mb-2" required maxlength="4000">{{ old('text') }}</textarea>
+                        <p class="text-muted">Se enviará por {{ $replyTarget->platform }} al cliente de esta conversación. Una respuesta manual pausa la IA durante al menos 30 minutos. El envío depende de la conexión y de las reglas del canal.</p>
+                        <button type="submit" class="btn btn-primary">Enviar por BrightBean</button>
+                    </form>
+                </div>
+            </div>
+            @if($outbound->isNotEmpty())
+                <div class="card"><div class="card-body">
+                    <h2 class="h5">Respuestas desde la App</h2>
+                    @foreach($outbound as $reply)
+                        @continue($reply->external_id && $messages->getCollection()->contains('external_id', $reply->external_id))
+                        <article class="border-bottom mb-2 pb-2">
+                            <span class="badge {{ $reply->status === 'failed' ? 'badge-danger' : 'badge-info' }}">{{ ['queued' => 'En cola', 'processing' => 'Procesando', 'submitted' => 'Recibido por BrightBean', 'failed' => 'No se pudo enviar'][$reply->status] ?? $reply->status }}</span>
+                            <span class="text-muted">{{ $reply->created_at->format('d/m/Y H:i:s') }}</span>
+                            <div style="white-space: pre-wrap; overflow-wrap: anywhere">{{ $reply->text }}</div>
+                            @if($reply->status === 'failed')
+                                <p class="text-danger mb-0">Revisa la conexión y el estado de la conversación en BrightBean antes de intentarlo de nuevo.</p>
+                            @endif
+                        </article>
+                    @endforeach
+                    <a href="{{ route('admin.integrations.brightbean.index', ['conversation' => $conversation]) }}">Actualizar conversación y estados</a>
+                </div></div>
+            @endif
+        @endif
     @endif
     <div class="card"><div class="card-body">
         @forelse($messages as $message)
             <article class="border-bottom mb-3 pb-3">
                 <div><strong>{{ trim(($message->contact['first_name'] ?? '').' '.($message->contact['last_name'] ?? '')) ?: ($message->contact['phone'] ?? 'Contacto') }}</strong>
-                    · {{ $message->platform }} · {{ $message->direction === 'in' ? 'Recibido' : 'Enviado' }} · {{ $message->status }}
+                    · {{ $message->platform }} · {{ $message->direction === 'in' ? 'Entrante' : 'Saliente' }} · {{ ['queued' => 'En cola', 'sent' => 'Enviado', 'delivered' => 'Entregado', 'read' => 'Leído', 'failed' => 'Fallido', 'deleted' => 'Eliminado'][$message->status] ?? $message->status }}
                     @if($message->internal) · Nota interna @endif
                     <span class="text-muted"> · {{ $message->source_created_at->format('d/m/Y H:i:s') }}</span></div>
                 <div style="white-space: pre-wrap; overflow-wrap: anywhere">{{ $message->status === 'deleted' ? 'Mensaje eliminado' : ($message->text ?: 'Mensaje con adjuntos u otro contenido') }}</div>

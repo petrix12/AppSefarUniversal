@@ -29,6 +29,10 @@ Route::post('/brightbean/messages', [BrightbeanController::class, 'sync'])
     ->name('api.brightbean.messages.sync')->middleware($tokenMiddleware('brightbean:sync'));
 Route::post('/brightbean/messages/{message}/reply', [BrightbeanController::class, 'reply'])
     ->whereNumber('message')->name('api.brightbean.messages.reply')->middleware($tokenMiddleware('brightbean:ai'));
+Route::post('/brightbean/outbox/claim', [BrightbeanController::class, 'claim'])
+    ->name('api.brightbean.outbox.claim')->middleware($tokenMiddleware('brightbean:sync'));
+Route::post('/brightbean/outbox/{outbound}/ack', [BrightbeanController::class, 'acknowledge'])
+    ->whereNumber('outbound')->name('api.brightbean.outbox.ack')->middleware($tokenMiddleware('brightbean:sync'));
 Route::get('/whatsapp-requests/pending', [WhatsappController::class, 'pending'])
     ->middleware($tokenMiddleware('whatsapp:read'));
 Route::post('/whatsapp-requests/{id}/success', [WhatsappController::class, 'success'])

@@ -4,16 +4,73 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\BrightbeanMessage;
+use App\Models\BrightbeanOutboundMessage;
 use App\Models\BrightbeanSetting;
 use App\Services\BrightbeanAiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Throwable;
 
 class BrightbeanController extends Controller
 {
+    public function claim(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'workspace_id' => ['required', 'uuid'],
+            'conversation_id' => ['nullable', 'uuid'],
+        ]);
+        $rows = DB::transaction(function () use ($data) {
+            $query = BrightbeanOutboundMessage::where('workspace_id', $data['workspace_id'])
+                ->when($data['conversation_id'] ?? null, fn ($q, $id) => $q->where('conversation_id', $id))
+                ->where(fn ($q) => $q->where('status', 'queued')
+                    ->orWhere(fn ($q) => $q->where('status', 'processing')->where('leased_until', '<=', now())));
+            $rows = $query->orderBy('id')->limit(20)->lockForUpdate()->get();
+            foreach ($rows as $row) {
+                if ($row->attempts >= 5) {
+                    $row->update(['status' => 'failed', 'error_code' => 'retry_limit', 'lease_token' => null, 'leased_until' => null]);
+                    continue;
+                }
+                $row->update(['status' => 'processing', 'attempts' => $row->attempts + 1,
+                    'lease_token' => (string) Str::uuid(), 'leased_until' => now()->addMinutes(5)]);
+            }
+
+            return $rows->where('status', 'processing')->map(fn ($row) => $row->only([
+                'id', 'request_id', 'workspace_id', 'conversation_id', 'contact_id', 'connection_id', 'text', 'lease_token',
+            ]))->values();
+        });
+
+        return response()->json(['data' => $rows])->header('Cache-Control', 'no-store, private');
+    }
+
+    public function acknowledge(Request $request, BrightbeanOutboundMessage $outbound): JsonResponse
+    {
+        $data = $request->validate([
+            'workspace_id' => ['required', 'uuid'],
+            'lease_token' => ['required', 'uuid'],
+            'status' => ['required', 'in:submitted,failed'],
+            'external_id' => ['nullable', 'required_if:status,submitted', 'uuid'],
+            'error_code' => ['nullable', 'string', 'max:64', 'regex:/^[a-zA-Z0-9_:-]+$/'],
+        ]);
+        DB::transaction(function () use ($outbound, $data) {
+            $row = BrightbeanOutboundMessage::lockForUpdate()->findOrFail($outbound->id);
+            abort_unless($row->workspace_id === $data['workspace_id'], 404);
+            abort_unless($row->lease_token && hash_equals($row->lease_token, $data['lease_token']), 409);
+            if (in_array($row->status, ['submitted', 'failed'], true)) {
+                abort_unless($row->status === $data['status'] && $row->external_id === ($data['external_id'] ?? null), 409);
+                return;
+            }
+            abort_unless($row->status === 'processing', 409);
+            $row->update(['status' => $data['status'], 'external_id' => $data['external_id'] ?? null,
+                'error_code' => $data['status'] === 'failed' ? ($data['error_code'] ?? 'brightbean_rejected') : null,
+                'leased_until' => null]);
+        });
+
+        return response()->json(['data' => ['status' => $data['status']]])->header('Cache-Control', 'no-store, private');
+    }
+
     public function sync(Request $request): JsonResponse
     {
         $data = $request->validate([

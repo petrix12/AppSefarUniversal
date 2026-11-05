@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\BrightbeanMessage;
+use App\Models\BrightbeanOutboundMessage;
 use App\Models\BrightbeanSetting;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -25,6 +26,10 @@ class BrightbeanAiService
 
             if (! $settings->ai_enabled || $message->direction !== 'in' || $message->internal
                 || $message->status === 'deleted' || blank($message->text)) {
+                return null;
+            }
+            if (BrightbeanOutboundMessage::where('workspace_id', $message->workspace_id)
+                ->where('conversation_id', $message->conversation_id)->whereIn('status', ['queued', 'processing'])->exists()) {
                 return null;
             }
             if ($message->ai_reply !== null) {

@@ -119,6 +119,43 @@ OpenRouter de la App y admite los modelos de respaldo del configurador.
 - No se asocian automáticamente expedientes privados ni se da acceso del bot
   a los asistentes internos por rol.
 
+## Responder manualmente desde la App
+
+En **Integraciones → Mensajes BrightBean**, abrir **Ver conversación**, escribir
+en **Tu respuesta** y pulsar **Enviar por BrightBean**. Se utiliza el contacto
+y el canal del mensaje sincronizado; el formulario no permite cambiar el
+destinatario. Requiere el mismo permiso interno `integrations.manage` de la
+bandeja. El límite es de 4000 caracteres por respuesta de texto.
+
+La App conserva una cola con el usuario que escribió cada respuesta. El
+conector reclama los envíos de su workspace y utiliza `send_as_agent`, el
+servicio nativo de BrightBean para operadores. Así se mantienen las reglas de
+consentimiento y del canal y se pausa la automatización al menos 30 minutos.
+Una respuesta manual pendiente también impide generar una nueva respuesta IA
+desde la App para esa conversación.
+
+Cada envío tiene un UUID estable. El formulario evita duplicados por doble
+clic, y los reintentos del conector reutilizan la misma clave de idempotencia
+en BrightBean. Las reservas vencen a los cinco minutos; después de cinco
+intentos fallidos, la respuesta se marca como fallida para revisión.
+
+La pantalla diferencia **En cola**, **Procesando**, **Recibido por BrightBean**
+y **No se pudo enviar**. Que BrightBean acepte el mensaje no significa que el
+cliente lo haya recibido: la sincronización posterior muestra los estados
+reales del canal, incluidos entrega, lectura y fallo.
+
+El conector reutiliza el token `brightbean:sync` para reclamar y confirmar
+esta cola; no necesita un nuevo token ni la clave OpenRouter. Las rutas son
+`POST /api/brightbean/outbox/claim` y
+`POST /api/brightbean/outbox/{id}/ack`. Ambas exigen autenticación y la reserva
+se confirma con un token único, además del workspace.
+
+Después de publicar este cambio por Git, ejecutar la migración
+`2026_11_05_170000_create_brightbean_outbound_messages_table.php` y limpiar
+cachés. Actualizar `deploy/sefar_bridge.py` en el VPS y recrear el servicio
+`sefar-bridge`. El conector actualizado tolera que la App todavía no publique
+las rutas nuevas, manteniendo activa la sincronización anterior.
+
 ## Operación y verificación
 
 ```bash
