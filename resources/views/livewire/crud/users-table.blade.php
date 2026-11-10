@@ -526,6 +526,11 @@
                         <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
                             <span class="ctvSefar block text-indigo-600">{{ __('Users') }}</span>
                         </h2>
+                        @can('clients.export')
+                            <a href="{{ route('admin.client-exports.index') }}" class="btn btn-success mt-3 mb-3">
+                                <i class="fas fa-file-export mr-1" aria-hidden="true"></i> Exportar clientes
+                            </a>
+                        @endcan
                         @can('crud.users.create')
                             <div class="mt-8 flex lg:mt-0 lg:flex-shrink-0">
                                 <div class="inline-flex rounded-md shadow">

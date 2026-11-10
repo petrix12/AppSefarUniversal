@@ -4,6 +4,7 @@ use App\Http\Controllers\AgclienteController;
 use App\Http\Controllers\AdminConsultationCalendarController;
 use App\Http\Controllers\AdminIntegrationTokenController;
 use App\Http\Controllers\AdminAiModelSettingsController;
+use App\Http\Controllers\AdminClientExportController;
 use App\Http\Controllers\AlberoController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\ClienteController;
@@ -495,6 +496,11 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
         Route::get('/', [CosPasoEditorController::class, 'index'])->name('admin.procesos.index');
         Route::get('/{cos}', [CosPasoEditorController::class, 'show'])->name('admin.procesos.show');
         Route::put('/pasos/{paso}', [CosPasoEditorController::class, 'updatePasoFull'])->name('admin.procesos.pasos.updateFull');
+    });
+
+    Route::middleware(['auth', 'can:clients.export'])->prefix('admin/client-exports')->name('admin.client-exports.')->group(function () {
+        Route::get('/', [AdminClientExportController::class, 'listing'])->name('index');
+        Route::get('/download', [AdminClientExportController::class, 'download'])->name('download');
     });
 
     // Grupo de rutas CRUD

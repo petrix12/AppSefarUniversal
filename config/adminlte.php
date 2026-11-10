@@ -270,6 +270,13 @@ return [
                     'can'           => 'crud.users.index',
                 ],
                 [
+                    'text'          => 'Exportar clientes',
+                    'icon'          => 'fa-fw fas fa-file-export',
+                    'icon_color'    => 'white',
+                    'route'         => 'admin.client-exports.index',
+                    'can'           => 'clients.export',
+                ],
+                [
                     'text'          => 'Cartera y certificados',
                     'icon'          => 'fa-fw fas fa-file-invoice-dollar',
                     'url'           => 'cos/cartera',

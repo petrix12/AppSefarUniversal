@@ -50,6 +50,10 @@ class AuthServiceProvider extends ServiceProvider
             return $user->hasRole('Administrador');
         });
 
+        Gate::define('clients.export', function ($user) {
+            return $user->hasRole('Administrador') && ! $user->hasRole('Cliente');
+        });
+
         // Shared tree requests: clients are scoped to their assigned tree in the controller.
         // Internal users keep the same genealogy and file permission requirements.
         foreach (['view' => 'index', 'create' => 'create', 'edit' => 'edit'] as $action => $permission) {
