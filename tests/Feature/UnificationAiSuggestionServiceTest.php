@@ -3,17 +3,25 @@
 namespace Tests\Feature;
 
 use App\Services\UnificationAiSuggestionService;
+use App\Services\AiProcessSettingsService;
 use Illuminate\Http\Client\Request as ClientRequest;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class UnificationAiSuggestionServiceTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        (require database_path('migrations/2026_10_09_120000_create_ai_process_settings_table.php'))->up();
+        Http::preventStrayRequests();
+    }
+
     public function test_it_requests_a_structured_audit_suggestion_without_writing_any_mapping(): void
     {
         config()->set('services.openrouter.key', 'test-key');
         config()->set('services.openrouter.url', 'https://openrouter.test/chat');
-        config()->set('services.openrouter.unification_model', 'qwen/qwen3.5-flash-02-23');
 
         Http::fake([
             'https://openrouter.test/chat' => Http::response([
@@ -36,15 +44,17 @@ class UnificationAiSuggestionServiceTest extends TestCase
         $this->assertSame(86, $suggestion['suggestions'][0]['confidence']);
         $this->assertSame('estado_documental', $suggestion['suggestions'][0]['left']['key']);
         $this->assertSame('status', $suggestion['suggestions'][0]['right']['key']);
-        $this->assertSame('qwen/qwen3.5-flash-02-23', $suggestion['model']);
+        $this->assertSame(AiProcessSettingsService::DEFAULT_MODEL, $suggestion['model']);
         $this->assertTrue($suggestion['used_ai']);
 
         Http::assertSent(function (ClientRequest $request): bool {
             $prompt = json_decode((string) data_get($request->data(), 'messages.1.content'), true);
 
             return $request->url() === 'https://openrouter.test/chat'
-                && $request['models'] === ['qwen/qwen3.5-flash-02-23', 'google/gemini-2.5-flash']
+                && $request['models'] === [AiProcessSettingsService::DEFAULT_MODEL, AiProcessSettingsService::FALLBACK_MODEL]
                 && data_get($request->data(), 'provider.require_parameters') === true
+                && data_get($request->data(), 'provider.sort') === 'latency'
+                && data_get($request->data(), 'reasoning.effort') === 'minimal'
                 && data_get($request->data(), 'response_format.type') === 'json_object'
                 && data_get($prompt, 'left_platform') === 'app'
                 && data_get($prompt, 'right_platform') === 'monday'
@@ -56,7 +66,6 @@ class UnificationAiSuggestionServiceTest extends TestCase
     {
         config()->set('services.openrouter.key', 'secret-test-key');
         config()->set('services.openrouter.url', 'https://openrouter.test/chat');
-        config()->set('services.openrouter.unification_model', 'qwen/qwen3.5-flash-02-23');
 
         Http::fake([
             'https://openrouter.test/chat' => Http::response([

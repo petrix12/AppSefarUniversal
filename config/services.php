@@ -70,17 +70,16 @@ return [
     'openrouter' => [
         'key' => env('OPENROUTER_API_KEY'),
         'url' => 'https://openrouter.ai/api/v1/chat/completions',
-        'model' => 'openai/gpt-4o-mini',
+        'model' => env('OPENROUTER_MODEL', 'google/gemini-3.5-flash-lite'),
         // Dedicated model for factual Systems activity summaries. Keep this
         // separate from the application's existing OpenRouter use cases.
-        'systems_activity_model' => env('OPENROUTER_SYSTEMS_ACTIVITY_MODEL', 'qwen/qwen3-32b'),
-        'systems_activity_timeout' => env('OPENROUTER_SYSTEMS_ACTIVITY_TIMEOUT', 45),
-        // More capable than the previous small model while keeping the field
-        // audit inexpensive. It is scoped only to the unification screen.
-        'unification_model' => env('OPENROUTER_UNIFICATION_MODEL', 'qwen/qwen3-32b'),
+        'systems_activity_model' => env('OPENROUTER_SYSTEMS_ACTIVITY_MODEL', 'google/gemini-3.5-flash-lite'),
+        'systems_activity_timeout' => env('OPENROUTER_SYSTEMS_ACTIVITY_TIMEOUT', 30),
+        // Legacy environment defaults; saved per-process settings take precedence.
+        'unification_model' => env('OPENROUTER_UNIFICATION_MODEL', 'google/gemini-3.5-flash-lite'),
         // OpenRouter tries these only when the primary model/provider fails
-        // (including HTTP 429), so the stronger fallback is not the default cost.
-        'unification_fallback_models' => env('OPENROUTER_UNIFICATION_FALLBACK_MODELS', 'google/gemini-2.5-flash'),
+        // (including HTTP 429), keeping the primary model as the usual path.
+        'unification_fallback_models' => env('OPENROUTER_UNIFICATION_FALLBACK_MODELS', 'google/gemini-3.1-flash-lite'),
         'unification_timeout' => env('OPENROUTER_UNIFICATION_TIMEOUT', 30),
         // Per-request size. Larger selected batches are split into these
         // chunks so a user can review more than one model request safely.
@@ -92,7 +91,12 @@ return [
         'auto_association_min_field_signals' => env('TEAMLEADER_AUTO_ASSOCIATION_MIN_FIELD_SIGNALS', 2),
         'auto_association_min_margin' => env('OPENROUTER_AUTO_ASSOCIATION_MIN_MARGIN', 15),
         'auto_association_cooldown_minutes' => env('OPENROUTER_AUTO_ASSOCIATION_COOLDOWN_MINUTES', 1440),
-        'timeout' => 45,
+        // Keep reasoning short so the output budget produces a visible answer.
+        'request_options' => [
+            'reasoning' => ['effort' => 'minimal', 'exclude' => true],
+            'provider' => ['sort' => 'latency'],
+        ],
+        'timeout' => 30,
         'temperature' => 0.2,
         'max_tokens' => 900,
         'role_ai_session_minutes' => 120,

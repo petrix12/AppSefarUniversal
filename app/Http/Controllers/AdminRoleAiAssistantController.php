@@ -36,7 +36,9 @@ class AdminRoleAiAssistantController extends Controller
                 : 0;
         });
 
-        return view('admin.role_ai_assistants.index', compact('assistants'));
+        $defaultModel = app(\App\Services\AiProcessSettingsService::class)->get('role_assistants')['model'];
+
+        return view('admin.role_ai_assistants.index', compact('assistants', 'defaultModel'));
     }
 
     public function show(RoleAiAssistant $assistant)
@@ -57,7 +59,9 @@ class AdminRoleAiAssistantController extends Controller
                 ->get(['id', 'name', 'email'])
             : collect();
 
-        return view('admin.role_ai_assistants.show', compact('assistant', 'knowledgeEntries', 'accessUsers'));
+        $defaultModel = app(\App\Services\AiProcessSettingsService::class)->get('role_assistants')['model'];
+
+        return view('admin.role_ai_assistants.show', compact('assistant', 'knowledgeEntries', 'accessUsers', 'defaultModel'));
     }
 
     public function update(Request $request, RoleAiAssistant $assistant)

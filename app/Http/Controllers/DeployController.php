@@ -362,6 +362,7 @@ class DeployController extends Controller
                         'X-Title'       => config('app.name'),
                     ])
                     ->post((string) config('services.openrouter.url'), [
+                        ...config('services.openrouter.request_options', []),
                         'model'       => $model,
                         'messages'    => [
                             [

@@ -504,6 +504,13 @@ return [
             'icon_color'  => 'white',
             'submenu' => [
                 [
+                    'text'          => 'Modelos de IA',
+                    'icon'          => 'fa-fw fas fa-brain',
+                    'icon_color'    => 'white',
+                    'route'         => 'admin.integrations.ai-models.index',
+                    'can'           => 'integrations.manage',
+                ],
+                [
                     'text'          => 'Tokens API',
                     'icon'          => 'fa-fw fas fa-key',
                     'icon_color'    => 'white',

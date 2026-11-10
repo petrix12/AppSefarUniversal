@@ -43,7 +43,7 @@ class RoleAiAssistantService
             ['role_id' => $role->id],
             [
                 'name' => 'Asistente ' . $role->name,
-                'model' => config('services.openrouter.model', 'openai/gpt-4o-mini'),
+                'model' => null,
                 'instructions' => $this->defaultInstructions($role),
                 'created_by' => $createdBy?->id,
             ]
@@ -215,7 +215,11 @@ PROMPT);
                 'X-Title' => config('app.name'),
             ])
             ->post(config('services.openrouter.url', 'https://openrouter.ai/api/v1/chat/completions'), [
-                'model' => $assistant->model ?: $processSettings['model'],
+                ...config('services.openrouter.request_options', []),
+                'models' => array_values(array_unique([
+                    $assistant->model ?: $processSettings['model'],
+                    ...($processSettings['fallback_models'] ?? []),
+                ])),
                 'messages' => $messages,
                 'temperature' => (float) config('services.openrouter.temperature', 0.25),
                 'max_tokens' => (int) $processSettings['max_tokens'],

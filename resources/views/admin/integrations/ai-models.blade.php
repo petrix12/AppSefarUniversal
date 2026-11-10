@@ -27,7 +27,7 @@
             <h3 class="card-title mb-0">Configuración de OpenRouter</h3>
         </div>
         <div class="card-body">
-            <p class="text-muted">Selecciona un modelo principal y modelos de respaldo para cada proceso. La configuración queda guardada en la base de datos y no requiere editar <code>.env</code>. El catálogo muestra primero los modelos de menor latencia reportada por OpenRouter.</p>
+            <p class="text-muted">Selecciona un modelo principal y modelos de respaldo para cada proceso. La configuración queda guardada en la base de datos y no requiere editar <code>.env</code>. El catálogo incluye modelos multimodales que responden con texto y muestra primero los Flash-Lite recomendados.</p>
 
             @if($models)
                 <datalist id="openrouter-model-catalog">
@@ -59,7 +59,7 @@
                         <div class="col-lg-5 form-group">
                             <label for="fallback-{{ $process }}">Modelos de respaldo</label>
                             <input id="fallback-{{ $process }}" name="fallback_models" class="form-control" value="{{ old('process') === $process ? old('fallback_models') : implode(', ', $setting['fallback_models']) }}" placeholder="proveedor/modelo, proveedor/modelo">
-                            <small class="form-text text-muted">Se intentan en orden cuando el principal falla o no responde.</small>
+                            <small class="form-text text-muted">OpenRouter los intenta en orden si el modelo principal devuelve un error o no está disponible.</small>
                         </div>
                         <div class="col-lg-1 col-6 form-group">
                             <label for="timeout-{{ $process }}">Timeout</label>

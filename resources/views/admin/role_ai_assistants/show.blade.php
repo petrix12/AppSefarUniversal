@@ -37,7 +37,8 @@
 
                         <div class="form-group">
                             <label for="assistant-model">Modelo OpenRouter</label>
-                            <input id="assistant-model" name="model" class="form-control @error('model') is-invalid @enderror" value="{{ old('model', $assistant->model) }}" placeholder="{{ config('services.openrouter.model') }}">
+                            <input id="assistant-model" name="model" class="form-control @error('model') is-invalid @enderror" value="{{ old('model', $assistant->model) }}" placeholder="{{ $defaultModel }}">
+                            <small class="form-text text-muted">Déjalo vacío para usar el modelo de <a href="{{ route('admin.integrations.ai-models.index') }}">Modelos de IA → Asistentes por rol</a>.</small>
                             @error('model')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
 

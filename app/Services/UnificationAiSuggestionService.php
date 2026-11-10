@@ -49,6 +49,7 @@ class UnificationAiSuggestionService
                 'X-Title' => config('app.name').' · Asociación de negocios',
             ])
             ->post(config('services.openrouter.url'), [
+                ...config('services.openrouter.request_options', []),
                 'models' => $this->models($process),
                 'messages' => [
                     [
@@ -82,7 +83,7 @@ class UnificationAiSuggestionService
                 ],
                 'temperature' => 0.1,
                 'max_tokens' => (int) $processSettings['max_tokens'],
-                'provider' => ['require_parameters' => true],
+                'provider' => array_merge(config('services.openrouter.request_options.provider', []), ['require_parameters' => true]),
                 'response_format' => ['type' => 'json_object'],
             ]);
 
@@ -191,6 +192,7 @@ class UnificationAiSuggestionService
                 'X-OpenRouter-Metadata' => 'enabled',
             ])
             ->post(config('services.openrouter.url'), [
+                ...config('services.openrouter.request_options', []),
                 // `models` enables OpenRouter's own failover: a 429 from the
                 // primary model/provider tries the next configured model.
                 'models' => $models,
@@ -198,7 +200,7 @@ class UnificationAiSuggestionService
                 'temperature' => 0.1,
                 'max_tokens' => (int) $processSettings['max_tokens'],
                 // This rejects providers that cannot honor the requested JSON mode.
-                'provider' => ['require_parameters' => true],
+                'provider' => array_merge(config('services.openrouter.request_options.provider', []), ['require_parameters' => true]),
                 'response_format' => $this->responseFormat($process),
             ]);
 
@@ -436,10 +438,7 @@ class UnificationAiSuggestionService
 
     private function primaryModel(string $process): string
     {
-        $default = match ($process) {
-            'teamleader_association' => 'qwen/qwen3-8b',
-            default => 'qwen/qwen3-32b',
-        };
+        $default = AiProcessSettingsService::DEFAULT_MODEL;
 
         return trim((string) (app(AiProcessSettingsService::class)->get($process)['model'] ?? $default)) ?: $default;
     }

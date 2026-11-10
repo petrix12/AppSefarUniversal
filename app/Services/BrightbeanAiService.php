@@ -63,6 +63,7 @@ class BrightbeanAiService
             $response = Http::withToken($key)->acceptJson()->connectTimeout(10)
                 ->timeout((int) $process['timeout_seconds'])
                 ->post((string) config('services.openrouter.url'), [
+                    ...config('services.openrouter.request_options', []),
                     'models' => array_values(array_unique([$process['model'], ...($process['fallback_models'] ?? [])])),
                     'messages' => [
                         ['role' => 'system', 'content' => self::DEFAULT_INSTRUCTIONS."\n".($settings->instructions ?? '')],

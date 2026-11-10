@@ -21,14 +21,17 @@ class AdminAiModelSettingsController extends Controller
                 $response = Http::withToken($apiKey)
                     ->acceptJson()
                     ->timeout(12)
-                    ->get('https://openrouter.ai/api/v1/models', [
-                        'sort' => 'latency-low-to-high',
-                        'supported_parameters' => 'response_format',
-                    ]);
+                    ->get('https://openrouter.ai/api/v1/models');
 
                 if ($response->successful()) {
                     $models = collect($response->json('data', []))
-                        ->filter(fn (array $model) => data_get($model, 'architecture.modality') === 'text->text')
+                        ->filter(fn (array $model) => in_array('text', data_get($model, 'architecture.input_modalities', []), true)
+                            && in_array('text', data_get($model, 'architecture.output_modalities', []), true))
+                        ->sortBy(fn (array $model) => match ($model['id'] ?? '') {
+                            AiProcessSettingsService::DEFAULT_MODEL => 0,
+                            AiProcessSettingsService::FALLBACK_MODEL => 1,
+                            default => 2,
+                        })
                         ->take(150)
                         ->map(fn (array $model) => [
                             'id' => (string) ($model['id'] ?? ''),

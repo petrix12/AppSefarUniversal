@@ -36,7 +36,7 @@
                         <tr>
                             <td>{{ $assistant->name }}</td>
                             <td>{{ $assistant->role?->name ?? 'Sin rol' }}</td>
-                            <td><code>{{ $assistant->model ?: config('services.openrouter.model') }}</code></td>
+                            <td><code>{{ $assistant->model ?: $defaultModel }}</code></td>
                             <td>
                                 @if($assistant->is_active)
                                     <span class="badge badge-success">Activo</span>

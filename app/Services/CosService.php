@@ -1456,12 +1456,12 @@ class CosService
         ];
 
         $response = Http::timeout((int) $processSettings['timeout_seconds'])
-            ->retry(2, 100)
             ->withHeaders([
                 'Authorization' => "Bearer $apiKey",
                 'Content-Type' => 'application/json',
             ])
             ->post((string) config('services.openrouter.url'), [
+                ...config('services.openrouter.request_options', []),
                 'models' => array_values(array_unique(array_merge(
                     [$processSettings['model']],
                     $processSettings['fallback_models'] ?? []

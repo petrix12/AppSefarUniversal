@@ -62,6 +62,7 @@ class ChatController extends Controller
             'Authorization' => "Bearer $apiKey",
             'Content-Type' => 'application/json',
         ])->post((string) config('services.openrouter.url'), [
+            ...config('services.openrouter.request_options', []),
             'models' => array_values(array_unique(array_merge(
                 [$processSettings['model']],
                 $processSettings['fallback_models'] ?? []
@@ -71,7 +72,11 @@ class ChatController extends Controller
         ]);
 
         if ($response->successful()) {
-            $mensajeBot = $response->json()['choices'][0]['message']['content'];
+            $mensajeBot = $response->json('choices.0.message.content');
+
+            if (! is_string($mensajeBot) || trim($mensajeBot) === '') {
+                return response()->json(['error' => 'La IA no devolvió una respuesta. Inténtalo de nuevo.'], 502);
+            }
 
             // Reemplazar saltos de línea por <br>
             $mensajeBot = str_replace("\n", "<br>", $mensajeBot);
