@@ -9,6 +9,7 @@ class MarketingSesSender
 {
     public function send(MarketingCampaign $campaign, string $recipientEmail, array $rendered): string
     {
+        app(ClientRestrictionService::class)->assertEmailDeliverable($recipientEmail);
         $settings = config('marketing.ses');
         if (blank($settings['key']) || blank($settings['secret']) || blank($settings['from_email'])) {
             throw new \RuntimeException('Amazon SES de campañas no está configurado. Completa las variables MARKETING_SES_* antes de enviar.');

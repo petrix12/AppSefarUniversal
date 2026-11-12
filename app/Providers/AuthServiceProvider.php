@@ -25,6 +25,7 @@ class AuthServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->registerPolicies();
+        Gate::define('clients.blocks.review', fn ($user) => app(\App\Services\ClientRestrictionService::class)->canReview($user));
 
         Gate::define('ver.mi.estatus', function ($user) {
             return $user->cosready == 1;

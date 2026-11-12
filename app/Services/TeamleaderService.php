@@ -80,6 +80,11 @@ class TeamleaderService
         throw new TeamleaderRateLimitException('Teamleader API rate limit exceeded.', $retryAfter);
     }
 
+    public function setClientDeliveryBlockTag(string $id, string $tag, bool $blocked): void
+    {
+        $this->teamleaderPost($blocked ? 'contacts.tag' : 'contacts.untag', ['id' => $id, 'tags' => [$tag]])->throw();
+    }
+
     // ─────────────────────────────────────────────
     // EMPRESAS
     // ─────────────────────────────────────────────

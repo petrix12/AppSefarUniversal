@@ -22,6 +22,11 @@ class BrightbeanAiService
         // Persist the answer before the connector sends it. A retried request reuses it.
         return DB::transaction(function () use ($message): ?string {
             $message = BrightbeanMessage::lockForUpdate()->findOrFail($message->id);
+            try {
+                app(ClientRestrictionService::class)->assertContactDeliverable($message->contact ?? []);
+            } catch (\Symfony\Component\HttpKernel\Exception\HttpException $exception) {
+                return null;
+            }
             $settings = BrightbeanSetting::current();
 
             if (! $settings->ai_enabled || $message->direction !== 'in' || $message->internal

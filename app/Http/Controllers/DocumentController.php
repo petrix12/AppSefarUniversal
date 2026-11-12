@@ -139,16 +139,9 @@ class DocumentController extends Controller
             abort(403);
         }
 
-        // Admin: ok (además ya pasó can:docs.view)
-        $url = Storage::disk($doc->disk)->temporaryUrl(
-            $doc->path,
-            now()->addMinutes(10),
-            [
-                'ResponseContentDisposition' => 'inline; filename="'.$doc->original_name.'"'
-            ]
+        return app(\App\Services\ApplicationFileResponse::class)->stream(
+            $doc->disk, $doc->path, $doc->original_name, request()->boolean('download')
         );
-
-        return redirect($url);
     }
 
     public function update(Request $request, $id)

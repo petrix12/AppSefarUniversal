@@ -131,6 +131,8 @@ class UsersTable extends Component
             $query->with('accessBlock');
         }
 
+        app(\App\Services\ClientRestrictionService::class)->scopeVisible($query, $authUser);
+
         $isAdmin = in_array(1, $rolesIds);
         $isVentasOrCoord = !empty(array_intersect($rolesIds, [15, 17]));
 
@@ -278,19 +280,11 @@ class UsersTable extends Component
             return;
         }
 
-        DB::transaction(function () use ($user, $validated) {
-            $user->accessBlock()->updateOrCreate(
-                ['user_id' => $user->id],
-                [
-                    'reason' => $validated['blockReason'],
-                    'reason_other' => $validated['blockReason'] === 'other'
-                        ? trim($validated['blockReasonOther'] ?? '')
-                        : null,
-                    'blocked_at' => now(),
-                    'blocked_by_user_id' => Auth::id(),
-                ]
-            );
-        });
+        app(\App\Services\ClientRestrictionService::class)->block(
+            $user, $validated['blockReason'],
+            $validated['blockReason'] === 'other' ? trim($validated['blockReasonOther'] ?? '') : null,
+            'manual', null, null, Auth::user()
+        );
 
         $this->closeBlockModal();
         $this->dispatch('swal:toast', [
@@ -306,12 +300,7 @@ class UsersTable extends Component
         $user = User::with('roles')->findOrFail($userId);
         abort_unless($user->isCliente(), 403);
 
-        DB::transaction(fn () => $user->accessBlock()->delete());
-
-        $this->dispatch('swal:toast', [
-            'icon' => 'success',
-            'title' => 'Cliente desbloqueado.',
-        ]);
+        $this->redirectRoute('admin.client-restrictions.index', ['q' => $user->email]);
     }
 
     public function closeBlockModal(): void

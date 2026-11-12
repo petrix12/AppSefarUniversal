@@ -239,6 +239,8 @@
 @endphp
 
 <x-app-layout>
+    @include('crud.users.partials.restriction-notice')
+    @include('crud.users.partials.load-timing')
     <div>
         @if($cosViewRoleId != 5)
         <div class="flex flex-col">
@@ -3485,8 +3487,8 @@
                                     </span>
                                 </td>
                                 <td>
-                                    @if($req->file_path)
-                                    <a href="{{ Storage::disk('s3')->url($req->file_path) }}" target="_blank">Ver archivo</a>
+                                    @if($req->file_path && !$user->hasIndividualClientBlock())
+                                    <a href="{{ route('client-document-requests.content', $req) }}" target="_blank" rel="noopener">Ver archivo</a>
                                     @else
                                     —
                                     @endif
@@ -3969,15 +3971,21 @@
         <script>
             (function () {
                 const statusUrl = @json(route('crud.users.cos-refresh-status', $user));
+                const keepTimingReport = @json(\App\Support\CosPageTiming::authorized(request()) && request()->boolean('cos_timing'));
                 let attempts = 0;
                 const maxAttempts = 36;
                 const timer = window.setInterval(async function () {
                     attempts++;
                     try {
                         const response = await fetch(statusUrl, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+                        if (!response.ok) throw new Error('No se pudo consultar la actualización del COS');
                         const status = await response.json();
-                        if (!status.pending) {
+                        if (status.pending === false) {
                             window.clearInterval(timer);
+                            if (keepTimingReport) {
+                                document.dispatchEvent(new CustomEvent('cos:refresh-ready', { detail: { observed_ms: performance.now() } }));
+                                return;
+                            }
                             window.location.reload();
                             return;
                         }

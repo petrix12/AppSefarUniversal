@@ -32,6 +32,9 @@ class ClientRegistrationExport extends StringValueBinder implements FromQuery, W
             'users.id', 'name', 'nombres', 'apellidos', 'email', 'phone',
             'passport', 'servicio', 'pay', 'contrato', 'users.created_at',
         ]);
+        if (\Schema::hasTable('user_access_blocks')) {
+            $query->whereDoesntHave('accessBlock');
+        }
 
         match ($this->group) {
             'unpaid' => $query->where('pay', 0),

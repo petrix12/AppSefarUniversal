@@ -18,6 +18,7 @@
 @endsection
 
 @section('content')
+    @include('crud.users.partials.restriction-notice')
 @php
     $displayName = trim(($user->nombres ?? '') . ' ' . ($user->apellidos ?? '')) ?: $user->name;
     $primaryPhone = $user->phone ?: $user->numero_de_telefono ?? null;

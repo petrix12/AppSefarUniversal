@@ -28,13 +28,14 @@ class MondayMirrorUiTest extends TestCase
             'database/migrations/2026_10_27_190000_add_type_to_monday_boards_table.php',
         ]])->assertExitCode(0);
         Http::preventStrayRequests();
+        Role::findOrCreate('Administrador', 'web');
     }
 
     public function test_admin_can_browse_local_boards_and_items(): void
     {
         $this->withoutMiddleware(Authorize::class);
         Role::create(['name' => 'Cliente']);
-        $this->actingAs(User::factory()->create());
+        $this->actingAs(User::factory()->create()->syncRoles(['Administrador']));
         [$board, $item] = $this->seedMirror();
 
         $this->get(route('admin.monday.index'))
@@ -59,7 +60,7 @@ class MondayMirrorUiTest extends TestCase
     {
         $this->withoutMiddleware(Authorize::class);
         Role::create(['name' => 'Cliente']);
-        $this->actingAs(User::factory()->create());
+        $this->actingAs(User::factory()->create()->syncRoles(['Administrador']));
         [$board, $item] = $this->seedMirror();
 
         MondaySyncRun::create([
@@ -204,7 +205,7 @@ class MondayMirrorUiTest extends TestCase
     {
         $this->withoutMiddleware(Authorize::class);
         Role::create(['name' => 'Cliente']);
-        $this->actingAs(User::factory()->create());
+        $this->actingAs(User::factory()->create()->syncRoles(['Administrador']));
     }
 
     private function seedParents(MondayBoard $board, int $count, array $overrides = []): void

@@ -1722,17 +1722,22 @@ class UserController extends Controller
     public function edit(User $user)
 {
     $startTime = microtime(true);
+    $timing = \App\Support\CosPageTiming::current();
+    $timing?->checkpoint('middleware', 'Autenticación, permisos y carga del usuario');
 
     // ==========================================
     // CACHE BÁSICO
     // ==========================================
     $imageUrls = $this->getRandomImages();
     $cos = app(\App\Services\CosHelperService::class)->get();
+    $timing?->checkpoint('definitions', 'Definiciones del COS e imágenes');
 
     $pageSnapshot = app(\App\Services\ClientCosSnapshotService::class)->forPage($user);
     $negocios = $pageSnapshot['negocios'];
     $mondayData = $pageSnapshot['monday_data'];
     $cosAutoRefreshPending = (bool) ($pageSnapshot['refresh_pending'] ?? false);
+    if ($timing) $timing->refreshPending = $cosAutoRefreshPending;
+    $timing?->checkpoint('snapshot', 'Datos locales del COS y encolado');
 
     // ==========================================
     // GENEALOGÍA (CON CACHE)
@@ -1743,6 +1748,7 @@ class UserController extends Controller
 
     $columnasparatabla = $genealogyData['columnasparatabla'];
     $hayTatarabuelo = $genealogyData['hayTatarabuelo'];
+    $timing?->checkpoint('genealogy', 'Árbol genealógico');
 
     // ==========================================
     // CUSTOMER ORDER STATUS
@@ -1751,6 +1757,7 @@ class UserController extends Controller
         ? Servicio::where('id_hubspot', 'like', $user->servicio . '%')->first()
         : null;
     $cosuserFinal = $pageSnapshot['cos'];
+    $timing?->checkpoint('service', 'Servicio del cliente');
 
     // ==========================================
     // DATOS ADICIONALES
@@ -1759,21 +1766,26 @@ class UserController extends Controller
         ->where('pagado', 0)
         ->where('id_user', $user->id)
         ->get();
+    $timing?->checkpoint('pending_deal_purchases', 'Compras pendientes con negocio');
 
     $comprasSinDealNoPagadas = Compras::whereNull('deal_id')
         ->where('pagado', 0)
         ->where('id_user', $user->id)
         ->get();
+    $timing?->checkpoint('pending_other_purchases', 'Compras pendientes sin negocio');
 
     $documentRequests = DocumentRequest::where('user_id', $user->id)
         ->latest()
         ->get();
+    $timing?->checkpoint('document_requests', 'Solicitudes de documentos');
 
     $archivos = File::where("IDCliente", $user->passport)->get();
+    $timing?->checkpoint('files', 'Archivos del expediente');
 
     $facturas = Factura::with('compras')
         ->where('id_cliente', $user->id)
         ->get();
+    $timing?->checkpoint('invoices', 'Facturas y compras asociadas');
 
     $clientTasks = Task::query()
         ->with(['assignee:id,name', 'creator:id,name'])
@@ -1781,6 +1793,7 @@ class UserController extends Controller
         ->orderByDesc('due_date')
         ->orderByDesc('id')
         ->get();
+    $timing?->checkpoint('tasks', 'Tareas del cliente');
 
     $clientChatMessages = ClientChatMessage::query()
         ->with(['author:id,name', 'attachments'])
@@ -1788,23 +1801,29 @@ class UserController extends Controller
         ->orderBy('id')
         ->limit(100)
         ->get();
+    $timing?->checkpoint('chat', 'Chat interno y adjuntos');
 
     $userChangeAudits = $user->changeAudits()
         ->with('changedBy:id,name,email')
         ->latest()
         ->limit(100)
         ->get();
+    $timing?->checkpoint('history', 'Historial de cambios');
 
     $teamleaderMigration = $this->getTeamleaderMigrationData($user);
+    $timing?->checkpoint('teamleader', 'Datos locales de Teamleader');
     $processGrouping = app(\App\Services\CosProcessGroupingService::class)->forClient(
         $user, $negocios, collect($teamleaderMigration['projects'] ?? []),
     );
     $negocios = $processGrouping['deals'];
     $teamleaderMigration['projects'] = $processGrouping['projects'];
+    $timing?->checkpoint('grouping', 'Cruce y agrupación de procesos');
     $teamleaderProjectPayments = app(TeamleaderProjectPaymentAnalyzer::class)
         ->analyzeProjects($teamleaderMigration['projects'] ?? collect());
+    $timing?->checkpoint('payment_analysis', 'Análisis de pagos por fase');
     $phasePaymentService = app(TeamleaderPhasePaymentService::class);
     $phasePaymentService->sync($user, $teamleaderProjectPayments, $negocios);
+    $timing?->checkpoint('payment_sync', 'Conciliación y registro de pagos por fase');
 
     // In the applicant status window, HubSpot is the display source once a
     // Teamleader project has been linked to a HubSpot deal. Keep unlinked
@@ -1983,6 +2002,7 @@ class UserController extends Controller
     // The source of truth is Teamleader. Re-read purchases after creating or
     // closing each independent phase record so internal COS shows the same
     // debts the public COS will show.
+    $timing?->checkpoint('payment_summary', 'Resumen de pagos HubSpot y Teamleader');
     $comprasConDealNoPagadas = Compras::query()
         ->whereNotNull('deal_id')
         ->where('pagado', 0)
@@ -2048,6 +2068,7 @@ class UserController extends Controller
     // ==========================================
     // PREPARAR DATOS PARA VISTA
     // ==========================================
+    $timing?->checkpoint('reconciliation', 'Relectura y conciliación final de compras');
     $usuariosMonday = Cache::get('cos.monday_users', []);
     $roles = Role::all();
     $permissions = Permission::all();
@@ -2066,6 +2087,7 @@ class UserController extends Controller
         'fecha_visita' => now(),
         'cliente_id' => $user->id
     ]);
+    $timing?->checkpoint('catalogs_visit', 'Catálogos, responsables y registro de visita');
 
     // ==========================================
     // LOG DE RENDIMIENTO
@@ -2142,6 +2164,7 @@ class UserController extends Controller
         }
     }
 
+    $timing?->checkpoint('monday_form', 'Preparación del formulario de Monday');
     $clientTeamleaderHistory = [];
     if (! auth()->user()->roles->contains('id', 5) && request()->boolean('vista_cliente')) {
         $clientTeamleaderHistory = app(\App\Services\TeamleaderClientHistoryService::class)->for($user);
@@ -2149,10 +2172,12 @@ class UserController extends Controller
         $comprasSinDealNoPagadas = $comprasSinDealNoPagadas->filter(fn ($purchase) => $purchase->monto > 0);
     }
 
+    $timing?->checkpoint('client_history', 'Historial de la vista del solicitante');
     $formulario001 = null;
     if (! auth()->user()->roles->contains('id', 5) && ! request()->boolean('vista_cliente')) {
         $formulario001 = $this->hubspotService->formulario001ForUser($user);
     }
+    $timing?->checkpoint('formulario001', 'Formulario 001 y respuestas de HubSpot');
 
     $teamleaderProfileCustomValues = [];
     if (Schema::hasTable('custom_field_values') && Schema::hasTable('custom_field_definitions')) {
@@ -2165,6 +2190,7 @@ class UserController extends Controller
             ->all();
     }
 
+    $timing?->checkpoint('custom_fields', 'Campos adicionales del perfil');
     $html = view('crud.users.edit', compact(
         'clientTeamleaderHistory',
         'documentRequests',
@@ -2207,11 +2233,12 @@ class UserController extends Controller
         'formulario001',
 'columnasparatabla'
     ))->render();
+    $timing?->checkpoint('blade', 'Renderizado de Blade y componentes');
 
     Log::info('COS página renderizada', [
         'user_id' => $user->id,
         'duration_ms' => (int) round((microtime(true) - $startTime) * 1000),
-        'source' => 'local',
+        'source' => 'local_with_optional_external_calls',
     ]);
 
     return $html;
@@ -2285,6 +2312,7 @@ private function appOwnerUpdateAttributes(int $ownerUserId, string $hubspotOwner
 
 private function getTeamleaderMigrationData(User $user): array
 {
+    $timing = \App\Support\CosPageTiming::current();
     $matches = collect();
 
     $rememberMatch = function (?TlContact $contact, string $reason, int $priority) use (&$matches): void {
@@ -2345,6 +2373,7 @@ private function getTeamleaderMigrationData(User $user): array
 
     $selected = $orderedMatches->first();
     $contact = $selected['contact'] ?? null;
+    $timing?->checkpoint('tl_contact_match', 'Teamleader: búsqueda local del contacto');
 
     if (! $contact) {
         return [
@@ -2376,6 +2405,7 @@ private function getTeamleaderMigrationData(User $user): array
         ->orderByDesc('tl_updated_at')
         ->orderByDesc('tl_created_at')
         ->get();
+    $timing?->checkpoint('tl_deals', 'Teamleader: negocios locales');
 
     $projects = TlProject::query()
         ->where('customer_type', 'contact')
@@ -2383,6 +2413,7 @@ private function getTeamleaderMigrationData(User $user): array
         ->orderByDesc('tl_updated_at')
         ->orderByDesc('tl_created_at')
         ->get();
+    $timing?->checkpoint('tl_projects', 'Teamleader: proyectos locales');
 
     $dealIds = $deals->pluck('id')->filter()->values();
     $projectIds = $projects->pluck('id')->filter()->values();
@@ -2408,6 +2439,7 @@ private function getTeamleaderMigrationData(User $user): array
         ->get()
         ->unique('id')
         ->values();
+    $timing?->checkpoint('tl_invoices', 'Teamleader: facturas locales');
 
     $documents = TlDocument::query()
         ->where(function ($query) use ($contact, $dealIds, $projectIds) {
@@ -2436,6 +2468,7 @@ private function getTeamleaderMigrationData(User $user): array
         ->orderByDesc('tl_created_at')
         ->limit(100)
         ->get();
+    $timing?->checkpoint('tl_documents', 'Teamleader: documentos locales');
 
     $currency = $invoices->pluck('currency')->filter()->first()
         ?: $deals->pluck('currency')->filter()->first()

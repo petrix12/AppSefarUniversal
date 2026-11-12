@@ -25,7 +25,12 @@ class BlockClientAppAccess
         $blocked = $user->hasIndividualClientBlock();
 
         if (! $blocked) {
-            return $next($request);
+            $response = $next($request);
+            // A COS refresh may discover a retirement during this request.
+            $user->unsetRelation('accessBlock');
+            if (! $user->hasIndividualClientBlock()) {
+                return $response;
+            }
         }
 
         $message = 'El acceso a tu cuenta está bloqueado. Motivo: ' . ($user->clientBlockReasonDescription() ?? 'comunícate con atención al cliente.');

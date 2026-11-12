@@ -14,6 +14,7 @@ class Kernel extends HttpKernel
      * @var array
      */
     protected $middleware = [
+        \App\Http\Middleware\MeasureCosEdit::class,
         // \App\Http\Middleware\TrustHosts::class,
         \App\Http\Middleware\TrustProxies::class,
         \Illuminate\Http\Middleware\HandleCors::class,
@@ -38,6 +39,7 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\BlockClientAppAccess::class,
+            \App\Http\Middleware\RestrictBlockedClientRecords::class,
             \App\Http\Middleware\RedirectCoordinatorWithoutContract::class,
             \App\Http\Middleware\AuditRequests::class,
         ],
@@ -46,6 +48,7 @@ class Kernel extends HttpKernel
             'throttle:api',
             \App\Http\Middleware\BlockClientAppAccess::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\RestrictBlockedClientRecords::class,
         ],
     ];
 

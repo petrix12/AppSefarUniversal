@@ -7,6 +7,7 @@
 @stop
 
 @section('content')
+    <p class="text-muted">Los expedientes bloqueados quedan excluidos de la vista previa y las descargas.</p>
     <div class="client-exports">
         @if($errors->any())
             <div class="alert alert-danger" role="alert">{{ $errors->first() }}</div>

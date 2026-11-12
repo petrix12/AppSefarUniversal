@@ -5,7 +5,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Storage;
 
 class TlCreditNote extends Model
 {
@@ -60,8 +59,7 @@ class TlCreditNote extends Model
     {
         if (!$this->pdf_s3_path) return null;
 
-        return Storage::disk($this->pdf_s3_disk)
-            ->temporaryUrl($this->pdf_s3_path, now()->addMinutes(60));
+        return route('teamleader.credit-notes.stored-pdf', $this->id);
     }
 
     // ─── Helper ───────────────────────────────────

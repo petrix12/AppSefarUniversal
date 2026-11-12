@@ -45,6 +45,8 @@ class JetstreamServiceProvider extends ServiceProvider
             'mcp:read',
             'cos:refresh',
             'client-notes:create',
+            'client-blocks:read',
+            'client-blocks:sync',
             'update',
             'delete',
         ], array_keys(\App\Support\ApiTokenAbilities::LABELS)))));

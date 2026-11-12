@@ -4,7 +4,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 
 class TlDocument extends Model
 {
@@ -52,14 +51,26 @@ class TlDocument extends Model
     // ─── Accessors ────────────────────────────────
 
     /**
-     * URL temporal de S3 (válida 60 minutos por defecto)
+     * Enlace de la App; la autorización se comprueba al descargar.
      */
     public function getTemporaryUrlAttribute(): ?string
     {
         if (!$this->s3_path) return null;
 
-        return Storage::disk($this->s3_disk)
-            ->temporaryUrl($this->s3_path, now()->addMinutes(60));
+        return route('teamleader.documents.download', $this->id);
+    }
+
+    public function assertDeliverable(): void
+    {
+        $targets = app(\App\Services\ClientRestrictionTargets::class);
+        foreach ($targets->teamleader((string) $this->entity_type, (string) $this->entity_id) as $client) {
+            app(\App\Services\ClientRestrictionService::class)->assertDeliverable($client);
+        }
+        if (\Schema::hasTable('tl_document_user_links')) {
+            foreach (User::whereIn('id', TlDocumentUserLink::where('tl_document_id', $this->id)->pluck('user_id'))->get() as $client) {
+                app(\App\Services\ClientRestrictionService::class)->assertDeliverable($client);
+            }
+        }
     }
 
     /**

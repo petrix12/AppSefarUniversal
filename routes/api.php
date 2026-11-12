@@ -27,6 +27,10 @@ use App\Http\Middleware\EnsureMcpReadToken;
 
 // Todas las rutas de esta API requieren un usuario autenticado.
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/v1/clientes/delivery-permission', [\App\Http\Controllers\Api\ClientRestrictionApiController::class, 'delivery'])
+        ->middleware(EnsureInternalApiToken::class.':client-blocks:read')->name('api.client-blocks.delivery');
+    Route::post('/v1/clientes/reconcile-retirement', [\App\Http\Controllers\Api\ClientRestrictionApiController::class, 'refresh'])
+        ->middleware(EnsureInternalApiToken::class.':client-blocks:sync')->name('api.client-blocks.refresh');
     Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
         return $request->user();
     });

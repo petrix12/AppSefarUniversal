@@ -29,6 +29,16 @@ class BrightbeanController extends Controller
                     ->orWhere(fn ($q) => $q->where('status', 'processing')->where('leased_until', '<=', now())));
             $rows = $query->orderBy('id')->limit(20)->lockForUpdate()->get();
             foreach ($rows as $row) {
+                $target = BrightbeanMessage::where('workspace_id', $row->workspace_id)
+                    ->where('contact_id', $row->contact_id)->latest('id')->first();
+                try {
+                    if ($target) {
+                        app(\App\Services\ClientRestrictionService::class)->assertContactDeliverable($target->contact ?? []);
+                    }
+                } catch (\Symfony\Component\HttpKernel\Exception\HttpException $exception) {
+                    $row->update(['status' => 'failed', 'error_code' => 'client_restricted', 'lease_token' => null, 'leased_until' => null]);
+                    continue;
+                }
                 if ($row->attempts >= 5) {
                     $row->update(['status' => 'failed', 'error_code' => 'retry_limit', 'lease_token' => null, 'leased_until' => null]);
                     continue;

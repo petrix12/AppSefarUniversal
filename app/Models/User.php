@@ -25,6 +25,8 @@ class User extends Authenticatable
     use HasRoles;
 
     public const CLIENT_BLOCK_REASONS = [
+        'retired' => 'Registro retirado. Contacta con la empresa para revisar y resolver tu situación.',
+        'test_data' => 'Registro identificado como información de prueba. Contacta con la empresa si necesitas una revisión.',
         'payment_default' => 'Pagos pendientes o incumplidos',
         'documentation_issues' => 'Documentación pendiente o inconsistente',
         'terms_violation' => 'Incumplimiento de términos y condiciones',

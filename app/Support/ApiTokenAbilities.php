@@ -10,6 +10,8 @@ class ApiTokenAbilities
         'update' => 'Actualizar',
         'cos:refresh' => 'Actualizar COS sin caché',
         'client-notes:create' => 'Crear notas de clientes',
+        'client-blocks:read' => 'Comprobar permiso de entrega a clientes',
+        'client-blocks:sync' => 'Comprobar retiro de clientes desde HubSpot',
         'brightbean:sync' => 'BrightBean: sincronizar mensajes',
         'brightbean:ai' => 'BrightBean: generar respuestas con IA',
         'delete' => 'Eliminar',

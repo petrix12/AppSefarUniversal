@@ -24,6 +24,7 @@ class RestrictClientRoutes
         'my_status', 'viewcomprobantecliente', 'upload', 'no_doc',
         'agclientesnew.store', 'agclientesnew.update',
         'getclientfiles', 'updatefiletype', 'storefile', 'openfile',
+        'client-files.content', 'client-document-requests.content',
     ];
 
     // A Genealogista may also be a client. Only their tree work gets this exception;

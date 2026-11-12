@@ -22,7 +22,8 @@ class CosPortfolioController extends Controller
         ]);
         $filters += ['certificate' => 'all', 'balance' => 'debt', 'q' => ''];
         $report = Cache::remember($this->cacheKey($ownerId), 300, fn () => $portfolio->generate($ownerId));
-        $rows = collect($report['rows'])->filter(function ($row) use ($filters) {
+        $restricted = \Schema::hasTable('user_access_blocks') ? \App\Models\User::whereHas('accessBlock')->pluck('id')->all() : [];
+        $rows = collect($report['rows'])->reject(fn ($row) => in_array((int) ($row['user_id'] ?? $row['client_id'] ?? $row['id'] ?? 0), $restricted, true))->filter(function ($row) use ($filters) {
             if ($filters['certificate'] !== 'all' && $row['has_certificate'] !== ($filters['certificate'] === 'yes')) {
                 return false;
             }

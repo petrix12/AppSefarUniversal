@@ -242,7 +242,7 @@ class DocumentRequestController extends Controller
         ]);
 
         return response()->json([
-            'file_url' => Storage::disk('s3')->url($path),
+            'file_url' => route('client-document-requests.content', $requestModel),
             'request' => $requestModel
         ]);
     }

@@ -277,6 +277,12 @@ return [
                     'can'           => 'clients.export',
                 ],
                 [
+                    'text' => 'Bloqueos de clientes',
+                    'icon' => 'fa-fw fas fa-user-lock',
+                    'route' => 'admin.client-restrictions.index',
+                    'can' => 'clients.blocks.review',
+                ],
+                [
                     'text'          => 'Cartera y certificados',
                     'icon'          => 'fa-fw fas fa-file-invoice-dollar',
                     'url'           => 'cos/cartera',

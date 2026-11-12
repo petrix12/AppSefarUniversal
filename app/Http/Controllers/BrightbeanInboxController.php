@@ -33,6 +33,7 @@ class BrightbeanInboxController extends Controller
 
     public function send(Request $request, BrightbeanMessage $message)
     {
+        app(\App\Services\ClientRestrictionService::class)->assertContactDeliverable($message->contact ?? []);
         abort_if($message->internal || $message->status === 'deleted', 422, 'Selecciona un mensaje público de la conversación.');
         $data = $request->validate([
             'request_id' => ['required', 'uuid'],

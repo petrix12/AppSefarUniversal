@@ -14,7 +14,9 @@ class AdminClientExportController extends Controller
     public function listing(Request $request)
     {
         [$filters, $export] = $this->exportFor($request);
-        $counts = User::role('Cliente')->selectRaw('COUNT(*) as total')
+        $counts = User::role('Cliente')
+            ->when(\Schema::hasTable('user_access_blocks'), fn ($q) => $q->whereDoesntHave('accessBlock'))
+            ->selectRaw('COUNT(*) as total')
             ->selectRaw('COALESCE(SUM(CASE WHEN pay = 0 THEN 1 ELSE 0 END), 0) as unpaid')
             ->selectRaw('COALESCE(SUM(CASE WHEN pay = 1 THEN 1 ELSE 0 END), 0) as paid')
             ->selectRaw('COALESCE(SUM(CASE WHEN pay = 2 AND contrato = 1 THEN 1 ELSE 0 END), 0) as complete')

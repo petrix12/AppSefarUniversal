@@ -630,14 +630,11 @@ class AgClienteNewController extends Controller
         $request->validate(['path' => ['required', 'string', 'max:2048']]);
         $path = $request->path;
 
-        if (app(ClientTreeAccess::class)->isClientScoped($request->user())) {
-            // A client-supplied S3 path alone never grants access to an object.
-            $file = File::where('location', dirname($path))->where('file', basename($path))->first();
-            abort_unless($file && $file->location.'/'.$file->file === $path, 403);
-            app(ClientTreeAccess::class)->authorize($request->user(), $file->IDCliente);
-        }
-
-        $url = Storage::disk('s3')->temporaryUrl($path, now()->addMinutes(5));
+        $file = File::where('location', dirname($path))->where('file', basename($path))->first();
+        abort_unless($file && $file->location.'/'.$file->file === $path, 403);
+        app(ClientTreeAccess::class)->authorize($request->user(), $file->IDCliente);
+        app(\App\Services\ClientRestrictionTargets::class)->assertFileDeliverable($file);
+        $url = route('client-files.content', $file);
 
         return response()->json(['url' => $url]);
     }

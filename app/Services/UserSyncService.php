@@ -43,11 +43,14 @@ class UserSyncService
         if ($forceRefresh) {
             $data = $fetch();
             Cache::put($cacheKey, $data, 300);
-
+            app(ClientRestrictionService::class)->detectHubspotRetirement($user, $data['contact'], $data['deals']);
             return $data;
         }
 
-        return Cache::remember($cacheKey, 300, $fetch);
+        $data = Cache::remember($cacheKey, 300, $fetch);
+        app(ClientRestrictionService::class)->detectHubspotRetirement($user, $data['contact'], $data['deals']);
+
+        return $data;
     }
 
     /**

@@ -43,6 +43,7 @@ class GedcomService
     public function exportClientByAgclienteId(int|string $id): string
     {
         $root = Agcliente::findOrFail($id);
+        app(ClientRestrictionTargets::class)->assertTreeDeliverable($root->IDCliente);
         $people = Agcliente::where('IDCliente', $root->IDCliente)
             ->orderBy('IDPersona')
             ->orderBy('id')
@@ -53,6 +54,7 @@ class GedcomService
 
     public function exportGlobal(): string
     {
+        $this->assertGlobalDeliverable();
         $people = Agcliente::whereNotNull('IDCliente')
             ->where('IDCliente', '<>', '')
             ->where('IDCliente', '<>', '0')
@@ -66,6 +68,7 @@ class GedcomService
 
     public function exportGlobalToFile(string $path): void
     {
+        $this->assertGlobalDeliverable();
         @set_time_limit(0);
 
         $query = Agcliente::query()
@@ -101,6 +104,14 @@ class GedcomService
             fwrite($handle, "0 TRLR\n");
         } finally {
             fclose($handle);
+        }
+    }
+
+    private function assertGlobalDeliverable(): void
+    {
+        if (\Schema::hasTable('user_access_blocks')) {
+            abort_if(\App\Models\User::whereHas('accessBlock')->exists(), 423,
+                'La exportación global está suspendida porque incluye expedientes bloqueados. Exporta únicamente árboles autorizados.');
         }
     }
 

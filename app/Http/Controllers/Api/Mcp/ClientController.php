@@ -18,6 +18,7 @@ class ClientController extends Controller
 
         $clients = User::role('Cliente')
             ->select($this->clientColumns())
+            ->when(Schema::hasTable('user_access_blocks'), fn ($q) => $q->whereDoesntHave('accessBlock'))
             ->when($query !== '', function ($builder) use ($query) {
                 $builder->where(function ($nested) use ($query) {
                     $nested->where('id', $query)

@@ -174,30 +174,12 @@ class FileController extends Controller
      */
     public function show(File $file)
     {
-        /* $pathtoFile = storage_path().'/app/'.$file->location.'/'.$file->file;
-        return response()->file($pathtoFile); */
-        //return Storage::disk('s3')->url($file->location.'/'.$file->file);
-        if(!Storage::disk('s3')->exists($file->location . '/' . $file->file)){
-            Alert::error('¡Error!', 'No se ha podido ubicar el documento solicitado.');
-            return back();
-        }
-
-        return redirect(Storage::disk('s3')->url($file->location . '/' . $file->file));
+        return app(ClientDocumentController::class)->file(request(), $file, app(\App\Services\ApplicationFileResponse::class));
     }
 
     public function viewfile($id)
     {
-        $file = File::findOrFail($id);
-
-        $fileroute = preg_replace('/\/+/', '/', $file->location . "/" . $file->file);
-
-        // Verificar si el archivo existe en S3
-        if (!Storage::disk('s3')->exists($fileroute)) {
-            abort(404);
-        }
-
-        // Redirigir a la URL del archivo en S3
-        return redirect(Storage::disk('s3')->url($fileroute));
+        return $this->show(File::findOrFail($id));
     }
 
     /**

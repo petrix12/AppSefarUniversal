@@ -12,6 +12,7 @@ class HubspotDealLocalSyncService
 {
     public function sync(User $user, array $deals): array
     {
+        app(ClientRestrictionService::class)->detectHubspotRetirement($user, [], $deals);
         $columns = Schema::getColumnListing((new Negocio)->getTable());
         $excludedColumns = [
             'id',

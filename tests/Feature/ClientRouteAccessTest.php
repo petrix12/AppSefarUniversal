@@ -246,12 +246,10 @@ class ClientRouteAccessTest extends TestCase
         $actor = $this->actor('Genealogista')->assignRole('Cliente');
         $file = $this->document($this->person('OTHER-TREE'));
         $path = $file->location.'/'.$file->file;
-        Storage::shouldReceive('disk')->once()->with('s3')->andReturnSelf();
-        Storage::shouldReceive('temporaryUrl')->once()->with($path, \Mockery::any())
-            ->andReturn('https://example.test/signed-document');
+        Storage::shouldReceive('disk')->never();
 
         $this->actingAs($actor)->postJson('/openfile', ['path' => $path])->assertOk()
-            ->assertJsonPath('url', 'https://example.test/signed-document');
+            ->assertJsonPath('url', route('client-files.content', $file));
     }
 
     public function test_genealogists_with_a_client_role_upload_documents_for_the_tree_owner(): void
@@ -393,16 +391,14 @@ class ClientRouteAccessTest extends TestCase
         $this->assertSame('Original', $foreign->fresh()->tipo);
     }
 
-    public function test_a_client_can_sign_a_url_for_their_own_registered_file(): void
+    public function test_a_client_can_get_an_application_link_for_their_own_registered_file(): void
     {
         $this->actingAs($this->actor());
         $file = $this->document($this->person('OWN-TREE'));
         $path = $file->location.'/'.$file->file;
-        Storage::shouldReceive('disk')->once()->with('s3')->andReturnSelf();
-        Storage::shouldReceive('temporaryUrl')->once()->with($path, \Mockery::any())
-            ->andReturn('https://example.test/signed-document');
+        Storage::shouldReceive('disk')->never();
         $this->postJson('/openfile', ['path' => $path])->assertOk()
-            ->assertJsonPath('url', 'https://example.test/signed-document');
+            ->assertJsonPath('url', route('client-files.content', $file));
     }
 
     public function test_a_client_can_upload_a_document_to_their_own_tree(): void

@@ -13,6 +13,7 @@ class ClientTreeAccess
 
     public function authorize(User $user, ?string $treeId): void
     {
+        app(ClientRestrictionTargets::class)->assertTreeReadable($treeId, $user);
         if (! $this->isClientScoped($user)) {
             return;
         }

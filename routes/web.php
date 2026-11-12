@@ -697,6 +697,14 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
     Route::get('/api/getemail/{id}', [UserController::class, 'getemail'])->name('getemail');
 
     Route::get('/viewfile/{id}', [FileController::class, 'viewFile'])->name('viewfile')->middleware('can:crud.files.index');
+    Route::get('/client-files/{file}/content', [\App\Http\Controllers\ClientDocumentController::class, 'file'])
+        ->middleware('auth')->name('client-files.content');
+    Route::get('/client-document-requests/{documentRequest}/content', [\App\Http\Controllers\ClientDocumentController::class, 'requested'])
+        ->middleware('auth')->name('client-document-requests.content');
+    Route::get('/teamleader/invoices/{id}/stored-pdf', [\App\Http\Controllers\ClientDocumentController::class, 'invoice'])
+        ->middleware(['auth', 'can:tl.view'])->name('teamleader.invoices.stored-pdf');
+    Route::get('/teamleader/credit-notes/{id}/stored-pdf', [\App\Http\Controllers\ClientDocumentController::class, 'creditNote'])
+        ->middleware(['auth', 'can:tl.view'])->name('teamleader.credit-notes.stored-pdf');
 
     //Ruta Comprobantes de Pago
     Route::get('/viewcomprobante/{id}', [FacturaController::class, 'viewcomprobante'])->name('viewcomprobante')->middleware('can:crud.comprobantes.index');
@@ -704,6 +712,14 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
 
     //panel administrativo status
     Route::get('/users/status/{id}', [UserController::class, 'getuserstatus'])->name('getuserstatus')->middleware('can:crud.users.index');
+
+    Route::prefix('admin/client-restrictions')->name('admin.client-restrictions.')->middleware(['auth', 'can:clients.blocks.review'])->group(function () {
+        Route::get('/', [\App\Http\Controllers\ClientRestrictionController::class, 'listing'])->name('index');
+        Route::post('/scan', [\App\Http\Controllers\ClientRestrictionController::class, 'scan'])->name('scan');
+        Route::post('/scans/{scan}/apply', [\App\Http\Controllers\ClientRestrictionController::class, 'apply'])->name('apply');
+        Route::post('/users/{user}/unblock', [\App\Http\Controllers\ClientRestrictionController::class, 'unblock'])->name('unblock');
+        Route::post('/users/{user}/refresh', [\App\Http\Controllers\ClientRestrictionController::class, 'refresh'])->name('refresh');
+    });
 
     Route::post('/guardar-datos-personales', [UserController::class, 'savePersonalData'])
         ->middleware('auth')

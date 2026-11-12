@@ -186,6 +186,7 @@ class HubspotService
             'force_ip_resolve' => $this->hubspotIpResolve(),
             'connect_timeout' => 10,
             'timeout' => 30,
+            'on_stats' => static fn (\GuzzleHttp\TransferStats $stats) => \App\Support\CosPageTiming::httpTransfer('HubSpot', $stats),
         ], $options));
     }
 
@@ -550,12 +551,9 @@ class HubspotService
 
         try {
             $this->hubspotThrottle();
-
-            $contact = $this->hubspot
-                ->crm()
-                ->contacts()
-                ->basicApi()
-                ->getById((string) $user->hs_id, $propertyNames);
+            $contact = \App\Support\CosPageTiming::external('hubspot_form001', 'HubSpot: respuestas del Formulario 001', function () use ($user, $propertyNames) {
+                return $this->hubspot->crm()->contacts()->basicApi()->getById((string) $user->hs_id, $propertyNames);
+            });
             $properties = $contact->getProperties();
 
             foreach ($forms as &$form) {
@@ -1001,6 +999,7 @@ class HubspotService
                 'n000__referido_por__clonado_',
                 'numero_de_pasaporte',
                 'servicio_solicitado',
+                'retirado',
             ];
 
             // Obtener todas las propiedades disponibles para contactos desde HubSpot
@@ -1301,6 +1300,60 @@ class HubspotService
         } catch (\Exception $e) {
             throw new \Exception('Error al obtener IDs de negocios asociados al contacto: ' . $e->getMessage());
         }
+    }
+
+    public function clientRetirement(string $contactId): array
+    {
+        $contact = $this->hubspot->crm()->contacts()->basicApi()->getById($contactId, ['retirado']);
+        $ids = $this->getDealIdsByContactId($contactId);
+        $deals = [];
+        foreach (array_chunk($ids, 100) as $chunk) {
+            $response = $this->hubspot->crm()->deals()->batchApi()->read(new BatchReadInputSimplePublicObjectId([
+                'properties' => ['el_cliente_se_encuentra_retirado', 'motivo_del_retiro'],
+                'inputs' => array_map(fn ($id) => ['id' => $id], $chunk),
+            ]));
+            foreach ($response->getResults() as $deal) {
+                $deals[] = ['id' => $deal->getId(), 'properties' => $deal->getProperties()];
+            }
+        }
+
+        return ['contact' => ['id' => $contactId, 'properties' => $contact->getProperties()], 'deals' => $deals];
+    }
+
+    public function retirementPage(string $objectType, ?string $after = null): array
+    {
+        $isDeal = $objectType === 'deals';
+        $property = $isDeal ? 'el_cliente_se_encuentra_retirado' : 'retirado';
+        $filter = ['propertyName' => $property, 'operator' => $isDeal ? 'EQ' : 'HAS_PROPERTY'];
+        if ($isDeal) {
+            $filter['value'] = 'true';
+        }
+        $body = ['limit' => 100, 'properties' => [$property, ...($isDeal ? ['motivo_del_retiro'] : [])],
+            'filterGroups' => [['filters' => [$filter]]]];
+        if ($after !== null) {
+            $body['after'] = $after;
+        }
+        $response = $this->hubspot->apiRequest(['method' => 'POST',
+            'path' => '/crm/v3/objects/'.$objectType.'/search', 'body' => $body]);
+        $data = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        if (! is_array($data['results'] ?? null)) {
+            throw new \RuntimeException('HubSpot no devolvió una página válida de retiros.');
+        }
+        foreach ($data['results'] as &$record) {
+            $record['contact_ids'] = $isDeal ? [] : [(string) $record['id']];
+            if ($isDeal) {
+                $associations = $this->hubspot->crm()->associations()->batchApi()->read('deals', 'contacts',
+                    new BatchInputPublicObjectId(['inputs' => [['id' => (string) $record['id']]]]));
+                foreach ($associations->getResults() as $association) {
+                    foreach ($association->getTo() as $to) {
+                        $record['contact_ids'][] = (string) $to->getId();
+                    }
+                }
+            }
+        }
+        unset($record);
+
+        return $data;
     }
 
     public function updateDealOwnersByContactId(string $contactId, string $hubspotOwnerId): int
@@ -1741,7 +1794,7 @@ class HubspotService
         $milliseconds = (int) env('HUBSPOT_TASKS_THROTTLE_MS', 250);
 
         if ($milliseconds > 0) {
-            usleep($milliseconds * 1000);
+            \App\Support\CosPageTiming::external('hubspot_throttle', 'HubSpot: espera local antes de llamar a la API', fn () => usleep($milliseconds * 1000));
         }
     }
 

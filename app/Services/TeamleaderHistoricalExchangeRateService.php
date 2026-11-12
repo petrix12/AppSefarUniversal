@@ -74,13 +74,15 @@ class TeamleaderHistoricalExchangeRateService
 
         return Cache::remember($cacheKey, now()->addDays(90), function () use ($currency, $date): ?float {
             try {
-                $response = Http::accept('text/csv')
-                    ->timeout(5)
-                    ->get(sprintf(self::ECB_EXCHANGE_RATE_URL, $currency), [
+                $response = \App\Support\CosPageTiming::external('ecb_rates', 'BCE: tasas históricas', fn () =>
+                    Http::accept('text/csv')->timeout(5)->withOptions([
+                        'on_stats' => static fn (\GuzzleHttp\TransferStats $stats) => \App\Support\CosPageTiming::httpTransfer('BCE', $stats),
+                    ])->get(sprintf(self::ECB_EXCHANGE_RATE_URL, $currency), [
                         'startPeriod' => $date->copy()->subWeek()->toDateString(),
                         'endPeriod' => $date->toDateString(),
                         'format' => 'csvdata',
-                    ]);
+                    ])
+                );
 
                 if (! $response->successful()) {
                     return null;
