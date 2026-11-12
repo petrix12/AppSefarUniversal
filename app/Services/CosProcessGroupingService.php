@@ -134,13 +134,13 @@ class CosProcessGroupingService
     {
         $contact = filled($user->tl_id) ? TlContact::find($user->tl_id) : null;
         if (! $contact && filled($user->passport)) {
-            $matches = TlContact::whereRaw('LOWER(TRIM(passport)) = ?', [mb_strtolower(trim($user->passport))])->get();
+            $matches = TlContact::matchingIdentity('passport', [$user->passport])->get();
             if ($matches->count() > 1) return null;
             $contact = $matches->first();
         }
         if (! $contact) {
             $emails = collect([$user->email, $user->email_2])->filter()->map(fn ($value) => mb_strtolower(trim($value)))->unique()->all();
-            $matches = TlContact::whereIn(DB::raw('LOWER(TRIM(email))'), $emails)->get();
+            $matches = TlContact::matchingIdentity('email', $emails)->get();
             if ($matches->count() > 1) return null;
             $contact = $matches->first();
         }

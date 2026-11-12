@@ -152,7 +152,7 @@ class TeamleaderClientHistoryService
         $passport = $this->normalizedValue($user->passport);
         if ($passport !== '') {
             TlContact::query()
-                ->whereRaw('LOWER(TRIM(passport)) = ?', [$passport])
+                ->matchingIdentity('passport', [$passport])
                 ->get()
                 ->each(fn (TlContact $contact) => $remember($contact, 'Pasaporte', 80));
         }
@@ -169,7 +169,7 @@ class TeamleaderClientHistoryService
 
         if ($emails->isNotEmpty()) {
             TlContact::query()
-                ->whereIn(DB::raw('LOWER(TRIM(email))'), $emails->all())
+                ->matchingIdentity('email', $emails->all())
                 ->get()
                 ->each(fn (TlContact $contact) => $remember($contact, 'Correo', 70));
         }

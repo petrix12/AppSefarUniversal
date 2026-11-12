@@ -4,6 +4,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TlContact extends Model
@@ -13,6 +14,7 @@ class TlContact extends Model
     // ID es UUID string, no autoincrement
     public $incrementing = false;
     protected $keyType   = 'string';
+    protected $hidden = ['email_lookup', 'passport_lookup'];
 
     protected $fillable = [
         'id',
@@ -86,6 +88,27 @@ class TlContact extends Model
     public function scopeByPassport($query, string $passport)
     {
         return $query->where('passport', $passport);
+    }
+
+    /** Exact normalized identity lookup, including duplicate candidates. */
+    public function scopeMatchingIdentity(Builder $query, string $field, array $values): Builder
+    {
+        if (! in_array($field, ['email', 'passport'], true)) {
+            throw new \InvalidArgumentException('Unsupported Teamleader identity field.');
+        }
+        $values = collect($values)->map(fn ($value) => mb_strtolower(trim((string) $value)))
+            ->filter(fn ($value) => $value !== '')->unique()->values()->all();
+        if ($values === []) return $query->whereRaw('1 = 0');
+
+        $column = $field.'_lookup';
+        if ($this->getConnection()->getSchemaBuilder()->hasColumn($this->getTable(), $column)) {
+            return $query->whereIn($this->qualifyColumn($column), $values);
+        }
+
+        // Rolling deployment / older backups: same matching behavior until
+        // the migration has been applied, without caching stale identities.
+        $expression = 'LOWER(TRIM('.$query->getQuery()->getGrammar()->wrap($this->qualifyColumn($field)).'))';
+        return $query->whereIn($this->getConnection()->raw($expression), $values);
     }
 
     // ─── Helper para crear desde raw data de TL ───

@@ -896,6 +896,8 @@
                                             @endif
                                         @endif
 
+                                        @include('livewire.crud.partials.user-delete-button', ['user' => $user, 'mobile' => true])
+
                                         {{-- ✅ Pendiente proveedor: SweetAlert + Modal --}}
                                         @if(auth()->user()->roles[0]->id == 1 && $user->estado_vendedor === 'Pendiente')
                                             <div class="tooltip-container flex-1">
@@ -1077,6 +1079,7 @@
                                                             </div>
                                                         @endif
                                                     @endif
+                                                    @include('livewire.crud.partials.user-delete-button', ['user' => $user, 'mobile' => false])
                                                 </div>
 
                                                 <div class="action-buttons mt-1">

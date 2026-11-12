@@ -2341,14 +2341,16 @@ private function getTeamleaderMigrationData(User $user): array
             100
         );
     }
+    $timing?->checkpoint('tl_lookup_id', 'Teamleader: contacto por ID guardado');
 
     $passport = $this->normalizeTeamleaderMatchValue($user->passport);
     if ($passport !== '') {
         TlContact::query()
-            ->whereRaw('LOWER(TRIM(passport)) = ?', [$passport])
+            ->matchingIdentity('passport', [$passport])
             ->get()
             ->each(fn (TlContact $contact) => $rememberMatch($contact, 'Pasaporte', 80));
     }
+    $timing?->checkpoint('tl_lookup_passport', 'Teamleader: contactos por pasaporte');
 
     $emails = collect([
             $user->email,
@@ -2362,10 +2364,11 @@ private function getTeamleaderMigrationData(User $user): array
 
     if ($emails->isNotEmpty()) {
         TlContact::query()
-            ->whereIn(DB::raw('LOWER(TRIM(email))'), $emails->all())
+            ->matchingIdentity('email', $emails->all())
             ->get()
             ->each(fn (TlContact $contact) => $rememberMatch($contact, 'Correo', 70));
     }
+    $timing?->checkpoint('tl_lookup_email', 'Teamleader: contactos por correo');
 
     $orderedMatches = $matches
         ->sortByDesc('priority')
@@ -3264,6 +3267,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
      */
     public function destroy(User $user)
     {
+        abort_unless(auth()->user()?->hasRole('Administrador') && ! auth()->user()->hasRole('Cliente'), 403);
         $nombre = $user->name;
 
         $user->delete();

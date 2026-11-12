@@ -34,6 +34,27 @@ Otras peticiones del mismo documento observadas en la sesión tardaron 18,47 s y
 
 La revisión del código identificó una consulta síncrona de respuestas del Formulario 001 en HubSpot durante cada apertura interna, además de operaciones locales de cruce/conciliación y posibles consultas de tasas históricas del BCE con caché. El primer log antiguo `Edit ejecutado` ocurre antes del Formulario 001 y de Blade, por lo que no basta para atribuir toda la espera. El cronómetro permite comprobar la contribución de cada paso sin cambiar la lógica de datos, cachés, colas, pagos ni Amazon S3.
 
+## Medición posterior: búsqueda local de Teamleader
+
+El informe recibido después de activar el cronómetro permitió atribuir la espera:
+
+| Paso | Inicio desde la solicitud | Duración |
+| --- | ---: | ---: |
+| Búsqueda local del contacto Teamleader | 511,74 ms | 10.158,34 ms |
+| SQL dentro de esa búsqueda | Incluido en el paso anterior | 10.156,11 ms, 6 consultas |
+| Espera local previa a HubSpot | 10.821 ms | 250,09 ms |
+| Operación de respuestas Formulario 001 | 11.071,13 ms | 339,56 ms |
+| Transferencia HTTP de HubSpot | 11.081,61 ms | 326,47 ms |
+| Solicitud del servidor completa | 0 ms | 11.631,87 ms |
+
+La búsqueda local concentra el 87,33 % del tiempo del servidor; la base de datos completa concentra el 92,45 %. En esta muestra la espera principal ya se ha consumido antes de iniciar la API de HubSpot. La observación de actualización en segundo plano a los 22.295,30 ms corresponde al sondeo posterior y no debe sumarse a los 11.631,87 ms como si fuera otra etapa síncrona.
+
+Las consultas anteriores aplicaban `LOWER(TRIM(passport))` y `LOWER(TRIM(email))` a columnas con índices ordinarios. La corrección incorpora `passport_lookup` y `email_lookup`, columnas virtuales generadas con esa misma normalización e índices propios. Las consultas del COS, agrupación de procesos e historial del solicitante las usan directamente cuando existen. La base mantiene los valores generados en cada escritura, incluidos imports que no ejecuten eventos de Eloquent. Los datos originales, prioridades ID → pasaporte → correo y candidatos duplicados se mantienen. [Documentación MySQL de índices sobre columnas generadas](https://dev.mysql.com/doc/refman/8.4/en/create-table-secondary-indexes.html).
+
+La migración de activación es `2026_11_12_150000_add_normalized_identity_indexes_to_tl_contacts.php`: desplegar el código y ejecutar `php artisan migrate --force`. La creación de índices recorre los contactos una vez y requiere la ventana de despliegue adecuada al volumen de producción. Si la migración todavía no se ha aplicado, la App conserva la consulta compatible anterior; ese modo mantiene la lentitud original. El cronómetro ahora distingue `tl_lookup_id`, `tl_lookup_passport` y `tl_lookup_email` para comprobar las tres rutas por separado. No cambia quién puede consultar el diagnóstico.
+
+Validación: 135 pruebas relacionadas correctas; comprobación adicional en MySQL 9.6 local y aislado con 30.001 contactos sintéticos. `EXPLAIN` mostró `ALL` sin índice antes y `ref` con el índice de identidad y una fila estimada después. En ese ensayo local las medianas de consulta fueron 13,556 → 0,538 ms para correo y 10,924 → 0,321 ms para pasaporte. **Esas cifras no son tiempos de producción ni una promesa de su rendimiento.** Después del despliegue debe repetirse el mismo caso con el cronómetro. Los resultados detallados están en `outputs/teamleader-lookup-check/`, fuera de Git.
+
 ## Validación y despliegue
 
 La instrumentación utiliza `hrtime` y no añade consultas remotas para medir. Las pruebas verifican etapas y consultas, excepciones, independencia entre solicitudes, transporte HTTP sin datos sensibles y exclusión de otros administradores. El ensayo de diseño local usa datos de demostración y no representa los tiempos de producción.
