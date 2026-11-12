@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\HubspotContactUpdateException;
 use HubSpot\Factory;
 use HubSpot\Client\Crm\Contacts\Model\SimplePublicObjectInput;
 use HubSpot\Client\Crm\Contacts\Model\BatchInputSimplePublicObjectBatchInput as ContactBatchInput;
@@ -1125,7 +1126,7 @@ class HubspotService
                 'properties' => $properties,
             ]);
 
-            throw new \Exception("Error actualizando contacto {$hsId} en HubSpot ({$statusCode}): {$responseBody}", 0, $e);
+            throw new HubspotContactUpdateException((string) $hsId, $e);
         }
     }
 

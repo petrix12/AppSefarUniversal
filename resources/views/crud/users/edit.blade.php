@@ -4065,28 +4065,22 @@
                     Swal.fire({
                         icon: 'success',
                         title: '¡Éxito!',
-                        text: 'Datos guardados exitosamente.',
+                        text: response.message || 'Datos guardados exitosamente.',
                         confirmButtonText: 'Aceptar'
                     });
                 },
                 error: function(xhr) {
                     // Maneja errores
-                    let errors = xhr.responseJSON.errors;
-                    let errorMessage = xhr.responseJSON.message || 'Hubo un error al guardar los datos.';
-
-                    // Formatea los errores en una lista para mostrarlos en Swal2
-                    let formattedErrors = '';
-                    if (errors) {
-                        Object.keys(errors).forEach(function(key) {
-                            formattedErrors += `<p>${errors[key][0]}</p>`;
-                        });
-                    }
+                    const response = xhr.responseJSON || {};
+                    const errors = response.errors || {};
+                    const errorMessage = Object.values(errors).flat().join('\n')
+                        || response.message || 'Hubo un error al guardar los datos. Inténtalo de nuevo.';
 
                     // Muestra el mensaje de error usando Swal2
                     Swal.fire({
                         icon: 'error',
                         title: 'Error al guardar',
-                        html: formattedErrors || errorMessage,
+                        text: errorMessage,
                         confirmButtonText: 'Aceptar'
                     });
                 }

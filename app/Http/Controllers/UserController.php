@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\HubspotContactUpdateException;
 use App\Models\User;
 use App\Models\ClientChatMessage;
 use App\Models\Task;
@@ -28,6 +29,8 @@ use App\Models\UserGenealogyTreeLink;
 use App\Models\UserChangeAudit;
 use App\Models\CustomFieldValue;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -3038,18 +3041,21 @@ private function removeDuplicatesAndSort(array $cosuser): array
     public function savePersonalData(Request $request){
         abort_unless($this->canEditCosUserData(), 403, 'Solo el personal interno puede editar datos del COS.');
 
+        $request->validate(['id' => ['required', 'integer', 'exists:users,id']]);
+        $user = User::findOrFail($request->id);
+
         $request->validate([
-            'email' => 'required|email|unique:users,email,' . $request->id,
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user)],
             'phone' => 'required|string|max:15',
             'nombres' => 'required|string|max:255',
             'apellidos' => 'required|string|max:255',
             'date_of_birth' => 'nullable',
-            'passport' => 'required|string|max:20|unique:users,passport,' . $request->id,
+            'passport' => ['required', 'string', 'max:20', Rule::unique('users', 'passport')->ignore($user)],
             'genealogy_tree_id' => $this->genealogyTreeIdRules(),
         ], [
-            'correo.required' => 'El campo correo es obligatorio.',
-            'correo.email' => 'El correo debe ser válido.',
-            'correo.unique' => 'Este correo ya está registrado.',
+            'email.required' => 'El campo correo es obligatorio.',
+            'email.email' => 'El correo debe ser válido.',
+            'email.unique' => 'Este correo ya está registrado.',
             'phone.required' => 'El campo teléfono es obligatorio.',
             'nombres.required' => 'El campo nombres es obligatorio.',
             'apellidos.required' => 'El campo apellidos es obligatorio.',
@@ -3067,10 +3073,14 @@ private function removeDuplicatesAndSort(array $cosuser): array
             'servicio' => 'servicio_solicitado',
         ];
 
-        $user = User::findOrFail($request->id);
-
         if ($request->has('genealogy_tree_id') && ! $this->canManageGenealogyTreeLink()) {
             abort(403);
+        }
+
+        if (blank($user->hs_id)) {
+            throw ValidationException::withMessages([
+                'hubspot' => 'Este cliente no tiene un contacto vinculado en HubSpot. Revisa la vinculación antes de guardar.',
+            ]);
         }
 
         // Obtener los datos actuales de la base de datos
@@ -3112,15 +3122,28 @@ private function removeDuplicatesAndSort(array $cosuser): array
             }
         }
 
-        // Inspeccionar resultados
-        $user->update($filteredRequest->toArray());
-        $this->persistLocalExtensibleProfileFields($user, $teamleaderExtensibleFields);
-        if ($hasGenealogyTreeId) {
-            $this->syncGenealogyTreeId($user, $genealogyTreeId);
-        }
+        try {
+            // A rejected HubSpot update must not leave a partially saved COS.
+            DB::transaction(function () use ($user, $filteredRequest, $teamleaderExtensibleFields, $hasGenealogyTreeId, $genealogyTreeId, $hubspotData): void {
+                $user->update($filteredRequest->toArray());
+                $this->persistLocalExtensibleProfileFields($user, $teamleaderExtensibleFields);
+                if ($hasGenealogyTreeId) {
+                    $this->syncGenealogyTreeId($user, $genealogyTreeId);
+                }
 
-        // Llamar a la API de HubSpot para actualizar los datos
-        $this->hubspotService->updateContact($user->hs_id, $hubspotData);
+                $this->hubspotService->updateContact($user->hs_id, $hubspotData);
+            });
+        } catch (HubspotContactUpdateException $exception) {
+            if ($exception->isEmailConflict()) {
+                throw ValidationException::withMessages([
+                    'email' => 'Este correo ya pertenece a otro contacto en HubSpot. Revisa el correo y la vinculación del cliente antes de guardar. No se guardaron cambios.',
+                ]);
+            }
+
+            return response()->json([
+                'message' => 'HubSpot no pudo actualizar el contacto. No se guardaron cambios. Inténtalo de nuevo; si persiste, solicita revisar la integración.',
+            ], 502);
+        }
 
         // Retornar respuesta exitosa
         return response()->json(['message' => 'Datos actualizados correctamente.']);

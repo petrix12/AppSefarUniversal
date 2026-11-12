@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Factura;
-use App\Models\Compras;
 use App\Models\Agcliente;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Client\ConnectionException;
 use App\Models\MondayBoard;
 use App\Models\MondayItemValue;
 
@@ -80,94 +82,120 @@ class MondayController extends Controller
 
     }
 
-    public function registrarMD(Request $request){
-        $passport = $request->passport;
+    public function registrarMD(Request $request)
+    {
+        $validated = $request->validate([
+            'passport' => ['required', 'string', 'max:20'],
+        ], [
+            'passport.required' => 'Ingresa el número de pasaporte del cliente.',
+            'passport.max' => 'El pasaporte no puede tener más de 20 caracteres.',
+        ]);
+        $passport = trim($validated['passport']);
+        $user = User::query()->where('passport', $passport)->first();
 
-        $users = json_decode(json_encode(User::where("passport", "LIKE", $request->passport)->get()),true);
-
-        if ($users[0]["pay"]!=2 || $users[0]["pay"]!="2"){
-            return redirect()->route('mondayregistrar')->with("status","error2");
+        if (! $user) {
+            return redirect()->route('mondayregistrar')->with('status', 'error');
         }
 
-        if (sizeof($users)>0){
-            $query = "SELECT a.*, b.name, b.passport, b.email, b.phone, b.created_at as fecha_de_registro FROM facturas as a, users as b WHERE a.id_cliente = b.id AND b.passport='".$passport."' ORDER BY a.id DESC LIMIT 1;";
-
-            $datos_factura = json_decode(json_encode(DB::select($query)),true);
-
-            if (sizeof($datos_factura)>1){
-
-                $productos = json_decode(json_encode(Compras::where("hash_factura", $datos_factura[0]["hash_factura"])->get()),true);
-                $servicios = "";
-
-                foreach ($productos as $key => $value) {
-                    $servicios = $servicios . $value["servicio_hs_id"];
-                    if ($key != count($productos)-1){
-                        $servicios = $servicios . ", ";
-                    }
-                }
-            } else {
-                $servicios = $users[0]["servicio"];
-            }
-
-            $familiarescheck = json_decode(json_encode(Agcliente::where('IDCliente','LIKE',$passport)->get()),true);
-
-            $nombres_y_apellidos_del_padre = "";
-            $nombres_y_apellidos_de_madre = "";
-
-            if (sizeof($familiarescheck) > 1) {
-                if($familiarescheck[1]["Sexo"]=="M"){
-                    $nombres_y_apellidos_del_padre = $familiarescheck[1]["Nombres"] . " " . $familiarescheck[1]["Apellidos"];
-                    $nombres_y_apellidos_de_madre = $familiarescheck[2]["Nombres"] . " " . $familiarescheck[2]["Apellidos"];
-                } else {
-                    $nombres_y_apellidos_del_padre = $familiarescheck[2]["Nombres"] . " " . $familiarescheck[2]["Apellidos"];
-                    $nombres_y_apellidos_de_madre = $familiarescheck[1]["Nombres"] . " " . $familiarescheck[1]["Apellidos"];
-                }
-            }
-
-
-            $fechanacimiento = $familiarescheck[0]["AnhoNac"]."-".$familiarescheck[0]["MesNac"]."-".$familiarescheck[0]["DiaNac"];
-
-            $token = env('MONDAY_TOKEN');
-            $apiUrl = 'https://api.monday.com/v2';
-            $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
-
-            $link = 'https://app.sefaruniversal.com/tree/' . $passport;
-
-            $query = 'mutation ($myItemName: String!, $columnVals: JSON!) { create_item (board_id: 878831315, group_id: "duplicate_of_en_proceso", item_name:$myItemName, column_values:$columnVals) { id } }';
-
-            if (is_null($users[0]["apellidos"]) || is_null($users[0]["nombres"])){
-                $clientname = $users[0]["name"];
-            } else {
-                $clientname = $users[0]["apellidos"]." ".$users[0]["nombres"];
-            }
-
-            $vars = [
-                'myItemName' => $clientname,
-                'columnVals' => json_encode([
-                    'texto' => $passport,
-                    'fecha75' => ['date' => date("Y-m-d", strtotime($fechanacimiento))],
-                    'texto_largo8' => $nombres_y_apellidos_del_padre,
-                    'texto_largo75' => $nombres_y_apellidos_de_madre,
-                    'enlace' => $link . " " . $link,
-                    'estado54' => 'Arbol Incompleto',
-                    'texto1' => $servicios,
-                    'texto4' => $users[0]["hs_id"]
-                ])
-            ];
-
-            $data = @file_get_contents($apiUrl, false, stream_context_create([
-                    'http' => [
-                        'method' => 'POST',
-                        'header' => $headers,
-                        'content' => json_encode(['query' => $query, 'variables' => $vars]),
-                    ]
-                ]
-            ));
-
-            return redirect()->route('mondayregistrar')->with("status","ok");
-        } else {
-            return redirect()->route('mondayregistrar')->with("status","error");
+        if ((string) $user->pay !== '2') {
+            return redirect()->route('mondayregistrar')->with('status', 'error2');
         }
 
+        $invoice = Factura::query()->where('id_cliente', $user->id)->latest('id')->first();
+        $services = $invoice?->compras()->pluck('servicio_hs_id')->filter()->unique()->implode(', ');
+        $services = $services ?: $user->servicio;
+
+        $people = Agcliente::query()
+            ->where('IDCliente', $passport)
+            ->whereIn('IDPersona', [1, 2, 3])
+            ->get()
+            ->keyBy('IDPersona');
+        $father = $people->get(2);
+        $mother = $people->get(3);
+        $link = rtrim(config('app.url'), '/').'/tree/'.rawurlencode($passport);
+        $columns = [
+            'texto' => $passport,
+            'texto_largo8' => trim(($father?->Nombres ?? '').' '.($father?->Apellidos ?? '')),
+            'texto_largo75' => trim(($mother?->Nombres ?? '').' '.($mother?->Apellidos ?? '')),
+            'enlace' => ['url' => $link, 'text' => $link],
+            'estado54' => 'Arbol Incompleto',
+            'texto1' => $services ?: '',
+            'texto4' => $user->hs_id ?: '',
+        ];
+        $birthDate = $this->registrationBirthDate($people->get(1), $user);
+        if ($birthDate !== null) {
+            $columns['fecha75'] = ['date' => $birthDate];
+        }
+
+        $token = config('services.monday.token');
+        if (blank($token)) {
+            Log::warning('Registro manual en Monday sin token configurado', ['user_id' => $user->id]);
+
+            return redirect()->route('mondayregistrar')->with('status', 'error3');
+        }
+
+        $query = <<<'GRAPHQL'
+            mutation ($myItemName: String!, $columnVals: JSON!) {
+                create_item (
+                    board_id: 878831315,
+                    group_id: "duplicate_of_en_proceso",
+                    item_name: $myItemName,
+                    column_values: $columnVals
+                ) { id }
+            }
+            GRAPHQL;
+
+        try {
+            $response = Http::withHeaders(['Authorization' => $token])
+                ->connectTimeout(10)
+                ->timeout(30)
+                ->post('https://api.monday.com/v2', [
+                    'query' => $query,
+                    'variables' => [
+                        'myItemName' => trim(($user->apellidos ?? '').' '.($user->nombres ?? '')) ?: $user->name,
+                        'columnVals' => json_encode($columns, JSON_UNESCAPED_UNICODE),
+                    ],
+                ]);
+            $itemId = $response->json('data.create_item.id');
+
+            if (! $response->successful() || $response->json('errors')
+                || ! is_scalar($itemId) || blank((string) $itemId)) {
+                Log::warning('Monday rechazó el registro manual del cliente', [
+                    'user_id' => $user->id,
+                    'status' => $response->status(),
+                    'errors' => $response->json('errors'),
+                ]);
+
+                return redirect()->route('mondayregistrar')->with('status', 'error3');
+            }
+        } catch (ConnectionException $exception) {
+            Log::warning('No se pudo conectar con Monday para el registro manual', [
+                'user_id' => $user->id,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return redirect()->route('mondayregistrar')->with('status', 'error3');
+        }
+
+        return redirect()->route('mondayregistrar')->with('status', 'ok');
+    }
+
+    private function registrationBirthDate(?Agcliente $person, User $user): ?string
+    {
+        $year = (int) $person?->AnhoNac;
+        $month = (int) $person?->MesNac;
+        $day = (int) $person?->DiaNac;
+        if (checkdate($month, $day, $year)) {
+            return sprintf('%04d-%02d-%02d', $year, $month, $day);
+        }
+
+        $date = substr((string) $user->date_of_birth, 0, 10);
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $date, $parts)
+            && checkdate((int) $parts[2], (int) $parts[3], (int) $parts[1])) {
+            return $date;
+        }
+
+        // Partial or absent dates must never become an invented 1970-01-01.
+        return null;
     }
 }

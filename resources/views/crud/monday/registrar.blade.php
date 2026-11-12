@@ -22,6 +22,7 @@ src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js">
             Swal.fire({
                 icon: 'error',
                 title: 'No se encontró a ningún usuario con el pasaporte ingresado',
+                text: 'Utiliza el número de pasaporte del cliente, no su correo electrónico.',
                 showConfirmButton: false,
                 timer: 5000
             });
@@ -50,6 +51,17 @@ src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js">
         </script>
     @endif
 
+    @if(session("status")=="error3")
+        <script type="text/javascript">
+            Swal.fire({
+                icon: 'error',
+                title: 'No se pudo registrar al cliente en Monday',
+                text: 'Monday no confirmó el registro. Inténtalo de nuevo; si persiste, solicita revisar la integración.',
+                confirmButtonText: 'Aceptar'
+            });
+        </script>
+    @endif
+
     <div class="card" style="padding: 25px; margin: 20px 15%;">
 
         <center>
@@ -57,7 +69,10 @@ src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js">
                 <div style="width: 80%;">
                     <h4>Pasaporte del Cliente</h4><br>
                     @csrf
-                    <input type="text" name="passport" placeholder="Número de Pasaporte del Cliente">
+                    <input type="text" name="passport" placeholder="Número de Pasaporte del Cliente" value="{{ old('passport') }}" required maxlength="20">
+                    @error('passport')
+                        <p class="text-danger" role="alert">{{ $message }}</p>
+                    @enderror
                     <button class="btn btn-primary cfrSefar">Enviar a Monday</button>
                 </div>
             </form>
