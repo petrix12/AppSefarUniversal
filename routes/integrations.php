@@ -50,3 +50,7 @@ Route::post('/stripe/banca-online/webhook', BancaOnlineStripeWebhookController::
 Route::post('/webhooks/monday', MondayWebhookController::class)
     ->name('api.monday.webhook')
     ->withoutMiddleware('throttle:api');
+
+Route::post('/webhooks/{provider}', \App\Http\Controllers\CrmWebhookController::class)
+    ->whereIn('provider', ['hubspot', 'teamleader'])
+    ->name('api.crm.webhook')->withoutMiddleware('throttle:api');

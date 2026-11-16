@@ -354,10 +354,12 @@ class LocalCosPortfolioService
                     'currency_conversion_required' => 'Moneda pendiente de conversión a EUR',
                     'unreadable_preestablished_amount' => 'Importe preestablecido ilegible',
                     'unreadable_paid_amount' => 'Importe pagado ilegible',
-                    'paid_exceeds_preestablished_amount' => 'Sobrepago pendiente de conciliación',
                     'payment_without_preestablished_amount' => 'Pago sin importe preestablecido',
                 ];
-                $issues[] = $phase['payment_label'].': '.implode(', ', array_map(fn ($reason) => $labels[$reason] ?? 'Importe pendiente de revisión', $phase['review_reasons']));
+                $visibleReasons = array_values(array_diff($phase['review_reasons'], ['paid_exceeds_preestablished_amount']));
+                if ($visibleReasons !== []) {
+                    $issues[] = $phase['payment_label'].': '.implode(', ', array_map(fn ($reason) => $labels[$reason] ?? 'Importe pendiente de revisión', $visibleReasons));
+                }
                 continue;
             }
             // A successful portal installment may be newer than the imported project.

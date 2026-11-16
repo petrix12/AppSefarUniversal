@@ -139,6 +139,7 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
         ->prefix('admin/integrations')
         ->name('admin.integrations.')
         ->group(function () {
+            Route::get('/crm-sync', \App\Http\Controllers\AdminCrmSyncController::class)->name('crm-sync');
             Route::get('/brightbean', [\App\Http\Controllers\BrightbeanInboxController::class, 'inbox'])->name('brightbean.index');
             Route::put('/brightbean', [\App\Http\Controllers\BrightbeanInboxController::class, 'update'])->name('brightbean.update');
             Route::post('/brightbean/messages/{message}/send', [\App\Http\Controllers\BrightbeanInboxController::class, 'send'])
@@ -507,6 +508,10 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
     Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
         Route::get('cos/cartera', [\App\Http\Controllers\CosPortfolioController::class, 'listing'])
             ->name('cos.portfolio')->middleware('can:crud.users.index');
+        Route::get('admin/finance/payment-reviews', [\App\Http\Controllers\CosOverpaymentController::class, 'listing'])
+            ->name('finance.payment-reviews')->middleware('can:crud.users.index');
+        Route::get('admin/finance/payment-reviews/{user}', \App\Http\Controllers\CosOverpaymentController::class)
+            ->name('users.overpayments')->middleware('can:crud.users.index');
         Route::post('cos/cartera/asociaciones', [\App\Http\Controllers\CosPortfolioController::class, 'associate'])
             ->name('cos.portfolio.associate')->middleware('can:crud.users.index');
         Route::post('users/{user}/process-associations', [\App\Http\Controllers\CosProcessAssociationController::class, 'associate'])

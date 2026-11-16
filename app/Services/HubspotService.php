@@ -550,11 +550,19 @@ class HubspotService
             ->all();
 
         try {
-            $this->hubspotThrottle();
-            $contact = \App\Support\CosPageTiming::external('hubspot_form001', 'HubSpot: respuestas del Formulario 001', function () use ($user, $propertyNames) {
-                return $this->hubspot->crm()->contacts()->basicApi()->getById((string) $user->hs_id, $propertyNames);
-            });
-            $properties = $contact->getProperties();
+            if (CrmContactMirrorService::localReadsEnabled()) {
+                $snapshot = \App\Models\CrmContactSnapshot::where('provider', 'hubspot')->where('contact_id', (string) $user->hs_id)->first();
+                if ($snapshot?->classification !== 'client') {
+                    return ['status' => 'unavailable', 'forms' => $forms, 'using_default' => $usingDefault];
+                }
+                $properties = $snapshot->contact['properties'] ?? [];
+            } else {
+                $this->hubspotThrottle();
+                $contact = \App\Support\CosPageTiming::external('hubspot_form001', 'HubSpot: respuestas del Formulario 001', function () use ($user, $propertyNames) {
+                    return $this->hubspot->crm()->contacts()->basicApi()->getById((string) $user->hs_id, $propertyNames);
+                });
+                $properties = $contact->getProperties();
+            }
 
             foreach ($forms as &$form) {
                 foreach ($form['fields'] as &$field) {
@@ -984,9 +992,45 @@ class HubspotService
         }) ?: $stages->first();
     }
 
-    /**
-     * Obtener un contacto por ID.
-     */
+    public function webhookObjectExists(string $entity, string $id): bool
+    {
+        if (! in_array($entity, ['contacts', 'deals'], true) || ! ctype_digit($id)) throw new \InvalidArgumentException('Invalid CRM object.');
+        $response = $this->makeHttpClient()->request('GET', "https://api.hubapi.com/crm/v3/objects/$entity/$id", [
+            'headers' => ['Authorization' => 'Bearer '.env('HUBSPOT_KEY')],
+            'query' => ['properties' => 'hs_object_id'], 'http_errors' => false,
+        ]);
+        if ($response->getStatusCode() === 404) return false;
+        if ($response->getStatusCode() !== 200) throw new \RuntimeException('CRM availability check failed.');
+        return true;
+    }
+
+    /** Current associations, including every page. A failed read is never an empty list. */
+    public function webhookAssociations(string $from, string $id, string $to): array
+    {
+        if (! in_array([$from, $to], [['contacts', 'deals'], ['deals', 'contacts']], true) || ! ctype_digit($id)) {
+            throw new \InvalidArgumentException('Invalid CRM association.');
+        }
+        $ids = [];
+        $after = null;
+        $seen = [];
+        do {
+            $this->hubspotThrottle();
+            $response = $this->hubspot->apiRequest([
+                'method' => 'GET', 'path' => "/crm/v4/objects/$from/$id/associations/$to",
+                'qs' => array_filter(['limit' => 500, 'after' => $after], fn ($value) => $value !== null),
+            ]);
+            $body = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+            if (! isset($body['results']) || ! is_array($body['results'])) throw new \UnexpectedValueException('Invalid CRM associations response.');
+            foreach ($body['results'] as $row) $ids[] = (string) $row['toObjectId'];
+            $next = $body['paging']['next']['after'] ?? null;
+            if ($next !== null && isset($seen[(string) $next])) throw new \UnexpectedValueException('Repeated CRM cursor.');
+            if ($next !== null) $seen[(string) $next] = true;
+            $after = $next;
+        } while ($after !== null);
+        return array_values(array_unique($ids));
+    }
+
+    /** Obtener un contacto por ID. */
     public function getContactById($id, bool $includeAllProperties = false)
     {
         try {

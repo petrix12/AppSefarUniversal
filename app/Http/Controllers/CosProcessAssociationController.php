@@ -30,8 +30,8 @@ class CosProcessAssociationController extends Controller
             $count = $groups->associateAutomatically($context);
             $message = $count.' procesos agrupados sin IA. Los pagos repetidos se muestran una sola vez.';
         }
-        Cache::forget('cos.portfolio.v1.all');
-        if ($user->owner_id) Cache::forget('cos.portfolio.v1.'.$user->owner_id);
+        Cache::forget('cos.portfolio.v2.all');
+        if ($user->owner_id) Cache::forget('cos.portfolio.v2.'.$user->owner_id);
         return redirect()->to(route('crud.users.edit', $user).'#mystatus')->with('process_association_success', $message);
     }
 }

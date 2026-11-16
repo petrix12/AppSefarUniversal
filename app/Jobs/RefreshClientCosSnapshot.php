@@ -53,7 +53,7 @@ class RefreshClientCosSnapshot implements ShouldQueue, ShouldBeUnique
                 \App\Jobs\Monday\RefreshMondayUsersJob::dispatch();
             }
             $user->refresh();
-            if (filled($user->hs_id) && filled($user->passport)) {
+            if (! \App\Services\CrmContactMirrorService::localReadsEnabled() && filled($user->hs_id) && filled($user->passport)) {
                 \Illuminate\Support\Facades\Cache::remember('cos.documents_imported.' . $user->id, 3600, function () use ($user, $hubspot) {
                     $urls = array_unique(array_merge(
                         $hubspot->getEngagementsByContactId($user->hs_id),

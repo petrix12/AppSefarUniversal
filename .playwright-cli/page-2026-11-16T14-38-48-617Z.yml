@@ -1,0 +1,119 @@
+- generic [ref=f8e2]:
+  - navigation [ref=f8e3]:
+    - list [ref=f8e4]:
+      - listitem [ref=f8e5]:
+        - link " Alternar barra de navegación" [ref=f8e6] [cursor=pointer]:
+          - /url: "#"
+          - generic [ref=f8e7]: 
+          - generic [ref=f8e8]: Alternar barra de navegación
+    - list [ref=f8e9]:
+      - listitem [ref=f8e10]:
+        - button "" [ref=f8e11] [cursor=pointer]
+      - listitem [ref=f8e13]:
+        - link "Notificaciones" [ref=f8e14] [cursor=pointer]:
+          - /url: "#"
+          - generic [ref=f8e15]: 
+      - listitem [ref=f8e16]:
+        - link "Administrador de demostración" [ref=f8e17] [cursor=pointer]:
+          - /url: "#"
+        - text:  
+  - complementary [ref=f8e18]:
+    - link "Sefar Universal App Sefar - COS" [ref=f8e19] [cursor=pointer]:
+      - /url: http://127.0.0.1:8866
+      - img "Sefar Universal" [ref=f8e20]
+      - generic [ref=f8e21]: App Sefar - COS
+    - generic [ref=f8e25]:
+      - generic [ref=f8e26]:
+        - img "User Image" [ref=f8e28]
+        - generic [ref=f8e29]:
+          - link "Administrador de demostración" [ref=f8e30] [cursor=pointer]:
+            - /url: http://127.0.0.1:8866/user/profile
+          - generic [ref=f8e31]: bryon.cartwright@example.com
+      - navigation [ref=f8e32]:
+        - menu [ref=f8e33]:
+          - listitem [ref=f8e34]:
+            - generic [ref=f8e36]:
+              - searchbox "Buscar opciones del menú" [ref=f8e37]
+              - button "" [ref=f8e39] [cursor=pointer]
+          - listitem [ref=f8e41]:
+            - link " Usuarios y permisos " [ref=f8e42] [cursor=pointer]:
+              - /url: ""
+              - generic [ref=f8e43]: 
+              - paragraph [ref=f8e44]:
+                - text: Usuarios y permisos
+                - generic [ref=f8e45]: 
+            - text:  
+          - listitem [ref=f8e46]:
+            - link " Operación COS " [ref=f8e47] [cursor=pointer]:
+              - /url: ""
+              - generic [ref=f8e48]: 
+              - paragraph [ref=f8e49]:
+                - text: Operación COS
+                - generic [ref=f8e50]: 
+            - text: 
+          - listitem [ref=f8e51]:
+            - link " Integraciones " [ref=f8e52] [cursor=pointer]:
+              - /url: ""
+              - generic [ref=f8e53]: 
+              - paragraph [ref=f8e54]:
+                - text: Integraciones
+                - generic [ref=f8e55]: 
+            - text:      
+          - listitem [ref=f8e56]:
+            - link " Documentos y contenido " [ref=f8e57] [cursor=pointer]:
+              - /url: ""
+              - generic [ref=f8e58]: 
+              - paragraph [ref=f8e59]:
+                - text: Documentos y contenido
+                - generic [ref=f8e60]: 
+            - text: 
+  - generic [ref=f8e61]:
+    - heading "Sincronización CRM" [level=1] [ref=f8e64]
+    - generic [ref=f8e66]:
+      - generic [ref=f8e68]:
+        - heading "Clientes y leads" [level=2] [ref=f8e69]
+        - paragraph [ref=f8e70]: Se importa el perfil del contacto cuando tiene al menos un negocio en el proveedor correspondiente, incluidos negocios cerrados o perdidos. Un proyecto o una factura por sí solos no lo convierten en cliente. No se crean cuentas de acceso automáticamente.
+        - paragraph [ref=f8e71]: Los contactos sin negocios quedan fuera de la actualización de perfiles. Se conserva su historial anterior.
+        - paragraph [ref=f8e72]:
+          - text: "Tablas:"
+          - strong [ref=f8e73]: Instaladas
+          - text: "· COS desde datos locales:"
+          - strong [ref=f8e74]: Desactivado
+        - paragraph [ref=f8e75]: Activar la recepción no confirma que el proveedor esté enviando eventos. Comprueba una entrega real y la carga inicial antes de cambiar el modo de lectura del COS. Los espejos financieros de proyectos y facturas de Teamleader siguen utilizando su importador independiente.
+        - generic [ref=f8e76]:
+          - heading "HubSpot · Recepción deshabilitada" [level=3] [ref=f8e77]
+          - code [ref=f8e78]: http://127.0.0.1:8866/api/webhooks/hubspot
+        - generic [ref=f8e79]:
+          - heading "Teamleader · Recepción deshabilitada" [level=3] [ref=f8e80]
+          - code [ref=f8e81]: http://127.0.0.1:8866/api/webhooks/teamleader
+          - paragraph [ref=f8e82]: El registro desde el servidor añade el token secreto al destino. No compartas esa URL completa.
+        - table [ref=f8e84]:
+          - rowgroup [ref=f8e85]:
+            - row [ref=f8e86]:
+              - columnheader "Proveedor" [ref=f8e87]
+              - columnheader "Clasificación" [ref=f8e88]
+              - columnheader "Contactos" [ref=f8e89]
+          - rowgroup [ref=f8e90]:
+            - row [ref=f8e91]:
+              - cell "hubspot" [ref=f8e92]
+              - cell "Con negocios" [ref=f8e93]
+              - cell "18" [ref=f8e94]
+            - row [ref=f8e95]:
+              - cell "teamleader" [ref=f8e96]
+              - cell "Sin negocios" [ref=f8e97]
+              - cell "4" [ref=f8e98]
+      - generic [ref=f8e99]:
+        - heading "Últimos eventos recibidos" [level=2] [ref=f8e101]
+        - table [ref=f8e103]:
+          - rowgroup [ref=f8e104]:
+            - row [ref=f8e105]:
+              - columnheader "Referencia" [ref=f8e106]
+              - columnheader "Proveedor" [ref=f8e107]
+              - columnheader "Estado" [ref=f8e108]
+              - columnheader "Intentos" [ref=f8e109]
+              - columnheader "Recibido" [ref=f8e110]
+              - columnheader "Procesado" [ref=f8e111]
+              - columnheader "Error" [ref=f8e112]
+          - rowgroup [ref=f8e113]:
+            - row [ref=f8e114]:
+              - cell "Todavía no se han recibido eventos." [ref=f8e115]

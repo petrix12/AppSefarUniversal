@@ -94,6 +94,21 @@ class ClientCosPageTest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_event_mode_does_not_enqueue_external_refreshes_when_opening_cos(): void
+    {
+        config(['crm_sync.local_reads_enabled' => true, 'crm_sync.hubspot.enabled' => true,
+            'crm_sync.teamleader.enabled' => true, 'services.monday.mirror_enabled' => true]);
+        (require database_path('migrations/2026_11_16_120000_create_crm_webhook_mirrors.php'))->up();
+        $user = $this->client();
+        $user->arraycos_expire = now()->subDay();
+        DB::table('negocios')->insert(['user_id' => $user->id, 'servicio_solicitado' => 'Española Sefardi']);
+        $page = app(ClientCosSnapshotService::class)->forPage($user);
+        $this->assertFalse($page['refresh_pending']);
+        $this->assertSame('Española Sefardi', $page['cos'][0]['servicio']);
+        $this->assertSame(0, DB::table('jobs')->count());
+        Http::assertNothingSent();
+    }
+
     private function client(): User
     {
         $user = new User();

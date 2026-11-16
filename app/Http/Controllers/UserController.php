@@ -2064,6 +2064,8 @@ class UserController extends Controller
         'non_collectible_balance_amount' => round($statusPaymentRows->sum('non_collectible_balance_amount'), 2),
         'overpaid_amount' => round($statusPaymentRows->sum('overpaid_amount'), 2),
     ];
+    app(\App\Services\CosOverpaymentReport::class)->remember($user, $statusPaymentRows);
+
 
     // ==========================================
     // PREPARAR DATOS PARA VISTA

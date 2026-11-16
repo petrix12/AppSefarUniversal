@@ -137,6 +137,25 @@ class CosPortfolioTest extends TestCase
         $this->assertStringContainsString('private', $response->headers->get('Cache-Control'));
     }
 
+    public function test_certificate_and_debt_filter_and_export_require_both_conditions(): void
+    {
+        $qualified = $this->client(1);
+        $this->client(2);
+        TlProject::whereKey('project-2')->update(['custom_fields' => []]);
+        $paid = $this->client(3);
+        $fields = TlProject::find('project-3')->custom_fields;
+        $fields[1]['value'] = '1000 EUR';
+        TlProject::whereKey('project-3')->update(['custom_fields' => $fields]);
+        $filters = ['certificate' => 'yes', 'balance' => 'debt'];
+        $this->actingAs($this->actor())->get(route('crud.cos.portfolio', $filters))->assertOk()
+            ->assertViewHas('clients', fn ($clients) => $clients->total() === 1 && $clients->first()['client_id'] === $qualified->id);
+        $csv = $this->get(route('crud.cos.portfolio', $filters + ['export' => 'csv']))->streamedContent();
+        $this->assertStringContainsString('PASS-1', $csv);
+        $this->assertStringNotContainsString('PASS-2', $csv);
+        $this->assertStringNotContainsString($paid->passport, $csv);
+        Http::assertNothingSent();
+    }
+
     public function test_ventas_can_only_view_export_and_associate_their_own_clients(): void
     {
         $actor = $this->actor('Ventas');

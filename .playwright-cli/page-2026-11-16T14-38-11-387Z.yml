@@ -1,0 +1,99 @@
+- generic [ref=f4e2]:
+  - navigation [ref=f4e3]:
+    - list [ref=f4e4]:
+      - listitem [ref=f4e5]:
+        - link " Alternar barra de navegación" [ref=f4e6] [cursor=pointer]:
+          - /url: "#"
+          - generic [ref=f4e7]: 
+          - generic [ref=f4e8]: Alternar barra de navegación
+    - list [ref=f4e9]:
+      - listitem [ref=f4e10]:
+        - button "" [ref=f4e11] [cursor=pointer]
+      - listitem [ref=f4e13]:
+        - link "Notificaciones" [ref=f4e14] [cursor=pointer]:
+          - /url: "#"
+          - generic [ref=f4e15]: 
+      - listitem [ref=f4e16]:
+        - link "Administrador de demostración" [ref=f4e17] [cursor=pointer]:
+          - /url: "#"
+        - text:  
+  - complementary [ref=f4e18]:
+    - link "Sefar Universal App Sefar - COS" [ref=f4e19] [cursor=pointer]:
+      - /url: http://127.0.0.1:8866
+      - img "Sefar Universal" [ref=f4e20]
+      - generic [ref=f4e21]: App Sefar - COS
+    - generic [ref=f4e25]:
+      - generic [ref=f4e26]:
+        - img "User Image" [ref=f4e28]
+        - generic [ref=f4e29]:
+          - link "Administrador de demostración" [ref=f4e30] [cursor=pointer]:
+            - /url: http://127.0.0.1:8866/user/profile
+          - generic [ref=f4e31]: bryon.cartwright@example.com
+      - navigation [ref=f4e32]:
+        - menu [ref=f4e33]:
+          - listitem [ref=f4e34]:
+            - generic [ref=f4e36]:
+              - searchbox "Buscar opciones del menú" [ref=f4e37]
+              - button "" [ref=f4e39] [cursor=pointer]
+          - listitem [ref=f4e41]:
+            - link " Usuarios y permisos " [ref=f4e42] [cursor=pointer]:
+              - /url: ""
+              - generic [ref=f4e43]: 
+              - paragraph [ref=f4e44]:
+                - text: Usuarios y permisos
+                - generic [ref=f4e45]: 
+            - text:  
+          - listitem [ref=f4e46]:
+            - link " Operación COS " [ref=f4e47] [cursor=pointer]:
+              - /url: ""
+              - generic [ref=f4e48]: 
+              - paragraph [ref=f4e49]:
+                - text: Operación COS
+                - generic [ref=f4e50]: 
+            - text: 
+          - listitem [ref=f4e51]:
+            - link " Integraciones " [ref=f4e52] [cursor=pointer]:
+              - /url: ""
+              - generic [ref=f4e53]: 
+              - paragraph [ref=f4e54]:
+                - text: Integraciones
+                - generic [ref=f4e55]: 
+            - text:      
+          - listitem [ref=f4e56]:
+            - link " Documentos y contenido " [ref=f4e57] [cursor=pointer]:
+              - /url: ""
+              - generic [ref=f4e58]: 
+              - paragraph [ref=f4e59]:
+                - text: Documentos y contenido
+                - generic [ref=f4e60]: 
+            - text: 
+  - generic [ref=f4e61]:
+    - heading "Revisión de pagos" [level=1] [ref=f4e64]
+    - generic [ref=f4e67]:
+      - heading "Cliente de demostración" [level=2] [ref=f4e69]
+      - generic [ref=f4e70]:
+        - paragraph [ref=f4e71]: "Sobrepagos detectados en la última conciliación del COS: 2026-11-16T09:33:47-05:00. Este informe conserva los importes de esa revisión; abre de nuevo la ficha para actualizarlos."
+        - paragraph [ref=f4e72]:
+          - text: "Total detectado:"
+          - strong [ref=f4e73]: 125,00 EUR
+        - table [ref=f4e75]:
+          - rowgroup [ref=f4e76]:
+            - row [ref=f4e77]:
+              - columnheader "Proceso" [ref=f4e78]
+              - columnheader "Fase" [ref=f4e79]
+              - columnheader "Fuente" [ref=f4e80]
+              - columnheader "Preestablecido" [ref=f4e81]
+              - columnheader "Pagado" [ref=f4e82]
+              - columnheader "Sobrepago" [ref=f4e83]
+          - rowgroup [ref=f4e84]:
+            - row [ref=f4e85]:
+              - cell "Nacionalidad española" [ref=f4e86]
+              - cell "Fase 3" [ref=f4e87]
+              - cell "Teamleader" [ref=f4e88]
+              - cell "1.000,00 EUR" [ref=f4e89]
+              - cell "1.125,00 EUR" [ref=f4e90]
+              - cell "125,00 EUR" [ref=f4e91]
+        - link "Abrir ficha del cliente" [ref=f4e92] [cursor=pointer]:
+          - /url: http://127.0.0.1:8866/users/2/edit#mystatus
+          - text: Abrir ficha del cliente
+          - generic [aria-hidden] [ref=f4e93]: 

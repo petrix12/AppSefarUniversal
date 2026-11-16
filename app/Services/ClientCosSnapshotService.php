@@ -42,6 +42,7 @@ class ClientCosSnapshotService
     /** Render from local data only, even when the global queue uses sync. */
     public function forPage(User $user): array
     {
+        $localReads = CrmContactMirrorService::localReadsEnabled();
         $negocios = Negocio::where('user_id', $user->id)->get();
         $stored = MondayData::where('user_id', $user->id)->value('data');
         $details = is_array($stored) ? $stored : json_decode($stored ?: 'null', true);
@@ -52,12 +53,13 @@ class ClientCosSnapshotService
             : $this->mondayCalculationData($details, 'stored_snapshot');
         $mondayChanged = $monday['mondaydataforAI'] !== $this->mondayCalculationData($details, 'stored_snapshot')['mondaydataforAI'];
 
-        if ($this->hasFreshCachedCos($user)) {
+        if (! $localReads && $this->hasFreshCachedCos($user)) {
             $statuses = is_array($user->arraycos) ? $user->arraycos : [];
         } else {
             // A stale snapshot remains visible until the worker replaces it.
             $statuses = is_array($user->arraycos) ? $user->arraycos : [];
-            if ($statuses === []) {
+            if ($localReads || $statuses === []) {
+                $statuses = [];
                 foreach ($negocios as $negocio) {
                     if (blank($negocio->servicio_solicitado2) && blank($negocio->servicio_solicitado)) {
                         continue;
@@ -77,7 +79,7 @@ class ClientCosSnapshotService
         }
 
         $refreshPending = false;
-        if ($mondayChanged || ! $this->hasFreshCachedCos($user) || ! \Illuminate\Support\Facades\Cache::has('cos.page_refreshed.' . $user->id)) {
+        if (! $localReads && ($mondayChanged || ! $this->hasFreshCachedCos($user) || ! \Illuminate\Support\Facades\Cache::has('cos.page_refreshed.' . $user->id))) {
             try {
                 Cache::put('cos.snapshot_refresh.pending.' . $user->id, true, 600);
                 \App\Jobs\RefreshClientCosSnapshot::dispatch($user->id, true);
@@ -106,6 +108,10 @@ class ClientCosSnapshotService
 
     public function refresh(User $user, bool $syncExternal = true, bool $forceExternalRefresh = false): array
     {
+        if (CrmContactMirrorService::localReadsEnabled()) {
+            $syncExternal = false;
+            $forceExternalRefresh = false;
+        }
         $startedAt = microtime(true);
         $user = $user->fresh() ?? $user;
         $sync = [
@@ -146,6 +152,7 @@ class ClientCosSnapshotService
                     $negocios,
                     $mondayData['mondaydataforAI'] ?? [],
                     forceRefresh: $forceExternalRefresh,
+                    allowRemoteAI: ! CrmContactMirrorService::localReadsEnabled(),
                     cos: $forceExternalRefresh ? $cos : null,
                 );
 
@@ -441,6 +448,11 @@ class ClientCosSnapshotService
             $data = $this->mondayCalculationData($details, 'local_mirror', $local['synced_at']);
             Cache::put("monday_data_{$user->id}_{$user->monday_id}", $data, 600);
             return $data;
+        }
+
+        if (CrmContactMirrorService::localReadsEnabled()) {
+            $stored = MondayData::where('user_id', $user->id)->value('data');
+            return $this->mondayCalculationData(is_array($stored) ? $stored : json_decode($stored ?: 'null', true), 'stored_snapshot');
         }
 
         $fetch = function () use ($user, $forceRefresh) {

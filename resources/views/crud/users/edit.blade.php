@@ -867,7 +867,7 @@
 
                             <div style="padding:1rem 1.25rem;">
                                 <div class="row g-3">
-                                    <div class="col-md-3">
+                                    <div class="col-md-4">
                                         <div style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:.55rem; padding:.85rem;">
                                             <div class="small text-muted">Preestablecido</div>
                                             <div style="font-size:1.15rem; font-weight:800; color:#111827;">
@@ -875,7 +875,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-4">
                                         <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:.55rem; padding:.85rem;">
                                             <div class="small text-muted">Pagado / abonado</div>
                                             <div style="font-size:1.15rem; font-weight:800; color:#166534;">
@@ -883,7 +883,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-4">
                                         <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:.55rem; padding:.85rem;">
                                             <div class="small text-muted">Saldo pendiente</div>
                                             <div style="font-size:1.15rem; font-weight:800; color:#9a3412;">
@@ -896,14 +896,7 @@
                                             @endif
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
-                                        <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:.55rem; padding:.85rem;">
-                                            <div class="small text-muted">Sobrepago detectado</div>
-                                            <div style="font-size:1.15rem; font-weight:800; color:#991b1b;">
-                                                {{ $tlMoney($tlPaymentTotals['overpaid_amount'] ?? 0) }}
-                                            </div>
-                                        </div>
-                                    </div>
+
                                 </div>
 
                                 @if($tlPaymentHasData)

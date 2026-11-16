@@ -403,6 +403,13 @@ return [
             'icon_color'  => 'white',
             'submenu' => [
                 [
+                    'text' => 'Revisión de pagos',
+                    'icon' => 'fa-fw fas fa-receipt',
+                    'route' => 'crud.finance.payment-reviews',
+                    'target' => '_blank',
+                    'can' => 'crud.users.index',
+                ],
+                [
                     'text'       => 'Facturas',
                     'icon'       => 'fa-fw fas fa-file-invoice-dollar',
                     'icon_color' => 'white',
@@ -516,6 +523,12 @@ return [
             'icon'        => 'fa-fw fas fa-plug',
             'icon_color'  => 'white',
             'submenu' => [
+                [
+                    'text' => 'Sincronización CRM',
+                    'route' => 'admin.integrations.crm-sync',
+                    'icon' => 'fas fa-sync-alt',
+                    'can' => 'integrations.manage',
+                ],
                 [
                     'text'          => 'Modelos de IA',
                     'icon'          => 'fa-fw fas fa-brain',

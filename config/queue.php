@@ -30,6 +30,15 @@ return [
 
     'connections' => [
 
+        'crm' => [
+            'driver' => 'database',
+            'connection' => env('DB_QUEUE_CONNECTION'),
+            'table' => 'jobs',
+            'queue' => 'crm-sync',
+            'retry_after' => 360,
+            'after_commit' => true,
+        ],
+
         'monday' => [
             'driver' => env('MONDAY_QUEUE_CONNECTION', 'database'),
             'connection' => env('DB_QUEUE_CONNECTION'),

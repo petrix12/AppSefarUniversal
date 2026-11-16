@@ -43,6 +43,27 @@ class TeamleaderService
         return $response;
     }
 
+    /** Strict webhook reads distinguish removal from an API outage. */
+    public function webhookObject(string $entity, string $id): ?array
+    {
+        $endpoint = ['contact' => 'contacts.info', 'deal' => 'deals.info'][$entity] ?? null;
+        if (! $endpoint || ! $this->isValidUuid($id)) throw new \InvalidArgumentException('Invalid CRM object.');
+        $response = $this->teamleaderPost($endpoint, ['id' => $id]);
+        if ($response->status() === 404) return null;
+        $response->throw();
+        $data = $response->json('data');
+        if (! is_array($data) || empty($data['id'])) throw new \UnexpectedValueException('Missing CRM object.');
+        return $data;
+    }
+
+    public function crmWebhooks(string $action, array $payload = []): array
+    {
+        if (! in_array($action, ['list', 'register'], true)) throw new \InvalidArgumentException('Invalid webhook action.');
+        $response = $this->teamleaderPost('webhooks.'.$action, $payload);
+        $response->throw();
+        return $response->json() ?? [];
+    }
+
     private function waitForTeamleaderSlot(): void
     {
         $gapMs = max(0, (int) config('services.teamleader.min_request_gap_ms', 800));

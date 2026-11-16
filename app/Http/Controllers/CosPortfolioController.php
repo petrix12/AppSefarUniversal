@@ -75,6 +75,6 @@ class CosPortfolioController extends Controller
 
     private function cacheKey(?int $ownerId): string
     {
-        return 'cos.portfolio.v1.'.($ownerId ?? 'all');
+        return 'cos.portfolio.v2.'.($ownerId ?? 'all');
     }
 }

@@ -22,7 +22,7 @@
         @endforeach
     </div>
     <div class="alert alert-info">
-        El saldo conocido suma únicamente fases con importes legibles en EUR. Las fases con monedas pendientes de conversión, sobrepagos u otras incidencias quedan para revisión. Sin datos no significa sin deuda. El certificado se identifica por su fecha registrada.
+        El saldo conocido suma únicamente fases con importes legibles en EUR. Las fases con monedas pendientes de conversión u otras incidencias quedan para revisión. Sin datos no significa sin deuda. El certificado se identifica por su fecha registrada.
     </div>
     <div class="card"><div class="card-body">
         <form method="GET" class="row align-items-end">
@@ -43,11 +43,14 @@
                 </select>
             </div>
             <div class="form-group col-md-4"><label for="portfolio-search">Cliente, pasaporte o correo</label><input id="portfolio-search" name="q" value="{{ $filters['q'] }}" class="form-control"></div>
-            <div class="form-group col-md-2"><button class="btn btn-primary btn-block">Filtrar</button></div>
+            <div class="form-group col-md-2"><button class="btn sefar-button cfrSefar btn-block">Filtrar</button></div>
         </form>
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-3" style="gap: .75rem">
             <span>{{ number_format($clients->total(), 0, ',', '.') }} clientes encontrados</span>
-            <a class="btn btn-outline-primary" href="{{ route('crud.cos.portfolio', array_merge($filters, ['export' => 'csv'])) }}">Descargar lista completa CSV</a>
+            <div class="d-flex flex-wrap" style="gap: .5rem">
+                <a class="btn sefar-button cfrSefar" href="{{ route('crud.cos.portfolio', ['certificate' => 'yes', 'balance' => 'debt']) }}">Con certificado y saldo pendiente</a>
+                <a class="btn sefar-button cfrSefar" href="{{ route('crud.cos.portfolio', array_merge($filters, ['export' => 'csv'])) }}">Descargar lista completa CSV</a>
+            </div>
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle">

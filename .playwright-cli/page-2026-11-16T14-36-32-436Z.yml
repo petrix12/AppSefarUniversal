@@ -1,0 +1,137 @@
+- generic [ref=e14]:
+  - navigation [ref=e15]:
+    - list [ref=e16]:
+      - listitem [ref=e17]:
+        - link " Alternar barra de navegación" [ref=e18] [cursor=pointer]:
+          - /url: "#"
+          - generic [ref=e19]: 
+          - generic [ref=e20]: Alternar barra de navegación
+    - list [ref=e21]:
+      - listitem [ref=e22]:
+        - button "" [ref=e23] [cursor=pointer]
+      - listitem [ref=e25]:
+        - link "Notificaciones" [ref=e26] [cursor=pointer]:
+          - /url: "#"
+          - generic [ref=e27]: 
+      - listitem [ref=e28]:
+        - link "Administrador de demostración" [ref=e29] [cursor=pointer]:
+          - /url: "#"
+        - text:  
+  - complementary [ref=e30]:
+    - link "Sefar Universal App Sefar - COS" [ref=e31] [cursor=pointer]:
+      - /url: http://127.0.0.1:8866
+      - img "Sefar Universal" [ref=e32]
+      - generic [ref=e33]: App Sefar - COS
+    - generic [ref=e37]:
+      - generic [ref=e38]:
+        - img "User Image" [ref=e40]
+        - generic [ref=e41]:
+          - link "Administrador de demostración" [ref=e42] [cursor=pointer]:
+            - /url: http://127.0.0.1:8866/user/profile
+          - generic [ref=e43]: bryon.cartwright@example.com
+      - navigation [ref=e44]:
+        - menu [ref=e45]:
+          - listitem [ref=e46]:
+            - generic [ref=e48]:
+              - searchbox "Buscar opciones del menú" [ref=e49]
+              - button "" [ref=e51] [cursor=pointer]
+          - listitem [ref=e53]:
+            - link " Usuarios y permisos " [ref=e54] [cursor=pointer]:
+              - /url: ""
+              - generic [ref=e55]: 
+              - paragraph [ref=e56]:
+                - text: Usuarios y permisos
+                - generic [ref=e57]: 
+            - text:  
+          - listitem [ref=e58]:
+            - link " Operación COS " [ref=e59] [cursor=pointer]:
+              - /url: ""
+              - generic [ref=e60]: 
+              - paragraph [ref=e61]:
+                - text: Operación COS
+                - generic [ref=e62]: 
+            - text: 
+          - listitem [ref=e63]:
+            - link " Integraciones " [ref=e64] [cursor=pointer]:
+              - /url: ""
+              - generic [ref=e65]: 
+              - paragraph [ref=e66]:
+                - text: Integraciones
+                - generic [ref=e67]: 
+            - text:      
+          - listitem [ref=e68]:
+            - link " Documentos y contenido " [ref=e69] [cursor=pointer]:
+              - /url: ""
+              - generic [ref=e70]: 
+              - paragraph [ref=e71]:
+                - text: Documentos y contenido
+                - generic [ref=e72]: 
+            - text: 
+  - generic [ref=e73]:
+    - heading "Cartera y certificados" [level=1] [ref=e76]
+    - generic [ref=e78]:
+      - paragraph [ref=e79]: "Listado global de clientes con los datos importados disponibles. Actualizado al calcular este informe: 2026-11-16T09:33:47-05:00."
+      - generic [ref=e80]:
+        - generic [ref=e83]:
+          - generic [ref=e84]: Clientes
+          - strong [ref=e85]: "1"
+        - generic [ref=e88]:
+          - generic [ref=e89]: Con saldo conocido
+          - strong [ref=e90]: "1"
+        - generic [ref=e93]:
+          - generic [ref=e94]: Con certificado y saldo
+          - strong [ref=e95]: "1"
+        - generic [ref=e98]:
+          - generic [ref=e99]: Requieren revisión
+          - strong [ref=e100]: "0"
+      - generic [ref=e101]: El saldo conocido suma únicamente fases con importes legibles en EUR. Las fases con monedas pendientes de conversión u otras incidencias quedan para revisión. Sin datos no significa sin deuda. El certificado se identifica por su fecha registrada.
+      - generic [ref=e103]:
+        - generic [ref=e104]:
+          - generic [ref=e105]:
+            - generic [ref=e106]: Saldo
+            - combobox "Saldo" [ref=e107]:
+              - option "Con saldo conocido" [selected]
+              - option "Requieren revisión"
+              - option "Sin saldo registrado"
+              - option "Sin datos suficientes"
+              - option "Todos"
+          - generic [ref=e108]:
+            - generic [ref=e109]: Certificado
+            - combobox "Certificado" [ref=e110]:
+              - option "Todos"
+              - option "Con fecha registrada" [selected]
+              - option "Sin fecha registrada"
+          - generic [ref=e111]:
+            - generic [ref=e112]: Cliente, pasaporte o correo
+            - textbox "Cliente, pasaporte o correo" [ref=e113]
+          - button "Filtrar" [ref=e115] [cursor=pointer]
+        - generic [ref=e116]:
+          - generic [ref=e117]: 1 clientes encontrados
+          - generic [ref=e118]:
+            - link "Con certificado y saldo pendiente" [ref=e119] [cursor=pointer]:
+              - /url: http://127.0.0.1:8866/cos/cartera?certificate=yes&balance=debt
+            - link "Descargar lista completa CSV" [ref=e120] [cursor=pointer]:
+              - /url: http://127.0.0.1:8866/cos/cartera?certificate=yes&balance=debt&q=&export=csv
+        - table [ref=e122]:
+          - rowgroup [ref=e123]:
+            - row [ref=e124]:
+              - columnheader "Cliente" [ref=e125]
+              - columnheader "Certificado" [ref=e126]
+              - columnheader "Saldo conocido" [ref=e127]
+              - columnheader "Estado y expedientes" [ref=e128]
+          - rowgroup [ref=e129]:
+            - row [ref=e130]:
+              - cell "Cliente de demostración DEMO-001 · cliente@example.test" [ref=e131]:
+                - link "Cliente de demostración" [ref=e132] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8866/users/2/edit
+                - generic [ref=e133]: DEMO-001 · cliente@example.test
+              - cell "Registrado 2026-11-16" [ref=e134]:
+                - text: Registrado
+                - generic [ref=e135]: 2026-11-16
+              - 'cell "750,00 EUR Cobrable: 750,00 EUR" [ref=e136]':
+                - strong [ref=e137]: 750,00 EUR
+                - generic [ref=e138]: "Cobrable: 750,00 EUR"
+              - cell "Con saldo conocido" [ref=e139]:
+                - group [ref=e141]:
+                  - generic "0 expediente(s)" [ref=e142] [cursor=pointer]
+      - paragraph [ref=e143]: Para agrupar negocios de HubSpot con proyectos de Teamleader, abre el cliente y utiliza «Procesos del solicitante» en su ventana de estatus.
