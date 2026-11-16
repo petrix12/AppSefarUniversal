@@ -14,8 +14,16 @@ class CrmReconcileContacts extends Command
 
     public function handle(CrmContactMirrorService $mirror): int
     {
+        if (! config('crm_sync.processing_enabled')) {
+            $this->error('El procesamiento CRM está pausado. Primero verifica las entregas y la política de sincronización.');
+            return self::FAILURE;
+        }
         $provider = $this->argument('provider');
         if (! in_array($provider, ['hubspot', 'teamleader'], true)) return self::INVALID;
+        if (! config('crm_sync.'.$provider.'.enabled')) {
+            $this->error('El receptor de este proveedor está deshabilitado.');
+            return self::FAILURE;
+        }
         $lock = Cache::lock('crm.webhooks.'.$provider, 1800);
         if (! $lock->get()) { $this->error('Hay una sincronización de este proveedor en curso.'); return self::FAILURE; }
         $field = $provider === 'hubspot' ? 'hs_id' : 'tl_id';

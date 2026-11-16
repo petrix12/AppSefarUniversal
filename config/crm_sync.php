@@ -1,6 +1,8 @@
 <?php
 
 return [
+    // Receive and verify events before allowing them to mutate client profiles.
+    'processing_enabled' => env('CRM_EVENT_PROCESSING_ENABLED', false),
     // Enable reception separately from switching the COS to local reads.
     'hubspot' => [
         'enabled' => env('CRM_HUBSPOT_WEBHOOKS_ENABLED', false),

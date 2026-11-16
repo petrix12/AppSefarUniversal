@@ -13,6 +13,7 @@ class CrmRetryWebhooks extends Command
 
     public function handle(): int
     {
+        if (! config('crm_sync.processing_enabled')) return self::SUCCESS;
         $providers = array_values(array_filter(['hubspot', 'teamleader'], fn ($provider) => config("crm_sync.$provider.enabled")));
         CrmWebhookEvent::whereIn('status', ['pending', 'failed'])->where('attempts', '<', 5)
             ->whereIn('provider', $providers)

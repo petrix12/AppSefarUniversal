@@ -6,7 +6,6 @@ use App\Models\CrmContactSnapshot;
 use App\Models\TlContact;
 use App\Models\TlDeal;
 use App\Models\User;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -17,6 +16,7 @@ class CrmContactMirrorService
     public static function localReadsEnabled(): bool
     {
         return (bool) config('crm_sync.local_reads_enabled')
+            && config('crm_sync.processing_enabled')
             && config('crm_sync.hubspot.enabled') && config('crm_sync.teamleader.enabled')
             && config('services.monday.mirror_enabled') && Schema::hasTable('crm_contact_snapshots');
     }
@@ -25,6 +25,12 @@ class CrmContactMirrorService
     {
         $type = (string) ($event['subscriptionType'] ?? $event['type'] ?? '');
         $id = (string) ($event['objectId'] ?? data_get($event, 'subject.id', ''));
+        if ($provider === 'hubspot' && str_ends_with($type, '.propertyChange')
+            && ! CosCrmSyncFields::supportsHubspotProperty($type, (string) ($event['propertyName'] ?? ''))) return;
+        if ($provider === 'teamleader' && str_starts_with($type, 'project.')) {
+            app(CrmProjectMirrorService::class)->process($event);
+            return;
+        }
         $contacts = [];
         if ($provider === 'hubspot' && $type === 'contact.merge') {
             $contacts = array_merge((array) ($event['mergedObjectIds'] ?? []), [(string) ($event['primaryObjectId'] ?? ''), (string) ($event['newObjectId'] ?? '')]);
@@ -95,13 +101,8 @@ class CrmContactMirrorService
             return $snapshot;
         });
         if ($user && $changed) {
-            Cache::forget('hubspot_data_'.$user->hs_id);
-            Cache::forget('teamleader_data_'.$user->id);
-            Cache::forget('cos.page_refreshed.'.$user->id);
-            Cache::forget('cos.portfolio.v2.all');
-            Cache::forget('cos.portfolio.v2.'.$user->owner_id);
             // Recalculate locally on the next read; no full external refresh is launched here.
-            $user->forceFill(['arraycos_expire' => now()->subSecond()])->save();
+            CrmCosCache::invalidate($user);
         }
         return $snapshot;
     }

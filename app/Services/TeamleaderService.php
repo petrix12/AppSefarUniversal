@@ -46,13 +46,13 @@ class TeamleaderService
     /** Strict webhook reads distinguish removal from an API outage. */
     public function webhookObject(string $entity, string $id): ?array
     {
-        $endpoint = ['contact' => 'contacts.info', 'deal' => 'deals.info'][$entity] ?? null;
+        $endpoint = ['contact' => 'contacts.info', 'deal' => 'deals.info', 'project' => 'projects.info'][$entity] ?? null;
         if (! $endpoint || ! $this->isValidUuid($id)) throw new \InvalidArgumentException('Invalid CRM object.');
         $response = $this->teamleaderPost($endpoint, ['id' => $id]);
         if ($response->status() === 404) return null;
         $response->throw();
         $data = $response->json('data');
-        if (! is_array($data) || empty($data['id'])) throw new \UnexpectedValueException('Missing CRM object.');
+        if (! is_array($data) || (string) ($data['id'] ?? '') !== $id) throw new \UnexpectedValueException('Missing or mismatched CRM object.');
         return $data;
     }
 

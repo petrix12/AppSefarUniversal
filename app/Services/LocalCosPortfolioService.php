@@ -68,7 +68,7 @@ class LocalCosPortfolioService
             ->groupBy('teamleader_id')->map(fn ($group) => $group->pluck('user_id')->unique()->all());
         $projects = [];
         $byContact = [];
-        foreach (TlProject::select('id', 'title', 'customer_id', 'customer_type', 'custom_fields', 'tl_updated_at', 'updated_at')->cursor() as $project) {
+        foreach (TlProject::forCos()->select('id', 'title', 'customer_id', 'customer_type', 'custom_fields', 'tl_updated_at', 'updated_at')->cursor() as $project) {
             $facts = $this->matcher->projectFacts($project->toArray());
             $facts['updated_at'] = ($project->updated_at ?? $project->tl_updated_at)?->toIso8601String();
             $projects[(string) $project->id] = $facts;
@@ -151,7 +151,7 @@ class LocalCosPortfolioService
             }
             $linked += DB::transaction(function () use ($match): int {
                 $client = User::whereKey($match['client_id'])->lockForUpdate()->first();
-                $project = TlProject::whereKey($match['project_id'])->lockForUpdate()->first();
+                $project = TlProject::forCos()->whereKey($match['project_id'])->lockForUpdate()->first();
                 $deal = Negocio::whereKey($match['deal_id'])->where('user_id', $match['client_id'])->lockForUpdate()->first();
                 if (! $client || ! $project || ! $deal || filled($deal->teamleader_id)
                     || Negocio::where('teamleader_id', $match['project_id'])->exists()) {
@@ -180,7 +180,7 @@ class LocalCosPortfolioService
                     return 0;
                 }
                 $peers = $this->matcher->canonicalDeals(Negocio::where('user_id', $client->id)->get()->map->toArray()->all());
-                $projects = TlProject::where('customer_type', 'contact')->where('customer_id', $contactId)->get()
+                $projects = TlProject::forCos()->where('customer_type', 'contact')->where('customer_id', $contactId)->get()
                     ->map(fn ($candidate) => $this->matcher->projectFacts($candidate->toArray()))->all();
                 $reserved = Negocio::whereNotNull('teamleader_id')->pluck('teamleader_id')->all();
                 $proof = collect($this->matcher->plan($peers, $projects, $reserved))->firstWhere('deal_id', $deal->id);

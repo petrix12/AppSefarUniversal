@@ -146,7 +146,8 @@ class TeamleaderProjectPaymentAnalyzer
 
     public function analyzeProjects(Collection $projects): array
     {
-        $items = $projects->map(fn (TlProject $project) => $this->analyzeProject($project));
+        $items = $projects->reject(fn (TlProject $project) => in_array($project->status, TlProject::CRM_INACTIVE_STATUSES, true))
+            ->map(fn (TlProject $project) => $this->analyzeProject($project));
 
         return [
             'projects' => $items->values()->all(),

@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\TeamleaderService;
+use App\Services\TeamleaderWebhookSubscriptionService;
 use Illuminate\Console\Command;
 
 class RegisterCrmWebhooks extends Command
@@ -10,24 +10,17 @@ class RegisterCrmWebhooks extends Command
     protected $signature = 'crm:register-teamleader-webhooks {--apply : Registra las suscripciones; sin esta opción solo verifica.}';
     protected $description = 'Verifica o registra exclusivamente los webhooks CRM de esta App, sin tocar otros destinos.';
 
-    public const TYPES = ['contact.added', 'contact.updated', 'contact.deleted', 'deal.created', 'deal.updated', 'deal.moved', 'deal.won', 'deal.lost', 'deal.deleted'];
+    public const TYPES = TeamleaderWebhookSubscriptionService::TYPES;
 
-    public function handle(TeamleaderService $teamleader): int
+    public function handle(TeamleaderWebhookSubscriptionService $subscriptions): int
     {
-        if (! config('crm_sync.teamleader.enabled') || strlen((string) config('crm_sync.teamleader.secret')) < 32
-            || blank(config('crm_sync.teamleader.account_id')) || ! str_starts_with(config('app.url'), 'https://')) {
-            $this->error('Configura HTTPS, cuenta, secreto y recepción de Teamleader antes de registrar.');
+        if ($subscriptions->missingConfiguration() !== []) {
+            $this->error('Falta configurar: '.implode(', ', $subscriptions->missingConfiguration()));
             return self::FAILURE;
         }
-        $url = route('api.crm.webhook', ['provider' => 'teamleader', 'token' => config('crm_sync.teamleader.secret')]);
-        $subscriptions = $teamleader->crmWebhooks('list');
-        $existing = collect($subscriptions['data'] ?? [])->where('url', $url)->flatMap(fn ($hook) => $hook['types'] ?? [])->all();
-        $missing = array_values(array_diff(self::TYPES, $existing));
-        $this->line(count($missing).' tipos pendientes para el destino de esta App.');
-        if ($this->option('apply') && $missing !== []) {
-            $teamleader->crmWebhooks('register', ['url' => $url, 'types' => array_values(array_unique(array_merge($existing, self::TYPES)))]);
-            $this->info('Suscripciones registradas. Verifica la recepción de un evento real antes de cambiar el COS a lectura local.');
-        }
+        $result = $subscriptions->register((bool) $this->option('apply'));
+        $this->line($result['missing'].' tipos pendientes para el destino de esta App.');
+        if ($result['verified']) $this->info('Suscripciones verificadas. Falta comprobar una entrega real.');
         return self::SUCCESS;
     }
 }

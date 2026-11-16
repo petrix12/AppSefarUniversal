@@ -2412,7 +2412,7 @@ private function getTeamleaderMigrationData(User $user): array
         ->get();
     $timing?->checkpoint('tl_deals', 'Teamleader: negocios locales');
 
-    $projects = TlProject::query()
+    $projects = TlProject::forCos()
         ->where('customer_type', 'contact')
         ->where('customer_id', $contact->id)
         ->orderByDesc('tl_updated_at')

@@ -11,10 +11,26 @@ Se puede desplegar la base existente y ejecutar la migración manteniendo:
 ```dotenv
 CRM_HUBSPOT_WEBHOOKS_ENABLED=false
 CRM_TEAMLEADER_WEBHOOKS_ENABLED=false
+CRM_EVENT_PROCESSING_ENABLED=false
 CRM_LOCAL_READS_ENABLED=false
 ```
 
 Estos interruptores corresponden a los nuevos receptores y al modo local. No desactivan las integraciones anteriores de la App. Registrar y probar los destinos se hace después del despliegue, siguiendo `crm-webhooks-y-cartera.md`, antes de activar propagación automática.
+
+Se puede habilitar la recepción de cada proveedor manteniendo `CRM_EVENT_PROCESSING_ENABLED=false`: se valida y conserva el evento, sin modificar perfiles, certificados ni pagos. El trabajo permanece pendiente y no consume intentos. La carga inicial también exige habilitar expresamente el procesamiento.
+
+## Alcance confirmado: entradas del COS
+
+El alcance se limita a los campos que alimentan el cálculo del COS. El catálogo ejecutable está en `app/Services/CosCrmSyncFields.php`; los identificadores de proyectos se reutilizan de los analizadores actuales para evitar un segundo mapa financiero distinto.
+
+- Contacto HubSpot: siete propiedades de identificación, servicio y retiro. Sus eventos no autorizan cambiar automáticamente la identidad o el acceso de una cuenta App.
+- Negocio HubSpot: 33 propiedades existentes en producción, con servicio, código, certificado, fechas de informe/jurídico/resolución/recursos, tasas, preestablecidos y pagos de fases 1/2/3, Carta de Naturaleza y CIL/FCJE. Incluye estado del negocio y referencias para distinguir servicios auxiliares.
+- Proyecto Teamleader clásico: trece campos personalizados usados por el COS: servicio, código, certificado y diez campos de importes preestablecidos/pagados. Los eventos `project.created`, `project.updated` y `project.deleted` releen el proyecto y comprueban que su contacto tenga negocios antes de importarlo. `nextgenProject` requiere un adaptador distinto y no se registra: la App utiliza `projects.info`.
+- Monday conserva su espejo y sus entradas de estado genealógico. Solicitudes, documentos y recibos locales conservan su identidad. Progreso, saldos calculados, permisos y `pay`/`contrato` no se convierten en campos comerciales intercambiables.
+
+Definiciones verificadas en el portal el 16-11-2026: no existen en los negocios HubSpot `titulo`, `fecha_solicitud_recurso_urgencia`, `fecha_solicitud_recursoalzada`, `fecha_solicitud_resolucionexpresa`, `fecha_solicitud_viajudicial`, `carta_nat_montopagado` ni `cilfcje_montopagado`. El cálculo tiene caminos locales para esos valores; no se crearon propiedades remotas ni se inventaron equivalencias. Tampoco existen propiedades de contacto `pay` y `contrato` con esos nombres.
+
+**Configuración nativa guardada el 16-11-2026:** Api-Call-Sefar, portal 20053496, tiene 49 suscripciones HubSpot pausadas: doce de contacto (siete propiedades y cinco eventos de ciclo de vida/asociación) y 37 de negocio (33 propiedades y cuatro eventos de ciclo de vida/asociación). Destino `https://app.sefaruniversal.com/api/webhooks/hubspot`. Comprobado después de guardar, sin activar entregas ni editar expedientes. El registro nativo de Teamleader y las entregas reales siguen pendientes; el código nuevo ofrece un botón de administrador que registra y vuelve a consultar sus doce tipos para verificar el resultado.
 
 ## Decisión por campo
 

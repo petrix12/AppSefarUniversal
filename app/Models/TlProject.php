@@ -9,6 +9,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TlProject extends Model
 {
+    public const CRM_DELETED = 'crm_deleted';
+    public const CRM_EXCLUDED = 'crm_excluded';
+    public const CRM_INACTIVE_STATUSES = [self::CRM_DELETED, self::CRM_EXCLUDED];
+
     protected $table    = 'tl_projects';
     public $incrementing = false;
     protected $keyType  = 'string';
@@ -56,6 +60,11 @@ class TlProject extends Model
 
     public function scopeActive($query)    { return $query->where('status', 'active'); }
     public function scopeCompleted($query) { return $query->where('status', 'done'); }
+
+    public function scopeForCos($query)
+    {
+        return $query->where(fn ($visible) => $visible->whereNull('status')->orWhereNotIn('status', self::CRM_INACTIVE_STATUSES));
+    }
 
     // ─── Accessors ────────────────────────────────
 

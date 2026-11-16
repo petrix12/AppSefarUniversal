@@ -63,7 +63,7 @@ class TeamleaderClientHistoryService
                 ->get()
             : collect();
 
-        $projects = TlProject::query()
+        $projects = TlProject::forCos()
             ->where(function ($query) use ($contact, $linkedProjectIds) {
                 if ($contact instanceof TlContact) {
                     $query->where(function ($contactQuery) use ($contact) {

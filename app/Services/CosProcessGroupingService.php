@@ -23,7 +23,7 @@ class CosProcessGroupingService
         $deals = Negocio::where('user_id', $user->id)->get();
         $contact = $this->contactFor($user);
         $linkedIds = $deals->pluck('teamleader_id')->filter()->all();
-        $projects = TlProject::where(function ($query) use ($contact, $linkedIds) {
+        $projects = TlProject::forCos()->where(function ($query) use ($contact, $linkedIds) {
             $query->whereRaw('1 = 0');
             if ($contact) {
                 $query->orWhere(fn ($own) => $own->where('customer_type', 'contact')->where('customer_id', $contact->id));
@@ -36,11 +36,12 @@ class CosProcessGroupingService
     /** Virtual grouping is shared by the staff and applicant status views. No GET writes links. */
     public function forClient(User $user, Collection $deals, Collection $projects): array
     {
+        $projects = $projects->reject(fn ($project) => in_array($project->status, TlProject::CRM_INACTIVE_STATUSES, true))->values();
         $canonical = $this->matcher->canonicalDeals($deals->map->toArray()->all());
         $existingIds = $deals->pluck('teamleader_id')->filter()->unique();
         $missing = $existingIds->diff($projects->pluck('id'));
         if ($missing->isNotEmpty()) {
-            $projects = $projects->concat(TlProject::whereIn('id', $missing)->get())->unique('id')->values();
+            $projects = $projects->concat(TlProject::forCos()->whereIn('id', $missing)->get())->unique('id')->values();
         }
         $reserved = Negocio::whereNotNull('teamleader_id')->pluck('teamleader_id')->all();
         $ownedProjects = $this->ownedProjects($user, $projects);
@@ -107,7 +108,7 @@ class CosProcessGroupingService
         }
         DB::transaction(function () use ($user, $dealId, $projectId) {
             User::whereKey($user->id)->lockForUpdate()->firstOrFail();
-            TlProject::whereKey($projectId)->lockForUpdate()->firstOrFail();
+            TlProject::forCos()->whereKey($projectId)->lockForUpdate()->firstOrFail();
             $deal = Negocio::where('user_id', $user->id)->whereKey($dealId)->lockForUpdate()->firstOrFail();
             if (filled($deal->teamleader_id) || blank($deal->hubspot_id)
                 || Negocio::where('teamleader_id', $projectId)->exists()) {

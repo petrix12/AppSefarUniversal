@@ -48,11 +48,11 @@ class CrmWebhookController extends Controller
                 ksort($event);
                 $key = hash('sha256', json_encode($event, JSON_THROW_ON_ERROR));
                 $payload = $provider === 'hubspot'
-                    ? Arr::only($event, ['subscriptionType', 'objectId', 'objectTypeId', 'fromObjectId', 'toObjectId', 'associationType', 'associationRemoved', 'primaryObjectId', 'mergedObjectIds', 'newObjectId'])
-                    : ['type' => $event['type'], 'subject' => Arr::only($event['subject'], ['id', 'type'])];
+                    ? Arr::only($event, ['subscriptionType', 'objectId', 'objectTypeId', 'fromObjectId', 'toObjectId', 'associationType', 'associationRemoved', 'primaryObjectId', 'mergedObjectIds', 'newObjectId', 'occurredAt', 'propertyName', 'changeSource', 'sourceId', 'eventId', 'appId'])
+                    : Arr::only($event, ['type', 'timestamp', 'event_id', 'id']) + ['subject' => Arr::only($event['subject'], ['id', 'type'])];
                 $delivery = CrmWebhookEvent::firstOrCreate(['provider' => $provider, 'event_key' => $key], ['payload' => $payload]);
                 // Retrying a failed delivery also repairs a queue insertion failure.
-                if ($delivery->status !== 'completed') {
+                if ($delivery->status !== 'completed' && config('crm_sync.processing_enabled')) {
                     ProcessCrmWebhookEvent::dispatch($delivery->id)->afterCommit();
                 }
             }

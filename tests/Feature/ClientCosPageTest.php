@@ -96,7 +96,7 @@ class ClientCosPageTest extends TestCase
 
     public function test_event_mode_does_not_enqueue_external_refreshes_when_opening_cos(): void
     {
-        config(['crm_sync.local_reads_enabled' => true, 'crm_sync.hubspot.enabled' => true,
+        config(['crm_sync.local_reads_enabled' => true, 'crm_sync.processing_enabled' => true, 'crm_sync.hubspot.enabled' => true,
             'crm_sync.teamleader.enabled' => true, 'services.monday.mirror_enabled' => true]);
         (require database_path('migrations/2026_11_16_120000_create_crm_webhook_mirrors.php'))->up();
         $user = $this->client();

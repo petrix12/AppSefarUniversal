@@ -24,7 +24,7 @@ class CrmWebhooksTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config(['cache.default' => 'array', 'crm_sync.hubspot.enabled' => true,
+        config(['cache.default' => 'array', 'crm_sync.processing_enabled' => true, 'crm_sync.hubspot.enabled' => true,
             'crm_sync.hubspot.portal_id' => '123', 'crm_sync.hubspot.client_secret' => 'example-secret',
             'crm_sync.hubspot.signature_version' => 'v3', 'crm_sync.teamleader.enabled' => true,
             'crm_sync.teamleader.account_id' => 'account-1', 'crm_sync.teamleader.secret' => str_repeat('s', 40)]);
@@ -86,6 +86,27 @@ class CrmWebhooksTest extends TestCase
         $this->send([$this->event(), $this->event(['portalId' => 999])])->assertUnauthorized();
         $this->assertDatabaseCount('crm_webhook_events', 0);
         Bus::assertNothingDispatched();
+    }
+
+    public function test_paused_processing_retains_authenticated_events_and_their_source_time_without_profile_writes(): void
+    {
+        config(['crm_sync.processing_enabled' => false]);
+        $this->send([$this->event(['occurredAt' => 123456789, 'changeSource' => 'CRM', 'sourceId' => 'app-1'])])->assertStatus(202);
+        $event = CrmWebhookEvent::first();
+        $this->mock(CrmContactMirrorService::class)->shouldNotReceive('process');
+        (new ProcessCrmWebhookEvent($event->id))->handle(app(CrmContactMirrorService::class));
+        $this->assertSame('pending', $event->fresh()->status);
+        $this->assertSame(0, $event->fresh()->attempts);
+        $this->assertSame(123456789, $event->payload['occurredAt']);
+        $this->assertSame('firstname', $event->payload['propertyName']);
+        $this->assertStringNotContainsString('Private name', json_encode($event->payload));
+        Bus::assertNothingDispatched();
+        $this->travel(6)->minutes();
+        $this->artisan('crm:retry-webhooks')->assertExitCode(0);
+        Bus::assertNothingDispatched();
+        config(['crm_sync.processing_enabled' => true]);
+        $this->artisan('crm:retry-webhooks')->assertExitCode(0);
+        Bus::assertDispatched(ProcessCrmWebhookEvent::class, fn ($job) => $job->eventId === $event->id);
     }
 
     public function test_explicit_legacy_signature_and_disabled_receiver_fail_closed(): void
@@ -194,5 +215,16 @@ class CrmWebhooksTest extends TestCase
         $admin = User::factory()->create()->syncRoles(['Administrador']);
         $this->actingAs($admin)->get($url)->assertOk()->assertSee('Sincronización CRM')
             ->assertDontSee('example-secret')->assertDontSee(str_repeat('s', 40));
+    }
+
+    public function test_paused_processing_disables_local_cos_reads_and_initial_reconciliation(): void
+    {
+        config(['crm_sync.processing_enabled' => false, 'crm_sync.local_reads_enabled' => true, 'services.monday.mirror_enabled' => true]);
+        $this->assertFalse(CrmContactMirrorService::localReadsEnabled());
+        $this->mock(CrmContactMirrorService::class)->shouldNotReceive('syncContact');
+        $this->artisan('crm:reconcile-contacts', ['provider' => 'hubspot'])->assertExitCode(1);
+        config(['crm_sync.processing_enabled' => true, 'crm_sync.hubspot.enabled' => false]);
+        $this->artisan('crm:reconcile-contacts', ['provider' => 'hubspot'])->assertExitCode(1);
+        Http::assertNothingSent();
     }
 }

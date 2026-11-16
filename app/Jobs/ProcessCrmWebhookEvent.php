@@ -30,6 +30,7 @@ class ProcessCrmWebhookEvent implements ShouldQueue
         $event = CrmWebhookEvent::find($this->eventId);
         if (! $event || $event->status === 'completed') return;
         if (! config('crm_sync.'.$event->provider.'.enabled')) return;
+        if (! config('crm_sync.processing_enabled')) return;
         // Serialize provider events; reread current remote state instead of applying old deltas.
         $lock = Cache::lock('crm.webhooks.'.$event->provider, 330);
         if (! $lock->get()) { $this->release(10); return; }
