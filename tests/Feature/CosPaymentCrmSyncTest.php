@@ -172,6 +172,8 @@ class CosPaymentCrmSyncTest extends TestCase
         $this->assertSame(1, Compras::count()); $this->assertSame(1, Factura::count());
         $this->assertSame(['invoices' => 1, 'line_items' => 1, 'commerce_payments' => 1], $this->creates);
         $this->assertSame(1, $this->projectWrites); $this->assertCount(1, $this->notes);
+        $this->assertSame('contact', $this->notes[0]['subject_type']);
+        $this->assertStringContainsString('Proyecto Teamleader: e93270e9-4065-0f1d-bc62-63e3431a1a0a', $this->notes[0]['content']);
         $this->assertStringContainsString('/viewcomprobante/2035', $this->notes[0]['content']);
         $this->assertStringContainsString('[COS:phase-payment-7786]', $this->paidText);
         $this->assertSame(1, substr_count($this->paidText, '[COS:phase-payment-7786]'));

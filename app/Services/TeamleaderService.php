@@ -78,9 +78,9 @@ class TeamleaderService
         return $notes;
     }
 
-    public function createPaymentReceiptNote(string $projectId, string $content, string $subjectType = 'project'): string
+    public function createPaymentReceiptNote(string $projectId, string $content, string $subjectType = 'contact'): string
     {
-        if (! in_array($subjectType, ['project', 'contact'], true)) throw new \InvalidArgumentException('Invalid receipt note subject.');
+        if ($subjectType !== 'contact') throw new \InvalidArgumentException('Payment receipt notes must belong to the contact.');
         $response = $this->teamleaderPost('notes.create', [
             'subject' => ['type' => $subjectType, 'id' => $projectId], 'content' => $content,
         ]);

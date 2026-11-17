@@ -49,11 +49,14 @@ class TeamleaderPaymentReceiptWriter
                 $c['receipt']->paid_at->format('Y-m-d'), $c['reference'], $c['currency'], $project,
             );
         }
-        $subjectType = $registration ? 'contact' : 'project';
-        $subjectId = $registration ? (string) $c['user']->tl_id : $c['project_id'];
+        // notes.list can read legacy project notes, but notes.create accepts
+        // contact/company/deal/nextgenProject and excludes legacy project.
+        $subjectType = 'contact';
+        $subjectId = (string) $c['user']->tl_id;
         $marker = "[COS:{$c['reference']}]";
         $content = (($registration ? 'Registro confirmado ' : 'Pago confirmado ')."{$c['amount']} {$c['currency']} · ").$c['receipt']->paid_at->format('Y-m-d')
             ."\n{$marker}\nComprobante App {$c['invoice']->id}: PAGADO\n{$c['invoice_url']}"
+            .($registration ? '' : "\nProyecto Teamleader: {$c['project_id']}")
             ."\nNegocio HubSpot: ".($c['deal']?->hubspot_id ?? 'No asignado')."\nRegistro del mismo pago; no supone un nuevo cobro.";
         $state->createOnce('note', function () use ($c, $marker, $state, $subjectId, $subjectType): ?string {
             $found = [];
@@ -80,6 +83,7 @@ class TeamleaderPaymentReceiptWriter
                 throw $e;
             }
         });
-        $state->save(['teamleader_project_id' => $c['project_id'], 'document_url' => $c['invoice_url'], 'document_status' => 'paid']);
+        $state->save(['teamleader_project_id' => $c['project_id'], 'note_subject_type' => $subjectType,
+            'note_subject_id' => $subjectId, 'document_url' => $c['invoice_url'], 'document_status' => 'paid']);
     }
 }
