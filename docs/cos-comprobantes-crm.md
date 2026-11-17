@@ -60,6 +60,19 @@ El siguiente intento confirmó HubSpot como `synced`, con número `APP-2035-7786
 
 Tras corregir el presupuesto, la actualización del abono en el proyecto se completó y el fallo avanzó a `notes.create`: su enumeración de tipos excluye `project` clásico. El destino de creación se corrigió al contacto verificado, incluyendo la referencia del proyecto dentro de la nota. La referencia estable permite recuperar y reutilizar la nota ante reintentos.
 
+### Resultado confirmado en producción
+
+El usuario desplegó la corrección y ejecutó nuevamente el recibo 7786, limitado a Teamleader. La salida confirmó `teamleader: synced` y la nota `500c1316-2ab2-0aa6-bd80-ebaf618404cb`.
+
+Una carga nueva de `/users/290/edit`, pestaña «Pagos realizados», confirmó visualmente:
+
+- Un solo abono portal de **51,36 EUR**, con comprobante **2035**.
+- Factura HubSpot **APP-2035-7786**, marcada **Pagada**, sobre el ID externo original **607389666816** y el pago original **607390250785**.
+- **HubSpot: Sincronizado** y **Teamleader: Sincronizado**.
+- Los pagos históricos permanecen en una fila separada de 3.448,64 EUR. El resumen conserva 3.500 EUR pagados y saldo cero.
+
+La evidencia está en `outputs/cos-payment-crm/production-synced.png`. La ampliación de `/pay` quedó desplegada y probada con simulaciones; no se realizó un cargo real de registro para probarla. Los receptores de webhooks generales están habilitados y reciben eventos, con procesamiento y lecturas locales todavía desactivados; el flujo específico de comprobantes no activa la sincronización general bidireccional.
+
 El diagnóstico posterior conserva también la operación, clase de excepción, código HTTP, categoría, scopes requeridos y código cURL cuando existen. De los errores Teamleader se extraen como máximo tres títulos truncados y con valores sensibles ocultos, nunca el cuerpo completo. El flujo usa lecturas y actualizaciones estrictas para conservar el estado HTTP que antes quedaba oculto en una excepción genérica.
 
 El scheduler Laravel existente ejecuta cada minuto `cos:sync-payment-receipts --pending --write --limit=2`. Solo procesa abonos ya encolados por el nuevo checkout, con espera progresiva entre reintentos. **No sincroniza masivamente pagos anteriores:** requieren seleccionar explícitamente cada recibo con `--receipt=ID`. No se necesita un nuevo worker de colas. `COS_PAYMENT_CRM_SYNC_ENABLED=false` detiene las escrituras; los nuevos abonos conservan su estado pendiente.
