@@ -211,6 +211,15 @@ class CosPaymentCrmSyncService
             $receipt = Compras::lockForUpdate()->findOrFail($receiptId);
             $metadata = $receipt->metadata ?? [];
             $states = data_get($metadata, 'crm_payment_sync.providers', []);
+            foreach ($states as $provider => &$providerState) {
+                if (($providerState['status'] ?? '') === 'synced') {
+                    foreach (['last_error', 'exception_type', 'http_status', 'http_category', 'required_scopes', 'curl_error', 'remote_errors'] as $key) {
+                        unset($providerState[$key]);
+                    }
+                }
+            }
+            unset($providerState);
+            data_set($metadata, 'crm_payment_sync.providers', $states);
             data_set($metadata, 'crm_payment_sync.pending', collect($states)->contains(
                 fn ($s) => in_array($s['status'] ?? '', ['pending', 'retry', 'processing'], true)));
             $receipt->forceFill(['metadata' => $metadata])->save();

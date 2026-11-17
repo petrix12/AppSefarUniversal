@@ -200,6 +200,7 @@ class CosPaymentCrmSyncTest extends TestCase
         $this->assertSame('retry', data_get($receipt->fresh()->metadata, 'crm_payment_sync.providers.hubspot.status'));
         $service->process($receipt->id, 'hubspot', true);
         $this->assertSame('synced', data_get($receipt->fresh()->metadata, 'crm_payment_sync.providers.hubspot.status'));
+        $this->assertArrayNotHasKey('http_status', data_get($receipt->fresh()->metadata, 'crm_payment_sync.providers.hubspot'));
         $this->assertSame(1, $this->creates['commerce_payments']);
         $this->assertSame(1, Compras::count()); $this->assertSame(1, Factura::count());
     }
@@ -432,6 +433,7 @@ class CosPaymentCrmSyncTest extends TestCase
     private function fakeTeamleader(): void
     {
         $this->project = ['id' => 'e93270e9-4065-0f1d-bc62-63e3431a1a0a', 'title' => 'Proyecto',
+            'budget' => ['provided' => ['amount' => 3500, 'currency' => 'EUR'], 'spent' => ['total' => ['amount' => 100, 'currency' => 'EUR']]],
             'customer' => ['type' => 'contact', 'id' => '4a853f3d-0c10-0b3d-9c7d-20d3a2be67ad'],
             'custom_fields' => [['id' => '4339375f-ed77-02d9-a157-7da9f9e4bfac', 'value' => '3448.64 EUR']]];
         $this->mock(TeamleaderService::class, function ($m): void {
@@ -439,6 +441,7 @@ class CosPaymentCrmSyncTest extends TestCase
             $m->shouldReceive('webhookObject')->andReturnUsing(fn ($type) => $type === 'project' ? $this->project
                 : ['id' => '4a853f3d-0c10-0b3d-9c7d-20d3a2be67ad', 'emails' => [['email' => 'client@example.com']]]);
             $m->shouldReceive('updatePaymentProject')->andReturnUsing(function ($id, $data): void {
+                $this->assertSame(['amount' => 3500, 'currency' => 'EUR'], $data['budget']);
                 $this->projectWrites++; $this->project = array_merge($this->project, $data);
             });
             $m->shouldReceive('paymentReceiptNotes')->andReturnUsing(fn () => $this->notes);

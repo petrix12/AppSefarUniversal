@@ -12,6 +12,31 @@ use PHPUnit\Framework\TestCase;
 
 class TeamleaderPhasePaymentRulesTest extends TestCase
 {
+    #[\PHPUnit\Framework\Attributes\DataProvider('projectBudgetShapes')]
+    public function test_project_budget_is_translated_from_the_read_schema_to_a_valid_update_money_object(array $budget, ?array $expected): void
+    {
+        $writer = new TeamleaderProjectPaymentWriter($this->createMock(TeamleaderService::class));
+        $payload = $writer->projectUpdatePayload(['budget' => $budget], []);
+        if ($expected === null) $this->assertArrayNotHasKey('budget', $payload);
+        else $this->assertSame($expected, $payload['budget']);
+    }
+
+    public static function projectBudgetShapes(): array
+    {
+        return [
+            'documented provided/spent response' => [
+                ['provided' => ['amount' => 3500, 'currency' => 'EUR'], 'spent' => ['total' => ['amount' => 200, 'currency' => 'EUR']]],
+                ['amount' => 3500, 'currency' => 'EUR'],
+            ],
+            'provided zero is preserved' => [['provided' => ['amount' => 0, 'currency' => 'EUR']], ['amount' => 0, 'currency' => 'EUR']],
+            'direct legacy Money' => [['amount' => 1200, 'currency' => 'EUR'], ['amount' => 1200, 'currency' => 'EUR']],
+            'numeric string' => [['provided' => ['amount' => '50.25', 'currency' => 'EUR']], ['amount' => 50.25, 'currency' => 'EUR']],
+            'no provided budget' => [['spent' => ['total' => ['amount' => 20, 'currency' => 'EUR']]], null],
+            'empty budget' => [[], null],
+            'incomplete Money' => [['provided' => ['amount' => 30]], null],
+        ];
+    }
+
     public function test_a_confirmed_final_installment_proves_the_complete_paid_total_without_double_counting(): void
     {
         $method = new \ReflectionMethod(TeamleaderPhasePaymentService::class, 'confirmedPortalPaidFloor');

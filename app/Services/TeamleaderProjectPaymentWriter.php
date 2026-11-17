@@ -114,11 +114,16 @@ class TeamleaderProjectPaymentWriter
             ];
         }
 
-        if (isset($project['budget']) && is_array($project['budget'])) {
-            $payload['budget'] = array_filter([
-                'amount' => $project['budget']['amount'] ?? null,
-                'currency' => $project['budget']['currency'] ?? null,
-            ], static fn ($value) => $value !== null);
+        // projects.info returns budget.provided plus spent/forecast figures;
+        // projects.update expects the provided Money object itself.
+        $budget = data_get($project, 'budget.provided', $project['budget'] ?? null);
+        if (is_array($budget) && isset($budget['amount'], $budget['currency'])
+            && is_numeric($budget['amount']) && is_finite((float) $budget['amount'])
+            && is_string($budget['currency']) && preg_match('/^[A-Z]{3}$/', $budget['currency'])) {
+            $payload['budget'] = [
+                'amount' => is_string($budget['amount']) ? (float) $budget['amount'] : $budget['amount'],
+                'currency' => $budget['currency'],
+            ];
         }
 
         $payload['custom_fields'] = $customFields;
