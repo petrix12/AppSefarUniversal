@@ -174,7 +174,7 @@ class HubspotService
     private function makeHubspotClient()
     {
         return Factory::createWithAccessToken(
-            env('HUBSPOT_KEY'),
+            config('services.hubspot.key'),
             $this->makeHttpClient()
         );
     }
@@ -192,7 +192,7 @@ class HubspotService
 
     private function hubspotIpResolve(): string
     {
-        $mode = strtolower((string) env('HUBSPOT_FORCE_IP_RESOLVE', 'v4'));
+        $mode = strtolower((string) config('services.hubspot.force_ip_resolve', 'v4'));
 
         return in_array($mode, ['v4', 'v6'], true) ? $mode : 'v4';
     }
@@ -200,7 +200,7 @@ class HubspotService
     private function hubspotCaBundle()
     {
         $paths = array_filter([
-            env('HUBSPOT_CA_BUNDLE'),
+            config('services.hubspot.ca_bundle'),
             ini_get('curl.cainfo') ?: null,
             ini_get('openssl.cafile') ?: null,
             base_path('storage/certs/cacert.pem'),
@@ -996,7 +996,7 @@ class HubspotService
     {
         if (! in_array($entity, ['contacts', 'deals'], true) || ! ctype_digit($id)) throw new \InvalidArgumentException('Invalid CRM object.');
         $response = $this->makeHttpClient()->request('GET', "https://api.hubapi.com/crm/v3/objects/$entity/$id", [
-            'headers' => ['Authorization' => 'Bearer '.env('HUBSPOT_KEY')],
+            'headers' => ['Authorization' => 'Bearer '.config('services.hubspot.key')],
             'query' => ['properties' => 'hs_object_id'], 'http_errors' => false,
         ]);
         if ($response->getStatusCode() === 404) return false;
@@ -1037,6 +1037,7 @@ class HubspotService
             // Campos adicionales requeridos de HubSpot
             $requiredHubspotFields = [
                 'fecha_nac',
+                'hs_merged_object_ids',
                 'firstname',
                 'lastmodifieddate',
                 'lastname',
@@ -1579,7 +1580,7 @@ class HubspotService
             $legacyClient = $this->makeHttpClient([
                 'base_uri' => 'https://api.hubapi.com',
             ]);
-            $token = env('HUBSPOT_KEY');
+            $token = config('services.hubspot.key');
 
             // 3. Cliente v3 de archivos (File Manager)
             $filesClient = $this->makeHubspotClient();
@@ -1835,7 +1836,7 @@ class HubspotService
 
     private function hubspotThrottle(): void
     {
-        $milliseconds = (int) env('HUBSPOT_TASKS_THROTTLE_MS', 250);
+        $milliseconds = (int) config('services.hubspot.tasks_throttle_ms', 250);
 
         if ($milliseconds > 0) {
             \App\Support\CosPageTiming::external('hubspot_throttle', 'HubSpot: espera local antes de llamar a la API', fn () => usleep($milliseconds * 1000));

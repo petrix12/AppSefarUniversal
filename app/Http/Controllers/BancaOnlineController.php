@@ -962,19 +962,19 @@ class BancaOnlineController extends Controller
     private function stripePublicKey(string $countrySlug): ?string
     {
         if ($this->catalog->stripeAccountForCountry($countrySlug) === 'portugal') {
-            return env('STRIPE_KEY_PORT') ?: env('STRIPE_KEY');
+            return config('services.stripe.key_port') ?: config('services.stripe.key');
         }
 
-        return env('STRIPE_KEY');
+        return config('services.stripe.key');
     }
 
     private function stripeSecretKey(string $countrySlug): ?string
     {
         if ($this->catalog->stripeAccountForCountry($countrySlug) === 'portugal') {
-            return env('STRIPE_SECRET_PORT') ?: env('STRIPE_SECRET');
+            return config('services.stripe.secret_port') ?: config('services.stripe.secret');
         }
 
-        return env('STRIPE_SECRET');
+        return config('services.stripe.secret');
     }
 
     private function appendJsonValue($current, $value): string

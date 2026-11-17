@@ -830,6 +830,7 @@
                                 'small_balance_ignored' => 'No cobrable',
                                 'pending' => 'Pendiente',
                                 'review' => 'Revisar',
+                                'conversion_pending' => 'Conversión pendiente',
                                 'exonerated' => 'Exonerado',
                                 'included' => 'Incluido',
                                 'empty' => 'Sin datos',
@@ -840,6 +841,7 @@
                                 'small_balance_ignored' => 'bg-secondary',
                                 'pending' => 'bg-danger',
                                 'review' => 'bg-danger',
+                                'conversion_pending' => 'bg-warning text-dark',
                                 'exonerated' => 'bg-info text-dark',
                                 'included' => 'bg-secondary',
                                 'empty' => 'bg-light text-dark',
@@ -877,17 +879,24 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:.55rem; padding:.85rem;">
-                                            <div class="small text-muted">Pagado / abonado</div>
+                                            <div class="small text-muted">Pagado / abonado{{ !empty($tlPaymentTotals['conversion_pending_count']) ? ' (parcial)' : '' }}</div>
                                             <div style="font-size:1.15rem; font-weight:800; color:#166534;">
                                                 {{ $tlMoney($tlPaymentTotals['paid_amount'] ?? 0) }}
                                             </div>
+                                            @if(!empty($tlPaymentTotals['conversion_pending_count']))
+                                                <div class="small text-muted">Faltan abonos por convertir. El total aún no está completo.</div>
+                                            @endif
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:.55rem; padding:.85rem;">
                                             <div class="small text-muted">Saldo pendiente</div>
                                             <div style="font-size:1.15rem; font-weight:800; color:#9a3412;">
-                                                {{ $tlMoney($tlPaymentTotals['balance_amount'] ?? 0) }}
+                                                @if(!empty($tlPaymentTotals['conversion_pending_count']))
+                                                    Pendiente de cálculo
+                                                @else
+                                                    {{ $tlMoney($tlPaymentTotals['balance_amount'] ?? 0) }}
+                                                @endif
                                             </div>
                                             @if((float) ($tlPaymentTotals['non_collectible_balance_amount'] ?? 0) > 0)
                                                 <div class="small text-muted">
@@ -938,6 +947,12 @@
                                                         <td class="text-end">{{ $tlMoney($phase['effective_preestab_amount'] ?? 0) }}</td>
                                                         <td class="text-end">
                                                             {{ $tlMoney($phase['effective_paid_amount'] ?? 0) }}
+                                                            @if(($phase['payment_total_complete'] ?? $phase['payment_conversion_complete'] ?? true) === false)
+                                                                <div class="small text-muted">Importe parcial; falta convertir abonos.</div>
+                                                            @endif
+                                                            @if((float) ($phase['portal_paid_amount'] ?? 0) > 0)
+                                                                <div class="small text-muted">Incluye {{ $tlMoney($phase['portal_paid_amount']) }} pagados en la App.</div>
+                                                            @endif
                                                             @if((float) ($phase['converted_foreign_paid_amount'] ?? 0) > 0)
                                                                 <div class="small text-muted">
                                                                     Incluye {{ $tlMoney($phase['converted_foreign_paid_amount']) }} en cuotas convertidas
@@ -945,7 +960,11 @@
                                                             @endif
                                                         </td>
                                                         <td class="text-end fw-bold {{ $collectibleBalance > 0 ? 'text-danger' : 'text-success' }}">
-                                                            {{ $tlMoney($collectibleBalance) }}
+                                                            @if(($phase['payment_total_complete'] ?? $phase['payment_conversion_complete'] ?? true) === false)
+                                                                <span class="text-warning">Pendiente de cálculo</span>
+                                                            @else
+                                                                {{ $tlMoney($collectibleBalance) }}
+                                                            @endif
                                                             @if((float) ($phase['non_collectible_balance_amount'] ?? 0) > 0)
                                                                 <div class="small text-muted fw-normal">
                                                                     Diferencial no cobrable: {{ $tlMoney($phase['non_collectible_balance_amount']) }}
@@ -2566,7 +2585,9 @@
                                             @php
                                                 $monto += $compra["monto"];
                                             @endphp
-                                            @if($compra["servicio_hs_id"])
+                                            @if(in_array($compra['source'] ?? null, [\App\Services\TeamleaderPhasePaymentService::PURCHASE_SOURCE, \App\Services\TeamleaderPhasePaymentService::INSTALLMENT_SOURCE, \App\Services\TeamleaderPhasePaymentService::HISTORY_SOURCE], true))
+                                                {{ $compra['descripcion'] }}
+                                            @elseif($compra["servicio_hs_id"])
                                                 {{$compra["servicio_hs_id"]}}
                                             @else
                                                 @if ($compra["phasenum"]<10)
@@ -2583,7 +2604,7 @@
                                         @endforeach
                                     </td>
                                     <td>
-                                        {{ format_money($monto) }} €
+                                        {{ format_money($monto, 2, ',', '.') }} €
                                     </td>
                                     <td>
                                         @if($cosViewRoleId == 1)

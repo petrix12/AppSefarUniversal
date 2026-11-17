@@ -275,8 +275,8 @@ class SefarMcpServer extends Command
 
     private function iniciarSesion(array $arguments): array
     {
-        $email = trim((string) (($arguments['email'] ?? '') ?: (env('SEFAR_MCP_LOGIN_EMAIL') ?: env('SEFAR_LOGIN_EMAIL'))));
-        $password = (string) (($arguments['password'] ?? '') ?: (env('SEFAR_MCP_LOGIN_PASSWORD') ?: env('SEFAR_LOGIN_PASSWORD')));
+        $email = trim((string) (($arguments['email'] ?? '') ?: config('mcp.login_email')));
+        $password = (string) (($arguments['password'] ?? '') ?: config('mcp.login_password'));
         $twoFactorCode = trim((string) ($arguments['two_factor_code'] ?? ''));
 
         if ($email === '' || $password === '') {

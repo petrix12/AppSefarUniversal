@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\CosIdentityConflictException;
 use App\Exceptions\CosSourceRefreshException;
 use App\Models\MondayData;
 use App\Models\MondayFormBuilder;
@@ -9,6 +10,7 @@ use App\Models\Negocio;
 use App\Models\Servicio;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -257,6 +259,9 @@ class ClientCosSnapshotService
             try {
                 $linkedContact = $this->linkExistingHubspotContact($user, $forceExternalRefresh);
             } catch (\Throwable $exception) {
+                if ($exception instanceof CosSourceRefreshException) {
+                    throw $exception;
+                }
                 throw new CosSourceRefreshException('hubspot', $exception);
             }
 
@@ -267,15 +272,13 @@ class ClientCosSnapshotService
             }
         }
 
-        $callbacks = [
-            'teamleader' => fn () => $syncService->syncWithTeamleader($user, $forceExternalRefresh),
-        ];
-
+        $callbacks = [];
         if (filled($user->hs_id)) {
             $callbacks['hubspot'] = fn () => $syncService->syncWithHubspot($user, $forceExternalRefresh);
         } else {
             $sync['hubspot']['skipped'] = 'missing_hs_id_no_existing_contact';
         }
+        $callbacks['teamleader'] = fn () => $syncService->syncWithTeamleader($user, $forceExternalRefresh);
 
         $sourceErrors = [];
         $guardedCallbacks = [];
@@ -284,6 +287,9 @@ class ClientCosSnapshotService
                 try {
                     return $callback();
                 } catch (\Throwable $exception) {
+                    if ($exception instanceof CosIdentityConflictException) {
+                        throw $exception;
+                    }
                     $sourceErrors[$source] = $exception;
 
                     return null;
@@ -294,6 +300,9 @@ class ClientCosSnapshotService
         try {
             $apiResults = $this->hubspotService->executeConcurrent($guardedCallbacks);
         } catch (\Throwable $e) {
+            if ($e instanceof CosSourceRefreshException) {
+                throw $e;
+            }
             Log::error('COS/MCP: error refrescando fuentes externas', [
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
@@ -305,6 +314,9 @@ class ClientCosSnapshotService
         if ($sourceErrors !== []) {
             $source = array_key_first($sourceErrors);
 
+            if ($sourceErrors[$source] instanceof CosSourceRefreshException) {
+                throw $sourceErrors[$source];
+            }
             throw new CosSourceRefreshException($source, $sourceErrors[$source]);
         }
 
@@ -375,6 +387,7 @@ class ClientCosSnapshotService
                 continue;
             }
 
+            app(HubspotClientIdentityGuard::class)->assertForUser($user, $contact);
             $user->hs_id = (string) $contact['id'];
             $user->save();
 
@@ -399,6 +412,10 @@ class ClientCosSnapshotService
 
     private function applyHubspotUpdatesToUser(User $user, array $contact, UserSyncService $syncService): array
     {
+        $identity = app(HubspotClientIdentityGuard::class);
+        // Validate even if the remote timestamp is older or no fields change:
+        // deals and files must not be imported for an ambiguous identity.
+        $identity->assertForUser($user, $contact);
         try {
             $fieldUpdates = $syncService->calculateFieldUpdates($user, $contact);
         } catch (\Throwable $e) {
@@ -424,7 +441,13 @@ class ClientCosSnapshotService
             $user->{$field} = $value;
         }
 
-        $user->save();
+        try {
+            $user->save();
+        } catch (UniqueConstraintViolationException $exception) {
+            // Another request may claim an identity after the preflight check.
+            $identity->assertForUser($user, $contact, $exception);
+            throw $exception;
+        }
 
         Log::info('COS/MCP: usuario actualizado desde HubSpot', [
             'user_id' => $user->id,

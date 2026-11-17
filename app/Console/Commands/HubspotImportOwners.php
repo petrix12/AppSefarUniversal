@@ -16,7 +16,7 @@ class HubspotImportOwners extends Command
 
     public function handle(): int
     {
-        $hubspot = Factory::createWithAccessToken(env('HUBSPOT_KEY'));
+        $hubspot = Factory::createWithAccessToken(config('services.hubspot.key'));
 
         $includeInactive = $this->option('include-inactive');
         $dryRun = $this->option('dry-run');

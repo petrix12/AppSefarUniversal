@@ -59,7 +59,7 @@ class HubspotSyncAll extends Command
 
     public function handle(): int
     {
-        $this->hubspot   = Factory::createWithAccessToken(config('services.hubspot.key', env('HUBSPOT_KEY')));
+        $this->hubspot   = Factory::createWithAccessToken(config('services.hubspot.key'));
         $this->dryRun    = (bool)  $this->option('dry-run');
         $this->matchMode = (string) $this->option('match');
         $this->chunkSize = (int)   $this->option('chunk');

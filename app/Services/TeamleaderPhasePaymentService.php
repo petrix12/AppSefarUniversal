@@ -50,6 +50,13 @@ class TeamleaderPhasePaymentService
 
         $records = collect();
         $historicalPaidAmounts = $this->historicalPaidAmounts($user, $processDeals);
+        $portalInstallments = Compras::where('id_user', $user->id)
+            ->where('source', self::INSTALLMENT_SOURCE)->where('pagado', 1)->where('monto', '>', 0)
+            ->get()->filter(fn (Compras $receipt) => strtoupper((string) data_get($receipt->metadata, 'display_currency', 'EUR')) === 'EUR')
+            ->groupBy(fn (Compras $receipt) => $this->purchaseKey(
+                (string) data_get($receipt->metadata, 'teamleader_project_id'),
+                (int) data_get($receipt->metadata, 'phase', $receipt->phasenum)
+            ));
 
         if (! isset($analysis['projects']) || ! is_array($analysis['projects'])) {
             return $records;
@@ -72,13 +79,33 @@ class TeamleaderPhasePaymentService
                 }
 
                 $key = $this->purchaseKey($projectId, $phaseNumber);
+                $receipts = $portalInstallments->get($key, collect());
+                // Receipt metadata is an immutable snapshot of the confirmed
+                // balance at checkout. Reuse its dated ECB conversions before
+                // requesting those same historical rates again.
+                $knownConversions = $receipts->flatMap(fn (Compras $receipt) =>
+                    data_get($receipt->metadata, 'foreign_payment_conversions_at_sync', [])
+                )->all();
                 $preestablished = round((float) ($phase['effective_preestab_amount'] ?? 0), 2);
                 $foreignConversion = app(TeamleaderHistoricalExchangeRateService::class)
-                    ->convertForeignEntriesToEuro(data_get($phase, 'paid_parse.dated_entries', []));
+                    ->convertForeignEntriesToEuro(data_get($phase, 'paid_parse.dated_entries', []), $knownConversions);
                 $this->syncHistoricalPaymentEntries($user, $project, $phase, $foreignConversion, $historicalEntries);
+                $portalPaidFloor = $this->confirmedPortalPaidFloor($receipts);
+                $settledByPortal = $preestablished > 0
+                    && empty(data_get($phase, 'preestab_parse.requires_currency_conversion'))
+                    && $portalPaidFloor >= $preestablished - 0.01;
                 $hasUnconvertedCurrency = ! empty(data_get($phase, 'preestab_parse.requires_currency_conversion'))
                     || ! empty($foreignConversion['unconverted_entries']);
-                if (! $hasUnconvertedCurrency) {
+                $phase['payment_conversion_complete'] = ! $hasUnconvertedCurrency;
+                $phase['payment_total_complete'] = ! $hasUnconvertedCurrency || $settledByPortal;
+                $phase['unconverted_foreign_entries'] = $foreignConversion['unconverted_entries'] ?? [];
+                if ($hasUnconvertedCurrency && ! $settledByPortal) {
+                    $phase['needs_review'] = true;
+                    $phase['review_reasons'] = array_values(array_unique(array_merge(
+                        $phase['review_reasons'] ?? [], ['currency_conversion_required']
+                    )));
+                }
+                if (! $hasUnconvertedCurrency || $settledByPortal) {
                     $phase['review_reasons'] = array_values(array_filter(
                         $phase['review_reasons'] ?? [],
                         fn (string $reason) => $reason !== 'currency_conversion_required'
@@ -95,7 +122,7 @@ class TeamleaderPhasePaymentService
                 // legacy negocio totals. It must count once, so reconcile
                 // the two independently confirmed totals instead of adding
                 // them together.
-                $paid = $this->reconciledPaidAmount($teamleaderPaid, $historicalPaid);
+                $paid = max($this->reconciledPaidAmount($teamleaderPaid, $historicalPaid), $portalPaidFloor);
                 $balance = round(max($preestablished - $paid, 0), 2);
                 $overpaid = round(max($paid - $preestablished, 0), 2);
 
@@ -103,6 +130,8 @@ class TeamleaderPhasePaymentService
                 $phase['converted_foreign_paid_amount'] = (float) ($foreignConversion['converted_amount'] ?? 0);
                 $phase['foreign_payment_conversions'] = $foreignConversion['conversions'] ?? [];
                 $phase['historical_paid_amount'] = $historicalPaid;
+                $phase['portal_paid_amount'] = round((float) $receipts->sum('monto'), 2);
+                $phase['portal_confirmed_paid_total'] = $portalPaidFloor;
                 $phase['paid_amount'] = $paid;
                 $phase['effective_paid_amount'] = $paid;
                 $phase['balance_amount'] = $balance;
@@ -114,8 +143,10 @@ class TeamleaderPhasePaymentService
                         : ($balance <= 0.01 ? 'paid' : ($paid > 0 ? 'partial' : 'pending'));
                 }
 
-                $this->notifyPhaseThreeOverpayment($user, $project, $phase);
-                $this->notifySmallBalance($user, $project, $phase);
+                if ($phase['payment_total_complete']) {
+                    $this->notifyPhaseThreeOverpayment($user, $project, $phase);
+                    $this->notifySmallBalance($user, $project, $phase);
+                }
 
                 // A payment record only makes sense when Teamleader contains a
                 // real, readable pre-established amount for this phase.
@@ -123,7 +154,8 @@ class TeamleaderPhasePaymentService
                 // still visibly flagged in COS and phase 3 sends its internal
                 // notification above; only other data-quality issues pause
                 // record creation.
-                $hasBlockingReview = ! empty($phase['needs_review']) && $overpaid <= 0.01;
+                $hasBlockingReview = ! $phase['payment_total_complete']
+                    || (! empty($phase['needs_review']) && $overpaid <= 0.01);
 
                 $purchase = $existing->get($key) ?? $this->legacyPurchaseFor($user, $projectId, $phaseNumber);
                 if ($preestablished <= 0 || $hasBlockingReview) {
@@ -233,16 +265,17 @@ class TeamleaderPhasePaymentService
      */
     public function paymentSummaryRow(array $payment): array
     {
+        $conversionPending = ($payment['payment_total_complete'] ?? $payment['payment_conversion_complete'] ?? true) === false;
         $status = $payment['status'] ?? 'empty';
         $balance = round((float) ($payment['balance_amount'] ?? 0), 2);
-        $isNonCollectible = $this->isSmallBalance($payment)
+        $isNonCollectible = ! $conversionPending && $this->isSmallBalance($payment)
             && empty($payment['needs_review'])
             && in_array($status, ['partial', 'pending'], true);
 
         return array_merge($payment, [
-            'collectible_balance_amount' => $isNonCollectible ? 0.0 : $balance,
+            'collectible_balance_amount' => $conversionPending || $isNonCollectible ? 0.0 : $balance,
             'non_collectible_balance_amount' => $isNonCollectible ? $balance : 0.0,
-            'display_status' => $isNonCollectible ? 'small_balance_ignored' : $status,
+            'display_status' => $conversionPending ? 'conversion_pending' : ($isNonCollectible ? 'small_balance_ignored' : $status),
         ]);
     }
 
@@ -517,6 +550,22 @@ class TeamleaderPhasePaymentService
     private function reconciledPaidAmount(float $teamleaderPaid, float $historicalPaid): float
     {
         return round(max($teamleaderPaid, $historicalPaid, 0), 2);
+    }
+
+    private function confirmedPortalPaidFloor(Collection $receipts): float
+    {
+        $confirmed = 0.0;
+        foreach ($receipts->unique('id')->sortBy([['paid_at', 'asc'], ['id', 'asc']]) as $receipt) {
+            $baseline = data_get($receipt->metadata, 'paid_amount_at_sync');
+            // Do not guess which remote installments an older receipt mirrors.
+            // Modern portal receipts explicitly retain the pre-payment total.
+            if (! is_numeric($baseline) || (float) $baseline < 0) {
+                continue;
+            }
+            $confirmed = round(max($confirmed, (float) $baseline) + (float) $receipt->monto, 2);
+        }
+
+        return $confirmed;
     }
 
     /**

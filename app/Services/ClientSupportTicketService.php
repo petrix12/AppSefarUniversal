@@ -140,8 +140,8 @@ class ClientSupportTicketService
 
     private function createHubspotTicket(string $subject, string $content, string $contactId): array
     {
-        $configuredPipeline = env('HUBSPOT_SUPPORT_TICKET_PIPELINE');
-        $configuredStage = env('HUBSPOT_SUPPORT_TICKET_STAGE');
+        $configuredPipeline = config('services.hubspot.support_tickets.pipeline');
+        $configuredStage = config('services.hubspot.support_tickets.stage');
         $pipeline = $this->hubspot->getTicketPipelineStage($configuredPipeline, $configuredStage);
 
         if (
@@ -165,7 +165,7 @@ class ClientSupportTicketService
             'content' => $content,
             'hs_pipeline' => $pipeline['hs_pipeline'] ?? null,
             'hs_pipeline_stage' => $pipeline['hs_pipeline_stage'] ?? null,
-            'hs_ticket_priority' => env('HUBSPOT_SUPPORT_TICKET_PRIORITY', 'MEDIUM'),
+            'hs_ticket_priority' => config('services.hubspot.support_tickets.priority', 'MEDIUM'),
         ], $contactId);
     }
 

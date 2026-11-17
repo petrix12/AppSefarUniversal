@@ -12,6 +12,37 @@ use PHPUnit\Framework\TestCase;
 
 class TeamleaderPhasePaymentRulesTest extends TestCase
 {
+    public function test_a_confirmed_final_installment_proves_the_complete_paid_total_without_double_counting(): void
+    {
+        $method = new \ReflectionMethod(TeamleaderPhasePaymentService::class, 'confirmedPortalPaidFloor');
+        $receipt = new Compras(['monto' => 51.36, 'metadata' => ['paid_amount_at_sync' => 3448.64]]);
+        $receipt->id = 7786;
+
+        $this->assertSame(3500.0, $method->invoke(new TeamleaderPhasePaymentService(), collect([$receipt, $receipt])));
+    }
+
+    public function test_successive_installments_use_each_checkout_baseline_without_adding_previous_receipts_twice(): void
+    {
+        $method = new \ReflectionMethod(TeamleaderPhasePaymentService::class, 'confirmedPortalPaidFloor');
+        $first = new Compras(['monto' => 25.36, 'metadata' => ['paid_amount_at_sync' => 3448.64]]);
+        $first->id = 1;
+        $second = new Compras(['monto' => 26, 'metadata' => ['paid_amount_at_sync' => 3474]]);
+        $second->id = 2;
+
+        $this->assertSame(3500.0, $method->invoke(new TeamleaderPhasePaymentService(), collect([$second, $first])));
+    }
+
+    public function test_an_incomplete_conversion_is_not_a_collectible_or_forgiven_balance(): void
+    {
+        $row = (new TeamleaderPhasePaymentService())->paymentSummaryRow([
+            'balance_amount' => 20, 'status' => 'partial', 'payment_total_complete' => false,
+        ]);
+
+        $this->assertSame(0.0, $row['collectible_balance_amount']);
+        $this->assertSame(0.0, $row['non_collectible_balance_amount']);
+        $this->assertSame('conversion_pending', $row['display_status']);
+    }
+
     public function test_each_phase_is_evaluated_as_an_independent_payment(): void
     {
         $project = new TlProject([
@@ -57,7 +88,7 @@ class TeamleaderPhasePaymentRulesTest extends TestCase
 
     public function test_project_update_payload_preserves_mutable_project_data(): void
     {
-        $writer = new TeamleaderProjectPaymentWriter(new TeamleaderService());
+        $writer = new TeamleaderProjectPaymentWriter($this->createMock(TeamleaderService::class));
 
         $payload = $writer->projectUpdatePayload([
             'title' => 'Proyecto de prueba',

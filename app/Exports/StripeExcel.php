@@ -22,7 +22,7 @@ class StripeExcel implements FromCollection, WithHeadings
     }
 
     public function collection() {
-        Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+        Stripe\Stripe::setApiKey(config('services.stripe.secret'));
 
         $mycharges = Stripe\Charge::all([
             'created' => [

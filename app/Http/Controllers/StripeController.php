@@ -20,7 +20,7 @@ class StripeController extends Controller
     }
 
     public function stripefind(Request $request){
-    	Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+        Stripe\Stripe::setApiKey(config('services.stripe.secret'));
     	$variable = json_decode(json_encode($request->all()),true);
 
     	$dbsearch = json_decode(json_encode(DB::table('users')->where('email', $variable["info"])->get(["id", "name", "email", "passport", "id_pago"])),true);
@@ -46,7 +46,7 @@ class StripeController extends Controller
     }
 
     public function stripegetidpago(Request $request){
-    	Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+        Stripe\Stripe::setApiKey(config('services.stripe.secret'));
     	$variable = json_decode(json_encode($request->all()),true);
 
     	$dbsearch = json_decode(json_encode(DB::table('users')->where('email', $variable["info"])->get(["id", "name", "email", "passport", "id_pago"])),true);
@@ -89,7 +89,7 @@ class StripeController extends Controller
     }
 
     public function listLatestStripeData(){
-    	Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+        Stripe\Stripe::setApiKey(config('services.stripe.secret'));
 
     	$startOfMonth = strtotime('first day of this month this year midnight');
 		$endOfMonth = strtotime('first day of next month this year midnight');
@@ -196,7 +196,7 @@ class StripeController extends Controller
 			$endOfMonth = strtotime('first day of '.$nextmonth.' '. ($year+1) .' midnight');
     	}
 
-		Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+		Stripe\Stripe::setApiKey(config('services.stripe.secret'));
 
 		$mycharges = Stripe\Charge::all([
 			'created' => [

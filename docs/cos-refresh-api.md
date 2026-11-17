@@ -93,6 +93,7 @@ Los límites de peticiones y las reglas de asociación automática existentes si
 | `401` | Falta el Bearer token, no es válido, venció o fue revocado; o se intentó usar una sesión web. |
 | `403` | Falta `cos:refresh` o el dueño del token tiene rol `Cliente`. |
 | `404` | En la ruta por ID, el cliente no existe o el usuario destino no tiene rol `Cliente`. La búsqueda sin coincidencias devuelve `200` con alerta. |
+| `409` | Conflicto de identidad entre cuentas: `reason: identity_conflict`, `retryable: false`. Revisar vínculos y datos antes de reintentar. |
 | `422` | No se envió correo ni pasaporte, o alguno de los identificadores tiene un formato inválido. |
 | `429` | Se alcanzó el límite general de la API. |
 | `502` | No se pudo completar el refresco; `error` es `cos_refresh_failed`. Cuando se conoce la fuente, `source` indica `hubspot`, `teamleader` o `monday`. |
@@ -100,6 +101,43 @@ Los límites de peticiones y las reglas de asociación automática existentes si
 Ante un fallo del refresco, no se reemplaza ni se renueva la fecha del COS anterior. Las sincronizaciones que se hayan completado antes del fallo pueden haber actualizado contactos, negocios o datos Monday: no hay una transacción distribuida entre las fuentes. Ajustar el timeout del consumidor/proxy para esperar las consultas externas.
 
 Cuando el cliente se identificó, un fallo de refresco también incluye `data.client_id`. Si no hay coincidencias, `data` sigue siendo `null`. El [módulo y endpoint de notas](client-notes-api.md) permite usar ese ID para añadir una nota al cliente.
+
+Cada fallo de refresco devuelve una referencia UUID en `reference` y en la cabecera `X-Error-Reference`. El registro privado `COS/API: cos_refresh_failed` contiene esa misma referencia, `user_id`, duración y la clase/ubicación de la causa original; se mantiene el reporte habitual de la excepción. La respuesta no expone mensajes técnicos, rutas del servidor ni trazas. La referencia es distinta en cada intento.
+
+Para localizar un fallo en los archivos del canal `single` o `daily`, sustituir el UUID por el recibido:
+
+```sh
+grep -n -A 30 -B 2 -F 'UUID_RECIBIDO' storage/logs/laravel*.log
+```
+
+Si el canal configurado envía los registros a otro destino, buscar allí la referencia. En versiones anteriores, `report($exception)` no añadía el ID del cliente al error; que la búsqueda por `user_id` no encuentre nada no significa que no se registrara la excepción.
+
+### Conflictos de identidad
+
+Antes de importar archivos, negocios o aplicar restricciones desde HubSpot, se comprueba que el ID del contacto (incluidos sus alias fusionados), el correo y el pasaporte no pertenezcan a otra cuenta de la App. Se compara correo/pasaporte ignorando mayúsculas y espacios exteriores. La comprobación también se aplica a contactos cacheados y a la vinculación inicial. Las fusiones sin colisiones siguen funcionando.
+
+Un conflicto detiene el refresco: no se omite el dato duplicado para continuar calculando con la identidad ambigua. El COS anterior y su vencimiento se conservan. La respuesta mantiene `error: cos_refresh_failed`, el ID del cliente solicitado y la referencia de diagnóstico; no muestra datos de la otra cuenta:
+
+```json
+{
+  "message": "La identidad del contacto de HubSpot entra en conflicto con otra cuenta de la App. Revisa la vinculación antes de actualizar el COS.",
+  "error": "cos_refresh_failed",
+  "reference": "UUID_DEL_INTENTO",
+  "source": "hubspot",
+  "reason": "identity_conflict",
+  "retryable": false,
+  "conflicting_fields": ["hs_id", "passport"],
+  "action": {"type": "review_client_identity"},
+  "data": {"client_id": 123},
+  "meta": {"found": true, "refreshed": false, "matched_by": "email"}
+}
+```
+
+Los IDs de las cuentas en conflicto quedan solo en el log privado (`identity_conflicts`). Una colisión de correo/pasaporte que se produzca entre la comprobación y el guardado también se clasifica como `409`. Otros fallos SQL siguen siendo errores y no se ocultan como conflictos de identidad.
+
+Para resolverlo, verificar la identidad de cada persona, su contacto canónico y cualquier fusión en HubSpot; corregir los vínculos desde la gestión autorizada. Los correos compartidos o incorrectos requieren revisión. No fusionar cuentas locales, borrar usuarios, quitar índices únicos ni reasignar negocios automáticamente para hacer pasar el refresco. En n8n, derivar `reason: identity_conflict` a revisión interna sin reintento automático ni entrega del COS anterior como si estuviera actualizado.
+
+### Fallos de Teamleader
 
 Una caída temporal de Teamleader, un timeout o una respuesta de autorización que no sea JSON no invalidan sus tokens almacenados ni requieren reconectar la cuenta. La respuesta distingue estos casos de un refresh token rechazado:
 
@@ -123,6 +161,7 @@ En n8n, el `502` detiene por defecto el flujo antes del nodo de notas. Para guar
 ## Verificación
 
 ```sh
+php vendor/phpunit/phpunit/phpunit tests/Feature/ClientCosIdentityConflictTest.php tests/Unit/ClientCosRefreshDiagnosticsTest.php
 php vendor/phpunit/phpunit/phpunit tests/Feature/ClientCosRefreshApiTest.php tests/Feature/CosMondayLookupTest.php
 php vendor/phpunit/phpunit/phpunit tests/Unit/TeamleaderFocusProviderTest.php tests/Feature/TeamleaderAuthorizationTest.php tests/Feature/TeamleaderForcedRefreshTest.php
 php vendor/phpunit/phpunit/phpunit --filter test_forced_classification_ignores_cached_ai_results_on_every_call tests/Unit/CosServiceTest.php

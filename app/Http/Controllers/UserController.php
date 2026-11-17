@@ -499,7 +499,7 @@ class UserController extends Controller
         $familiaresR = Agcliente::where('IDCliente', '=', $user->passport)->get();
 
         // Llamo a la Api Key de Hubspot
-        $hubspot = HubSpot\Factory::createWithAccessToken(env('HUBSPOT_KEY'));
+        $hubspot = HubSpot\Factory::createWithAccessToken(config('services.hubspot.key'));
 
         /*
 
@@ -1908,7 +1908,7 @@ class UserController extends Controller
                     : round((float) $paid['total'] + (float) ($foreignPaymentConversion['converted_amount'] ?? 0), 2);
                 $balance = round(max($preestablishedAmount - $paidAmount, 0), 2);
                 $overpaid = round(max($paidAmount - $preestablishedAmount, 0), 2);
-                $hasUnconvertedCurrency = ! empty($foreignPaymentConversion['unconverted_entries']);
+                $hasUnconvertedCurrency = ! empty($foreignPaymentConversion['unconverted_entries']) || $preestab['requires_currency_conversion'];
 
                 $rows[] = [
                     'source' => 'HubSpot',
@@ -1924,6 +1924,9 @@ class UserController extends Controller
                     'effective_paid_amount' => round($paidAmount, 2),
                     'converted_foreign_paid_amount' => $exoneratedOrIncluded ? 0.0 : (float) ($foreignPaymentConversion['converted_amount'] ?? 0),
                     'foreign_payment_conversions' => $foreignPaymentConversion['conversions'] ?? [],
+                    'unconverted_foreign_entries' => $foreignPaymentConversion['unconverted_entries'] ?? [],
+                    'payment_conversion_complete' => ! $hasUnconvertedCurrency,
+                    'payment_total_complete' => ! $hasUnconvertedCurrency,
                     'balance_amount' => $balance,
                     'overpaid_amount' => $overpaid,
                     'status' => $exoneratedOrIncluded ? 'exonerated' : ($hasUnconvertedCurrency || $overpaid > 0.01 ? 'review' : ($balance <= 0.01 ? 'paid' : ($paidAmount > 0 ? 'partial' : 'pending'))),
@@ -1997,6 +2000,9 @@ class UserController extends Controller
         'balance_amount' => round((float) $visibleTeamleaderPhases->sum('collectible_balance_amount'), 2),
         'non_collectible_balance_amount' => round((float) $visibleTeamleaderPhases->sum('non_collectible_balance_amount'), 2),
         'overpaid_amount' => round((float) $visibleTeamleaderPhases->sum('overpaid_amount'), 2),
+        'conversion_pending_count' => $visibleTeamleaderPhases->filter(fn ($phase) =>
+            ($phase['payment_total_complete'] ?? $phase['payment_conversion_complete'] ?? true) === false
+        )->count(),
     ];
 
     // The source of truth is Teamleader. Re-read purchases after creating or

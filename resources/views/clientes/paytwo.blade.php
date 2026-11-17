@@ -96,9 +96,9 @@
     </style>
 
     @if (auth()->user()->servicio == 'Constitución de Empresa' || auth()->user()->servicio == 'Representante Fiscal' || auth()->user()->servicio == 'Codigo  Fiscal' || auth()->user()->servicio == 'Apertura de cuenta' || auth()->user()->servicio == 'Trimestre contable' || auth()->user()->servicio == 'Cooperativa 10 años' || auth()->user()->servicio == 'Cooperativa 5 años' || auth()->user()->servicio == 'Portuguesa Sefardi' || auth()->user()->servicio == 'Portuguesa Sefardi - Subsanación' || auth()->user()->servicio == 'Certificación de Documentos - Portugal')
-    <form action="" method="POST" class="require-validation" data-cc-on-file="false" data-stripe-publishable-key="{{ env('STRIPE_KEY_PORT') }}" id="payment-form">
+    <form action="" method="POST" class="require-validation" data-cc-on-file="false" data-stripe-publishable-key="{{ config('services.stripe.key_port') }}" id="payment-form">
     @else
-    <form action="" method="POST" class="require-validation" data-cc-on-file="false" data-stripe-publishable-key="{{ env('STRIPE_KEY') }}" id="payment-form">
+    <form action="" method="POST" class="require-validation" data-cc-on-file="false" data-stripe-publishable-key="{{ config('services.stripe.key') }}" id="payment-form">
     @endif
         <div class="container-fluid px-2 py-3">
             <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
@@ -432,7 +432,7 @@
     </form>
 
     <script
-            src="https://www.paypal.com/sdk/js?client-id={{ env('PAYPAL_CLIENT_ID') }}&currency=EUR&components=buttons&enable-funding=venmo,paylater,card"
+            src="https://www.paypal.com/sdk/js?client-id={{ config('services.paypal.client_id') }}&currency=EUR&components=buttons&enable-funding=venmo,paylater,card"
             data-sdk-integration-source="developer-studio"
         ></script>
 

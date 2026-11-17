@@ -2040,7 +2040,7 @@ class ClienteController extends Controller
     public function revisarcupon(Request $request){
         $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->whereNull('deal_id')->get();
         $servicio = Servicio::where('id_hubspot', auth()->user()->servicio)->get();
-        $hubspot = HubSpot\Factory::createWithAccessToken(env('HUBSPOT_KEY'));
+        $hubspot = HubSpot\Factory::createWithAccessToken(config('services.hubspot.key'));
         $data = json_decode(json_encode($request->all()),true);
 
         $datos = json_decode(json_encode(DB::table('users')->where('id', auth()->user()->id)->get()),true);
@@ -2298,7 +2298,7 @@ class ClienteController extends Controller
 
                         $servicios = $this->mondayAnalysisServicesText($productos);
 
-                        $token = env('MONDAY_TOKEN');
+                        $token = config('services.monday.token');
                         $apiUrl = 'https://api.monday.com/v2';
                         $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
 
@@ -2344,7 +2344,7 @@ class ClienteController extends Controller
     }
 
     public function procesarPaypal(Request $request){
-        $hubspot = HubSpot\Factory::createWithAccessToken(env('HUBSPOT_KEY'));
+        $hubspot = HubSpot\Factory::createWithAccessToken(config('services.hubspot.key'));
 
         $servicio = Servicio::where('id_hubspot', auth()->user()->servicio)->get();
 
@@ -2583,7 +2583,7 @@ class ClienteController extends Controller
 
             $servicios = $this->mondayAnalysisServicesText($productos);
 
-            $token = env('MONDAY_TOKEN');
+            $token = config('services.monday.token');
             $apiUrl = 'https://api.monday.com/v2';
             $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
 
@@ -2991,13 +2991,13 @@ class ClienteController extends Controller
     }
 
     public function procesarpay(Request $request) {
-        $hubspot = HubSpot\Factory::createWithAccessToken(env('HUBSPOT_KEY'));
+        $hubspot = HubSpot\Factory::createWithAccessToken(config('services.hubspot.key'));
         //Lo que va dentro de la Funcion
 
         if (auth()->user()->servicio == 'Constitución de Empresa' || auth()->user()->servicio == 'Representante Fiscal' || auth()->user()->servicio == 'Codigo  Fiscal' || auth()->user()->servicio == 'Apertura de cuenta' || auth()->user()->servicio == 'Trimestre contable' || auth()->user()->servicio == 'Cooperativa 10 años' || auth()->user()->servicio == 'Cooperativa 5 años' || auth()->user()->servicio == 'Portuguesa Sefardi' || auth()->user()->servicio == 'Portuguesa Sefardi - Subsanación' || auth()->user()->servicio == 'Certificación de Documentos - Portugal') {
-            Stripe\Stripe::setApiKey(env('STRIPE_SECRET_PORT'));
+            Stripe\Stripe::setApiKey(config('services.stripe.secret_port'));
         } else {
-            Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+            Stripe\Stripe::setApiKey(config('services.stripe.secret'));
         }
 
 
@@ -3305,7 +3305,7 @@ class ClienteController extends Controller
 
                     $servicios = $this->mondayAnalysisServicesText($productos);
 
-                    $token = env('MONDAY_TOKEN');
+                    $token = config('services.monday.token');
                     $apiUrl = 'https://api.monday.com/v2';
                     $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
 
@@ -3348,13 +3348,13 @@ class ClienteController extends Controller
     }
 
     public function procesarpayfases(Request $request) {
-        $hubspot = HubSpot\Factory::createWithAccessToken(env('HUBSPOT_KEY'));
+        $hubspot = HubSpot\Factory::createWithAccessToken(config('services.hubspot.key'));
         //Lo que va dentro de la Funcion
 
         if (auth()->user()->servicio == 'Constitución de Empresa' || auth()->user()->servicio == 'Representante Fiscal' || auth()->user()->servicio == 'Codigo  Fiscal' || auth()->user()->servicio == 'Apertura de cuenta' || auth()->user()->servicio == 'Trimestre contable' || auth()->user()->servicio == 'Cooperativa 10 años' || auth()->user()->servicio == 'Cooperativa 5 años' || auth()->user()->servicio == 'Portuguesa Sefardi' || auth()->user()->servicio == 'Portuguesa Sefardi - Subsanación' || auth()->user()->servicio == 'Certificación de Documentos - Portugal') {
-            Stripe\Stripe::setApiKey(env('STRIPE_SECRET_PORT'));
+            Stripe\Stripe::setApiKey(config('services.stripe.secret_port'));
         } else {
-            Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+            Stripe\Stripe::setApiKey(config('services.stripe.secret'));
         }
 
         $servicio = Servicio::where('id_hubspot', auth()->user()->servicio)->get();
@@ -3804,7 +3804,7 @@ class ClienteController extends Controller
 
     public function procesarPagoStripe(Request $request) {
         try {
-            $hubspot = HubSpot\Factory::createWithAccessToken(env('HUBSPOT_KEY'));
+            $hubspot = HubSpot\Factory::createWithAccessToken(config('services.hubspot.key'));
 
             // Determinar qué clave de Stripe usar
             /*
@@ -3818,12 +3818,12 @@ class ClienteController extends Controller
                 auth()->user()->servicio == 'Portuguesa Sefardi' ||
                 auth()->user()->servicio == 'Portuguesa Sefardi - Subsanación' ||
                 auth()->user()->servicio == 'Certificación de Documentos - Portugal') {
-                \Stripe\Stripe::setApiKey(env('STRIPE_SECRET_PORT'));
+                \Stripe\Stripe::setApiKey(config('services.stripe.secret_port'));
             } else {
 
             }
                 */
-            \Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+            \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
 
             // Obtener datos del request
             // ✅ CORRECTO
@@ -4178,7 +4178,7 @@ class ClienteController extends Controller
                             $this->attachHubspotDealToCatalogPurchase($compra, $iddeal);
 
                             // ✅ Asociación via HTTP directo
-                            $hubspotToken = env('HUBSPOT_KEY');
+                            $hubspotToken = config('services.hubspot.key');
                             $associationUrl = "https://api.hubapi.com/crm/v4/objects/deals/{$iddeal}/associations/contacts/{$idcontact}";
 
                             $associationBody = json_encode([
@@ -4257,7 +4257,7 @@ class ClienteController extends Controller
 
                         $servicios = $this->mondayAnalysisServicesText($productos);
 
-                        $token = env('MONDAY_TOKEN');
+                        $token = config('services.monday.token');
                         $apiUrl = 'https://api.monday.com/v2';
                         $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
 
@@ -4788,7 +4788,7 @@ class ClienteController extends Controller
     private function registrarVentaPostPagoEnMonday($monto, $compras, string $formaPago, ?string $clienteRef = null, ?string $pagoRef = null): bool
     {
         try {
-            $token = env('MONDAY_TOKEN');
+            $token = config('services.monday.token');
 
             if (! $token) {
                 throw new \Exception('Falta MONDAY_TOKEN');
@@ -4891,7 +4891,7 @@ class ClienteController extends Controller
     private function registrarAuditoriaEtiquetadoVentasSefar($monto, $compras, string $formaPago, ?string $clienteRef = null, ?string $pagoRef = null): bool
     {
         try {
-            $token = env('MONDAY_TOKEN');
+            $token = config('services.monday.token');
 
             if (! $token) {
                 throw new \Exception('Falta MONDAY_TOKEN');
@@ -5014,7 +5014,7 @@ class ClienteController extends Controller
     protected function registrarVentaEnMonday($customer, $paymentIntent, $monto, $compras)
     {
         try {
-            $token = env('MONDAY_TOKEN');
+            $token = config('services.monday.token');
             $apiUrl = 'https://api.monday.com/v2';
             $headers = [
                 'Content-Type: application/json',
@@ -5412,7 +5412,7 @@ class ClienteController extends Controller
         ini_set('max_execution_time', 3000000);
         ini_set('max_input_time', 3000000);
 
-        $hubspot = HubSpot\Factory::createWithAccessToken(env('HUBSPOT_KEY'));
+        $hubspot = HubSpot\Factory::createWithAccessToken(config('services.hubspot.key'));
         $query = 'SELECT id, email, pago_cupon, pago_registro, hs_id FROM users where pago_cupon = "NOPAY" or id_pago = "NOPAY"';
 
         $globalcount = json_decode(json_encode(DB::select($query)),true);
@@ -5482,7 +5482,7 @@ class ClienteController extends Controller
 
     public function checkMondayTest()
     {
-        $token = env('MONDAY_TOKEN');
+        $token = config('services.monday.token');
         $apiUrl = 'https://api.monday.com/v2';
         $headers = ['Content-Type: application/json', 'Authorization: ' . $token];
 

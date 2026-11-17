@@ -275,7 +275,7 @@ class DeployController extends Controller
     // ── Version del despliegue ────────────────────────────────
     private function releaseVersion(string $afterHead): string
     {
-        $configuredVersion = trim((string) (config('app.version') ?? env('APP_VERSION', '')));
+        $configuredVersion = trim((string) config('app.version', ''));
 
         if ($configuredVersion !== '') {
             return $configuredVersion;

@@ -119,7 +119,7 @@
 
                         <tr>
                             <td style="">{{$descripcion}}</td>
-                            <td style="">{{ format_money($compra['monto']) }}€</td>
+                            <td style="">{{ format_money($compra['monto'], 2, ',', '.') }}€</td>
                         </tr>
 
                     <?php
@@ -129,7 +129,7 @@
                     ?>
                     <tr>
                         <td style="font-weight: bold; text-align: right; color:white;">TOTAL:</td>
-                        <td style="font-weight: bold; color:white;">{{ format_money($total) }}€</td>
+                        <td style="font-weight: bold; color:white;">{{ format_money($total, 2, ',', '.') }}€</td>
                     </tr>
                 </tbody>
             </table>

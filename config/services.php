@@ -64,7 +64,20 @@ return [
     ],
 
     'stripe' => [
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+        'key_port' => env('STRIPE_KEY_PORT'),
+        'secret_port' => env('STRIPE_SECRET_PORT'),
         'banca_online_webhook_secret' => env('STRIPE_BANCA_ONLINE_WEBHOOK_SECRET', env('STRIPE_WEBHOOK_SECRET')),
+    ],
+
+    'paypal' => [
+        'client_id' => env('PAYPAL_CLIENT_ID'),
+    ],
+
+    'telegram' => [
+        'saime_bot' => env('TELEGRAM_SAIME_BOT'),
+        'saime_group' => env('TELEGRAM_SAIME_GROUP'),
     ],
 
     'openrouter' => [
@@ -102,8 +115,21 @@ return [
         'role_ai_session_minutes' => 120,
     ],
 
+    'ecb_rates' => [
+        // Historical rates are cached for 90 days; the first read can exceed 5s.
+        'timeout' => 15,
+    ],
+
     'hubspot' => [
         'key' => env('HUBSPOT_KEY'),
+        'force_ip_resolve' => env('HUBSPOT_FORCE_IP_RESOLVE', 'v4'),
+        'ca_bundle' => env('HUBSPOT_CA_BUNDLE'),
+        'tasks_throttle_ms' => env('HUBSPOT_TASKS_THROTTLE_MS', 250),
+        'support_tickets' => [
+            'pipeline' => env('HUBSPOT_SUPPORT_TICKET_PIPELINE'),
+            'stage' => env('HUBSPOT_SUPPORT_TICKET_STAGE'),
+            'priority' => env('HUBSPOT_SUPPORT_TICKET_PRIORITY', 'MEDIUM'),
+        ],
         'coordinator_user_provisioning' => [
             'enabled' => env('HUBSPOT_COORDINATOR_USER_PROVISIONING', true),
             'role_id' => env('HUBSPOT_COORDINATOR_ROLE_ID'),

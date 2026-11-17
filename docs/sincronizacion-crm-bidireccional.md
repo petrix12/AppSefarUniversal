@@ -6,6 +6,8 @@ Requerimiento actualizado el 16-11-2026: sincronizar datos en ambas direcciones,
 
 ## Despliegue inicial
 
+Después de cambiar el `.env`, usar `php artisan config:clear`. La incidencia del 16-11-2026 se recuperó eliminando la caché de configuración; no recomendar `config:cache` en la versión anterior de producción, que tenía lecturas de `env()` durante las peticiones.
+
 Se puede desplegar la base existente y ejecutar la migración manteniendo:
 
 ```dotenv
@@ -30,7 +32,7 @@ El alcance se limita a los campos que alimentan el cálculo del COS. El catálog
 
 Definiciones verificadas en el portal el 16-11-2026: no existen en los negocios HubSpot `titulo`, `fecha_solicitud_recurso_urgencia`, `fecha_solicitud_recursoalzada`, `fecha_solicitud_resolucionexpresa`, `fecha_solicitud_viajudicial`, `carta_nat_montopagado` ni `cilfcje_montopagado`. El cálculo tiene caminos locales para esos valores; no se crearon propiedades remotas ni se inventaron equivalencias. Tampoco existen propiedades de contacto `pay` y `contrato` con esos nombres.
 
-**Configuración nativa guardada el 16-11-2026:** Api-Call-Sefar, portal 20053496, tiene 49 suscripciones HubSpot pausadas: doce de contacto (siete propiedades y cinco eventos de ciclo de vida/asociación) y 37 de negocio (33 propiedades y cuatro eventos de ciclo de vida/asociación). Destino `https://app.sefaruniversal.com/api/webhooks/hubspot`. Comprobado después de guardar, sin activar entregas ni editar expedientes. El registro nativo de Teamleader y las entregas reales siguen pendientes; el código nuevo ofrece un botón de administrador que registra y vuelve a consultar sus doce tipos para verificar el resultado.
+**Configuración nativa comprobada el 16-11-2026:** Api-Call-Sefar, portal 20053496, tiene 49 suscripciones HubSpot activas: doce de contacto y 37 de negocio, con destino `https://app.sefaruniversal.com/api/webhooks/hubspot`. La prueba nativa devolvió HTTP 202 y el panel App muestra el evento de ejemplo recibido, pendiente y con cero intentos. Teamleader tiene sus doce tipos registrados y verificados mediante API; falta una entrega originada en un cambio real. Se mantiene `CRM_EVENT_PROCESSING_ENABLED=false`; no se editaron expedientes para generar la prueba. La recuperación de la incidencia de caché y las pruebas de la corrección se detallan en [incidencia-cache-configuracion-2026-11-16.md](incidencia-cache-configuracion-2026-11-16.md).
 
 ## Decisión por campo
 

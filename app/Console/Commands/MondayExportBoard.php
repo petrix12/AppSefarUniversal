@@ -40,7 +40,7 @@ class MondayExportBoard extends Command
             return self::FAILURE;
         }
 
-        $token = env('MONDAY_TOKEN') ?? config('services.monday.token');
+        $token = config('services.monday.token');
         if (!$token) {
             $this->error('Falta MONDAY_TOKEN. Agrega en .env o config/services.php');
             return self::FAILURE;

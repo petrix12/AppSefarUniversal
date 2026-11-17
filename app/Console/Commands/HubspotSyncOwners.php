@@ -23,7 +23,7 @@ class HubspotSyncOwners extends Command
 
     public function handle(): int
     {
-        $hubspot = Factory::createWithAccessToken(env('HUBSPOT_KEY'));
+        $hubspot = Factory::createWithAccessToken(config('services.hubspot.key'));
 
         $dryRun = (bool) $this->option('dry-run');
         $includeArchived = (bool) $this->option('include-archived');

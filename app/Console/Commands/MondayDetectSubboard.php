@@ -13,7 +13,7 @@ class MondayDetectSubboard extends Command
     public function handle()
     {
         $boardId = (int)$this->option('board');
-        $token = env('MONDAY_TOKEN') ?? config('services.monday.token');
+        $token = config('services.monday.token');
 
         if (!$token) {
             $this->error('Falta MONDAY_TOKEN');

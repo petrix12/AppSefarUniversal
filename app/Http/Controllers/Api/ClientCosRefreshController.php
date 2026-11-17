@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\CosIdentityConflictException;
 use App\Exceptions\CosSourceRefreshException;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\ClientCosSnapshotService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class ClientCosRefreshController extends Controller
 {
@@ -70,14 +73,37 @@ class ClientCosRefreshController extends Controller
 
     private function refreshCos(User $cliente, ClientCosSnapshotService $snapshots, string $matchedBy): JsonResponse
     {
+        $startedAt = microtime(true);
+
         try {
             $snapshot = $snapshots->get($cliente, true, true);
         } catch (\Throwable $exception) {
+            $reference = (string) Str::uuid();
+            $cause = $exception;
+            while ($cause->getPrevious()) {
+                $cause = $cause->getPrevious();
+            }
+
+            // Keep identity and correlation separate from the exception report:
+            // request bodies, credentials and exception messages are not copied here.
+            Log::error('COS/API: cos_refresh_failed', [
+                'reference' => $reference,
+                'user_id' => $cliente->id,
+                'matched_by' => $matchedBy,
+                'duration_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+                'source' => $exception instanceof CosSourceRefreshException ? $exception->source : null,
+                'identity_conflicts' => $exception instanceof CosIdentityConflictException ? $exception->conflicts : null,
+                'exception_class' => $exception::class,
+                'cause_class' => $cause::class,
+                'cause_file' => $cause->getFile(),
+                'cause_line' => $cause->getLine(),
+            ]);
             report($exception);
 
             $error = [
                 'message' => 'No se pudo completar la actualización del COS. Reintenta la solicitud.',
                 'error' => 'cos_refresh_failed',
+                'reference' => $reference,
                 'data' => ['client_id' => $cliente->id],
                 'meta' => ['found' => true, 'refreshed' => false, 'matched_by' => $matchedBy],
             ];
@@ -100,7 +126,15 @@ class ClientCosRefreshController extends Controller
                 }
             }
 
-            return response()->json($error, 502)->header('Cache-Control', 'no-store, private');
+            if ($exception instanceof CosIdentityConflictException) {
+                $error['retryable'] = false;
+                $error['conflicting_fields'] = array_keys($exception->conflicts);
+                $error['action'] = ['type' => 'review_client_identity'];
+            }
+
+            return response()->json($error, $exception instanceof CosIdentityConflictException ? 409 : 502)
+                ->header('Cache-Control', 'no-store, private')
+                ->header('X-Error-Reference', $reference);
         }
 
         return response()->json([

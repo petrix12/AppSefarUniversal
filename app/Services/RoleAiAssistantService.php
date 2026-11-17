@@ -201,7 +201,7 @@ PROMPT);
     private function callOpenRouter(RoleAiAssistant $assistant, array $messages): string
     {
         $processSettings = app(AiProcessSettingsService::class)->get('role_assistants');
-        $apiKey = config('services.openrouter.key') ?: env('OPENROUTER_API_KEY');
+        $apiKey = config('services.openrouter.key');
 
         if (! $apiKey) {
             throw new RuntimeException('Falta configurar OPENROUTER_API_KEY.');

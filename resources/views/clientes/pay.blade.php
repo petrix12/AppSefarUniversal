@@ -769,9 +769,9 @@
     <script>
         // Determinar qué clave usar según el servicio
         @if (auth()->user()->servicio == 'Constitución de Empresa' || auth()->user()->servicio == 'Representante Fiscal' || auth()->user()->servicio == 'Codigo  Fiscal' || auth()->user()->servicio == 'Apertura de cuenta' || auth()->user()->servicio == 'Trimestre contable' || auth()->user()->servicio == 'Cooperativa 10 años' || auth()->user()->servicio == 'Cooperativa 5 años' || auth()->user()->servicio == 'Portuguesa Sefardi' || auth()->user()->servicio == 'Portuguesa Sefardi - Subsanación' || auth()->user()->servicio == 'Certificación de Documentos - Portugal')
-            var stripePublicKey = '{{ env("STRIPE_KEY_PORT") }}';
+            var stripePublicKey = '{{ config('services.stripe.key_port') }}';
         @else
-            var stripePublicKey = '{{ env("STRIPE_KEY") }}';
+            var stripePublicKey = '{{ config('services.stripe.key') }}';
         @endif
 
         // Inicializar Stripe
@@ -926,7 +926,7 @@
 
     {{-- Script de PayPal (oculto) --}}
     <script
-        src="https://www.paypal.com/sdk/js?client-id={{ env('PAYPAL_CLIENT_ID') }}&currency=EUR&components=buttons&disable-funding=credit,card"
+        src="https://www.paypal.com/sdk/js?client-id={{ config('services.paypal.client_id') }}&currency=EUR&components=buttons&disable-funding=credit,card"
         data-sdk-integration-source="developer-studio"
     ></script>
 

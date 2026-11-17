@@ -15,4 +15,11 @@ class TeamleaderHistoricalExchangeRateServiceTest extends TestCase
 
         $this->assertSame(1.1316, $method->invoke($service, $csv));
     }
+    public function test_csv_order_and_future_observations_do_not_change_the_payment_date_rate(): void
+    {
+        $method = new \ReflectionMethod(TeamleaderHistoricalExchangeRateService::class, 'latestRateFromCsv');
+        $csv = "TIME_PERIOD,OBS_VALUE\n2022-10-31,0.9914\n2022-10-28,0.9951\n2022-10-27,1.0037\n";
+
+        $this->assertSame(.9951, $method->invoke(new TeamleaderHistoricalExchangeRateService(), $csv, '2022-10-28'));
+    }
 }

@@ -33,8 +33,11 @@ class UserSyncService
                 $this->ensureHubspotContact($user);
             }
 
+            $contact = $this->hubspotService->getContactById($user->hs_id);
+            app(HubspotClientIdentityGuard::class)->assertForUser($user, $contact);
+
             return [
-                'contact' => $this->hubspotService->getContactById($user->hs_id),
+                'contact' => $contact,
                 'files' => $this->hubspotService->getContactFileFields($user->hs_id),
                 'deals' => $this->hubspotService->getDealsByContactId($user->hs_id),
             ];
@@ -48,6 +51,7 @@ class UserSyncService
         }
 
         $data = Cache::remember($cacheKey, 300, $fetch);
+        app(HubspotClientIdentityGuard::class)->assertForUser($user, $data['contact']);
         app(ClientRestrictionService::class)->detectHubspotRetirement($user, $data['contact'], $data['deals']);
 
         return $data;

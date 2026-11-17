@@ -385,7 +385,7 @@ class RegisterV2Controller extends Controller
 
     private function registrarAuditoriaFormularioEnMonday(User $user, Compras $compra, Servicio $servicio, string $hashFactura): void
     {
-        $token = env('MONDAY_TOKEN');
+        $token = config('services.monday.token');
 
         if (! $token) {
             \Log::warning('No se registro Auditoria de Procedimientos en Monday: falta MONDAY_TOKEN', [
@@ -461,7 +461,7 @@ class RegisterV2Controller extends Controller
 
     private function registrarAuditoriaFormularioEtiquetadoVentasSefar(User $user, Compras $compra, Servicio $servicio, string $hashFactura): void
     {
-        $token = env('MONDAY_TOKEN');
+        $token = config('services.monday.token');
 
         if (! $token) {
             \Log::warning('No se registro Auditoria de Procedimientos en ETIQUETADO VENTAS SEFAR: falta MONDAY_TOKEN', [

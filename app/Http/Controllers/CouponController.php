@@ -193,7 +193,7 @@ class CouponController extends Controller
         ini_set('max_execution_time', 3000000);
         ini_set('max_input_time', 3000000);
 
-        $hubspot = HubSpot\Factory::createWithAccessToken(env('HUBSPOT_KEY'));
+        $hubspot = HubSpot\Factory::createWithAccessToken(config('services.hubspot.key'));
         $query = 'SELECT id, email, pago_cupon, hs_id FROM users where pay>0 and pago_cupon <> "" and pago_cupon is not null and email not like "%sefarvzla.com%" and hs_id is null';
 
         $globalcount = json_decode(json_encode(DB::select($query)),true);

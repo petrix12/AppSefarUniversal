@@ -128,7 +128,7 @@ class EtiquetaGenealogiaController extends Controller
         // Configurar la solicitud HTTP a la API de Monday.com
         $client = new \GuzzleHttp\Client();
         $apiUrl = 'https://api.monday.com/v2'; // Usar HTTPS
-        $apiKey = env('MONDAY_TOKEN'); // Asegúrate de tener tu API key en el archivo .env
+        $apiKey = config('services.monday.token'); // Asegúrate de tener tu API key en el archivo .env
 
         try {
             // Realizar la solicitud a la API de Monday.com
