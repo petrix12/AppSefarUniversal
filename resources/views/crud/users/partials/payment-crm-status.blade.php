@@ -1,6 +1,6 @@
 @if(($cosViewRoleId ?? 0) === 1)
     @foreach($purchases as $purchase)
-        @if(($purchase['source'] ?? null) === \App\Services\TeamleaderPhasePaymentService::INSTALLMENT_SOURCE)
+        @if(($purchase['source'] ?? null) === \App\Services\TeamleaderPhasePaymentService::INSTALLMENT_SOURCE || data_get($purchase, 'metadata.registration_payment') === true)
             @php
                 $sync = data_get($purchase, 'metadata.crm_payment_sync.providers', []);
                 $labels = ['pending' => 'Pendiente', 'processing' => 'En proceso', 'retry' => 'Pendiente de reintento', 'review' => 'Requiere revisión', 'synced' => 'Sincronizado'];
@@ -14,9 +14,9 @@
                 @if($remoteInvoice !== '')
                     <div>
                         @if($canLinkInvoice)
-                            <a href="https://app.hubspot.com/contacts/{{ $portal }}/record/0-53/{{ $remoteInvoice }}" target="_blank" rel="noopener noreferrer">Factura HubSpot #{{ $remoteInvoice }}</a>
+                            <a href="https://app.hubspot.com/contacts/{{ $portal }}/record/0-53/{{ $remoteInvoice }}" target="_blank" rel="noopener noreferrer">Factura HubSpot {{ $hs['invoice_number'] ?? '#'.$remoteInvoice }}</a>
                         @else
-                            Factura HubSpot #{{ $remoteInvoice }}
+                            Factura HubSpot {{ $hs['invoice_number'] ?? '#'.$remoteInvoice }}
                         @endif
                         · {{ ($hs['invoice_status'] ?? '') === 'paid' ? 'Pagada' : 'Pendiente de confirmación' }}
                     </div>

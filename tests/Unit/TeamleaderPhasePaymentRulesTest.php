@@ -399,7 +399,8 @@ class TeamleaderPhasePaymentRulesTest extends TestCase
 
                 return $fields->get($paidFieldId)['value']
                     === 'Abono 100 EUR 2026-05-18 [COS:purchase-previous] + Abono 50 EUR 2026-09-07 [COS:purchase-123]'
-                    && $fields->get('unrelated-field')['value'] === 'Conservar esta información';
+                    && $fields->count() === 1
+                    && $payload['custom_fields_update_strategy'] === 'partial';
             }));
 
         (new TeamleaderProjectPaymentWriter($teamleader))->appendPhasePayment(

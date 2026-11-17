@@ -18,6 +18,7 @@ class HubspotPaymentReceiptWriter
     {
         $this->syncState = $state;
         $user = $c['user'];
+        if (! $user->hs_id) throw new \RuntimeException('El contacto HubSpot del registro todavía no está enlazado.');
         $contact = $this->request('GET', '/crm/v3/objects/contacts/'.rawurlencode($user->hs_id), [
             'properties' => 'email,numero_de_pasaporte,hs_merged_object_ids',
         ]);
@@ -31,18 +32,21 @@ class HubspotPaymentReceiptWriter
         if ($contactId !== (string) $user->hs_id) {
             throw new PaymentSyncReviewException('HubSpot ha fusionado el contacto; revisar su enlace antes de registrar el pago.');
         }
-        $dealId = (string) $c['deal']->hubspot_id;
-        $contacts = $this->associationIds('deals', $dealId, 'contacts');
-        if (! in_array($contactId, $contacts, true)) {
+        $dealId = (string) ($c['deal']?->hubspot_id ?? '');
+        $contacts = $dealId !== '' ? $this->associationIds('deals', $dealId, 'contacts') : [];
+        if ($dealId !== '' && ! in_array($contactId, $contacts, true)) {
             throw new PaymentSyncReviewException('El negocio HubSpot no está asociado al contacto del cliente.');
         }
 
         // A non-billable tracking invoice mirrors the existing App document.
         // It creates no customer checkout, fiscal PDF, email, or second charge.
-        $comment = "Pago COS [COS:{$c['reference']}] · Comprobante App {$c['invoice']->id} pagado · {$c['invoice_url']}";
+        $label = ($c['kind'] ?? 'phase') === 'registration' ? 'Pago de registro' : 'Pago COS';
+        $comment = "{$label} [COS:{$c['reference']}] · Comprobante App {$c['invoice']->id} pagado · {$c['invoice_url']}";
+        $externalNumber = 'APP-'.$c['invoice']->id.'-'.$c['receipt']->id;
         $invoiceId = $this->ensureObject($state, 'remote_invoice', 'invoices', 'hs_comments', $comment, [
             'hs_currency' => $c['currency'], 'hs_invoice_billable' => 'false',
             'hs_invoice_date' => $c['date'], 'hs_comments' => $comment,
+            'hs_number' => $externalNumber, 'hs_amount_billed' => $c['amount'], 'hs_invoice_status' => 'draft',
         ]);
         $invoice = $this->request('GET', '/crm/v3/objects/invoices/'.$invoiceId, [
             'properties' => 'hs_invoice_billable,hs_currency,hs_invoice_status,hs_comments,hs_amount_billed,hs_amount_paid,hs_balance_due',
@@ -53,7 +57,7 @@ class HubspotPaymentReceiptWriter
             || data_get($invoice, 'properties.hs_invoice_status') === 'voided') {
             throw new PaymentSyncReviewException('La factura HubSpot vinculada no corresponde al comprobante de la App.');
         }
-        $lineName = "Abono COS [COS:{$c['reference']}]";
+        $lineName = (($c['kind'] ?? 'phase') === 'registration' ? 'Registro' : 'Abono COS')." [COS:{$c['reference']}]";
         $lineId = $this->ensureObject($state, 'line_item', 'line_items', 'name', $lineName, [
             'name' => $lineName, 'description' => (string) $c['receipt']->descripcion,
             'quantity' => '1', 'price' => $c['amount'], 'hs_line_item_currency_code' => $c['currency'],
@@ -65,52 +69,60 @@ class HubspotPaymentReceiptWriter
             throw new PaymentSyncReviewException('La línea de factura HubSpot no coincide con el importe del abono.');
         }
         $this->associate('invoices', $invoiceId, 'contacts', $contactId);
-        $this->associate('invoices', $invoiceId, 'deals', $dealId);
+        if ($dealId !== '') $this->associate('invoices', $invoiceId, 'deals', $dealId);
         $this->associate('invoices', $invoiceId, 'line_items', $lineId);
-        if (data_get($invoice, 'properties.hs_invoice_status') === 'draft') {
-            $this->request('PATCH', '/crm/v3/objects/invoices/'.$invoiceId, ['properties' => ['hs_invoice_status' => 'open']]);
-        }
 
-        $paymentId = $this->ensureObject($state, 'payment', 'commerce_payments', 'hs_reference_number', $c['reference'], [
-            'hs_reference_number' => $c['reference'], 'hs_initial_amount' => $c['amount'],
-            'hs_currency_code' => $c['currency'], 'hs_initiated_date' => $c['date'],
-            'hs_latest_status' => 'succeeded', 'hs_processor_type' => 'none',
-            'hs_customer_email' => $user->email, 'hs_internal_comment' => $comment,
-        ], [
-            $this->association($contactId, 387), $this->association($dealId, 391), $this->association($invoiceId, 542),
-        ]);
-        $payment = $this->request('GET', '/crm/v3/objects/commerce_payments/'.$paymentId, [
-            'properties' => 'hs_reference_number,hs_initial_amount,hs_currency_code,hs_customer_email,hs_latest_status,hs_initiated_date',
-        ]);
-        if (data_get($payment, 'properties.hs_reference_number') !== $c['reference']
-            || abs((float) data_get($payment, 'properties.hs_initial_amount') - (float) $c['amount']) > .001
-            || data_get($payment, 'properties.hs_currency_code') !== $c['currency']
-            || mb_strtolower((string) data_get($payment, 'properties.hs_customer_email')) !== mb_strtolower($user->email)
-            || data_get($payment, 'properties.hs_latest_status') !== 'succeeded') {
-            throw new PaymentSyncReviewException('El pago externo de HubSpot no coincide con el abono confirmado.');
+        if ((float) $c['amount'] > 0) {
+            $paymentId = $this->ensureObject($state, 'payment', 'commerce_payments', 'hs_reference_number', $c['reference'], [
+                'hs_reference_number' => $c['reference'], 'hs_initial_amount' => $c['amount'],
+                'hs_currency_code' => $c['currency'], 'hs_initiated_date' => $c['date'],
+                'hs_latest_status' => 'succeeded', 'hs_processor_type' => 'none',
+                'hs_customer_email' => $user->email, 'hs_internal_comment' => $comment,
+            ], array_values(array_filter([
+                $this->association($contactId, 387), $dealId !== '' ? $this->association($dealId, 391) : null, $this->association($invoiceId, 542),
+            ])));
+            $payment = $this->request('GET', '/crm/v3/objects/commerce_payments/'.$paymentId, [
+                'properties' => 'hs_reference_number,hs_initial_amount,hs_currency_code,hs_customer_email,hs_latest_status,hs_initiated_date',
+            ]);
+            if (data_get($payment, 'properties.hs_reference_number') !== $c['reference']
+                || abs((float) data_get($payment, 'properties.hs_initial_amount') - (float) $c['amount']) > .001
+                || data_get($payment, 'properties.hs_currency_code') !== $c['currency']
+                || mb_strtolower((string) data_get($payment, 'properties.hs_customer_email')) !== mb_strtolower($user->email)
+                || data_get($payment, 'properties.hs_latest_status') !== 'succeeded') {
+                throw new PaymentSyncReviewException('El pago externo de HubSpot no coincide con el abono confirmado.');
+            }
+            $paymentInvoices = $this->associationIds('commerce_payments', $paymentId, 'invoices');
+            $paymentContacts = $this->associationIds('commerce_payments', $paymentId, 'contacts');
+            if (array_diff($paymentInvoices, [$invoiceId]) || array_diff($paymentContacts, [$contactId])) {
+                throw new PaymentSyncReviewException('El pago HubSpot ya está vinculado a otra factura o a otro cliente.');
+            }
+            $this->associate('commerce_payments', $paymentId, 'contacts', $contactId);
+            if ($dealId !== '') $this->associate('commerce_payments', $paymentId, 'deals', $dealId);
+            $this->associate('commerce_payments', $paymentId, 'invoices', $invoiceId);
         }
-        $paymentInvoices = $this->associationIds('commerce_payments', $paymentId, 'invoices');
-        $paymentContacts = $this->associationIds('commerce_payments', $paymentId, 'contacts');
-        if (array_diff($paymentInvoices, [$invoiceId]) || array_diff($paymentContacts, [$contactId])) {
-            throw new PaymentSyncReviewException('El pago HubSpot ya está vinculado a otra factura o a otro cliente.');
-        }
-        $this->associate('commerce_payments', $paymentId, 'contacts', $contactId);
-        $this->associate('commerce_payments', $paymentId, 'deals', $dealId);
-        $this->associate('commerce_payments', $paymentId, 'invoices', $invoiceId);
+        // Non-billable invoices do not inherit a number/status/totals from
+        // line items. Mirror the existing document only after verifying its
+        // successful payment. Calculated paid/balance properties are read-only.
+        $this->request('PATCH', '/crm/v3/objects/invoices/'.$invoiceId, ['properties' => [
+            'hs_number' => $externalNumber, 'hs_amount_billed' => $c['amount'], 'hs_invoice_status' => 'paid',
+        ]]);
         $confirmed = $this->request('GET', '/crm/v3/objects/invoices/'.$invoiceId, [
             'properties' => 'hs_invoice_status,hs_amount_billed,hs_amount_paid,hs_balance_due',
         ]);
         if (data_get($confirmed, 'properties.hs_invoice_status') !== 'paid'
             || ! is_numeric(data_get($confirmed, 'properties.hs_amount_billed'))
             || abs((float) data_get($confirmed, 'properties.hs_amount_billed') - (float) $c['amount']) > .001
-            || abs((float) data_get($confirmed, 'properties.hs_amount_paid') - (float) $c['amount']) > .001
-            || ! is_numeric(data_get($confirmed, 'properties.hs_balance_due'))
-            || abs((float) data_get($confirmed, 'properties.hs_balance_due')) > .001) {
-            throw new \RuntimeException('HubSpot aún no confirma la factura pagada con saldo cero.');
+            || (is_numeric(data_get($confirmed, 'properties.hs_amount_paid'))
+                && abs((float) data_get($confirmed, 'properties.hs_amount_paid') - (float) $c['amount']) > .001)
+            || (is_numeric(data_get($confirmed, 'properties.hs_balance_due'))
+                && abs((float) data_get($confirmed, 'properties.hs_balance_due')) > .001)) {
+            throw new \RuntimeException('HubSpot aún no confirma el estado y el importe de la factura vinculada al pago.');
         }
-        $this->appendPhasePayment($c);
+        if (($c['kind'] ?? 'phase') === 'phase') $this->appendPhasePayment($c);
         $state->save(['hubspot_deal_id' => $dealId, 'hubspot_contact_id' => $contactId,
-            'document_url' => $c['invoice_url'], 'invoice_status' => 'paid']);
+            'document_url' => $c['invoice_url'], 'invoice_status' => 'paid', 'invoice_number' => $externalNumber,
+            'calculated_totals_available' => is_numeric(data_get($confirmed, 'properties.hs_amount_paid'))
+                && is_numeric(data_get($confirmed, 'properties.hs_balance_due'))]);
     }
 
     private function appendPhasePayment(array $c): void

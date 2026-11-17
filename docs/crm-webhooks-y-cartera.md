@@ -62,6 +62,8 @@ Los eventos de propiedades HubSpot ajenas al catálogo COS se aceptan sin lectur
 
 ## Fuentes verificadas el 16-11-2026
 
+Comprobación adicional del 17-11-2026 en el panel de producción: los receptores HubSpot y Teamleader están habilitados y hay eventos aceptados de ambos proveedores. Los eventos Teamleader 16 y 17 aparecen recibidos el mismo día; permanecen pendientes con cero intentos, al igual que los eventos HubSpot, porque el procesamiento sigue pausado. Las tablas están instaladas y las lecturas locales del COS siguen desactivadas. Esto acredita la recepción; no acredita la resolución de conflictos ni la escritura bidireccional entre plataformas, que continúan pendientes.
+
 - [Teamleader Focus: registro de webhooks](https://developer.focus.teamleader.eu/docs/api/webhooks-register).
 - [HubSpot: configuración en la plataforma actual](https://developers.hubspot.com/docs/apps/developer-platform/build-apps/features/configure-webhooks).
 - [HubSpot: suscripciones en apps privadas legacy y limitaciones](https://developers.hubspot.com/docs/apps/legacy-apps/private-apps/create-and-edit-webhook-subscriptions-in-private-apps).

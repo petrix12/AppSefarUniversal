@@ -2129,7 +2129,7 @@ class ClienteController extends Controller
                         $compra->forceFill(['pagado' => 1, 'hash_factura' => $hash_factura, 'paid_at' => $paidAt]);
                     }
 
-                    $this->finalizeCatalogPurchases($compras, $hash_factura);
+                    $this->finalizeCatalogPurchases($compras, $hash_factura, null, true);
                     $this->registerReferralSale($referralCode, $hash_factura, $compras, 0);
                     $this->registrarAuditoriaPostPagoEnMonday($compras, 0, 'Cupón', null, $hash_factura);
 
@@ -2382,17 +2382,16 @@ class ClienteController extends Controller
 
         $hash_factura = "sef_".$this->generate_string($permitted_chars, 50);
 
-        Factura::create([
-            'id_cliente' => auth()->user()->id,
-            'hash_factura' => $hash_factura,
-            'met' => 'paypal'
-        ]);
+        $confirmedInvoice = app(\App\Services\Payments\ConfirmedPaymentInvoiceService::class)->getOrCreate(
+            (int) auth()->id(), 'paypal', $request->input('orderID'), $hash_factura,
+        );
+        $hash_factura = $confirmedInvoice->hash_factura;
 
         foreach ($compras as $key => $compra) {
             DB::table('compras')->where('id', $compra['id'])->update(['pagado' => 1, 'hash_factura' => $hash_factura]);
         }
 
-        $this->finalizeCatalogPurchases($compras, $hash_factura);
+        $this->finalizeCatalogPurchases($compras, $hash_factura, $request->input('orderID'), true);
         $this->registerReferralSale($referralCode, $hash_factura, $compras, $monto);
         $this->registrarAuditoriaPostPagoEnMonday($compras, $monto, 'PayPal', null, $hash_factura);
 
@@ -3096,13 +3095,10 @@ class ClienteController extends Controller
 
                 $hash_factura = "sef_".$this->generate_string($permitted_chars, 50);
 
-                Factura::create([
-                    'id_cliente' => auth()->user()->id,
-                    'hash_factura' => $hash_factura,
-                    'met' => 'stripe',
-                    'idcus' => $charged->customer,
-                    'idcharge' => $charged->id
-                ]);
+                $confirmedInvoice = app(\App\Services\Payments\ConfirmedPaymentInvoiceService::class)->getOrCreate(
+                    (int) auth()->id(), 'stripe', $charged->id, $hash_factura, $charged->customer,
+                );
+                $hash_factura = $confirmedInvoice->hash_factura;
                 $paidAt = now();
 
                 foreach ($compras as $key => $compra) {
@@ -3110,7 +3106,7 @@ class ClienteController extends Controller
                     $compra->forceFill(['pagado' => 1, 'hash_factura' => $hash_factura, 'paid_at' => $paidAt]);
                 }
 
-                $this->finalizeCatalogPurchases($compras, $hash_factura, $charged->id);
+                $this->finalizeCatalogPurchases($compras, $hash_factura, $charged->id, true);
                 $this->registerReferralSale($referralCode, $hash_factura, $compras, $monto);
                 $this->registrarAuditoriaPostPagoEnMonday($compras, $monto, 'Stripe', $charged->customer, $charged->id);
 
@@ -4000,13 +3996,10 @@ class ClienteController extends Controller
                 $hash_factura = "sef_" . $this->generate_string($permitted_chars, 50);
 
                 // Crear factura
-                Factura::create([
-                    'id_cliente' => auth()->user()->id,
-                    'hash_factura' => $hash_factura,
-                    'met' => 'stripe',
-                    'idcus' => $customer->id,
-                    'idcharge' => $paymentIntent->id
-                ]);
+                $confirmedInvoice = app(\App\Services\Payments\ConfirmedPaymentInvoiceService::class)->getOrCreate(
+                    (int) auth()->id(), 'stripe', $paymentIntent->id, $hash_factura, $customer->id,
+                );
+                $hash_factura = $confirmedInvoice->hash_factura;
 
                 // Actualizar compras a pagado
                 foreach ($compras as $compra) {
@@ -4018,7 +4011,7 @@ class ClienteController extends Controller
                         ]);
                 }
 
-                $this->finalizeCatalogPurchases($compras, $hash_factura, $paymentIntent->id);
+                $this->finalizeCatalogPurchases($compras, $hash_factura, $paymentIntent->id, true);
                 $this->registerReferralSale($referralCode, $hash_factura, $compras, $monto);
 
                 // Obtener datos del usuario
@@ -4505,7 +4498,7 @@ class ClienteController extends Controller
         }
     }
 
-    private function finalizeCatalogPurchases($compras, string $hashFactura, ?string $paymentReference = null): void
+    private function finalizeCatalogPurchases($compras, string $hashFactura, ?string $paymentReference = null, bool $registration = false): void
     {
         $ids = collect($compras)->pluck('id')->filter()->values();
 
@@ -4513,9 +4506,14 @@ class ClienteController extends Controller
             return;
         }
 
-        Compras::whereIn('id', $ids)->update([
+        Compras::whereIn('id', $ids)->whereNull('paid_at')->update([
             'paid_at' => now(),
         ]);
+
+        if ($registration) {
+            $invoice = Factura::where('hash_factura', $hashFactura)->where('id_cliente', auth()->id())->firstOrFail();
+            app(\App\Services\Payments\RegistrationPaymentReceiptService::class)->record($invoice, $compras, $paymentReference);
+        }
 
         ConsultationBooking::whereIn('compra_id', $ids)
             ->where('status', ConsultationBooking::STATUS_PENDING_PAYMENT)

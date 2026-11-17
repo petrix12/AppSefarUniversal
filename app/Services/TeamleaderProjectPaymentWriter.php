@@ -82,10 +82,12 @@ class TeamleaderProjectPaymentWriter
             $customFields[] = ['id' => $fieldId, 'value' => $newPaymentText];
         }
 
-        $this->teamleader->updatePaymentProject(
-            (string) $project['id'],
-            $this->projectUpdatePayload($project, $customFields)
-        );
+        // Explicit partial strategy preserves every other custom value and
+        // avoids resubmitting empty/read-only fields returned by projects.info.
+        $changedFields = array_values(array_filter($customFields, fn ($field) => $field['id'] === $fieldId));
+        $payload = $this->projectUpdatePayload($project, $changedFields);
+        $payload['custom_fields_update_strategy'] = 'partial';
+        $this->teamleader->updatePaymentProject((string) $project['id'], $payload);
     }
 
     /**

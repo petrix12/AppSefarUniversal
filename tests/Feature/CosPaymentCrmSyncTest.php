@@ -56,6 +56,7 @@ class CosPaymentCrmSyncTest extends TestCase
             $t->id(); $t->unsignedBigInteger('id_user'); $t->string('source')->nullable();
             $t->string('servicio_hs_id')->nullable(); $t->text('descripcion')->nullable(); $t->integer('pagado')->default(0);
             $t->decimal('monto', 12, 2); $t->unsignedBigInteger('deal_id')->nullable(); $t->integer('phasenum')->nullable();
+            $t->decimal('montooriginal', 12, 2)->nullable(); $t->integer('porcentajedescuento')->nullable();
             $t->string('hash_factura')->nullable(); $t->json('metadata')->nullable(); $t->timestamp('paid_at')->nullable(); $t->timestamps();
         });
         \Illuminate\Support\Facades\DB::table('users')->insert(['id' => 290, 'name' => 'Cliente', 'email' => 'client@example.com', 'passport' => 'P-290',
@@ -107,6 +108,55 @@ class CosPaymentCrmSyncTest extends TestCase
         $this->assertSame(0, Compras::count());
     }
 
+    public function test_registration_has_a_paid_invoice_even_before_any_deal_or_project_exists(): void
+    {
+        Negocio::query()->delete();
+        $receipt = Compras::create(['id_user' => 290, 'monto' => 50, 'pagado' => 1,
+            'hash_factura' => 'existing-document', 'paid_at' => '2026-11-17']);
+        $registration = app(\App\Services\Payments\RegistrationPaymentReceiptService::class);
+        $registration->record(Factura::findOrFail(2035), [$receipt], 'registration-gateway');
+        $this->fakeHubspot(); $this->fakeTeamleader();
+        $service = app(CosPaymentCrmSyncService::class); $service->process($receipt->id);
+        $state = data_get($receipt->fresh()->metadata, 'crm_payment_sync.providers');
+        $this->assertSame('synced', $state['hubspot']['status']);
+        $this->assertSame('synced', $state['teamleader']['status']);
+        $this->assertSame('registration-payment-'.$receipt->id, $state['hubspot']['reference']);
+        $this->assertSame('50.00', array_values($this->remote['invoices'])[0]['properties']['hs_amount_billed']);
+        $this->assertSame('paid', array_values($this->remote['invoices'])[0]['properties']['hs_invoice_status']);
+        $this->assertSame('contact', $this->notes[0]['subject_type']);
+        $this->assertSame(0, $this->projectWrites); $this->assertSame(0, Negocio::count());
+        $this->assertSame(1, Compras::count()); $this->assertSame(1, Factura::count());
+        $this->assertSame('Abono 3448.64 EUR 2026-01-01', $this->paidText);
+        $registration->record(Factura::findOrFail(2035), [$receipt], 'registration-gateway');
+        $service->process($receipt->id, null, true);
+        $this->assertSame(['invoices' => 1, 'line_items' => 1, 'commerce_payments' => 1], $this->creates);
+        $this->assertCount(1, $this->notes);
+    }
+
+    public function test_a_full_registration_coupon_has_a_zero_invoice_without_inventing_cash_revenue(): void
+    {
+        Negocio::query()->delete(); Factura::findOrFail(2035)->update(['met' => 'cupon']);
+        $receipt = Compras::create(['id_user' => 290, 'monto' => 50, 'pagado' => 1,
+            'hash_factura' => 'existing-document', 'paid_at' => '2026-11-17']);
+        app(\App\Services\Payments\RegistrationPaymentReceiptService::class)->record(Factura::findOrFail(2035), [$receipt]);
+        $this->fakeHubspot();
+        app(CosPaymentCrmSyncService::class)->process($receipt->id, 'hubspot');
+        $this->assertSame(0.0, $receipt->fresh()->monto);
+        $this->assertSame('50', (string) (float) $receipt->fresh()->montooriginal);
+        $this->assertSame(100, (int) $receipt->fresh()->porcentajedescuento);
+        $this->assertSame('0.00', array_values($this->remote['invoices'])[0]['properties']['hs_amount_billed']);
+        $this->assertSame('paid', array_values($this->remote['invoices'])[0]['properties']['hs_invoice_status']);
+        $this->assertSame(0, $this->creates['commerce_payments'] ?? 0);
+        $this->assertSame(1, Compras::count()); $this->assertSame(1, Factura::count());
+    }
+
+    public function test_an_unpaid_registration_cannot_be_queued_as_a_paid_invoice(): void
+    {
+        $receipt = Compras::create(['id_user' => 290, 'monto' => 50, 'pagado' => 0, 'hash_factura' => 'existing-document']);
+        $this->expectException(\InvalidArgumentException::class);
+        app(\App\Services\Payments\RegistrationPaymentReceiptService::class)->record(Factura::findOrFail(2035), [$receipt]);
+    }
+
     public function test_native_hubspot_payment_and_paid_invoice_reuse_the_original_local_receipt(): void
     {
         $receipt = $this->receipt();
@@ -127,7 +177,10 @@ class CosPaymentCrmSyncTest extends TestCase
         $this->assertSame(1, substr_count($this->paidText, '[COS:phase-payment-7786]'));
         $invoice = array_values($this->remote['invoices'])[0];
         $this->assertSame('false', $invoice['properties']['hs_invoice_billable']);
-        $this->assertSame('0', $invoice['properties']['hs_balance_due']);
+        $this->assertSame('APP-2035-7786', $invoice['properties']['hs_number']);
+        $this->assertSame('51.36', $invoice['properties']['hs_amount_billed']);
+        $this->assertSame('paid', $invoice['properties']['hs_invoice_status']);
+        $this->assertArrayNotHasKey('hs_balance_due', $invoice['properties']);
         $payment = array_values($this->remote['commerce_payments'])[0];
         $this->assertSame('51.36', $payment['properties']['hs_initial_amount']);
         $this->assertSame('succeeded', $payment['properties']['hs_latest_status']);
@@ -149,6 +202,24 @@ class CosPaymentCrmSyncTest extends TestCase
         $this->assertSame('synced', data_get($receipt->fresh()->metadata, 'crm_payment_sync.providers.hubspot.status'));
         $this->assertSame(1, $this->creates['commerce_payments']);
         $this->assertSame(1, Compras::count()); $this->assertSame(1, Factura::count());
+    }
+
+    public function test_an_existing_blank_non_billable_invoice_is_completed_in_place(): void
+    {
+        $receipt = $this->receipt(); $this->fakeHubspot();
+        $comment = 'Pago COS [COS:phase-payment-7786] · Comprobante App 2035 pagado · https://app.example.test/viewcomprobante/2035';
+        $this->remote['invoices']['607389666816'] = ['id' => '607389666816', 'properties' => [
+            'hs_comments' => $comment, 'hs_invoice_billable' => 'false', 'hs_currency' => 'EUR',
+        ]];
+        $service = app(CosPaymentCrmSyncService::class); $service->queueReceipt($receipt); $service->process($receipt->id, 'hubspot');
+        $state = data_get($receipt->fresh()->metadata, 'crm_payment_sync.providers.hubspot');
+        $this->assertSame('synced', $state['status']);
+        $this->assertSame('607389666816', $state['remote_invoice_id']);
+        $this->assertSame('paid', $this->remote['invoices']['607389666816']['properties']['hs_invoice_status']);
+        $this->assertSame('51.36', $this->remote['invoices']['607389666816']['properties']['hs_amount_billed']);
+        $this->assertSame(0, $this->creates['invoices'] ?? 0);
+        $this->assertFalse($state['calculated_totals_available']);
+        $this->assertSame(1, Compras::count());
     }
 
     public function test_an_unknown_creation_result_never_causes_a_second_post(): void
@@ -349,13 +420,8 @@ class CosPaymentCrmSyncTest extends TestCase
                 $record = ['id' => $id, 'properties' => $r['properties'], 'associations' => $r['associations']];
                 if ($type === 'invoices') $record['properties'] += ['hs_invoice_status' => 'draft'];
                 if ($this->remoteAccepted) $this->remote[$type][$id] = $record;
-                if ($type === 'commerce_payments' && $this->remoteAccepted) {
-                    foreach ($this->remote['invoices'] as &$invoice) {
-                        $invoice['properties'] = array_merge($invoice['properties'], ['hs_invoice_status' => 'paid',
-                            'hs_amount_billed' => $r['properties']['hs_initial_amount'], 'hs_amount_paid' => $r['properties']['hs_initial_amount'], 'hs_balance_due' => '0']);
-                    }
-                    unset($invoice);
-                }
+                // Real non-billable invoices do not calculate totals or acquire
+                // a paid status just because a payment was associated.
                 if ($this->loseResponse === $type) { $this->loseResponse = null; throw new ConnectionException('Simulated lost response'); }
                 return Http::response($record, 201);
             }
@@ -376,8 +442,8 @@ class CosPaymentCrmSyncTest extends TestCase
                 $this->projectWrites++; $this->project = array_merge($this->project, $data);
             });
             $m->shouldReceive('paymentReceiptNotes')->andReturnUsing(fn () => $this->notes);
-            $m->shouldReceive('createPaymentReceiptNote')->andReturnUsing(function ($id, $content) {
-                $this->notes[] = ['id' => 'tl-note', 'content' => $content];
+            $m->shouldReceive('createPaymentReceiptNote')->andReturnUsing(function ($id, $content, $type = 'project') {
+                $this->notes[] = ['id' => 'tl-note', 'content' => $content, 'subject_type' => $type, 'subject_id' => $id];
                 if ($this->loseNoteResponse) { $this->loseNoteResponse = false; throw new ConnectionException('Simulated lost note response'); }
                 return 'tl-note';
             });

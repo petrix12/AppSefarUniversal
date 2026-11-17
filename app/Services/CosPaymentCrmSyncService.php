@@ -19,11 +19,17 @@ class CosPaymentCrmSyncService
 {
     public const PROVIDERS = ['hubspot', 'teamleader'];
 
+    public static function isRegistration(Compras $receipt): bool
+    {
+        return data_get($receipt->metadata, 'registration_payment') === true
+            && data_get($receipt->metadata, 'portal_record_kind') === 'registration_payment';
+    }
+
     /** Only real confirmed portal installments enter the outbound flow. */
     public function queueReceipt(Compras $receipt): void
     {
-        if ($receipt->source !== TeamleaderPhasePaymentService::INSTALLMENT_SOURCE || ! $receipt->pagado) {
-            throw new \InvalidArgumentException('Solo se sincronizan abonos confirmados del portal.');
+        if ((! self::isRegistration($receipt) && $receipt->source !== TeamleaderPhasePaymentService::INSTALLMENT_SOURCE) || ! $receipt->pagado) {
+            throw new \InvalidArgumentException('Solo se sincronizan pagos confirmados del portal.');
         }
         DB::transaction(function () use ($receipt): void {
             $stored = Compras::lockForUpdate()->findOrFail($receipt->id);
@@ -40,8 +46,10 @@ class CosPaymentCrmSyncService
 
     public function context(Compras $receipt): array
     {
-        if ($receipt->source !== TeamleaderPhasePaymentService::INSTALLMENT_SOURCE
-            || ! $receipt->pagado || $receipt->monto <= 0 || ! $receipt->paid_at || ! $receipt->hash_factura) {
+        $registration = self::isRegistration($receipt);
+        if ((! $registration && $receipt->source !== TeamleaderPhasePaymentService::INSTALLMENT_SOURCE)
+            || ! $receipt->pagado || $receipt->monto < 0 || (! $registration && $receipt->monto == 0)
+            || ! $receipt->paid_at || ! $receipt->hash_factura) {
             throw new PaymentSyncReviewException('El abono no tiene pago y comprobante confirmados.');
         }
         if (strtoupper((string) data_get($receipt->metadata, 'display_currency', 'EUR')) !== 'EUR') {
@@ -52,6 +60,7 @@ class CosPaymentCrmSyncService
         if ($invoices->count() !== 1 || (int) $invoices->first()->id_cliente !== (int) $user->id) {
             throw new PaymentSyncReviewException('El comprobante no pertenece inequívocamente al cliente del abono.');
         }
+        if ($registration) return $this->registrationContext($receipt, $user, $invoices->first());
         $project = trim((string) data_get($receipt->metadata, 'teamleader_project_id'));
         $phase = (int) data_get($receipt->metadata, 'phase', $receipt->phasenum);
         if (! $project || ! isset(TeamleaderProjectPaymentAnalyzer::PHASE_FIELDS[$phase])) {
@@ -78,12 +87,43 @@ class CosPaymentCrmSyncService
         $invoice = $invoices->first();
         return [
             'receipt' => $receipt, 'user' => $user, 'invoice' => $invoice, 'deal' => $deal,
+            'kind' => 'phase',
             'project_id' => $project, 'phase' => $phase, 'currency' => 'EUR',
             'reference' => 'phase-payment-'.$receipt->id,
             'invoice_url' => rtrim((string) config('app.url'), '/').'/viewcomprobante/'.$invoice->id,
             'amount' => number_format($receipt->monto, 2, '.', ''),
             'date' => $receipt->paid_at->toIso8601String(),
         ];
+    }
+
+    private function registrationContext(Compras $receipt, User $user, Factura $invoice): array
+    {
+        if ($receipt->monto == 0 && $invoice->met !== 'cupon') {
+            throw new PaymentSyncReviewException('Un pago monetario de registro no puede acreditarse con importe cero.');
+        }
+        foreach (['hs_id', 'tl_id'] as $field) {
+            if (filled($user->$field) && User::where('id', '!=', $user->id)->where($field, $user->$field)->exists()) {
+                throw new PaymentSyncReviewException('El contacto de registro está compartido con otra cuenta.');
+            }
+        }
+        if ((filled($user->hs_id) && ! ctype_digit((string) $user->hs_id))
+            || (filled($user->tl_id) && ! Str::isUuid((string) $user->tl_id))) {
+            throw new PaymentSyncReviewException('El identificador CRM del registro no es válido.');
+        }
+        // Registration is accounted for even before the first deal/project exists.
+        // It does not import a lead profile or create a deal to force a match.
+        $deals = Negocio::where('user_id', $user->id)->whereNotNull('hubspot_id')->where('hubspot_id', '!=', '')->get();
+        $deal = $receipt->deal_id ? $deals->firstWhere('id', $receipt->deal_id) : ($deals->count() === 1 ? $deals->first() : null);
+        if ($receipt->deal_id && ! $deal) throw new PaymentSyncReviewException('El negocio del pago de registro no pertenece a ese cliente.');
+        if ($deal && (! ctype_digit((string) $deal->hubspot_id)
+            || Negocio::where('user_id', '!=', $user->id)->where('hubspot_id', $deal->hubspot_id)->exists())) {
+            throw new PaymentSyncReviewException('El negocio del registro está cruzado con otra cuenta.');
+        }
+        return ['receipt' => $receipt, 'user' => $user, 'invoice' => $invoice, 'deal' => $deal,
+            'kind' => 'registration', 'project_id' => '', 'phase' => 0, 'currency' => 'EUR',
+            'reference' => 'registration-payment-'.$receipt->id,
+            'invoice_url' => rtrim((string) config('app.url'), '/').'/viewcomprobante/'.$invoice->id,
+            'amount' => number_format($receipt->monto, 2, '.', ''), 'date' => $receipt->paid_at->toIso8601String()];
     }
 
     public function process(int $receiptId, ?string $onlyProvider = null, bool $force = false): void
@@ -99,7 +139,7 @@ class CosPaymentCrmSyncService
                 $fingerprint = hash('sha256', json_encode([
                     $context['amount'], $context['date'], $context['invoice']->id, $context['invoice_url'],
                     $context['user']->id, $context['user']->hs_id, $context['user']->tl_id,
-                    $context['user']->email, $context['deal']->hubspot_id, $context['project_id'], $context['phase'],
+                    $context['user']->email, $context['deal']?->hubspot_id, $context['project_id'], $context['phase'],
                 ], JSON_THROW_ON_ERROR));
                 if ($state->get('fingerprint') && $state->get('fingerprint') !== $fingerprint) {
                     foreach (['remote_invoice_id', 'remote_invoice_create_started', 'payment_id', 'payment_create_started', 'phase_update_started', 'note_id', 'note_create_started'] as $key) {
@@ -110,7 +150,7 @@ class CosPaymentCrmSyncService
                 }
                 $state->save(['fingerprint' => $fingerprint, 'invoice_id' => $context['invoice']->id,
                     'reference' => $context['reference']]);
-                $lock = Cache::lock('cos-payment-crm:'.$provider.':'.sha1($context['project_id']), 600);
+                $lock = Cache::lock('cos-payment-crm:'.$provider.':'.sha1($context['project_id'] ?: 'client-'.$context['user']->id), 600);
                 $lock->block(2, function () use ($context, $state, $provider): void {
                     $writer = $provider === 'hubspot' ? HubspotPaymentReceiptWriter::class : TeamleaderPaymentReceiptWriter::class;
                     app($writer)->sync($context, $state);
@@ -147,6 +187,15 @@ class CosPaymentCrmSyncService
                         data_get($body, 'errors.*.context.requiredGranularScopes', []),
                     ])->flatten()->filter(fn ($scope) => is_string($scope) && preg_match('/^crm\.[a-z0-9_.-]{1,100}$/', $scope))->unique()->values()->all();
                     if ($scopes) $diagnostic['required_scopes'] = $scopes;
+                    if ($provider === 'teamleader') {
+                        $diagnostic['remote_errors'] = collect(data_get($body, 'errors', []))->take(3)
+                            ->map(function ($error): string {
+                                $title = strip_tags((string) ($error['title'] ?? ''));
+                                $title = preg_replace('/[\'\"].*?[\'\"]/u', '[valor]', $title);
+                                $title = preg_replace('/https?:\/\/\S+|[\w.+-]+@[\w.-]+|\b[A-Za-z0-9_+=.\/-]{24,}\b|\b\d{4,}\b/u', '[valor]', $title);
+                                return mb_substr($title, 0, 200);
+                            })->filter()->values()->all();
+                    }
                 }
                 if (preg_match('/cURL error (\d+)/', $e->getMessage(), $match)) $diagnostic['curl_error'] = (int) $match[1];
                 $state->save($diagnostic + ['status' => $review ? 'review' : 'retry', 'lease_until' => null,

@@ -65,10 +65,11 @@ class TeamleaderService
     }
 
     /** Strict payment receipt notes; failed calls must not look like empty lists. */
-    public function paymentReceiptNotes(string $projectId, int $page = 1): array
+    public function paymentReceiptNotes(string $projectId, int $page = 1, string $subjectType = 'project'): array
     {
+        if (! in_array($subjectType, ['project', 'contact'], true)) throw new \InvalidArgumentException('Invalid receipt note subject.');
         $response = $this->teamleaderPost('notes.list', [
-            'filter' => ['subject' => ['type' => 'project', 'id' => $projectId]],
+            'filter' => ['subject' => ['type' => $subjectType, 'id' => $projectId]],
             'page' => ['size' => 100, 'number' => $page],
         ]);
         $response->throw();
@@ -77,10 +78,11 @@ class TeamleaderService
         return $notes;
     }
 
-    public function createPaymentReceiptNote(string $projectId, string $content): string
+    public function createPaymentReceiptNote(string $projectId, string $content, string $subjectType = 'project'): string
     {
+        if (! in_array($subjectType, ['project', 'contact'], true)) throw new \InvalidArgumentException('Invalid receipt note subject.');
         $response = $this->teamleaderPost('notes.create', [
-            'subject' => ['type' => 'project', 'id' => $projectId], 'content' => $content,
+            'subject' => ['type' => $subjectType, 'id' => $projectId], 'content' => $content,
         ]);
         $response->throw();
         return (string) $response->json('data.id', '');

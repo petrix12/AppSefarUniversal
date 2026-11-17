@@ -29,7 +29,8 @@ class SyncCosPaymentReceipts extends Command
             || count($ids) > 50 || collect($ids)->contains(fn ($id) => ! ctype_digit((string) $id))) {
             $this->error('Indica --receipt=ID o --pending.'); return self::INVALID;
         }
-        $query = Compras::where('source', TeamleaderPhasePaymentService::INSTALLMENT_SOURCE)->where('pagado', 1);
+        $query = Compras::where('pagado', 1)->where(fn ($q) => $q->where('source', TeamleaderPhasePaymentService::INSTALLMENT_SOURCE)
+            ->orWhere(fn ($q) => $q->where('metadata->registration_payment', true)->where('metadata->portal_record_kind', 'registration_payment')));
         if ($ids) {
             $receipts = $query->whereIn('id', $ids)->orderBy('id')->get();
             if ($receipts->count() !== count(array_unique($ids))) {
@@ -66,7 +67,7 @@ class SyncCosPaymentReceipts extends Command
                         $failed = true;
                         $this->warn($state['last_error'] ?? 'Pendiente de confirmación.');
                     }
-                    $links = array_intersect_key($state, array_flip(['invoice_id', 'reference', 'remote_invoice_id', 'payment_id', 'note_id', 'document_url', 'last_operation', 'exception_type', 'http_status', 'http_category', 'required_scopes', 'curl_error']));
+                    $links = array_intersect_key($state, array_flip(['invoice_id', 'reference', 'remote_invoice_id', 'invoice_number', 'invoice_status', 'calculated_totals_available', 'payment_id', 'note_id', 'document_url', 'last_operation', 'exception_type', 'http_status', 'http_category', 'required_scopes', 'curl_error', 'remote_errors']));
                     $this->line(json_encode($links, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
                 }
             } else {
@@ -75,7 +76,7 @@ class SyncCosPaymentReceipts extends Command
                     $this->line(json_encode([
                         'receipt_id' => $receipt->id, 'amount' => $c['amount'], 'currency' => $c['currency'],
                         'invoice_id' => $c['invoice']->id, 'document_url' => $c['invoice_url'],
-                        'hubspot_contact_id' => $c['user']->hs_id, 'hubspot_deal_id' => $c['deal']->hubspot_id,
+                        'hubspot_contact_id' => $c['user']->hs_id, 'hubspot_deal_id' => $c['deal']?->hubspot_id,
                         'teamleader_contact_id' => $c['user']->tl_id, 'teamleader_project_id' => $c['project_id'],
                         'reference' => $c['reference'], 'current_state' => data_get($receipt->metadata, 'crm_payment_sync.providers', []),
                     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
