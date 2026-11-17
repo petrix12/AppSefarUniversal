@@ -418,97 +418,67 @@ class TeamleaderPhasePaymentService
         \Carbon\Carbon $paidAt,
         ?string $gatewayReference = null
     ): Compras {
-        if ($balancePurchase->source !== self::PURCHASE_SOURCE || $balancePurchase->pagado) {
-            throw new \InvalidArgumentException('El pago de fase ya no está disponible.');
-        }
-
-        $balance = round((float) $balancePurchase->monto, 2);
         $amount = round($amount, 2);
-
-        if ($amount <= 0 || $amount > $balance) {
-            throw new \InvalidArgumentException('El abono debe ser mayor que cero y no puede superar el saldo pendiente.');
-        }
-
-        $receipt = Compras::query()
-            ->where('id_user', $balancePurchase->id_user)
-            ->where('source', self::INSTALLMENT_SOURCE)
-            ->where('hash_factura', $invoiceHash)
-            ->get()
-            ->first(function (Compras $candidate) use ($balancePurchase): bool {
-                $linkedBalanceId = data_get($candidate->metadata, 'balance_purchase_id');
-
-                if ($linkedBalanceId !== null) {
-                    return (int) $linkedBalanceId === (int) $balancePurchase->id;
+        $receipt = \Illuminate\Support\Facades\DB::transaction(function () use ($balancePurchase, $amount, $invoiceHash, $paidAt, $gatewayReference): Compras {
+            $balancePurchase = Compras::lockForUpdate()->findOrFail($balancePurchase->id);
+            if ($balancePurchase->source !== self::PURCHASE_SOURCE) {
+                throw new \InvalidArgumentException('El registro no es un saldo de fase.');
+            }
+            // Lock the balance before looking up a receipt. A retry after the final
+            // installment must return the original receipt without reducing it again.
+            $receipt = Compras::where('id_user', $balancePurchase->id_user)
+                ->where('source', self::INSTALLMENT_SOURCE)
+                ->where(function ($q) use ($invoiceHash, $gatewayReference): void {
+                    $q->where('hash_factura', $invoiceHash);
+                    if (filled($gatewayReference)) $q->orWhere('metadata->gateway_reference', $gatewayReference);
+                })->get()->first(function (Compras $candidate) use ($balancePurchase): bool {
+                    $linkedBalanceId = data_get($candidate->metadata, 'balance_purchase_id');
+                    if ($linkedBalanceId !== null) return (int) $linkedBalanceId === (int) $balancePurchase->id;
+                    return (int) $candidate->phasenum === (int) $balancePurchase->phasenum
+                        && (string) data_get($candidate->metadata, 'teamleader_project_id')
+                            === (string) data_get($balancePurchase->metadata, 'teamleader_project_id');
+                });
+            if ($receipt) {
+                if (! $receipt->pagado || abs($receipt->monto - $amount) > .001) {
+                    throw new \InvalidArgumentException('La referencia de pago ya existe con otro importe o estado.');
                 }
-
-                // Compatibility with receipts created before the balance
-                // purchase identifier was stored in metadata.
-                return (int) $candidate->phasenum === (int) $balancePurchase->phasenum
-                    && (string) data_get($candidate->metadata, 'teamleader_project_id')
-                        === (string) data_get($balancePurchase->metadata, 'teamleader_project_id');
-            });
-
-        if (! $receipt) {
+                app(CosPaymentCrmSyncService::class)->queueReceipt($receipt);
+                return $receipt;
+            }
+            $balance = round((float) $balancePurchase->monto, 2);
+            if ($balancePurchase->pagado || $amount <= 0 || $amount > $balance || trim($invoiceHash) === '') {
+                throw new \InvalidArgumentException('El abono no puede superar el saldo pendiente ni repetir un saldo ya pagado.');
+            }
             $receiptMetadata = array_merge($balancePurchase->metadata ?? [], [
-                'portal_record_kind' => 'installment',
-                'balance_purchase_id' => $balancePurchase->id,
+                'portal_record_kind' => 'installment', 'balance_purchase_id' => $balancePurchase->id,
                 'gateway_reference' => $gatewayReference,
             ]);
-
+            // A balance refreshed from an older receipt must never copy its journal.
+            unset($receiptMetadata['crm_payment_sync']);
             $receipt = Compras::create([
-                'id_user' => $balancePurchase->id_user,
-                'source' => self::INSTALLMENT_SOURCE,
+                'id_user' => $balancePurchase->id_user, 'source' => self::INSTALLMENT_SOURCE,
                 'servicio_hs_id' => $balancePurchase->servicio_hs_id,
-                'descripcion' => 'Abono · ' . $balancePurchase->descripcion,
-                'pagado' => 1,
-                'monto' => $amount,
-                'deal_id' => $balancePurchase->deal_id,
-                'phasenum' => $balancePurchase->phasenum,
-                'metadata' => $receiptMetadata,
-                'hash_factura' => $invoiceHash,
-                'paid_at' => $paidAt,
+                'descripcion' => 'Abono · '.$balancePurchase->descripcion, 'pagado' => 1, 'monto' => $amount,
+                'deal_id' => $balancePurchase->deal_id, 'phasenum' => $balancePurchase->phasenum,
+                'metadata' => $receiptMetadata, 'hash_factura' => $invoiceHash, 'paid_at' => $paidAt,
             ]);
-        }
-
-        $remaining = round(max($balance - $amount, 0), 2);
-        $balanceMetadata = array_merge($balancePurchase->metadata ?? [], [
-            'portal_record_kind' => 'balance',
-            'last_portal_installment_id' => $receipt->id,
-            'last_portal_installment_at' => $paidAt->toIso8601String(),
-        ]);
-        $balancePurchase->forceFill([
-            'monto' => $remaining,
-            'pagado' => $remaining <= 0.01 ? 1 : 0,
-            'metadata' => $balanceMetadata,
-            'paid_at' => $remaining <= 0.01 ? $paidAt : null,
-        ])->save();
-
-        try {
-            $projectId = (string) data_get($balancePurchase->metadata, 'teamleader_project_id');
-            $phase = (int) data_get($balancePurchase->metadata, 'phase', $balancePurchase->phasenum);
-
-            if ($projectId === '' || ! array_key_exists($phase, TeamleaderProjectPaymentAnalyzer::PHASE_FIELDS)) {
-                throw new \InvalidArgumentException('El pago de fase no contiene la referencia necesaria.');
-            }
-
-            app(TeamleaderProjectPaymentWriter::class)->appendPhasePayment(
-                $projectId,
-                $phase,
-                $amount,
-                $paidAt->format('Y-m-d'),
-                'phase-payment-' . $receipt->id,
-                'EUR'
-            );
-        } catch (\Throwable $exception) {
-            Log::channel('teamleader')->error('El abono fue registrado localmente pero no se pudo sincronizar en Teamleader', [
-                'purchase_id' => $balancePurchase->id,
-                'receipt_id' => $receipt->id,
-                'error' => $exception->getMessage(),
-            ]);
-        }
-
-        return $receipt;
+            $remaining = round(max($balance - $amount, 0), 2);
+            $balancePurchase->forceFill([
+                'monto' => $remaining, 'pagado' => $remaining <= 0.01 ? 1 : 0,
+                'metadata' => array_merge($balancePurchase->metadata ?? [], [
+                    'portal_record_kind' => 'balance', 'last_portal_installment_id' => $receipt->id,
+                    'last_portal_installment_at' => $paidAt->toIso8601String(),
+                ]),
+                'paid_at' => $remaining <= 0.01 ? $paidAt : null,
+            ])->save();
+            // No network calls on checkout: the scheduler retries each CRM independently.
+            app(CosPaymentCrmSyncService::class)->queueReceipt($receipt);
+            return $receipt;
+        });
+        $balancePurchase->refresh();
+        return $receipt->fresh();
     }
+
     /**
      * Records a portal payment in the corresponding Teamleader paid field.
      * The Teamleader service fetches the current project and sends all mutable

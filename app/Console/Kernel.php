@@ -24,6 +24,10 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
+        $schedule->command('cos:sync-payment-receipts --pending --write --limit=2')
+            ->everyMinute()->when(fn () => (bool) config('cos_payments.crm_sync_enabled'))
+            ->withoutOverlapping(20)->runInBackground()
+            ->appendOutputTo(storage_path('logs/cos-payment-crm.log'));
         $schedule->command('clients:reconcile-blocks --limit=30')->everyMinute()->withoutOverlapping(10);
         $schedule->command('send:dailyreport')->dailyAt('12:00')->timezone('UTC');
         $schedule->command('send:weklyreport')->weekly()->mondays()->at('12:00')->timezone('UTC');

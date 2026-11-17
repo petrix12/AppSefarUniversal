@@ -43,6 +43,24 @@ class CosPaymentPresentationTest extends TestCase
         $this->assertStringNotContainsString('>51€', $html);
     }
 
+    public function test_internal_crm_invoice_information_is_hidden_in_client_preview(): void
+    {
+        config(['crm_sync.hubspot.portal_id' => '20053496']);
+        $data = ['purchases' => [['source' => 'teamleader_phase_installment', 'metadata' => [
+            'crm_payment_sync' => ['providers' => ['hubspot' => [
+                'status' => 'synced', 'invoice_status' => 'paid', 'remote_invoice_id' => '9000123',
+            ], 'teamleader' => ['status' => 'synced']]],
+        ]]]];
+        $admin = view('crud.users.partials.payment-crm-status', $data + ['cosViewRoleId' => 1])->render();
+        $client = view('crud.users.partials.payment-crm-status', $data + ['cosViewRoleId' => 5])->render();
+        $this->assertStringContainsString('Factura HubSpot #9000123', $admin);
+        $this->assertStringContainsString('Pagada', $admin);
+        $this->assertStringContainsString('/record/0-53/9000123', $admin);
+        $this->assertStringNotContainsString('HubSpot', $client);
+        $this->assertStringNotContainsString('Teamleader', $client);
+        $this->assertStringNotContainsString('9000123', $client);
+    }
+
     private function summary(bool $pending): string
     {
         // Render the actual finance fragment of the large COS view, without

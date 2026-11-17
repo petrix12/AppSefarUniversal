@@ -2616,6 +2616,8 @@
                                                 <i class="fas fa-receipt"></i>
                                             </a>
                                         @endif
+                                        <div class="small text-muted mt-2">Comprobante #{{ $factura['id'] }}@if(collect($factura['compras'])->isNotEmpty() && collect($factura['compras'])->every(fn ($p) => (bool) data_get($p, 'pagado'))) · Pagado @endif</div>
+                                        @include('crud.users.partials.payment-crm-status', ['purchases' => $factura['compras']])
                                     </td>
                                 </tr>
                             @endforeach

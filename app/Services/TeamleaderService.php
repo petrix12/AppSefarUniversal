@@ -64,6 +64,28 @@ class TeamleaderService
         return $response->json() ?? [];
     }
 
+    /** Strict payment receipt notes; failed calls must not look like empty lists. */
+    public function paymentReceiptNotes(string $projectId, int $page = 1): array
+    {
+        $response = $this->teamleaderPost('notes.list', [
+            'filter' => ['subject' => ['type' => 'project', 'id' => $projectId]],
+            'page' => ['size' => 100, 'number' => $page],
+        ]);
+        $response->throw();
+        $notes = $response->json('data');
+        if (! is_array($notes)) throw new \UnexpectedValueException('Teamleader no confirmó la lista de notas.');
+        return $notes;
+    }
+
+    public function createPaymentReceiptNote(string $projectId, string $content): string
+    {
+        $response = $this->teamleaderPost('notes.create', [
+            'subject' => ['type' => 'project', 'id' => $projectId], 'content' => $content,
+        ]);
+        $response->throw();
+        return (string) $response->json('data.id', '');
+    }
+
     private function waitForTeamleaderSlot(): void
     {
         $gapMs = max(0, (int) config('services.teamleader.min_request_gap_ms', 800));

@@ -57,6 +57,12 @@ class TeamleaderProjectPaymentWriter
 
             $previous = trim((string) ($field['value'] ?? ''));
             if ($reference && str_contains($previous, "[COS:{$reference}]")) {
+                $entries = collect((new TeamleaderProjectPaymentAnalyzer())->parseMoneyText($previous)['dated_entries'])
+                    ->where('cos_reference', $reference)->values();
+                if ($entries->count() !== 1 || abs((float) $entries[0]['amount'] - $amount) > .001
+                    || $entries[0]['currency'] !== $currency) {
+                    throw new \App\Services\Payments\PaymentSyncReviewException('La referencia del abono Teamleader existe con otro importe o moneda.');
+                }
                 return;
             }
 

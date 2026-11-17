@@ -2650,11 +2650,10 @@ class ClienteController extends Controller
 
         $hash_factura = "sef_".$this->generate_string($permitted_chars, 50);
 
-        Factura::create([
-            'id_cliente' => auth()->user()->id,
-            'hash_factura' => $hash_factura,
-            'met' => 'paypal',
-        ]);
+        $confirmedInvoice = app(\App\Services\Payments\ConfirmedPaymentInvoiceService::class)->getOrCreate(
+            (int) auth()->id(), 'paypal', $request->input('orderID'), $hash_factura,
+        );
+        $hash_factura = $confirmedInvoice->hash_factura;
         $paidAt = now();
 
         $remainingPhasePayment = (float) ($phasePaymentAmount ?? 0);
@@ -3451,14 +3450,10 @@ class ClienteController extends Controller
 
                 $hash_factura = "sef_".$this->generate_string($permitted_chars, 50);
 
-                Factura::create([
-                    'id_cliente' => auth()->user()->id,
-                    'hash_factura' => $hash_factura,
-                    'met' => 'stripe',
-                    'idcus' => $charged->customer,
-                    'idcharge' => $charged->id
-                ]);
-
+                $confirmedInvoice = app(\App\Services\Payments\ConfirmedPaymentInvoiceService::class)->getOrCreate(
+                    (int) auth()->id(), 'stripe', $charged->id, $hash_factura, $charged->customer,
+                );
+                $hash_factura = $confirmedInvoice->hash_factura;
                 $paidAt = now();
 
                 $remainingPhasePayment = (float) ($phasePaymentAmount ?? 0);

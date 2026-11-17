@@ -166,7 +166,9 @@ class TeamleaderProjectPaymentAnalyzer
     public function parseMoneyText(?string $value): array
     {
         $raw = trim((string) $value);
-        $normalized = $this->normalizeText($raw);
+        // Correlation IDs are metadata, not money. In particular a receipt
+        // such as [COS:phase-payment-7786] must never become EUR 7,786.
+        $normalized = $this->normalizeText(preg_replace('/\[COS:[^\]]+\]/iu', '', $raw) ?? $raw);
         $withoutDates = $this->removeDates($normalized);
 
         $exonerated = (bool) preg_match('/\bEXONERAD[OA]|\bEXONERACION\b/u', $withoutDates);
