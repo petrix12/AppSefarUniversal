@@ -86,6 +86,13 @@ class TeamleaderService
         return (string) $response->json('data.id', '');
     }
 
+    /** Preserve the HTTP status for payment retries instead of wrapping it in a generic Exception. */
+    public function updatePaymentProject(string $projectId, array $data): void
+    {
+        if (! $this->isValidUuid($projectId)) throw new \InvalidArgumentException('Invalid payment project.');
+        $this->teamleaderPost('projects.update', array_merge($data, ['id' => $projectId]))->throw();
+    }
+
     private function waitForTeamleaderSlot(): void
     {
         $gapMs = max(0, (int) config('services.teamleader.min_request_gap_ms', 800));

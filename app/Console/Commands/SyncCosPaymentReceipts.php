@@ -66,7 +66,7 @@ class SyncCosPaymentReceipts extends Command
                         $failed = true;
                         $this->warn($state['last_error'] ?? 'Pendiente de confirmación.');
                     }
-                    $links = array_intersect_key($state, array_flip(['invoice_id', 'reference', 'remote_invoice_id', 'payment_id', 'note_id', 'document_url']));
+                    $links = array_intersect_key($state, array_flip(['invoice_id', 'reference', 'remote_invoice_id', 'payment_id', 'note_id', 'document_url', 'last_operation', 'exception_type', 'http_status', 'http_category', 'required_scopes', 'curl_error']));
                     $this->line(json_encode($links, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
                 }
             } else {

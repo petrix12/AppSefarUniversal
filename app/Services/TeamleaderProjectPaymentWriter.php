@@ -29,7 +29,8 @@ class TeamleaderProjectPaymentWriter
         float $amount,
         string $date,
         ?string $reference = null,
-        string $currency = 'EUR'
+        string $currency = 'EUR',
+        ?array $verifiedProject = null,
     ): void
     {
         $fieldId = self::PAID_FIELD_IDS[$phase] ?? null;
@@ -38,9 +39,14 @@ class TeamleaderProjectPaymentWriter
             throw new InvalidArgumentException('La fase o el monto de Teamleader no es válido.');
         }
 
-        $project = $this->teamleader->getProjectDetails($projectId);
-        if (! is_array($project) || empty($project['id'])) {
+        // Reread immediately before merging fields; the identity check may
+        // have made another API call and must not overwrite newer project data.
+        $project = $this->teamleader->webhookObject('project', $projectId);
+        if (! is_array($project) || (string) ($project['id'] ?? '') !== $projectId) {
             throw new \RuntimeException('Teamleader no devolvió el proyecto que se iba a actualizar.');
+        }
+        if ($verifiedProject !== null && ($project['customer'] ?? []) !== ($verifiedProject['customer'] ?? [])) {
+            throw new \App\Services\Payments\PaymentSyncReviewException('El cliente del proyecto cambió durante la sincronización del abono.');
         }
 
         $customFields = $this->customFieldsForUpdate($project['custom_fields'] ?? []);
@@ -76,7 +82,7 @@ class TeamleaderProjectPaymentWriter
             $customFields[] = ['id' => $fieldId, 'value' => $newPaymentText];
         }
 
-        $this->teamleader->updateProject(
+        $this->teamleader->updatePaymentProject(
             (string) $project['id'],
             $this->projectUpdatePayload($project, $customFields)
         );

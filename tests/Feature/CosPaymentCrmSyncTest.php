@@ -197,6 +197,20 @@ class CosPaymentCrmSyncTest extends TestCase
         $this->assertSame(1, Compras::count());
     }
 
+    public function test_teamleader_http_failures_keep_the_exact_operation_and_status(): void
+    {
+        $receipt = $this->receipt(); config(['services.teamleader.min_request_gap_ms' => 0]);
+        $this->partialMock(TeamleaderService::class, fn ($m) => $m->shouldReceive('getAccessToken')->andReturn('test-only'));
+        Http::fake(['https://api.focus.teamleader.eu/projects.info' => Http::response(['errors' => [['title' => 'do-not-store-response-body']]], 403)]);
+        $service = app(CosPaymentCrmSyncService::class); $service->queueReceipt($receipt); $service->process($receipt->id, 'teamleader');
+        $state = data_get($receipt->fresh()->metadata, 'crm_payment_sync.providers.teamleader');
+        $this->assertSame('retry', $state['status']);
+        $this->assertSame('projects.info', $state['last_operation']);
+        $this->assertSame(403, $state['http_status']);
+        $this->assertStringNotContainsString('do-not-store-response-body', json_encode($state));
+        $this->assertSame(1, Compras::count());
+    }
+
     public function test_a_provider_permission_failure_does_not_repeat_or_block_the_other_provider(): void
     {
         $receipt = $this->receipt(); $this->fakeHubspot(); $this->fakeTeamleader(); $this->hubspotRejection = 403;
@@ -204,6 +218,10 @@ class CosPaymentCrmSyncTest extends TestCase
         $state = data_get($receipt->fresh()->metadata, 'crm_payment_sync.providers');
         $this->assertSame('retry', $state['hubspot']['status']);
         $this->assertStringContainsString('HTTP 403', $state['hubspot']['last_error']);
+        $this->assertSame('GET /crm/v3/objects/contacts/19063', $state['hubspot']['last_operation']);
+        $this->assertSame('MISSING_SCOPES', $state['hubspot']['http_category']);
+        $this->assertSame(['crm.objects.contacts.read'], $state['hubspot']['required_scopes']);
+        $this->assertStringNotContainsString('do-not-store-response-body', json_encode($state));
         $this->assertSame('synced', $state['teamleader']['status']);
         $this->hubspotRejection = null;
         $service->process($receipt->id, null, true);
@@ -298,7 +316,8 @@ class CosPaymentCrmSyncTest extends TestCase
     private function fakeHubspot(): void
     {
         Http::fake(function ($r) {
-            if ($this->hubspotRejection) return Http::response(['message' => 'Simulated permission rejection'], $this->hubspotRejection);
+            if ($this->hubspotRejection) return Http::response(['message' => 'do-not-store-response-body',
+                'category' => 'MISSING_SCOPES', 'errors' => [['context' => ['requiredScopes' => ['crm.objects.contacts.read']]]]], $this->hubspotRejection);
             $path = parse_url($r->url(), PHP_URL_PATH);
             if ($path === '/crm/v3/objects/contacts/19063') return Http::response(['id' => '19063',
                 'properties' => ['email' => $this->contactEmail, 'numero_de_pasaporte' => 'P-290']]);
@@ -351,9 +370,10 @@ class CosPaymentCrmSyncTest extends TestCase
             'custom_fields' => [['id' => '4339375f-ed77-02d9-a157-7da9f9e4bfac', 'value' => '3448.64 EUR']]];
         $this->mock(TeamleaderService::class, function ($m): void {
             $m->shouldReceive('getProjectDetails')->andReturnUsing(fn () => $this->project);
-            $m->shouldReceive('webhookObject')->andReturn(['id' => '4a853f3d-0c10-0b3d-9c7d-20d3a2be67ad', 'emails' => [['email' => 'client@example.com']]]);
-            $m->shouldReceive('updateProject')->andReturnUsing(function ($id, $data) {
-                $this->projectWrites++; $this->project = array_merge($this->project, $data); return [];
+            $m->shouldReceive('webhookObject')->andReturnUsing(fn ($type) => $type === 'project' ? $this->project
+                : ['id' => '4a853f3d-0c10-0b3d-9c7d-20d3a2be67ad', 'emails' => [['email' => 'client@example.com']]]);
+            $m->shouldReceive('updatePaymentProject')->andReturnUsing(function ($id, $data): void {
+                $this->projectWrites++; $this->project = array_merge($this->project, $data);
             });
             $m->shouldReceive('paymentReceiptNotes')->andReturnUsing(fn () => $this->notes);
             $m->shouldReceive('createPaymentReceiptNote')->andReturnUsing(function ($id, $content) {

@@ -376,8 +376,8 @@ class TeamleaderPhasePaymentRulesTest extends TestCase
         $paidFieldId = 'a1b50c58-8175-0d13-9856-f661e783dc08';
         $teamleader = $this->createMock(TeamleaderService::class);
         $teamleader->expects($this->once())
-            ->method('getProjectDetails')
-            ->with('project-installments')
+            ->method('webhookObject')
+            ->with('project', 'project-installments')
             ->willReturn([
                 'id' => 'project-installments',
                 'title' => 'Expediente de prueba',
@@ -393,7 +393,7 @@ class TeamleaderPhasePaymentRulesTest extends TestCase
                 ],
             ]);
         $teamleader->expects($this->once())
-            ->method('updateProject')
+            ->method('updatePaymentProject')
             ->with('project-installments', $this->callback(function (array $payload) use ($paidFieldId): bool {
                 $fields = collect($payload['custom_fields'])->keyBy('id');
 
@@ -415,7 +415,7 @@ class TeamleaderPhasePaymentRulesTest extends TestCase
     {
         $teamleader = $this->createMock(TeamleaderService::class);
         $teamleader->expects($this->once())
-            ->method('getProjectDetails')
+            ->method('webhookObject')
             ->willReturn([
                 'id' => 'project-idempotent',
                 'custom_fields' => [[
@@ -423,7 +423,7 @@ class TeamleaderPhasePaymentRulesTest extends TestCase
                     'value' => 'Abono 50 EUR 2026-09-07 [COS:purchase-123]',
                 ]],
             ]);
-        $teamleader->expects($this->never())->method('updateProject');
+        $teamleader->expects($this->never())->method('updatePaymentProject');
 
         (new TeamleaderProjectPaymentWriter($teamleader))->appendPhasePayment(
             'project-idempotent',

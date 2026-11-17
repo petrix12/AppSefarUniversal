@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Http;
 
 class HubspotPaymentReceiptWriter
 {
+    private ?CrmPaymentSyncState $syncState = null;
     private const PAID_PROPERTIES = [
         1 => 'fase_1_pagado', 2 => 'fase_2_pagado', 3 => 'fase_3_pagado',
         98 => 'carta_nat_pagado', 99 => 'cil___fcje_pagado',
@@ -15,6 +16,7 @@ class HubspotPaymentReceiptWriter
 
     public function sync(array $c, CrmPaymentSyncState $state): void
     {
+        $this->syncState = $state;
         $user = $c['user'];
         $contact = $this->request('GET', '/crm/v3/objects/contacts/'.rawurlencode($user->hs_id), [
             'properties' => 'email,numero_de_pasaporte,hs_merged_object_ids',
@@ -183,10 +185,14 @@ class HubspotPaymentReceiptWriter
 
     private function request(string $method, string $path, array $data = []): array
     {
+        $this->syncState?->save(['last_operation' => $method.' '.$path]);
         if (! config('services.hubspot.key')) throw new \RuntimeException('HubSpot no está configurado.');
         $mode = strtolower((string) config('services.hubspot.force_ip_resolve', 'v4'));
-        $options = ['force_ip_resolve' => in_array($mode, ['v4', 'v6'], true) ? $mode : 'v4'];
-        if ($ca = config('services.hubspot.ca_bundle')) $options['verify'] = $ca;
+        $options = ['force_ip_resolve' => in_array($mode, ['v4', 'v6'], true) ? $mode : 'v4', 'verify' => true];
+        foreach (array_filter([config('services.hubspot.ca_bundle'), ini_get('curl.cainfo'),
+            ini_get('openssl.cafile'), base_path('storage/certs/cacert.pem')]) as $ca) {
+            if (is_file($ca)) { $options['verify'] = $ca; break; }
+        }
         $response = Http::withToken(config('services.hubspot.key'))->withOptions($options)->acceptJson()->asJson()
             ->connectTimeout(5)->timeout(20)->send($method, 'https://api.hubapi.com'.$path,
                 $method === 'GET' ? ['query' => $data] : ['json' => $data]);

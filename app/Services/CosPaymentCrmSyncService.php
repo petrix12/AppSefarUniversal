@@ -125,6 +125,8 @@ class CosPaymentCrmSyncService
                     : 'Sincronización no confirmada; se conservaron los pasos completados para reintentar.';
                 if ($e instanceof \App\Exceptions\CosIdentityConflictException) {
                     $reason = 'Los datos del contacto CRM están cruzados con otra cuenta.';
+                } elseif ($e instanceof \App\Exceptions\TeamleaderAuthenticationException) {
+                    $reason = 'Teamleader requiere volver a autorizar la conexión OAuth de la App.';
                 } elseif ($e instanceof \Illuminate\Http\Client\RequestException) {
                     $code = $e->response->status();
                     $reason = ucfirst($provider)." devolvió HTTP {$code}. ".(
@@ -132,11 +134,27 @@ class CosPaymentCrmSyncService
                             ? 'Revisa los permisos de la integración para contactos, negocios, facturas, líneas y pagos.'
                             : 'Se conservaron las referencias confirmadas para reintentar sin duplicar.');
                 }
-                $state->save(['status' => $review ? 'review' : 'retry', 'lease_until' => null,
+                $diagnostic = ['exception_type' => get_class($e)];
+                if ($e instanceof \App\Exceptions\TeamleaderServiceUnavailableException) $diagnostic['http_status'] = $e->getCode();
+                if ($e instanceof \Illuminate\Http\Client\RequestException) {
+                    $diagnostic['http_status'] = $e->response->status();
+                    $body = $e->response->json() ?? [];
+                    $category = data_get($body, 'category');
+                    if (is_string($category) && preg_match('/^[A-Z_]{1,80}$/', $category)) $diagnostic['http_category'] = $category;
+                    $scopes = collect([
+                        data_get($body, 'context.requiredScopes', []), data_get($body, 'requiredScopes', []),
+                        data_get($body, 'errors.*.context.requiredScopes', []),
+                        data_get($body, 'errors.*.context.requiredGranularScopes', []),
+                    ])->flatten()->filter(fn ($scope) => is_string($scope) && preg_match('/^crm\.[a-z0-9_.-]{1,100}$/', $scope))->unique()->values()->all();
+                    if ($scopes) $diagnostic['required_scopes'] = $scopes;
+                }
+                if (preg_match('/cURL error (\d+)/', $e->getMessage(), $match)) $diagnostic['curl_error'] = (int) $match[1];
+                $state->save($diagnostic + ['status' => $review ? 'review' : 'retry', 'lease_until' => null,
                     'last_error' => $reason, 'next_attempt_at' => now()->addMinutes(min(60, 5 * (int) $state->get('attempts')))->toIso8601String()]);
                 Log::warning('COS: sincronización del comprobante pendiente', [
                     'receipt_id' => $receiptId, 'provider' => $provider,
                     'exception_type' => get_class($e), 'review' => $review,
+                    'operation' => $state->get('last_operation'),
                 ]);
             }
         }

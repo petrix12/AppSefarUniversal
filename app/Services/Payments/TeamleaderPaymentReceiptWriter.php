@@ -14,10 +14,12 @@ class TeamleaderPaymentReceiptWriter
 
     public function sync(array $c, CrmPaymentSyncState $state): void
     {
-        $project = $this->teamleader->getProjectDetails($c['project_id']);
+        $state->save(['last_operation' => 'projects.info']);
+        $project = $this->teamleader->webhookObject('project', $c['project_id']);
         if (($project['id'] ?? '') !== $c['project_id']) {
             throw new PaymentSyncReviewException('Teamleader devolvió un proyecto diferente al del abono.');
         }
+        $state->save(['last_operation' => 'contacts.info']);
         $contact = $this->teamleader->webhookObject('contact', (string) $c['user']->tl_id);
         $emails = collect($contact['emails'] ?? [])->pluck('email')->map(fn ($v) => mb_strtolower(trim((string) $v)));
         if (! $contact || ! $emails->contains(mb_strtolower(trim($c['user']->email)))) {
@@ -31,18 +33,19 @@ class TeamleaderPaymentReceiptWriter
         }
         if (! $matches) throw new PaymentSyncReviewException('El cliente del proyecto Teamleader no coincide con el abono.');
 
-        $state->save(['phase_update_started' => true]);
+        $state->save(['phase_update_started' => true, 'last_operation' => 'projects.info/update.payment-field']);
         app(TeamleaderProjectPaymentWriter::class)->appendPhasePayment(
             $c['project_id'], $c['phase'], (float) $c['amount'],
-            $c['receipt']->paid_at->format('Y-m-d'), $c['reference'], $c['currency'],
+            $c['receipt']->paid_at->format('Y-m-d'), $c['reference'], $c['currency'], $project,
         );
         $marker = "[COS:{$c['reference']}]";
         $content = "Pago confirmado {$c['amount']} {$c['currency']} · ".$c['receipt']->paid_at->format('Y-m-d')
             ."\n{$marker}\nComprobante App {$c['invoice']->id}: PAGADO\n{$c['invoice_url']}"
             ."\nNegocio HubSpot: {$c['deal']->hubspot_id}\nRegistro del mismo abono; no supone un nuevo cobro.";
-        $state->createOnce('note', function () use ($c, $marker): ?string {
+        $state->createOnce('note', function () use ($c, $marker, $state): ?string {
             $found = [];
             for ($page = 1; $page <= 10; $page++) {
+                $state->save(['last_operation' => 'notes.list']);
                 $notes = $this->teamleader->paymentReceiptNotes($c['project_id'], $page);
                 foreach ($notes as $note) {
                     if (str_contains((string) ($note['content'] ?? ''), $marker)) $found[] = (string) $note['id'];
@@ -55,6 +58,7 @@ class TeamleaderPaymentReceiptWriter
             throw new \RuntimeException('No se ha completado la búsqueda del comprobante en Teamleader.');
         }, function () use ($state, $c, $content): string {
             try {
+                $state->save(['last_operation' => 'notes.create']);
                 return $this->teamleader->createPaymentReceiptNote($c['project_id'], $content);
             } catch (RequestException $e) {
                 if (in_array($e->response->status(), [400, 401, 403, 404, 422, 429], true)) {
