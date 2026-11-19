@@ -73,6 +73,9 @@ class CosPaymentCrmSyncService
             throw new PaymentSyncReviewException('Falta un enlace único entre cliente, negocio de HubSpot y proyecto de Teamleader.');
         }
         $deal = $deals->first();
+        if (! CosDealPaymentScope::allowsDealPhase($deal->getAttributes(), $phase)) {
+            throw new PaymentSyncReviewException('Las fases de nacionalidad no corresponden a un negocio de traducción. Revisa la asociación.');
+        }
         if (! ctype_digit((string) $user->hs_id) || ! ctype_digit((string) $deal->hubspot_id)
             || ! Str::isUuid($project) || ! Str::isUuid((string) $user->tl_id)) {
             throw new PaymentSyncReviewException('Los identificadores de contacto, negocio o proyecto no tienen un formato válido.');

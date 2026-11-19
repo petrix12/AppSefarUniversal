@@ -67,7 +67,9 @@ class TeamleaderProjectPaymentAnalyzer
 
     public function analyzeProject(TlProject $project): array
     {
+        $scope = ['title' => $project->title, 'custom_fields' => $project->custom_fields ?? []];
         $phases = collect(self::PHASE_FIELDS)
+            ->filter(fn (array $fields, int $phase) => CosDealPaymentScope::allowsProjectPhase($scope, $phase))
             ->mapWithKeys(function (array $fields, int $phase) use ($project) {
                 $preestabRaw = $this->customFieldValue($project, $fields['preestab']['id'], $fields['preestab']['label']);
                 $paidRaw = $this->customFieldValue($project, $fields['paid']['id'], $fields['paid']['label']);
@@ -129,6 +131,7 @@ class TeamleaderProjectPaymentAnalyzer
         return [
             'project_id' => $project->id,
             'project_title' => $project->title,
+            'service' => CosDealPaymentScope::projectService($scope),
             'customer_id' => $project->customer_id,
             'customer_type' => $project->customer_type,
             'phases' => $phases->all(),

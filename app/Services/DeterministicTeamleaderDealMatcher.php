@@ -105,6 +105,10 @@ class DeterministicTeamleaderDealMatcher
 
     private function compare(array $deal, array $project): array
     {
+        if (CosDealPaymentScope::allowsDealPhase($deal, 1)
+            !== CosDealPaymentScope::allowsProjectPhase($project, 1)) {
+            return ['score' => 0, 'reason' => 'Traducción y nacionalidad son servicios distintos'];
+        }
         $code = $this->processCode((string) ($deal['codigo_de_proceso'] ?? ''));
         $otherCode = $this->processCode($project['process_code']);
         if ($code !== '' && $otherCode !== '' && $code !== $otherCode) {
@@ -128,6 +132,10 @@ class DeterministicTeamleaderDealMatcher
         $matchingPhases = 0;
         $conflictingAmount = false;
         foreach (self::DEAL_PHASES as $phase => $properties) {
+            if (! CosDealPaymentScope::allowsDealPhase($deal, $phase)
+                || ! CosDealPaymentScope::allowsProjectPhase($project, $phase)) {
+                continue;
+            }
             $matched = false;
             foreach (['preestab' => $properties[0], 'paid' => $properties[2]] as $kind => $property) {
                 $left = $this->money($deal[$property] ?? null);

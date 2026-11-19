@@ -69,6 +69,13 @@ class TeamleaderPhasePaymentService
             if (! isset($project['phases']) || ! is_array($project['phases'])) {
                 continue;
             }
+            $linkedDeals = ($processDeals ?? collect())->filter(fn ($deal) =>
+                (string) $deal->teamleader_id === (string) ($project['project_id'] ?? '')
+            );
+            $project['phases'] = collect($project['phases'])->filter(fn (array $phase) =>
+                CosDealPaymentScope::allowsProjectPhase($project, (int) ($phase['phase'] ?? 0))
+                && $linkedDeals->every(fn ($deal) => CosDealPaymentScope::allowsDealPhase($deal->getAttributes(), (int) ($phase['phase'] ?? 0)))
+            )->all();
 
             foreach ($project['phases'] as &$phase) {
                 $projectId = (string) ($project['project_id'] ?? '');
@@ -388,6 +395,21 @@ class TeamleaderPhasePaymentService
         if ($purchase->source !== self::PURCHASE_SOURCE) {
             return true;
         }
+        if ($this->isHiddenFromClient($purchase)) {
+            return false;
+        }
+        // Recheck the current deal classification before honoring an old
+        // payment URL, even if its saved project title predates the correction.
+        $projectId = data_get($purchase->metadata, 'teamleader_project_id');
+        $phase = (int) data_get($purchase->metadata, 'phase', $purchase->phasenum);
+        $linkedDeals = Negocio::where('user_id', $purchase->id_user)
+            ->where(function ($query) use ($purchase, $projectId) {
+                $query->whereKey($purchase->deal_id);
+                if (filled($projectId)) $query->orWhere('teamleader_id', $projectId);
+            })->get();
+        if ($linkedDeals->contains(fn ($deal) => ! CosDealPaymentScope::allowsDealPhase($deal->getAttributes(), $phase))) {
+            return false;
+        }
 
         return $this->currentPortalPurchases(
             Compras::query()
@@ -401,7 +423,10 @@ class TeamleaderPhasePaymentService
 
     private function isHiddenFromClient(Compras $purchase): bool
     {
-        return filter_var(
+        return ! CosDealPaymentScope::allowsProjectPhase([
+            'project_title' => data_get($purchase->metadata, 'teamleader_project_title', ''),
+            'service' => data_get($purchase->metadata, 'teamleader_project_service', ''),
+        ], (int) data_get($purchase->metadata, 'phase', $purchase->phasenum)) || filter_var(
             data_get($purchase->metadata, 'hidden_from_client', false),
             FILTER_VALIDATE_BOOLEAN
         );
@@ -763,6 +788,7 @@ class TeamleaderPhasePaymentService
         return [
             'teamleader_project_id' => (string) ($project['project_id'] ?? ''),
             'teamleader_project_title' => (string) ($project['project_title'] ?? ''),
+            'teamleader_project_service' => (string) ($project['service'] ?? ''),
             'phase' => (int) ($phase['phase'] ?? 0),
             'payment_key' => $phase['payment_key'] ?? null,
             'payment_label' => $phase['payment_label'] ?? null,

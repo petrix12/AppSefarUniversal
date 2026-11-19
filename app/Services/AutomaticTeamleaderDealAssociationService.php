@@ -254,6 +254,10 @@ class AutomaticTeamleaderDealAssociationService
                 if (! $project || ! $matchingCandidate) {
                     continue;
                 }
+                if (CosDealPaymentScope::allowsDealPhase($properties, 1)
+                    !== CosDealPaymentScope::allowsProjectPhase($matchingCandidate, 1)) {
+                    continue;
+                }
 
                 $reverseMatches = collect($hubspotDeals)
                     ->filter(function (array $item) use ($user): bool {
@@ -340,6 +344,11 @@ class AutomaticTeamleaderDealAssociationService
 
     private function compareFields(array $hubspot, array $candidate): array
     {
+        if (CosDealPaymentScope::allowsDealPhase($hubspot, 1)
+            !== CosDealPaymentScope::allowsProjectPhase($candidate, 1)) {
+            return ['_field_confidence' => 0, '_field_signal_count' => 0,
+                '_field_match_reason' => 'Traducción y nacionalidad son servicios distintos.'];
+        }
         $score = 0;
         $signals = 0;
         $matched = [];
@@ -368,6 +377,10 @@ class AutomaticTeamleaderDealAssociationService
             99 => ['preestab' => 'cil___fcje_preestab', 'paid' => 'cil___fcje_pagado'],
         ];
         foreach ($hubspotPhases as $phase => $properties) {
+            if (! CosDealPaymentScope::allowsDealPhase($hubspot, $phase)
+                || ! CosDealPaymentScope::allowsProjectPhase($candidate, $phase)) {
+                continue;
+            }
             $phaseMatched = false;
             foreach ($properties as $kind => $property) {
                 $hubspotProperty = in_array($phase, [1, 2, 3], true) && $kind === 'paid'

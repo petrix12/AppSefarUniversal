@@ -1863,6 +1863,9 @@ class UserController extends Controller
             $rows = [];
             $linkedTeamleaderProject = $teamleaderPaymentProjectsById->get(trim((string) ($deal->teamleader_id ?? '')));
             foreach ($hubspotPaymentFields as $phase => $fields) {
+                if (! \App\Services\CosDealPaymentScope::allowsDealPhase($deal->getAttributes(), $phase)) {
+                    continue;
+                }
                 $preestabRaw = trim((string) $deal->{$fields['preestab']});
                 $hubspotPaidRaw = trim((string) $deal->{$fields['paid']});
                 $teamleaderPaidField = $fields['teamleader_paid'] ?? null;

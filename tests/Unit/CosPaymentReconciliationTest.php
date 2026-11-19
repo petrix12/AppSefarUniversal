@@ -10,6 +10,45 @@ use PHPUnit\Framework\TestCase;
 
 class CosPaymentReconciliationTest extends TestCase
 {
+    public function test_copied_nationality_fields_on_two_translation_deals_do_not_triple_the_totals(): void
+    {
+        $deals = collect([
+            new Negocio(['id' => 1, 'hubspot_id' => 'HS-1', 'servicio_solicitado2' => 'Portuguesa Sefardi', 'servicio_solicitado' => 'Traducción al Portugués']),
+            new Negocio(['id' => 2, 'hubspot_id' => 'HS-2', 'servicio_solicitado2' => 'Traducción al Portugués']),
+            new Negocio(['id' => 3, 'hubspot_id' => 'HS-3', 'servicio_solicitado2' => 'Traducción al Portugués']),
+        ]);
+        $rows = $deals->flatMap(fn ($deal) => collect([1 => 1050.0, 2 => 1875.0, 3 => 1875.0])->map(
+            fn ($amount, $phase) => ['deal_id' => $deal->id, 'phase' => $phase, 'source' => 'HubSpot',
+                'project_id' => $deal->hubspot_id, 'effective_preestab_amount' => $amount,
+                'effective_paid_amount' => $amount - ($phase === 1 ? 50 : 0),
+                'collectible_balance_amount' => $phase === 1 ? 50.0 : 0.0],
+        ))->values();
+        $result = $this->service()->reconcile($deals, collect(), collect(), $rows);
+        $this->assertCount(3, $result['rows']);
+        $this->assertSame([1], $result['rows']->pluck('deal_id')->unique()->values()->all());
+        $this->assertSame(4800.0, $result['rows']->sum('effective_preestab_amount'));
+        $this->assertSame(4750.0, $result['summary']->first()['paid']);
+        $this->assertSame(50.0, $result['summary']->first()['debt']);
+        $this->assertCount(9, $rows, 'The source data is preserved, not deleted or rewritten.');
+    }
+
+    public function test_imported_translation_phase_mirrors_are_excluded_but_real_receipts_and_other_charges_remain(): void
+    {
+        $deal = new Negocio(['id' => 1, 'hubspot_id' => 'HS-1', 'teamleader_id' => 'project-1', 'servicio_solicitado2' => 'Traducción al Portugués']);
+        $real = $this->purchase(1, ['monto' => 110.56, 'hash_factura' => 'confirmed-invoice']);
+        $installment = $this->purchase(2, ['monto' => 50, 'source' => 'teamleader_phase_installment']);
+        $imported = $this->phase(3, ['pagado' => 1, 'source' => 'teamleader_phase_history']);
+        $balance = $this->phase(4);
+        $independent = $this->purchase(5, ['phasenum' => null, 'monto' => 25]);
+        $original = $real->getAttributes();
+        $result = $this->service()->reconcile(collect([$deal]), collect([$balance, $independent]), collect([$real, $installment, $imported]), collect());
+        $this->assertSame([1, 2], $result['paid']->pluck('id')->all());
+        $this->assertSame([5], $result['pending']->pluck('id')->all());
+        $this->assertSame(160.56, $result['summary']->first()['paid']);
+        $this->assertSame(25.0, $result['summary']->first()['debt']);
+        $this->assertSame($original, $real->getAttributes());
+    }
+
     private function deal(int $id = 1, string $project = 'project-1'): Negocio
     {
         return new Negocio(['id' => $id, 'hubspot_id' => 'HS-'.$id, 'teamleader_id' => $project]);

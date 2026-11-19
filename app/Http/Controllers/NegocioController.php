@@ -89,6 +89,9 @@ class NegocioController extends Controller
         $hsProps = $hubspotDeal['properties'] ?? [];
 
         foreach ($camposRelacionados as $hsField => $tlFieldId) {
+            if (! \App\Services\CosDealPaymentScope::allowsEnrichmentField(array_replace($dealDb->getAttributes(), $hsProps), $teamleaderDeal, $hsField)) {
+                continue;
+            }
             $hsValue = $hsProps[$hsField] ?? null;
             $tlValue = $tlFields->first(fn ($field) => ($field['definition']['id'] ?? $field['id'] ?? null) === $tlFieldId)['value'] ?? null;
 

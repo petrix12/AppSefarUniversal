@@ -14,6 +14,31 @@ class CosPaymentReconciliationService
 
     public function reconcile(Collection $deals, Collection $pending, Collection $paid, Collection $rows): array
     {
+        $dealsById = $deals->keyBy('id');
+        $dealsByProject = $deals->filter(fn ($deal) => filled($deal->teamleader_id))->groupBy('teamleader_id');
+        $allowed = static function (?int $dealId, int $phase, ?string $projectId = null) use ($dealsById, $dealsByProject): bool {
+            $deal = $dealsById->get($dealId);
+            $linked = $dealsByProject->get($projectId, collect());
+            if (! $deal && $linked->count() === 1) {
+                $deal = $linked->first();
+            }
+
+            return ! $deal || CosDealPaymentScope::allowsDealPhase($deal->getAttributes(), $phase);
+        };
+        $rows = $rows->filter(fn (array $row) => $allowed(
+            $row['deal_id'] ?? null, (int) ($row['phase'] ?? 0),
+            $row['teamleader_project_id'] ?? (($row['source'] ?? '') === 'Teamleader' ? ($row['project_id'] ?? null) : null),
+        ))->values();
+        // Only calculated/imported phase mirrors are excluded. A real receipt,
+        // invoice or independent translation charge keeps its own audit trail.
+        $inapplicableMirror = static fn (Compras $purchase) => in_array($purchase->source, [
+            TeamleaderPhasePaymentService::PURCHASE_SOURCE, TeamleaderPhasePaymentService::HISTORY_SOURCE,
+        ], true) && blank($purchase->hash_factura) && ! $allowed(
+            $purchase->deal_id, (int) data_get($purchase->metadata, 'phase', $purchase->phasenum),
+            data_get($purchase->metadata, 'teamleader_project_id'),
+        );
+        $pending = $pending->reject($inapplicableMirror);
+        $paid = $paid->reject($inapplicableMirror);
         $identities = $deals->mapWithKeys(fn ($deal) => [$deal->id => filled($deal->teamleader_id) ? 'tl:'.$deal->teamleader_id
             : (filled($deal->hubspot_id) ? 'hs:'.$deal->hubspot_id : 'local:'.$deal->id)]);
         $purchaseKey = fn (Compras $purchase) => $this->purchaseKey($purchase, $identities);

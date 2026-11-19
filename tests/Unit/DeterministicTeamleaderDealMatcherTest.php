@@ -8,6 +8,18 @@ use PHPUnit\Framework\TestCase;
 
 class DeterministicTeamleaderDealMatcherTest extends TestCase
 {
+    public function test_a_shared_process_code_and_copied_phases_do_not_link_translation_to_nationality(): void
+    {
+        $plan = $this->matcher()->plan([[
+            'id' => 1, 'dealname' => 'Cliente - Traducción al Portugués', 'servicio_solicitado2' => 'Traducción al Portugués',
+            'codigo_de_proceso' => 'SAME-CODE', 'fase_1_preestab' => '1050 EUR',
+        ]], [[
+            'id' => 'nationality-project', 'title' => 'Cliente - Nacionalidad Portuguesa', 'service' => '',
+            'process_code' => 'SAME-CODE', 'phase_fields' => [1 => ['preestab' => '1050 EUR']],
+        ]]);
+        $this->assertSame('no_match', $plan[0]['status']);
+    }
+
     private function matcher(): DeterministicTeamleaderDealMatcher
     {
         return new DeterministicTeamleaderDealMatcher(new TeamleaderProjectPaymentAnalyzer());

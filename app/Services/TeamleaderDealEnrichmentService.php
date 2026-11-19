@@ -106,6 +106,9 @@ class TeamleaderDealEnrichmentService
         $comparisons = [];
 
         foreach (self::FIELD_MAP as $hubspotField => $teamleaderFieldId) {
+            if (! CosDealPaymentScope::allowsEnrichmentField(array_replace($deal->getAttributes(), $properties), $teamleaderProject, $hubspotField)) {
+                continue;
+            }
             $hubspotValue = $properties[$hubspotField] ?? null;
             $teamleaderValue = $teamleaderFields->first(
                 fn ($field) => ($field['definition']['id'] ?? $field['id'] ?? null) === $teamleaderFieldId

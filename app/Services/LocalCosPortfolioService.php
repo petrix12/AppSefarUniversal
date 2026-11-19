@@ -314,6 +314,10 @@ class LocalCosPortfolioService
     {
         $customFields = [];
         foreach (TeamleaderProjectPaymentAnalyzer::PHASE_FIELDS as $phase => $definition) {
+            if (($deal && ! CosDealPaymentScope::allowsDealPhase($deal, $phase))
+                || ! CosDealPaymentScope::allowsProjectPhase($project, $phase)) {
+                continue;
+            }
             $raw = $project['phase_fields'][$phase] ?? [];
             $fields = DeterministicTeamleaderDealMatcher::DEAL_PHASES[$phase];
             $preestab = ($raw['preestab'] ?? '') !== '' && ($raw['preestab'] ?? null) !== null

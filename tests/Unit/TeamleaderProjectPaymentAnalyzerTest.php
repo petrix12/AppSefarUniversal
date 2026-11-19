@@ -8,6 +8,20 @@ use PHPUnit\Framework\TestCase;
 
 class TeamleaderProjectPaymentAnalyzerTest extends TestCase
 {
+    public function test_nationality_phases_copied_to_a_translation_project_are_not_charges(): void
+    {
+        $project = new TlProject(['id' => 'translation-project', 'title' => 'Cliente - Traducción al Portugués', 'custom_fields' => [
+            ['definition' => ['id' => '73173887-a0e8-0f4f-bb55-b61f33d3c6e9'], 'value' => '1050 EUR'],
+            ['definition' => ['id' => 'a1b50c58-8175-0d13-9856-f661e783dc08'], 'value' => '1000 EUR'],
+        ]]);
+        $original = $project->getAttributes();
+        $analysis = $this->analyzer()->analyzeProject($project);
+        $this->assertSame([], $analysis['phases']);
+        $this->assertSame(0.0, $analysis['totals']['preestab_amount']);
+        $this->assertSame(0.0, $analysis['totals']['balance_amount']);
+        $this->assertSame($original, $project->getAttributes());
+    }
+
     public function test_it_extracts_euro_amount_and_ignores_dates(): void
     {
         $parsed = $this->analyzer()->parseMoneyText('1100.53€ 18/05/2026');

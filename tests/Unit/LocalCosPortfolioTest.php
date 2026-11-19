@@ -7,6 +7,16 @@ use Tests\TestCase;
 
 class LocalCosPortfolioTest extends TestCase
 {
+    public function test_copied_nationality_phases_on_translation_do_not_add_portfolio_debt(): void
+    {
+        $row = app(LocalCosPortfolioService::class)->clientRow($this->client(), [
+            ['id' => 1, 'hubspot_id' => 'HS-1', 'servicio_solicitado2' => 'Portuguesa Sefardi', 'fase_1_preestab' => '1050 EUR', 'fase_1_pagado' => '1000 EUR'],
+            ['id' => 2, 'hubspot_id' => 'HS-2', 'servicio_solicitado2' => 'Traducción al Portugués', 'fase_1_preestab' => '1050 EUR', 'fase_1_pagado' => '1000 EUR'],
+        ], []);
+        $this->assertSame(50.0, $row['known_balance_eur']);
+        $this->assertSame(50.0, $row['collectible_balance_eur']);
+    }
+
     private function client(): array
     {
         return ['id' => 1, 'name' => 'Ana Pérez', 'email' => 'ana@example.test', 'passport' => 'ANA123'];

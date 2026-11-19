@@ -259,6 +259,23 @@ class CosPaymentCrmSyncTest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_a_confirmed_receipt_on_a_translation_deal_requires_review_before_either_crm_is_written(): void
+    {
+        Schema::table('negocios', fn (Blueprint $table) => $table->string('servicio_solicitado2')->nullable());
+        Negocio::whereKey(2377)->update(['servicio_solicitado2' => 'Traducción al Portugués']);
+        $receipt = $this->receipt();
+        $service = app(CosPaymentCrmSyncService::class);
+        $service->queueReceipt($receipt);
+        $service->process($receipt->id);
+        $states = data_get($receipt->fresh()->metadata, 'crm_payment_sync.providers');
+        $this->assertSame('review', $states['hubspot']['status']);
+        $this->assertSame('review', $states['teamleader']['status']);
+        $this->assertSame(1, Compras::count());
+        $this->assertSame(1, Factura::count());
+        $this->assertSame(51.36, $receipt->fresh()->monto);
+        Http::assertNothingSent();
+    }
+
     public function test_a_lost_teamleader_note_response_is_recovered_without_repeating_the_abono(): void
     {
         $receipt = $this->receipt(); $this->fakeTeamleader(); $this->loseNoteResponse = true;
