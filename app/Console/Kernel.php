@@ -24,6 +24,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
+        $schedule->command('registration:deliver-meeting-webhooks --limit=4')
+            ->everyMinute()->when(fn () => (bool) config('registration_meetings.enabled'))
+            ->withoutOverlapping(5)->runInBackground();
         $schedule->command('cos:sync-payment-receipts --pending --write --limit=2')
             ->everyMinute()->when(fn () => (bool) config('cos_payments.crm_sync_enabled'))
             ->withoutOverlapping(20)->runInBackground()

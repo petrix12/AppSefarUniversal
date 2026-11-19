@@ -32,6 +32,8 @@ class RegisterV2Controller extends Controller
         }
 
         return view('auth.registerv2', [
+            'meetingRequired' => \App\Services\RegistrationMeetingService::supports((string) request('servicio'))
+                || \App\Services\RegistrationMeetingService::supports($this->resolveServicioSolicitado((string) request('servicio'))?->nombre),
             'googleLoginEnabled' => filled(config('services.google.client_id'))
                 && filled(config('services.google.client_secret'))
                 && filled(config('services.google.redirect')),
@@ -49,6 +51,15 @@ class RegisterV2Controller extends Controller
         $passport = $input['passport'] ?? null;
 
         try {
+            $selectedService = $this->resolveServicioSolicitado((string) ($input['servicio'] ?? ''));
+            $meeting = $selectedService
+                ? app(\App\Services\RegistrationMeetingService::class)->validateMeeting($input, $selectedService) : null;
+            if ($meeting) {
+                // Public fields are not evidence of payment for these services.
+                $input['pay'] = '0';
+                $input['registration_meeting'] = $meeting;
+                $rol = 'cliente';
+            }
             // -------------------------
             // VALIDACIONES
             // -------------------------
@@ -59,6 +70,11 @@ class RegisterV2Controller extends Controller
                     ->first();
 
                 if ($userCheck) {
+                    // Never replace another account's appointment or service
+                    // through the public form; existing clients must sign in.
+                    if ($meeting) {
+                        return view('redirect', ['redirect_url' => 'https://app.sefaruniversal.com/login?alert=existe']);
+                    }
                     $servicioSolicitado = $this->resolveServicioSolicitado((string) ($input['servicio'] ?? ''));
 
                     if (! $servicioSolicitado) {
@@ -184,6 +200,9 @@ class RegisterV2Controller extends Controller
                 'contrato'   => 0,
                 'cosready'  => 1,
             ]);
+            if ($meeting) {
+                Compras::create($this->initialPurchaseData($user, $servicio, $input));
+            }
 
             if (!empty($input['tiene_antepasados_espanoles'])) {
                 $userData['tiene_antepasados_espanoles'] = $input['tiene_antepasados_espanoles'] == '1' ? 'Si' : 'No';
@@ -312,10 +331,7 @@ class RegisterV2Controller extends Controller
              return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             // Loguear cualquier error general
-            \Log::error('Error en el registro: ' . $e->getMessage(), [
-                'input' => $input,
-                'stack' => $e->getTraceAsString()
-            ]);
+            \Log::error('Error en el registrov2', ['exception_type' => get_class($e)]);
             throw $e;
         }
     }
@@ -371,6 +387,8 @@ class RegisterV2Controller extends Controller
             'descripcion' => $desc,
             'pagado' => 0,
             'monto' => $monto,
+            'metadata' => isset($input['registration_meeting'])
+                ? ['registration_meeting' => $input['registration_meeting']] : null,
         ];
     }
 

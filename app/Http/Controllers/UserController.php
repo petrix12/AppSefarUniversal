@@ -337,6 +337,7 @@ class UserController extends Controller
 
         // Encuentra al usuario
         $user = User::findOrFail($request->id);
+        $this->protectSuperadminAccount($user);
 
         // Actualiza la contraseña
         $user->password = bcrypt($request->password);
@@ -3090,6 +3091,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
 
         $request->validate(['id' => ['required', 'integer', 'exists:users,id']]);
         $user = User::findOrFail($request->id);
+        $this->protectSuperadminAccount($user);
 
         $request->validate([
             'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user)],
@@ -3138,7 +3140,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
             ->filter(function ($value, $key) use ($currentData) {
                 return !is_null($value) || !array_key_exists($key, $currentData) || !is_null($currentData[$key]);
             })
-            ->except(['_token', 'id']);
+            ->except(['_token', 'id', 'is_superadmin']);
 
         if ($filteredRequest->has('vinculo_antepasados')) {
             $filteredRequest['vinculo_antepasados'] = implode(';', $filteredRequest->get('vinculo_antepasados'));
@@ -3205,6 +3207,11 @@ private function removeDuplicatesAndSort(array $cosuser): array
      */
     public function update(Request $request, User $user)
     {
+        $this->protectSuperadminAccount($user);
+        if ($user->getAttribute('is_superadmin')) {
+            $clientRole = Role::where('name', 'Cliente')->first();
+            abort_if($clientRole && $request->boolean('role'.$clientRole->id), 422, 'Retira primero la marca de superadmin antes de asignar el rol Cliente.');
+        }
         //dd($request->passport);
         // Validación
         if (is_null($request->passport)){
@@ -3278,6 +3285,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
      */
     public function destroy(User $user)
     {
+        abort_if((bool) $user->getAttribute('is_superadmin'), 403, 'Retira primero la marca de superadmin.');
         abort_unless(auth()->user()?->hasRole('Administrador') && ! auth()->user()->hasRole('Cliente'), 403);
         $nombre = $user->name;
 
@@ -3491,6 +3499,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
     public function updateBasic(Request $request, User $user)
     {
         $this->authorizeAdminOnly();
+        $this->protectSuperadminAccount($user);
 
         $request->validate([
             'name'      => 'required|string|max:255',
@@ -3513,6 +3522,8 @@ private function removeDuplicatesAndSort(array $cosuser): array
             'permissions'   => 'array',
             'permissions.*' => 'string',
         ]);
+        abort_if($user->getAttribute('is_superadmin') && in_array('Cliente', $request->input('roles', []), true), 422,
+            'Retira primero la marca de superadmin antes de asignar el rol Cliente.');
 
         // ✅ Datos básicos
         $user->name      = $request->name;
@@ -3553,6 +3564,12 @@ private function removeDuplicatesAndSort(array $cosuser): array
     private function authorizeAdminOnly(): void
     {
         abort_unless($this->isAdminUser(), 403);
+    }
+
+    private function protectSuperadminAccount(User $user): void
+    {
+        abort_if($user->getAttribute('is_superadmin') && ! auth()->user()?->isSuperadmin(), 403,
+            'Solo un superadmin puede modificar esta cuenta.');
     }
 
     private function isAdminUser(): bool

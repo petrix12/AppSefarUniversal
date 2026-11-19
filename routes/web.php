@@ -507,6 +507,10 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
     });
 
     // Grupo de rutas CRUD
+    Route::middleware(['auth', 'can:superadmin'])->group(function () {
+        Route::get('admin/superadmins', [\App\Http\Controllers\SuperadminController::class, 'listing'])->name('admin.superadmins.index');
+        Route::patch('admin/superadmins/{user}', [\App\Http\Controllers\SuperadminController::class, 'update'])->name('admin.superadmins.update');
+    });
     Route::group(['middleware' => ['auth'], 'as' => 'crud.'], function(){
         Route::get('cos/cartera', [\App\Http\Controllers\CosPortfolioController::class, 'listing'])
             ->name('cos.portfolio')->middleware('can:crud.users.index');
@@ -545,6 +549,8 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
         Route::post('users/{user}/notes', [ClientNoteController::class, 'store'])
                 ->name('users.notes.store')
                 ->middleware('can:crud.users.index');
+        Route::delete('users/{user}/notes/{note}', [ClientNoteController::class, 'destroy'])
+                ->name('users.notes.destroy')->middleware('can:client-notes.delete');
         Route::get('users/{user}/internal-chat/mentions', [ClientChatController::class, 'mentionableUsers'])
                 ->name('users.internal-chat.mentions')
                 ->middleware('can:crud.users.index');

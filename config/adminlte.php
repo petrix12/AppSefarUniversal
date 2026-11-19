@@ -263,6 +263,12 @@ return [
             'icon_color'  => 'white',
             'submenu' => [
                 [
+                    'text' => 'Superadmins',
+                    'icon' => 'fa-fw fas fa-user-shield',
+                    'route' => 'admin.superadmins.index',
+                    'can' => 'superadmin',
+                ],
+                [
                     'text'          => 'Usuarios (COS)',
                     'icon'          => 'fa-fw fas fa-users-cog',
                     'icon_color'    => 'white',

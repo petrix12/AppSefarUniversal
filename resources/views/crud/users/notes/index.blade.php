@@ -59,6 +59,15 @@
                         <time datetime="{{ $note->created_at->toIso8601String() }}" class="text-muted ml-2">
                             {{ $note->created_at->format('d/m/Y H:i') }}
                         </time>
+                        @can('client-notes.delete')
+                            <form method="POST" action="{{ route('crud.users.notes.destroy', [$client, $note]) }}" class="ml-auto"
+                                  onsubmit="return confirm('¿Eliminar esta nota del cliente?')">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="btn btn-outline-danger btn-sm" aria-label="Eliminar nota {{ $note->id }}">
+                                    <i class="fas fa-trash-alt mr-1" aria-hidden="true"></i>Eliminar
+                                </button>
+                            </form>
+                        @endcan
                     </div>
                     <div class="card-body" style="white-space:pre-wrap; overflow-wrap:anywhere;">{{ $note->note }}</div>
                 </article>

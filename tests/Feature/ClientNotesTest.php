@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\ClientNote;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -14,11 +13,20 @@ use Tests\TestCase;
 
 class ClientNotesTest extends TestCase
 {
-    use RefreshDatabase;
-
     protected function setUp(): void
     {
         parent::setUp();
+        // Notes use only the local application schema, never external Onidex migrations.
+        $this->artisan('migrate', ['--path' => [
+            'database/migrations/2014_10_12_000000_create_users_table.php',
+            'database/migrations/2021_03_08_173429_create_permission_tables.php',
+            'database/migrations/2019_12_14_000001_create_personal_access_tokens_table.php',
+            'database/migrations/2026_08_20_120000_add_expires_at_to_personal_access_tokens_table_if_missing.php',
+            'database/migrations/2025_07_03_200540_add_arraycos_to_users_table.php',
+            'database/migrations/2026_05_12_090000_create_client_chat_messages_table.php',
+            'database/migrations/2026_10_21_120000_create_client_notes_table.php',
+            'database/migrations/2026_11_19_120000_add_superadmin_and_note_deletion_audit.php',
+        ]])->assertExitCode(0);
         Role::findOrCreate('Cliente', 'web');
         Role::findOrCreate('Administrador', 'web');
         Permission::findOrCreate('crud.users.index', 'web');

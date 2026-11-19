@@ -203,6 +203,23 @@
             </div>
 
             {{-- Checkboxes --}}
+            @if($meetingRequired ?? false)
+                <div class="mt-4 border-t pt-4" data-registration-meeting>
+                    <h3 class="font-semibold">Tu reunión</h3>
+                    <p class="text-sm text-gray-600 mt-1">Indica la fecha y hora solicitadas. Te contactaremos para confirmar la disponibilidad.</p>
+                    <label for="meeting-at" class="block text-sm font-medium mt-3">Fecha y hora de reunión *</label>
+                    <input type="datetime-local" id="meeting-at" name="meeting_at" value="{{ old('meeting_at') }}" class="w-full border rounded p-2" required>
+                    @error('meeting_at')<p class="error-text">{{ $message }}</p>@enderror
+                    <label for="meeting-timezone" class="block text-sm font-medium mt-3">Zona horaria de la reunión *</label>
+                    <select id="meeting-timezone" name="meeting_timezone" class="w-full border rounded p-2" data-has-old-value="{{ old('meeting_timezone') ? '1' : '0' }}" required>
+                        @foreach(\DateTimeZone::listIdentifiers() as $timezone)
+                            <option value="{{ $timezone }}" @selected(old('meeting_timezone', config('app.timezone')) === $timezone)>{{ str_replace('_', ' ', $timezone) }}</option>
+                        @endforeach
+                    </select>
+                    <p class="text-sm text-gray-600 mt-1">Selecciona la zona donde estarás al asistir a la reunión.</p>
+                    @error('meeting_timezone')<p class="error-text">{{ $message }}</p>@enderror
+                </div>
+            @endif
             <div class="mt-4">
                 <label class="inline-flex items-center">
                     <input type="checkbox" name="acepta_comunicaciones" {{ old('acepta_comunicaciones') ? 'checked' : '' }} required>
@@ -244,6 +261,13 @@
         document.addEventListener("DOMContentLoaded", function () {
             const form = document.getElementById("registerV2Form");
             const modal = document.getElementById("successModal");
+            const meetingTimezone = document.getElementById('meeting-timezone');
+            if (meetingTimezone && meetingTimezone.dataset.hasOldValue !== '1') {
+                const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                if (Array.from(meetingTimezone.options).some(option => option.value === localTimezone)) {
+                    meetingTimezone.value = localTimezone;
+                }
+            }
 
             form.addEventListener("submit", function () {
                 modal.classList.remove("hidden");

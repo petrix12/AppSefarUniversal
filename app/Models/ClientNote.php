@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ClientNote extends Model
 {
+    use SoftDeletes;
+
     public const MAX_LENGTH = 10000;
 
     protected $fillable = ['client_id', 'user_id', 'note'];

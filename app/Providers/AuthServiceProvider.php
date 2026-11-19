@@ -25,6 +25,8 @@ class AuthServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->registerPolicies();
+        Gate::define('superadmin', fn ($user) => $user->isSuperadmin());
+        Gate::define('client-notes.delete', fn ($user) => $user->isSuperadmin());
         Gate::define('clients.blocks.review', fn ($user) => app(\App\Services\ClientRestrictionService::class)->canReview($user));
 
         Gate::define('ver.mi.estatus', function ($user) {

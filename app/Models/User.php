@@ -35,7 +35,7 @@ class User extends Authenticatable
         'other' => 'Otro',
     ];
 
-    protected $guarded = [];
+    protected $guarded = ['is_superadmin'];
 
     protected $hidden = [
         'password',
@@ -46,6 +46,7 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
+        'is_superadmin' => 'boolean',
         'email_verified_at' => 'datetime',
         'arraycos' => 'array',
         'arraycos_expire' => 'datetime',
@@ -60,6 +61,11 @@ class User extends Authenticatable
     public function accessBlock()
     {
         return $this->hasOne(UserAccessBlock::class, 'user_id');
+    }
+
+    public function isSuperadmin(): bool
+    {
+        return (bool) $this->getAttribute('is_superadmin') && ! $this->hasRole('Cliente');
     }
 
     public function hasIndividualClientBlock(): bool
