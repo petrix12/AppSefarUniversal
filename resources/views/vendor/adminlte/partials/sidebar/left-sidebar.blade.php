@@ -27,8 +27,9 @@
                 </div>
 
                 <div class="info" style="line-height:1.1;">
-                    <a href="{{ url('user/profile') }}" class="d-block" style="white-space:normal;">
-                        {{ trim(($u->name ?? '').' '.($u->lastname ?? '')) ?: $u->email }}
+                    <a href="{{ url('user/profile') }}" class="d-flex align-items-baseline" style="white-space:normal;">
+                        <span>{{ trim(($u->name ?? '').' '.($u->lastname ?? '')) ?: $u->email }}</span>
+                        <x-superadmin-indicator :user="$u" />
                     </a>
                     <small class="text-muted" style="display:block;white-space:normal;">
                         {{ $u->email }}

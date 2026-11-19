@@ -759,6 +759,7 @@
 
                                             <h3 class="text-lg font-semibold text-gray-900">
                                                 {{ \Illuminate\Support\Str::limit($user->name, 30) }}
+                                                <x-superadmin-indicator :user="$user" />
                                             </h3>
 
                                             <p class="text-sm text-gray-600 mt-1">
@@ -967,7 +968,7 @@
                                                     <span class="badge badge-danger ml-2">Acceso restringido</span>
                                                 @endif
 
-                                                <p class="user-name">{{ \Illuminate\Support\Str::limit($user->name, 25) }}</p>
+                                                <p class="user-name">{{ \Illuminate\Support\Str::limit($user->name, 25) }} <x-superadmin-indicator :user="$user" /></p>
                                                 <p class="user-info">{{ $user->email }}</p>
                                                 <p class="user-info">{{ $user->passport }}</p>
                                                 @if($user->isClientAppAccessBlocked())

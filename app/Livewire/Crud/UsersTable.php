@@ -93,7 +93,7 @@ class UsersTable extends Component
 
         $query = User::query()
             ->select([
-                'id', 'name', 'nombres', 'apellidos', 'email',
+                'id', 'name', 'nombres', 'apellidos', 'email', 'is_superadmin',
                 'passport', 'servicio', 'contrato', 'pay', 'created_at',
                 'owner_id',
                 'estado_vendedor',

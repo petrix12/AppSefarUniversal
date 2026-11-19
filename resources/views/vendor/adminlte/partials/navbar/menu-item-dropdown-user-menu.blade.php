@@ -24,6 +24,7 @@
         @endif
         <span @if(config('adminlte.usermenu_image')) class="d-none d-md-inline" @endif>
             {{ Auth::user()->name }}
+            <x-superadmin-indicator :user="Auth::user()" />
         </span>
     </a>
 

@@ -362,6 +362,22 @@ textarea {
   overflow-wrap: anywhere;
 }
 
+.sefar-superadmin-indicator {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  margin-inline-start: 0.35rem;
+  color: var(--sefar-accent);
+  font-size: 0.85em;
+  line-height: 1;
+  vertical-align: baseline;
+}
+
+.main-sidebar .sefar-superadmin-indicator,
+.main-header .nav-link .sefar-superadmin-indicator {
+  color: var(--sefar-accent-light) !important;
+}
+
 .main-sidebar .nav-sidebar {
   padding: 0.1rem 0.55rem 1.1rem;
 }
