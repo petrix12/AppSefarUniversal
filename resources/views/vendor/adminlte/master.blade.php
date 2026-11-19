@@ -82,7 +82,8 @@
         <meta name="msapplication-TileImage" content="{{ asset('favicon/ms-icon-144x144.png') }}">
     @endif
 
-    <script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/20053496.js"></script>
+    {{-- Do not load HubSpot tracking here: staff forms contain other clients' data.
+         Automatic form capture can attach them to the operator's tracking cookie. --}}
 
     <script async src="//www.googletagmanager.com/gtag/js?id=UA-189067277-1"></script>
     <script>

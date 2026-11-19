@@ -36,7 +36,8 @@
         @include('layouts.partials.sefar-global-libraries')
         <script src="{{ asset('/js/auth-modern.js') }}?v={{ filemtime(public_path('js/auth-modern.js')) }}" defer></script>
 
-        <script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/20053496.js"></script>
+        {{-- Login and account recovery must not update CRM contacts through
+             HubSpot's automatic form capture or a previous visitor's cookie. --}}
 
         <script async src="//www.googletagmanager.com/gtag/js?id=UA-189067277-1"></script>
         <script>

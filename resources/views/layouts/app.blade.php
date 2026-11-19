@@ -46,7 +46,8 @@
         <!-- Scripts -->
         <script src="{{ asset('/js/app.js') }}?v={{ filemtime(public_path('js/app.js')) }}" defer></script>
         @include('layouts.partials.sefar-global-libraries')
-        <script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/20053496.js"></script>
+        {{-- Account forms sync through the API; HubSpot tracking would also capture
+             their submissions and associate them with a browser cookie. --}}
 
         <script async src="//www.googletagmanager.com/gtag/js?id=UA-189067277-1"></script>
         <script>
@@ -83,9 +84,6 @@
 
         @livewireScripts
 
-        <!-- Start of HubSpot Embed Code -->
-        <script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/20053496.js"></script>
-        <!-- End of HubSpot Embed Code -->
         @if(auth()->user() && ! auth()->user()->hasRole('Cliente'))
             <x-chat-bubble />
         @endif
