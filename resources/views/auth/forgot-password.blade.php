@@ -1,13 +1,13 @@
 <x-guest-layout>
     <x-sefar-auth-shell
         title="Recupera el acceso a tu cuenta"
-        copy="Te enviaremos un enlace seguro para restablecer tu contrasena y volver a consultar tus procesos, documentos y avances."
+        copy="Te enviaremos un enlace seguro para restablecer tu contraseña y volver a consultar tus procesos, documentos y avances."
         card-id="sefar-forgot-title"
-        card-title="Contrasena olvidada"
+        card-title="Contraseña olvidada"
         card-eyebrow="Acceso seguro"
     >
         <p class="sefar-login-text">
-            Escribe el correo asociado a tu usuario. Si existe una cuenta, recibiras un enlace para crear una nueva contrasena.
+            Escribe el correo asociado a tu usuario. Si existe una cuenta, recibiras un enlace para crear una nueva contraseña.
         </p>
 
         @if (session('status'))
@@ -34,7 +34,7 @@
             </button>
 
             <p class="sefar-login-register">
-                Ya recordaste tu contrasena?
+                Ya recordaste tu contraseña?
                 <a href="{{ route('login') }}">Volver al login</a>
             </p>
         </form>

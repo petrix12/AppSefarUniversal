@@ -29,7 +29,7 @@
                 Swal.fire({
                     icon: 'info',
                     title: 'Bienvenido de vuelta',
-                    html: 'Ya te encuentras registrado en la App de Sefar.<br>Si no recuerdas tu usuario o contrasena, puedes <a href="/forgot-password">recuperarla aqui</a>.',
+                    html: 'Ya te encuentras registrado en la App de Sefar.<br>Si no recuerdas tu usuario o contraseña, puedes <a href="/forgot-password">recuperarla aqui</a>.',
                     confirmButtonText: 'Entendido'
                 })
             </script>
@@ -44,7 +44,7 @@
             </label>
 
             <label for="password" class="sefar-login-field">
-                <span>Password</span>
+                <span>Contraseña</span>
                 <input id="password" type="password" name="password" required autocomplete="current-password">
             </label>
 
@@ -55,7 +55,7 @@
                 </label>
 
                 @if (Route::has('password.request'))
-                    <a href="{{ route('password.request') }}">Olvide mi password</a>
+                    <a href="{{ route('password.request') }}">Olvidé mi contraseña</a>
                 @endif
             </div>
 

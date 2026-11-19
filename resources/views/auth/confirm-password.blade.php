@@ -3,11 +3,11 @@
         title="Confirma que eres tu"
         copy="Algunas acciones del expediente requieren una verificacion adicional para proteger tu informacion personal y documental."
         card-id="sefar-confirm-title"
-        card-title="Confirmar contrasena"
+        card-title="Confirmar contraseña"
         card-eyebrow="Area protegida"
     >
         <p class="sefar-login-text">
-            Ingresa tu contrasena actual para continuar con esta accion segura dentro de la app.
+            Ingresa tu contraseña actual para continuar con esta accion segura dentro de la app.
         </p>
 
         <x-validation-errors class="sefar-login-errors" />
@@ -16,7 +16,7 @@
             @csrf
 
             <label for="password" class="sefar-login-field">
-                <span>Contrasena</span>
+                <span>Contraseña</span>
                 <input id="password" type="password" name="password" required autocomplete="current-password" autofocus>
             </label>
 
