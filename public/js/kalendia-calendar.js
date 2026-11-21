@@ -40,6 +40,10 @@
             eventTimeFormat: {hour: '2-digit', minute: '2-digit', hour12: false},
             slotLabelFormat: {hour: '2-digit', minute: '2-digit', hour12: false},
             noEventsContent: 'No hay reuniones en este periodo con los filtros seleccionados.',
+            eventClick(info) {
+                info.jsEvent.preventDefault();
+                document.dispatchEvent(new CustomEvent('sefar:manage-appointment', {detail: {url: info.event.url}}));
+            },
             datesSet(info) {
                 document.getElementById('kalendia-calendar-title').textContent = info.view.title;
                 const date = luxon.DateTime.fromJSDate(info.view.calendar.getDate(), {zone}).toISODate();
@@ -111,6 +115,7 @@
             },
         });
         calendar.render();
+        document.addEventListener('sefar:appointment-updated', () => calendar.refetchEvents());
         document.querySelectorAll('[data-calendar-action]').forEach(button => button.addEventListener('click', () => calendar[button.dataset.calendarAction]()));
         document.querySelectorAll('[data-calendar-view-button]').forEach(button => button.addEventListener('click', () => calendar.changeView(button.dataset.calendarViewButton)));
         dateInput.addEventListener('change', () => { if (dateInput.value && dateInput.validity.valid) calendar.gotoDate(dateInput.value); });

@@ -48,4 +48,12 @@
 #kalendia-calendar .fc-list-event-graphic { width: 1.5rem; padding-inline: .3rem; }
 .dark-mode #kalendia-calendar { --fc-page-bg-color: #343a40; --fc-neutral-bg-color: #3f474e; --fc-border-color: #65717a; --fc-list-event-hover-bg-color: #3f474e; color: #f0f3f5; }
 .dark-mode #kalendia-calendar .fc-col-header-cell { background: #3f474e; }
+#kalendia-appointment-modal .modal-content { border-radius: var(--sefar-radius, 8px); }
+#kalendia-appointment-modal .modal-header { background: var(--sefar-primary-soft, #e8f2f5); }
+#kalendia-appointment-modal .modal-footer { flex-wrap: wrap; gap: .5rem; }
+#kalendia-appointment-modal .form-control { min-width: 0; font-size: 1rem; }
+#kalendia-appointment-modal .btn { min-height: 44px; }
+#kalendia-appointment-modal .input-group { flex-wrap: wrap; gap: .5rem; }
+#kalendia-appointment-modal .input-group > .form-control { flex-basis: min(100%, 16rem); border-radius: var(--sefar-radius, 8px); }
+.dark-mode #kalendia-appointment-modal .modal-header { background: #3f474e; }
 @media print { .kalendia-agenda-toolbar, #kalendia-calendar-filters { display: none; } }

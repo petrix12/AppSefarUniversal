@@ -200,7 +200,8 @@ class KalendiaConsultationsTest extends TestCase
     {
         $user=$this->client();$appointment=$this->appointment($user);$actor=$this->admin();
         $this->actingAs($actor)->get(route('admin.kalendia.appointments',['client'=>$user->id]))->assertOk()->assertSee($user->name);
-        $this->get(route('admin.kalendia.appointment',$appointment))->assertOk();
+        $this->get(route('admin.kalendia.appointment',$appointment))->assertRedirect(route('admin.kalendia.appointments',
+            ['appointment'=>$appointment->id,'date'=>'2027-03-19']));
         $uuid=(string)Str::uuid();$body=['operation_id'=>$uuid,'action'=>'cancel'];
         $this->post(route('admin.kalendia.change',$appointment),$body)->assertRedirect();
         $this->post(route('admin.kalendia.change',$appointment),$body)->assertRedirect();
@@ -257,6 +258,45 @@ class KalendiaConsultationsTest extends TestCase
             $this->getJson(route('admin.kalendia.events', $query))->assertUnprocessable();
         }
         Http::assertNothingSent();
+    }
+    public function test_appointment_modal_loads_an_escaped_fragment_without_navigating_or_calling_kalendia(): void
+    {
+        $appointment = $this->appointment($this->client());
+        $appointment->update(['service_name'=>'<script>alert("unsafe")</script>']);
+        $this->actingAs($this->admin());
+        $response = $this->getJson(route('admin.kalendia.appointment', $appointment))
+            ->assertOk()->assertHeader('Cache-Control','no-store, private');
+        $html = $response->json('html');
+        $this->assertStringContainsString('&lt;script&gt;', $html);
+        $this->assertStringNotContainsString('<script>', $html);
+        $this->assertStringNotContainsString('<html', $html);
+        $this->assertStringContainsString('Copiar enlace', $html);
+        $this->assertStringContainsString('Reagendar en Kalendia', $html);
+        Http::assertNothingSent();
+    }
+    public function test_modal_cancellation_returns_the_updated_fragment_and_reuses_the_same_operation(): void
+    {
+        $appointment = $this->appointment($this->client());
+        $this->actingAs($this->admin());
+        $body = ['operation_id'=>(string)Str::uuid(),'action'=>'cancel'];
+        $response = $this->postJson(route('admin.kalendia.change', $appointment),$body)->assertOk();
+        $this->assertStringContainsString('Cancelada',$response->json('html'));
+        $this->assertStringNotContainsString('Reagendar en Kalendia',$response->json('html'));
+        $this->postJson(route('admin.kalendia.change', $appointment),$body)->assertOk();
+        $this->assertCount(1,$this->mutations);
+    }
+    public function test_uncertain_modal_changes_return_the_original_operation_for_a_safe_retry(): void
+    {
+        $appointment = $this->appointment($this->client());
+        $this->actingAs($this->admin()); $this->failChange = true;
+        $body = ['operation_id'=>(string)Str::uuid(),'action'=>'reschedule','date'=>'2027-03-22','time'=>'10:00'];
+        $response = $this->postJson(route('admin.kalendia.change', $appointment),$body)->assertUnprocessable()->assertJsonValidationErrors('appointment');
+        $this->assertStringContainsString('Comprobar cambio pendiente',$response->json('html'));
+        $this->assertStringContainsString($body['operation_id'],$response->json('html'));
+        $this->assertStringNotContainsString('data-kalendia-timezone-input',$response->json('html'));
+        $this->failChange = false;
+        $this->postJson(route('admin.kalendia.change', $appointment),$body)->assertOk();
+        $this->assertCount(2,$this->mutations); $this->assertSame($this->mutations[0],$this->mutations[1]);
     }
     public function test_reschedule_uses_availability_and_retries_an_uncertain_patch_with_the_same_key(): void
     {

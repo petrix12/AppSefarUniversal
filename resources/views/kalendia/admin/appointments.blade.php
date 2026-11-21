@@ -47,14 +47,22 @@
                     data-initial-date="{{ request('date') ?: now(\App\Services\KalendiaTimezone::preferred())->format('Y-m-d') }}"
                     data-initial-view="{{ request('view', 'dayGridMonth') }}"></div>
             </div>
-            <p class="text-muted small mt-3 mb-0">Pulsa una cita para gestionarla y abrir su enlace de reunión. Los cambios de Kalendia se consultan automáticamente cada cinco minutos.</p>
+            <p class="text-muted small mt-3 mb-0">Pulsa una cita para gestionarla en esta misma página. Los cambios de Kalendia se consultan automáticamente cada cinco minutos.</p>
         </section>
-        <details class="mt-4" @if(request('page')) open @endif>
+        <details class="mt-4" id="kalendia-appointment-history" @if(request('page')) open @endif>
             <summary class="text-muted mb-3">Historial completo en tabla</summary>
             @include('kalendia.partials.appointments', ['showClient' => true])
             {{ $appointments->links() }}
         </details>
     </div></div>
+    <div class="modal fade" id="kalendia-appointment-modal" tabindex="-1" role="dialog" aria-labelledby="kalendia-appointment-modal-title" aria-hidden="true"
+        @if(request('appointment')) data-appointment-url="{{ route('admin.kalendia.appointment', request('appointment')) }}" @endif>
+        <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document"><div class="modal-content">
+            <div class="modal-header"><h2 class="modal-title h5" id="kalendia-appointment-modal-title">Gestionar reunión</h2><button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button></div>
+            <div class="modal-body"><div id="kalendia-appointment-feedback" role="status" hidden></div><div id="kalendia-appointment-content"></div></div>
+            <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-reload-appointment>Actualizar ficha</button><button type="button" class="btn btn-primary" data-dismiss="modal">Cerrar</button></div>
+        </div></div>
+    </div>
 @stop
 @section('js')
     <script src="{{ asset('vendor/fullcalendar/luxon.min.js') }}" defer></script>
@@ -62,4 +70,5 @@
     <script src="{{ asset('vendor/fullcalendar/luxon3.global.min.js') }}" defer></script>
     <script src="{{ asset('vendor/fullcalendar/es.global.min.js') }}" defer></script>
     <script src="{{ asset('js/kalendia-calendar.js') }}?v={{ filemtime(public_path('js/kalendia-calendar.js')) }}" defer></script>
+    <script src="{{ asset('js/kalendia-appointment-modal.js') }}?v={{ filemtime(public_path('js/kalendia-appointment-modal.js')) }}" defer></script>
 @stop

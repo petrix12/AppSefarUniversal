@@ -5,6 +5,7 @@ use App\Services\{KalendiaApi, KalendiaApiException, KalendiaAppointmentService}
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 class AdminKalendiaController extends Controller
 {
     public function offers(KalendiaApi $api)
@@ -28,7 +29,8 @@ class AdminKalendiaController extends Controller
     public function appointments(Request $request, KalendiaAppointmentService $service)
     {
         $this->validateAppointmentFilters($request);
-        $request->validate(['date' => ['nullable','date_format:Y-m-d'], 'view' => ['nullable','in:dayGridMonth,timeGridWeek,timeGridDay,listMonth']]);
+        $request->validate(['date' => ['nullable','date_format:Y-m-d'], 'view' => ['nullable','in:dayGridMonth,timeGridWeek,timeGridDay,listMonth'],
+            'appointment' => ['nullable','integer','exists:kalendia_appointments,id']]);
         $client = $request->filled('client') ? User::findOrFail($request->integer('client')) : null;
         $appointments = KalendiaAppointment::with('user')->when($client, fn ($q) => $q->where('user_id', $client->id))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))->orderByDesc('starts_at')->paginate(30)->withQueryString();
@@ -73,18 +75,35 @@ class AdminKalendiaController extends Controller
         catch (KalendiaApiException) { return back()->withErrors(['kalendia' => 'No se pudo consultar Kalendia. Se conserva la información anterior.']); }
         return back()->with('success', 'Sincronización completada: '.$count.' citas consultadas.');
     }
-    public function show(KalendiaAppointment $appointment)
+    private function appointmentData(KalendiaAppointment $appointment): array
     {
         $operation = KalendiaAppointmentAction::where('appointment_id', $appointment->id)->whereIn('status', ['processing','uncertain'])->latest()->first();
-        return response()->view('kalendia.admin.appointment', ['appointment' => $appointment, 'operation' => $operation,
-            'operationId' => $operation?->uuid ?: (string) Str::uuid()])->header('Cache-Control', 'private, no-store');
+        return ['appointment' => $appointment, 'operation' => $operation, 'operationId' => $operation?->uuid ?: (string) Str::uuid()];
+    }
+    private function appointmentFragment(KalendiaAppointment $appointment): string
+    {
+        return view('kalendia.admin.partials.appointment-details', $this->appointmentData($appointment))->render();
+    }
+    public function show(Request $request, KalendiaAppointment $appointment)
+    {
+        if ($request->expectsJson()) return response()->json(['html' => $this->appointmentFragment($appointment)])
+            ->header('Cache-Control', 'private, no-store');
+        return redirect()->route('admin.kalendia.appointments', ['appointment' => $appointment->id,
+            'date' => $appointment->starts_at->timezone(\App\Services\KalendiaTimezone::preferred())->format('Y-m-d')]);
     }
     public function change(Request $request, KalendiaAppointment $appointment, KalendiaAppointmentService $service)
     {
         $data = $request->validate(['operation_id' => ['required','uuid'], 'action' => ['required','in:reschedule,cancel'],
             'timezone' => ['bail','nullable','string','timezone:all'],
             'date' => ['required_if:action,reschedule','nullable','date_format:Y-m-d'], 'time' => ['required_if:action,reschedule','nullable','date_format:H:i']]);
-        $service->change($appointment, $request->user(), $data['operation_id'], $data['action'], $data);
+        try { $service->change($appointment, $request->user(), $data['operation_id'], $data['action'], $data); }
+        catch (ValidationException $error) {
+            if (! $request->expectsJson()) throw $error;
+            return response()->json(['message' => 'No se pudo confirmar el cambio.', 'errors' => $error->errors(),
+                'html' => $this->appointmentFragment($appointment->fresh())], 422)->header('Cache-Control', 'private, no-store');
+        }
+        if ($request->expectsJson()) return response()->json(['message' => 'Cita actualizada en Kalendia y en el COS.',
+            'html' => $this->appointmentFragment($appointment->fresh())])->header('Cache-Control', 'private, no-store');
         return redirect()->route('admin.kalendia.appointment', $appointment)->with('success', 'Cita actualizada en Kalendia y en el COS.');
     }
 }

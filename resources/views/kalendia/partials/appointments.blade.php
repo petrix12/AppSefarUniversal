@@ -10,8 +10,8 @@
                 <td>{{ $item->staff_name ?: 'Equipo Sefar' }}</td>
                 <td><span class="badge badge-{{ $item->status === 'cancelled' ? 'secondary' : 'info' }} bg-{{ $item->status === 'cancelled' ? 'secondary' : 'info' }}">{{ $item->display_status }}</span></td>
                 <td>
-                    @if($item->meeting_url && $item->status !== 'cancelled')<a class="btn btn-sm btn-outline-primary" href="{{ $item->meeting_url }}" target="_blank" rel="noopener noreferrer">Abrir reunión <i class="fas fa-external-link-alt" aria-hidden="true"></i></a>@endif
-                    @if($showClient ?? false)<a class="btn btn-sm btn-outline-secondary mt-1" href="{{ route('admin.kalendia.appointment', $item) }}">Gestionar</a>@endif
+                    @if($item->meeting_url && $item->status !== 'cancelled' && !($showClient ?? false))<a class="btn btn-sm btn-outline-primary" href="{{ $item->meeting_url }}" target="_blank" rel="noopener noreferrer">Abrir reunión <i class="fas fa-external-link-alt" aria-hidden="true"></i></a>@endif
+                    @if($showClient ?? false)<a class="btn btn-sm btn-outline-secondary mt-1" href="{{ route('admin.kalendia.appointment', $item) }}" data-manage-kalendia-appointment>Gestionar</a>@endif
                     @unless($item->meeting_url || ($showClient ?? false))<span class="text-muted">Enlace pendiente</span>@endunless
                 </td>
             </tr>
