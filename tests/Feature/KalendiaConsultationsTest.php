@@ -208,6 +208,56 @@ class KalendiaConsultationsTest extends TestCase
         $this->assertSame('Sin próximas reuniones',app(KalendiaAppointmentService::class)->summary($user)['status']);
         $this->assertDatabaseCount('compras',0);
     }
+    public function test_calendar_reads_all_visible_appointments_without_remote_requests_or_private_customer_data(): void
+    {
+        $user = $this->client();
+        $appointment = $this->appointment($user);
+        for ($i = 1; $i <= 34; $i++) {
+            $copy = $appointment->replicate();
+            $copy->remote_id = 'apt_calendar_'.$i;
+            $copy->save();
+        }
+        $this->actingAs($this->admin())->get(route('admin.kalendia.appointments'))
+            ->assertOk()->assertSee('Calendario de reuniones')->assertSee('data-calendar-view-button="timeGridDay"', false);
+        $response = $this->getJson(route('admin.kalendia.events', [
+            'start'=>'2027-03-01T00:00:00-04:00', 'end'=>'2027-04-01T00:00:00-04:00', 'timeZone'=>'America/Caracas',
+        ]))->assertOk()->assertHeader('Cache-Control', 'no-store, private')->assertJsonCount(35)
+            ->assertJsonPath('0.start', '2027-03-19T14:00:00+00:00')
+            ->assertJsonPath('0.extendedProps.statusLabel', 'Confirmada')
+            ->assertJsonPath('0.url', route('admin.kalendia.appointment', $appointment));
+        $this->assertStringNotContainsString($user->email, $response->getContent());
+        $this->assertStringNotContainsString('https://meet.example.test/own', $response->getContent());
+        Http::assertNothingSent();
+    }
+    public function test_calendar_filters_by_client_status_and_overlapping_utc_range(): void
+    {
+        $user = $this->client();
+        $appointment = $this->appointment($user);
+        $appointment->update(['status'=>'cancelled','starts_at'=>'2027-03-18 23:30:00','ends_at'=>'2027-03-19 00:30:00']);
+        $other = $appointment->replicate();
+        $actor = $this->admin();
+        $other->remote_id = 'apt_other'; $other->user_id = $actor->id; $other->save();
+        $this->actingAs($actor);
+        $query = ['start'=>'2027-03-19T01:00:00+01:00','end'=>'2027-03-20T01:00:00+01:00',
+            'timeZone'=>'Europe/Madrid','client'=>$user->id,'status'=>'cancelled'];
+        $this->getJson(route('admin.kalendia.events', $query))->assertOk()->assertJsonCount(1)
+            ->assertJsonPath('0.id', (string) $appointment->id);
+        $this->getJson(route('admin.kalendia.events', array_replace($query, ['status'=>'confirmed'])))->assertOk()->assertExactJson([]);
+        $this->getJson(route('admin.kalendia.events', array_replace($query, ['start'=>'2027-03-19T01:30:00+01:00'])))->assertOk()->assertExactJson([]);
+        Http::assertNothingSent();
+    }
+    public function test_calendar_rejects_invalid_ranges_and_is_restricted_to_internal_admins(): void
+    {
+        $this->actingAs($this->client())->getJson(route('admin.kalendia.events', [
+            'start'=>'2027-03-01','end'=>'2027-04-01',
+        ]))->assertForbidden();
+        $this->actingAs($this->admin());
+        foreach ([['start'=>'2027-03-01','end'=>'2027-02-01'], ['start'=>'2027-03-01','end'=>'2028-03-01'],
+            ['start'=>'invalid','end'=>'2027-03-01'], ['start'=>'2027-03-01','end'=>'2027-04-01','timeZone'=>'Fake/Zone']] as $query) {
+            $this->getJson(route('admin.kalendia.events', $query))->assertUnprocessable();
+        }
+        Http::assertNothingSent();
+    }
     public function test_reschedule_uses_availability_and_retries_an_uncertain_patch_with_the_same_key(): void
     {
         $appointment=$this->appointment($this->client());$this->actingAs($this->admin());$this->failChange=true;

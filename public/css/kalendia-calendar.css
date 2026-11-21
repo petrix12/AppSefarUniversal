@@ -1,0 +1,51 @@
+/* Controls wrap within the card; the weekly grid scrolls inside it on small screens. */
+.kalendia-agenda { min-width: 0; }
+.kalendia-agenda-toolbar, .kalendia-agenda-navigation, .kalendia-agenda-legend { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
+.kalendia-agenda-toolbar { justify-content: space-between; margin-block: 1.5rem 1rem; }
+.kalendia-agenda-toolbar > *, .kalendia-agenda-navigation > * { min-width: 0; max-width: 100%; }
+.kalendia-agenda-toolbar .btn { min-height: 44px; }
+.kalendia-agenda-navigation input { min-height: 44px; font-size: 1rem; width: 11rem; }
+.kalendia-agenda-views { flex-wrap: wrap; }
+.kalendia-agenda-title { text-transform: capitalize; overflow-wrap: anywhere; }
+.kalendia-agenda-legend { font-size: .875rem; color: var(--sefar-muted, #607783); margin-bottom: .75rem; }
+.kalendia-agenda-legend > span { display: inline-flex; align-items: center; gap: .4rem; }
+.kalendia-agenda-dot { width: .6rem; height: .6rem; border-radius: 50%; background: var(--kalendia-status-color); flex: 0 0 auto; }
+.kalendia-status-confirmed { --kalendia-status-color: #0d5d78; }
+.kalendia-status-pending { --kalendia-status-color: #886119; }
+.kalendia-status-completed { --kalendia-status-color: #28704b; }
+.kalendia-status-cancelled, .kalendia-status-unknown { --kalendia-status-color: #697580; }
+.kalendia-status-no_show { --kalendia-status-color: #ac2630; }
+.kalendia-agenda-viewport { max-width: 100%; overflow-x: auto; border-radius: var(--sefar-radius, 8px); }
+.kalendia-agenda-viewport:focus-visible { outline: 2px solid var(--sefar-primary, #093143); outline-offset: 2px; }
+#kalendia-calendar {
+    --fc-border-color: var(--sefar-border, #d7e0e4);
+    --fc-page-bg-color: var(--sefar-surface, #fff);
+    --fc-neutral-bg-color: var(--sefar-primary-soft, #e8f2f5);
+    --fc-list-event-hover-bg-color: var(--sefar-primary-soft, #e8f2f5);
+    --fc-today-bg-color: rgba(219, 186, 114, .14);
+    --fc-now-indicator-color: var(--sefar-danger, #ac2630);
+    font-family: inherit; color: var(--sefar-text, #093143); min-width: 0;
+}
+#kalendia-calendar .fc-timeGridWeek-view { min-width: 44rem; }
+#kalendia-calendar .fc-col-header-cell { background: var(--sefar-primary-soft, #e8f2f5); padding-block: .5rem; }
+#kalendia-calendar .fc-col-header-cell-cushion, #kalendia-calendar .fc-daygrid-day-number { color: inherit; }
+#kalendia-calendar .fc-daygrid-day-number { padding: .5rem; }
+#kalendia-calendar .fc-daygrid-day-frame { min-height: 6.5rem; }
+#kalendia-calendar .fc-event { border-radius: 4px; font-size: .8rem; text-decoration: none; }
+#kalendia-calendar .fc-h-event, #kalendia-calendar .fc-v-event { background: var(--kalendia-status-color, #0d5d78); border-color: var(--kalendia-status-color, #0d5d78); }
+#kalendia-calendar .fc-list-event-dot { border-color: var(--kalendia-status-color, #0d5d78); }
+#kalendia-calendar .fc-event:focus-visible { outline: 2px solid var(--sefar-accent, #a17f48); outline-offset: 2px; }
+#kalendia-calendar .fc-event-main { min-width: 0; }
+.kalendia-calendar-event { padding: .2rem .3rem; min-width: 0; overflow: hidden; }
+.kalendia-calendar-event > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kalendia-calendar-event-name { font-weight: 700; }
+.kalendia-calendar-event-meta { font-size: .75rem; }
+#kalendia-calendar .fc-daygrid-event .kalendia-calendar-event { padding-block: .15rem; }
+#kalendia-calendar .fc-list-event .kalendia-calendar-event > span { white-space: normal; overflow-wrap: anywhere; }
+#kalendia-calendar .fc-timegrid-slot { height: 1.7rem; }
+#kalendia-calendar .fc-list-table { table-layout: fixed; }
+#kalendia-calendar .fc-list-event-time { width: 7rem; white-space: normal; }
+#kalendia-calendar .fc-list-event-graphic { width: 1.5rem; padding-inline: .3rem; }
+.dark-mode #kalendia-calendar { --fc-page-bg-color: #343a40; --fc-neutral-bg-color: #3f474e; --fc-border-color: #65717a; --fc-list-event-hover-bg-color: #3f474e; color: #f0f3f5; }
+.dark-mode #kalendia-calendar .fc-col-header-cell { background: #3f474e; }
+@media print { .kalendia-agenda-toolbar, #kalendia-calendar-filters { display: none; } }

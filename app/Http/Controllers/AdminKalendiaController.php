@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 use App\Models\{KalendiaAppointment, KalendiaAppointmentAction, KalendiaConsultationOffer, User};
 use App\Services\{KalendiaApi, KalendiaApiException, KalendiaAppointmentService};
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 class AdminKalendiaController extends Controller
@@ -26,11 +27,45 @@ class AdminKalendiaController extends Controller
     }
     public function appointments(Request $request, KalendiaAppointmentService $service)
     {
-        $request->validate(['client' => ['nullable','integer','exists:users,id'], 'status' => ['nullable','in:confirmed,pending,cancelled,completed']]);
+        $this->validateAppointmentFilters($request);
+        $request->validate(['date' => ['nullable','date_format:Y-m-d'], 'view' => ['nullable','in:dayGridMonth,timeGridWeek,timeGridDay,listMonth']]);
         $client = $request->filled('client') ? User::findOrFail($request->integer('client')) : null;
         $appointments = KalendiaAppointment::with('user')->when($client, fn ($q) => $q->where('user_id', $client->id))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))->orderByDesc('starts_at')->paginate(30)->withQueryString();
         return response()->view('kalendia.admin.appointments', compact('appointments', 'client'))->header('Cache-Control', 'private, no-store');
+    }
+    public function events(Request $request)
+    {
+        $this->validateAppointmentFilters($request);
+        $data = $request->validate(['start' => ['required','string','max:64','date'],
+            'end' => ['required','string','max:64','date'], 'timeZone' => ['nullable','string','timezone:all']]);
+        $start = CarbonImmutable::parse($data['start'])->utc();
+        $end = CarbonImmutable::parse($data['end'])->utc();
+        abort_if($end <= $start || $start->diffInSeconds($end) > 62 * 86400, 422, 'Selecciona un intervalo de hasta dos meses.');
+
+        // The calendar reads the local mirror only. Its visible range must not be paginated.
+        $appointments = KalendiaAppointment::with('user:id,name')
+            ->when($request->filled('client'), fn ($q) => $q->where('user_id', $request->integer('client')))
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
+            ->where('starts_at', '<', $end->format('Y-m-d H:i:s'))
+            ->where('ends_at', '>', $start->format('Y-m-d H:i:s'))
+            ->orderBy('starts_at')->limit(2001)->get();
+        abort_if($appointments->count() > 2000, 422, 'Hay demasiadas citas. Usa la vista diaria o filtra por cliente o estado.');
+
+        return response()->json($appointments->map(function (KalendiaAppointment $appointment) {
+            $name = $appointment->user?->name ?: data_get($appointment->customer, 'name') ?: 'Contacto de Kalendia';
+            return ['id' => (string) $appointment->id, 'title' => $name,
+                'start' => $appointment->starts_at->toIso8601String(), 'end' => $appointment->ends_at->toIso8601String(),
+                'url' => route('admin.kalendia.appointment', $appointment),
+                'extendedProps' => ['service' => $appointment->service_name ?: 'Reunión',
+                    'staff' => $appointment->staff_name ?: 'Equipo Sefar',
+                    'status' => $appointment->status, 'statusLabel' => $appointment->display_status]];
+        }))->header('Cache-Control', 'private, no-store');
+    }
+    private function validateAppointmentFilters(Request $request): void
+    {
+        $request->validate(['client' => ['nullable','integer','exists:users,id'],
+            'status' => ['nullable','in:confirmed,pending,cancelled,completed,no_show']]);
     }
     public function refresh(KalendiaAppointmentService $service)
     {

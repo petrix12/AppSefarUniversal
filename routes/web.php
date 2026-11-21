@@ -323,6 +323,7 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
         Route::post('consultas', [\App\Http\Controllers\AdminKalendiaController::class, 'saveOffer'])->name('offers.store');
         Route::put('consultas/{offer}', [\App\Http\Controllers\AdminKalendiaController::class, 'saveOffer'])->name('offers.update');
         Route::get('citas', [\App\Http\Controllers\AdminKalendiaController::class, 'appointments'])->name('appointments');
+        Route::get('eventos', [\App\Http\Controllers\AdminKalendiaController::class, 'events'])->name('events');
         Route::post('sincronizar', [\App\Http\Controllers\AdminKalendiaController::class, 'refresh'])->middleware('throttle:6,1')->name('refresh');
         Route::get('citas/{appointment}', [\App\Http\Controllers\AdminKalendiaController::class, 'show'])->name('appointment');
         Route::post('citas/{appointment}', [\App\Http\Controllers\AdminKalendiaController::class, 'change'])->middleware('throttle:10,1')->name('change');
