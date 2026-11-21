@@ -41,9 +41,7 @@ class RegistrationPaymentReceiptService
                     $receipt->forceFill(['paid_at' => $metadata['registration_paid_at']])->save();
                 }
                 app(CosPaymentCrmSyncService::class)->queueReceipt($receipt);
-                if (is_array(data_get($receipt->metadata, 'registration_meeting'))) {
-                    app(\App\Services\RegistrationMeetingService::class)->queueConfirmed($receipt, $invoice);
-                }
+                app(\App\Services\RegistrationMeetingService::class)->queueConfirmed($receipt, $invoice);
             }
         });
     }

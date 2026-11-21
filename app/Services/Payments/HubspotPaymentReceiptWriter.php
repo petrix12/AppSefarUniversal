@@ -40,7 +40,7 @@ class HubspotPaymentReceiptWriter
 
         // A non-billable tracking invoice mirrors the existing App document.
         // It creates no customer checkout, fiscal PDF, email, or second charge.
-        $label = ($c['kind'] ?? 'phase') === 'registration' ? 'Pago de registro' : 'Pago COS';
+        $label = match ($c['kind'] ?? 'phase') { 'consultation' => 'Pago de consulta', 'registration' => 'Pago de registro', default => 'Pago COS' };
         $comment = "{$label} [COS:{$c['reference']}] · Comprobante App {$c['invoice']->id} pagado · {$c['invoice_url']}";
         $externalNumber = 'APP-'.$c['invoice']->id.'-'.$c['receipt']->id;
         $invoiceId = $this->ensureObject($state, 'remote_invoice', 'invoices', 'hs_comments', $comment, [
@@ -57,7 +57,7 @@ class HubspotPaymentReceiptWriter
             || data_get($invoice, 'properties.hs_invoice_status') === 'voided') {
             throw new PaymentSyncReviewException('La factura HubSpot vinculada no corresponde al comprobante de la App.');
         }
-        $lineName = (($c['kind'] ?? 'phase') === 'registration' ? 'Registro' : 'Abono COS')." [COS:{$c['reference']}]";
+        $lineName = (match ($c['kind'] ?? 'phase') { 'consultation' => 'Consulta', 'registration' => 'Registro', default => 'Abono COS' })." [COS:{$c['reference']}]";
         $lineId = $this->ensureObject($state, 'line_item', 'line_items', 'name', $lineName, [
             'name' => $lineName, 'description' => (string) $c['receipt']->descripcion,
             'quantity' => '1', 'price' => $c['amount'], 'hs_line_item_currency_code' => $c['currency'],

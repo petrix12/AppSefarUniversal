@@ -27,7 +27,7 @@ class AuditRequests
                 'is_authenticated' => true,
                 'method'           => $request->method(),
                 'route_name'       => optional($request->route())->getName(),
-                'url'              => $request->fullUrl(),
+                'url'              => $request->fullUrlWithoutQuery(['payment_intent_client_secret', 'client_secret']),
                 'path'             => $request->path(),
                 'ip_address'       => $request->ip(),
                 'user_agent'       => $request->userAgent(),

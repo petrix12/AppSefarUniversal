@@ -150,6 +150,22 @@ class CosPaymentCrmSyncTest extends TestCase
         $this->assertSame(1, Compras::count()); $this->assertSame(1, Factura::count());
     }
 
+    public function test_a_consultation_receipt_does_not_increase_the_clients_nationality_project_payments(): void
+    {
+        $receipt = Compras::create(['id_user'=>290, 'source'=>\App\Models\KalendiaConsultationOrder::SOURCE,
+            'descripcion'=>'Consulta jurídica', 'monto'=>125.50, 'pagado'=>1, 'hash_factura'=>'existing-document', 'paid_at'=>now()]);
+        app(\App\Services\Payments\RegistrationPaymentReceiptService::class)->record(Factura::findOrFail(2035),[$receipt],'consultation-gateway');
+        $context=app(CosPaymentCrmSyncService::class)->context($receipt->fresh());
+        $this->assertSame('consultation',$context['kind']);$this->assertNull($context['deal']);
+        $this->fakeHubspot();$this->fakeTeamleader();
+        app(CosPaymentCrmSyncService::class)->process($receipt->id);
+        $this->assertSame(0,$this->projectWrites);$this->assertSame('Abono 3448.64 EUR 2026-01-01',$this->paidText);
+        $this->assertSame('125.50',array_values($this->remote['invoices'])[0]['properties']['hs_amount_billed']);
+        $this->assertSame('synced',data_get($receipt->fresh()->metadata,'crm_payment_sync.providers.hubspot.status'));
+        $this->assertSame('synced',data_get($receipt->fresh()->metadata,'crm_payment_sync.providers.teamleader.status'));
+        $this->assertDatabaseCount('compras',1);$this->assertDatabaseCount('facturas',1);
+    }
+
     public function test_an_unpaid_registration_cannot_be_queued_as_a_paid_invoice(): void
     {
         $receipt = Compras::create(['id_user' => 290, 'monto' => 50, 'pagado' => 0, 'hash_factura' => 'existing-document']);

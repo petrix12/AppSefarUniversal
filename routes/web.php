@@ -312,6 +312,22 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
         ->except(['show'])
         ->middleware(['auth', 'can:administrador']);
 
+    Route::post('kalendia/timezone', function (\Illuminate\Http\Request $request) {
+        $data = $request->validate(['timezone'=>['bail','required','string','timezone:all']]);
+        $request->session()->put('kalendia_timezone', $data['timezone']);
+        return response()->noContent();
+    })->middleware(['auth','throttle:60,1'])->name('kalendia.timezone');
+
+    Route::middleware(['auth', 'can:kalendia.manage'])->prefix('admin/kalendia')->name('admin.kalendia.')->group(function () {
+        Route::get('consultas', [\App\Http\Controllers\AdminKalendiaController::class, 'offers'])->name('offers');
+        Route::post('consultas', [\App\Http\Controllers\AdminKalendiaController::class, 'saveOffer'])->name('offers.store');
+        Route::put('consultas/{offer}', [\App\Http\Controllers\AdminKalendiaController::class, 'saveOffer'])->name('offers.update');
+        Route::get('citas', [\App\Http\Controllers\AdminKalendiaController::class, 'appointments'])->name('appointments');
+        Route::post('sincronizar', [\App\Http\Controllers\AdminKalendiaController::class, 'refresh'])->middleware('throttle:6,1')->name('refresh');
+        Route::get('citas/{appointment}', [\App\Http\Controllers\AdminKalendiaController::class, 'show'])->name('appointment');
+        Route::post('citas/{appointment}', [\App\Http\Controllers\AdminKalendiaController::class, 'change'])->middleware('throttle:10,1')->name('change');
+    });
+
     Route::get('referral-codes/validate', [CoordinatorReferralCodeController::class, 'validateCode'])
         ->name('referral-codes.validate')
         ->middleware(['auth']);
@@ -876,6 +892,18 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
 
     // Grupo de rutas para vistas de clientes
     Route::group(['middleware' => ['auth'], 'as' => 'clientes.'], function(){
+        Route::get('mis-reuniones', [\App\Http\Controllers\ClientConsultationController::class, 'meetings'])->middleware('can:cliente')->name('meetings');
+        Route::get('consultas', [\App\Http\Controllers\ClientConsultationController::class, 'catalog'])->middleware('can:cliente')->name('consultations');
+        Route::post('consultas/{offer}', [\App\Http\Controllers\ClientConsultationController::class, 'purchase'])->middleware(['can:cliente','throttle:6,1'])->name('consultations.purchase');
+        Route::get('consultas/pago/{order}', [\App\Http\Controllers\ClientConsultationController::class, 'checkout'])->middleware('can:cliente')->name('consultations.checkout');
+        Route::post('consultas/pago/{order}/intent', [\App\Http\Controllers\ClientConsultationController::class, 'intent'])->middleware(['can:cliente','throttle:6,1'])->name('consultations.intent');
+        Route::get('consultas/pago/{order}/confirmar', [\App\Http\Controllers\ClientConsultationController::class, 'complete'])->middleware(['can:cliente','throttle:20,1'])->name('consultations.complete');
+        Route::get('consultas/reservar/{purchase}', [\App\Http\Controllers\ClientConsultationController::class, 'reserve'])->whereNumber('purchase')->middleware('can:cliente')->name('consultations.reserve');
+        Route::get('mi-reunion', [\App\Http\Controllers\ClientMeetingController::class, 'listing'])->name('meeting')->middleware('can:cliente');
+        Route::get('mi-reunion/disponibilidad', [\App\Http\Controllers\ClientMeetingController::class, 'availability'])
+            ->name('meeting.availability')->middleware(['can:cliente', 'throttle:60,1']);
+        Route::post('mi-reunion/{purchase}', [\App\Http\Controllers\ClientMeetingController::class, 'book'])
+            ->whereNumber('purchase')->name('meeting.book')->middleware(['can:cliente', 'throttle:6,1']);
         Route::get('tree', [ClienteController::class, 'tree'])->name('tree')
             ->middleware('can:cliente');
         Route::post('google-review', [GoogleReviewInvitationController::class, 'write'])->name('google-review')

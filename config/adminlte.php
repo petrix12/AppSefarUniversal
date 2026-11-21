@@ -502,6 +502,13 @@ return [
                     'url'           => 'admin/consultation-calendars',
                 ],
                 [
+                    'text' => 'Kalendia', 'icon' => 'fa-fw fas fa-calendar-check', 'can' => 'kalendia.manage',
+                    'submenu' => [
+                        ['text' => 'Consultas y precios', 'route' => 'admin.kalendia.offers', 'icon' => 'fa-fw fas fa-tags', 'can' => 'kalendia.manage'],
+                        ['text' => 'Citas y enlaces', 'route' => 'admin.kalendia.appointments', 'icon' => 'fa-fw fas fa-calendar-alt', 'can' => 'kalendia.manage'],
+                    ],
+                ],
+                [
                     'text'          => 'Referidos',
                     'icon'          => 'fa-fw fas fa-handshake',
                     'icon_color'    => 'white',
@@ -1088,6 +1095,14 @@ return [
                     'url'           => '/status',
                     'can'           => 'ver.mi.estatus',
                 ],
+                [
+                    'text' => 'Agendar reunión inicial',
+                    'route' => 'clientes.meeting',
+                    'icon' => 'fa-fw fas fa-calendar-check',
+                    'can' => 'registration.meeting',
+                ],
+                ['text' => 'Mis reuniones', 'route' => 'clientes.meetings', 'icon' => 'fa-fw fas fa-calendar-alt', 'can' => 'cliente'],
+                ['text' => 'Contratar consulta', 'route' => 'clientes.consultations', 'icon' => 'fa-fw fas fa-comments', 'can' => 'cliente'],
                 [
                     'text'          => 'Solicitar soporte',
                     'classes'       => 'btn_support_ticket',

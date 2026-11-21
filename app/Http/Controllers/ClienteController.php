@@ -1574,8 +1574,12 @@ class ClienteController extends Controller
     }
 
     public function checkContrato(){
+        if ($redirect = $this->redirectClientUnlessOnboardingRoute('cliente.contrato')) {
+            return $redirect;
+        }
         DB::table('users')->where('id', auth()->user()->id)->update(['contrato' => 1]); // no borrar esta linea
-        return redirect('/tree')->with('exito', 'contrato enviado');
+        $user = auth()->user()->refresh();
+        return redirect()->route($this->clientOnboardingRoute($user) ?? 'clientes.tree')->with('exito', 'contrato enviado');
     }
 
     public function salir(Request $request){
@@ -1710,7 +1714,7 @@ class ClienteController extends Controller
 
             return response()->json([
                 'success' => true,
-                'redirect_url' => auth()->user()->contrato == 0 ? route('cliente.contrato') : route('clientes.tree'),
+                'redirect_url' => $this->afterGetInfoUrl(),
             ]);
         } else {
             $inputdata = json_decode(json_encode($request->all()),true);
@@ -1813,7 +1817,7 @@ class ClienteController extends Controller
 
             return response()->json([
                 'success' => true,
-                'redirect_url' => auth()->user()->contrato == 0 ? route('cliente.contrato') : route('clientes.tree'),
+                'redirect_url' => $this->afterGetInfoUrl(),
                 'monday' => [
                     'timing' => MondayRegistrationService::TIMING_AFTER_GETINFO,
                     'results' => $responseContent,
@@ -1823,6 +1827,15 @@ class ClienteController extends Controller
 
 
 
+    }
+
+    private function afterGetInfoUrl(): string
+    {
+        $user = auth()->user()->fresh();
+        if ((int) $user->contrato !== 1) return route('cliente.contrato');
+        if (\App\Services\RegistrationMeetingService::supportsUser($user)) return route(
+            \App\Services\RegistrationMeetingService::hasBookedInitialMeeting($user) ? 'clientes.status' : 'clientes.meeting');
+        return route('clientes.tree');
     }
 
     private function saveGetInfoParent(

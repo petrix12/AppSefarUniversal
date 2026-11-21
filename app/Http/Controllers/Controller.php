@@ -46,12 +46,14 @@ class Controller extends BaseController
             return null;
         }
 
-        return ClientOnboardingFlow::destination(
+        $destination = ClientOnboardingFlow::destination(
             (int) $user->pay,
             (bool) $user->contrato,
             $this->clientHasPendingInitialPayment($user),
             filled($user->servicio)
         );
+        return $destination === ClientOnboardingFlow::TREE && \App\Services\RegistrationMeetingService::supportsUser($user)
+            ? (\App\Services\RegistrationMeetingService::hasBookedInitialMeeting($user) ? 'clientes.status' : 'clientes.meeting') : $destination;
     }
 
     protected function redirectClientUnlessOnboardingRoute(string $allowedRoute, ?User $user = null)

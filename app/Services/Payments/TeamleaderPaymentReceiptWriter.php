@@ -14,7 +14,7 @@ class TeamleaderPaymentReceiptWriter
 
     public function sync(array $c, CrmPaymentSyncState $state): void
     {
-        $registration = ($c['kind'] ?? 'phase') === 'registration';
+        $registration = in_array($c['kind'] ?? 'phase', ['registration','consultation'], true);
         if (! $c['user']->tl_id) throw new \RuntimeException('El contacto Teamleader del registro todavía no está enlazado.');
         if ($registration) {
             $state->save(['last_operation' => 'contacts.info']);
@@ -54,7 +54,7 @@ class TeamleaderPaymentReceiptWriter
         $subjectType = 'contact';
         $subjectId = (string) $c['user']->tl_id;
         $marker = "[COS:{$c['reference']}]";
-        $content = (($registration ? 'Registro confirmado ' : 'Pago confirmado ')."{$c['amount']} {$c['currency']} · ").$c['receipt']->paid_at->format('Y-m-d')
+        $content = (((($c['kind'] ?? 'phase') === 'consultation') ? 'Consulta confirmada ' : ($registration ? 'Registro confirmado ' : 'Pago confirmado '))."{$c['amount']} {$c['currency']} · ").$c['receipt']->paid_at->format('Y-m-d')
             ."\n{$marker}\nComprobante App {$c['invoice']->id}: PAGADO\n{$c['invoice_url']}"
             .($registration ? '' : "\nProyecto Teamleader: {$c['project_id']}")
             ."\nNegocio HubSpot: ".($c['deal']?->hubspot_id ?? 'No asignado')."\nRegistro del mismo pago; no supone un nuevo cobro.";

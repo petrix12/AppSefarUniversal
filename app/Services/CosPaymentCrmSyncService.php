@@ -101,6 +101,7 @@ class CosPaymentCrmSyncService
 
     private function registrationContext(Compras $receipt, User $user, Factura $invoice): array
     {
+        $consultation = $receipt->source === \App\Models\KalendiaConsultationOrder::SOURCE;
         if ($receipt->monto == 0 && $invoice->met !== 'cupon') {
             throw new PaymentSyncReviewException('Un pago monetario de registro no puede acreditarse con importe cero.');
         }
@@ -116,15 +117,15 @@ class CosPaymentCrmSyncService
         // Registration is accounted for even before the first deal/project exists.
         // It does not import a lead profile or create a deal to force a match.
         $deals = Negocio::where('user_id', $user->id)->whereNotNull('hubspot_id')->where('hubspot_id', '!=', '')->get();
-        $deal = $receipt->deal_id ? $deals->firstWhere('id', $receipt->deal_id) : ($deals->count() === 1 ? $deals->first() : null);
+        $deal = $receipt->deal_id ? $deals->firstWhere('id', $receipt->deal_id) : (! $consultation && $deals->count() === 1 ? $deals->first() : null);
         if ($receipt->deal_id && ! $deal) throw new PaymentSyncReviewException('El negocio del pago de registro no pertenece a ese cliente.');
         if ($deal && (! ctype_digit((string) $deal->hubspot_id)
             || Negocio::where('user_id', '!=', $user->id)->where('hubspot_id', $deal->hubspot_id)->exists())) {
             throw new PaymentSyncReviewException('El negocio del registro está cruzado con otra cuenta.');
         }
         return ['receipt' => $receipt, 'user' => $user, 'invoice' => $invoice, 'deal' => $deal,
-            'kind' => 'registration', 'project_id' => '', 'phase' => 0, 'currency' => 'EUR',
-            'reference' => 'registration-payment-'.$receipt->id,
+            'kind' => $consultation ? 'consultation' : 'registration', 'project_id' => '', 'phase' => 0, 'currency' => 'EUR',
+            'reference' => ($consultation ? 'consultation-payment-' : 'registration-payment-').$receipt->id,
             'invoice_url' => rtrim((string) config('app.url'), '/').'/viewcomprobante/'.$invoice->id,
             'amount' => number_format($receipt->monto, 2, '.', ''), 'date' => $receipt->paid_at->toIso8601String()];
     }

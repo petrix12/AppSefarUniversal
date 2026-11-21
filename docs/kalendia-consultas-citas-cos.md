@@ -1,0 +1,66 @@
+# Consultas, citas y COS con Kalendia
+
+## Comportamiento
+
+La reunión inicial de las cuatro modalidades de nacionalidad se ofrece después de **pago → 001 → contrato**. Solo se ofrece una primera reserva por cliente. Una cita con identificador remoto consume esa reunión incluida, incluso si después se cancela. Un intento incierto debe comprobarse antes de iniciar otra reserva inicial. Al terminar, el cliente continúa al COS y consulta el historial en **Mis reuniones**; la agenda inicial deja de abrirse al iniciar sesión o volver al inicio.
+
+Las consultas adicionales se contratan desde **Contratar consulta** (`/consultas`). Los enlaces de consultas del catálogo anterior redirigen a este flujo; los demás productos conservan su catálogo. El historial de calendarios locales se conserva. Cada modalidad tiene nombre, tipo, descripción, servicio de Kalendia y precio en EUR con dos decimales. Se pueden crear varios precios/modalidades asociados al mismo servicio remoto. Un precio vacío o cero mantiene deshabilitados tanto el botón como la compra directa. No se copiaron automáticamente los precios de Kalendia ni se publicaron consultas con un precio supuesto.
+
+El administrador configura las modalidades en **Pagos y servicios → Kalendia → Consultas y precios** (`/admin/kalendia/consultas`). El servicio remoto debe estar configurado a cero, como las reuniones incluidas probadas, o tener un método para pagos externos confirmado por Kalendia. Un servicio con cobro remoto sin ese método queda protegido para evitar solicitar otro pago.
+
+El flujo de consulta es **elegir modalidad → pagar en la App con Stripe → comprobar pago → agendar con Kalendia**. La orden conserva un importe fijo y un identificador de pago al reintentar. La App verifica importe, moneda, titular y referencia con Stripe; la respuesta del navegador no confirma pagos. Se reutilizan el comprobante y la compra confirmada, sin duplicarlos. El cobro de una consulta conserva los estados del registro y contrato. Los pagos de consulta usan su propia referencia CRM y no aumentan las fases o saldos del negocio de nacionalidad.
+
+Una confirmación de Stripe que llegue antes de que termine la creación del intento también se conserva. Si se pierde la respuesta de creación, se repite el mismo cuerpo y clave. Después de 23 horas, una creación incierta sin identificador pasa a revisión en lugar de arriesgar un nuevo cargo tras vencer la retención de claves del proveedor. [Idempotencia de Stripe](https://docs.stripe.com/api/idempotent_requests). Los datos de tarjeta se introducen en Stripe Elements; el servidor de la App no recibe esos campos.
+
+## Agenda administrativa y del cliente
+
+**Pagos y servicios → Kalendia → Citas y enlaces** (`/admin/kalendia/citas`) permite consultar citas, filtrar por cliente y estado, abrir el enlace virtual, reagendar y cancelar. Solo administradores internos acceden a estas rutas; una cuenta Cliente con permisos adicionales tampoco puede entrar. La gestión se limita a citas y enlaces, según lo solicitado: no se habilitó la edición general de contactos o formularios de Kalendia.
+
+Las modificaciones se envían mediante PATCH a la API. Una operación pendiente conserva el mismo identificador y cuerpo; antes de iniciar otra se debe comprobar la pendiente. La sincronización también puede confirmar una operación incierta cuando Kalendia devuelve el estado o el horario solicitado, sin enviar otro PATCH. Reagendar valida fecha futura, lunes a viernes y disponibilidad del profesional. Cancelar una cita no ejecuta ningún reembolso ni devuelve otra reunión inicial gratuita.
+
+El cliente usa **Mis reuniones** (`/mis-reuniones`) para ver fechas, estados y enlaces propios. La lectura se limita a su usuario y no muestra citas de otras cuentas. La zona del dispositivo se detecta con `Intl` y se puede cambiar en el selector; la preferencia se conserva en ese navegador y sesión. Se usan identificadores IANA (Madrid/Canarias, Santiago/Magallanes/Rapa Nui, Caracas y Bogotá), con las reglas de horario de verano correspondientes a la fecha de la cita. No se fija un desfase constante por país. En su COS aparece el bloque **Reuniones y consultas** con el próximo evento y su estado. El personal autorizado dispone allí de **Ver reuniones del cliente**, que abre el filtro administrativo correspondiente. Este bloque de agenda no sustituye el estado jurídico del proceso.
+
+La copia local guarda los instantes en UTC. La disponibilidad se presenta para el día y la zona elegidos por quien consulta; se incluyen los días colindantes del calendario del negocio cuando cambia la fecha al convertir. La reserva y el PATCH se envían en la hora base de Kalendia (Bogotá), manteniendo el mismo instante, y la ficha del contacto y las observaciones conservan la zona del cliente. Se vuelven a validar fines de semana, pasado y disponibilidad al reservar.
+
+La copia local de citas se actualiza al reservar/cambiar una cita y en segundo plano cada cinco minutos. El COS consulta únicamente la próxima cita en esa copia; no llama a Kalendia al abrir la ficha. Las listas tienen paginación. Las citas existentes creadas fuera de la App se vinculan por identificadores ya confirmados o por correo exacto y único de una cuenta Cliente. Los identificadores compartidos o conflictivos no se asignan automáticamente.
+
+La sincronización obtiene una página de hasta 100 citas por ejecución y conserva cursor, página y un margen de dos minutos. Si falla, no avanza el punto de lectura. Para una carga inicial grande se necesitan varias ejecuciones; no se vuelven a descargar todos los contactos en cada COS.
+
+## Despliegue
+
+Subir todos los archivos del cambio. En la carpeta Laravel de producción, conservar las claves ya configuradas:
+
+```dotenv
+KALENDIA_TOKEN=TOKEN_SIN_PREFIJO_BEARER
+REGISTRATION_MEETING_WEBHOOK_ENABLED=true
+REGISTRATION_CONTACT_NOTIFY_N8N=false
+```
+
+Las consultas usan `STRIPE_KEY` y `STRIPE_SECRET`, ya utilizados por la App. Revisar los nombres efectivos en `config/services.php`; no pegar secretos en logs ni en el chat. Para el webhook nuevo de Stripe configurar:
+
+```dotenv
+STRIPE_KALENDIA_WEBHOOK_SECRET=SECRETO_DEL_ENDPOINT
+```
+
+Si ya existe `STRIPE_WEBHOOK_SECRET`, se usa como valor alternativo, pero debe corresponder a la firma del endpoint registrado. En Stripe se registra el evento **payment_intent.succeeded** para:
+
+
+El receptor valida la firma y rechaza eventos sin firma o con secreto ausente. Se recomienda el webhook para confirmar aunque el cliente cierre la página. Existe además una conciliación de respaldo cada cinco minutos: verifica hasta diez pagos pendientes mediante GET y no genera intentos ni cargos nuevos. [Confirmación del pago con Stripe](https://docs.stripe.com/payments/payment-intents/verifying-status).
+
+En SSH:
+
+```bash
+cd /home/xzysctv/gitproyects/app/AppSefarUniversal
+php artisan config:clear
+php artisan migrate --force --path=database/migrations/2026_11_20_180000_create_kalendia_bookings_table.php --path=database/migrations/2026_11_20_190000_create_kalendia_consultation_management_tables.php
+php artisan kalendia:check
+php artisan kalendia:sync-appointments
+```
+
+Si están pendientes las migraciones del 19/11, aplicar primero las indicadas en `docs/superadmins-notas-registro-reunion.md`. No ejecutar `config:cache`. El cron Laravel `schedule:run` debe seguir activo. La primera sincronización consulta una página; si hay más de 100 citas, las siguientes ejecuciones continúan la carga. Las nuevas órdenes y citas se guardan en tablas independientes de los calendarios locales antiguos.
+
+## Validación y pendientes externos
+
+La prueba real previamente autorizada creó una sola cita ficticia el 19/03/2027, de 09:00 a 10:00 de Colombia, con el Dr. Alex. Se comprobó por API el mismo cliente, el estado confirmado, el enlace Zoom y que ese horario dejó de estar disponible. Esta actualización no realizó nuevos cobros reales ni modificó citas de clientes de producción.
+
+Los nuevos cobros, firmas del webhook, reintentos, comprobantes y permisos se validan con proveedores simulados y base de datos aislada. Antes de activar precios reales faltan el despliegue, el registro del webhook con su secreto y una comprobación de pago en modo prueba del servidor. La App no crea ni altera precios remotos de Kalendia: su API proporcionada permite leer servicios, no editarlos. Los reembolsos siguen los canales de pago existentes; cancelar la agenda no los procesa.

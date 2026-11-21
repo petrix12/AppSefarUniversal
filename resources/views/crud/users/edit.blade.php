@@ -427,6 +427,7 @@
                 @php $rolId = $cosViewRoleId; @endphp
 
                 <div class="tab-pane fade show active" id="mystatus" role="tabpanel" aria-labelledby="mystatus-tab">
+                    @include('kalendia.partials.cos')
                     @if($canEditCos && isset($processGrouping))
                         @include('crud.users.partials.process-groups')
                     @endif

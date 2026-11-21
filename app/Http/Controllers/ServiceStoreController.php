@@ -18,6 +18,7 @@ class ServiceStoreController extends Controller
             ->orderBy('orden')
             ->orderBy('nombre')
             ->get()
+            ->reject(fn (Servicio $servicio) => $servicio->tipo === 'consulta')
             ->groupBy(fn (Servicio $servicio) => $servicio->categoria ?: 'general');
 
         return view('services.store.index', compact('services'));
@@ -25,6 +26,7 @@ class ServiceStoreController extends Controller
 
     public function show(Servicio $servicio)
     {
+        if ($servicio->tipo === 'consulta') return redirect()->route('clientes.consultations');
         abort_unless($this->isSellable($servicio), 404);
 
         $slotsByCalendar = $this->requiresBooking($servicio)
@@ -36,6 +38,7 @@ class ServiceStoreController extends Controller
 
     public function purchase(Request $request, Servicio $servicio)
     {
+        if ($servicio->tipo === 'consulta') return redirect()->route('clientes.consultations');
         abort_unless($this->isSellable($servicio), 404);
 
         $slot = null;

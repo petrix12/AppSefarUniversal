@@ -55,4 +55,5 @@ class Compras extends Model
     {
         return $this->hasOne(ConsultationBooking::class, 'compra_id');
     }
+    public function kalendiaBooking() { return $this->hasOne(KalendiaBooking::class, 'compra_id'); }
 }

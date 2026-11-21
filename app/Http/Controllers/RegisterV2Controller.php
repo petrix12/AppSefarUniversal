@@ -32,8 +32,6 @@ class RegisterV2Controller extends Controller
         }
 
         return view('auth.registerv2', [
-            'meetingRequired' => \App\Services\RegistrationMeetingService::supports((string) request('servicio'))
-                || \App\Services\RegistrationMeetingService::supports($this->resolveServicioSolicitado((string) request('servicio'))?->nombre),
             'googleLoginEnabled' => filled(config('services.google.client_id'))
                 && filled(config('services.google.client_secret'))
                 && filled(config('services.google.redirect')),
@@ -46,18 +44,19 @@ class RegisterV2Controller extends Controller
         MondayRegistrationService $mondayRegistrationService
     )
     {
-        $input = $request->all();
+        $input = $request->except(['registration_meeting', 'registration_contact']);
         $rol = $input['rol'] ?? 'cliente';
         $passport = $input['passport'] ?? null;
 
         try {
             $selectedService = $this->resolveServicioSolicitado((string) ($input['servicio'] ?? ''));
             $meeting = $selectedService
-                ? app(\App\Services\RegistrationMeetingService::class)->validateMeeting($input, $selectedService) : null;
+                ? app(\App\Services\RegistrationMeetingService::class)->contextForService($selectedService) : null;
             if ($meeting) {
                 // Public fields are not evidence of payment for these services.
                 $input['pay'] = '0';
-                $input['registration_meeting'] = $meeting;
+                $input['registration_contact'] = $meeting;
+                Validator::make($input, ['phone' => ['required', 'string', 'max:255']])->validate();
                 $rol = 'cliente';
             }
             // -------------------------
@@ -387,8 +386,8 @@ class RegisterV2Controller extends Controller
             'descripcion' => $desc,
             'pagado' => 0,
             'monto' => $monto,
-            'metadata' => isset($input['registration_meeting'])
-                ? ['registration_meeting' => $input['registration_meeting']] : null,
+            'metadata' => isset($input['registration_contact'])
+                ? ['registration_contact' => $input['registration_contact']] : null,
         ];
     }
 

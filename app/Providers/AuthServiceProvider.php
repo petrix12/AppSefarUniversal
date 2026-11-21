@@ -27,6 +27,10 @@ class AuthServiceProvider extends ServiceProvider
         $this->registerPolicies();
         Gate::define('superadmin', fn ($user) => $user->isSuperadmin());
         Gate::define('client-notes.delete', fn ($user) => $user->isSuperadmin());
+        Gate::define('registration.meeting', fn ($user) => $user->hasRole('Cliente') && (int) $user->pay === 2 && (int) $user->contrato === 1
+            && \App\Services\RegistrationMeetingService::supportsUser($user)
+            && ! \App\Services\RegistrationMeetingService::hasBookedInitialMeeting($user));
+        Gate::define('kalendia.manage', fn ($user) => $user->hasRole('Administrador') && ! $user->hasRole('Cliente'));
         Gate::define('clients.blocks.review', fn ($user) => app(\App\Services\ClientRestrictionService::class)->canReview($user));
 
         Gate::define('ver.mi.estatus', function ($user) {

@@ -11,15 +11,21 @@ use Illuminate\Support\Str;
 class DeliverRegistrationMeetingWebhooks extends Command
 {
     protected $signature = 'registration:deliver-meeting-webhooks {--limit=20} {--test : Envía solo un ejemplo ficticio a la URL de pruebas}';
-    protected $description = 'Envía a n8n los registros con reunión cuyo pago está confirmado';
+    protected $description = 'Sincroniza el contacto y la referencia del pago de registro con Kalendia';
 
     public function handle(): int
     {
         if ($this->option('test')) return $this->sendTest();
         if (! config('registration_meetings.enabled')) return self::SUCCESS;
+        $native = app(\App\Services\KalendiaApi::class)->configured();
+        $notify = (bool) config('registration_meetings.notify_n8n');
+        if (! $native && ! $notify) {
+            $this->error('Falta configurar Kalendia. Se conservan los eventos pendientes.');
+            return self::FAILURE;
+        }
         $url = (string) config('registration_meetings.url');
-        if (parse_url($url, PHP_URL_SCHEME) !== 'https' || ! parse_url($url, PHP_URL_HOST)
-            || str_contains((string) parse_url($url, PHP_URL_PATH), '/webhook-test/')) {
+        if ($notify && (parse_url($url, PHP_URL_SCHEME) !== 'https' || ! parse_url($url, PHP_URL_HOST)
+            || str_contains((string) parse_url($url, PHP_URL_PATH), '/webhook-test/'))) {
             $this->error('Configura una URL HTTPS de producción para el webhook.');
             return self::FAILURE;
         }
@@ -37,11 +43,20 @@ class DeliverRegistrationMeetingWebhooks extends Command
             if (! $event) break;
             $status = null;
             try {
-                $response = Http::acceptJson()->asJson()->connectTimeout(3)->timeout(10)->withoutRedirecting()
-                    ->withHeaders(['Idempotency-Key' => $event->event_id])
-                    ->post($url, ['event_id' => $event->event_id] + $event->payload);
-                $status = $response->status();
-                $sent = $response->successful();
+                $status = $native ? app(\App\Services\KalendiaRegistrationContactSync::class)->sync($event) : 200;
+                $sent = true;
+                if ($notify) {
+                    // This event creates a contact after payment, never an appointment from an old date.
+                    $payload = \Illuminate\Support\Arr::except($event->payload, ['_kalendia', 'reunion_fecha_hora', 'reunion_zona_horaria', 'reunion_utc']);
+                    $response = Http::acceptJson()->asJson()->connectTimeout(3)->timeout(10)->withoutRedirecting()
+                        ->withHeaders(['Idempotency-Key' => $event->event_id])
+                        ->post($url, ['event_id' => $event->event_id] + $payload);
+                    $status = $response->status();
+                    $sent = $response->successful();
+                }
+            } catch (\App\Services\KalendiaApiException $exception) {
+                $status = $exception->httpStatus;
+                $sent = false;
             } catch (\Throwable) {
                 $sent = false;
             }
@@ -67,7 +82,6 @@ class DeliverRegistrationMeetingWebhooks extends Command
             return self::FAILURE;
         }
         $eventId = (string) Str::uuid();
-        $date = now('America/Bogota')->addDays(3)->startOfHour();
         try {
             $response = Http::acceptJson()->asJson()->connectTimeout(3)->timeout(10)->withoutRedirecting()
                 ->withHeaders(['Idempotency-Key' => $eventId])->post($url, [
@@ -76,8 +90,7 @@ class DeliverRegistrationMeetingWebhooks extends Command
                     'nombre_completo' => 'PRUEBA FICTICIA', 'pasaporte' => 'PRUEBA-SIN-VALIDEZ',
                     'telefono' => '000000000', 'correo_electronico' => 'prueba@example.invalid',
                     'servicio' => 'Nacionalidad portuguesa por cónyuge', 'servicio_id' => null,
-                    'reunion_fecha_hora' => $date->toIso8601String(), 'reunion_zona_horaria' => 'America/Bogota',
-                    'reunion_utc' => $date->copy()->utc()->toIso8601String(), 'pago_confirmado_en' => now()->toIso8601String(),
+                    'pago_confirmado_en' => now()->toIso8601String(),
                 ]);
             $this->line('Prueba ficticia: HTTP '.$response->status().'. No se consultaron ni modificaron pagos.');
             return $response->successful() ? self::SUCCESS : self::FAILURE;
