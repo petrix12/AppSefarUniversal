@@ -106,7 +106,7 @@
 
     const filterItem = (item, query, parentMatches = false) => {
       const link = directChild(item, '.nav-link');
-      const label = normalize(link ? link.textContent : '');
+      const label = normalize(link ? `${link.textContent} ${link.dataset.search || ''}` : '');
       const ownMatches = parentMatches || label.includes(query);
       const submenu = directChild(item, '.nav-treeview');
       const children = submenu

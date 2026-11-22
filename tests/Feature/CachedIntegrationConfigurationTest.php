@@ -16,6 +16,15 @@ class CachedIntegrationConfigurationTest extends TestCase
 {
     private $environmentRepository;
 
+    public function createApplication()
+    {
+        $app = require __DIR__.'/../../bootstrap/app.php';
+        $app->useEnvironmentPath('/dev')->loadEnvironmentFrom('null');
+        $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+
+        return $app;
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -27,8 +36,6 @@ class CachedIntegrationConfigurationTest extends TestCase
             'services.hubspot.support_tickets.priority' => 'HIGH',
             'services.stripe.key' => 'pk_test_default',
             'services.stripe.secret' => 'sk_test_default',
-            'services.stripe.key_port' => 'pk_test_portugal',
-            'services.stripe.secret_port' => 'sk_test_portugal',
             'services.teamleader.client_id' => 'cached-teamleader-test-id',
             'services.teamleader.client_secret' => 'cached-teamleader-test-secret',
             'services.teamleader.redirect' => 'https://example.test/teamleader/callback',
@@ -68,18 +75,17 @@ class CachedIntegrationConfigurationTest extends TestCase
         $this->assertSame(30, $http->getConfig('timeout'));
     }
 
-    public function test_payment_account_selection_and_fallback_work_without_dotenv(): void
+    public function test_payments_use_only_the_primary_account_without_dotenv(): void
     {
         $controller = app(BancaOnlineController::class);
         $publicKey = new \ReflectionMethod($controller, 'stripePublicKey');
         $secretKey = new \ReflectionMethod($controller, 'stripeSecretKey');
-        $this->assertSame('pk_test_default', $publicKey->invoke($controller, 'espana'));
-        $this->assertSame('sk_test_default', $secretKey->invoke($controller, 'espana'));
-        $this->assertSame('pk_test_portugal', $publicKey->invoke($controller, 'portugal'));
-        $this->assertSame('sk_test_portugal', $secretKey->invoke($controller, 'portugal'));
-        config(['services.stripe.key_port' => null, 'services.stripe.secret_port' => null]);
-        $this->assertSame('pk_test_default', $publicKey->invoke($controller, 'portugal'));
-        $this->assertSame('sk_test_default', $secretKey->invoke($controller, 'portugal'));
+        $this->assertSame('pk_test_default', $publicKey->invoke($controller));
+        $this->assertSame('sk_test_default', $secretKey->invoke($controller));
+        $catalog = app(\App\Services\BancaOnlineCatalog::class);
+        foreach (['espana', 'portugal', 'italia'] as $country) {
+            $this->assertArrayNotHasKey('stripe_account', $catalog->country($country));
+        }
     }
 
     public function test_ticket_routing_uses_cached_pipeline_stage_and_priority(): void

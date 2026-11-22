@@ -3005,11 +3005,7 @@ class ClienteController extends Controller
         $hubspot = HubSpot\Factory::createWithAccessToken(config('services.hubspot.key'));
         //Lo que va dentro de la Funcion
 
-        if (auth()->user()->servicio == 'Constitución de Empresa' || auth()->user()->servicio == 'Representante Fiscal' || auth()->user()->servicio == 'Codigo  Fiscal' || auth()->user()->servicio == 'Apertura de cuenta' || auth()->user()->servicio == 'Trimestre contable' || auth()->user()->servicio == 'Cooperativa 10 años' || auth()->user()->servicio == 'Cooperativa 5 años' || auth()->user()->servicio == 'Portuguesa Sefardi' || auth()->user()->servicio == 'Portuguesa Sefardi - Subsanación' || auth()->user()->servicio == 'Certificación de Documentos - Portugal') {
-            Stripe\Stripe::setApiKey(config('services.stripe.secret_port'));
-        } else {
-            Stripe\Stripe::setApiKey(config('services.stripe.secret'));
-        }
+        Stripe\Stripe::setApiKey(config('services.stripe.secret'));
 
 
         $variable = json_decode(json_encode($request->all()),true);
@@ -3359,11 +3355,7 @@ class ClienteController extends Controller
         $hubspot = HubSpot\Factory::createWithAccessToken(config('services.hubspot.key'));
         //Lo que va dentro de la Funcion
 
-        if (auth()->user()->servicio == 'Constitución de Empresa' || auth()->user()->servicio == 'Representante Fiscal' || auth()->user()->servicio == 'Codigo  Fiscal' || auth()->user()->servicio == 'Apertura de cuenta' || auth()->user()->servicio == 'Trimestre contable' || auth()->user()->servicio == 'Cooperativa 10 años' || auth()->user()->servicio == 'Cooperativa 5 años' || auth()->user()->servicio == 'Portuguesa Sefardi' || auth()->user()->servicio == 'Portuguesa Sefardi - Subsanación' || auth()->user()->servicio == 'Certificación de Documentos - Portugal') {
-            Stripe\Stripe::setApiKey(config('services.stripe.secret_port'));
-        } else {
-            Stripe\Stripe::setApiKey(config('services.stripe.secret'));
-        }
+        Stripe\Stripe::setApiKey(config('services.stripe.secret'));
 
         $servicio = Servicio::where('id_hubspot', auth()->user()->servicio)->get();
 
@@ -3806,27 +3798,23 @@ class ClienteController extends Controller
         }
     }
 
-    public function procesarPagoStripe(Request $request) {
+    public function procesarPagoStripe(Request $request)
+    {
+        $lock = Cache::lock('stripe-primary-user-'.auth()->id(), 1800);
+        if (!$lock->get()) {
+            return response()->json(['success' => false, 'message' => 'Ya hay un pago en curso. Espera antes de reintentar.'], 409);
+        }
+        try {
+            return $this->procesarPagoStripePrincipal($request);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function procesarPagoStripePrincipal(Request $request) {
         try {
             $hubspot = HubSpot\Factory::createWithAccessToken(config('services.hubspot.key'));
 
-            // Determinar qué clave de Stripe usar
-            /*
-            if (auth()->user()->servicio == 'Constitución de Empresa' ||
-                auth()->user()->servicio == 'Representante Fiscal' ||
-                auth()->user()->servicio == 'Codigo  Fiscal' ||
-                auth()->user()->servicio == 'Apertura de cuenta' ||
-                auth()->user()->servicio == 'Trimestre contable' ||
-                auth()->user()->servicio == 'Cooperativa 10 años' ||
-                auth()->user()->servicio == 'Cooperativa 5 años' ||
-                auth()->user()->servicio == 'Portuguesa Sefardi' ||
-                auth()->user()->servicio == 'Portuguesa Sefardi - Subsanación' ||
-                auth()->user()->servicio == 'Certificación de Documentos - Portugal') {
-                \Stripe\Stripe::setApiKey(config('services.stripe.secret_port'));
-            } else {
-
-            }
-                */
             \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
 
             // Obtener datos del request
@@ -3876,46 +3864,20 @@ class ClienteController extends Controller
             $paymentIntent = null;
 
             try {
-                // 1. Crear o recuperar el cliente en Stripe
-                if (auth()->user()->stripe_cus_id) {
-                    // Cliente ya existe
-                    $customer = \Stripe\Customer::retrieve(auth()->user()->stripe_cus_id);
-
-                    // Actualizar información del cliente
-                    \Stripe\Customer::update(auth()->user()->stripe_cus_id, [
-                        'name' => $data['first_name'] . ' ' . $data['last_name'],
-                        'email' => $data['email'],
-                        'phone' => $data['phone'] ?? null,
-                        'address' => [
-                            'line1' => $data['address_line1'],
-                            'line2' => $data['address_line2'] ?? null,
-                            'city' => $data['city'],
-                            'state' => $data['state'] ?? null,
-                            'postal_code' => $data['postal_code'],
-                            'country' => $data['country'],
-                        ]
-                    ]);
-                } else {
-                    // Crear nuevo cliente
-                    $customer = \Stripe\Customer::create([
-                        'name' => $data['first_name'] . ' ' . $data['last_name'],
-                        'email' => $data['email'],
-                        'phone' => $data['phone'] ?? null,
-                        'address' => [
-                            'line1' => $data['address_line1'],
-                            'line2' => $data['address_line2'] ?? null,
-                            'city' => $data['city'],
-                            'state' => $data['state'] ?? null,
-                            'postal_code' => $data['postal_code'],
-                            'country' => $data['country'],
-                        ]
-                    ]);
-
-                    // Guardar el customer ID en la base de datos
-                    DB::table('users')
-                        ->where('id', auth()->user()->id)
-                        ->update(['stripe_cus_id' => $customer->id]);
-                }
+                // Historical customer references are verified only against the primary account.
+                $customer = $this->primaryStripeCustomer(auth()->user(), [
+                    'name' => $data['first_name'] . ' ' . $data['last_name'],
+                    'email' => $data['email'],
+                    'phone' => $data['phone'] ?? null,
+                    'address' => [
+                        'line1' => $data['address_line1'],
+                        'line2' => $data['address_line2'] ?? null,
+                        'city' => $data['city'],
+                        'state' => $data['state'] ?? null,
+                        'postal_code' => $data['postal_code'],
+                        'country' => $data['country'],
+                    ],
+                ]);
 
                 // 2. Adjuntar el método de pago al cliente
                 \Stripe\PaymentMethod::retrieve($paymentMethodId)->attach([
@@ -3930,7 +3892,7 @@ class ClienteController extends Controller
                 ]);
 
                 // 4. Crear el Payment Intent
-                $paymentIntent = \Stripe\PaymentIntent::create([
+                $paymentIntent = $this->primaryStripePaymentIntent($compras, [
                     'amount' => $monto * 100, // Stripe trabaja en centavos
                     'currency' => 'eur',
                     'customer' => $customer->id,
@@ -3947,7 +3909,7 @@ class ClienteController extends Controller
                         'user_email' => auth()->user()->email,
                         'user_passport' => auth()->user()->passport ?? 'N/A',
                     ]
-                ]);
+                ], 'cart:'.auth()->id().':'.$compras->pluck('id')->sort()->implode(','));
 
                 $errorcod = "success";
 
@@ -5006,6 +4968,69 @@ class ClienteController extends Controller
 
             return false;
         }
+    }
+
+    private function primaryStripePaymentIntent(\Illuminate\Support\Collection $purchases, array $payload, string $reference)
+    {
+        $mode = preg_match('/^(?:sk|rk)_(live|test)_/', (string) config('services.stripe.secret'), $matches) ? $matches[1] : 'unknown';
+        $identity = hash('sha256', $reference);
+        $attempt = data_get($purchases->first()->metadata, 'stripe_primary_checkout', []);
+        $intentId = ($attempt['account'] ?? null) === 'main' && ($attempt['mode'] ?? null) === $mode
+            && ($attempt['reference'] ?? null) === $identity ? ($attempt['id'] ?? null) : null;
+        $key = 'sefar-primary-'.$mode.'-'.$identity;
+        if (!is_string($intentId) || !preg_match('/^pi_[A-Za-z0-9_]+$/D', $intentId)) {
+            $creation = $payload;
+            unset($creation['payment_method'], $creation['confirm'], $creation['off_session']);
+            // Persist a primary-account reference before any request can confirm a charge.
+            $created = \Stripe\PaymentIntent::create($creation, ['idempotency_key' => $key]);
+            $intentId = $created->id;
+            foreach ($purchases as $purchase) {
+                $metadata = $purchase->metadata ?? [];
+                $metadata['stripe_primary_checkout'] = ['account' => 'main', 'mode' => $mode, 'reference' => $identity, 'id' => $intentId];
+                $purchase->forceFill(['metadata' => $metadata])->save();
+            }
+        }
+
+        // A lost confirmation response is read back; never create another payment on retry.
+        $intent = \Stripe\PaymentIntent::retrieve($intentId);
+        if ((int) $intent->amount !== (int) $payload['amount'] || $intent->currency !== $payload['currency']
+            || $intent->customer !== $payload['customer']) {
+            throw new \RuntimeException('El pago pendiente no coincide con esta compra. Requiere revisión.');
+        }
+        if (in_array($intent->status, ['requires_payment_method', 'requires_confirmation', 'requires_action'], true)) {
+            $intent = $intent->confirm(['payment_method' => $payload['payment_method'], 'off_session' => false], [
+                'idempotency_key' => $key.'-confirm-'.hash('sha256', $payload['payment_method']),
+            ]);
+        }
+
+        return $intent;
+    }
+
+    private function primaryStripeCustomer(User $user, array $payload)
+    {
+        $previousId = (string) $user->stripe_cus_id;
+        if ($previousId !== '') {
+            try {
+                $customer = \Stripe\Customer::retrieve($previousId);
+            } catch (\Stripe\Exception\InvalidRequestException $exception) {
+                if ($exception->getHttpStatus() !== 404 || $exception->getStripeCode() !== 'resource_missing') {
+                    throw $exception;
+                }
+                $customer = null;
+            }
+            if ($customer) {
+                \Stripe\Customer::update($customer->id, $payload);
+                return $customer;
+            }
+        }
+
+        $customer = \Stripe\Customer::create($payload, [
+            'idempotency_key' => 'sefar-primary-customer-'.$user->id.'-'.hash('sha256', $previousId),
+        ]);
+        DB::table('users')->where('id', $user->id)->update(['stripe_cus_id' => $customer->id]);
+        $user->setAttribute('stripe_cus_id', $customer->id);
+
+        return $customer;
     }
 
     /**

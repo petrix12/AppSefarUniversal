@@ -31,7 +31,7 @@
 @unless($cosActualClient)
     @php
         $cosPreviewTargetUrl = request()->fullUrlWithQuery(['vista_cliente' => $cosClientPreview ? 0 : 1]);
-        $cosPreviewButtonLabel = $cosClientPreview ? 'Volver a vista interna' : 'Ver como solicitante';
+        $cosPreviewButtonLabel = $cosClientPreview ? 'Volver a vista interna' : 'Ver como cliente';
         $cosPreviewLoadingLabel = $cosClientPreview ? 'Cargando vista interna…' : 'Cargando vista del solicitante…';
     @endphp
 
@@ -40,11 +40,11 @@
             gap: 1rem;
             margin-bottom: 1rem;
             padding: .9rem 1rem;
-            color: #0c4a6e;
-            background: linear-gradient(135deg, #ecfeff, #e0f2fe);
-            border: 1px solid #7dd3fc;
+            color: #123f50;
+            background: #f2f6f7;
+            border: 1px solid #dce6e9;
             border-radius: .65rem;
-            box-shadow: 0 .25rem .9rem rgba(14, 116, 144, .08);
+            box-shadow: none;
         }
 
         #cos-preview-control > span {
@@ -164,18 +164,7 @@
         }
     </style>
 
-    <div class="alert d-flex justify-content-between align-items-center" id="cos-preview-control">
-        <span>{{ $cosClientPreview ? 'Vista del solicitante · solo lectura' : 'Vista interna del COS' }}</span>
-        <a id="cos-preview-toggle"
-            class="cos-preview-toggle {{ $cosClientPreview ? 'cos-preview-toggle--return' : 'cos-preview-toggle--enter' }}"
-            href="{{ $cosPreviewTargetUrl }}"
-            role="switch"
-            aria-checked="{{ $cosClientPreview ? 'true' : 'false' }}"
-            data-loading-label="{{ $cosPreviewLoadingLabel }}">
-            <i class="fas fa-{{ $cosClientPreview ? 'arrow-left' : 'eye' }}" aria-hidden="true"></i>
-            <span>{{ $cosPreviewButtonLabel }}</span>
-        </a>
-    </div>
+    @include('crud.users.partials.preview-control')
 
     <div class="cos-preview-loading" id="cos-preview-loading" hidden role="status" aria-live="assertive" aria-atomic="true">
         <div class="cos-preview-loading__panel">
@@ -242,178 +231,9 @@
     @include('crud.users.partials.restriction-notice')
     @include('crud.users.partials.load-timing')
     <div>
-        @if($cosViewRoleId != 5)
-        <div class="flex flex-col">
-            <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                    {{-- Inicio --}}
-                    <div class="bg-gray-50">
-                        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:py-6 lg:px-8 lg:flex lg:items-center lg:justify-between">
-                            <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-                                <span class="ctvSefar block text-indigo-600">{{$user->nombres}} {{$user->apellidos}}</span>
-                            </h2>
-                            <div class="mt-8 flex flex-wrap items-center gap-2 lg:mt-0 lg:flex-shrink-0">
-                                @php
-                                    $teamleaderContactId = filled($user->tl_id)
-                                        ? $user->tl_id
-                                        : data_get($teamleaderMigration ?? [], 'contact.id');
-                                    $externalProfiles = [
-                                        'HubSpot' => filled($user->hs_id)
-                                            ? 'https://app.hubspot.com/contacts/20053496/record/0-1/' . rawurlencode(trim((string) $user->hs_id))
-                                            : null,
-                                        'Teamleader' => filled($teamleaderContactId)
-                                            ? 'https://focus.teamleader.eu/contacts/' . rawurlencode(trim((string) $teamleaderContactId))
-                                            : null,
-                                    ];
-                                @endphp
-                                @foreach($externalProfiles as $platform => $profileUrl)
-                                    @if($profileUrl)
-                                        <a href="{{ $profileUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary">
-                                            <i class="fas fa-external-link-alt mr-1" aria-hidden="true"></i> Ver en {{ $platform }}
-                                        </a>
-                                    @else
-                                        <button type="button" class="btn btn-outline-secondary" disabled title="Sin contacto vinculado en {{ $platform }}">
-                                            <i class="fas fa-external-link-alt mr-1" aria-hidden="true"></i> Ver en {{ $platform }}
-                                        </button>
-                                    @endif
-                                @endforeach
-                                <div class="inline-flex rounded-md shadow">
-                                    <a href="{{ route('crud.users.index') }}" class="cfrSefar inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                                        Volver a {{ __('Users list') }}
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {{-- Fin --}}
-                </div>
-            </div>
-        </div>
-        @endif
+        @include('crud.users.partials.workspace-header')
         <div class="card p-4">
-            <ul class="nav nav-tabs" id="formTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button style="color:black" class="nav-link active" id="mystatus-tab" data-bs-toggle="tab" data-bs-target="#mystatus" type="button" role="tab" aria-controls="mystatus" aria-selected="true">
-                        @if($cosViewRoleId == 5)
-                        Mi Estatus
-                        @else
-                        Estatus de Solicitante
-                        @endif
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button style="color:black" class="nav-link" id="personal-data-tab" data-bs-toggle="tab" data-bs-target="#personal_data" type="button" role="tab" aria-controls="personal_data" aria-selected="true">
-                        Datos personales
-                    </button>
-                </li>
-                @if($canEditCos)
-                <li class="nav-item" role="presentation">
-                    <button style="color:black" class="nav-link" id="change-history-tab" data-bs-toggle="tab" data-bs-target="#change-history" type="button" role="tab" aria-controls="change-history" aria-selected="false">
-                        Historial de cambios
-                    </button>
-                </li>
-                @endif
-                @if($cosViewRoleId !== 5)
-                <li class="nav-item" role="presentation">
-                    <button style="color:black" class="nav-link" id="formulario-001-tab" data-bs-toggle="tab" data-bs-target="#formulario-001" type="button" role="tab" aria-controls="formulario-001" aria-selected="false">
-                        Formulario 001
-                    </button>
-                </li>
-                @endif
-                @if($cosViewRoleId == 1)
-                <li class="nav-item" role="presentation">
-                    <button style="color:black" class="nav-link" id="adminchangepassword-tab" data-bs-toggle="tab" data-bs-target="#adminchangepassword" type="button" role="tab" aria-controls="adminchangepassword" aria-selected="true">
-                        Contraseña
-                    </button>
-                </li>
-                @elseif($cosViewRoleId == 5)
-                <li class="nav-item" role="presentation">
-                    <button style="color:black" class="nav-link" id="mypassword-tab" data-bs-toggle="tab" data-bs-target="#mypassword" type="button" role="tab" aria-controls="mypassword" aria-selected="true">
-                        Cambiar mi Contraseña
-                    </button>
-                </li>
-                @endif
-                <li class="nav-item" role="presentation">
-                    <button style="color:black" class="nav-link" id="familiars-tab" data-bs-toggle="tab" data-bs-target="#familiars" type="button" role="tab" aria-controls="familiars" aria-selected="false">
-                        Familiares registrados
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button style="color:black" class="nav-link" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments" type="button" role="tab" aria-controls="payments" aria-selected="false">
-                        Pagos realizados
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button style="color:black" class="nav-link" id="paymentspen-tab" data-bs-toggle="tab" data-bs-target="#paymentspen" type="button" role="tab" aria-controls="paymentspen" aria-selected="false">
-                        Deuda pendiente
-                    </button>
-                </li>
-                @if($cosViewRoleId == 5)
-                <li class="nav-item">
-                    <button style="color:black" class="nav-link" id="client-req-tab"
-                            data-bs-toggle="tab" data-bs-target="#client-req"
-                            type="button" role="tab" aria-controls="client-req" aria-selected="false">
-                        Mis solicitudes de documentos
-                    </button>
-                </li>
-                @else
-                {{-- === TAB para ADMIN === --}}
-                <li class="nav-item">
-                    <button style="color:black" class="nav-link" id="admin-req-tab"
-                            data-bs-toggle="tab" data-bs-target="#admin-req"
-                            type="button" role="tab" aria-controls="admin-req" aria-selected="false">
-                        Solicitudes de documentos
-                    </button>
-                </li>
-                @endif
-                <li class="nav-item" role="presentation">
-                    <button style="color:black" class="nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab" aria-controls="documents" aria-selected="false">
-                        Archivos Cargados
-                    </button>
-                </li>
-                @if($cosViewRoleId == 1 || $cosViewRoleId == 2)
-                <li class="nav-item" role="presentation">
-                    <button style="color:black" class="nav-link" id="etiquetado-tab" data-bs-toggle="tab" data-bs-target="#etiquetado" type="button" role="tab" aria-controls="etiquetado" aria-selected="false">
-                        Etiquetado
-                    </button>
-                </li>
-                @endif
-                @if($cosViewRoleId == 17 || $cosViewRoleId == 1 || $cosViewRoleId == 4 || $cosViewRoleId == 16 || $cosViewRoleId == 15)
-                <li class="nav-item" role="presentation">
-                    <button style="color:black" class="nav-link" id="negocios-tab" data-bs-toggle="tab" data-bs-target="#negocios" type="button" role="tab" aria-controls="negocios" aria-selected="false">
-                        Negocios
-                    </button>
-                </li>
-                @endif
-                @if($cosViewRoleId != 5)
-                <li class="nav-item" role="presentation">
-                    <button style="color:black" class="nav-link" id="teamleader-migration-tab" data-bs-toggle="tab" data-bs-target="#teamleader-migration" type="button" role="tab" aria-controls="teamleader-migration" aria-selected="false">
-                        Teamleader
-                        @if(($teamleaderMigration['contact'] ?? null))
-                            <span class="badge bg-secondary ms-1">{{ ($teamleaderMigration['summary']['deals'] ?? 0) + ($teamleaderMigration['summary']['projects'] ?? 0) + ($teamleaderMigration['summary']['invoices'] ?? 0) }}</span>
-                        @endif
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button style="color:black" class="nav-link" id="client-tasks-tab" data-bs-toggle="tab" data-bs-target="#client-tasks" type="button" role="tab" aria-controls="client-tasks" aria-selected="false">
-                        Tareas
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button style="color:black" class="nav-link" id="client-chat-tab" data-bs-toggle="tab" data-bs-target="#client-chat" type="button" role="tab" aria-controls="client-chat" aria-selected="false">
-                        Chat interno
-                        <span id="clientInternalChatBadge" class="badge bg-danger ms-1 d-none">0</span>
-                    </button>
-                </li>
-                @if(!auth()->user()->hasRole('Cliente') && $user->hasRole('Cliente'))
-                <li class="nav-item">
-                    <a style="color:black" class="nav-link" href="{{ route('crud.users.notes.index', $user) }}">
-                        Notas
-                    </a>
-                </li>
-                @endif
-                @endif
-            </ul>
+            @include('crud.users.partials.workspace-navigation')
             <style>
                 /* Título de la tarjeta */
                 .card-title {
@@ -1679,733 +1499,10 @@
                 @endpush
 
 
-                <div class="tab-pane fade show" id="personal_data" role="tabpanel" aria-labelledby="personal-data-tab">
-                    <style>
-                        .cos-custom-groups {
-                            margin-top: 2.25rem;
-                            padding: 1.5rem;
-                            border: 1px solid #dce6ef;
-                            border-radius: .8rem;
-                            background: #f8fafc;
-                        }
-                        .cos-custom-groups .cos-section-index {
-                            display: grid;
-                            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-                            gap: .55rem;
-                            margin: 1.25rem 0;
-                        }
-                        .cos-custom-groups .cos-section-index a {
-                            display: flex;
-                            align-items: center;
-                            justify-content: space-between;
-                            min-height: 48px;
-                            padding: .6rem .75rem;
-                            color: #173b57;
-                            background: #fff;
-                            border: 1px solid #dbe3ec;
-                            border-radius: .45rem;
-                            font-size: .86rem;
-                            font-weight: 600;
-                            text-decoration: none;
-                        }
-                        .cos-custom-groups .cos-section-index a:hover,
-                        .cos-custom-groups .cos-section-index a:focus {
-                            border-color: #1687b5;
-                            box-shadow: 0 0 0 .15rem rgba(22,135,181,.12);
-                        }
-                        .cos-custom-groups details {
-                            border: 1px solid #dbe3ec;
-                            border-radius: .6rem;
-                            background: #fff;
-                            margin-bottom: .9rem;
-                            scroll-margin-top: 1rem;
-                        }
-                        .cos-custom-groups summary {
-                            cursor: pointer;
-                            font-weight: 700;
-                            padding: .85rem 1rem;
-                            color: #173b57;
-                            list-style: none;
-                        }
-                        .cos-custom-groups summary::-webkit-details-marker { display: none; }
-                        .cos-custom-groups summary::after { content: '⌄'; float: right; }
-                        .cos-custom-groups details[open] summary::after { content: '⌃'; }
-                        .cos-custom-groups .cos-group-body {
-                            border-top: 1px solid #edf1f5;
-                            padding: 1.25rem;
-                        }
-                        .cos-custom-groups .cos-field-count {
-                            display: inline-block;
-                            margin-left: .5rem;
-                            padding: .1rem .45rem;
-                            border-radius: 999px;
-                            color: #52606d;
-                            background: #edf2f7;
-                            font-size: .75rem;
-                            font-weight: 600;
-                        }
-                        .cos-save-bar {
-                            position: sticky;
-                            bottom: 0;
-                            z-index: 10;
-                            display: flex;
-                            justify-content: space-between;
-                            align-items: center;
-                            gap: 1rem;
-                            margin: 1.5rem -1px -1px;
-                            padding: 1rem;
-                            border: 1px solid #cbd5e1;
-                            border-radius: .6rem .6rem 0 0;
-                            background: rgba(255,255,255,.96);
-                            box-shadow: 0 -5px 16px rgba(15,23,42,.08);
-                        }
-                    </style>
-                    <form id="datos-personales-form">
-                        @csrf
-                        <input type="hidden" id="id" name="id" value="{{$user->id}}" />
-                        <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
-                            <span class="ctvSefar block text-indigo-600">Información de contacto</span>
-                        </h2>
-                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre</label>
-                                <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="nombres" name="nombres" value="{{ old('nombres', $user->nombres) }}" placeholder="Ingrese su nombre">
-                            </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="apellido" class="block text-sm font-medium text-gray-700">Apellido</label>
-                                <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="apellidos" name="apellidos" value="{{ old('apellidos', $user->apellidos) }}" placeholder="Ingrese su apellido">
-                            </div>
-                        </div>
-                        <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            @php
-                                $fechaNacimiento = '';
-                                if ($user->date_of_birth) {
-                                    try {
-                                        // Intenta primero el formato europeo
-                                        $fechaNacimiento = \Carbon\Carbon::createFromFormat('d/m/Y', $user->date_of_birth)->format('Y-m-d');
-                                    } catch (\Exception $e) {
-                                        try {
-                                            // Si falla, intenta parseo genérico (Y-m-d, etc.)
-                                            $fechaNacimiento = \Carbon\Carbon::parse($user->date_of_birth)->format('Y-m-d');
-                                        } catch (\Exception $e2) {
-                                            $fechaNacimiento = '';
-                                        }
-                                    }
-                                }
-                            @endphp
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="date_of_birth" class="block text-sm font-medium text-gray-700">Fecha de Nacimiento</label>
-                                <input
-                                    type="date"
-                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                    id="date_of_birth"
-                                    name="date_of_birth"
-                                    value="{{ old('date_of_birth', $fechaNacimiento) }}"
-                                    placeholder="Ingrese fecha de nacimiento"
-                                >
-                            </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="genero" class="block text-sm font-medium text-gray-700">Genero</label>
-                                <select
-                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                    id="genero"
-                                    name="genero">
-
-                                    <option value="" {{ old('genero', $user->genero ?? '') === '' ? 'selected' : '' }}></option>
-                                    <option value="FEMENINO / FEMALE"
-                                        {{ old('genero', $user->genero ?? '') === 'FEMENINO' || old('genero', $user->genero ?? '') === 'FEMENINO / FEMALE' ? 'selected' : '' }}>
-                                        FEMENINO / FEMALE
-                                    </option>
-                                    <option value="MASCULINO / MALE"
-                                        {{ old('genero', $user->genero ?? '') === 'MASCULINO' || old('genero', $user->genero ?? '') === 'MASCULINO / MALE' ? 'selected' : '' }}>
-                                        MASCULINO / MALE
-                                    </option>
-                                    <option value="OTROS / OTHERS"
-                                        {{ in_array((string) old('genero', $user->genero ?? ''), ['OTRO', 'OTROS', 'OTROS / OTHERS', 'OTROS / OT']) ? 'selected' : '' }}>
-                                        OTROS / OTHERS
-                                    </option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="veces_casado" class="block text-sm font-medium text-gray-700">Veces Casado</label>
-                                <input
-                                    type="number"
-                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                    id="veces_casado"
-                                    name="veces_casado"
-                                    value="{{ old('veces_casado', $user->veces_casado ?? '') }}"
-                                    placeholder="Ingrese la cantidad de veces casado">
-                            </div>
-
-                            <div style="flex: 1;" class="mb-3 d-none">
-                                <label for="edo_civil" class="block text-sm font-medium text-gray-700">Estado Civil</label>
-                                <select
-                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                    id="edo_civil"
-                                    name="edo_civil"
-                                    disabled>
-                                    <option value="" {{ old('edo_civil', $user->edo_civil ?? '') === '' ? 'selected' : '' }}></option>
-                                    <option value="SOLTERO (A)" {{ old('edo_civil', $user->edo_civil ?? '') === 'SOLTERO (A)' ? 'selected' : '' }}>SOLTERO (A)</option>
-                                    <option value="CASADO (A)" {{ old('edo_civil', $user->edo_civil ?? '') === 'CASADO (A)' ? 'selected' : '' }}>CASADO (A)</option>
-                                    <option value="DIVORCIADO (A)" {{ old('edo_civil', $user->edo_civil ?? '') === 'DIVORCIADO (A)' ? 'selected' : '' }}>DIVORCIADO (A)</option>
-                                    <option value="VIUDO (A)" {{ old('edo_civil', $user->edo_civil ?? '') === 'VIUDO (A)' ? 'selected' : '' }}>VIUDO (A)</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="email" class="block text-sm font-medium text-gray-700">Correo</label>
-                                <input type="email" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="email" name="email" value="{{ old('email', $user->email) }}" placeholder="Ingrese su correo electrónico">
-                            </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="telefono" class="block text-sm font-medium text-gray-700">Teléfono</label>
-                                <input type="tel" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="phone" name="phone" value="{{ old('phone', $user->phone) }}" placeholder="Ingrese su número de teléfono">
-                            </div>
-                        </div>
-
-                        <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="tiene_hermanos" class="block text-sm font-medium text-gray-700">¿Tiene Hermanos realizando procesos en Sefar Universal?</label>
-                                <select
-                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                    id="tiene_hermanos"
-                                    name="tiene_hermanos">
-                                    <option value="" {{ old('tiene_hermanos', $user->tiene_hermanos ?? '') == '' ? 'selected' : '' }}>Seleccione una opción</option>
-                                    <option value="0" {{ old('tiene_hermanos', $user->tiene_hermanos ?? '') == 0 ? 'selected' : '' }}>No</option>
-                                    <option value="1" {{ old('tiene_hermanos', $user->tiene_hermanos ?? '') == 1 ? 'selected' : '' }}>Si</option>
-                                </select>
-                            </div>
-                        </div>
-                        @if($cosViewRoleId == 1 || $cosViewRoleId == 15 || $cosViewRoleId == 16)
-                        <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="detalle_de_la_solicitud" class="block text-sm font-medium text-gray-700">Detalles de la solicitud</label>
-                                <textarea
-                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                    id="detalle_de_la_solicitud"
-                                    name="detalle_de_la_solicitud"
-                                    rows="3"
-                                    placeholder="Ingrese Detalles de la Solicitud"
-                                >{{ old('detalle_de_la_solicitud', $user->detalle_de_la_solicitud) }}</textarea>
-                            </div>
-                        </div>
-                        @endif
-                        <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="pay" class="block text-sm font-medium text-gray-700">{{ __('Payment status') }} del registro</label>
-                                @if($cosViewRoleId == 1)
-                                    <select name="pay" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                        @if ($user->pay == 0)
-                                            <option selected value=0>No ha pagado</option>
-                                        @else
-                                            <option value=0>No ha pagado</option>
-                                        @endif
-
-                                        @if ($user->pay == 1)
-                                            <option selected value=1>Pagó</option>
-                                        @else
-                                            <option value=1>Pagó</option>
-                                        @endif
-
-                                        @if ($user->pay == 2)
-                                            <option selected value=2>Pagó y completó información</option>
-                                        @else
-                                            <option value=2>Pagó y completó información</option>
-                                        @endif
-
-                                        @if ($user->pay == 3)
-                                            <option selected value=3>Pagó pero no se registró en Hubspot</option>
-                                        @else
-                                            <option value=3>Pagó pero no se registró en Hubspot</option>
-                                        @endif
-                                    </select>
-                                @else
-                                    <p>
-                                        @if ($user->pay == 0)
-                                            No ha pagado
-                                        @endif
-
-                                        @if ($user->pay == 1)
-                                            Pagó
-                                        @endif
-
-                                        @if ($user->pay == 2)
-                                            Pagó y completó información
-                                        @endif
-
-                                        @if ($user->pay == 3)
-                                            Pagó pero no se registró en Hubspot
-                                        @endif
-                                    </p>
-                                @endif
-                            </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="contrato" class="block text-sm font-medium text-gray-700">Servicio Principal</label>
-                                @if($cosViewRoleId == 1)
-                                <select name="servicio" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                    <option></option>
-                                    @foreach ($servicios as $servicio)
-                                        <option {{ $user->servicio == $servicio->id_hubspot ? 'selected' : '' }} > {{$servicio->id_hubspot}}</option>
-                                    @endforeach
-                                </select>
-                                @else
-                                    <p>
-                                        {{$user->servicio}}
-                                    </p>
-                                @endif
-                            </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="contrato" class="block text-sm font-medium text-gray-700">Contrato</label>
-                                @if($cosViewRoleId == 1)
-                                    <select name="contrato" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                        @if ($user->contrato == 0)
-                                            <option selected value=0>No ha firmado contrato</option>
-                                        @else
-                                            <option value=0>No ha firmado contrato</option>
-                                        @endif
-
-                                        @if ($user->contrato == 1)
-                                            <option selected value=1>Firmó Contrato</option>
-                                        @else
-                                            <option value=1>Firmó Contrato</option>
-                                        @endif
-                                    </select>
-                                @else
-                                    <p>
-                                        @if ($user->pay == 0)
-                                            No ha firmado contrato
-                                        @endif
-
-                                        @if ($user->pay == 1)
-                                            Firmó Contrato
-                                        @endif
-                                    </p>
-                                @endif
-                            </div>
-                        </div>
-
-                        <fieldset disabled class="d-none">
-                        <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
-                            <span class="ctvSefar block text-indigo-600">
-                            Datos del Pasaporte
-                            </span>
-                        </h2>
-
-                        <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="pasaporte" class="block text-sm font-medium text-gray-700">Número de Pasaporte</label>
-                                <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="passport" name="passport" value="{{ old('passport', $user->passport) }}" placeholder="Ingrese su número de pasaporte">
-                            </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="nombre_en_pasaporte" class="block text-sm font-medium text-gray-700">Nombre en Pasaporte</label>
-                                <input
-                                    type="text"
-                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                    id="nombre_en_pasaporte"
-                                    name="nombre_en_pasaporte"
-                                    value="{{ old('nombre_en_pasaporte', $user->nombre_en_pasaporte ?? '') }}"
-                                    placeholder="Ingrese el nombre tal como aparece en el pasaporte">
-                            </div>
-
-                            @can('genealogista')
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="genealogy_tree_id" class="block text-sm font-medium text-gray-700">ID secundario del árbol</label>
-                                    <input
-                                        type="text"
-                                        class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                        id="genealogy_tree_id"
-                                        name="genealogy_tree_id"
-                                        value="{{ old('genealogy_tree_id', $user->genealogy_tree_id) }}"
-                                        placeholder="IDCliente del árbol, si es distinto al pasaporte">
-                                    <small class="text-muted">Se consulta únicamente si no existe árbol con el pasaporte.</small>
-                                </div>
-                            @endcan
-
-                            <!-- Campo País de Expedición del Pasaporte -->
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="pais_de_expedicion_del_pasaporte" class="block text-sm font-medium text-gray-700">País de Expedición del Pasaporte</label>
-                                <input
-                                    type="text"
-                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                    id="pais_de_expedicion_del_pasaporte"
-                                    name="pais_de_expedicion_del_pasaporte"
-                                    value="{{ old('pais_de_expedicion_del_pasaporte', $user->pais_de_expedicion_del_pasaporte ?? '') }}"
-                                    placeholder="Ingrese el país de expedición del pasaporte">
-                            </div>
-
-                            <!-- Campo Fecha de Caducidad del Pasaporte -->
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="fecha_de_caducidad_del_pasaporte" class="block text-sm font-medium text-gray-700">Fecha de Caducidad del Pasaporte</label>
-                                <input
-                                    type="date"
-                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                    id="fecha_de_caducidad_del_pasaporte"
-                                    name="fecha_de_caducidad_del_pasaporte"
-                                    value="{{ old('fecha_de_caducidad_del_pasaporte', \Carbon\Carbon::parse($user->fecha_de_caducidad_del_pasaporte ?? now())->format('Y-m-d')) }}"
-                                    placeholder="Ingrese la fecha de caducidad del pasaporte">
-                            </div>
-                        </div>
-
-                        <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
-                            <span class="ctvSefar block text-indigo-600">Direcciones</span>
-                        </h2>
-                        <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="pais_de_residencia" class="block text-sm font-medium text-gray-700">Pais de Residencia</label>
-                                <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="pais_de_residencia" name="pais_de_residencia" value="{{ old('pais_de_residencia', $user->pais_de_residencia) }}" placeholder="Ingrese su Pais de Residencia">
-                            </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="city" class="block text-sm font-medium text-gray-700">Ciudad de Residencia</label>
-                                <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="city" name="city" value="{{ old('city', $user->city) }}" placeholder="Ingrese su ciudad de Residencia">
-                            </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="anos_en_residencia_actual" class="block text-sm font-medium text-gray-700">Años en Residencia Actual</label>
-                                <input
-                                    type="text"
-                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                    id="anos_en_residencia_actual"
-                                    name="anos_en_residencia_actual"
-                                    value="{{ old('anos_en_residencia_actual', $user->anos_en_residencia_actual ?? '') }}"
-                                    placeholder="Ingrese los años en la residencia actual">
-                            </div>
-                        </div>
-                        <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="address" class="block text-sm font-medium text-gray-700">Direccion actual</label>
-                                <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="address" name="address" value="{{ old('address', $user->address) }}" placeholder="Ingrese su Dirección actual">
-                            </div>
-                        </div>
-
-                        <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="pais_de_nacimiento" class="block text-sm font-medium text-gray-700">Pais de Nacimiento</label>
-                                <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="pais_de_nacimiento" name="pais_de_nacimiento" value="{{ old('pais_de_nacimiento', $user->pais_de_nacimiento) }}" placeholder="Ingrese su País de Nacimiento">
-                            </div>
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="ciudad_de_nacimiento" class="block text-sm font-medium text-gray-700">Ciudad de Nacimiento</label>
-                                <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="ciudad_de_nacimiento" name="ciudad_de_nacimiento" value="{{ old('ciudad_de_nacimiento', $user->ciudad_de_nacimiento) }}" placeholder="Ingrese su Ciudad de Nacimiento">
-                            </div>
-                        </div>
-                        <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="direccion_en_el_pais_de_origen" class="block text-sm font-medium text-gray-700">Dirección en el País de Origen</label>
-                                <input
-                                    type="text"
-                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                    id="direccion_en_el_pais_de_origen"
-                                    name="direccion_en_el_pais_de_origen"
-                                    value="{{ old('direccion_en_el_pais_de_origen', $user->direccion_en_el_pais_de_origen ?? '') }}"
-                                    placeholder="Ingrese la dirección en el país de origen">
-                            </div>
-                        </div>
-                        <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <div style="flex: 1;" class="mb-3">
-                                <label for="paises_donde_ha_residido_en_los_ultimos_5_anos" class="block text-sm font-medium text-gray-700">Países donde ha residido en los últimos 5 años</label>
-                                <textarea
-                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                    id="paises_donde_ha_residido_en_los_ultimos_5_anos"
-                                    name="paises_donde_ha_residido_en_los_ultimos_5_anos"
-                                    rows="3"
-                                    placeholder="Ingrese los países donde ha residido en los últimos 5 años">{{ old('paises_donde_ha_residido_en_los_ultimos_5_anos', $user->paises_donde_ha_residido_en_los_ultimos_5_anos ?? '') }}</textarea>
-                            </div>
-                        </div>
-
-                        @if($cosViewRoleId == 1 || $cosViewRoleId == 15 || $cosViewRoleId == 4 || $cosViewRoleId == 17)
-
-                            <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
-                                <span class="ctvSefar block text-indigo-600">Otros datos personales</span>
-                            </h2>
-                            <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="conyuge_interesado_en_proceso" class="block text-sm font-medium text-gray-700">Conyuge Interesado</label>
-                                    <input type="hidden" name="conyuge_interesado_en_proceso" value="false">
-                                    <input
-                                        type="checkbox"
-                                        class="mt-1 py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                        id="conyuge_interesado_en_proceso"
-                                        name="conyuge_interesado_en_proceso"
-                                        style="width: 33.6px!important; height: 33.6px!important;"
-                                        value="true"
-                                        {{ filter_var(old('conyuge_interesado_en_proceso', $user->conyuge_interesado_en_proceso), FILTER_VALIDATE_BOOLEAN) ? 'checked' : '' }}
-                                    />
-                                </div>
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="nombre_completo_del_conyuge" class="block text-sm font-medium text-gray-700">Nombre de Conyuge</label>
-                                    <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="nombre_completo_del_conyuge" name="nombre_completo_del_conyuge" value="{{ old('nombre_completo_del_conyuge', $user->nombre_completo_del_conyuge) }}" placeholder="Ingrese su Ciudad de Nacimiento">
-                                </div>
-                            </div>
-                            <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                                <!-- Campo Partida de Nacimiento Simple -->
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="partida_de_nacimiento_simple" class="block text-sm font-medium text-gray-700">Partida de Nacimiento Simple</label>
-                                    <input
-                                        type="text"
-                                        class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                        id="partida_de_nacimiento_simple"
-                                        name="partida_de_nacimiento_simple"
-                                        value="{{ old('partida_de_nacimiento_simple', $user->partida_de_nacimiento_simple ?? '') }}"
-                                        placeholder="Ingrese información sobre la partida de nacimiento">
-                                </div>
-                            </div>
-                            <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                                <!-- Campo Número de IBAN -->
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="no_de_iban" class="block text-sm font-medium text-gray-700">Número de IBAN</label>
-                                    <input
-                                        type="text"
-                                        class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                        id="no_de_iban"
-                                        name="no_de_iban"
-                                        value="{{ old('no_de_iban', $user->no_de_iban ?? '') }}"
-                                        placeholder="Ingrese el número de IBAN">
-                                </div>
-
-                                <!-- Campo Número de Identificación Nacional (NIF) -->
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="no_de_identificacion_nacional__nif_" class="block text-sm font-medium text-gray-700">Número de Identificación Nacional (NIF)</label>
-                                    <input
-                                        type="text"
-                                        class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                        id="no_de_identificacion_nacional__nif_"
-                                        name="no_de_identificacion_nacional__nif_"
-                                        value="{{ old('no_de_identificacion_nacional__nif_', $user->no_de_identificacion_nacional__nif_ ?? '') }}"
-                                        placeholder="Ingrese el número de identificación nacional (NIF)">
-                                </div>
-                            </div>
-
-                            <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                                <!-- Campo Vínculo con Antepasados -->
-                                <div style="flex: 1;" class="mb-3">
-                                    <label class="block text-sm font-medium text-gray-700">Vínculo con Antepasados</label>
-                                    @php
-                                        $vinculosSeleccionados = explode(';', $user->vinculo_antepasados ?? '');
-                                    @endphp
-                                    <div class="mt-1">
-                                        <label class="flex items-center">
-                                            <input
-                                                type="checkbox"
-                                                name="vinculo_antepasados[]"
-                                                value="Padre/Madre"
-                                                {{ in_array('Padre/Madre', $vinculosSeleccionados) ? 'checked' : '' }}
-                                                class="mr-2">
-                                            Padre/Madre
-                                        </label>
-                                        <label class="flex items-center">
-                                            <input
-                                                type="checkbox"
-                                                name="vinculo_antepasados[]"
-                                                value="Abuelo(a)"
-                                                {{ in_array('Abuelo(a)', $vinculosSeleccionados) ? 'checked' : '' }}
-                                                class="mr-2">
-                                            Abuelo(a)
-                                        </label>
-                                        <label class="flex items-center">
-                                            <input
-                                                type="checkbox"
-                                                name="vinculo_antepasados[]"
-                                                value="Bisabuelo(a)"
-                                                {{ in_array('Bisabuelo(a)', $vinculosSeleccionados) ? 'checked' : '' }}
-                                                class="mr-2">
-                                            Bisabuelo(a)
-                                        </label>
-                                        <label class="flex items-center">
-                                            <input
-                                                type="checkbox"
-                                                name="vinculo_antepasados[]"
-                                                value="Tatarabuelo(a)"
-                                                {{ in_array('Tatarabuelo(a)', $vinculosSeleccionados) ? 'checked' : '' }}
-                                                class="mr-2">
-                                            Tatarabuelo(a)
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
-                                <span class="ctvSefar block text-indigo-600">AIV</span>
-                            </h2>
-                            <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="n6__aiv_recibido_en_espana" class="block text-sm font-medium text-gray-700">Fecha AIV recibido en España</label>
-                                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n6__aiv_recibido_en_espana" name="n6__aiv_recibido_en_espana" value="{{ old('n6__aiv_recibido_en_espana', $user->n6__aiv_recibido_en_espana) }}" placeholder="Fecha AIV Recibido en España">
-                                </div>
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="n2__aiv_notificacion_aprobado" class="block text-sm font-medium text-gray-700">AIV Notificación Aprobado</label>
-                                    <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n2__aiv_notificacion_aprobado" name="n2__aiv_notificacion_aprobado" value="{{ old('n2__aiv_notificacion_aprobado', $user->n2__aiv_notificacion_aprobado) }}" placeholder="Ingrese AIV Notificación Aprobado">
-                                </div>
-                            </div>
-
-                            <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
-                                <span class="ctvSefar block text-indigo-600">AACS</span>
-                            </h2>
-                            <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="n1__aacs_introducido_asociacion" class="block text-sm font-medium text-gray-700">AACS Introducido Asociacion</label>
-                                    <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n1__aacs_introducido_asociacion" name="n1__aacs_introducido_asociacion" value="{{ old('n1__aacs_introducido_asociacion', $user->n1__aacs_introducido_asociacion) }}" placeholder="Ingrese AACS INTRODUCIDO ASOCIACIÓN">
-                                </div>
-                            </div>
-                            <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="n2__aacs_notificacion_aprobado" class="block text-sm font-medium text-gray-700">AACS Notificacion Aprobado</label>
-                                    <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n2__aacs_notificacion_aprobado" name="n2__aacs_notificacion_aprobado" value="{{ old('n2__aacs_notificacion_aprobado', $user->n2__aacs_notificacion_aprobado) }}" placeholder="Ingrese AACS Notificación Aprobado">
-                                </div>
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="n2__fecha_aacs_notificacion_aprobado" class="block text-sm font-medium text-gray-700">Fecha AACS Notificacion Aprobado</label>
-                                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n2__fecha_aacs_notificacion_aprobado" name="n2__fecha_aacs_notificacion_aprobado" value="{{ old('n2__fecha_aacs_notificacion_aprobado', $user->n2__fecha_aacs_notificacion_aprobado) }}" placeholder="Ingrese Fecha AACS Notificacion Aprobado">
-                                </div>
-                            </div>
-                            <div class="mt-3"  style="display: flex; gap: 16px; flex-wrap: wrap;">
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="n4__aacs_retirado_asociacion" class="block text-sm font-medium text-gray-700">AACS Retirado Asociacion</label>
-                                    <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__aacs_retirado_asociacion" name="n4__aacs_retirado_asociacion" value="{{ old('n4__aacs_retirado_asociacion', $user->n4__aacs_retirado_asociacion) }}" placeholder="Ingrese aacs retirado asociacion">
-                                </div>
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="n6__aacs_recibido_en_espana" class="block text-sm font-medium text-gray-700">AACS Recibido en España</label>
-                                    <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n6__aacs_recibido_en_espana" name="n6__aacs_recibido_en_espana" value="{{ old('n6__aacs_recibido_en_espana', $user->n6__aacs_recibido_en_espana) }}" placeholder="AACS Recibido en España">
-                                </div>
-                            </div>
-
-                            <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
-                                <span class="ctvSefar block text-indigo-600">CCSE</span>
-                            </h2>
-                            <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="ccse_archivado_espana" class="block text-sm font-medium text-gray-700">CCSE Archivado España</label>
-                                    <input type="text" value="{{ old('ccse_archivado_espana', $user->ccse_archivado_espana) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="ccse_archivado_espana" name="ccse_archivado_espana" placeholder="CCSE Archivado España">
-                                </div>
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="ccse_resultado" class="block text-sm font-medium text-gray-700">CCSE Resultado</label>
-                                    <input type="text" value="{{ old('ccse_resultado', $user->ccse_resultado) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="ccse_resultado" name="ccse_resultado">
-                                </div>
-                            </div>
-
-                            <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
-                                <span class="ctvSefar block text-indigo-600">CIF</span>
-                            </h2>
-                            <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="cif" class="block text-sm font-medium text-gray-700">CIF</label>
-                                    <input type="text" value="{{ old('cif', $user->cif) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="cif" name="cif" placeholder="CIF">
-                                </div>
-                            </div>
-
-                            <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4">
-                                <span class="ctvSefar block text-indigo-600">Otros datos</span>
-                            </h2>
-                            <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="n1__acta_notarial" class="block text-sm font-medium text-gray-700">Acta Notarial</label>
-                                    <input type="text" value="{{ old('n1__acta_notarial', $user->n1__acta_notarial) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n1__acta_notarial" name="n1__acta_notarial" placeholder="Ingrese Acta Notarial">
-                                </div>
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="n1__f__peticion_por_genealogia" class="block text-sm font-medium text-gray-700">Fecha Petición por Genealogía</label>
-                                    <input type="date" value="{{ old('n1__f__peticion_por_genealogia', $user->n1__f__peticion_por_genealogia) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n1__f__peticion_por_genealogia" name="n1__f__peticion_por_genealogia">
-                                </div>
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="n1__f__solicitado_por_genealogia" class="block text-sm font-medium text-gray-700">Fecha Solicitado por Genealogía</label>
-                                    <input type="date" value="{{ old('n1__f__solicitado_por_genealogia', $user->n1__f__solicitado_por_genealogia) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n1__f__solicitado_por_genealogia" name="n1__f__solicitado_por_genealogia">
-                                </div>
-                            </div>
-
-                            <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="n2__f_solicitud_mayor_info" class="block text-sm font-medium text-gray-700">Fecha Solicitud Mayor Información</label>
-                                    <input type="date" value="{{ old('n2__f_solicitud_mayor_info', $user->n2__f_solicitud_mayor_info) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n2__f_solicitud_mayor_info" name="n2__f_solicitud_mayor_info">
-                                </div>
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="n2__f__de_solicitud_al_cliente" class="block text-sm font-medium text-gray-700">Fecha de solicitud al solicitante</label>
-                                    <input type="date" value="{{ old('n2__f__de_solicitud_al_cliente', $user->n2__f__de_solicitud_al_cliente) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n2__f__de_solicitud_al_cliente" name="n2__f__de_solicitud_al_cliente">
-                                </div>
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="n3__estatus_de_nacionalidad" class="block text-sm font-medium text-gray-700">Estatus de Nacionalidad</label>
-                                    <select class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n3__estatus_de_nacionalidad" name="n3__estatus_de_nacionalidad">
-                                        <option value="" {{ old('n3__estatus_de_nacionalidad', $user->n3__estatus_de_nacionalidad ?? '') === '' ? 'selected' : '' }}></option>
-                                        <option value="Concedida" {{ old('n3__estatus_de_nacionalidad', $user->n3__estatus_de_nacionalidad ?? '') === 'Concedida' ? 'selected' : '' }}>Concedida</option>
-                                        <option value="En Tramitación" {{ old('n3__estatus_de_nacionalidad', $user->n3__estatus_de_nacionalidad ?? '') === 'En Tramitación' ? 'selected' : '' }}>En Tramitación</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="n3__f___recordatorio_filiacion" class="block text-sm font-medium text-gray-700">Fecha Recordatorio Filiación</label>
-                                    <input type="date" value="{{ old('n3__f___recordatorio_filiacion', $user->n3__f___recordatorio_filiacion) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n3__f___recordatorio_filiacion" name="n3__f___recordatorio_filiacion">
-                                </div>
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="n3__fcje_registro" class="block text-sm font-medium text-gray-700">FCJE Registro</label>
-                                    <input type="date" value="{{ old('n3__fcje_registro', $user->n3__fcje_registro) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n3__fcje_registro" name="n3__fcje_registro">
-                                </div>
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="n3__fecha_de_recordatorio" class="block text-sm font-medium text-gray-700">Fecha de Recordatorio</label>
-                                    <input type="date" value="{{ old('n3__fecha_de_recordatorio', $user->n3__fecha_de_recordatorio) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n3__fecha_de_recordatorio" name="n3__fecha_de_recordatorio">
-                                </div>
-                            </div>
-
-                            <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="n4__aacs_retirado_asociacion" class="block text-sm font-medium text-gray-700">AACS Retirado Asociación</label>
-                                    <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__aacs_retirado_asociacion" name="n4__aacs_retirado_asociacion" value="{{ old('n4__aacs_retirado_asociacion', $user->n4__aacs_retirado_asociacion ?? '') }}" placeholder="Ingrese AACS Retirado Asociación">
-                                </div>
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="n4__f__entregado_genealogia" class="block text-sm font-medium text-gray-700">Fecha Entregado Genealogía</label>
-                                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__f__entregado_genealogia" name="n4__f__entregado_genealogia" value="{{ old('n4__f__entregado_genealogia', $user->n4__f__entregado_genealogia ?? '') }}">
-                                </div>
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="n4__f__enviada_a_genealogia" class="block text-sm font-medium text-gray-700">Fecha Enviada a Genealogía</label>
-                                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__f__enviada_a_genealogia" name="n4__f__enviada_a_genealogia" value="{{ old('n4__f__enviada_a_genealogia', $user->n4__f__enviada_a_genealogia ?? '') }}">
-                                </div>
-                            </div>
-
-                            <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="n4__fcje_certifi__descargado" class="block text-sm font-medium text-gray-700">FCJE Certificado Descargado</label>
-                                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__fcje_certifi__descargado" name="n4__fcje_certifi__descargado" value="{{ old('n4__fcje_certifi__descargado', $user->n4__fcje_certifi__descargado ?? '') }}">
-                                </div>
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="n4__otros_nombres" class="block text-sm font-medium text-gray-700">Otros Nombres</label>
-                                    <input type="text" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__otros_nombres" name="n4__otros_nombres" value="{{ old('n4__otros_nombres', $user->n4__otros_nombres ?? '') }}" placeholder="Ingrese Otros Nombres">
-                                </div>
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="n5__fecha_de_registro" class="block text-sm font-medium text-gray-700">Fecha de Registro</label>
-                                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n5__fecha_de_registro" name="n5__fecha_de_registro" value="{{ old('n5__fecha_de_registro', $user->n5__fecha_de_registro ?? '') }}">
-                                </div>
-                            </div>
-
-
-                            <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                                <div style="flex: 1;" class="mb-3">
-                                    <label for="estado_de_datos_y_documentos_de_los_antepasados" class="block text-sm font-medium text-gray-700">Estado de datos y documentos de antepasados</label>
-                                    <select class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="estado_de_datos_y_documentos_de_los_antepasados" name="estado_de_datos_y_documentos_de_los_antepasados">
-                                        <option value="" {{ old('estado_de_datos_y_documentos_de_los_antepasados', $user->estado_de_datos_y_documentos_de_los_antepasados ?? '') === '' ? 'selected' : '' }}></option>
-                                        <option value="Conoce los datos y tiene los documentos" {{ old('estado_de_datos_y_documentos_de_los_antepasados', $user->estado_de_datos_y_documentos_de_los_antepasados ?? '') === 'Conoce los datos y tiene los documentos' ? 'selected' : '' }}>Conoce los datos y tiene los documentos</option>
-                                        <option value="Conoce los datos, pero no tiene los documentos" {{ old('estado_de_datos_y_documentos_de_los_antepasados', $user->estado_de_datos_y_documentos_de_los_antepasados ?? '') === 'Conoce los datos, pero no tiene los documentos' ? 'selected' : '' }}>Conoce los datos, pero no tiene los documentos</option>
-                                        <option value="No conoce los datos" {{ old('estado_de_datos_y_documentos_de_los_antepasados', $user->estado_de_datos_y_documentos_de_los_antepasados ?? '') === 'No conoce los datos' ? 'selected' : '' }}>No conoce los datos</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                        @endif
-
-                        </fieldset>
-
-                        @include('crud.users.partials.teamleader-custom-fields', [
-                            'user' => $user,
-                            'teamleaderProfileCustomValues' => $teamleaderProfileCustomValues ?? [],
-                        ])
-
-                        @if($canEditCos)
-                            <div class="cos-save-bar">
-                                <span class="text-muted small"><i class="fas fa-history mr-1"></i> Cada cambio queda registrado con el usuario que lo realizó.</span>
-                                <button type="button" id="guardar-datos" class="cfrSefar btn btn-primary px-4"><i class="fas fa-save mr-1"></i> Guardar cambios</button>
-                            </div>
-                        @endif
-                    </form>
-                </div>
+                @include('crud.users.partials.profile-details')
 
                 @if($canEditCos)
-                <div class="tab-pane fade" id="change-history" role="tabpanel" aria-labelledby="change-history-tab">
+                <div class="tab-pane fade cos-workspace-panel" id="change-history" role="tabpanel" aria-labelledby="change-history-tab">
                     <h3 class="h5 mb-3">Historial de cambios del usuario</h3>
                     @forelse($userChangeAudits as $audit)
                         <article class="border rounded p-3 mb-3 bg-light">
@@ -2432,40 +1529,43 @@
                     @include('crud.users.partials.formulario-001')
                 @endif
 
-                <div class="tab-pane fade" id="mypassword" role="tabpanel" aria-labelledby="mypassword-tab">
+                <div class="tab-pane fade cos-workspace-panel" id="mypassword" role="tabpanel" aria-labelledby="mypassword-tab">
+                    @include('crud.users.partials.workspace-panel-heading', ['title' => 'Contraseña de acceso', 'description' => 'Actualiza la contraseña que utilizas para entrar en la App.', 'icon' => 'fa-lock'])
                     <form id="clientChangePasswordForm">
                         @csrf
                         <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
                             <div style="flex: 1;" class="mb-3">
-                                <label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
-                                <input class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="password" name="password" type="password" placeholder="Ingrese su contraseña">
+                                <label for="client-password" class="block text-sm font-medium text-gray-700">Contraseña</label>
+                                <input class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="client-password" name="password" type="password" placeholder="Ingrese su contraseña">
                             </div>
                         </div>
                         <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
                             <div style="flex: 1;" class="mb-3">
-                                <label for="repeat_password" class="block text-sm font-medium text-gray-700">Repetir Contraseña</label>
-                                <input class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="repeat_password" name="repeat_password" type="password" placeholder="Repite tu contraseña">
+                                <label for="client-repeat-password" class="block text-sm font-medium text-gray-700">Repetir Contraseña</label>
+                                <input class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="client-repeat-password" name="repeat_password" type="password" placeholder="Repite tu contraseña">
                             </div>
                         </div>
                         <button type="button" id="clientSubmitButton" class="cfrSefar btn btn-primary mt-3">Guardar</button>
                     </form>
                 </div>
 
-                <div class="tab-pane fade" id="adminchangepassword" role="tabpanel" aria-labelledby="adminchangepassword-tab">
+                <div class="tab-pane fade cos-workspace-panel" id="adminchangepassword" role="tabpanel" aria-labelledby="adminchangepassword-tab">
+                    @include('crud.users.partials.workspace-panel-heading', ['title' => 'Contraseña del cliente', 'description' => 'Gestiona la contraseña de acceso de este solicitante.', 'icon' => 'fa-lock'])
                     <form id="adminChangePasswordForm">
                         @csrf
-                        <input type="hidden" id="id" name="id" value="{{ $user->id }}">
+                        <input type="hidden" id="admin-password-user-id" name="id" value="{{ $user->id }}">
                         <div class="mt-2" style="display: flex; gap: 16px; flex-wrap: wrap;">
                             <div style="flex: 1;" class="mb-3">
-                                <label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
-                                <input class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="password" name="password" type="password" placeholder="Ingrese su contraseña">
+                                <label for="admin-password" class="block text-sm font-medium text-gray-700">Contraseña</label>
+                                <input class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="admin-password" name="password" type="password" placeholder="Ingrese su contraseña">
                             </div>
                         </div>
                         <button type="button" id="submitButton" class="cfrSefar btn btn-primary mt-3">Guardar</button>
                     </form>
                 </div>
 
-                <div class="tab-pane fade" id="familiars" role="tabpanel" aria-labelledby="familiars-tab">
+                <div class="tab-pane fade cos-workspace-panel" id="familiars" role="tabpanel" aria-labelledby="familiars-tab">
+                    @include('crud.users.partials.workspace-panel-heading', ['title' => 'Familiares registrados', 'description' => 'Consulta las personas vinculadas a este expediente y accede a su árbol familiar.', 'icon' => 'fa-users'])
                     <center>
                         @if($cosViewRoleId == 5)
                         <a href="/tree/" class="btn btn-primary mb-3">
@@ -2479,7 +1579,7 @@
                     </center>
 
                     @if(isset($columnasparatabla) && count($columnasparatabla) > 0)
-                        <table id="familiarsTable" class="table table-striped">
+                        <div class="cos-panel-table" role="region" aria-label="Familiares registrados" tabindex="0"><table id="familiarsTable" class="table table-striped">
                             <thead>
                                 <tr>
                                     <th>Nombre</th>
@@ -2515,7 +1615,7 @@
                                     @endforeach
                                 @endforeach
                             </tbody>
-                        </table>
+                        </table></div>
 
                         <div class="alert alert-info mt-3">
                             Total de familiares registrados: {{ $totalMostrados }}
@@ -2527,8 +1627,9 @@
                     @endif
                 </div>
 
-                <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
-                    <table id="documentsTable" class="min-w-full divide-y divide-gray-200 w-100">
+                <div class="tab-pane fade cos-workspace-panel" id="documents" role="tabpanel" aria-labelledby="documents-tab">
+                    @include('crud.users.partials.workspace-panel-heading', ['title' => 'Archivos cargados', 'description' => 'Revisa los documentos que forman parte del expediente.', 'icon' => 'fa-file-alt'])
+                    <div class="cos-panel-table" role="region" aria-label="Archivos del expediente" tabindex="0"><table id="documentsTable" class="min-w-full divide-y divide-gray-200 w-100">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th scope="col">Nombre del Archivo</th>
@@ -2547,12 +1648,13 @@
                                 </tr>
                             @endforeach
                         </tbody>
-                    </table>
+                    </table></div>
                 </div>
 
-                <div class="tab-pane fade" id="payments" role="tabpanel" aria-labelledby="payments-tab">
+                <div class="tab-pane fade cos-workspace-panel" id="payments" role="tabpanel" aria-labelledby="payments-tab">
+                    @include('crud.users.partials.workspace-panel-heading', ['title' => 'Pagos realizados', 'description' => 'Consulta el historial de pagos y sus comprobantes.', 'icon' => 'fa-receipt'])
 
-                    <table id="paymentsTable" class="min-w-full divide-y divide-gray-200 w-100">
+                    <div class="cos-panel-table" role="region" aria-label="Historial de pagos" tabindex="0"><table id="paymentsTable" class="min-w-full divide-y divide-gray-200 w-100">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th scope="col"># de Comprobante</th>
@@ -2646,7 +1748,7 @@
                                 </tr>
                             @endforeach
                         </tbody>
-                    </table>
+                    </table></div>
 
                     @if($facturas->isEmpty() && collect($comprasPagadasSinFactura ?? [])->isEmpty() && collect($hubspotPaidPaymentRows ?? [])->isEmpty())
                         <div class="alert alert-light border mt-3 mb-0">
@@ -2657,7 +1759,8 @@
 
                 </div>
 
-                <div class="tab-pane fade" id="paymentspen" role="tabpanel" aria-labelledby="payments-tab">
+                <div class="tab-pane fade cos-workspace-panel" id="paymentspen" role="tabpanel" aria-labelledby="paymentspen-tab">
+                    @include('crud.users.partials.workspace-panel-heading', ['title' => 'Deuda pendiente', 'description' => 'Revisa los importes pendientes y las opciones de pago disponibles.', 'icon' => 'fa-wallet'])
                     @php
                         $allPendingPurchasesForCos = $comprasSinDealNoPagadas->merge($comprasConDealNoPagadas);
                         $paymentPhasePaymentService = app(\App\Services\TeamleaderPhasePaymentService::class);
@@ -2739,7 +1842,7 @@
                     @endif
                 </div>
 
-                <div class="tab-pane fade" id="etiquetado" role="tabpanel" aria-labelledby="etiquetado-tab">
+                <div class="tab-pane fade cos-workspace-panel" id="etiquetado" role="tabpanel" aria-labelledby="etiquetado-tab">
                     @if ($boardId != 0)
                     <h2 class="text-1xl font-extrabold tracking-tight text-gray-900 sm:text-2xl mt-4 mb-4">
                         <span class="ctvSefar block text-indigo-600">Tablero actual: {{ $boardName }}</span>
@@ -2936,11 +2039,12 @@
                     @endif
                 </div>
 
-                <div class="tab-pane fade" id="negocios" role="tabpanel" aria-labelledby="negocios-tab">
+                <div class="tab-pane fade cos-workspace-panel" id="negocios" role="tabpanel" aria-labelledby="negocios-tab">
+                    @include('crud.users.partials.workspace-panel-heading', ['title' => 'Negocios del solicitante', 'description' => 'Consulta los servicios y negocios asociados a este expediente.', 'icon' => 'fa-briefcase'])
                     @php
                         $manualTeamleaderProjects = collect($teamleaderStatusMigration['projects'] ?? []);
                     @endphp
-                    <table id="dealsTable" class="min-w-full divide-y divide-gray-200 w-100">
+                    <div class="cos-panel-table" role="region" aria-label="Negocios del solicitante" tabindex="0"><table id="dealsTable" class="min-w-full divide-y divide-gray-200 w-100">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th scope="col">Nombre del Negocio</th>
@@ -3013,11 +2117,11 @@
                                 </tr>
                             @endforeach
                         </tbody>
-                    </table>
+                    </table></div>
                 </div>
 
                 @if($rolId !== 5)
-                <div class="tab-pane fade" id="teamleader-migration" role="tabpanel" aria-labelledby="teamleader-migration-tab">
+                <div class="tab-pane fade cos-workspace-panel" id="teamleader-migration" role="tabpanel" aria-labelledby="teamleader-migration-tab">
                     @php
                         $tlContact = $teamleaderMigration['contact'] ?? null;
                         $tlSummary = $teamleaderMigration['summary'] ?? [];
@@ -3276,13 +2380,13 @@
                     @endif
                 </div>
 
-                <div class="tab-pane fade" id="client-tasks" role="tabpanel" aria-labelledby="client-tasks-tab">
+                <div class="tab-pane fade cos-workspace-panel" id="client-tasks" role="tabpanel" aria-labelledby="client-tasks-tab">
                     <div class="mb-3">
                         <h3 class="text-xl font-bold text-gray-900 mb-1">Tareas del solicitante</h3>
                         <p class="text-sm text-gray-500 mb-0">Historial completo de tareas asociadas a este solicitante.</p>
                     </div>
 
-                    <table id="clientTasksTable" class="table table-striped table-hover w-100">
+                    <div class="cos-panel-table" role="region" aria-label="Tareas del solicitante" tabindex="0"><table id="clientTasksTable" class="table table-striped table-hover w-100">
                         <thead>
                             <tr>
                                 <th>#</th>
@@ -3350,10 +2454,10 @@
                                 </tr>
                             @endforeach
                         </tbody>
-                    </table>
+                    </table></div>
                 </div>
 
-                <div class="tab-pane fade" id="client-chat" role="tabpanel" aria-labelledby="client-chat-tab">
+                <div class="tab-pane fade cos-workspace-panel" id="client-chat" role="tabpanel" aria-labelledby="client-chat-tab">
                     <div class="mb-3">
                         <h3 class="text-xl font-bold text-gray-900 mb-1">Chat interno</h3>
                         <p class="text-sm text-gray-500 mb-0">Notas internas entre coordinadores y administradores sobre este solicitante. El solicitante no ve este chat.</p>
@@ -3409,7 +2513,8 @@
                 </div>
                 @endif
 
-                <div class="tab-pane fade" id="admin-req" role="tabpanel" aria-labelledby="admin-req-tab">
+                <div class="tab-pane fade cos-workspace-panel" id="admin-req" role="tabpanel" aria-labelledby="admin-req-tab">
+                    @include('crud.users.partials.workspace-panel-heading', ['title' => 'Solicitudes de documentos', 'description' => 'Organiza los documentos solicitados y revisa las entregas del cliente.', 'icon' => 'fa-clipboard-list'])
                     <div class="d-flex justify-content-end mb-3">
                         <button class="cfrSefar inline-flex items-center justify-center px-3 py-2 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700" data-bs-toggle="modal" data-bs-target="#crearSolicitudModal">
                             + Nueva solicitud
@@ -3479,7 +2584,7 @@
                         </div>
                     </div>
 
-                    <table class="table table-sm" id="solicitudesTable">
+                    <div class="cos-panel-table" role="region" aria-label="Solicitudes de documentos" tabindex="0"><table class="table table-sm" id="solicitudesTable">
                         <thead>
                             <tr>
                                 <th>Nombre</th>
@@ -3521,7 +2626,7 @@
                             </tr>
                             @endforeach
                         </tbody>
-                    </table>
+                    </table></div>
                 </div>
 
                 <script>
@@ -3873,8 +2978,9 @@
                     });
                 </script>
 
-                <div class="tab-pane fade" id="client-req" role="tabpanel" aria-labelledby="client-req-tab">
-                    <table class="table table-sm" id="solicitudesClienteTable">
+                <div class="tab-pane fade cos-workspace-panel" id="client-req" role="tabpanel" aria-labelledby="client-req-tab">
+                    @include('crud.users.partials.workspace-panel-heading', ['title' => 'Mis solicitudes de documentos', 'description' => 'Consulta qué documentos necesita el equipo y el estado de cada entrega.', 'icon' => 'fa-clipboard-list'])
+                    <div class="cos-panel-table" role="region" aria-label="Mis solicitudes de documentos" tabindex="0"><table class="table table-sm" id="solicitudesClienteTable">
                         <thead>
                             <tr>
                                 <th>Nombre</th>
@@ -3908,7 +3014,7 @@
                             </tr>
                             @endforeach
                         </tbody>
-                    </table>
+                    </table></div>
                 </div>
             </div>
         </div>
@@ -3918,6 +3024,9 @@
 
 @section('css')
     <link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
+<link rel="stylesheet" href="{{ asset('css/cos-user-profile.css') }}?v={{ filemtime(public_path('css/cos-user-profile.css')) }}">
+<link rel="stylesheet" href="{{ asset('css/cos-user-workspace.css') }}?v={{ filemtime(public_path('css/cos-user-workspace.css')) }}">
+
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.1/css/dataTables.bootstrap5.min.css">
     <style>
     /* Estilos de la tabla y el switch */
@@ -3984,6 +3093,8 @@
 @stop
 
 @section('js')
+<script src="{{ asset('js/cos-user-profile.js') }}?v={{ filemtime(public_path('js/cos-user-profile.js')) }}" defer></script>
+<script src="{{ asset('js/cos-user-workspace.js') }}?v={{ filemtime(public_path('js/cos-user-workspace.js')) }}" defer></script>
     @if($cosAutoRefreshPending ?? false)
         <script>
             (function () {
@@ -4125,8 +3236,8 @@
             e.preventDefault(); // Evita el comportamiento predeterminado
 
             // Validación básica en el frontend
-            var password = $('#password').val();
-            var repeatPassword = $('#repeat_password').val();
+            var password = $('#clientChangePasswordForm [name="password"]').val();
+            var repeatPassword = $('#clientChangePasswordForm [name="repeat_password"]').val();
 
             if (!password || password.length < 8) {
                 Swal.fire({

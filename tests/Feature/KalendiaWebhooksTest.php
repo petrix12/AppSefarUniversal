@@ -23,6 +23,7 @@ class KalendiaWebhooksTest extends TestCase
             'database/migrations/2026_11_20_180000_create_kalendia_bookings_table.php',
             'database/migrations/2026_11_20_190000_create_kalendia_consultation_management_tables.php',
             'database/migrations/2026_11_22_120000_create_kalendia_webhook_events_table.php',
+            'database/migrations/2026_11_22_180000_create_platform_management_tables.php',
         ]])->assertExitCode(0);
     }
 
@@ -83,9 +84,10 @@ class KalendiaWebhooksTest extends TestCase
     }
     public function test_payment_and_customer_events_are_acknowledged_without_creating_invoices_contacts_or_appointments(): void
     {
-        foreach(['payment.confirmed','payment.refunded','appointment.payment_updated','customer.created'] as $type) {
-            $this->signed($this->event(['event_type'=>$type,'resource_id'=>'pay_one']))->assertOk()->assertJsonPath('ignored','event_type');
+        foreach(['payment.confirmed'=>'pay_one','payment.refunded'=>'pay_one','appointment.payment_updated'=>'apt_one','customer.created'=>'cli_one'] as $type=>$id) {
+            $this->signed($this->event(['event_id'=>'evt_'.$type,'event_type'=>$type,'resource_id'=>$id]))->assertStatus(202);
         }
+        $this->assertDatabaseCount('platform_events',4);
         foreach(['kalendia_webhook_events','users','compras','facturas','kalendia_appointments'] as $table) $this->assertDatabaseCount($table,0);
         Http::assertNothingSent();
     }

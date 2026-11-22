@@ -14,6 +14,7 @@ use App\Services\MondayRegistrationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -105,7 +106,7 @@ class BancaOnlineController extends Controller
         $user = $compras->first()->user;
         $metadata = $compras->first()->metadata ?? [];
         $countrySlug = $metadata['country_slug'] ?? 'espana';
-        $stripeKey = $this->stripePublicKey($countrySlug);
+        $stripeKey = $this->stripePublicKey();
         $package = $compras->first()->servicio;
         $paymentOptions = $package ? $this->checkoutPaymentOptions($package) : [];
         $total = (float) ($metadata['package_total'] ?? $compras->sum('monto'));
@@ -114,6 +115,31 @@ class BancaOnlineController extends Controller
     }
 
     public function processPayment(Request $request, string $token)
+    {
+        $checkoutLock = Cache::lock('stripe-primary-banca-'.hash('sha256', $token), 1800);
+        if (!$checkoutLock->get()) {
+            return response()->json(['success' => false, 'message' => 'Ya hay un pago en curso. Espera antes de reintentar.'], 409);
+        }
+        $userLock = null;
+        $userLocked = false;
+        try {
+            // Share the user lock with the authenticated cart; reread purchases inside the lock below.
+            $userId = $this->purchasesForToken($token)->first()?->id_user;
+            if ($userId) {
+                $userLock = Cache::lock('stripe-primary-user-'.$userId, 1800);
+                $userLocked = $userLock->get();
+                if (!$userLocked) {
+                    return response()->json(['success' => false, 'message' => 'Ya hay un pago en curso. Espera antes de reintentar.'], 409);
+                }
+            }
+            return $this->processPrimaryPayment($request, $token);
+        } finally {
+            if ($userLocked) $userLock->release();
+            $checkoutLock->release();
+        }
+    }
+
+    private function processPrimaryPayment(Request $request, string $token)
     {
         $data = $request->validate([
             'payment_method_id' => ['required', 'string'],
@@ -178,7 +204,7 @@ class BancaOnlineController extends Controller
         $user = $compras->first()->user;
         $metadata = $compras->first()->metadata ?? [];
         $countrySlug = $metadata['country_slug'] ?? 'espana';
-        $secret = $this->stripeSecretKey($countrySlug);
+        $secret = $this->stripeSecretKey();
         $metadata['payment_plan'] = $paymentPlan;
         $isInstallmentPayment = ($paymentPlan['mode'] ?? 'full') === 'installments';
         $stripeInstallmentSchedule = null;
@@ -204,7 +230,7 @@ class BancaOnlineController extends Controller
             ]);
 
             if ($isInstallmentPayment) {
-                $stripeInstallmentSchedule = $this->createStripeInstallmentSchedule($user, $metadata, $customer, $data['payment_method_id']);
+                $stripeInstallmentSchedule = $this->createStripeInstallmentSchedule($user, $metadata, $customer, $data['payment_method_id'], $compras);
 
                 if (empty($stripeInstallmentSchedule['schedule_id'])) {
                     throw new \RuntimeException('No se pudo crear el calendario de cuotas en Stripe.');
@@ -240,23 +266,22 @@ class BancaOnlineController extends Controller
                 $paymentIntentPayload['metadata']['stripe_schedule_id'] = $stripeInstallmentSchedule['schedule_id'] ?? '';
             }
 
-            $paymentIntent = \Stripe\PaymentIntent::create($paymentIntentPayload);
+            $paymentIntent = $this->primaryStripePaymentIntent($compras, $paymentIntentPayload, 'banca:'.$token);
         } catch (\Stripe\Exception\CardException $e) {
-            $this->cancelStripeInstallmentSchedule($stripeInstallmentSchedule['schedule_id'] ?? null);
+            $this->cancelStripeInstallmentSchedule($stripeInstallmentSchedule['schedule_id'] ?? null, $compras);
 
             return response()->json([
                 'success' => false,
                 'message' => $this->stripeErrorMessage($e->getError()->code),
             ], 400);
         } catch (\Stripe\Exception\RateLimitException $e) {
-            $this->cancelStripeInstallmentSchedule($stripeInstallmentSchedule['schedule_id'] ?? null);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Se realizaron varios intentos sin exito. Por favor, comunicarse con el emisor de su tarjeta.',
             ], 429);
         } catch (\Stripe\Exception\InvalidRequestException $e) {
-            $this->cancelStripeInstallmentSchedule($stripeInstallmentSchedule['schedule_id'] ?? null);
+            $this->cancelStripeInstallmentSchedule($stripeInstallmentSchedule['schedule_id'] ?? null, $compras);
             Log::error('Banca Online Stripe InvalidRequestException: ' . $e->getMessage());
 
             return response()->json([
@@ -264,28 +289,24 @@ class BancaOnlineController extends Controller
                 'message' => 'Stripe rechazo la solicitud: ' . $e->getMessage(),
             ], 400);
         } catch (\Stripe\Exception\AuthenticationException $e) {
-            $this->cancelStripeInstallmentSchedule($stripeInstallmentSchedule['schedule_id'] ?? null);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Error de autenticacion con Stripe. Por favor, comunicar este error a Sistemas.',
             ], 401);
         } catch (\Stripe\Exception\ApiConnectionException $e) {
-            $this->cancelStripeInstallmentSchedule($stripeInstallmentSchedule['schedule_id'] ?? null);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Error conectandose a la pasarela de activación. Por favor, intente mas tarde.',
             ], 500);
         } catch (\Stripe\Exception\ApiErrorException $e) {
-            $this->cancelStripeInstallmentSchedule($stripeInstallmentSchedule['schedule_id'] ?? null);
 
             return response()->json([
                 'success' => false,
                 'message' => 'La pasarela de activación esta en mantenimiento. Por favor, intente mas tarde.',
             ], 503);
         } catch (\Throwable $e) {
-            $this->cancelStripeInstallmentSchedule($stripeInstallmentSchedule['schedule_id'] ?? null);
             Log::error('Banca Online payment error: ' . $e->getMessage(), ['token' => $token]);
 
             return response()->json([
@@ -295,7 +316,7 @@ class BancaOnlineController extends Controller
         }
 
         if (! $paymentIntent || $paymentIntent->status !== 'succeeded') {
-            $this->cancelStripeInstallmentSchedule($stripeInstallmentSchedule['schedule_id'] ?? null);
+            $this->cancelStripeInstallmentSchedule($stripeInstallmentSchedule['schedule_id'] ?? null, $compras);
 
             return response()->json([
                 'success' => false,
@@ -307,13 +328,10 @@ class BancaOnlineController extends Controller
             $hashFactura = 'sef_' . Str::random(50);
             $paidAt = now();
 
-            Factura::create([
-                'id_cliente' => $user->id,
-                'hash_factura' => $hashFactura,
-                'met' => 'stripe',
-                'idcus' => $customer->id,
-                'idcharge' => $paymentIntent->id,
-            ]);
+            $invoice = app(\App\Services\Payments\ConfirmedPaymentInvoiceService::class)->getOrCreate(
+                (int) $user->id, 'stripe', $paymentIntent->id, $hashFactura, $customer->id,
+            );
+            $hashFactura = $invoice->hash_factura;
 
             $compras->each(function (Compras $compra) use ($hashFactura, $paidAt, $customer, $paymentIntent, $stripeInstallmentSchedule, $paymentPlan, $total) {
                 $metadata = $compra->metadata ?? [];
@@ -556,7 +574,7 @@ class BancaOnlineController extends Controller
             'payment_url' => route('banca-online.payment', $token),
             'process_url' => route('banca-online.payment.process', $token),
             'thank_you_url' => route('banca-online.thank-you', $token),
-            'stripe_key' => $this->stripePublicKey($countrySlug),
+            'stripe_key' => $this->stripePublicKey(),
             'country_slug' => $countrySlug,
             'requested_service' => $serviceName,
             'plan_title' => $plan['title'] ?? 'Plan estrategico',
@@ -813,6 +831,42 @@ class BancaOnlineController extends Controller
         }
     }
 
+    private function primaryStripePaymentIntent(\Illuminate\Support\Collection $purchases, array $payload, string $reference)
+    {
+        $mode = preg_match('/^(?:sk|rk)_(live|test)_/', (string) config('services.stripe.secret'), $matches) ? $matches[1] : 'unknown';
+        $identity = hash('sha256', $reference);
+        $attempt = data_get($purchases->first()->metadata, 'stripe_primary_checkout', []);
+        $intentId = ($attempt['account'] ?? null) === 'main' && ($attempt['mode'] ?? null) === $mode
+            && ($attempt['reference'] ?? null) === $identity ? ($attempt['id'] ?? null) : null;
+        $key = 'sefar-primary-'.$mode.'-'.$identity;
+        if (!is_string($intentId) || !preg_match('/^pi_[A-Za-z0-9_]+$/D', $intentId)) {
+            $creation = $payload;
+            unset($creation['payment_method'], $creation['confirm'], $creation['off_session']);
+            // Persist a primary-account reference before any request can confirm a charge.
+            $created = \Stripe\PaymentIntent::create($creation, ['idempotency_key' => $key]);
+            $intentId = $created->id;
+            foreach ($purchases as $purchase) {
+                $metadata = $purchase->metadata ?? [];
+                $metadata['stripe_primary_checkout'] = ['account' => 'main', 'mode' => $mode, 'reference' => $identity, 'id' => $intentId];
+                $purchase->forceFill(['metadata' => $metadata])->save();
+            }
+        }
+
+        // A lost confirmation response is read back; never create another payment on retry.
+        $intent = \Stripe\PaymentIntent::retrieve($intentId);
+        if ((int) $intent->amount !== (int) $payload['amount'] || $intent->currency !== $payload['currency']
+            || $intent->customer !== $payload['customer']) {
+            throw new \RuntimeException('El pago pendiente no coincide con esta compra. Requiere revisión.');
+        }
+        if (in_array($intent->status, ['requires_payment_method', 'requires_confirmation', 'requires_action'], true)) {
+            $intent = $intent->confirm(['payment_method' => $payload['payment_method'], 'off_session' => false], [
+                'idempotency_key' => $key.'-confirm-'.hash('sha256', $payload['payment_method']),
+            ]);
+        }
+
+        return $intent;
+    }
+
     private function stripeCustomer(User $user, array $data)
     {
         $payload = [
@@ -829,18 +883,32 @@ class BancaOnlineController extends Controller
             ],
         ];
 
-        if ($user->stripe_cus_id) {
-            return \Stripe\Customer::update($user->stripe_cus_id, $payload);
+        $previousId = (string) $user->stripe_cus_id;
+        if ($previousId !== '') {
+            try {
+                $customer = \Stripe\Customer::retrieve($previousId);
+            } catch (\Stripe\Exception\InvalidRequestException $exception) {
+                if ($exception->getHttpStatus() !== 404 || $exception->getStripeCode() !== 'resource_missing') {
+                    throw $exception;
+                }
+                $customer = null;
+            }
+            if ($customer) {
+                \Stripe\Customer::update($customer->id, $payload);
+                return $customer;
+            }
         }
 
-        $customer = \Stripe\Customer::create($payload);
+        $customer = \Stripe\Customer::create($payload, [
+            'idempotency_key' => 'sefar-primary-customer-'.$user->id.'-'.hash('sha256', $previousId),
+        ]);
 
         $user->forceFill(['stripe_cus_id' => $customer->id])->save();
 
         return $customer;
     }
 
-    private function createStripeInstallmentSchedule(User $user, array $metadata, $customer, string $paymentMethodId): array
+    private function createStripeInstallmentSchedule(User $user, array $metadata, $customer, string $paymentMethodId, Collection $purchases): array
     {
         $paymentPlan = $metadata['payment_plan'] ?? [];
         $installments = (int) ($paymentPlan['installments_count'] ?? 0);
@@ -853,80 +921,79 @@ class BancaOnlineController extends Controller
             return [];
         }
 
-        $package = Servicio::find((int) ($metadata['package_id'] ?? 0));
-        $periodSettings = $package
-            ? collect($this->catalog->enabledInstallmentPeriods($package))->firstWhere('slug', $period)
-            : null;
-        $interval = $periodSettings['stripe_interval'] ?? 'month';
-        $intervalCount = max(1, (int) ($periodSettings['stripe_interval_count'] ?? 1));
-        $startAfterDays = $periodSettings['start_after_days'] ?? null;
-        $checkoutToken = (string) ($metadata['checkout_token'] ?? '');
-        $packageTitle = (string) ($metadata['package_title'] ?? 'Banca Online 2026');
-        $startDate = $this->stripeInstallmentStartTimestamp($interval, $intervalCount, $startAfterDays);
-        $stripeMetadata = [
-            'checkout_token' => $checkoutToken,
-            'user_id' => (string) $user->id,
-            'user_email' => (string) $user->email,
-            'plan' => (string) ($metadata['plan_slug'] ?? ''),
-            'country' => (string) ($metadata['country_slug'] ?? ''),
-            'payment_mode' => 'installments',
-            'payment_period' => $period,
-            'installments_count' => (string) $installments,
-        ];
+        $mode = preg_match('/^(?:sk|rk)_(live|test)_/', (string) config('services.stripe.secret'), $matches) ? $matches[1] : 'unknown';
+        $reference = hash('sha256', (string) ($metadata['checkout_token'] ?? ''));
+        $planIdentity = hash('sha256', json_encode($paymentPlan));
+        $stored = data_get($purchases->first()->metadata, 'stripe_primary_schedule', []);
+        $sameAccount = ($stored['account'] ?? null) === 'main' && ($stored['mode'] ?? null) === $mode
+            && ($stored['reference'] ?? null) === $reference;
+        if ($sameAccount && ($stored['plan'] ?? null) !== $planIdentity) {
+            throw new \RuntimeException('El checkout ya tiene un calendario de cuotas. Revisa el plan antes de cambiarlo.');
+        }
+        if ($sameAccount && !empty($stored['cancel_requested']) && empty($stored['canceled'])) {
+            throw new \RuntimeException('El calendario de cuotas tiene una cancelación sin confirmar. Requiere revisión.');
+        }
+        if ($sameAccount && empty($stored['canceled']) && !empty($stored['result'])) return $stored['result'];
+        if ($sameAccount && empty($stored['canceled']) && !empty($stored['requested_at'])
+            && \Carbon\Carbon::parse($stored['requested_at'])->lt(now()->subHours(23))) {
+            throw new \RuntimeException('El calendario de cuotas sigue sin confirmar. Requiere revisión antes de reintentar.');
+        }
 
-        $product = \Stripe\Product::create([
-            'name' => 'Banca Online 2026 - ' . $packageTitle,
-            'metadata' => $stripeMetadata,
-        ]);
-
-        $price = \Stripe\Price::create([
-            'currency' => 'eur',
-            'unit_amount' => (int) round($installmentAmount * 100),
-            'recurring' => [
-                'interval' => $interval,
-                'interval_count' => $intervalCount,
-            ],
-            'product' => $product->id,
-            'metadata' => $stripeMetadata,
-        ]);
-
-        $installments = max(1, (int) $installments);
-
-        $schedule = \Stripe\SubscriptionSchedule::create([
-            'customer' => $customer->id,
-            'start_date' => $startDate,
-            'end_behavior' => 'cancel',
-            'default_settings' => [
-                'collection_method' => 'charge_automatically',
-                'default_payment_method' => $paymentMethodId,
-                'description' => 'Cuotas ' . $periodPluralLabel . ' Banca Online 2026 - ' . $packageTitle,
-            ],
-            'phases' => [
-                [
-                    'items' => [
-                        [
-                            'price' => $price->id,
-                            'quantity' => 1,
-                        ],
-                    ],
-                    'iterations' => $installments,
-                    'metadata' => $stripeMetadata,
+        if (!$sameAccount || !empty($stored['canceled']) || empty($stored['request'])) {
+            $generation = $sameAccount ? (int) ($stored['generation'] ?? 0) + 1 : 0;
+            $package = Servicio::find((int) ($metadata['package_id'] ?? 0));
+            $periodSettings = $package
+                ? collect($this->catalog->enabledInstallmentPeriods($package))->firstWhere('slug', $period)
+                : null;
+            $interval = $periodSettings['stripe_interval'] ?? 'month';
+            $intervalCount = max(1, (int) ($periodSettings['stripe_interval_count'] ?? 1));
+            $startDate = $this->stripeInstallmentStartTimestamp($interval, $intervalCount, $periodSettings['start_after_days'] ?? null);
+            $packageTitle = (string) ($metadata['package_title'] ?? 'Banca Online 2026');
+            $stripeMetadata = [
+                'checkout_token' => (string) ($metadata['checkout_token'] ?? ''), 'user_id' => (string) $user->id,
+                'user_email' => (string) $user->email, 'plan' => (string) ($metadata['plan_slug'] ?? ''),
+                'country' => (string) ($metadata['country_slug'] ?? ''), 'payment_mode' => 'installments',
+                'payment_period' => $period, 'installments_count' => (string) $installments,
+            ];
+            $stored = ['account' => 'main', 'mode' => $mode, 'reference' => $reference, 'plan' => $planIdentity, 'requested_at' => now()->toIso8601String(),
+                'generation' => $generation, 'key' => 'sefar-primary-schedule-'.$mode.'-'.$reference.'-'.$generation,
+                'request' => [
+                    'product' => ['name' => 'Banca Online 2026 - '.$packageTitle, 'metadata' => $stripeMetadata],
+                    'price' => ['currency' => 'eur', 'unit_amount' => (int) round($installmentAmount * 100),
+                        'recurring' => ['interval' => $interval, 'interval_count' => $intervalCount], 'metadata' => $stripeMetadata],
+                    'schedule' => ['customer' => $customer->id, 'start_date' => $startDate, 'end_behavior' => 'cancel',
+                        'default_settings' => ['collection_method' => 'charge_automatically', 'default_payment_method' => $paymentMethodId,
+                            'description' => 'Cuotas '.$periodPluralLabel.' Banca Online 2026 - '.$packageTitle],
+                        'phases' => [['items' => [['quantity' => 1]], 'iterations' => max(1, $installments), 'metadata' => $stripeMetadata]],
+                        'metadata' => $stripeMetadata],
                 ],
-            ],
-            'metadata' => $stripeMetadata,
-        ]);
+                'result_fields' => ['start_date' => $startDate, 'installments_count' => max(1, $installments),
+                    'installment_amount' => $installmentAmount, 'period' => $period, 'period_label' => $periodLabel,
+                    'period_plural_label' => $periodPluralLabel],
+            ];
+            $this->storePrimaryStripeSchedule($purchases, $stored);
+        }
 
-        return [
-            'schedule_id' => $schedule->id,
-            'product_id' => $product->id,
-            'price_id' => $price->id,
-            'start_date' => $startDate,
-            'installments_count' => $installments,
-            'installment_amount' => $installmentAmount,
-            'period' => $period,
-            'period_label' => $periodLabel,
-            'period_plural_label' => $periodPluralLabel,
-        ];
+        // The persisted request keeps dates and payment method stable after an uncertain response.
+        $product = \Stripe\Product::create($stored['request']['product'], ['idempotency_key' => $stored['key'].'-product']);
+        $pricePayload = $stored['request']['price'] + ['product' => $product->id];
+        $price = \Stripe\Price::create($pricePayload, ['idempotency_key' => $stored['key'].'-price']);
+        $schedulePayload = $stored['request']['schedule'];
+        $schedulePayload['phases'][0]['items'][0]['price'] = $price->id;
+        $schedule = \Stripe\SubscriptionSchedule::create($schedulePayload, ['idempotency_key' => $stored['key'].'-schedule']);
+        $stored['result'] = ['schedule_id' => $schedule->id, 'product_id' => $product->id, 'price_id' => $price->id] + $stored['result_fields'];
+        $this->storePrimaryStripeSchedule($purchases, $stored);
+
+        return $stored['result'];
+    }
+
+    private function storePrimaryStripeSchedule(Collection $purchases, array $state): void
+    {
+        foreach ($purchases as $purchase) {
+            $metadata = $purchase->metadata ?? [];
+            $metadata['stripe_primary_schedule'] = $state;
+            $purchase->forceFill(['metadata' => $metadata])->save();
+        }
     }
 
     private function stripeInstallmentStartTimestamp(string $interval, int $intervalCount, ?int $startAfterDays): int
@@ -943,37 +1010,37 @@ class BancaOnlineController extends Controller
         };
     }
 
-    private function cancelStripeInstallmentSchedule(?string $scheduleId): void
+    private function cancelStripeInstallmentSchedule(?string $scheduleId, Collection $purchases): void
     {
-        if (! $scheduleId) {
-            return;
-        }
-
+        if (!$scheduleId) return;
         try {
+            $mode = preg_match('/^(?:sk|rk)_(live|test)_/', (string) config('services.stripe.secret'), $matches) ? $matches[1] : 'unknown';
+            $attempt = data_get($purchases->first()->metadata, 'stripe_primary_checkout', []);
+            if (!empty($attempt['id'])) {
+                if (($attempt['account'] ?? null) !== 'main' || ($attempt['mode'] ?? null) !== $mode) return;
+                $intent = \Stripe\PaymentIntent::retrieve($attempt['id']);
+                if (!in_array($intent->status, ['requires_payment_method', 'requires_confirmation', 'requires_action', 'canceled'], true)) return;
+            }
+            $state = data_get($purchases->first()->metadata, 'stripe_primary_schedule', []);
+            if (($state['account'] ?? null) !== 'main' || ($state['mode'] ?? null) !== $mode) return;
+            if (($state['result']['schedule_id'] ?? null) !== $scheduleId) return;
+            $state['cancel_requested'] = true;
+            $this->storePrimaryStripeSchedule($purchases, $state);
             \Stripe\SubscriptionSchedule::retrieve($scheduleId)->cancel();
+            $state['canceled'] = true;
+            $this->storePrimaryStripeSchedule($purchases, $state);
         } catch (\Throwable $e) {
-            Log::warning('No se pudo cancelar el calendario de cuotas de Stripe.', [
-                'schedule_id' => $scheduleId,
-                'error' => $e->getMessage(),
-            ]);
+            Log::warning('No se pudo confirmar el calendario de cuotas de Stripe.', ['schedule_id' => $scheduleId]);
         }
     }
 
-    private function stripePublicKey(string $countrySlug): ?string
+    private function stripePublicKey(): ?string
     {
-        if ($this->catalog->stripeAccountForCountry($countrySlug) === 'portugal') {
-            return config('services.stripe.key_port') ?: config('services.stripe.key');
-        }
-
         return config('services.stripe.key');
     }
 
-    private function stripeSecretKey(string $countrySlug): ?string
+    private function stripeSecretKey(): ?string
     {
-        if ($this->catalog->stripeAccountForCountry($countrySlug) === 'portugal') {
-            return config('services.stripe.secret_port') ?: config('services.stripe.secret');
-        }
-
         return config('services.stripe.secret');
     }
 

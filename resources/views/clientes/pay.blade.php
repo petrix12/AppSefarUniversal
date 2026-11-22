@@ -767,12 +767,7 @@
     {{-- Scripts de Stripe --}}
     <script src="https://js.stripe.com/v3/"></script>
     <script>
-        // Determinar qué clave usar según el servicio
-        @if (auth()->user()->servicio == 'Constitución de Empresa' || auth()->user()->servicio == 'Representante Fiscal' || auth()->user()->servicio == 'Codigo  Fiscal' || auth()->user()->servicio == 'Apertura de cuenta' || auth()->user()->servicio == 'Trimestre contable' || auth()->user()->servicio == 'Cooperativa 10 años' || auth()->user()->servicio == 'Cooperativa 5 años' || auth()->user()->servicio == 'Portuguesa Sefardi' || auth()->user()->servicio == 'Portuguesa Sefardi - Subsanación' || auth()->user()->servicio == 'Certificación de Documentos - Portugal')
-            var stripePublicKey = '{{ config('services.stripe.key_port') }}';
-        @else
-            var stripePublicKey = '{{ config('services.stripe.key') }}';
-        @endif
+        var stripePublicKey = @json(config('services.stripe.key'));
 
         // Inicializar Stripe
         var stripe = Stripe(stripePublicKey);

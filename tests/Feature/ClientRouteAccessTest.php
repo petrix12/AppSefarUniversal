@@ -116,7 +116,8 @@ class ClientRouteAccessTest extends TestCase
             }
 
             Cache::flush();
-            $uri = '/'.preg_replace('/\{[^}]+\}/', '999999', $route->uri());
+            $uri = '/'.preg_replace_callback('/\{([^}]+)\}/',
+                fn ($parameter) => ['provider'=>'stripe','account'=>'main'][$parameter[1]] ?? '999999', $route->uri());
             $response = $this->json($route->methods()[0], $uri);
             $this->assertSame(403, $response->status(), $route->methods()[0].' '.$uri);
             $denied++;

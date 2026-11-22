@@ -8,21 +8,18 @@ return [
         'espana' => [
             'label' => 'Espana',
             'service_name' => 'Española Sefardi',
-            'stripe_account' => 'default',
             'seed_catalog' => true,
             'public_enabled' => true,
         ],
         'portugal' => [
             'label' => 'Portugal',
             'service_name' => 'Portuguesa Sefardi',
-            'stripe_account' => 'portugal',
             'seed_catalog' => true,
             'public_enabled' => true,
         ],
         'italia' => [
             'label' => 'Italia',
             'service_name' => 'Italiana',
-            'stripe_account' => 'default',
             'seed_catalog' => true,
             'public_enabled' => true,
         ],

@@ -39,7 +39,17 @@ class KalendiaWebhookController extends Controller
         if ($validator->fails() || ($event['event_type'] ?? null) !== $type) return response()->json(['received' => false], 422);
         if ($business !== '' && !hash_equals($business, $event['business_id'])) return response()->json(['received' => false], 403);
         $business = $event['business_id'];
-        if (!in_array($type, self::APPOINTMENT_EVENTS, true)) return response()->json(['received' => true, 'ignored' => 'event_type']);
+        if (!in_array($type, self::APPOINTMENT_EVENTS, true)) {
+            $catalog = app(\App\Services\PlatformCatalog::class);
+            $resource = $catalog->kalendiaEvent($type);
+            if (!$resource) return response()->json(['received' => true, 'ignored' => 'event_type']);
+            $id = str_starts_with($type,'customer.note_') ? data_get($event,'data.customer_id') : ($event['resource_id'] ?? null);
+            if (!$catalog->validId('kalendia',$resource,$id)) return response()->json(['received'=>false],422);
+            if (strlen($event['event_id'])>190) return response()->json(['received'=>false],422);
+            if (!\Illuminate\Support\Facades\Schema::hasTable('platform_events')) return response()->json(['received'=>false],503);
+            $created = \App\Services\PlatformEventProcessor::receive('kalendia','main',$event['event_id'],$type,$resource,$id);
+            return response()->json(['received'=>true,'duplicate'=>!$created],$created ? 202 : 200)->header('Cache-Control','no-store');
+        }
         $validator = Validator::make($event, ['resource_id' => ['required','string','max:255','regex:/^apt_[A-Za-z0-9_-]+$/D'],
             'occurred_at' => ['required','string','max:64','date']]);
         if ($validator->fails() || (isset($event['data']['appointment_id']) && $event['data']['appointment_id'] !== $event['resource_id'])) {

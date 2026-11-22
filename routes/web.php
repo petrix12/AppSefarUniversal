@@ -318,6 +318,28 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
         return response()->noContent();
     })->middleware(['auth','throttle:60,1'])->name('kalendia.timezone');
 
+    Route::get('admin/finance/paypal-history', [\App\Http\Controllers\AdminPaypalHistoryController::class, 'listing'])
+        ->middleware(['auth','can:paypal.history','throttle:30,1'])->name('admin.paypal.history');
+
+    Route::middleware(['auth'])->prefix('admin/plataformas/{provider}/{account}')->name('admin.platforms.')
+        ->where(['provider'=>'stripe|kalendia','account'=>'main|spain_legacy'])->group(function () {
+        $controller=\App\Http\Controllers\AdminPlatformController::class;
+        Route::get('/',[$controller,'dashboard'])->name('index');
+        Route::get('webhooks',[$controller,'monitor'])->name('monitor');
+        Route::post('comprobar',[$controller,'check'])->middleware('throttle:6,1')->name('check');
+        Route::post('clientes',[$controller,'createCustomer'])->middleware('throttle:10,1')->name('customers.store');
+        Route::post('webhooks/{event}/reintentar',[$controller,'retry'])->middleware('throttle:10,1')->name('retry');
+        Route::get('registros/{record}',[$controller,'show'])->name('show');
+        Route::post('registros/{record}/actualizar',[$controller,'refresh'])->middleware('throttle:10,1')->name('refresh');
+        Route::post('registros/{record}/operar',[$controller,'operate'])->middleware('throttle:10,1')->name('operate');
+        Route::get('registros/{record}/notas',[$controller,'notes'])->middleware('throttle:20,1')->name('notes');
+        Route::get('registros/{record}/horarios',[$controller,'bookingOptions'])->middleware('throttle:20,1')->name('booking');
+        Route::post('operaciones/{operation}/reintentar',[$controller,'retryOperation'])->middleware('throttle:10,1')->name('operation.retry');
+        Route::get('datos/{resource}',[$controller,'records'])->name('records');
+        Route::post('datos/{resource}/sincronizar',[$controller,'sync'])->middleware('throttle:10,1')->name('sync');
+        Route::post('datos/{resource}/buscar',[$controller,'lookup'])->middleware('throttle:20,1')->name('lookup');
+    });
+
     Route::middleware(['auth', 'can:kalendia.manage'])->prefix('admin/kalendia')->name('admin.kalendia.')->group(function () {
         Route::get('consultas', [\App\Http\Controllers\AdminKalendiaController::class, 'offers'])->name('offers');
         Route::post('consultas', [\App\Http\Controllers\AdminKalendiaController::class, 'saveOffer'])->name('offers.store');

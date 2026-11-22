@@ -66,13 +66,16 @@ return [
     'stripe' => [
         'key' => env('STRIPE_KEY'),
         'secret' => env('STRIPE_SECRET'),
-        'key_port' => env('STRIPE_KEY_PORT'),
-        'secret_port' => env('STRIPE_SECRET_PORT'),
+        // Historical account only. Never fall back to the principal or the retired regional key.
+        'history_es_secret' => env('STRIPE_HISTORY_ES_SECRET'),
+        'admin_webhook_secret' => env('STRIPE_ADMIN_WEBHOOK_SECRET'),
         'banca_online_webhook_secret' => env('STRIPE_BANCA_ONLINE_WEBHOOK_SECRET', env('STRIPE_WEBHOOK_SECRET')),
     ],
 
     'paypal' => [
         'client_id' => env('PAYPAL_CLIENT_ID'),
+        'history_es_client_id' => env('PAYPAL_HISTORY_ES_CLIENT_ID'),
+        'history_es_secret' => env('PAYPAL_HISTORY_ES_SECRET'),
     ],
 
     'telegram' => [

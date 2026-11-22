@@ -105,11 +105,8 @@
         }
     </style>
 
-    @if (auth()->user()->servicio == 'Constitución de Empresa' || auth()->user()->servicio == 'Representante Fiscal' || auth()->user()->servicio == 'Codigo  Fiscal' || auth()->user()->servicio == 'Apertura de cuenta' || auth()->user()->servicio == 'Trimestre contable' || auth()->user()->servicio == 'Cooperativa 10 años' || auth()->user()->servicio == 'Cooperativa 5 años' || auth()->user()->servicio == 'Portuguesa Sefardi' || auth()->user()->servicio == 'Portuguesa Sefardi - Subsanación' || auth()->user()->servicio == 'Certificación de Documentos - Portugal')
-    <form action="/payfases" method="POST" class="require-validation" data-cc-on-file="false" data-stripe-publishable-key="{{ config('services.stripe.key_port') }}" id="payment-form">
-    @else
     <form action="/payfases" method="POST" class="require-validation" data-cc-on-file="false" data-stripe-publishable-key="{{ config('services.stripe.key') }}" id="payment-form">
-    @endif
+
         <input id="compraid" name="compraid" type="hidden" value="{{$compraid}}">
         @if($isInstallmentPayment ?? false)
             <input name="pay_all_remaining" type="hidden" value="{{ !empty($isPayingAllRemainingPhases) ? '1' : '0' }}">

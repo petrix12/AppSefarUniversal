@@ -39,7 +39,9 @@ class KalendiaWebhookProcessor
                 $saved = DB::transaction(function () use ($row, $items) {
                     $current = DB::table('kalendia_webhook_events')->where('id', $row->id)->lockForUpdate()->first();
                     if ($current->lease !== $row->lease) return false;
-                    if (!$this->appointments->record($items[0], true)) throw new KalendiaApiException(null, 'record_conflict');
+                    if (\Illuminate\Support\Facades\Schema::hasTable('platform_records')) {
+                        app(PlatformMirror::class)->save('kalendia','main','appointments',$items[0]);
+                    } elseif (!$this->appointments->record($items[0], true)) throw new KalendiaApiException(null, 'record_conflict');
                     DB::table('kalendia_webhook_events')->where('id', $row->id)->update([
                         'status'=>'synced', 'last_error_code'=>null, 'lease'=>null, 'leased_until'=>null, 'next_attempt_at'=>null, 'updated_at'=>now(),
                     ]);

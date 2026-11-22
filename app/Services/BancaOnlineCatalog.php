@@ -118,11 +118,6 @@ class BancaOnlineCatalog
         return $this->country($country)['service_name'] ?? 'Española Sefardi';
     }
 
-    public function stripeAccountForCountry(?string $country): string
-    {
-        return $this->country($country)['stripe_account'] ?? 'default';
-    }
-
     public function servicesForPlan(string $countrySlug, string $planSlug, bool $activeOnly = true): Collection
     {
         return $this->recordsForPlan($countrySlug, $planSlug, $activeOnly)

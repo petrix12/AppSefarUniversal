@@ -9,7 +9,7 @@
                 <option value="{{ $zone }}">{{ $label }} · {{ $zone }}</option>
             @endforeach
         </select>
-        <small class="form-text text-muted">Horas en <strong data-kalendia-timezone-label>{{ $viewerTimezone }}</strong>. La fecha de la reunión determina el horario de verano.</small>
+        <small class="form-text text-muted">Horas en <strong data-kalendia-timezone-label>{{ $viewerTimezone }}</strong>. {{ $timezoneContextHelp ?? 'La fecha de la reunión determina el horario de verano.' }}</small>
     </div>
     <script src="{{ asset('js/kalendia-timezone.js') }}?v={{ filemtime(public_path('js/kalendia-timezone.js')) }}" defer></script>
 @endonce

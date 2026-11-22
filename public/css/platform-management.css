@@ -1,0 +1,15 @@
+/* Cards and filters wrap within the existing AdminLTE content; tables scroll inside their own region on small screens. */
+.platform-admin { min-width: 0; }
+.platform-admin .platform-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,17rem),1fr)); gap: 1rem; }
+.platform-admin .platform-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
+.platform-admin .platform-toolbar > * { min-width: 0; max-width: 100%; }
+.platform-admin .platform-filter { flex: 1 1 15rem; }
+.platform-admin .platform-value { overflow-wrap: anywhere; white-space: normal; }
+.platform-admin .platform-data { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,15rem),1fr)); gap: .75rem 1.5rem; }
+.platform-admin .platform-data > div { min-width: 0; }
+.platform-admin .platform-data dd { margin-bottom: 0; }
+.platform-admin .platform-data dt { color: var(--sefar-primary, #123f50); }
+.platform-admin .table-responsive { max-width: 100%; }
+.platform-admin input,.platform-admin select,.platform-admin textarea { font-size: max(16px,1rem); }
+.platform-admin .btn { min-height: 44px; white-space: normal; }
+.platform-admin summary { cursor: pointer; }

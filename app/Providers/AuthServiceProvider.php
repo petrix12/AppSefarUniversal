@@ -31,6 +31,15 @@ class AuthServiceProvider extends ServiceProvider
             && \App\Services\RegistrationMeetingService::supportsUser($user)
             && ! \App\Services\RegistrationMeetingService::hasBookedInitialMeeting($user));
         Gate::define('kalendia.manage', fn ($user) => $user->hasRole('Administrador') && ! $user->hasRole('Cliente'));
+        Gate::define('platforms.manage', fn ($user) => $user->hasRole('Administrador') && ! $user->hasRole('Cliente'));
+        Gate::define('stripe.manage', fn ($user) => $user->hasRole('Administrador') && ! $user->hasRole('Cliente'));
+        Gate::define('paypal.history', fn ($user) => $user->hasRole('Administrador') && ! $user->hasRole('Cliente'));
+        Gate::define('stripe.transactions', fn ($user) => $user->isSuperadmin());
+        Gate::define('menu.stripe-legacy', fn ($user) => $user->can('admin.payments') && $user->can('crud.stripeverify.index'));
+        // Combine the existing navigation paths without granting route permissions.
+        Gate::define('menu.clients', fn ($user) => $user->can('crud.users.index') || $user->can('users.viewlist')
+            || (($user->can('genealogista') || $user->can('produccion')) && $user->can('crud.clients.index')));
+        Gate::define('menu.payment-receipts', fn ($user) => $user->can('admin.payments') && $user->can('crud.comprobantes.index'));
         Gate::define('clients.blocks.review', fn ($user) => app(\App\Services\ClientRestrictionService::class)->canReview($user));
 
         Gate::define('ver.mi.estatus', function ($user) {

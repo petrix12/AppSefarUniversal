@@ -1,0 +1,358 @@
+/* Profile fields only. The status panel and its timeline keep their existing styles. */
+#personal_data.cos-user-profile {
+  min-width: 0;
+  color: var(--sefar-text, #093143);
+}
+
+#personal_data.cos-user-profile .cos-profile-intro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 0 clamp(1rem, .8rem + 1vw, 1.5rem);
+}
+
+#personal_data.cos-user-profile .cos-profile-intro > div {
+  flex: 1 1 25rem;
+  min-width: 0;
+}
+
+#personal_data.cos-user-profile .cos-profile-intro h2 {
+  margin: 0 0 .55rem;
+  color: var(--sefar-primary, #093143);
+  font-size: clamp(1.35rem, 1.15rem + .8vw, 1.75rem);
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+#personal_data.cos-user-profile .cos-profile-intro p {
+  max-width: 68ch;
+  margin: 0;
+  color: var(--sefar-muted, #607783);
+  line-height: 1.6;
+}
+
+#personal_data.cos-user-profile .cos-profile-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  max-width: 100%;
+  padding: .5rem .75rem;
+  border: 1px solid var(--sefar-border, #dce6e9);
+  border-radius: 2rem;
+  background: var(--sefar-primary-soft, #e8f2f5);
+  color: var(--sefar-primary, #093143);
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+#personal_data.cos-user-profile [hidden] {
+  display: none !important;
+}
+
+#personal_data.cos-user-profile .cos-profile-search {
+  min-width: 0;
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  border: 1px solid var(--sefar-border, #dce6e9);
+  border-radius: var(--sefar-radius, 8px);
+  background: var(--sefar-page, #f4f7f9);
+}
+
+#personal_data.cos-user-profile .cos-profile-search__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .65rem;
+  min-width: 0;
+}
+
+#personal_data.cos-user-profile .cos-profile-search__controls input {
+  flex: 1 1 20rem;
+  width: auto;
+}
+
+#personal_data.cos-user-profile .cos-profile-search__controls button {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+}
+
+#personal_data.cos-user-profile .cos-profile-search p {
+  margin: .65rem 0 0;
+  color: var(--sefar-muted, #607783);
+  font-size: .875rem;
+  line-height: 1.5;
+}
+
+#personal_data.cos-user-profile .cos-profile-search .cos-profile-search__empty {
+  color: var(--sefar-text, #093143);
+}
+
+#personal_data.cos-user-profile .cos-profile-fields {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+#personal_data.cos-user-profile .cos-profile-legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+#personal_data.cos-user-profile .cos-profile-section,
+#personal_data.cos-user-profile .cos-custom-groups {
+  min-width: 0;
+  margin: 0 0 1.25rem;
+  padding: clamp(.9rem, .65rem + 1.2vw, 1.5rem);
+  border: 1px solid var(--sefar-border, #dce6e9);
+  border-radius: var(--sefar-radius, 8px);
+  background: var(--sefar-surface, #fff);
+}
+
+#personal_data.cos-user-profile .cos-profile-section__header {
+  display: flex;
+  align-items: flex-start;
+  gap: .8rem;
+  margin-bottom: 1.2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--sefar-border, #dce6e9);
+}
+
+#personal_data.cos-user-profile .cos-profile-section__header > div {
+  min-width: 0;
+}
+
+#personal_data.cos-user-profile .cos-profile-section__icon {
+  display: inline-flex;
+  flex: 0 0 2.4rem;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: .55rem;
+  background: var(--sefar-primary-soft, #e8f2f5);
+  color: var(--sefar-primary, #093143);
+}
+
+#personal_data.cos-user-profile .cos-profile-section__header h3,
+#personal_data.cos-user-profile .cos-custom-groups h2 {
+  margin: 0 0 .35rem;
+  color: var(--sefar-primary, #093143);
+  font-size: 1.08rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+#personal_data.cos-user-profile .cos-profile-section__header p {
+  margin: 0;
+  color: var(--sefar-muted, #607783);
+  font-size: .9rem;
+  line-height: 1.5;
+}
+
+/* Columns wrap at the field's readable width, including inside a narrow sidebar layout. */
+#personal_data.cos-user-profile .cos-profile-grid,
+#personal_data.cos-user-profile .cos-custom-groups .cos-group-body > .row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: 1rem 1.25rem;
+  min-width: 0;
+  margin: 0 0 1rem;
+}
+
+#personal_data.cos-user-profile .cos-profile-grid:last-child,
+#personal_data.cos-user-profile .cos-custom-groups .cos-group-body > .row:last-child {
+  margin-bottom: 0;
+}
+
+#personal_data.cos-user-profile .cos-profile-field,
+#personal_data.cos-user-profile .cos-custom-groups .cos-group-body > .row > [class*="col-"] {
+  min-width: 0;
+  width: auto;
+  max-width: 100%;
+  margin-bottom: 0 !important;
+  padding: 0;
+}
+
+#personal_data.cos-user-profile label {
+  display: block;
+  margin: 0 0 .4rem;
+  color: var(--sefar-text, #093143);
+  font-size: .875rem;
+  font-weight: 700;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+#personal_data.cos-user-profile input:not([type="hidden"]),
+#personal_data.cos-user-profile select,
+#personal_data.cos-user-profile textarea {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 0;
+  padding: .65rem .75rem;
+  border: 1px solid var(--sefar-border, #dce6e9);
+  border-radius: var(--sefar-radius, 8px);
+  background: var(--sefar-surface, #fff);
+  color: var(--sefar-text, #093143);
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+  box-shadow: none;
+}
+
+#personal_data.cos-user-profile textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+#personal_data.cos-user-profile input:focus,
+#personal_data.cos-user-profile select:focus,
+#personal_data.cos-user-profile textarea:focus {
+  border-color: var(--sefar-accent, #a17f48);
+  outline: 2px solid var(--sefar-accent-light, #dbba72);
+  outline-offset: 2px;
+}
+
+#personal_data.cos-user-profile.is-readonly input:disabled,
+#personal_data.cos-user-profile.is-readonly select:disabled,
+#personal_data.cos-user-profile.is-readonly textarea:disabled {
+  background: var(--sefar-page, #f4f7f9);
+  color: var(--sefar-text, #093143);
+  opacity: 1;
+  -webkit-text-fill-color: var(--sefar-text, #093143);
+  cursor: default;
+}
+
+#personal_data.cos-user-profile .cos-profile-field > p {
+  min-height: 44px;
+  margin: 0;
+  padding: .65rem .75rem;
+  border: 1px solid var(--sefar-border, #dce6e9);
+  border-radius: var(--sefar-radius, 8px);
+  background: var(--sefar-page, #f4f7f9);
+  overflow-wrap: anywhere;
+}
+
+#personal_data.cos-user-profile .cos-custom-groups .cos-section-index {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: .6rem;
+  margin: 1.25rem 0;
+}
+
+#personal_data.cos-user-profile .cos-custom-groups .cos-section-index a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  min-width: 0;
+  min-height: 44px;
+  padding: .7rem .8rem;
+  border: 1px solid var(--sefar-border, #dce6e9);
+  border-radius: var(--sefar-radius, 8px);
+  background: var(--sefar-page, #f4f7f9);
+  color: var(--sefar-primary, #093143);
+  font-size: .875rem;
+  font-weight: 700;
+  line-height: 1.45;
+  text-decoration: none;
+}
+
+#personal_data.cos-user-profile .cos-custom-groups .cos-section-index a span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+#personal_data.cos-user-profile .cos-custom-groups .cos-section-index a:hover {
+  border-color: var(--sefar-accent, #a17f48);
+  background: var(--sefar-primary-soft, #e8f2f5);
+}
+
+#personal_data.cos-user-profile .cos-custom-groups details {
+  min-width: 0;
+  margin-bottom: .8rem;
+  border: 1px solid var(--sefar-border, #dce6e9);
+  border-radius: var(--sefar-radius, 8px);
+  scroll-margin-top: 1rem;
+}
+
+#personal_data.cos-user-profile .cos-custom-groups summary {
+  min-height: 44px;
+  padding: .85rem 1rem;
+  border-radius: var(--sefar-radius, 8px);
+  color: var(--sefar-primary, #093143);
+  font-size: .95rem;
+  font-weight: 700;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+#personal_data.cos-user-profile .cos-custom-groups details[open] > summary {
+  border-bottom: 1px solid var(--sefar-border, #dce6e9);
+  border-radius: var(--sefar-radius, 8px) var(--sefar-radius, 8px) 0 0;
+  background: var(--sefar-primary-soft, #e8f2f5);
+}
+
+#personal_data.cos-user-profile .cos-custom-groups .cos-group-body {
+  min-width: 0;
+  padding: clamp(.85rem, .65rem + 1vw, 1.25rem);
+}
+
+#personal_data.cos-user-profile .cos-custom-groups .cos-field-count {
+  display: inline-block;
+  margin-inline-start: .5rem;
+  padding: .1rem .45rem;
+  border: 1px solid var(--sefar-border, #dce6e9);
+  border-radius: 1rem;
+  color: var(--sefar-muted, #607783);
+  background: var(--sefar-surface, #fff);
+  font-size: .75rem;
+  font-weight: 600;
+}
+
+#personal_data.cos-user-profile .cos-custom-groups a:focus-visible,
+#personal_data.cos-user-profile .cos-custom-groups summary:focus-visible,
+#personal_data.cos-user-profile [data-profile-search-clear]:focus-visible,
+#personal_data.cos-user-profile #guardar-datos:focus-visible {
+  outline: 2px solid var(--sefar-accent, #a17f48);
+  outline-offset: 3px;
+}
+
+/* Keep the save action in document flow; the shared card has an overflow ancestor. */
+#personal_data.cos-user-profile .cos-save-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 0;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--sefar-border, #dce6e9);
+  border-radius: var(--sefar-radius, 8px);
+  background: var(--sefar-page, #f4f7f9);
+}
+
+#personal_data.cos-user-profile .cos-save-bar > span {
+  flex: 1 1 20rem;
+  min-width: 0;
+}
+
+#personal_data.cos-user-profile #guardar-datos {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+}

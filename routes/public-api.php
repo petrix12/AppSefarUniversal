@@ -3,6 +3,9 @@
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
+Route::post('webhooks/stripe/admin/{account}', \App\Http\Controllers\StripeAdminWebhookController::class)
+    ->where('account', 'main')->withoutMiddleware('throttle:api')->middleware('throttle:120,1')->name('api.stripe.admin.webhook');
+
 // Authenticated by Stripe's signature; the handler rejects missing or invalid signatures.
 Route::post('webhooks/kalendia/stripe', \App\Http\Controllers\KalendiaStripeWebhookController::class)
     ->withoutMiddleware('throttle:api')->middleware('throttle:120,1')->name('api.kalendia.stripe');
