@@ -46,10 +46,42 @@ Las consultas usan `STRIPE_KEY` y `STRIPE_SECRET`, ya utilizados por la App. Rev
 STRIPE_KALENDIA_WEBHOOK_SECRET=SECRETO_DEL_ENDPOINT
 ```
 
-Si ya existe `STRIPE_WEBHOOK_SECRET`, se usa como valor alternativo, pero debe corresponder a la firma del endpoint registrado. En Stripe se registra el evento **payment_intent.succeeded** para:
+El secreto es exclusivo del endpoint de consultas; ya no se utiliza `STRIPE_WEBHOOK_SECRET` como alternativa. En Stripe se registra **solo `payment_intent.succeeded`**, formato **Snapshot**, eventos de **tu cuenta**, para:
 
+`https://app.sefaruniversal.com/api/webhooks/kalendia/stripe`
 
 El receptor valida la firma y rechaza eventos sin firma o con secreto ausente. Se recomienda el webhook para confirmar aunque el cliente cierre la página. Existe además una conciliación de respaldo cada cinco minutos: verifica hasta diez pagos pendientes mediante GET y no genera intentos ni cargos nuevos. [Confirmación del pago con Stripe](https://docs.stripe.com/payments/payment-intents/verifying-status).
+
+Stripe puede enviar pagos de otros servicios de la misma cuenta. Recibir un evento no significa aplicarlo a una consulta: la App descarta tipos ajenos, eventos de cuentas conectadas, modo de pruebas/producción que no coincide con la clave configurada, objetos distintos de PaymentIntent, referencias sin UUID de consulta y órdenes desconocidas. También descarta referencias de pago o de usuario diferentes de las guardadas. Para un pago propio se comprueban importe, moneda y estado antes de reutilizar la compra y factura; los reenvíos no crean otro cobro o comprobante. Una discrepancia financiera de un pago propio requiere revisión, no se acredita automáticamente. Los eventos ajenos se reconocen con HTTP 200 para evitar reintentos innecesarios. La suscripción del endpoint se restringe por tipo de evento; el filtro de pertenencia a la consulta se hace dentro de la App. [Configuración de destinos de Stripe](https://docs.stripe.com/webhooks).
+
+## Webhook de Kalendia hacia la App
+
+Este receptor es distinto del webhook de Stripe:
+
+`https://app.sefaruniversal.com/api/webhooks/kalendia`
+
+En **Kalendia → Automatizaciones → Webhooks**, usar la conexión propia y seleccionar solamente `appointment.created`, `appointment.confirmed`, `appointment.rescheduled` y `appointment.cancelled`. Los eventos de clientes, tienda, formularios y pagos no forman parte de este receptor. El secreto de verificación generado por Kalendia va en:
+
+```dotenv
+KALENDIA_WEBHOOK_SECRET=SECRETO_DEL_WEBHOOK_DE_KALENDIA
+```
+
+Este valor es distinto de `KALENDIA_TOKEN` y de `STRIPE_KALENDIA_WEBHOOK_SECRET`. Opcionalmente se puede fijar `KALENDIA_WEBHOOK_BUSINESS_ID` con el `business_id` real de los eventos del negocio; no copiar el valor del ejemplo de la documentación. La firma propia del webhook y la API restringida al subdominio de Sefar ya proporcionan aislamiento; fijar el negocio añade otra comprobación.
+
+Se verifican las cabeceras `X-Kalendia-Timestamp`, `X-Kalendia-Delivery`, `X-Kalendia-Event` y `X-Kalendia-Signature` contra los bytes originales del cuerpo: `v1=` más HMAC SHA-256 de `timestamp.delivery_id.event_type.raw_body`. La ventana de vigencia es de cinco minutos. Se comprueba también la coincidencia de tipo, versión y recurso. [Contrato oficial de webhooks de Kalendia](https://developers.kalendia.co/#firmas).
+
+La petición solo persiste identificadores mínimos y devuelve HTTP 202; los duplicados válidos devuelven 200 y no se vuelven a encolar. No guarda el cuerpo ni los datos personales del evento. El procesamiento se ejecuta **cada minuto** con el scheduler existente y consulta por GET únicamente `/appointments?id=apt_…`, verificando que la API devuelve exactamente esa cita. Se utiliza el estado actual del proveedor, no el contenido parcial o antiguo de la notificación. Los fallos conservan la referencia y se reintentan con espera creciente; después de ocho fallos se conserva para revisión. No se crean pagos, facturas, clientes ni citas a partir de estos eventos. La App tampoco envía un PATCH al recibirlos, evitando ciclos entre ambos sistemas. La sincronización incremental de cinco minutos permanece como respaldo; si hay más eventos que el límite de cuatro por ejecución, se procesan en las siguientes ejecuciones.
+
+Después de subir esta actualización y configurar el secreto de Kalendia:
+
+```bash
+php artisan config:clear
+php artisan migrate --force --path=database/migrations/2026_11_22_120000_create_kalendia_webhook_events_table.php
+php artisan kalendia:check
+php artisan kalendia:process-webhooks
+```
+
+No ejecutar `config:cache`. El scheduler debe seguir invocándose cada minuto. Tras recibir una notificación real firmada se debe comprobar un 202/200 en Kalendia y que la cita se refleja en la App. Las pruebas locales de firmas, duplicados y aislamiento no sustituyen esa validación de entrega real después del despliegue.
 
 En SSH:
 
@@ -67,4 +99,4 @@ Si están pendientes las migraciones del 19/11, aplicar primero las indicadas en
 
 La prueba real previamente autorizada creó una sola cita ficticia el 19/03/2027, de 09:00 a 10:00 de Colombia, con el Dr. Alex. Se comprobó por API el mismo cliente, el estado confirmado, el enlace Zoom y que ese horario dejó de estar disponible. Esta actualización no realizó nuevos cobros reales ni modificó citas de clientes de producción.
 
-Los nuevos cobros, firmas del webhook, reintentos, comprobantes y permisos se validan con proveedores simulados y base de datos aislada. Antes de activar precios reales faltan el despliegue, el registro del webhook con su secreto y una comprobación de pago en modo prueba del servidor. La App no crea ni altera precios remotos de Kalendia: su API proporcionada permite leer servicios, no editarlos. Los reembolsos siguen los canales de pago existentes; cancelar la agenda no los procesa.
+Los nuevos cobros, firmas de ambos proveedores, reintentos, comprobantes y permisos se validan con proveedores simulados y base de datos aislada. El receptor de citas de Kalendia añadido el 22/11 necesita su despliegue, migración, secreto propio y una entrega real firmada. Para Stripe, el registro del endpoint fue confirmado por el administrador; queda verificar su selección de eventos y una entrega firmada en el Dashboard. Antes de activar precios reales se debe comprobar un pago completo en modo prueba del servidor. La App no crea ni altera precios remotos de Kalendia: su API proporcionada permite leer servicios, no editarlos. Los reembolsos siguen los canales de pago existentes; cancelar la agenda no los procesa.

@@ -53,7 +53,7 @@ class RouteAuthenticationCoverageTest extends TestCase
         ];
         // These handlers verify provider signatures or existing integration tokens.
         $providerAuthenticated = [
-            'api/marketing/ses-events', 'api/stripe/banca-online/webhook', 'api/webhooks/monday', 'api/webhooks/kalendia/stripe',
+            'api/marketing/ses-events', 'api/stripe/banca-online/webhook', 'api/webhooks/monday', 'api/webhooks/kalendia/stripe', 'api/webhooks/kalendia',
         ];
         $unprotected = [];
 

@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Services\KalendiaApi;
 use App\Services\KalendiaApiException;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\{DB, Schema};
 
 class CheckKalendia extends Command
 {
@@ -32,6 +33,15 @@ class CheckKalendia extends Command
                 $this->line($name.': '.($service ? $service['id'].($free ? ' · sin cobro en Kalendia' : ($prepaid ? ' · método externo configurado' : ' · falta método para pago externo')) : 'pendiente de habilitar'));
             }
             $this->line('Método confirmado para servicios con precio en Kalendia: '.($prepaid ? 'configurado' : 'sin configurar; esos servicios permanecen protegidos'));
+            $this->line('Webhook de Kalendia: '.(filled(config('kalendia.webhook_secret')) ? 'secreto configurado' : 'pendiente de configurar KALENDIA_WEBHOOK_SECRET'));
+            $this->line('Receptor de citas: '.rtrim(config('app.url'), '/').'/api/webhooks/kalendia');
+            $this->line('Restricción adicional de negocio: '.(config('kalendia.webhook_business_id') ?: 'firma propia del webhook y API aislada al negocio'));
+            $this->line('Webhook de Stripe para consultas: '.(filled(config('kalendia.stripe_webhook_secret')) ? 'secreto propio configurado' : 'falta STRIPE_KALENDIA_WEBHOOK_SECRET'));
+            if (Schema::hasTable('kalendia_webhook_events')) {
+                $states = DB::table('kalendia_webhook_events')->selectRaw('status, COUNT(*) AS total')->groupBy('status')->pluck('total', 'status');
+                $this->line('Eventos de Kalendia: '.(($states['pending'] ?? 0) + ($states['processing'] ?? 0) + ($states['retry'] ?? 0)).' pendientes; '
+                    .($states['synced'] ?? 0).' sincronizados; '.($states['review'] ?? 0).' requieren revisión.');
+            } else $this->line('Eventos de Kalendia: falta aplicar la migración del receptor.');
             $this->line('Solo lectura. No se crearon clientes, citas ni pagos.');
             return $ok ? self::SUCCESS : self::FAILURE;
         } catch (KalendiaApiException $exception) {

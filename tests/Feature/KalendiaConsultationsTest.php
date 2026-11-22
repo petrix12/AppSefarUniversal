@@ -168,7 +168,7 @@ class KalendiaConsultationsTest extends TestCase
     {
         $order=$this->order($this->client());app(KalendiaConsultationCheckout::class)->begin($order);
         $intent=$this->stripe->intents['pi_fake'];$intent['status']='succeeded';$intent['amount_received']=12550;
-        $body=json_encode(['id'=>'evt_test','object'=>'event','type'=>'payment_intent.succeeded','data'=>['object'=>$intent]]);
+        $body=json_encode(['id'=>'evt_test','object'=>'event','livemode'=>false,'type'=>'payment_intent.succeeded','data'=>['object'=>$intent]]);
         $this->postJson('/api/webhooks/kalendia/stripe',json_decode($body,true))->assertStatus(400);
         $signature='t='.time().',v1='.hash_hmac('sha256',time().'.'.$body,'whsec_fake');
         for($i=0;$i<2;$i++) $this->call('POST','/api/webhooks/kalendia/stripe',[],[],[],['CONTENT_TYPE'=>'application/json','HTTP_STRIPE_SIGNATURE'=>$signature],$body)->assertOk();
@@ -180,6 +180,33 @@ class KalendiaConsultationsTest extends TestCase
         $intent=$this->stripe->intents['pi_fake'];$intent['status']='succeeded';$intent['amount_received']=1;
         try { app(KalendiaConsultationCheckout::class)->confirm($order->fresh(),$intent);$this->fail(); }
         catch(\Illuminate\Validation\ValidationException) { $this->assertDatabaseCount('compras',0); }
+    }
+    public function test_global_stripe_events_from_other_services_modes_accounts_and_payments_do_not_credit_a_consultation(): void
+    {
+        $order=$this->order($this->client()); app(KalendiaConsultationCheckout::class)->begin($order);
+        $intent=$this->stripe->intents['pi_fake']; $intent['status']='succeeded'; $intent['amount_received']=12550;
+        $before=Http::recorded()->count();
+        $cases = [
+            ['intent'=>array_replace($intent,['metadata'=>['checkout_token'=>'another-service']]),'reason'=>'unrelated_payment'],
+            ['intent'=>array_replace($intent,['metadata'=>['kalendia_order'=>['invalid']]]),'reason'=>'unrelated_payment'],
+            ['intent'=>array_replace($intent,['object'=>'charge']),'reason'=>'unrelated_payment'],
+            ['intent'=>array_replace($intent,['metadata'=>['kalendia_order'=>(string)Str::uuid()]]),'reason'=>'order_not_found'],
+            ['intent'=>array_replace($intent,['id'=>'pi_another']),'reason'=>'payment_reference'],
+            ['intent'=>array_replace($intent,['metadata'=>array_replace($intent['metadata'],['sefar_flow'=>'banca_online'])]),'reason'=>'other_flow'],
+            ['intent'=>$intent,'event'=>['livemode'=>true],'reason'=>'mode'],
+            ['intent'=>$intent,'event'=>['account'=>'acct_other'],'reason'=>'connected_account'],
+            ['intent'=>$intent,'event'=>['type'=>'charge.succeeded'],'reason'=>'event_type'],
+        ];
+        foreach ($cases as $case) {
+            $body=json_encode(array_replace(['id'=>'evt_foreign','object'=>'event','livemode'=>false,
+                'type'=>'payment_intent.succeeded','data'=>['object'=>$case['intent']]],$case['event']??[]));
+            $time=time();$signature='t='.$time.',v1='.hash_hmac('sha256',$time.'.'.$body,'whsec_fake');
+            $this->call('POST','/api/webhooks/kalendia/stripe',[],[],[],['CONTENT_TYPE'=>'application/json','HTTP_STRIPE_SIGNATURE'=>$signature],$body)
+                ->assertOk()->assertJsonPath('ignored',$case['reason']);
+        }
+        $this->assertDatabaseCount('compras',0); $this->assertDatabaseCount('facturas',0);
+        $this->assertSame('pending',$order->fresh()->status); $this->assertSame(2,(int)$order->user->pay);
+        $this->assertCount(1,$this->stripe->creates); $this->assertSame($before,Http::recorded()->count());
     }
     public function test_admin_can_configure_several_prices_without_enabling_an_unpriced_offer(): void
     {
@@ -386,7 +413,7 @@ class FakeKalendiaStripeGateway extends KalendiaStripeGateway
     public function create(array $payload,string $key): array
     {
         $this->creates[]=compact('payload','key');
-        $this->intents['pi_fake'] ??= $payload+['id'=>'pi_fake','client_secret'=>'pi_fake_secret_test','status'=>'requires_payment_method','amount_received'=>0];
+        $this->intents['pi_fake'] ??= $payload+['id'=>'pi_fake','object'=>'payment_intent','client_secret'=>'pi_fake_secret_test','status'=>'requires_payment_method','amount_received'=>0];
         if($this->onCreate) ($this->onCreate)($this->intents['pi_fake']);
         if($this->loseFirst && count($this->creates)===1) throw new \RuntimeException('Simulated network failure');
         return $this->intents['pi_fake'];
