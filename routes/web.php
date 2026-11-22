@@ -318,6 +318,11 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
         return response()->noContent();
     })->middleware(['auth','throttle:60,1'])->name('kalendia.timezone');
 
+    Route::get('admin/plataformas/importaciones', [\App\Http\Controllers\AdminPlatformImportController::class, 'overview'])
+        ->name('admin.platforms.imports.index');
+    Route::post('admin/plataformas/importaciones', [\App\Http\Controllers\AdminPlatformImportController::class, 'queue'])
+        ->middleware('throttle:6,1')->name('admin.platforms.imports.store');
+
     Route::get('admin/finance/paypal-history', [\App\Http\Controllers\AdminPaypalHistoryController::class, 'listing'])
         ->middleware(['auth','can:paypal.history','throttle:30,1'])->name('admin.paypal.history');
 

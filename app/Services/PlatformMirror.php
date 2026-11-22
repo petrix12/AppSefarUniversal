@@ -64,53 +64,94 @@ class PlatformMirror
         $status=match($data['status']??null) {'succeeded'=>'succeeded','failed','canceled'=>'rejected',default=>'pending'};
         $op->forceFill(['status'=>$status,'remote_id'=>$data['id'],'error_code'=>null,'lease'=>null,'leased_until'=>null])->save();
     }
-    public function queue(string $provider, string $account, string $resource, bool $restart = false): void
+    public function queue(string $provider, string $account, string $resource, bool $restart = false): bool
     {
         $this->catalog->definition($provider, $resource);
         DB::table('platform_sync_states')->insertOrIgnore(PlatformIdentity::where($provider,$account)+['resource'=>$resource,'created_at'=>now(),'updated_at'=>now()]);
-        DB::transaction(function () use ($provider,$account,$resource,$restart) {
+        return DB::transaction(function () use ($provider,$account,$resource,$restart) {
             $state = DB::table('platform_sync_states')->where(PlatformIdentity::where($provider,$account))->where('resource',$resource)->lockForUpdate()->first();
-            if ($state->leased_until && now()->lt($state->leased_until)) return;
+            if ($state->requested || ($state->leased_until && now()->lt($state->leased_until))) return false;
             $changes = ['requested'=>true,'error_code'=>null,'updated_at'=>now()];
             if ($restart || !$state->has_more) $changes += ['cursor'=>null,'page'=>1];
             DB::table('platform_sync_states')->where('id',$state->id)->update($changes);
+            return true;
         });
     }
-    /** One bounded page. Requests and pagination survive a slow provider or interrupted worker. */
+    /** Process bounded pages, resuming failed imports and sharing work across resources. */
     public function sync(int $limit = 2): array
     {
         $counts = ['records'=>0,'pages'=>0,'errors'=>0];
+        $visited = [];
         for ($i=0; $i<$limit; $i++) {
-            $state = DB::transaction(function () {
-                $row = DB::table('platform_sync_states')->where('requested',true)
-                    ->where(fn($q)=>$q->whereNull('leased_until')->orWhere('leased_until','<=',now()))->orderBy('updated_at')->lockForUpdate()->first();
+            $state = DB::transaction(function () use ($visited) {
+                $query = DB::table('platform_sync_states')->where('requested',true)
+                    ->where(fn($q)=>$q->whereNull('leased_until')->orWhere('leased_until','<=',now()))
+                    ->orderBy('updated_at')->orderBy('id');
+                $row = (clone $query)->whereNotIn('id',$visited)->lockForUpdate()->first()
+                    ?? $query->lockForUpdate()->first();
                 if (!$row) return null;
                 $row->lease = (string) Str::uuid();
                 DB::table('platform_sync_states')->where('id',$row->id)->update(['lease'=>$row->lease,'leased_until'=>now()->addMinute()]);
                 return $row;
             });
             if (!$state) break;
+            $visited[] = $state->id;
             try {
                 if ($state->mode!==PlatformIdentity::mode($state->provider,$state->account)) throw new PlatformApiException('mode_changed');
                 $path = $this->catalog->definition($state->provider,$state->resource)[2];
+                $inactivePrices = $state->provider==='stripe' && $state->resource==='prices'
+                    && str_starts_with((string)$state->cursor,'inactive:');
+                $requestPage=(int)$state->page;
                 if ($state->provider === 'stripe') {
-                    $query = ['limit'=>50]; if ($state->cursor) $query['starting_after'] = $state->cursor;
+                    $query = ['limit'=>100];
+                    $cursor = $inactivePrices ? substr($state->cursor,9) : $state->cursor;
+                    if ($state->resource==='subscriptions') {
+                        // Older imports used the active-only list; restart that filter once to include canceled entries.
+                        $cursor=str_starts_with((string)$cursor,'all:') ? substr($cursor,4) : null;
+                        $query['status'] = 'all';
+                    }
+                    if ($cursor) $query['starting_after'] = $cursor;
+                    if ($state->resource==='prices') $query['active'] = !$inactivePrices;
                     $response = $this->stripe->request($state->account,'GET',$path,$query);
-                    $items = $response['data'] ?? null; $more = (bool) ($response['has_more'] ?? false);
+                    $items = $response['data'] ?? null;
+                    if (!is_bool($response['has_more']??null)) throw new PlatformApiException('invalid_page');
+                    $apiMore = $response['has_more'];
+                    if ($apiMore && !$items) throw new PlatformApiException('invalid_page');
+                    // Stripe lists active prices by default; an additional pass includes archived prices.
+                    $more = $apiMore || ($state->resource==='prices' && !$inactivePrices);
                 } else {
-                    $response = $this->kalendia->request('GET',$path,['page'=>$state->page,'per_page'=>50]);
+                    // A page number from an older page size cannot be reused without skipping records.
+                    if (!str_starts_with((string)$state->cursor,'p100:')) $requestPage=1;
+                    $response = $this->kalendia->request('GET',$path,['page'=>$requestPage,'per_page'=>100]);
                     $items = $response['items'] ?? null;
-                    $more = isset($response['pagination']['pages']) ? $state->page < (int) $response['pagination']['pages'] : count($items ?? []) === 50;
+                    $pages = data_get($response,'pagination.pages',data_get($response,'pagination.total_pages'));
+                    if ($pages!==null) {
+                        if (filter_var($pages,FILTER_VALIDATE_INT)===false || (int)$pages<0) throw new PlatformApiException('invalid_page');
+                        if ((int)$pages===0 && $items) throw new PlatformApiException('invalid_page');
+                        $more = $requestPage < (int)$pages;
+                    } elseif (is_bool($response['has_more']??null)) $more = $response['has_more'];
+                    // Some providers cap page size. An empty page, not a short one, ends an uncounted list.
+                    else $more = is_array($items) && count($items)>0;
+                    if ($more && !$items) throw new PlatformApiException('invalid_page');
                 }
-                if (!is_array($items) || count($items)>100 || ($more && !$items)) throw new PlatformApiException('invalid_page');
-                $count = DB::transaction(function () use ($state,$items,$more) {
+                if (!is_array($items) || !array_is_list($items) || count($items)>100) throw new PlatformApiException('invalid_page');
+                foreach ($items as $item) if (!is_array($item)) throw new PlatformApiException('invalid_page');
+                $lastId = $items ? end($items)['id'] ?? ($state->resource==='inventory' ? end($items)['product_id']??null : null) : null;
+                if ($more && $items && !$lastId) throw new PlatformApiException('invalid_page');
+                $nextCursor = $more ? $lastId : null;
+                if ($state->provider==='stripe' && $state->resource==='prices' && $more) {
+                    $nextCursor = !$apiMore && !$inactivePrices ? 'inactive:' : ($inactivePrices ? 'inactive:'.$lastId : $lastId);
+                }
+                if ($state->provider==='stripe' && $state->resource==='subscriptions' && $more) $nextCursor='all:'.$lastId;
+                if ($state->provider==='kalendia' && $more) $nextCursor='p100:'.hash('sha256',$lastId);
+                if (strlen((string)$nextCursor)>190) throw new PlatformApiException('pagination_stalled');
+                if ($more && $nextCursor===$state->cursor) throw new PlatformApiException('pagination_stalled');
+                $count = DB::transaction(function () use ($state,$items,$more,$nextCursor,$requestPage) {
                     $current=DB::table('platform_sync_states')->where('id',$state->id)->lockForUpdate()->first();
-                    if ($current->lease !== $state->lease) return 0;
+                    if ($current->lease !== $state->lease) throw new PlatformApiException('lease_expired');
                     foreach ($items as $item) $this->save($state->provider,$state->account,$state->resource,$item);
-                    $cursor = $items ? end($items)['id'] ?? null : null;
-                    if ($more && $cursor === $state->cursor) throw new PlatformApiException('pagination_stalled');
                     DB::table('platform_sync_states')->where('id',$state->id)->update(['has_more'=>$more,'requested'=>$more,
-                        'page'=>$more ? $state->page+1 : 1,'cursor'=>$more ? $cursor : null,'checked_at'=>now(),'error_code'=>null,
+                        'page'=>$more ? $requestPage+1 : 1,'cursor'=>$nextCursor,'checked_at'=>now(),'error_code'=>null,
                         'lease'=>null,'leased_until'=>null,'updated_at'=>now()]);
                     return count($items);
                 });

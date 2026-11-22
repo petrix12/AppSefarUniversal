@@ -4,7 +4,7 @@
 <div class="card"><div class="card-body">
     <div class="platform-toolbar justify-content-between mb-3"><h2 class="h5 mb-0">{{ $definition[0] }}</h2>
         @if(!$readOnly && $resource==='customers')<button class="btn btn-primary" type="button" data-platform-template="#platform-new-customer">Crear contacto</button>@endif
-        <form method="POST" action="{{ route('admin.platforms.sync', [$provider,$account,$resource]) }}">@csrf<input type="hidden" name="restart" value="1"><button class="btn btn-outline-primary" type="submit" @disabled($state?->requested)><i class="fas fa-sync-alt mr-1" aria-hidden="true"></i>{{ $state?->requested ? 'Importando…':'Actualizar desde '.$platformName }}</button></form>
+        <form method="POST" action="{{ route('admin.platforms.sync', [$provider,$account,$resource]) }}">@csrf<button class="btn btn-outline-primary" type="submit" @disabled($state?->requested)><i class="fas fa-sync-alt mr-1" aria-hidden="true"></i>{{ $state?->requested ? 'Importando…':'Actualizar desde '.$platformName }}</button></form>
     </div>
     @if($state?->error_code)<div class="alert alert-warning">La última importación requiere revisión: {{ $state->error_code }}. Los registros anteriores se conservan.</div>@endif
     <form method="GET" class="platform-toolbar align-items-end mb-3">

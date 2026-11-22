@@ -7,6 +7,7 @@
     @include('kalendia.partials.messages')
     <nav class="platform-toolbar mb-3" aria-label="Administración de {{ $platformName }}">
         <a class="btn btn-outline-primary" href="{{ route('admin.platforms.index', [$provider,$account]) }}">Resumen</a>
+        <a class="btn btn-outline-primary" href="{{ route('admin.platforms.imports.index') }}">Copias de plataformas</a>
         @unless($readOnly)<a class="btn btn-outline-primary" href="{{ route('admin.platforms.monitor', [$provider,$account]) }}">Webhooks y actividad</a>@endunless
         @if($provider==='stripe')
             <a class="btn {{ $account==='main' ? 'btn-primary' : 'btn-outline-secondary' }}" href="{{ route('admin.platforms.index',['stripe','main']) }}">Cuenta principal</a>

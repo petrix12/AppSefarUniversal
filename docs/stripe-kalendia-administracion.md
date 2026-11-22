@@ -132,7 +132,7 @@ No ejecutar `config:cache`. La migración crea `platform_records`, `platform_eve
 El scheduler existente debe seguir ejecutando Laravel cada minuto. `app/Console/Kernel.php` ya agenda `platforms:process-events --limit=4` y `platforms:sync --limit=2` cada minuto, con bloqueo de solapamiento y ejecución en segundo plano. También conserva `kalendia:process-webhooks --limit=4` para las citas nativas, condicionado a sus credenciales.
 
 1. Abrir cada plataforma y usar la comprobación de conexión. En Stripe consulta cuenta, saldo y endpoints; en Kalendia consulta conexión y permisos. Revisar cualquier rechazo antes de importar.
-2. Solicitar manualmente la primera importación en **cada área/recurso** de la cuenta principal de Stripe y de Kalendia. La importación no se inicia por configurar una credencial; el scheduler consume las solicitudes por páginas.
+2. Abrir **Integraciones → Copias de plataformas** y solicitar **Importar conexiones configuradas**. También puede usarse **Importar todos los recursos** desde cada plataforma. Se incluyen los recursos disponibles de Stripe y Kalendia; PayPal histórico permanece como consulta API. La importación no se inicia por configurar una credencial; el scheduler consume las solicitudes por páginas. Véase [Copias de plataformas](copias-plataformas.md) para planificación, filtros y reanudación.
 3. Comprobar avance, fecha de actualización y errores. Las interrupciones conservan cursores; tras resolver un error, volver a solicitar la importación o reiniciarla desde la pantalla cuando proceda.
 4. Para comprobar el procesamiento manualmente, usar los comandos acotados siguientes; no crear bucles de importación:
 

@@ -11,6 +11,8 @@ class SyncPlatformResources extends Command
     public function handle(PlatformMirror $mirror): int
     {
         if (!\Illuminate\Support\Facades\Schema::hasTable('platform_sync_states')) { $this->warn('Pendiente la migración de plataformas.'); return self::SUCCESS; }
-        $this->line(json_encode($mirror->sync(max(1,min(10,(int)$this->option('limit')))))); return self::SUCCESS;
+        $result=$mirror->sync(max(1,min(10,(int)$this->option('limit'))));
+        \Illuminate\Support\Facades\Cache::put('platforms.sync.last_run',now()->toIso8601String(),now()->addDay());
+        $this->line(json_encode($result)); return self::SUCCESS;
     }
 }

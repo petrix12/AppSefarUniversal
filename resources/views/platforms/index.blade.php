@@ -4,7 +4,10 @@
 <div class="card"><div class="card-body">
     <div class="platform-toolbar justify-content-between">
         <div><h2 class="h5 mb-1">Conexión y sincronización</h2><p class="mb-0 text-muted">{{ $configured ? 'Credencial configurada' : 'Falta configurar la credencial' }}@if($provider==='stripe') · {{ $mode===null ? 'Modo sin confirmar' : ($mode ? 'Producción' : 'Pruebas') }}@endif</p></div>
-        <form method="POST" action="{{ route('admin.platforms.check', [$provider,$account]) }}">@csrf<button class="btn btn-primary" type="submit">Comprobar conexión</button></form>
+        <div class="platform-toolbar">
+            <form method="POST" action="{{ route('admin.platforms.imports.store') }}">@csrf<input type="hidden" name="provider" value="{{ $provider }}"><input type="hidden" name="account" value="{{ $account }}"><button class="btn btn-primary" type="submit" @disabled(!$configured)>Importar todos los recursos</button></form>
+            <form method="POST" action="{{ route('admin.platforms.check', [$provider,$account]) }}">@csrf<button class="btn btn-outline-primary" type="submit">Comprobar conexión</button></form>
+        </div>
     </div>
     <p class="text-muted mt-3 mb-0">Los listados consultan registros guardados en la App. Puedes importar datos por páginas y actualizar una ficha cuando necesites comprobar su estado actual.</p>
     @if(session('platform_connection'))<details class="mt-3" open><summary>Resultado de la comprobación</summary><dl class="mt-2">@foreach(session('platform_connection') as $key=>$value)<dt>{{ $key }}</dt><dd class="platform-value">{{ is_array($value)?json_encode($value,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES):$value }}</dd>@endforeach</dl></details>@endif

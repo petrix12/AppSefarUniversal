@@ -385,6 +385,7 @@ return [
             'text' => 'Integraciones',
             'icon' => 'fas fa-fw fa-plug',
             'submenu' => [
+                ['text' => 'Copias de plataformas', 'route' => 'admin.platforms.imports.index', 'icon' => 'fas fa-fw fa-database', 'can' => 'platforms.manage'],
                 ['text' => 'Sincronización CRM', 'route' => 'admin.integrations.crm-sync', 'icon' => 'fas fa-sync-alt', 'can' => 'integrations.manage'],
                 [
                     'text' => 'Teamleader',
