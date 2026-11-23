@@ -6,6 +6,7 @@ use App\Http\Middleware\AuditRequests;
 use App\Models\Compras;
 use App\Models\Factura;
 use App\Models\KalendiaBooking;
+use App\Models\KalendiaBookingRequest;
 use App\Models\Servicio;
 use App\Models\User;
 use App\Services\KalendiaApi;
@@ -50,6 +51,7 @@ class KalendiaBookingTest extends TestCase
         $this->createRegistrationSchema();
         $this->artisan('migrate', ['--path' => 'database/migrations/2026_11_20_180000_create_kalendia_bookings_table.php'])->assertExitCode(0);
         $this->artisan('migrate', ['--path' => 'database/migrations/2026_11_20_190000_create_kalendia_consultation_management_tables.php'])->assertExitCode(0);
+        $this->artisan('migrate', ['--path' => 'database/migrations/2026_11_23_190000_create_kalendia_booking_requests_table.php'])->assertExitCode(0);
         Permission::findOrCreate('cliente');
         Role::findByName('Cliente')->givePermissionTo('cliente');
         Http::fake(function ($request) {
@@ -69,7 +71,7 @@ class KalendiaBookingTest extends TestCase
                     ['time' => '10:30', 'staff_id' => 'stf_lawyer'], ['time' => '10:31', 'staff_id' => 'stf_lawyer']]]]);
             if ($request->method() === 'GET' && str_ends_with($path, '/appointments')) {
                 if ($this->meetingLinkReadFails) return Http::response([], 503);
-                return Http::response(['data' => ['items' => [['id' => 'apt_fake', 'client_id' => $this->meetingLinkWrongCustomer ? 'cli_other' : 'cli_fake',
+                return Http::response(['data' => ['items' => [['id' => 'apt_fake_'.$this->appointmentAttempts, 'client_id' => $this->meetingLinkWrongCustomer ? 'cli_other' : 'cli_fake',
                     'service_id' => 'svc_family', 'virtual_meeting_url' => 'https://meet.example.test/recovered-link']]]]);
             }
             if ($request->method() === 'POST') {
@@ -79,7 +81,7 @@ class KalendiaBookingTest extends TestCase
                     $this->appointmentAttempts++;
                     if ($this->rejectFirstAppointment && $this->appointmentAttempts === 1) return Http::response(['error' => ['code' => 'slot_unavailable', 'message' => 'El horario ya no está disponible.']], 409);
                     if ($this->failFirstAppointment && $this->appointmentAttempts === 1) throw new ConnectionException('Simulated timeout');
-                    return Http::response(['data' => array_filter(['id' => 'apt_fake', 'status' => 'confirmed',
+                    return Http::response(['data' => array_filter(['id' => 'apt_fake_'.$this->appointmentAttempts, 'status' => 'confirmed',
                         'virtual_meeting_url' => $this->postOmitsMeetingLink ? null : 'https://meet.example.test/meeting'])]);
                 }
             }
@@ -93,10 +95,10 @@ class KalendiaBookingTest extends TestCase
         parent::tearDown();
     }
 
-    private function customer(string $serviceName = self::NAME): array
+    private function customer(string $serviceName = self::NAME, string $suffix = ''): array
     {
-        $user = User::factory()->create(['name' => 'Persona de prueba', 'email' => 'persona@example.test', 'phone' => '000000000',
-            'passport' => 'TEST-PASSPORT', 'pay' => 2, 'contrato' => 1, 'servicio' => $serviceName]);
+        $user = User::factory()->create(['name' => 'Persona de prueba', 'email' => 'persona'.$suffix.'@example.test', 'phone' => '000000000'.$suffix,
+            'passport' => 'TEST-PASSPORT'.$suffix, 'pay' => 2, 'contrato' => 1, 'servicio' => $serviceName]);
         $service = Servicio::create(['nombre' => $serviceName, 'id_hubspot' => $serviceName]);
         $invoice = Factura::create(['id_cliente' => $user->id, 'hash_factura' => 'paid-'.$user->id, 'met' => 'stripe']);
         $purchase = Compras::create(['id_user' => $user->id, 'servicio_id' => $service->id, 'servicio_hs_id' => $serviceName,
@@ -108,6 +110,113 @@ class KalendiaBookingTest extends TestCase
     {
         $slots = app(KalendiaRegistrationBookingService::class)->availableSlots($purchase, '2026-11-23');
         return ['date' => '2026-11-23', 'slot' => $slots[0]['key']];
+    }
+
+    private function validQueueInput(): array
+    {
+        return ['date' => '2026-11-23', 'slot' => hash('sha256', '2026-11-23|09:00|stf_lawyer|svc_family|America/Bogota')];
+    }
+
+    private function bookDirectly(User $user, Compras $purchase, array $input): ?KalendiaBooking
+    {
+        try {
+            return app(KalendiaRegistrationBookingService::class)->book($user, $purchase->id, $input);
+        } catch (\Illuminate\Validation\ValidationException) {
+            return null;
+        }
+    }
+
+    public function test_valid_post_is_durable_idempotent_and_does_not_contact_kalendia(): void
+    {
+        [$user, $purchase] = $this->customer();
+        $this->actingAs($user);
+        $url = route('clientes.meeting.book', $purchase->id);
+
+        for ($attempt = 0; $attempt < 8; $attempt++) {
+            $this->post($url, $this->validQueueInput())->assertRedirect(route('clientes.meetings'));
+        }
+
+        $this->assertDatabaseCount('kalendia_booking_requests', 1);
+        $this->assertSame(KalendiaBookingRequest::QUEUED, KalendiaBookingRequest::first()->status);
+        $this->get(route('clientes.meetings'))->assertOk()->assertSee('Agendando en segundo plano');
+        Http::assertNothingSent();
+        $this->assertSame([], $this->writes);
+    }
+
+    public function test_post_rejects_invalid_date_and_slot_shape_without_contacting_kalendia(): void
+    {
+        [$user, $purchase] = $this->customer();
+        $this->actingAs($user);
+        $url = route('clientes.meeting.book', $purchase->id);
+
+        $this->post($url, ['date' => '2026-11-21', 'slot' => str_repeat('a', 64)])->assertSessionHasErrors('date');
+        $this->post($url, ['date' => '2026-11-23', 'slot' => 'not-a-slot'])->assertSessionHasErrors('slot');
+
+        $this->assertDatabaseCount('kalendia_booking_requests', 0);
+        Http::assertNothingSent();
+        $this->assertSame([], $this->writes);
+    }
+
+    public function test_worker_processes_only_one_of_two_users_requests_per_invocation(): void
+    {
+        [$first, $firstPurchase] = $this->customer();
+        [$second, $secondPurchase] = $this->customer(self::NAME, '-second');
+        $this->actingAs($first)->post(route('clientes.meeting.book', $firstPurchase->id), $this->validQueueInput())->assertRedirect();
+        $this->actingAs($second)->post(route('clientes.meeting.book', $secondPurchase->id), $this->validQueueInput())->assertRedirect();
+
+        $this->artisan('kalendia:process-bookings')->assertExitCode(0);
+        $this->assertSame(1, KalendiaBookingRequest::where('status', KalendiaBookingRequest::COMPLETED)->count());
+        $this->assertSame(1, KalendiaBookingRequest::where('status', KalendiaBookingRequest::QUEUED)->count());
+        $this->assertDatabaseCount('kalendia_bookings', 1);
+
+        $this->artisan('kalendia:process-bookings')->assertExitCode(0);
+        $this->assertSame(2, KalendiaBookingRequest::where('status', KalendiaBookingRequest::COMPLETED)->count());
+        $this->assertDatabaseCount('kalendia_bookings', 2);
+    }
+
+    public function test_definitively_unavailable_slot_moves_to_needs_slot_without_customer_creation(): void
+    {
+        [$user, $purchase] = $this->customer();
+        $this->boundarySlot = true;
+        $this->actingAs($user)->post(route('clientes.meeting.book', $purchase->id), $this->validQueueInput())->assertRedirect();
+
+        $this->artisan('kalendia:process-bookings')->assertExitCode(0);
+
+        $this->assertSame(KalendiaBookingRequest::NEEDS_SLOT, KalendiaBookingRequest::first()->status);
+        $this->assertDatabaseCount('kalendia_bookings', 0);
+        $this->assertSame([], $this->writes);
+    }
+
+    public function test_temporary_provider_failure_retries_after_one_minute_and_creates_one_appointment(): void
+    {
+        [$user, $purchase] = $this->customer();
+        $this->failFirstAppointment = true;
+        $this->actingAs($user)->post(route('clientes.meeting.book', $purchase->id), $this->validQueueInput())->assertRedirect();
+
+        $this->artisan('kalendia:process-bookings')->assertExitCode(0);
+        $request = KalendiaBookingRequest::first();
+        $this->assertSame(KalendiaBookingRequest::QUEUED, $request->status);
+        $this->assertSame(1, $request->attempts);
+        $this->assertCount(2, $this->writes);
+        $this->artisan('kalendia:process-bookings')->assertExitCode(0);
+        $this->assertSame(1, KalendiaBookingRequest::first()->attempts);
+        $this->travel(1)->minutes();
+        $this->artisan('kalendia:process-bookings')->assertExitCode(0);
+        $this->assertSame(KalendiaBookingRequest::COMPLETED, KalendiaBookingRequest::first()->status);
+        $this->assertDatabaseCount('kalendia_bookings', 1);
+        $this->assertSame(1, \App\Models\KalendiaAppointment::count());
+    }
+
+    public function test_worker_rechecks_purchase_eligibility_before_contacting_kalendia(): void
+    {
+        [$user, $purchase] = $this->customer();
+        $this->actingAs($user)->post(route('clientes.meeting.book', $purchase->id), $this->validQueueInput())->assertRedirect();
+        $purchase->forceFill(['pagado' => 0])->save();
+
+        $this->artisan('kalendia:process-bookings')->assertExitCode(0);
+
+        $this->assertSame(KalendiaBookingRequest::REVIEW, KalendiaBookingRequest::first()->status);
+        $this->assertSame([], $this->writes);
     }
 
     public function test_a_guest_cannot_access_the_agenda(): void
@@ -184,7 +293,7 @@ class KalendiaBookingTest extends TestCase
         [$user,$purchase]=$this->customer();$this->boundarySlot=true;
         $slots=app(KalendiaRegistrationBookingService::class)->availableSlots($purchase,'2027-03-19','Europe/Madrid');
         $this->assertCount(1,$slots);$this->assertSame('01:00',$slots[0]['display_time']);$this->assertSame('2027-03-18',$slots[0]['date']);
-        $this->actingAs($user)->post(route('clientes.meeting.book',$purchase->id),['date'=>'2027-03-19','timezone'=>'Europe/Madrid','slot'=>$slots[0]['key']])->assertRedirect();
+        $this->bookDirectly($user, $purchase, ['date'=>'2027-03-19','timezone'=>'Europe/Madrid','slot'=>$slots[0]['key']]);
         $this->assertSame('2027-03-18',$this->writes[1]['body']['date']);$this->assertSame('19:00',$this->writes[1]['body']['time']);
         $this->assertSame('America/Bogota',$this->writes[1]['body']['timezone']);$this->assertSame('Europe/Madrid',$this->writes[0]['body']['timezone']);
     }
@@ -193,8 +302,8 @@ class KalendiaBookingTest extends TestCase
     {
         [$user, $purchase, $invoice] = $this->customer();
         $input = $this->choice($purchase) + ['monto' => 1, 'customer' => ['email' => 'forged@example.test'], 'staff_id' => 'stf_wrong'];
-        $this->actingAs($user)->post(route('clientes.meeting.book', $purchase->id), $input)->assertRedirect(route('clientes.meetings'));
-        $this->post(route('clientes.meeting.book', $purchase->id), $input)->assertRedirect();
+        $this->bookDirectly($user, $purchase, $input);
+        $this->bookDirectly($user, $purchase, $input);
         $this->assertCount(2, $this->writes);
         $this->assertStringEndsWith('/customers', $this->writes[0]['path']);
         $this->assertSame('TEST-PASSPORT', $this->writes[0]['body']['properties']['cf_nopasaporte']);
@@ -215,22 +324,22 @@ class KalendiaBookingTest extends TestCase
     {
         [$user, $purchase] = $this->customer();
         $this->failFirstAppointment = true;
-        $this->actingAs($user)->post(route('clientes.meeting.book', $purchase->id), $this->choice($purchase))->assertSessionHasErrors('booking');
+        $input = $this->choice($purchase);
+        $this->bookDirectly($user, $purchase, $input);
         $this->assertSame('uncertain', KalendiaBooking::first()->status);
-        $this->post(route('clientes.meeting.book', $purchase->id), ['date' => '2026-11-24', 'slot' => str_repeat('b', 64)])->assertRedirect();
+        $this->bookDirectly($user, $purchase, ['date' => '2026-11-24', 'slot' => str_repeat('b', 64)]);
         $appointments = array_values(array_filter($this->writes, fn ($write) => str_ends_with($write['path'], '/appointments')));
         $this->assertCount(2, $appointments);
         $this->assertSame($appointments[0]['key'], $appointments[1]['key']);
         $this->assertSame($appointments[0]['body'], $appointments[1]['body']);
         $this->assertCount(3, $this->writes);
-        $this->assertSame('apt_fake', KalendiaBooking::first()->remote_id);
+        $this->assertSame('apt_fake_2', KalendiaBooking::first()->remote_id);
     }
 
     public function test_unavailable_or_forged_slots_cannot_create_a_customer_or_appointment(): void
     {
         [$user, $purchase] = $this->customer();
-        $this->actingAs($user)->post(route('clientes.meeting.book', $purchase->id), ['date' => '2026-11-23', 'slot' => str_repeat('a', 64)])
-            ->assertSessionHasErrors('slot');
+        $this->bookDirectly($user, $purchase, ['date' => '2026-11-23', 'slot' => str_repeat('a', 64)]);
         $this->assertSame([], $this->writes);
         $this->assertDatabaseCount('kalendia_bookings', 0);
     }
@@ -241,8 +350,7 @@ class KalendiaBookingTest extends TestCase
         [$user, $purchase] = $this->customer();
         $this->remotePrice = $price;
         config(['kalendia.prepaid_payment_method' => null]);
-        $this->actingAs($user)->post(route('clientes.meeting.book', $purchase->id), ['date' => '2026-11-23', 'slot' => str_repeat('a', 64)])
-            ->assertSessionHasErrors('booking');
+        $this->bookDirectly($user, $purchase, ['date' => '2026-11-23', 'slot' => str_repeat('a', 64)]);
         Http::assertNotSent(fn ($request) => $request->method() === 'POST');
         $this->assertSame([], $this->writes);
     }
@@ -257,7 +365,7 @@ class KalendiaBookingTest extends TestCase
         $this->liveSlotShape = true;
         config(['kalendia.prepaid_payment_method' => null]);
         $this->actingAs($user)->get('/mi-reunion')->assertOk()->assertSee('data-booking-ready="1"', false);
-        $this->post(route('clientes.meeting.book', $purchase->id), $this->choice($purchase))->assertRedirect();
+        $this->bookDirectly($user, $purchase, $this->choice($purchase));
         $this->assertCount(2, $this->writes);
         $body = $this->writes[1]['body'];
         $this->assertArrayNotHasKey('payment_method', $body);
@@ -283,9 +391,10 @@ class KalendiaBookingTest extends TestCase
     {
         [$user, $purchase] = $this->customer();
         $this->postOmitsMeetingLink = true;
-        $this->actingAs($user)->post(route('clientes.meeting.book', $purchase->id), $this->choice($purchase))->assertRedirect();
+        $this->bookDirectly($user, $purchase, $this->choice($purchase));
         $this->assertSame('https://meet.example.test/recovered-link', KalendiaBooking::first()->meeting_url);
         $this->assertCount(2, $this->writes);
+        $this->actingAs($user);
         $this->get('/mi-reunion')->assertRedirect(route('clientes.meetings'));
         $this->get('/mis-reuniones')->assertOk()->assertSee('https://meet.example.test/recovered-link');
     }
@@ -295,33 +404,15 @@ class KalendiaBookingTest extends TestCase
         [$user, $purchase] = $this->customer();
         $url = route('clientes.meeting.book', $purchase->id);
         $this->actingAs($user)->post($url, $this->choice($purchase))->assertRedirect(route('clientes.meetings'));
+        $this->artisan('kalendia:process-bookings')->assertExitCode(0);
 
         for ($attempt = 0; $attempt < 5; $attempt++) {
             $this->post($url)->assertRedirect(route('clientes.meetings'));
         }
 
-        $this->post($url)->assertStatus(303)->assertRedirect(route('clientes.meetings'))
-            ->assertSessionHas('success', 'Tu reserva ya está registrada. Aquí puedes consultar su estado.');
+        $this->post($url)->assertRedirect(route('clientes.meetings'));
         $this->assertDatabaseCount('kalendia_bookings', 1);
         $this->assertCount(2, $this->writes);
-    }
-
-    public function test_exceeding_the_limit_before_booking_shows_a_warning_in_my_meetings(): void
-    {
-        [$user, $purchase] = $this->customer();
-        $url = route('clientes.meeting.book', $purchase->id);
-        $this->actingAs($user);
-
-        for ($attempt = 0; $attempt < 6; $attempt++) {
-            $this->post($url)->assertSessionHasErrors('date');
-        }
-
-        $this->post($url)->assertStatus(303)->assertRedirect(route('clientes.meetings'));
-        $this->get(route('clientes.meetings'))->assertOk()
-            ->assertSee('Espera unos segundos antes de volver a agendar tu reunión.');
-        $this->postJson($url)->assertTooManyRequests()->assertHeader('Retry-After');
-        $this->assertDatabaseCount('kalendia_bookings', 0);
-        $this->assertSame([], $this->writes);
     }
 
     #[DataProvider('failedLinkReads')]
@@ -331,8 +422,8 @@ class KalendiaBookingTest extends TestCase
         $this->postOmitsMeetingLink = true;
         $this->meetingLinkReadFails = $failure;
         $this->meetingLinkWrongCustomer = $wrongOwner;
-        $this->actingAs($user)->post(route('clientes.meeting.book', $purchase->id), $this->choice($purchase))->assertRedirect();
-        $this->post(route('clientes.meeting.book', $purchase->id))->assertRedirect();
+        $this->bookDirectly($user, $purchase, $this->choice($purchase));
+        $this->bookDirectly($user, $purchase, []);
         $booking = KalendiaBooking::first();
         $this->assertSame('booked', $booking->status);
         $this->assertNull($booking->meeting_url);
@@ -347,11 +438,9 @@ class KalendiaBookingTest extends TestCase
         $this->remotePrice = 0;
         config(['kalendia.prepaid_payment_method' => null]);
         $this->failFirstAppointment = true;
-        $this->actingAs($user)->post(route('clientes.meeting.book', $purchase->id), $this->choice($purchase))->assertSessionHasErrors('booking');
+        $this->bookDirectly($user, $purchase, $this->choice($purchase));
         $this->remotePrice = 375;
-        \Illuminate\Support\Facades\Cache::flush();
-        $this->get('/mi-reunion')->assertOk()->assertSee('Comprobar reserva')->assertViewHas('bookingReady', true);
-        $this->post(route('clientes.meeting.book', $purchase->id))->assertRedirect();
+        $this->bookDirectly($user, $purchase, []);
         $appointments = array_values(array_filter($this->writes, fn ($write) => str_ends_with($write['path'], '/appointments')));
         $this->assertCount(2, $appointments);
         $this->assertSame($appointments[0], $appointments[1]);
@@ -387,7 +476,7 @@ class KalendiaBookingTest extends TestCase
         [$user, $purchase] = $this->customer();
         $purchase->servicio->update(['nombre' => 'Nacionalidad portuguesa por cónyuge']);
         $this->actingAs($user)->get('/mi-reunion')->assertOk()->assertSee('La agenda de este servicio todavía no está disponible');
-        $this->post(route('clientes.meeting.book', $purchase->id), ['date' => '2026-11-23', 'slot' => str_repeat('a', 64)])->assertSessionHasErrors('slot');
+        $this->bookDirectly($user, $purchase, ['date' => '2026-11-23', 'slot' => str_repeat('a', 64)]);
         $this->assertSame([], $this->writes);
     }
 
@@ -395,9 +484,9 @@ class KalendiaBookingTest extends TestCase
     {
         [$user, $purchase] = $this->customer();
         $this->failFirstAppointment = true;
-        $this->actingAs($user)->post(route('clientes.meeting.book', $purchase->id), $this->choice($purchase))->assertSessionHasErrors('booking');
+        $this->bookDirectly($user, $purchase, $this->choice($purchase));
         KalendiaBooking::first()->forceFill(['status' => 'processing', 'leased_until' => now()->addMinute()])->save();
-        $this->post(route('clientes.meeting.book', $purchase->id))->assertSessionHasErrors('booking');
+        $this->bookDirectly($user, $purchase, []);
         $this->assertCount(2, $this->writes);
     }
 
@@ -405,11 +494,11 @@ class KalendiaBookingTest extends TestCase
     {
         [$user, $purchase] = $this->customer();
         $this->rejectFirstAppointment = true;
-        $this->actingAs($user)->post(route('clientes.meeting.book', $purchase->id), $this->choice($purchase))->assertSessionHasErrors('booking');
+        $this->bookDirectly($user, $purchase, $this->choice($purchase));
         $this->assertSame('rejected', KalendiaBooking::first()->status);
         $this->assertSame(409, KalendiaBooking::first()->last_http_status);
         $choices = app(KalendiaRegistrationBookingService::class)->availableSlots($purchase, '2026-11-24');
-        $this->post(route('clientes.meeting.book', $purchase->id), ['date' => '2026-11-24', 'slot' => $choices[0]['key']])->assertRedirect();
+        $this->bookDirectly($user, $purchase, ['date' => '2026-11-24', 'slot' => $choices[0]['key']]);
         $appointments = array_values(array_filter($this->writes, fn ($write) => str_ends_with($write['path'], '/appointments')));
         $this->assertNotSame($appointments[0]['key'], $appointments[1]['key']);
         $this->assertSame('booked', KalendiaBooking::first()->status);
@@ -491,6 +580,7 @@ class KalendiaBookingTest extends TestCase
     {
         [$user, $purchase] = $this->customer();
         $this->actingAs($user)->post(route('clientes.meeting.book', $purchase->id), $this->choice($purchase))->assertRedirect(route('clientes.meetings'));
+        $this->artisan('kalendia:process-bookings')->assertExitCode(0);
         $this->get('/')->assertRedirect(route('clientes.status'));
         $this->get('/mi-reunion')->assertRedirect(route('clientes.meetings'));
         $this->assertFalse(\Illuminate\Support\Facades\Gate::forUser($user)->allows('registration.meeting'));
@@ -504,6 +594,7 @@ class KalendiaBookingTest extends TestCase
     {
         [$user, $purchase] = $this->customer();
         $this->actingAs($user)->post(route('clientes.meeting.book', $purchase->id), $this->choice($purchase))->assertRedirect();
+        $this->artisan('kalendia:process-bookings')->assertExitCode(0);
         $second = Compras::create($purchase->only(['id_user','servicio_id','servicio_hs_id','monto','pagado','hash_factura','metadata']));
         $this->post(route('clientes.meeting.book',$second->id), ['date'=>'2026-11-23','slot'=>str_repeat('a',64)])->assertForbidden();
         $this->assertCount(2,$this->writes);
@@ -513,9 +604,10 @@ class KalendiaBookingTest extends TestCase
     public function test_an_uncertain_initial_booking_blocks_a_parallel_initial_purchase(): void
     {
         [$user, $purchase] = $this->customer(); $this->failFirstAppointment = true;
-        $this->actingAs($user)->post(route('clientes.meeting.book', $purchase->id), $this->choice($purchase))->assertSessionHasErrors('booking');
+        $this->actingAs($user)->post(route('clientes.meeting.book', $purchase->id), $this->choice($purchase))->assertRedirect();
+        $this->artisan('kalendia:process-bookings')->assertExitCode(0);
         $second = Compras::create($purchase->only(['id_user','servicio_id','servicio_hs_id','monto','pagado','hash_factura','metadata']));
-        $this->post(route('clientes.meeting.book',$second->id), $this->choice($second))->assertSessionHasErrors('booking');
+        $this->post(route('clientes.meeting.book',$second->id), $this->choice($second))->assertRedirect(route('clientes.meetings'));
         $this->assertCount(2,$this->writes);$this->assertDatabaseCount('kalendia_bookings',1);
     }
 

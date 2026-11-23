@@ -32,6 +32,7 @@ class KalendiaConsultationsTest extends TestCase
         Schema::table('facturas', function ($t) { $t->string('idcharge')->nullable(); $t->string('idcus')->nullable(); });
         $this->artisan('migrate', ['--path'=>['database/migrations/2026_11_20_180000_create_kalendia_bookings_table.php',
             'database/migrations/2026_11_20_190000_create_kalendia_consultation_management_tables.php']])->assertExitCode(0);
+        $this->artisan('migrate', ['--path'=>'database/migrations/2026_11_23_190000_create_kalendia_booking_requests_table.php'])->assertExitCode(0);
         Role::findOrCreate('Administrador'); Permission::findOrCreate('cliente'); Role::findByName('Cliente')->givePermissionTo('cliente');
         $this->stripe = new FakeKalendiaStripeGateway;
         $this->app->instance(KalendiaStripeGateway::class, $this->stripe);
@@ -150,6 +151,7 @@ class KalendiaConsultationsTest extends TestCase
         $this->actingAs($user)->get(route('clientes.consultations.reserve',$purchase))->assertOk();
         $slots=app(\App\Services\KalendiaRegistrationBookingService::class)->availableSlots(Compras::first(),'2027-03-19');
         $this->post(route('clientes.meeting.book',$purchase),['date'=>'2027-03-19','slot'=>$slots[0]['key']])->assertRedirect(route('clientes.meetings'));
+        $this->artisan('kalendia:process-bookings')->assertExitCode(0);
         $this->get('/mis-reuniones')->assertOk()->assertSee('https://meet.example.test/own');
         $this->assertSame('Reunión programada',app(KalendiaAppointmentService::class)->summary($user)['status']);
         $this->assertDatabaseCount('compras',1);

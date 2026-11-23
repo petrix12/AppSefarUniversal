@@ -42,13 +42,16 @@
                     @endif
                 </div>
             @elseif($booking && in_array($booking->status, ['processing', 'uncertain'], true))
-                <div class="alert alert-info">Estamos comprobando tu reserva. Puedes repetir la comprobación; se utilizará la misma solicitud.</div>
+                <div class="alert alert-info">La reserva anterior sigue pendiente de comprobación. Puedes solicitar una comprobación en segundo plano; su resultado aparecerá en Mis reuniones.</div>
                 <form method="POST" action="{{ route('clientes.meeting.book', $purchase->id) }}">@csrf
-                    <button class="btn btn-primary" type="submit" @disabled(!$bookingReady)>Comprobar reserva</button>
+                    <button class="btn btn-primary" type="submit" @disabled(!$bookingReady)>Solicitar comprobación</button>
                 </form>
             @elseif(!$remoteService || $agendaUnavailable)
                 <div class="alert alert-info mb-0">La agenda de este servicio todavía no está disponible. Tu pago se conserva. Puedes continuar con tu expediente y consultar tus reservas desde «Mis reuniones».</div>
             @else
+                @if(($queuedRequest?->status ?? null) === 'needs_slot')
+                    <div class="alert alert-warning" role="status">No encontramos disponibilidad para el horario anterior. Elige una nueva fecha y hora para volver a enviar la solicitud.</div>
+                @endif
                 @unless($bookingReady)
                     <div class="alert alert-info">Estamos habilitando las reservas con el pago que ya realizaste. Puedes consultar los horarios disponibles; no se solicitará un nuevo pago.</div>
                 @endunless
@@ -70,7 +73,7 @@
                         </div>
                     </div>
                     <p data-agenda-status role="status" aria-live="polite" class="text-muted"></p>
-                    <button class="btn btn-primary" type="submit" data-agenda-submit disabled>Reservar mi reunión</button>
+                    <button class="btn btn-primary" type="submit" data-agenda-submit disabled>Enviar solicitud de reunión</button>
                 </form>
             @endif
         </div>

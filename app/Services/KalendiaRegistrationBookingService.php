@@ -121,6 +121,7 @@ class KalendiaRegistrationBookingService
         $purchase = $this->purchase($user, $purchaseId);
         if (! Schema::hasTable('kalendia_bookings')) throw ValidationException::withMessages(['booking' => 'La agenda se está preparando. Tu pago se conserva; inténtalo más tarde.']);
         $prior = KalendiaBooking::where('compra_id', $purchase->id)->first();
+        abort_if($prior && (int) $prior->user_id !== (int) $user->id, 409);
         if ($prior?->remote_id) return $prior;
         $retry = $prior && in_array($prior->status, ['processing', 'uncertain'], true);
         $service = $retry ? null : $this->remoteService($purchase);
@@ -155,7 +156,9 @@ class KalendiaRegistrationBookingService
         }
 
         [$booking, $replaying] = DB::transaction(function () use ($purchase, $user, $payload, $service, $slot, $input) {
-            User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+            $owner = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+            abort_unless($owner->hasRole('Cliente') && ! $owner->hasIndividualClientBlock()
+                && (int) $owner->pay === 2 && (int) $owner->contrato === 1, 403);
             if ($purchase->source !== \App\Models\KalendiaConsultationOrder::SOURCE) {
                 $other = KalendiaBooking::where('user_id', $user->id)->where('compra_id', '!=', $purchase->id)
                     ->whereHas('purchase', fn ($q) => $q->where(fn ($source) => $source->whereNull('source')->orWhere('source', '!=', \App\Models\KalendiaConsultationOrder::SOURCE)))
@@ -167,6 +170,7 @@ class KalendiaRegistrationBookingService
             abort_unless($locked->pagado && (int) $locked->id_user === (int) $user->id
                 && $locked->hash_factura === $purchase->hash_factura && $locked->monto === $purchase->monto, 409);
             $booking = KalendiaBooking::where('compra_id', $purchase->id)->lockForUpdate()->first();
+            abort_if($booking && (int) $booking->user_id !== (int) $user->id, 409);
             if ($booking?->remote_id) return [$booking, false];
             if ($booking?->status === 'processing' && $booking->leased_until?->isFuture()) {
                 throw ValidationException::withMessages(['booking' => 'Estamos procesando tu reserva. Espera unos segundos antes de volver a consultar.']);

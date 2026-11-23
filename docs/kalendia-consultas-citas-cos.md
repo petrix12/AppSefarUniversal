@@ -6,6 +6,8 @@ La reunión inicial de las cuatro modalidades de nacionalidad se ofrece después
 
 Las consultas adicionales se contratan desde **Contratar consulta** (`/consultas`). Los enlaces de consultas del catálogo anterior redirigen a este flujo; los demás productos conservan su catálogo. El historial de calendarios locales se conserva. Cada modalidad tiene nombre, tipo, descripción, servicio de Kalendia y precio en EUR con dos decimales. Se pueden crear varios precios/modalidades asociados al mismo servicio remoto. Un precio vacío o cero mantiene deshabilitados tanto el botón como la compra directa. No se copiaron automáticamente los precios de Kalendia ni se publicaron consultas con un precio supuesto.
 
+Al enviar el horario, la App guarda una solicitud por compra y abre **Mis reuniones**. El programador ejecuta `kalendia:process-bookings` cada minuto y toma una solicitud por ejecución. Comprueba la disponibilidad y crea la cita en Kalendia. Los fallos temporales se reintentan con la misma referencia de reserva y, si se agotan los intentos, la solicitud queda en revisión. Si Kalendia rechaza el horario por falta de disponibilidad, el cliente puede elegir otro desde **Mis reuniones**.
+
 El administrador configura las modalidades en **Agenda y consultas → Consultas y precios** (`/admin/kalendia/consultas`). El servicio remoto debe estar configurado a cero, como las reuniones incluidas probadas, o tener un método para pagos externos confirmado por Kalendia. Un servicio con cobro remoto sin ese método queda protegido para evitar solicitar otro pago.
 
 El flujo de consulta es **elegir modalidad → pagar en la App con Stripe → comprobar pago → agendar con Kalendia**. La orden conserva un importe fijo y un identificador de pago al reintentar. La App verifica importe, moneda, titular y referencia con Stripe; la respuesta del navegador no confirma pagos. Se reutilizan el comprobante y la compra confirmada, sin duplicarlos. El cobro de una consulta conserva los estados del registro y contrato. Los pagos de consulta usan su propia referencia CRM y no aumentan las fases o saldos del negocio de nacionalidad.
@@ -88,7 +90,7 @@ En SSH:
 ```bash
 cd /home/xzysctv/gitproyects/app/AppSefarUniversal
 php artisan config:clear
-php artisan migrate --force --path=database/migrations/2026_11_20_180000_create_kalendia_bookings_table.php --path=database/migrations/2026_11_20_190000_create_kalendia_consultation_management_tables.php
+php artisan migrate --force --path=database/migrations/2026_11_20_180000_create_kalendia_bookings_table.php --path=database/migrations/2026_11_20_190000_create_kalendia_consultation_management_tables.php --path=database/migrations/2026_11_23_190000_create_kalendia_booking_requests_table.php
 php artisan kalendia:check
 php artisan kalendia:sync-appointments
 ```

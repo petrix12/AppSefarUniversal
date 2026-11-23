@@ -1,7 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Models\{KalendiaBooking, KalendiaConsultationOffer, KalendiaConsultationOrder};
+use App\Models\{KalendiaBooking, KalendiaBookingRequest, KalendiaConsultationOffer, KalendiaConsultationOrder};
 use App\Services\{KalendiaApiException, KalendiaAppointmentService, KalendiaConsultationCheckout, KalendiaRegistrationBookingService};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -16,7 +16,9 @@ class ClientConsultationController extends Controller
             ->orderByDesc('starts_at')->paginate(20)->withQueryString() : collect();
         $orders = Schema::hasTable('kalendia_consultation_orders') ? KalendiaConsultationOrder::where('user_id', $request->user()->id)
             ->with('purchase.kalendiaBooking')->latest()->paginate(10, ['*'], 'orders_page')->withQueryString() : collect();
-        return response()->view('kalendia.client.meetings', compact('summary', 'orders'))->header('Cache-Control', 'private, no-store');
+        $bookingRequests = Schema::hasTable('kalendia_booking_requests') ? KalendiaBookingRequest::where('user_id', $request->user()->id)
+            ->whereIn('status', ['queued', 'processing', 'needs_slot', 'review'])->with('purchase.servicio')->latest()->get() : collect();
+        return response()->view('kalendia.client.meetings', compact('summary', 'orders', 'bookingRequests'))->header('Cache-Control', 'private, no-store');
     }
     public function catalog(Request $request, KalendiaConsultationCheckout $checkout)
     {
@@ -66,15 +68,24 @@ class ClientConsultationController extends Controller
     {
         $purchase = $service->purchase($request->user(), $purchase);
         abort_unless($request->user()->hasRole('Cliente') && $purchase->source === KalendiaConsultationOrder::SOURCE, 404);
-        $booking = KalendiaBooking::where('compra_id', $purchase->id)->first();
+        $schemaReady = Schema::hasTable('kalendia_bookings');
+        $queueReady = Schema::hasTable('kalendia_booking_requests');
+        $booking = $schemaReady ? KalendiaBooking::where('compra_id', $purchase->id)->first() : null;
         if ($booking?->remote_id) return redirect()->route('clientes.meetings');
-        $purchases = collect([$purchase]); $remoteService = null; $agendaUnavailable = false;
-        try { $remoteService = $service->remoteService($purchase); } catch (KalendiaApiException) { $agendaUnavailable = true; }
-        $bookingReady = $service->bookingReady($remoteService);
+        $queuedRequest = $queueReady ? KalendiaBookingRequest::where('user_id', $request->user()->id)
+            ->where('compra_id', $purchase->id)->first() : null;
+        if ($queuedRequest && in_array($queuedRequest->status, KalendiaBookingRequest::ACTIVE_STATUSES, true)) {
+            return redirect()->route('clientes.meetings')->with('info', 'Tu solicitud de consulta está en curso. Puedes consultar su estado en Mis reuniones.');
+        }
+        $purchases = collect([$purchase]); $remoteService = null; $agendaUnavailable = ! $schemaReady || ! $queueReady;
+        try {
+            if (! $agendaUnavailable) $remoteService = $service->remoteService($purchase);
+        } catch (KalendiaApiException) { $agendaUnavailable = true; }
+        $bookingReady = ! $agendaUnavailable && $service->bookingReady($remoteService);
         if ($booking && in_array($booking->status, ['processing','uncertain'], true)) {
-            $bookingReady = app(\App\Services\KalendiaApi::class)->configured();
+            $bookingReady = $queueReady && app(\App\Services\KalendiaApi::class)->configured();
         }
         $continueUrl = route('clientes.meetings'); $continueLabel = 'Volver a mis reuniones'; $today = now('America/Bogota')->format('Y-m-d');
-        return response()->view('clientes.meeting', compact('purchase', 'purchases', 'booking', 'remoteService', 'agendaUnavailable', 'bookingReady', 'continueUrl', 'continueLabel', 'today'))->header('Cache-Control', 'private, no-store');
+        return response()->view('clientes.meeting', compact('purchase', 'purchases', 'booking', 'queuedRequest', 'remoteService', 'agendaUnavailable', 'bookingReady', 'continueUrl', 'continueLabel', 'today'))->header('Cache-Control', 'private, no-store');
     }
 }

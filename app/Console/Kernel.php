@@ -26,6 +26,9 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('platforms:process-events --limit=4')->everyMinute()->withoutOverlapping(5)->runInBackground();
         $schedule->command('platforms:sync --limit=2')->everyMinute()->withoutOverlapping(5)->runInBackground();
+        $schedule->command('kalendia:process-bookings')->everyMinute()
+            ->when(fn () => filled(config('kalendia.token')))
+            ->withoutOverlapping(10)->runInBackground();
         $schedule->command('kalendia:process-webhooks --limit=4')->everyMinute()
             ->when(fn () => filled(config('kalendia.token')) && filled(config('kalendia.webhook_secret')))
             ->withoutOverlapping(5)->runInBackground();

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\KalendiaBooking;
+use App\Models\KalendiaBookingRequest;
 use App\Services\KalendiaApi;
 use App\Services\KalendiaApiException;
+use App\Services\KalendiaBookingQueue;
 use App\Services\KalendiaRegistrationBookingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -32,20 +34,30 @@ class ClientMeetingController extends Controller
         $purchase = $request->filled('purchase') ? $purchases->firstWhere('id', (int) $request->query('purchase'))
             : ($pendingId ? $purchases->firstWhere('id', $pendingId) : $purchases->first());
         abort_unless($purchase, 404);
+        $queuedRequest = null;
+        $queueReady = Schema::hasTable('kalendia_booking_requests');
+        if ($queueReady) {
+            $requests = KalendiaBookingRequest::where('user_id', $request->user()->id);
+            if ((clone $requests)->whereIn('compra_id', $purchases->pluck('id'))
+                ->whereIn('status', KalendiaBookingRequest::ACTIVE_STATUSES)->exists()) {
+                return redirect()->route('clientes.meetings');
+            }
+            $queuedRequest = $requests->where('compra_id', $purchase->id)->first();
+        }
         $schemaReady = Schema::hasTable('kalendia_bookings');
         $booking = $schemaReady ? KalendiaBooking::where('user_id', $request->user()->id)->where('compra_id', $purchase->id)->first() : null;
         $remoteService = null;
-        $agendaUnavailable = ! $schemaReady;
+        $agendaUnavailable = ! $schemaReady || ! $queueReady;
         try {
-            if ($schemaReady && ! $booking?->remote_id) $remoteService = $service->remoteService($purchase);
+            if (! $agendaUnavailable && ! $booking?->remote_id) $remoteService = $service->remoteService($purchase);
         } catch (KalendiaApiException) { $agendaUnavailable = true; }
-        $bookingReady = $schemaReady && $service->bookingReady($remoteService);
+        $bookingReady = ! $agendaUnavailable && $service->bookingReady($remoteService);
         if ($booking && in_array($booking->status, ['processing', 'uncertain'], true)) {
-            $bookingReady = $schemaReady && app(KalendiaApi::class)->configured();
+            $bookingReady = $queueReady && app(KalendiaApi::class)->configured();
         }
         $continueUrl = route('clientes.status');
         $today = now(config('kalendia.timezone'))->format('Y-m-d');
-        return response()->view('clientes.meeting', compact('purchases', 'purchase', 'booking', 'remoteService',
+        return response()->view('clientes.meeting', compact('purchases', 'purchase', 'booking', 'queuedRequest', 'remoteService',
             'agendaUnavailable', 'bookingReady', 'continueUrl', 'today'))->header('Cache-Control', 'private, no-store');
     }
 
@@ -63,10 +75,18 @@ class ClientMeetingController extends Controller
             ->header('Cache-Control', 'private, no-store');
     }
 
-    public function book(Request $request, int $purchase, KalendiaRegistrationBookingService $service)
+    public function book(Request $request, int $purchase, KalendiaBookingQueue $queue)
     {
         abort_unless($request->user()->hasRole('Cliente'), 403);
-        $service->book($request->user(), $purchase, $request->only(['date', 'slot', 'timezone']));
-        return redirect()->route('clientes.meetings')->with('success', 'La agenda ha recibido tu reserva.');
+        $result = $queue->enqueue($request->user(), $purchase, $request->only(['date', 'slot', 'timezone']));
+        $redirect = redirect()->route('clientes.meetings', [], 303);
+        if ($result === null) {
+            return $redirect->with('info', 'Esta reunión ya está reservada.');
+        }
+        if ($result->status === KalendiaBookingRequest::REVIEW) {
+            return $redirect->with('info', 'Tu solicitud ya está registrada y requiere revisión del equipo.');
+        }
+
+        return $redirect->with('success', 'Recibimos tu solicitud. Puedes salir de esta página y consultar el estado en Mis reuniones.');
     }
 }

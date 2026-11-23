@@ -929,9 +929,9 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
         Route::get('consultas/reservar/{purchase}', [\App\Http\Controllers\ClientConsultationController::class, 'reserve'])->whereNumber('purchase')->middleware('can:cliente')->name('consultations.reserve');
         Route::get('mi-reunion', [\App\Http\Controllers\ClientMeetingController::class, 'listing'])->name('meeting')->middleware('can:cliente');
         Route::get('mi-reunion/disponibilidad', [\App\Http\Controllers\ClientMeetingController::class, 'availability'])
-            ->name('meeting.availability')->middleware(['can:cliente', 'throttle:60,1']);
+            ->name('meeting.availability')->middleware(['can:cliente', 'throttle:60,1,kalendia-availability']);
         Route::post('mi-reunion/{purchase}', [\App\Http\Controllers\ClientMeetingController::class, 'book'])
-            ->whereNumber('purchase')->name('meeting.book')->middleware(['can:cliente', 'throttle:kalendia-booking']);
+            ->whereNumber('purchase')->name('meeting.book')->middleware('can:cliente');
         Route::get('tree', [ClienteController::class, 'tree'])->name('tree')
             ->middleware('can:cliente');
         Route::post('google-review', [GoogleReviewInvitationController::class, 'write'])->name('google-review')

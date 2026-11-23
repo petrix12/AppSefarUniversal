@@ -85,7 +85,7 @@
         form.addEventListener('submit', function (event) {
             if (!slot.value || slot.disabled || form.dataset.bookingReady !== '1') { event.preventDefault(); return; }
             submit.disabled = true;
-            submit.textContent = 'Reservando…';
+            submit.textContent = 'Enviando solicitud…';
         });
         if (date.value) load();
     });

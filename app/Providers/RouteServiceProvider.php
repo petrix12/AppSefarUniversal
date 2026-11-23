@@ -2,13 +2,11 @@
 
 namespace App\Providers;
 
-use App\Models\KalendiaBooking;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Schema;
 
 class RouteServiceProvider extends ServiceProvider
 {
@@ -86,31 +84,6 @@ class RouteServiceProvider extends ServiceProvider
     {
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by(optional($request->user())->id ?: $request->ip());
-        });
-
-        RateLimiter::for('kalendia-booking', function (Request $request) {
-            $userId = $request->user()?->getAuthIdentifier();
-
-            return Limit::perMinute(6)->by($userId ?: $request->ip())->response(
-                static function (Request $request, array $headers) use ($userId) {
-                    $message = 'Espera unos segundos antes de volver a agendar tu reunión.';
-
-                    if ($request->expectsJson()) {
-                        return response()->json(['message' => $message], 429, $headers);
-                    }
-
-                    $hasBooking = $userId && Schema::hasTable('kalendia_bookings')
-                        && KalendiaBooking::query()->where('user_id', $userId)
-                            ->where('compra_id', $request->route('purchase'))
-                            ->whereNotNull('remote_id')->exists();
-
-                    $redirect = redirect()->route('clientes.meetings', [], 303);
-
-                    return $hasBooking
-                        ? $redirect->with('success', 'Tu reserva ya está registrada. Aquí puedes consultar su estado.')
-                        : $redirect->with('warning', $message);
-                }
-            );
         });
     }
 }
