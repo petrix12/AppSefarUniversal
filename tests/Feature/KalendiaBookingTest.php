@@ -290,6 +290,40 @@ class KalendiaBookingTest extends TestCase
         $this->get('/mis-reuniones')->assertOk()->assertSee('https://meet.example.test/recovered-link');
     }
 
+    public function test_repeated_booking_submissions_return_to_the_already_registered_meeting(): void
+    {
+        [$user, $purchase] = $this->customer();
+        $url = route('clientes.meeting.book', $purchase->id);
+        $this->actingAs($user)->post($url, $this->choice($purchase))->assertRedirect(route('clientes.meetings'));
+
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $this->post($url)->assertRedirect(route('clientes.meetings'));
+        }
+
+        $this->post($url)->assertStatus(303)->assertRedirect(route('clientes.meetings'))
+            ->assertSessionHas('success', 'Tu reserva ya está registrada. Aquí puedes consultar su estado.');
+        $this->assertDatabaseCount('kalendia_bookings', 1);
+        $this->assertCount(2, $this->writes);
+    }
+
+    public function test_exceeding_the_limit_before_booking_shows_a_warning_in_my_meetings(): void
+    {
+        [$user, $purchase] = $this->customer();
+        $url = route('clientes.meeting.book', $purchase->id);
+        $this->actingAs($user);
+
+        for ($attempt = 0; $attempt < 6; $attempt++) {
+            $this->post($url)->assertSessionHasErrors('date');
+        }
+
+        $this->post($url)->assertStatus(303)->assertRedirect(route('clientes.meetings'));
+        $this->get(route('clientes.meetings'))->assertOk()
+            ->assertSee('Espera unos segundos antes de volver a agendar tu reunión.');
+        $this->postJson($url)->assertTooManyRequests()->assertHeader('Retry-After');
+        $this->assertDatabaseCount('kalendia_bookings', 0);
+        $this->assertSame([], $this->writes);
+    }
+
     #[DataProvider('failedLinkReads')]
     public function test_failed_or_foreign_link_reads_do_not_repeat_or_invalidate_the_confirmed_creation(bool $failure, bool $wrongOwner): void
     {

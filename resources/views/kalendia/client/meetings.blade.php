@@ -3,6 +3,9 @@
 @section('content_header')<h1>Mis reuniones</h1>@stop
 @section('content')
     @include('kalendia.partials.messages')
+    @if(session('warning'))
+        <div class="alert alert-warning" role="status">{{ session('warning') }}</div>
+    @endif
     <div class="card"><div class="card-body">
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-3"><h2 class="h5 mb-2">{{ $summary['status'] }}</h2><a class="btn btn-primary" href="{{ route('clientes.consultations') }}">Contratar una consulta</a></div>
         <p class="text-muted">Consulta tus próximas reuniones, su estado y el enlace de acceso en tu hora local.</p>

@@ -931,7 +931,7 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
         Route::get('mi-reunion/disponibilidad', [\App\Http\Controllers\ClientMeetingController::class, 'availability'])
             ->name('meeting.availability')->middleware(['can:cliente', 'throttle:60,1']);
         Route::post('mi-reunion/{purchase}', [\App\Http\Controllers\ClientMeetingController::class, 'book'])
-            ->whereNumber('purchase')->name('meeting.book')->middleware(['can:cliente', 'throttle:6,1']);
+            ->whereNumber('purchase')->name('meeting.book')->middleware(['can:cliente', 'throttle:kalendia-booking']);
         Route::get('tree', [ClienteController::class, 'tree'])->name('tree')
             ->middleware('can:cliente');
         Route::post('google-review', [GoogleReviewInvitationController::class, 'write'])->name('google-review')
