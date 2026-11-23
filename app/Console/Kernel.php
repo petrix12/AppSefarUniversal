@@ -84,6 +84,23 @@ class Kernel extends ConsoleKernel
         $schedule->command('marketing:dispatch-scheduled')
             ->everyMinute()
             ->withoutOverlapping();
+        $schedule->command('queue:work', [
+            (string) config('marketing.queue_connection', 'database'),
+            '--stop-when-empty',
+            '--queue' => (string) config('marketing.queue_name', 'marketing'),
+            '--max-time' => 50,
+            '--max-jobs' => 5,
+            '--timeout' => 60,
+            '--tries' => 3,
+        ])->name('marketing-queue-worker')
+            ->everyMinute()
+            ->when(fn () => (bool) config('marketing.worker_enabled')
+                && filled(config('marketing.ses.key'))
+                && filled(config('marketing.ses.secret'))
+                && filled(config('marketing.ses.from_email')))
+            ->withoutOverlapping(5)
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/marketing-worker.log'));
         $schedule->command('systems:activity-report')
             ->dailyAt((string) config('systems_activity_report.run_at', '08:00'))
             ->timezone((string) config('systems_activity_report.timezone', 'America/Caracas'))

@@ -17,6 +17,20 @@ MARKETING_SES_REPLY_TO=contacto@tu-dominio.com
 MARKETING_SES_CONFIGURATION_SET=sefar-marketing
 MARKETING_QUEUE_CONNECTION=database
 MARKETING_QUEUE_NAME=marketing
+MARKETING_QUEUE_WORKER_ENABLED=false
 MARKETING_SES_SNS_TOPIC_ARNS=arn:aws:sns:us-east-1:CUENTA:sefar-marketing-events</pre></div></div>
-    <div class="card card-outline card-secondary"><div class="card-header"><h3 class="card-title">Eventos y analíticas de SES</h3></div><div class="card-body"><ol class="mb-0"><li>Verifica el dominio o remitente <code>MARKETING_SES_FROM_EMAIL</code> en SES y saca la cuenta del sandbox antes de enviar a toda la lista.</li><li>Crea el configuration set indicado y publica los eventos <strong>Delivery, Bounce, Complaint, Open y Click</strong> en un tópico SNS.</li><li>Suscribe este endpoint HTTPS al tópico SNS: <code>{{ $webhookUrl }}</code>.</li><li>Confirma la suscripción desde AWS y agrega el ARN del tópico a <code>MARKETING_SES_SNS_TOPIC_ARNS</code>. Actualmente hay {{ $topicsConfigured }} tópico(s) permitido(s).</li><li>Ejecuta un worker persistente: <code>php artisan queue:work database --queue=marketing --tries=3</code>.</li></ol></div></div>
+    <div class="card card-outline card-secondary">
+        <div class="card-header"><h3 class="card-title">Eventos y analíticas de SES</h3></div>
+        <div class="card-body">
+            <ol>
+                <li>Verifica el dominio o remitente <code>MARKETING_SES_FROM_EMAIL</code> en SES y solicita acceso de producción antes de enviar a toda la lista.</li>
+                <li>Crea el conjunto de configuración indicado y publica los eventos <strong>Delivery, Bounce, Complaint, Open y Click</strong> en un tópico SNS.</li>
+                <li>Agrega su ARN a <code>MARKETING_SES_SNS_TOPIC_ARNS</code> y ejecuta <code>php artisan config:clear</code>. Actualmente hay {{ $topicsConfigured }} tópico(s) permitido(s).</li>
+                <li>Suscribe este endpoint HTTPS al tópico SNS: <code>{{ $webhookUrl }}</code>. Mantén desactivada la entrega de mensajes sin procesar.</li>
+                <li>Revisa la confirmación recibida con <code>php artisan marketing:confirm-sns</code> y complétala con <code>php artisan marketing:confirm-sns --write</code>. Estos comandos no muestran el token de confirmación.</li>
+                <li>Cuando AWS apruebe el acceso de producción, activa <code>MARKETING_QUEUE_WORKER_ENABLED=true</code> y ejecuta <code>php artisan config:clear</code>. El cron del scheduler procesará la cola de campañas cada minuto, en segundo plano y sin solapar ejecuciones.</li>
+            </ol>
+            <p class="mb-0"><strong>Procesamiento programado de campañas:</strong> {{ config('marketing.worker_enabled') ? 'activado en la configuración.' : 'desactivado en la configuración.' }}</p>
+        </div>
+    </div>
 @stop

@@ -22,7 +22,7 @@ class SnsMessageVerifier
         try {
             $certificateUrl = (string) $message['SigningCertURL'];
             $certificate = Cache::remember('marketing:sns-cert:'.hash('sha256', $certificateUrl), now()->addDay(), function () use ($certificateUrl) {
-                return Http::timeout(5)->get($certificateUrl)->throw()->body();
+                return Http::timeout(5)->withOptions(['allow_redirects' => false])->get($certificateUrl)->throw()->body();
             });
             $algorithm = $message['SignatureVersion'] === '1' ? OPENSSL_ALGO_SHA1 : OPENSSL_ALGO_SHA256;
 

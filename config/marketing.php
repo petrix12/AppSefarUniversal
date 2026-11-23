@@ -14,6 +14,7 @@ return [
 
     'queue_connection' => env('MARKETING_QUEUE_CONNECTION', 'database'),
     'queue_name' => env('MARKETING_QUEUE_NAME', 'marketing'),
+    'worker_enabled' => (bool) env('MARKETING_QUEUE_WORKER_ENABLED', false),
 
     /* Comma-separated SNS topic ARNs permitted to call the public webhook. */
     'ses_sns_topic_arns' => array_values(array_filter(array_map(
