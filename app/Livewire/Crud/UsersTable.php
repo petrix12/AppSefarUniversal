@@ -35,7 +35,6 @@ class UsersTable extends Component
         'filterChatActivity' => ['except' => ''],
         'filterBlockStatus' => ['except' => 'all'],
         'filterRoles' => ['except' => []], // ✅ multi
-        'entityType' => ['except' => 'clients'],
     ];
 
     public $search = '';
@@ -68,8 +67,12 @@ class UsersTable extends Component
     public string $blockReason = '';
     public string $blockReasonOther = '';
 
-    public function mount()
+    public function mount(string $entityType = 'clients')
     {
+        abort_unless(in_array($entityType, ['clients', 'internal'], true), 404);
+        abort_if($entityType === 'internal' && ! Auth::user()?->isSuperadmin(), 403);
+        $this->entityType = $entityType;
+
         $this->loadServiciosOptimized();
 
         $this->owners = User::whereHas('roles', function ($q) {
@@ -86,9 +89,17 @@ class UsersTable extends Component
             ->toArray();
     }
 
+    public function updatingEntityType(string $entityType): void
+    {
+        abort_unless(in_array($entityType, ['clients', 'internal'], true), 404);
+        abort_if($entityType === 'internal' && ! Auth::user()?->isSuperadmin(), 403);
+    }
+
     public function render()
     {
         $authUser = Auth::user()->load('roles');
+        abort_unless(in_array($this->entityType, ['clients', 'internal'], true), 404);
+        abort_if($this->entityType === 'internal' && ! $authUser->isSuperadmin(), 403);
         $rolesIds = $authUser->roles->pluck('id')->toArray();
 
         $hasAccessBlockTable = Schema::hasTable('user_access_blocks');
@@ -136,8 +147,6 @@ class UsersTable extends Component
         app(\App\Services\ClientRestrictionService::class)->scopeVisible($query, $authUser);
 
         // Mantener separados los contactos/clientes de las cuentas internas.
-        // El modo "all" queda disponible para administradores que necesiten
-        // revisar la correspondencia completa.
         $query->when($this->entityType === 'clients', fn ($q) => $q->clients())
             ->when($this->entityType === 'internal', fn ($q) => $q->internalUsers());
 
@@ -332,7 +341,7 @@ class UsersTable extends Component
         // define quién puede ver el modal (admin o coord ventas, ajusta si quieres)
         $auth = Auth::user()->load('roles');
         $rolesIds = $auth->roles->pluck('id')->toArray();
-        if (!in_array(1, $rolesIds) && !in_array(17, $rolesIds)) abort(403);
+        if (! $auth->isSuperadmin() && ! in_array(1, $rolesIds) && ! in_array(17, $rolesIds)) abort(403);
 
         $u = User::query()
             ->select([
@@ -372,9 +381,10 @@ class UsersTable extends Component
     public function approveProveedor(int $userId)
     {
         $auth = Auth::user()->load('roles');
-        if (!$auth->roles->pluck('id')->contains(1)) abort(403);
+        if (! $auth->isSuperadmin() && ! $auth->roles->pluck('id')->contains(1)) abort(403);
 
         $user = User::findOrFail($userId);
+        abort_unless($user->isInternalUser(), 403);
         if ($user->estado_vendedor !== 'Pendiente') return;
 
         DB::transaction(function () use ($user) {
@@ -392,9 +402,11 @@ class UsersTable extends Component
     public function rejectProveedor(int $userId)
     {
         $auth = Auth::user()->load('roles');
-        if (!$auth->roles->pluck('id')->contains(1)) abort(403);
+        if (! $auth->isSuperadmin() && ! $auth->roles->pluck('id')->contains(1)) abort(403);
 
         $user = User::findOrFail($userId);
+        abort_unless($user->isInternalUser(), 403);
+        abort_if($user->isSuperadmin(), 403);
         if ($user->estado_vendedor !== 'Pendiente') return;
 
         DB::transaction(function () use ($user) {
@@ -504,7 +516,6 @@ class UsersTable extends Component
             'filterProveedor',
             'filterOwner',
             'filterRoles',
-            'entityType',
         ]);
         $this->resetPage();
     }

@@ -16,6 +16,8 @@ class CrmInternalUserController extends Controller
 {
     public function create()
     {
+        abort_unless(auth()->user()?->isSuperadmin(), 403);
+
         return view('crm.internal-users.create', [
             'roles' => Role::query()->where('guard_name', 'web')->whereNotIn('name', ['Cliente', 'Administrador'])->orderBy('name')->get(),
         ]);
@@ -23,6 +25,8 @@ class CrmInternalUserController extends Controller
 
     public function store(Request $request)
     {
+        abort_unless(auth()->user()?->isSuperadmin(), 403);
+
         $roles = Role::query()->where('guard_name', 'web')->whereNotIn('name', ['Cliente', 'Administrador'])->pluck('name')->all();
         $data = $request->validate([
             'name' => ['required', 'string', 'max:254'],
@@ -58,11 +62,23 @@ class CrmInternalUserController extends Controller
             $status = Password::RESET_THROTTLED;
         }
 
-        return redirect('/users?entityType=internal')->with(
+        return redirect()->route('crm.internal-users.index')->with(
             $status === Password::RESET_LINK_SENT ? 'success' : 'warning',
             $status === Password::RESET_LINK_SENT
                 ? 'Cuenta interna creada. Enviamos un enlace para que establezca su contraseña.'
                 : 'La cuenta interna se creó, pero no se pudo enviar el enlace. Puede solicitarlo desde «Olvidé mi contraseña». '
         );
+    }
+
+    public function destroy(User $user)
+    {
+        abort_unless(auth()->user()?->isSuperadmin(), 403);
+        abort_unless($user->isInternalUser(), 404);
+        abort_if($user->isSuperadmin(), 403, 'Retira primero la marca de superadmin.');
+
+        $name = $user->name;
+        $user->delete();
+
+        return redirect()->route('crm.internal-users.index')->with('success', "Se eliminó la cuenta interna de {$name}.");
     }
 }

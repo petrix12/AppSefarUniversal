@@ -7,15 +7,16 @@ use App\Models\CrmObjectMirrorBackfill;
 use App\Jobs\BackfillHubspotObjectPage;
 use App\Services\CrmContactMirrorService;
 use App\Services\CrmObjectMirrorService;
+use App\Services\HubspotMigrationScope;
 use App\Services\HubspotService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
 
 class MirrorHubspotObjects extends Command
 {
     protected $signature = 'crm:mirror-hubspot-objects
         {--type= : HubSpot object type, for example contacts, deals, invoices or quotes}
         {--all : Queue the standard CRM object types}
+        {--initial-crm : Queue the agreed initial CRM migration scope, including archived records}
         {--include-archived : Also queue archived records}
         {--queue : Queue a resumable backfill in small pages}
         {--status : Show queued backfill progress}
@@ -34,6 +35,14 @@ class MirrorHubspotObjects extends Command
                     ($run->last_error_class ? ' · '.$run->last_error_class : '')
                 ));
             return self::SUCCESS;
+        }
+        if ($this->option('initial-crm') && (! $this->option('queue') || ! $this->option('write'))) {
+            $this->error('--initial-crm requires --queue --write. It only reads HubSpot and writes local snapshots.');
+            return self::INVALID;
+        }
+        if ($this->option('initial-crm') && ($this->option('all') || filled($this->option('type')))) {
+            $this->error('--initial-crm cannot be combined with --all or --type.');
+            return self::INVALID;
         }
         if ($this->option('queue')) {
             return $this->queueBackfill($hubspot);
@@ -98,26 +107,19 @@ class MirrorHubspotObjects extends Command
             return self::INVALID;
         }
 
-        $types = $this->option('all')
-            ? ['contacts', 'companies', 'deals', 'tickets', 'products', 'line_items', 'quotes', 'invoices',
-                'commerce_payments', 'subscriptions', 'orders', 'calls', 'emails', 'meetings', 'notes', 'tasks', 'leads']
-            : [trim((string) $this->option('type'))];
-        if ($this->option('all')) {
-            try {
-                $types = array_values(array_unique(array_merge($types, $hubspot->listCustomObjectTypes())));
-            } catch (\Throwable $exception) {
-                Log::warning('HubSpot: no se pudo descubrir el catálogo de objetos personalizados.', [
-                    'exception_type' => $exception::class,
-                ]);
-                $this->warn('No se descubrieron objetos personalizados; se encolarán los tipos estándar.');
-            }
-        }
+        $types = $this->option('initial-crm')
+            ? HubspotMigrationScope::OBJECT_TYPES
+            : ($this->option('all')
+                ? HubspotMigrationScope::OBJECT_TYPES
+                : [trim((string) $this->option('type'))]);
         if (in_array('', $types, true) || collect($types)->contains(fn ($type) => ! preg_match('/^[a-zA-Z0-9_-]{2,80}$/', $type))) {
             $this->error('Indica --type válido o --all.');
             return self::INVALID;
         }
 
-        $archivedStates = $this->option('include-archived') ? [false, true] : [(bool) $this->option('archived')];
+        $archivedStates = $this->option('initial-crm') || $this->option('include-archived')
+            ? [false, true]
+            : [(bool) $this->option('archived')];
         $queued = 0;
         foreach ($types as $type) {
             foreach ($archivedStates as $archived) {
@@ -139,6 +141,10 @@ class MirrorHubspotObjects extends Command
         }
 
         $this->info("Backfills puestos en la cola crm-sync: {$queued}.");
+        if ($this->option('initial-crm')) {
+            $this->line('Alcance: '.implode(', ', HubspotMigrationScope::OBJECT_TYPES).'.');
+            $this->line('No incluye empresas, productos ni objetos personalizados.');
+        }
         $this->comment('Se leen 25 registros por página, se reanudan desde el cursor guardado y se aplican límites por segundo y por día.');
         $this->warn('El estado completado confirma snapshots de objetos; no confirma paridad de todas las asociaciones ni sincronización saliente de todos los tipos.');
         return self::SUCCESS;

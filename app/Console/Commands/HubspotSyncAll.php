@@ -6,16 +6,13 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Models\User;
-use HubSpot\Factory;
-use HubSpot\Client\Crm\Contacts\Model\Filter;
-use HubSpot\Client\Crm\Contacts\Model\FilterGroup;
-use HubSpot\Client\Crm\Contacts\Model\PublicObjectSearchRequest;
+use App\Services\HubspotService;
 
 class HubspotSyncAll extends Command
 {
     protected $signature = 'hubspot:sync-all
         {--dry-run            : Solo muestra cambios, no escribe en BD}
-        {--match=email        : Modo match para contactos: email|hs_id}
+        {--match=hs_id        : Modo de coincidencia para clientes: hs_id|email (email solo diagnóstico)}
         {--chunk=500          : Chunk para updates locales}
         {--limit=100          : Page size HubSpot contacts (max 100)}
         {--only-owner=        : Solo procesa un hubspot_owner_id específico}
@@ -33,7 +30,7 @@ class HubspotSyncAll extends Command
 
     protected $description = '
         [Paso 0] (Opcional) Listar owners / modo interactivo para mapear owners y resolver duplicados.
-        [Paso 1] Sincroniza HubSpot Owners → users.hubspot_owner_id (por email o por mapa).
+        [Paso 1] Sincroniza HubSpot Owners → users.hubspot_owner_id (por cruce explícito de IDs).
         [Paso 2] Por cada asesor, trae sus contactos de HubSpot y asigna users.owner_id a los clientes matcheados.
         Detecta conflictos (mismo owner_id en múltiples asesores) y owners/contactos sin par en BD.
     ';
@@ -59,7 +56,7 @@ class HubspotSyncAll extends Command
 
     public function handle(): int
     {
-        $this->hubspot   = Factory::createWithAccessToken(config('services.hubspot.key'));
+        $this->hubspot   = app(HubspotService::class);
         $this->dryRun    = (bool)  $this->option('dry-run');
         $this->matchMode = (string) $this->option('match');
         $this->chunkSize = (int)   $this->option('chunk');
@@ -67,6 +64,10 @@ class HubspotSyncAll extends Command
 
         if (!in_array($this->matchMode, ['email', 'hs_id'], true)) {
             $this->error("--match debe ser: email|hs_id");
+            return self::FAILURE;
+        }
+        if ($this->matchMode === 'email' && ! $this->option('dry-run')) {
+            $this->error('La actualización por correo está bloqueada. Usa --match=hs_id; el correo solo se admite en --dry-run para diagnóstico.');
             return self::FAILURE;
         }
 
@@ -124,148 +125,85 @@ class HubspotSyncAll extends Command
         // Siempre detecta duplicados actuales (y reporta)
         $this->detectOwnerIdConflictsInDb();
 
-        // Si el usuario quiere usar el mapa, lo usamos y SALIMOS aquí (no email-match)
+        // El cruce de responsables se basa en un mapa explícito por IDs.
         if ($this->option('use-owners-map')) {
             $this->step1SyncOwnersUsingMap();
-            return;
+        } else {
+            $this->step1SyncOwnersFromBridge();
         }
-
-        $includeArchived = (bool) $this->option('include-archived');
-        $onlyOwner       = $this->option('only-owner');
-
-        // 1a. Fetch owners desde HubSpot
-        $hsOwners = $this->fetchHsOwners($includeArchived);
-        $this->report['owners_in_hs'] = count($hsOwners);
-        $this->info("Owners en HubSpot: " . count($hsOwners));
-
-        if (empty($hsOwners)) {
-            $this->warn('  Sin owners en HubSpot.');
-            return;
-        }
-
-        // Filtro opcional
-        if ($onlyOwner) {
-            $hsOwners = array_filter($hsOwners, fn($o) => (string)$o['id'] === (string)$onlyOwner);
-            $hsOwners = array_values($hsOwners);
-            $this->info("  (Filtrado a owner_id={$onlyOwner}: " . count($hsOwners) . " owners)");
-        }
-
-        // 1b. Construir mapa email (asesor) → hs_owner_id (NORMALIZADO)
-        $ownerByEmail = []; // email_normalizado => hs_owner_id
-        foreach ($hsOwners as $o) {
-            $email = strtolower(trim((string)($o['email'] ?? '')));
-            $id    = (string)($o['id'] ?? '');
-            if ($email !== '' && $id !== '') {
-                $ownerByEmail[$email] = $id;
-            }
-        }
-
-        // 1c. Buscar users que matcheen por email con algún owner de HS
-        $emails        = array_keys($ownerByEmail);
-        $hsEmailsSet   = array_flip($emails); // para detectar unmatched
-        $dbEmailsFound = [];
-
-        $toUpdate = [];
-
-        User::query()
-            ->select(['id', 'email', 'hubspot_owner_id'])
-            ->whereIn(DB::raw('LOWER(email)'), $emails)
-            ->chunkById($this->chunkSize, function ($users) use ($ownerByEmail, &$toUpdate, &$dbEmailsFound) {
-                foreach ($users as $user) {
-                    $email    = strtolower(trim((string)$user->email));
-                    $newOwnId = $ownerByEmail[$email] ?? null;
-
-                    if (!$newOwnId) continue;
-
-                    $dbEmailsFound[$email] = true;
-                    $this->report['owners_matched']++;
-
-                    // Sin cambio → skip
-                    if ((string)($user->hubspot_owner_id ?? '') === $newOwnId) continue;
-
-                    $toUpdate[] = [
-                        'id'    => (int)$user->id,
-                        'email' => $email,
-                        'old'   => $user->hubspot_owner_id,
-                        'new'   => $newOwnId,
-                    ];
-                }
-            });
-
-        // 1d. Owners de HS sin par en BD
-        foreach ($hsEmailsSet as $email => $_) {
-            if (!isset($dbEmailsFound[$email])) {
-                foreach ($hsOwners as $o) {
-                    if (($o['email'] ?? '') === $email) {
-                        $this->report['owners_unmatched'][] = $o;
-                        break;
-                    }
-                }
-            }
-        }
-
-        $this->info("  Matcheados: {$this->report['owners_matched']}");
-        $this->info("  Sin par en BD: " . count($this->report['owners_unmatched']));
-        $this->info("  Cambios pendientes: " . count($toUpdate));
-
-        if (!empty($toUpdate)) {
-            $this->table(
-                ['user_id', 'email', 'hs_owner_id_old', 'hs_owner_id_new'],
-                array_slice(
-                    array_map(fn($r) => [$r['id'], $r['email'], $r['old'] ?? 'NULL', $r['new']], $toUpdate),
-                    0,
-                    20
-                )
-            );
-            if (count($toUpdate) > 20) {
-                $this->line('  ... (mostrando primeros 20)');
-            }
-        }
-
-        if ($this->dryRun || empty($toUpdate)) {
-            if ($this->dryRun && !empty($toUpdate)) {
-                $this->warn('  DRY-RUN: no se aplicaron cambios en hubspot_owner_id.');
-            }
-            return;
-        }
-
-        // 1e. Aplicar updates con GUARDA DE UNICIDAD:
-        // - No asignar un hs_owner_id ya usado por otro user
-        // - No reasignar si ya está igual
-        foreach (array_chunk($toUpdate, $this->chunkSize) as $chunk) {
-            foreach ($chunk as $row) {
-                $hsOwnerId = (string)$row['new'];
-
-                // Si ya existe en otro user, NO lo asignamos (regla dura)
-                $existsElsewhere = DB::table('users')
-                    ->where('hubspot_owner_id', $hsOwnerId)
-                    ->where('id', '!=', $row['id'])
-                    ->exists();
-
-                if ($existsElsewhere) {
-                    $this->warn("  ⚠️  Saltado: hs_owner_id={$hsOwnerId} ya está asignado a otro user. user_id={$row['id']} ({$row['email']})");
-                    continue;
-                }
-
-                $affected = User::query()
-                    ->where('id', $row['id'])
-                    ->where(function ($q) use ($row) {
-                        $q->whereNull('hubspot_owner_id')
-                            ->orWhere('hubspot_owner_id', '!=', $row['new']);
-                    })
-                    ->update(['hubspot_owner_id' => $row['new']]);
-
-                $this->report['owners_updated'] += $affected;
-            }
-        }
-
-        $this->info("  ✅ hubspot_owner_id actualizados: {$this->report['owners_updated']}");
     }
 
-    /**
-     * Paso 1 alterno: usa el JSON map hs_owner_id -> user_id
-     * Regla dura: 1:1 (un hs_owner_id solo puede estar en un user)
-     */
+    /** Apply the explicit HubSpot owner ID ↔ internal account crosswalk. */
+    private function step1SyncOwnersFromBridge(): void
+    {
+        $this->info('  (Mapa explícito hubspot_owner_user por ID)');
+        if (! \Illuminate\Support\Facades\Schema::hasTable('hubspot_owner_user')) {
+            $this->warn('  Falta hubspot_owner_user; no se infieren responsables por correo.');
+            return;
+        }
+
+        $internalUserIds = User::internalUsers()->select('users.id');
+        $query = DB::table('hubspot_owner_user')
+            ->whereIn('user_id', $internalUserIds)
+            ->whereNotNull('hubspot_owner_id')
+            ->whereRaw("TRIM(hubspot_owner_id) <> ''");
+        if ($this->option('only-owner')) $query->where('hubspot_owner_id', (string) $this->option('only-owner'));
+        if ($this->option('only-user')) $query->where('user_id', (int) $this->option('only-user'));
+        $mappings = $query->get(['user_id', 'hubspot_owner_id', 'hubspot_owner_name']);
+
+        $byOwner = $mappings->groupBy('hubspot_owner_id');
+        $rows = [];
+        foreach ($byOwner as $ownerId => $ownerMappings) {
+            if ($ownerMappings->count() !== 1) {
+                $this->warn("  ID de responsable ambigu en hubspot_owner_user; se omite {$ownerId}.");
+                continue;
+            }
+            $mapping = $ownerMappings->first();
+            $user = User::internalUsers()->whereKey($mapping->user_id)->first(['id', 'email', 'hubspot_owner_id']);
+            if (! $user) continue;
+
+            $alreadyAssigned = User::internalUsers()
+                ->where('hubspot_owner_id', (string) $ownerId)
+                ->where('id', '!=', $user->id)
+                ->exists();
+            if ($alreadyAssigned) {
+                $this->warn("  {$ownerId} ya está asignado a otra cuenta interna; se omite.");
+                continue;
+            }
+
+            if ((string) $user->hubspot_owner_id === (string) $ownerId) continue;
+            $rows[] = [
+                'user_id' => (int) $user->id,
+                'email' => (string) $user->email,
+                'old' => $user->hubspot_owner_id,
+                'new' => (string) $ownerId,
+            ];
+        }
+
+        $this->report['owners_matched'] = $mappings->count();
+        $this->info('  Mapeos únicos aplicables: '.count($rows));
+        if ($rows !== []) {
+            $this->table(['user_id', 'correo interno', 'ID anterior', 'ID HubSpot'], array_map(
+                fn (array $row): array => [$row['user_id'], $row['email'], $row['old'] ?? '—', $row['new']],
+                array_slice($rows, 0, 30),
+            ));
+        }
+
+        if ($this->dryRun) {
+            $this->warn('  DRY-RUN: no se modificaron los responsables.');
+            return;
+        }
+
+        foreach ($rows as $row) {
+            $this->report['owners_updated'] += User::internalUsers()
+                ->whereKey($row['user_id'])
+                ->where('hubspot_owner_id', $row['old'])
+                ->update(['hubspot_owner_id' => $row['new']]);
+        }
+        $this->info('  Responsables internos actualizados: '.$this->report['owners_updated']);
+    }
+
+    /** Optional explicit JSON crosswalk for installations not using the bridge table. */
     private function step1SyncOwnersUsingMap(): void
     {
         $this->info("  (Modo mapa activo: --use-owners-map)");
@@ -289,6 +227,10 @@ class HubspotSyncAll extends Command
         foreach ($map as $hsOwnerId => $data) {
             $userId = (int)($data['user_id'] ?? 0);
             if ($userId <= 0) continue;
+            if (! User::internalUsers()->whereKey($userId)->exists()) {
+                $this->warn("Mapa omitido: user_id={$userId} no es una cuenta interna.");
+                continue;
+            }
 
             if ($onlyOwner !== '' && (string)$hsOwnerId !== (string)$onlyOwner) continue;
             if ($onlyUser && (int)$onlyUser !== $userId) continue;
@@ -327,7 +269,7 @@ class HubspotSyncAll extends Command
             $userId    = (int)$r['user_id'];
 
             // Regla dura: si hs_owner_id ya está en OTRO user, no lo asignamos
-            $existsElsewhere = DB::table('users')
+            $existsElsewhere = User::internalUsers()
                 ->where('hubspot_owner_id', $hsOwnerId)
                 ->where('id', '!=', $userId)
                 ->exists();
@@ -337,8 +279,8 @@ class HubspotSyncAll extends Command
                 continue;
             }
 
-            $affected = DB::table('users')
-                ->where('id', $userId)
+            $affected = User::internalUsers()
+                ->whereKey($userId)
                 ->where(function ($q) use ($hsOwnerId) {
                     $q->whereNull('hubspot_owner_id')
                         ->orWhere('hubspot_owner_id', '!=', $hsOwnerId);
@@ -360,12 +302,14 @@ class HubspotSyncAll extends Command
      */
     private function detectOwnerIdConflictsInDb(): void
     {
+        $internalUserIds = User::internalUsers()->select('users.id');
         $conflicts = DB::table('users')
             ->select(
                 'hubspot_owner_id',
                 DB::raw('COUNT(*) as num_users'),
                 DB::raw('GROUP_CONCAT(id ORDER BY id SEPARATOR ",") as user_ids')
             )
+            ->whereIn('id', $internalUserIds)
             ->whereNotNull('hubspot_owner_id')
             ->whereRaw("TRIM(hubspot_owner_id) <> ''")
             ->groupBy('hubspot_owner_id')
@@ -413,6 +357,7 @@ class HubspotSyncAll extends Command
 
         // Traer asesores con hubspot_owner_id
         $advisorsQ = User::query()
+            ->internalUsers()
             ->select(['id', 'email', 'hubspot_owner_id'])
             ->whereNotNull('hubspot_owner_id')
             ->whereRaw("TRIM(hubspot_owner_id) <> ''");
@@ -501,8 +446,9 @@ class HubspotSyncAll extends Command
 
         foreach (array_chunk($updates, $this->chunkSize) as $chunk) {
             foreach ($chunk as $row) {
-                $affected = User::query()
+                $affected = User::clients()
                     ->where('id', $row['client_id'])
+                    ->where('hs_id', $row['hs_id'] ?? '')
                     ->where(function ($q) use ($row) {
                         $q->whereNull('owner_id')
                           ->orWhere('owner_id', '!=', $row['new_owner_id']);
@@ -522,41 +468,14 @@ class HubspotSyncAll extends Command
      */
     private function fetchContactsByOwner(string $ownerId): array
     {
-        $all   = [];
-        $after = null;
-
-        do {
-            $filter = new Filter();
-            $filter->setOperator('EQ')
-                ->setPropertyName('hubspot_owner_id')
-                ->setValue($ownerId);
-
-            $filterGroup = new FilterGroup();
-            $filterGroup->setFilters([$filter]);
-
-            $req = new PublicObjectSearchRequest();
-            $req->setFilterGroups([$filterGroup]);
-            $req->setLimit($this->hsLimit);
-            $req->setProperties(['email']);
-
-            if (!is_null($after)) $req->setAfter($after);
-
-            $page = $this->hubspot->crm()->contacts()->searchApi()->doSearch($req);
-
-            foreach ($page->getResults() as $contact) {
-                $email = strtolower(trim($contact->getProperties()['email'] ?? ''));
-                $hsId  = (string) $contact->getId();
-
-                $entry = ['hs_id' => $hsId];
-                if ($email !== '') $entry['email'] = $email;
-
-                $all[] = $entry;
-            }
-
-            $paging = $page->getPaging();
-            $after  = ($paging && $paging->getNext()) ? $paging->getNext()->getAfter() : null;
-
-        } while (!is_null($after));
+        $all = [];
+        $contacts = $this->hubspot->getAllContactsByOwnerId($ownerId, ['email'], $this->hsLimit);
+        foreach ($contacts as $contact) {
+            $email = strtolower(trim((string) ($contact['properties']['email'] ?? '')));
+            $entry = ['hs_id' => (string) $contact['id']];
+            if ($email !== '') $entry['email'] = $email;
+            $all[] = $entry;
+        }
 
         return [$all, count($all)];
     }
@@ -577,7 +496,7 @@ class HubspotSyncAll extends Command
 
             if (empty($keys)) return [[], []];
 
-            $clients = User::query()
+            $clients = User::clients()
                 ->select(['id', 'email', 'owner_id'])
                 ->whereIn(DB::raw('LOWER(email)'), $keys)
                 ->get()
@@ -607,19 +526,19 @@ class HubspotSyncAll extends Command
 
             if (empty($keys)) return [[], []];
 
-            $clients = User::query()
+            $clients = User::clients()
                 ->select(['id', 'hs_id', 'owner_id'])
                 ->whereIn('hs_id', $keys)
                 ->get()
-                ->keyBy('hs_id');
+                ->groupBy('hs_id');
 
             foreach ($keys as $hsId) {
-                if (!isset($clients[$hsId])) {
+                if (!isset($clients[$hsId]) || $clients[$hsId]->count() !== 1) {
                     $unmatchedKeys[] = $hsId;
                     continue;
                 }
 
-                $client = $clients[$hsId];
+                $client = $clients[$hsId]->first();
 
                 if ((int)($client->owner_id ?? 0) === $advisorUserId) continue;
 
@@ -641,45 +560,7 @@ class HubspotSyncAll extends Command
 
     private function fetchHsOwners(bool $includeArchived): array
     {
-        $owners = [];
-        $after  = null;
-
-        do {
-            $query = [
-                'limit'    => 500,
-                'archived' => $includeArchived ? 'true' : 'false',
-            ];
-            if (!is_null($after)) $query['after'] = $after;
-
-            $resp = $this->hubspot->apiRequest([
-                'method' => 'GET',
-                'path'   => '/crm/v3/owners',
-                'query'  => $query,
-            ]);
-
-            $body = json_decode((string) $resp->getBody(), true);
-
-            foreach ($body['results'] ?? [] as $o) {
-                $id    = (string) ($o['id'] ?? '');
-                $email = strtolower(trim((string)($o['email'] ?? '')));
-
-                if ($id === '') continue;
-
-                $owners[] = [
-                    'id'        => $id,
-                    'email'     => $email,
-                    'name'      => trim(($o['firstName'] ?? '') . ' ' . ($o['lastName'] ?? '')),
-                    'active'    => $o['active'] ?? null,
-                    'createdAt' => $o['createdAt'] ?? null,
-                    'updatedAt' => $o['updatedAt'] ?? null,
-                ];
-            }
-
-            $after = $body['paging']['next']['after'] ?? null;
-
-        } while (!is_null($after));
-
-        return $owners;
+        return $this->hubspot->getAllOwners($includeArchived);
     }
 
     // =========================================================================
@@ -716,8 +597,10 @@ class HubspotSyncAll extends Command
         $this->info(" RESOLVER DUPLICADOS: users.hubspot_owner_id");
         $this->info("══════════════════════════════════════════");
 
+        $internalUserIds = User::internalUsers()->select('users.id');
         $dups = DB::table('users')
             ->select('hubspot_owner_id', DB::raw('COUNT(*) as n'))
+            ->whereIn('id', $internalUserIds)
             ->whereNotNull('hubspot_owner_id')
             ->whereRaw("TRIM(hubspot_owner_id) <> ''")
             ->groupBy('hubspot_owner_id')
@@ -738,6 +621,7 @@ class HubspotSyncAll extends Command
 
             $users = DB::table('users')
                 ->select(['id', 'email', 'name', 'hubspot_owner_id'])
+                ->whereIn('id', $internalUserIds)
                 ->where('hubspot_owner_id', $hsOwnerId)
                 ->orderBy('id')
                 ->get();
@@ -770,6 +654,7 @@ class HubspotSyncAll extends Command
             // Nullear en los demás (regla dura)
             $nulled = DB::table('users')
                 ->where('hubspot_owner_id', $hsOwnerId)
+                ->whereIn('id', $internalUserIds)
                 ->where('id', '!=', $keepId)
                 ->update([
                     'hubspot_owner_id' => null,
@@ -782,6 +667,7 @@ class HubspotSyncAll extends Command
         // Re-check
         $still = DB::table('users')
             ->select('hubspot_owner_id', DB::raw('COUNT(*) as n'))
+            ->whereIn('id', $internalUserIds)
             ->whereNotNull('hubspot_owner_id')
             ->whereRaw("TRIM(hubspot_owner_id) <> ''")
             ->groupBy('hubspot_owner_id')
@@ -845,6 +731,7 @@ class HubspotSyncAll extends Command
             // Mostrar si ya existe este hs_owner_id en BD asignado (debería ser 1:1)
             $assignedInDb = DB::table('users')
                 ->select(['id', 'email', 'name', 'hubspot_owner_id'])
+                ->whereIn('id', User::internalUsers()->select('users.id'))
                 ->where('hubspot_owner_id', $hsOwnerId)
                 ->orderBy('id')
                 ->get();
@@ -860,7 +747,7 @@ class HubspotSyncAll extends Command
             // Candidatos por email
             $candidates = [];
             if ($email !== '') {
-                $candidates = User::query()
+                $candidates = User::internalUsers()
                     ->select(['id', 'email', 'name', 'hubspot_owner_id'])
                     ->whereRaw('LOWER(email) = ?', [$email])
                     ->limit(10)
@@ -910,6 +797,7 @@ class HubspotSyncAll extends Command
 
             $targetUser = DB::table('users')
                 ->select(['id', 'email', 'name', 'hubspot_owner_id'])
+                ->whereIn('id', User::internalUsers()->select('users.id'))
                 ->where('id', $userId)
                 ->first();
 
@@ -923,6 +811,7 @@ class HubspotSyncAll extends Command
             // 1) hs_owner_id ya asignado a otro user?
             $assignedOther = DB::table('users')
                 ->select(['id', 'email', 'name'])
+                ->whereIn('id', User::internalUsers()->select('users.id'))
                 ->where('hubspot_owner_id', $hsOwnerId)
                 ->where('id', '!=', $userId)
                 ->first();
@@ -947,6 +836,7 @@ class HubspotSyncAll extends Command
                 if ($choice === 'move' && !$this->dryRun) {
                     DB::table('users')
                         ->where('id', (int)$assignedOther->id)
+                        ->whereIn('id', User::internalUsers()->select('users.id'))
                         ->update(['hubspot_owner_id' => null, 'updated_at' => now()]);
                     $this->info("Nulleado en other_user_id={$assignedOther->id}");
                 } elseif ($choice === 'move' && $this->dryRun) {
@@ -989,19 +879,25 @@ class HubspotSyncAll extends Command
                 // Regla dura: no debe existir en otro user (arriba ya lo movimos o saltamos)
                 DB::table('users')
                     ->where('id', $userId)
+                    ->whereIn('id', User::internalUsers()->select('users.id'))
                     ->update(['hubspot_owner_id' => $hsOwnerId, 'updated_at' => now()]);
             } else {
                 $this->warn("[DRY-RUN] Se asignaría hubspot_owner_id={$hsOwnerId} a user_id={$userId}");
             }
         }
 
-        Storage::disk('local')->put($mapPath, json_encode($ownerMap, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-        $this->info("\nGuardado mapa: storage/app/{$mapPath}");
+        if (! $this->dryRun) {
+            Storage::disk('local')->put($mapPath, json_encode($ownerMap, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            $this->info("\nGuardado mapa: storage/app/{$mapPath}");
+        } else {
+            $this->warn("\nDRY-RUN: no se guardó el mapa en storage.");
+        }
         $this->info("Cambios realizados: {$updated}");
 
         // Validación final: no duplicados en BD
         $still = DB::table('users')
             ->select('hubspot_owner_id', DB::raw('COUNT(*) as n'))
+            ->whereIn('id', User::internalUsers()->select('users.id'))
             ->whereNotNull('hubspot_owner_id')
             ->whereRaw("TRIM(hubspot_owner_id) <> ''")
             ->groupBy('hubspot_owner_id')

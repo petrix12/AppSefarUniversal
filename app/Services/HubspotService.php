@@ -26,6 +26,7 @@ use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\ClientInterface;
 use HubSpot\Client\Files\ApiException as FilesApiException;
 use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\TransferStats;
 use GuzzleHttp\Promise;
 use GuzzleHttp\Psr7\Response;
 use HubSpot\Client\Crm\Contacts\Model\Filter;
@@ -36,6 +37,7 @@ use HubSpot\Client\Settings\Users\Model\UserProvisionRequest;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Psr\Http\Message\ResponseInterface;
 
 use HubSpot\Client\Files\Model\FileUpdateInput;
 
@@ -187,7 +189,13 @@ class HubspotService
             'force_ip_resolve' => $this->hubspotIpResolve(),
             'connect_timeout' => 10,
             'timeout' => 30,
-            'on_stats' => static fn (\GuzzleHttp\TransferStats $stats) => \App\Support\CosPageTiming::httpTransfer('HubSpot', $stats),
+            'on_stats' => function (TransferStats $stats): void {
+                \App\Support\CosPageTiming::httpTransfer('HubSpot', $stats);
+                $response = $stats->getResponse();
+                if ($response instanceof ResponseInterface) {
+                    $this->captureHubspotRateLimits($response);
+                }
+            },
         ], $options));
     }
 
@@ -301,6 +309,10 @@ class HubspotService
                     $searchRequest->setAfter($after);
                 }
 
+                // This legacy SDK path must use the same global limiter as the
+                // migration jobs so owner reconciliation cannot exceed the
+                // shared HubSpot budget.
+                $this->hubspotThrottle();
                 $page = $this->hubspot->crm()->contacts()->searchApi()->doSearch($searchRequest);
 
                 foreach ($page->getResults() as $contact) {
@@ -323,6 +335,58 @@ class HubspotService
         } catch (\Exception $e) {
             throw new \Exception("Error al obtener contactos por ownerId en HubSpot: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Read HubSpot owners through the shared request limiter.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getAllOwners(bool $includeArchived = false): array
+    {
+        $owners = [];
+        $after = null;
+
+        do {
+            $query = [
+                'limit' => 500,
+                'archived' => $includeArchived ? 'true' : 'false',
+            ];
+            if ($after !== null) {
+                $query['after'] = $after;
+            }
+
+            $this->hubspotThrottle();
+            $response = $this->hubspot->apiRequest([
+                'method' => 'GET',
+                'path' => '/crm/v3/owners',
+                'query' => $query,
+            ]);
+            $body = json_decode((string) $response->getBody(), true) ?: [];
+
+            foreach ($body['results'] ?? [] as $owner) {
+                $id = trim((string) ($owner['id'] ?? ''));
+                if ($id === '') {
+                    continue;
+                }
+
+                $owners[] = [
+                    'id' => $id,
+                    'email' => strtolower(trim((string) ($owner['email'] ?? ''))),
+                    'name' => trim(implode(' ', array_filter([
+                        $owner['firstName'] ?? null,
+                        $owner['lastName'] ?? null,
+                    ]))) ?: (string) ($owner['name'] ?? ''),
+                    'active' => $owner['active'] ?? null,
+                    'createdAt' => $owner['createdAt'] ?? null,
+                    'updatedAt' => $owner['updatedAt'] ?? null,
+                ];
+            }
+
+            $after = $body['paging']['next']['after'] ?? null;
+        } while ($after !== null);
+
+        return $owners;
     }
 
     public function check001(string $hsId, int $maxRetries = 100, int $sleepSeconds = 2): ?array
@@ -1090,7 +1154,7 @@ class HubspotService
         }
         $token = (string) config('services.hubspot.key');
         if ($token === '') throw new \RuntimeException('HubSpot credentials are not configured.');
-        $this->hubspotThrottle();
+        $this->hubspotThrottle(2.5);
         $response = $this->makeHttpClient()->request('POST', "https://api.hubapi.com/crm/v3/objects/$entity/search", [
             'headers' => ['Authorization' => 'Bearer '.$token, 'Accept' => 'application/json'],
             'json' => [
@@ -1213,7 +1277,7 @@ class HubspotService
         $seen = [];
         do {
             $this->hubspotThrottle();
-            $response = $client->request('GET', "https://api.hubapi.com/crm/v4/objects/$from/$id/associations/$to", [
+            $response = $client->request('GET', "https://api.hubapi.com/crm/objects/2026-09/$from/$id/associations/$to", [
                 'headers' => $headers,
                 'query' => array_filter(['limit' => 500, 'after' => $after], fn ($value) => $value !== null),
                 'http_errors' => false,
@@ -1231,6 +1295,86 @@ class HubspotService
             $after = $next;
         } while ($after !== null);
         return array_values(array_unique($ids));
+    }
+
+    /** Read all association IDs plus their type IDs without reducing the remote response to a set. */
+    public function webhookAssociationRecords(string $from, string $id, string $to): array
+    {
+        if (! preg_match('/^[a-zA-Z0-9_-]{2,80}$/', $from)
+            || ! preg_match('/^[a-zA-Z0-9_-]{2,80}$/', $to)
+            || ! ctype_digit($id) || strlen($id) > 64) {
+            throw new \InvalidArgumentException('Invalid CRM association.');
+        }
+        $token = (string) config('services.hubspot.key');
+        if ($token === '') throw new \RuntimeException('HubSpot credentials are not configured.');
+        $client = $this->makeHttpClient();
+        $headers = ['Authorization' => 'Bearer '.$token, 'Accept' => 'application/json'];
+        $records = [];
+        $after = null;
+        $seen = [];
+        do {
+            $this->hubspotThrottle();
+            $response = $client->request('GET', "https://api.hubapi.com/crm/objects/2026-09/$from/$id/associations/$to", [
+                'headers' => $headers,
+                'query' => array_filter(['limit' => 500, 'after' => $after], fn ($value) => $value !== null),
+                'http_errors' => false,
+            ]);
+            if ($response->getStatusCode() !== 200) throw $this->apiException($response, 'association detail read');
+            $body = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+            if (! isset($body['results']) || ! is_array($body['results'])) {
+                throw new \UnexpectedValueException('Invalid CRM association detail response.');
+            }
+            foreach ($body['results'] as $row) {
+                $targetId = (string) ($row['toObjectId'] ?? '');
+                if (! ctype_digit($targetId) || strlen($targetId) > 64 || ! is_array($row['associationTypes'] ?? null)) {
+                    throw new \UnexpectedValueException('HubSpot returned an association without its target or type metadata.');
+                }
+                foreach ($row['associationTypes'] as $type) {
+                    if (! is_array($type) || ! isset($type['typeId'], $type['category'])) {
+                        throw new \UnexpectedValueException('HubSpot returned an invalid association type.');
+                    }
+                    $records[] = [
+                        'to_object_id' => $targetId,
+                        'association_type_id' => (string) $type['typeId'],
+                        'association_category' => (string) $type['category'],
+                    ];
+                }
+            }
+            $next = $body['paging']['next']['after'] ?? null;
+            if ($next !== null && isset($seen[(string) $next])) throw new \UnexpectedValueException('Repeated CRM cursor.');
+            if ($next !== null) $seen[(string) $next] = true;
+            $after = $next;
+        } while ($after !== null);
+
+        return $records;
+    }
+
+    /** Read association labels keyed by category and type ID. */
+    public function webhookAssociationLabels(string $from, string $to): array
+    {
+        if (! preg_match('/^[a-zA-Z0-9_-]{2,80}$/', $from)
+            || ! preg_match('/^[a-zA-Z0-9_-]{2,80}$/', $to)) {
+            throw new \InvalidArgumentException('Invalid CRM association types.');
+        }
+        $token = (string) config('services.hubspot.key');
+        if ($token === '') throw new \RuntimeException('HubSpot credentials are not configured.');
+        $this->hubspotThrottle();
+        $response = $this->makeHttpClient()->request('GET', "https://api.hubapi.com/crm/associations/2026-09/$from/$to/labels", [
+            'headers' => ['Authorization' => 'Bearer '.$token, 'Accept' => 'application/json'],
+            'http_errors' => false,
+        ]);
+        if ($response->getStatusCode() !== 200) throw $this->apiException($response, 'association labels read');
+        $body = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        if (! is_array($body['results'] ?? null)) throw new \UnexpectedValueException('Invalid CRM association labels response.');
+
+        $labels = [];
+        foreach ($body['results'] as $row) {
+            if (! isset($row['category'], $row['typeId'])) continue;
+            $labels[(string) $row['category'].':'.(string) $row['typeId']] = isset($row['label']) && $row['label'] !== ''
+                ? (string) $row['label']
+                : null;
+        }
+        return $labels;
     }
 
     /** Obtener un contacto por ID. */
@@ -1986,38 +2130,101 @@ class HubspotService
         return (json_last_error() === JSON_ERROR_NONE);
     }
 
-    private function hubspotThrottle(): void
+    private function hubspotThrottle(?float $endpointLimitPerSecond = null): void
     {
         $configured = (int) config('services.hubspot.tasks_throttle_ms', 250);
         $outboundRate = (int) config('crm_sync.hubspot.request_rate_per_second', 4);
-        $milliseconds = max($configured, $outboundRate > 0 ? (int) ceil(1000 / $outboundRate) : 0);
+        $effectiveRate = max(0.1, (float) $outboundRate);
+        $hubspotBurstRate = (float) Cache::get('hubspot.rate-limit.half-burst-rps', 0);
+        if ($hubspotBurstRate > 0) {
+            $effectiveRate = min($effectiveRate, $hubspotBurstRate);
+        }
+        if ($endpointLimitPerSecond !== null && $endpointLimitPerSecond > 0) {
+            $effectiveRate = min($effectiveRate, $endpointLimitPerSecond);
+        }
+        $milliseconds = max($configured, (int) ceil(1000 / $effectiveRate));
+        $lockSeconds = max(10, (int) ceil($milliseconds / 1000) + 5);
         $dailyBudget = max(0, (int) config('crm_sync.hubspot.daily_request_budget', 10000));
-        if ($milliseconds <= 0 && $dailyBudget <= 0) return;
+        $timezone = $this->hubspotDailyTimezone();
+        $now = now($timezone);
+        $resetAt = $now->copy()->startOfDay()->addDay();
+        $secondsUntilReset = max(1, $resetAt->getTimestamp() - $now->getTimestamp() + 1);
+        $dateKey = $now->format('Ymd');
+        $dailyKey = 'hubspot.daily-request-budget.'.$dateKey;
+        $dailyLimitKey = 'hubspot.rate-limit.daily-limit.'.$dateKey;
+        $dailyRemainingKey = 'hubspot.rate-limit.daily-remaining.'.$dateKey;
+        if ($milliseconds <= 0 && $dailyBudget <= 0 && ! Cache::has($dailyLimitKey)) return;
 
         // One shared lock spaces requests from all PHP workers on this app.
         // Keep the lock across the wait so concurrent workers cannot burst together.
-        \App\Support\CosPageTiming::external('hubspot_throttle', 'HubSpot: límite global de solicitudes', function () use ($milliseconds, $dailyBudget): void {
-            \Illuminate\Support\Facades\Cache::lock('hubspot.global-request-throttle', 10)->block(10, function () use ($milliseconds, $dailyBudget): void {
-                $now = now('UTC');
-                $resetAt = $now->copy()->startOfDay()->addDay();
-                $secondsUntilReset = max(1, $resetAt->getTimestamp() - $now->getTimestamp() + 1);
-                $dailyKey = 'hubspot.daily-request-budget.'.$now->format('Ymd');
+        \App\Support\CosPageTiming::external('hubspot_throttle', 'HubSpot: límite global de solicitudes', function () use ($milliseconds, $lockSeconds, $dailyBudget, $dailyKey, $dailyLimitKey, $dailyRemainingKey, $secondsUntilReset): void {
+            Cache::lock('hubspot.global-request-throttle', $lockSeconds)->block($lockSeconds, function () use ($milliseconds, $dailyBudget, $dailyKey, $dailyLimitKey, $dailyRemainingKey, $secondsUntilReset): void {
+                $actualDailyLimit = (int) Cache::get($dailyLimitKey, 0);
+                $actualDailyRemaining = Cache::get($dailyRemainingKey);
+                if ($actualDailyLimit > 0 && $actualDailyRemaining !== null
+                    && (int) $actualDailyRemaining <= (int) floor($actualDailyLimit / 2)) {
+                    throw new \App\Exceptions\HubspotDailyBudgetExceeded($secondsUntilReset);
+                }
                 if ($dailyBudget > 0) {
-                    \Illuminate\Support\Facades\Cache::add($dailyKey, 0, $secondsUntilReset);
-                    if ((int) \Illuminate\Support\Facades\Cache::get($dailyKey, 0) >= $dailyBudget) {
+                    Cache::add($dailyKey, 0, $secondsUntilReset);
+                    if ((int) Cache::get($dailyKey, 0) >= $dailyBudget) {
                         throw new \App\Exceptions\HubspotDailyBudgetExceeded($secondsUntilReset);
                     }
                 }
 
                 $key = 'hubspot.global-request-throttle.last_at';
-                $lastAt = (int) \Illuminate\Support\Facades\Cache::get($key, 0);
-                $now = (int) floor(microtime(true) * 1000);
-                $wait = $milliseconds - ($now - $lastAt);
+                $lastAt = (int) Cache::get($key, 0);
+                $currentMilliseconds = (int) floor(microtime(true) * 1000);
+                $wait = $milliseconds - ($currentMilliseconds - $lastAt);
                 if ($lastAt > 0 && $wait > 0) usleep($wait * 1000);
-                \Illuminate\Support\Facades\Cache::put($key, (int) floor(microtime(true) * 1000), 10);
-                if ($dailyBudget > 0) \Illuminate\Support\Facades\Cache::increment($dailyKey);
+                Cache::put($key, (int) floor(microtime(true) * 1000), 10);
+                if ($dailyBudget > 0) Cache::increment($dailyKey);
             });
         });
+    }
+
+    private function captureHubspotRateLimits(ResponseInterface $response): void
+    {
+        $maximum = (int) $response->getHeaderLine('X-HubSpot-RateLimit-Max');
+        $intervalMilliseconds = (int) $response->getHeaderLine('X-HubSpot-RateLimit-Interval-Milliseconds');
+        if ($maximum > 0 && $intervalMilliseconds > 0) {
+            $halfLimitPerSecond = ($maximum * 0.5) / ($intervalMilliseconds / 1000);
+            Cache::put('hubspot.rate-limit.half-burst-rps', $halfLimitPerSecond, 86400);
+        }
+
+        $dailyLimit = (int) $response->getHeaderLine('X-HubSpot-RateLimit-Daily');
+        $dailyRemaining = $response->getHeaderLine('X-HubSpot-RateLimit-Daily-Remaining');
+        if ($dailyLimit <= 0 || $dailyRemaining === '' || ! is_numeric($dailyRemaining)) {
+            return;
+        }
+
+        $timezone = $this->hubspotDailyTimezone();
+        $now = now($timezone);
+        $resetAt = $now->copy()->startOfDay()->addDay();
+        $ttl = max(1, $resetAt->getTimestamp() - $now->getTimestamp() + 1);
+        $dateKey = $now->format('Ymd');
+        $limitKey = 'hubspot.rate-limit.daily-limit.'.$dateKey;
+        $remainingKey = 'hubspot.rate-limit.daily-remaining.'.$dateKey;
+        $previousRemaining = Cache::get($remainingKey);
+
+        Cache::put($limitKey, $dailyLimit, $ttl);
+        Cache::put(
+            $remainingKey,
+            $previousRemaining === null ? (int) $dailyRemaining : min((int) $previousRemaining, (int) $dailyRemaining),
+            $ttl,
+        );
+    }
+
+    private function hubspotDailyTimezone(): string
+    {
+        $timezone = (string) config('crm_sync.hubspot.daily_reset_timezone', config('app.timezone', 'UTC'));
+
+        try {
+            new \DateTimeZone($timezone);
+            return $timezone;
+        } catch (\Throwable) {
+            return (string) config('app.timezone', 'UTC');
+        }
     }
 
     /**
@@ -2026,6 +2233,7 @@ class HubspotService
     public function searchContactByPassport($passportNumber)
     {
         try {
+            $this->hubspotThrottle(2.5);
             $filter = new \HubSpot\Client\Crm\Contacts\Model\Filter();
             $filter
                 ->setOperator('EQ')

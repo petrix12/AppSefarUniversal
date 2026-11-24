@@ -34,12 +34,24 @@ class HubspotOutboxService
         DB::transaction(function () use ($model, $entityType, $externalType, $fields, $dedupeKey): void {
             $entry = IntegrationOutbox::query()->where('dedupe_key', $dedupeKey)->lockForUpdate()->first();
             $fields = array_values(array_unique(array_merge((array) data_get($entry?->payload, 'fields', []), $fields)));
+            $idColumn = match ($entityType) {
+                'client' => 'hs_id',
+                'lead' => 'hubspot_id',
+                'deal' => 'hubspot_id',
+            };
+            $createdInApp = (bool) data_get($entry?->payload, 'created_in_app')
+                || ($model->wasRecentlyCreated && ! filled($model->getAttribute($idColumn)));
             $entry = IntegrationOutbox::query()->updateOrCreate(['dedupe_key' => $dedupeKey], [
                 'provider' => 'hubspot',
                 'entity_type' => $entityType,
                 'entity_id' => (int) $model->getKey(),
                 'operation' => 'upsert_crm_object',
-                'payload' => ['external_entity_type' => $externalType, 'fields' => $fields, 'generation' => (string) Str::uuid()],
+                'payload' => [
+                    'external_entity_type' => $externalType,
+                    'fields' => $fields,
+                    'generation' => (string) Str::uuid(),
+                    'created_in_app' => $createdInApp,
+                ],
                 'status' => 'pending',
                 'attempts' => 0,
                 'available_at' => now(),

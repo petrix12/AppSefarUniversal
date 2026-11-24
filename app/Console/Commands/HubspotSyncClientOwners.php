@@ -6,10 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use Illuminate\Support\Facades\Schema;
-use HubSpot\Factory;
-use HubSpot\Client\Crm\Contacts\Model\Filter;
-use HubSpot\Client\Crm\Contacts\Model\FilterGroup;
-use HubSpot\Client\Crm\Contacts\Model\PublicObjectSearchRequest;
+use App\Services\HubspotService;
 
 class HubspotSyncClientOwners extends Command
 {
@@ -19,14 +16,14 @@ class HubspotSyncClientOwners extends Command
         {--limit=100 : Page size HubSpot (max 100 recomendado)}
         {--only-owner= : Solo procesa un hubspot_owner_id específico}
         {--only-user= : Solo procesa un user (asesor) por id}
-        {--match=email : match mode: email|hs_id}
+        {--match=hs_id : match mode: hs_id|email (email solo diagnóstico)}
     ';
 
     protected $description = 'Asigna users.owner_id a cada cliente según el hubspot_owner_id del contacto en HubSpot, usando el mapeo hubspot_owner_user';
 
     public function handle(): int
     {
-        $hubspot = Factory::createWithAccessToken(config('services.hubspot.key'));
+        $hubspot = app(HubspotService::class);
 
         $dryRun    = (bool) $this->option('dry-run');
         $chunkSize = (int) $this->option('chunk');
@@ -40,8 +37,21 @@ class HubspotSyncClientOwners extends Command
             $this->error("Opción --match inválida. Usa: email|hs_id");
             return self::FAILURE;
         }
+        if ($matchMode === 'email' && ! $dryRun) {
+            $this->error('La actualización por correo está bloqueada. Usa --match=hs_id; el correo solo se admite en --dry-run para diagnóstico.');
+            return self::FAILURE;
+        }
+        if ($chunkSize < 1 || $limit < 1 || $limit > 100) {
+            $this->error('--chunk debe ser positivo y --limit debe estar entre 1 y 100.');
+            return self::FAILURE;
+        }
+        if (! Schema::hasTable('hubspot_owner_user')) {
+            $this->warn('No existe la tabla puente hubspot_owner_user.');
+            return self::SUCCESS;
+        }
 
         // 1) Traer asesores desde tabla puente hubspot_owner_user (mapeo interno)
+        $internalUserIds = User::internalUsers()->select('users.id');
         $advisorsQ = DB::table('hubspot_owner_user as hou')
             ->join('users as u', 'u.id', '=', 'hou.user_id')
             ->select([
@@ -51,7 +61,9 @@ class HubspotSyncClientOwners extends Command
                 'u.email as advisor_email',
                 'u.name as advisor_name',
             ])
-            ->whereNotNull('hou.hubspot_owner_id');
+            ->whereIn('hou.user_id', $internalUserIds)
+            ->whereNotNull('hou.hubspot_owner_id')
+            ->whereRaw("TRIM(hou.hubspot_owner_id) <> ''");
 
         if ($onlyOwner) {
             $advisorsQ->where('hou.hubspot_owner_id', (string) $onlyOwner);
@@ -60,7 +72,11 @@ class HubspotSyncClientOwners extends Command
             $advisorsQ->where('hou.user_id', (int) $onlyUserId);
         }
 
-        $advisors = $advisorsQ->get();
+        $advisors = $advisorsQ->get()->groupBy('hs_owner_id')->filter(function ($mappings, $hsOwnerId) {
+            if ($mappings->count() === 1) return true;
+            $this->warn("ID de responsable ambiguo en hubspot_owner_user; se omite {$hsOwnerId}.");
+            return false;
+        })->flatten(1);
 
         if ($advisors->isEmpty()) {
             $this->warn('No hay mapeos en hubspot_owner_user para procesar.');
@@ -100,7 +116,7 @@ class HubspotSyncClientOwners extends Command
 
                 // IMPORTANTE: en grandes volúmenes, mejor chunk de emails para evitar query gigante
                 foreach (array_chunk($keys, 2000) as $emailChunk) {
-                    $clients = User::query()
+                    $clients = User::clients()
                         ->select(['id', 'email', 'owner_id'])
                         ->whereIn(DB::raw('LOWER(email)'), $emailChunk)
                         ->get()
@@ -136,16 +152,16 @@ class HubspotSyncClientOwners extends Command
                 }
 
                 foreach (array_chunk($keys, 2000) as $idChunk) {
-                    $clients = User::query()
+                    $clients = User::clients()
                         ->select(['id', 'hs_id', 'owner_id'])
                         ->whereIn('hs_id', $idChunk) // <-- TU COLUMNA real
                         ->get()
-                        ->keyBy('hs_id');
+                        ->groupBy('hs_id');
 
                     foreach ($idChunk as $hsId) {
-                        if (!isset($clients[$hsId])) continue;
+                        if (!isset($clients[$hsId]) || $clients[$hsId]->count() !== 1) continue;
 
-                        $client = $clients[$hsId];
+                        $client = $clients[$hsId]->first();
                         $totalMatchedClients++;
 
                         if ((int) ($client->owner_id ?? 0) === $advisorUserId) {
@@ -185,8 +201,9 @@ class HubspotSyncClientOwners extends Command
             // 4) Aplicar updates
             foreach (array_chunk($updates, $chunkSize) as $chunk) {
                 foreach ($chunk as $row) {
-                    $affected = User::query()
+                    $affected = User::clients()
                         ->where('id', $row['client_id'])
+                        ->when($matchMode === 'hs_id', fn ($query) => $query->where('hs_id', $row['key']))
                         ->where(function ($q) use ($row) {
                             $q->whereNull('owner_id')
                               ->orWhere('owner_id', '!=', $row['new_owner_id']);
@@ -207,49 +224,21 @@ class HubspotSyncClientOwners extends Command
 
     /**
      * Retorna lista de contactos del owner con keys:
-     *  - email (si match=email)
-     *  - hs_id (si match=hs_id)
+     *  - email (diagnóstico seco)
+     *  - hs_id (coincidencia permanente)
      */
     private function fetchAllContactsByOwner($hubspot, string $ownerId, int $limit, string $matchMode): array
     {
         $all = [];
-        $after = null;
-
-        do {
-            $filter = new Filter();
-            $filter->setOperator('EQ')
-                ->setPropertyName('hubspot_owner_id')
-                ->setValue($ownerId);
-
-            $filterGroup = new FilterGroup();
-            $filterGroup->setFilters([$filter]);
-
-            $req = new PublicObjectSearchRequest();
-            $req->setFilterGroups([$filterGroup]);
-            $req->setLimit($limit);
-
-            $props = $matchMode === 'email' ? ['email'] : [];
-            if (!empty($props)) $req->setProperties($props);
-
-            if (!is_null($after)) $req->setAfter($after);
-
-            $page = $hubspot->crm()->contacts()->searchApi()->doSearch($req);
-
-            foreach ($page->getResults() as $contact) {
-                if ($matchMode === 'email') {
-                    $email = $contact->getProperties()['email'] ?? null;
-                    if ($email) {
-                        $all[] = ['email' => $email];
-                    }
-                } else {
-                    $all[] = ['hs_id' => $contact->getId()];
-                }
+        $contacts = $hubspot->getAllContactsByOwnerId($ownerId, ['email'], $limit);
+        foreach ($contacts as $contact) {
+            if ($matchMode === 'email') {
+                $email = strtolower(trim((string) ($contact['properties']['email'] ?? '')));
+                if ($email !== '') $all[] = ['email' => $email];
+            } else {
+                $all[] = ['hs_id' => (string) $contact['id']];
             }
-
-            $paging = $page->getPaging();
-            $after = ($paging && $paging->getNext()) ? $paging->getNext()->getAfter() : null;
-
-        } while (!is_null($after));
+        }
 
         return $all;
     }

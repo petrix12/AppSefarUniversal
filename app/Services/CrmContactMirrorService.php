@@ -107,16 +107,23 @@ class CrmContactMirrorService
         usort($orderedDeals, fn ($left, $right) => strcmp((string) $left['id'], (string) $right['id']));
         $contentHash = hash('sha256', json_encode($this->canonical([$exists, $contact, $orderedDeals]), JSON_THROW_ON_ERROR));
         $previous = CrmContactSnapshot::where('provider', $provider)->where('contact_id', $id)->first();
-        $field = $provider === 'hubspot' ? 'hs_id' : 'tl_id';
+        $identity = null;
         if ($provider === 'hubspot' && $contact !== null) {
-            $user = app(HubspotContactLocalSyncService::class)->resolveQualifiedClient($id, $contact, $deals);
+            $identity = app(HubspotContactLocalSyncService::class)->resolveContact($id, $contact, $deals);
+            $user = $identity['user'];
         } else {
+            $field = $provider === 'hubspot' ? 'hs_id' : 'tl_id';
             $users = User::where($field, $id)->limit(2)->get();
             $user = $users->count() === 1 ? $users->first() : null;
             if ($user && ! $user->hasRole('Cliente')) $user = null;
         }
-        $changed = $previous?->content_hash !== $contentHash || $previous?->user_id !== $user?->id;
-        $writeSnapshot = fn () => DB::transaction(function () use ($provider, $id, $ids, $contact, $deals, $user, $exists, $contentHash, $changed) {
+        $classification = ! $exists
+            ? 'deleted'
+            : ($provider === 'hubspot' ? $identity['classification'] : ($user ? 'client' : 'lead'));
+        $changed = $previous?->content_hash !== $contentHash
+            || $previous?->user_id !== $user?->id
+            || $previous?->classification !== $classification;
+        $writeSnapshot = fn () => DB::transaction(function () use ($provider, $id, $ids, $contact, $deals, $user, $exists, $contentHash, $changed, $classification) {
             if ($provider === 'hubspot') {
                 app(CrmObjectMirrorService::class)->storeAssociationSnapshot(
                     'contacts', $id, 'deals', $ids,
@@ -124,7 +131,7 @@ class CrmContactMirrorService
             }
             $snapshot = CrmContactSnapshot::firstOrNew(['provider' => $provider, 'contact_id' => $id]);
             $snapshot->fill([
-                'user_id' => $user?->id, 'classification' => ! $exists ? 'deleted' : ($user ? 'client' : 'lead'),
+                'user_id' => $user?->id, 'classification' => $classification,
                 'deal_ids' => $ids, 'contact' => $contact, 'synced_at' => now(),
                 'content_hash' => $contentHash,
             ])->save();
@@ -134,12 +141,17 @@ class CrmContactMirrorService
                 foreach ($deals as $deal) TlDeal::fromTeamleader($deal);
             } elseif ($provider === 'hubspot') {
                 $localSync = app(HubspotContactLocalSyncService::class);
+                $baselineProperties = data_get($previous?->contact, 'properties');
+                $baselineProperties = is_array($baselineProperties) ? $baselineProperties : null;
                 if ($user) {
-                    $localSync->syncQualifiedClient($user, $contact);
+                    $localSync->syncQualifiedClient($user, $contact, $baselineProperties);
                     app(HubspotDealLocalSyncService::class)->sync($user, $deals);
                     app(ClientRestrictionService::class)->detectHubspotRetirement($user, $contact, $deals);
-                } else {
-                    $localSync->syncLead($id, $contact);
+                } elseif ($classification === 'lead') {
+                    $localSync->syncLead($id, $contact, $baselineProperties);
+                    app(HubspotDealLocalSyncService::class)->syncUnassigned($deals);
+                } elseif ($classification === 'review') {
+                    // Preserve uniquely identified deal snapshots while withholding the ambiguous contact.
                     app(HubspotDealLocalSyncService::class)->syncUnassigned($deals);
                 }
             }

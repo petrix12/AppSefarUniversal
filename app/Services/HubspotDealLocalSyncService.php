@@ -182,6 +182,11 @@ class HubspotDealLocalSyncService
             }
         }
 
+        // HubSpot uses dealname; the existing COS-facing label is proyecto.
+        if (array_key_exists('dealname', $properties) && ! array_key_exists('proyecto', $properties)) {
+            $properties['proyecto'] = $properties['dealname'];
+        }
+
         $data = [];
 
         foreach ($fillableColumns as $column) {

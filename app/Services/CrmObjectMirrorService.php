@@ -6,6 +6,7 @@ use App\Models\CrmObjectAssociation;
 use App\Models\CrmObjectMirror;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /** Stores full HubSpot CRM object snapshots and association events without exposing them in user-facing records. */
 class CrmObjectMirrorService
@@ -75,6 +76,10 @@ class CrmObjectMirrorService
         ];
         $hash = hash('sha256', json_encode($this->canonical($remoteState), JSON_THROW_ON_ERROR));
 
+        if ($previous && $remote !== null && ! $archived && $previous->content_hash !== $hash) {
+            $this->recordInboundFieldConflicts($objectType, $externalId, $previous, $properties, $remote['updatedAt'] ?? null);
+        }
+
         $mirror = DB::transaction(function () use ($objectType, $externalId, $properties, $remote, $archived, $archivedAt, $hash): CrmObjectMirror {
             $mirror = CrmObjectMirror::query()->firstOrNew([
                 'provider' => 'hubspot', 'object_type' => $objectType, 'external_id' => $externalId,
@@ -107,6 +112,71 @@ class CrmObjectMirrorService
         return $mirror;
     }
 
+    private function recordInboundFieldConflicts(
+        string $objectType,
+        string $externalId,
+        CrmObjectMirror $previous,
+        array $remoteProperties,
+        mixed $remoteUpdatedAt,
+    ): void {
+        if (! Schema::hasTable('crm_sync_conflicts')) return;
+
+        $entityType = null;
+        $model = null;
+        $localProperties = [];
+
+        if ($objectType === 'contacts') {
+            $users = User::query()->where('hs_id', $externalId)->limit(2)->get();
+            if ($users->count() === 1 && $users->first()->hasRole('Cliente')) {
+                $entityType = 'client';
+                $model = $users->first();
+                foreach (['email' => 'email', 'firstname' => 'nombres', 'lastname' => 'apellidos', 'phone' => 'phone', 'numero_de_pasaporte' => 'passport'] as $property => $column) {
+                    $localProperties[$property] = $model->getAttribute($column);
+                }
+            } elseif ($users->isEmpty()) {
+                $leads = \App\Models\Lead::query()->where('hubspot_id', $externalId)->limit(2)->get();
+                if ($leads->count() === 1) {
+                    $entityType = 'lead';
+                    $model = $leads->first();
+                    $name = trim((string) $model->nombre);
+                    $parts = preg_split('/\s+/', $name, 2) ?: [];
+                    $localProperties = [
+                        'firstname' => $parts[0] ?? '',
+                        'lastname' => $parts[1] ?? '',
+                        'email' => $model->email,
+                        'phone' => $model->telefono,
+                        'numero_de_pasaporte' => $model->passport,
+                    ];
+                }
+            }
+        } elseif ($objectType === 'deals') {
+            $deals = Negocio::query()->where('hubspot_id', $externalId)->limit(2)->get();
+            if ($deals->count() === 1) {
+                $entityType = 'deal';
+                $model = $deals->first();
+                foreach (array_keys($remoteProperties) as $property) {
+                    $column = $property === 'dealname' ? 'proyecto' : $property;
+                    if (Schema::hasColumn($model->getTable(), $column)) {
+                        $localProperties[$property] = $model->getAttribute($column);
+                    }
+                }
+            }
+        }
+
+        if ($model && $localProperties !== []) {
+            app(CrmSyncConflictRecorder::class)->recordHubspotPrecedence(
+                $entityType,
+                $model,
+                $objectType,
+                $externalId,
+                $localProperties,
+                (array) ($previous->properties ?? []),
+                $remoteProperties,
+                $remoteUpdatedAt,
+            );
+        }
+    }
+
     /** Replace the currently known contact/deal relation set after a full read. */
     public function storeAssociationSnapshot(string $fromType, string $fromId, string $toType, array $toIds): void
     {
@@ -117,10 +187,29 @@ class CrmObjectMirrorService
         $toIds = array_values(array_unique(array_filter(array_map('strval', $toIds), fn ($id) => preg_match('/^[0-9]{1,64}$/', $id))));
 
         DB::transaction(function () use ($fromType, $fromId, $toType, $toIds): void {
+            $pair = CrmObjectAssociation::query()->where('provider', 'hubspot')
+                ->where('from_object_type', $fromType)->where('from_external_id', $fromId)
+                ->where('to_object_type', $toType);
+            $detailedTargetIds = (clone $pair)->where('association_type_id', '!=', 'snapshot')
+                ->pluck('to_external_id')->map(fn ($id) => (string) $id)->unique()->all();
+
             CrmObjectAssociation::query()->where('provider', 'hubspot')
                 ->where('from_object_type', $fromType)->where('from_external_id', $fromId)
                 ->where('to_object_type', $toType)->where('association_type_id', 'snapshot')
                 ->update(['active' => false, 'last_event_at' => now()]);
+
+            if ($detailedTargetIds !== []) {
+                $detailed = (clone $pair)->where('association_type_id', '!=', 'snapshot');
+                if ($toIds === []) {
+                    $detailed->update(['active' => false, 'last_event_at' => now()]);
+                    return;
+                }
+                (clone $detailed)->whereNotIn('to_external_id', $toIds)
+                    ->update(['active' => false, 'last_event_at' => now()]);
+                (clone $detailed)->whereIn('to_external_id', $toIds)
+                    ->update(['active' => true, 'last_event_at' => now()]);
+                $toIds = array_values(array_diff($toIds, $detailedTargetIds));
+            }
 
             foreach ($toIds as $toId) {
                 CrmObjectAssociation::query()->updateOrCreate([

@@ -13,7 +13,7 @@
             @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
             @if(session('warning'))<div class="alert alert-warning">{{ session('warning') }}</div>@endif
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <livewire:crud.users-table />
+                <livewire:crud.users-table :entity-type="$entityType ?? 'clients'" />
             </div>
         </div>
     </div>

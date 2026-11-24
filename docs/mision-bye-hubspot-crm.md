@@ -5,7 +5,7 @@
 
 ## Objetivo
 
-Convertir App Sefar en el sistema CRM principal de Sefar Universal y dejar HubSpot como integración opcional o histórico de transición. La App debe ser la fuente canónica de los datos propios, mientras que cada plataforma externa conserva su identidad y sus límites operativos.
+Convertir App Sefar en el sistema CRM principal de Sefar Universal y dejar HubSpot como plataforma sincronizada durante la transición. HubSpot es la prioridad de la carga inicial; después, un cambio iniciado en la App debe actualizar el registro existente en HubSpot. Si ambos lados modifican el mismo campo antes de sincronizar, HubSpot prevalece y la diferencia debe quedar registrada.
 
 La migración es una copia bidireccional de los objetos y relaciones de CRM, no solo una importación de contactos. No se debe retirar HubSpot hasta que la reconciliación confirme paridad y las escrituras en ambas direcciones estén operativas.
 
@@ -33,18 +33,22 @@ La migración es una copia bidireccional de los objetos y relaciones de CRM, no 
 - El listado administrativo de usuarios ahora separa visualmente **Contactos/clientes**, **Usuarios internos** y **Todos**. La separación usa los scopes `User::clients()` y `User::internalUsers()` sin alterar todavía las relaciones históricas del COS.
 - Se añadieron etapas controladas para leads, actividades CRM con seguimiento y presupuestos con conceptos, moneda, impuestos y estado. Los presupuestos se guardan en el CRM local y no emiten facturas ni cobros.
 - Se habilitó la creación administrativa de cuentas internas con selección de roles no Cliente/Administrador, contraseña aleatoria y enlace de recuperación para que cada persona defina su contraseña.
-- La copia entrante de webhooks HubSpot ya puede guardar propiedades completas de contactos, leads, negocios, facturas, presupuestos, productos, empresas, tickets, actividades y tipos de objeto personalizados en `crm_object_mirrors`; las relaciones recibidas se guardan en `crm_object_associations`.
-- El backfill de contactos usa la misma clasificación acordada: un contacto que puede asociarse sin ambigüedad a un `Cliente` con negocio local (o trae negocios que se copian a `negocios`) actualiza ese usuario; los demás se guardan como `Lead`. Los negocios sin cliente local quedan en `negocios` con `user_id` nulo para revisión/asociación posterior.
-- Antes de aplicar cambios de contacto o negocio existentes, se compara `updated_at` local con `updatedAt` de HubSpot; cuando el dato local es más nuevo, se preserva. Es una protección temporal de registro completo, no arbitraje de última modificación por campo.
+- El receptor genérico puede conservar snapshots de distintos tipos de HubSpot que tengan webhook activo. El alcance acordado de la migración inicial se limita a contactos, negocios, tickets, líneas, presupuestos, facturas, pagos, pedidos, suscripciones y actividades; no se migran empresas, productos ni objetos personalizados.
+- El backfill clasifica como `Lead` los contactos de HubSpot sin negocios asociados, salvo que un usuario local no cliente o con negocios propios coincida por ID; esa contradicción queda para Sistemas. Solo enlaza un contacto con negocios a un cliente por `users.hs_id`; el correo y el pasaporte sirven únicamente para detectar posibles colisiones, nunca para enlazar automáticamente. Los casos ambiguos, los correos secundarios duplicados, los IDs cruzados y los contactos con negocios sin cliente local quedan en `crm_identity_reviews` para revisión de Sistemas. Sus negocios pueden conservarse localmente sin asignar a un usuario.
+- La proyección de contactos confirma estos mapas: `firstname → users.nombres`, `lastname → users.apellidos`, `phone → users.phone`, `numero_de_pasaporte → users.passport`, `firstname + lastname → leads.nombre`, y `email/phone/numero_de_pasaporte → campos equivalentes de Lead`. `email` también se copia a `users.email` únicamente por `hs_id`; si coincide con otro usuario, lead o correo secundario, se deja para Sistemas. La fecha de nacimiento permanece en el snapshot hasta acordar su columna local. Para negocios, `dealname → negocios.proyecto`; una migración añade `amount`, `deal_currency_code`, `pipeline`, `dealstage` y `hubspot_owner_id`, que se copian por su ID exacto.
+- La reconciliación de contactos compara cada campo con el snapshot anterior. Si solo cambió localmente, conserva el valor para el outbox; si cambió en HubSpot, HubSpot prevalece en ese campo. Cuando ambos cambiaron el mismo campo, guarda el par cifrado en `crm_sync_conflicts`. El comando `crm:hubspot-sync-conflicts` lista metadatos sin valores; `--show-values` revela el diff cifrado para revisión autorizada.
 - Los espejos guardan eliminaciones como archivo lógico y conservan las propiedades anteriores. La recepción sigue dependiendo de la firma, el portal configurado, `CRM_EVENT_PROCESSING_ENABLED` y de que HubSpot envíe las suscripciones de cada objeto.
-- Esta copia técnica no convierte por sí sola cada registro en una ficha operativa ni empuja cambios locales a HubSpot. Es el primer bloque de la sincronización general; no habilita la salida de HubSpot.
-- Para backfill por tipo, `crm:mirror-hubspot-objects --type=contacts` solo cuenta en modo lectura; `--write` persiste esa página tras página en el espejo local. `--archived` lee los archivados. El backfill no modifica HubSpot y requiere la migración nueva aplicada antes de usar `--write`.
+- Esta copia técnica conserva cada tipo de HubSpot como snapshot con su ID externo y todas sus propiedades. No genera cargos ni números de factura o presupuesto. Todavía no convierte facturas, pagos, presupuestos y actividades en registros editables de sus módulos operativos locales.
+- Alcance inicial acordado: contactos (clasificados como clientes o leads en la App), negocios, tickets, líneas, presupuestos, facturas, pagos, pedidos, suscripciones y actividad histórica (llamadas, correos registrados, reuniones, notas y tareas). No incluye empresas, productos ni objetos personalizados.
+- La importación inicial tiene el perfil `crm:mirror-hubspot-objects --initial-crm --queue --write`; crea cargas reanudables para registros activos y archivados, sin escribir en HubSpot. `crm:hubspot-migration-report` muestra el avance guardado localmente y no llama a la API. El objeto Leads de HubSpot no se encola; la App clasifica como lead el contacto que no tiene negocios asociados.
+- `crm:hubspot-identity-reviews` muestra los IDs y motivos pendientes sin exponer correos ni pasaportes. Sistemas resuelve cada caso de forma explícita con `--resolve=<contact-id> --as=client|lead|ignore --write`; una asignación a cliente requiere un `users.hs_id` único y al menos un negocio local.
 - La importación histórica tiene ahora una modalidad en cola y reanudable. Cada job lee 25 registros, guarda su cursor y programa la página siguiente con una pausa. Un `429` respeta `Retry-After`; otros errores quedan con clase de excepción para reintentar sin guardar la respuesta o datos personales.
-- El limitador compartido espacia las solicitudes de importación/sincronización que pasan por el cliente CRM (predeterminado: máximo 4 por segundo) y aplica un techo propio de 10.000 solicitudes por día UTC (`CRM_HUBSPOT_DAILY_REQUEST_BUDGET`). Al alcanzar el techo, pausa la cola hasta el siguiente día UTC. El techo es por esta App, no lee el consumo de otras integraciones del portal; se debe ajustar con el panel de uso de HubSpot. Requiere una caché con locks compartidos entre los workers.
-- Cambios locales de clientes, leads y negocios pueden ir al outbox idempotente y al worker `crm-sync`. La salida queda apagada por defecto (`CRM_HUBSPOT_OUTBOUND_ENABLED=false`). Actualiza contactos por el ID existente o correo exacto; la creación de negocios requiere una propiedad única `sefar_app_negocio_id` en HubSpot para que los reintentos no creen duplicados. No empuja facturas, pagos, presupuestos ni actividades todavía.
-- Comandos para ejecutar después del despliegue de código: `php artisan migrate --force`; `php artisan crm:mirror-hubspot-objects --all --queue --write --include-archived`; `php artisan crm:mirror-hubspot-objects --status`. La cola usa la conexión `crm` y el scheduler despierta el worker cuando hay trabajos en `crm-sync`. `completed` confirma snapshots de objetos, no paridad completa de todas las asociaciones.
+- El limitador compartido conserva el techo de configuración de la App (predeterminado: 4 solicitudes por segundo y 10.000 por día), pero reduce la velocidad a la mitad del burst anunciado en las cabeceras de HubSpot. También pausa al llegar a la mitad del límite diario anunciado, lo que conserva la otra mitad para las integraciones compartidas. Los límites diarios se reinician según `CRM_HUBSPOT_DAILY_RESET_TIMEZONE`, que debe coincidir con la zona horaria configurada en HubSpot; si faltan cabeceras (por ejemplo, en Search/OAuth), se mantiene el presupuesto local conservador. Requiere una caché con locks compartidos entre los workers.
+- Cambios locales de clientes, leads y negocios pueden ir al outbox idempotente y al worker `crm-sync`. La salida queda apagada por defecto (`CRM_HUBSPOT_OUTBOUND_ENABLED=false`). Los contactos existentes se actualizan solo por `hs_id`/vínculo externo; no se enlazan por correo. Un registro histórico sin ID queda en revisión. La creación de contactos nuevos usa el marcador `sefar_app_contact_id`; los negocios nuevos usan `sefar_app_negocio_id`, para que los reintentos recuperen el mismo objeto. No empuja facturas, pagos, presupuestos ni actividades todavía.
+- El perfil anterior se ejecuta por la cola `crm-sync`, en páginas pequeñas con pausa, cursor, límite de solicitudes y presupuesto diario compartidos. Se puede pausar y reanudar a lo largo del tiempo. `completed` confirma snapshots de objetos, no paridad de asociaciones ni proyección operativa.
 - Webhook receptor: `https://app.sefaruniversal.com/api/webhooks/hubspot`. La ruta verifica firma, portal e idempotencia y encola los eventos que HubSpot tenga suscritos. Falta configurar y comprobar en la App de HubSpot las suscripciones de cada tipo de objeto y asociación; el endpoint por sí solo no crea esas suscripciones.
-- El backfill de contactos consulta negocios asociados para proyectarlos a `negocios` y guardar la relación contacto↔negocio. Las demás asociaciones no se backfillean todavía de forma completa. También quedan pendientes la proyección operativa de facturas, presupuestos, empresas y objetos personalizados, la salida de esos tipos desde la App y la reconciliación de paridad; el espejo JSON sirve como copia de transición, no basta para retirar HubSpot.
+- El backfill de contactos consulta negocios asociados para proyectarlos a `negocios` y guardar la relación contacto↔negocio. La cola `crm:hubspot-backfill-associations --queue --write` añade un backfill del conjunto explícito de relaciones comerciales, facturas, presupuestos y actividades; `--status` informa el avance. Ambas modalidades escriben solo el espejo local y usan Associations API `2026-09` con el limitador compartido. Facturas, presupuestos, pagos y actividad histórica se conservan íntegros en el espejo JSON y sus asociaciones genéricas; todavía falta proyectarlos a fichas operativas locales y sincronizar escrituras salientes de esos tipos.
+- El informe compara filas guardadas con registros leídos por cada backfill, además de estados, revisiones, conflictos y asociaciones. Esa comparación es local: no equivale a consultar HubSpot en vivo ni certifica paridad actual después de nuevos cambios.
 
 Esta es una separación lógica y reversible. La extracción física de contactos fuera de `users` se hará después de migrar compras, documentos, restricciones, notas, tareas, autenticación e integraciones.
 
@@ -52,7 +56,7 @@ Esta es una separación lógica y reversible. La extracción física de contacto
 
 ### 1. Leads separados de clientes
 
-La primera entidad `Lead` ya existe con datos de contacto, origen, etapa, responsable y trazabilidad de conversión. El panel permite alta, edición, búsqueda y filtrado por etapa/estado. La conversión desde los registros de clientes está conectada a los flujos de registro actuales.
+La entidad `Lead` conserva datos de contacto, origen, etapa y responsable. Al registrarse como cliente, una coincidencia única mueve el ID de HubSpot y los datos faltantes a `users`, transfiere sus actividades y presupuestos asociados y elimina la fila del lead. Si hay más de una coincidencia, un ID cruzado o asociaciones a otro cliente, no borra ni crea otro contacto remoto y lo deja pendiente para Sistemas.
 
 **Pendiente:** captación desde formularios/canales, consentimiento, próxima acción automatizada y conversión manual desde una ficha CRM. La separación física de contactos se mantiene como fase futura.
 
@@ -164,4 +168,25 @@ La prioridad de sincronización debe ser por campo y por versión, no por la hor
 
 Implementar el outbox local por objeto y el comando de reconciliación HubSpot. Empezar con contactos/leads y negocios usando los IDs ya existentes; continuar con facturas y presupuestos con protección de duplicados e importes; después sumar asociaciones y actividades. Los campos de acceso, pagos y COS requieren reglas propias antes de permitir que un valor externo los sobrescriba.
 
-No se han creado migraciones ni se han activado integraciones nuevas en esta auditoría.
+En esta fase se añadió la cola local `crm_identity_reviews` y el comando `crm:hubspot-identity-reviews`. La migración todavía debe desplegarse antes de ejecutar la clasificación de contactos en producción. La salida a HubSpot continúa apagada por defecto; no se ha iniciado ninguna importación real ni se han creado registros remotos.
+
+## Secuencia inicial de producción
+
+Después de desplegar el código, ejecutar en la carpeta Laravel:
+
+```bash
+php artisan config:clear
+php artisan migrate --force
+php artisan crm:mirror-hubspot-objects --initial-crm --queue --write
+php artisan crm:hubspot-migration-report
+```
+
+El scheduler de Laravel debe seguir ejecutándose cada minuto para procesar `crm-sync`. Revisar `crm:mirror-hubspot-objects --status` y el informe hasta que cada tipo activo y archivado indique `completed`. Después, iniciar las relaciones:
+
+```bash
+php artisan crm:hubspot-backfill-associations --queue --write
+php artisan crm:hubspot-backfill-associations --status
+php artisan crm:hubspot-migration-report
+```
+
+Los comandos de carga escriben únicamente en la base local y respetan el limitador compartido. Los pendientes de `crm_identity_reviews`, fallos de backfill y conflictos de campos deben resolverse antes de aprobar paridad. La recepción continua requiere suscripciones configuradas en HubSpot y `CRM_EVENT_PROCESSING_ENABLED=true`; la salida App → HubSpot sigue apagada hasta aprobar el mapa y el informe.

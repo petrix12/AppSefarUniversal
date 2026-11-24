@@ -86,7 +86,19 @@ class UserController extends Controller
      */
     public function index()
     {
-        return view('crud.users.index');
+        return view('crud.users.index', ['entityType' => 'clients']);
+    }
+
+    public function internalIndex()
+    {
+        abort_unless(auth()->user()?->isSuperadmin(), 403);
+
+        return view('crud.users.index', ['entityType' => 'internal']);
+    }
+
+    private function authorizeInternalUserManagement(User $user): void
+    {
+        abort_unless($user->isCliente() || auth()->user()?->isSuperadmin(), 403);
     }
 
     /**
@@ -96,6 +108,7 @@ class UserController extends Controller
     public function information(User $user)
     {
         abort_if(auth()->user()?->hasRole('Cliente'), 403);
+        $this->authorizeInternalUserManagement($user);
 
         $purchases = $user->compras()
             ->with('servicio:id,nombre')
@@ -341,6 +354,12 @@ class UserController extends Controller
 
         // Encuentra al usuario
         $user = User::findOrFail($request->id);
+        if ($user->isInternalUser()) {
+            abort_unless(auth()->user()?->isSuperadmin(), 403);
+        } else {
+            $this->authorizeAdminOnly();
+        }
+        $this->authorizeInternalUserManagement($user);
         $this->protectSuperadminAccount($user);
 
         // Actualiza la contraseña
@@ -361,6 +380,8 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
+        $this->authorizeInternalUserManagement($user);
+
         // Teamleader
         if (is_null($user->tl_id)) {
             $TLcontactByEmail = $this->teamleaderService->searchContactByEmail($user->email);
@@ -1726,6 +1747,8 @@ class UserController extends Controller
 
     public function edit(User $user)
 {
+    $this->authorizeInternalUserManagement($user);
+
     $startTime = microtime(true);
     $timing = \App\Support\CosPageTiming::current();
     $timing?->checkpoint('middleware', 'Autenticación, permisos y carga del usuario');
@@ -3211,6 +3234,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
      */
     public function update(Request $request, User $user)
     {
+        $this->authorizeInternalUserManagement($user);
         $this->protectSuperadminAccount($user);
         if ($user->getAttribute('is_superadmin')) {
             $clientRole = Role::where('name', 'Cliente')->first();
@@ -3232,6 +3256,11 @@ private function removeDuplicatesAndSort(array $cosuser): array
                 'email' => 'email|required|unique:users,email,'.$user->id
             ]);
         }
+
+        $clientRole = Role::where('name', 'Cliente')->first();
+        $willBeClient = $clientRole && $request->boolean('role'.$clientRole->id);
+        abort_if($user->isCliente() !== $willBeClient && ! auth()->user()?->isSuperadmin(), 403,
+            'Solo un superadmin puede cambiar una cuenta entre contacto y usuario interno.');
 
         // Actualizando usuario
         $user->name = $request->name;
@@ -3289,8 +3318,14 @@ private function removeDuplicatesAndSort(array $cosuser): array
      */
     public function destroy(User $user)
     {
+        $this->authorizeInternalUserManagement($user);
         abort_if((bool) $user->getAttribute('is_superadmin'), 403, 'Retira primero la marca de superadmin.');
-        abort_unless(auth()->user()?->hasRole('Administrador') && ! auth()->user()->hasRole('Cliente'), 403);
+        abort_unless(
+            $user->isInternalUser()
+                ? auth()->user()?->isSuperadmin()
+                : (auth()->user()?->hasRole('Administrador') && ! auth()->user()->hasRole('Cliente')),
+            403
+        );
         $nombre = $user->name;
 
         $user->delete();
@@ -3479,7 +3514,8 @@ private function removeDuplicatesAndSort(array $cosuser): array
 
     public function editBasic(User $user)
     {
-        $this->authorizeAdminOnly();
+        $this->authorizeBasicUserAccess($user);
+        $this->authorizeInternalUserManagement($user);
 
         // Roles/Permisos disponibles
         $roles = Role::orderBy('name')->get();
@@ -3502,8 +3538,10 @@ private function removeDuplicatesAndSort(array $cosuser): array
 
     public function updateBasic(Request $request, User $user)
     {
-        $this->authorizeAdminOnly();
+        $this->authorizeBasicUserAccess($user);
+        $this->authorizeInternalUserManagement($user);
         $this->protectSuperadminAccount($user);
+        $wasInternalUser = $user->isInternalUser();
 
         $request->validate([
             'name'      => 'required|string|max:255',
@@ -3526,6 +3564,9 @@ private function removeDuplicatesAndSort(array $cosuser): array
             'permissions'   => 'array',
             'permissions.*' => 'string',
         ]);
+        $willBeClient = in_array('Cliente', $request->input('roles', []), true);
+        abort_if($user->isCliente() !== $willBeClient && ! auth()->user()?->isSuperadmin(), 403,
+            'Solo un superadmin puede cambiar una cuenta entre contacto y usuario interno.');
         abort_if($user->getAttribute('is_superadmin') && in_array('Cliente', $request->input('roles', []), true), 422,
             'Retira primero la marca de superadmin antes de asignar el rol Cliente.');
 
@@ -3556,8 +3597,9 @@ private function removeDuplicatesAndSort(array $cosuser): array
         $permissions = $request->input('permissions', []);
         $user->syncPermissions($permissions);
 
-        return redirect()
-            ->route('crud.users.editBasic', $user->id)
+        return redirect($wasInternalUser || $user->isInternalUser()
+            ? route('crm.internal-users.index')
+            : route('crud.users.index'))
             ->with('success', 'Usuario actualizado (modo básico).');
     }
 
@@ -3568,6 +3610,17 @@ private function removeDuplicatesAndSort(array $cosuser): array
     private function authorizeAdminOnly(): void
     {
         abort_unless($this->isAdminUser(), 403);
+    }
+
+    private function authorizeBasicUserAccess(User $user): void
+    {
+        if ($user->isInternalUser()) {
+            abort_unless(auth()->user()?->isSuperadmin(), 403);
+
+            return;
+        }
+
+        $this->authorizeAdminOnly();
     }
 
     private function protectSuperadminAccount(User $user): void

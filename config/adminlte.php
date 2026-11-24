@@ -232,10 +232,10 @@ return [
         [
             'key' => 'clients',
             'id' => 'menu-clients',
-            'text' => 'Clientes y COS',
+            'text' => 'Contactos y clientes',
             'icon' => 'fas fa-fw fa-users',
             'submenu' => [
-                ['text' => 'Clientes y expedientes', 'icon' => 'fa-fw fas fa-users-cog', 'icon_color' => 'white', 'url' => 'users', 'can' => 'menu.clients', 'data' => ['search' => 'usuarios clientes cos']],
+                ['text' => 'Contactos y expedientes', 'icon' => 'fa-fw fas fa-users-cog', 'icon_color' => 'white', 'url' => 'users', 'can' => 'menu.clients', 'data' => ['search' => 'usuarios clientes cos']],
                 ['text' => 'Exportar clientes', 'icon' => 'fa-fw fas fa-file-export', 'icon_color' => 'white', 'route' => 'admin.client-exports.index', 'can' => 'clients.export'],
                 ['text' => 'Bloqueos de clientes', 'icon' => 'fa-fw fas fa-user-lock', 'route' => 'admin.client-restrictions.index', 'can' => 'clients.blocks.review'],
                 ['text' => 'Alertas', 'icon' => 'fa-fw fa fa-exclamation-triangle', 'icon_color' => 'white', 'can' => 'alertasapp.index', 'url' => 'alerts'],
@@ -461,7 +461,7 @@ return [
                     'text' => 'Usuarios y permisos',
                     'icon' => 'fas fa-fw fa-users-cog',
                     'submenu' => [
-                        ['text' => 'Usuarios internos', 'icon' => 'fa-fw fas fa-user-tie', 'icon_color' => 'white', 'url' => 'users?entityType=internal', 'can' => 'crud.users.index', 'data' => ['search' => 'usuarios internos personal equipo colaboradores']],
+                        ['text' => 'Usuarios internos', 'icon' => 'fa-fw fas fa-user-tie', 'icon_color' => 'white', 'route' => 'crm.internal-users.index', 'can' => 'superadmin', 'data' => ['search' => 'usuarios internos personal equipo colaboradores']],
                         ['text' => 'Superadmins', 'icon' => 'fa-fw fas fa-user-shield', 'route' => 'admin.superadmins.index', 'can' => 'superadmin'],
                         ['text' => 'Roles', 'icon' => 'fa-fw fas fa-user-tag', 'icon_color' => 'white', 'url' => 'roles', 'can' => 'crud.roles.index'],
                         ['text' => 'Permisos', 'icon' => 'fa-fw fas fa-universal-access', 'icon_color' => 'white', 'url' => 'permissions', 'can' => 'crud.permissions.index'],

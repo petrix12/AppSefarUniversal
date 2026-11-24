@@ -73,7 +73,7 @@ class BackfillHubspotObjectPage implements ShouldQueue
                 $locked->save();
 
                 if ($next !== null) {
-                    self::dispatch($locked->id)->delay(now()->addSeconds(2));
+                    self::dispatch($locked->id)->delay(now()->addSeconds(2))->afterCommit();
                 }
             });
         } catch (\Throwable $exception) {

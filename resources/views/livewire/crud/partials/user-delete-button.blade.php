@@ -1,6 +1,6 @@
-@if(auth()->user()?->hasRole('Administrador') && ! auth()->user()->hasRole('Cliente'))
+@if((! $user->isCliente() && auth()->user()?->isSuperadmin()) || ($user->isCliente() && auth()->user()?->hasRole('Administrador') && ! auth()->user()->hasRole('Cliente')))
     <div class="tooltip-container {{ ($mobile ?? false) ? 'flex-1' : '' }}">
-        <form action="{{ route('crud.users.destroy', $user) }}" method="POST" class="m-0"
+        <form action="{{ $user->isInternalUser() ? route('crm.internal-users.destroy', $user) : route('crud.users.destroy', $user) }}" method="POST" class="m-0"
               data-user-delete="{{ $user->id }}"
               onsubmit="return confirm('¿Eliminar definitivamente este usuario de la App? Esta acción no se puede deshacer.');">
             @csrf

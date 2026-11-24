@@ -224,8 +224,6 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
         ->name('crm.')
         ->group(function () {
             Route::get('/contacts/search', \App\Http\Controllers\CrmContactLookupController::class)->name('contacts.search');
-            Route::get('/internal-users/create', [\App\Http\Controllers\CrmInternalUserController::class, 'create'])->name('internal-users.create');
-            Route::post('/internal-users', [\App\Http\Controllers\CrmInternalUserController::class, 'store'])->name('internal-users.store');
             Route::get('/activities', [\App\Http\Controllers\CrmActivityController::class, 'listing'])->name('activities.index');
             Route::get('/activities/create', [\App\Http\Controllers\CrmActivityController::class, 'create'])->name('activities.create');
             Route::post('/activities', [\App\Http\Controllers\CrmActivityController::class, 'store'])->name('activities.store');
@@ -236,6 +234,16 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
             Route::post('/quotes', [\App\Http\Controllers\CrmQuoteController::class, 'store'])->name('quotes.store');
             Route::get('/quotes/{quote}/edit', [\App\Http\Controllers\CrmQuoteController::class, 'edit'])->name('quotes.edit');
             Route::put('/quotes/{quote}', [\App\Http\Controllers\CrmQuoteController::class, 'update'])->name('quotes.update');
+        });
+
+    Route::middleware(['auth', 'can:superadmin'])
+        ->prefix('admin/crm/internal-users')
+        ->name('crm.internal-users.')
+        ->group(function () {
+            Route::get('/', [UserController::class, 'internalIndex'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\CrmInternalUserController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\CrmInternalUserController::class, 'store'])->name('store');
+            Route::delete('/{user}', [\App\Http\Controllers\CrmInternalUserController::class, 'destroy'])->name('destroy');
         });
 
     Route::middleware(['auth', 'can:administrador'])
@@ -509,14 +517,14 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
     });
 
     Route::get('/crud/users/{user}/edit-basic', [UserController::class, 'editBasic'])
-        ->name('crud.users.editBasic')->middleware('can:administrador');
+        ->name('crud.users.editBasic')->middleware('auth');
 
     Route::get('/crud/users/{user}/information', [UserController::class, 'information'])
         ->middleware(['auth', 'can:crud.users.index'])
         ->name('crud.users.information');
 
     Route::put('/crud/users/{user}/update-basic', [UserController::class, 'updateBasic'])
-        ->name('crud.users.updateBasic')->middleware('can:administrador');
+        ->name('crud.users.updateBasic')->middleware('auth');
 
     Route::middleware(['auth', 'estado.vendedor'])->group(function () {
         Route::get('/dashboard', fn () => view('dashboard'))->name('dashboard');
@@ -747,7 +755,7 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
     Route::post('getreporteanual',[ReportController::class, 'getreporteanual'])->name('getreporteanual')->middleware('can:reportes.index');
 
     Route::post('changepassword',[UserController::class, 'mypassword'])->name('changepassword');
-    Route::post('adminchangepassword',[UserController::class, 'adminchangepassword'])->name('adminchangepassword')->middleware('can:administrador');
+    Route::post('adminchangepassword',[UserController::class, 'adminchangepassword'])->name('adminchangepassword')->middleware('can:admin.user-password');
 
     //TeamleaderTest
 
@@ -1090,7 +1098,7 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
         });
         Route::post('/deploy', [DeployController::class, 'deploy'])->name('deploy.run');
         Route::post('/hubspot/sync-client-owners', function () {
-            Artisan::call('hubspot:sync-client-owners', ['--match' => 'email']);
+            Artisan::call('hubspot:sync-client-owners', ['--match' => 'hs_id']);
 
             return response()->json(['status' => 'ok', 'output' => Artisan::output()]);
         })->name('hubspot.sync-client-owners');

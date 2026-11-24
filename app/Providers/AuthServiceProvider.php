@@ -26,6 +26,7 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
         Gate::define('superadmin', fn ($user) => $user->isSuperadmin());
+        Gate::define('admin.user-password', fn ($user) => $user->can('administrador') || $user->isSuperadmin());
         Gate::define('client-notes.delete', fn ($user) => $user->isSuperadmin());
         Gate::define('registration.meeting', fn ($user) => $user->hasRole('Cliente') && (int) $user->pay === 2 && (int) $user->contrato === 1
             && \App\Services\RegistrationMeetingService::supportsUser($user)

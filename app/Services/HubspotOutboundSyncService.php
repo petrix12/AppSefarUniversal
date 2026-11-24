@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ExternalEntityLink;
 use App\Models\IntegrationOutbox;
+use App\Models\CrmObjectMirror;
 use App\Models\Lead;
 use App\Models\Negocio;
 use App\Models\User;
@@ -38,8 +39,11 @@ class HubspotOutboundSyncService
                 if ($properties !== []) {
                     $externalId = $this->externalId($entry, $model, $objectType, $idColumn);
                     if ($externalId === null) {
-                        if ($entry->entity_type === 'deal' && ! $search['app_id_property']) {
-                            throw new \RuntimeException('Para crear negocios desde la App, crea en HubSpot la propiedad sefar_app_negocio_id.');
+                        if (! $search['created_in_app']) {
+                            throw new \RuntimeException('Falta el ID permanente de HubSpot; el registro requiere revisión antes de enlazarlo.');
+                        }
+                        if (! $search['app_id_property']) {
+                            throw new \RuntimeException("Falta la propiedad única {$search['property']} en HubSpot; el registro nuevo no se puede crear con reintentos seguros.");
                         }
                         $found = $this->hubspot->searchWebhookObjects(
                             $objectType,
@@ -53,22 +57,29 @@ class HubspotOutboundSyncService
                         $externalId = isset($found[0]['id']) ? (string) $found[0]['id'] : null;
                     }
 
-                    if ($externalId !== null && $this->remoteWins($objectType, $externalId, $model)) {
-                        $properties = [];
+                    if ($externalId !== null && $properties !== []) {
+                        $properties = $this->applyHubspotConflictPolicy(
+                            $entry,
+                            $objectType,
+                            $externalId,
+                            $model,
+                            $properties,
+                        );
                     }
 
                     $creating = $externalId === null;
-                    if ($creating && $entry->entity_type === 'deal') {
-                        if (! $search['app_id_property']) {
-                            throw new \RuntimeException('Para crear negocios desde la App, crea en HubSpot la propiedad sefar_app_negocio_id.');
-                        }
-                        $properties['sefar_app_negocio_id'] = (string) $model->getKey();
+                    if ($creating) {
+                        $properties[$search['property']] = $search['value'];
                     }
 
                     if ($properties !== []) {
                         $remote = $this->hubspot->writeWebhookObject($objectType, $externalId, $properties);
                         $externalId = (string) $remote['id'];
                         $this->storeLink($entry, $model, $objectType, $idColumn, $externalId, $remote['updatedAt'] ?? null);
+                        $currentRemote = $this->hubspot->webhookObject($objectType, $externalId);
+                        if ($currentRemote !== null) {
+                            app(CrmObjectMirrorService::class)->storeRemoteObject($objectType, $externalId, $currentRemote);
+                        }
                     }
                 }
 
@@ -103,7 +114,7 @@ class HubspotOutboundSyncService
         }
     }
 
-    /** @return array{Model,string,string,array<string,mixed>,array{property:string,value:string,app_id_property:bool}} */
+    /** @return array{Model,string,string,array<string,mixed>,array{property:string,value:string,app_id_property:bool,created_in_app:bool}} */
     private function prepare(IntegrationOutbox $entry): array
     {
         $fields = (array) data_get($entry->payload, 'fields', []);
@@ -118,8 +129,13 @@ class HubspotOutboundSyncService
             throw new \RuntimeException('Solo se sincronizan contactos con rol Cliente.');
         }
         if ($model instanceof Lead && $model->converted_at) {
-            return [$model, 'contacts', 'hubspot_id', [], ['property' => 'email', 'value' => '', 'app_id_property' => false]];
+            return [$model, 'contacts', 'hubspot_id', [], [
+                'property' => 'sefar_app_contact_id', 'value' => (string) $model->getKey(),
+                'app_id_property' => false, 'created_in_app' => false,
+            ]];
         }
+
+        $createdInApp = (bool) data_get($entry->payload, 'created_in_app', false);
 
         $objectType = $entry->entity_type === 'deal' ? 'deals' : 'contacts';
         $idColumn = $entry->entity_type === 'client' ? 'hs_id' : 'hubspot_id';
@@ -144,7 +160,7 @@ class HubspotOutboundSyncService
             if (! filled($model->proyecto)) {
                 throw new \RuntimeException('El negocio no tiene dealname; se dejó sin sincronizar.');
             }
-            return [$model, $objectType, $idColumn, $properties, $search];
+            return [$model, $objectType, $idColumn, $properties, $search + ['created_in_app' => $createdInApp]];
         }
 
         $mapping = $entry->entity_type === 'client'
@@ -169,9 +185,13 @@ class HubspotOutboundSyncService
             if ($value !== null || $model->exists) $properties[$property] = $this->normalizeValue($value);
         }
 
-        $email = trim((string) ($model instanceof User ? $model->email : $model->email));
-        if ($email === '') throw new \RuntimeException('Falta correo: no se puede identificar con seguridad el contacto en HubSpot.');
-        return [$model, $objectType, $idColumn, $properties, ['property' => 'email', 'value' => $email, 'app_id_property' => false]];
+        $contactIdProperty = 'sefar_app_contact_id';
+        return [$model, $objectType, $idColumn, $properties, [
+            'property' => $contactIdProperty,
+            'value' => (string) $model->getKey(),
+            'app_id_property' => isset($available[$contactIdProperty]),
+            'created_in_app' => $createdInApp,
+        ]];
     }
 
     private function externalId(IntegrationOutbox $entry, Model $model, string $objectType, string $idColumn): ?string
@@ -182,32 +202,90 @@ class HubspotOutboundSyncService
             ->where('provider', 'hubspot')->where('external_entity_type', $objectType)->value('external_id');
     }
 
-    private function remoteWins(string $objectType, string $externalId, Model $model): bool
+    private function applyHubspotConflictPolicy(
+        IntegrationOutbox $entry,
+        string $objectType,
+        string $externalId,
+        Model $model,
+        array $localProperties,
+    ): array
     {
         $remote = $this->hubspot->webhookObject($objectType, $externalId);
-        if (! $remote) return false;
+        if (! $remote) return $localProperties;
         if (($remote['archived'] ?? false) === true) {
             throw new \RuntimeException('El objeto remoto está archivado y requiere revisión antes de reactivarlo.');
         }
-        $remoteUpdatedAt = $remote['updatedAt'] ?? null;
-        if (! is_string($remoteUpdatedAt) || ! $model->updated_at) return false;
-        try {
-            $remoteDate = \Illuminate\Support\Carbon::parse($remoteUpdatedAt);
-            $localDate = \Illuminate\Support\Carbon::parse($model->updated_at);
-        } catch (\Throwable) {
-            return false;
+        $baseline = CrmObjectMirror::query()->where('provider', 'hubspot')
+            ->where('object_type', $objectType)->where('external_id', $externalId)->first();
+        $hubspotWinsFields = app(CrmSyncConflictRecorder::class)->recordHubspotPrecedence(
+            $entry->entity_type,
+            $model,
+            $objectType,
+            $externalId,
+            $localProperties,
+            $baseline?->properties,
+            (array) ($remote['properties'] ?? []),
+            $remote['updatedAt'] ?? null,
+        );
+        if ($hubspotWinsFields !== []) {
+            $this->applyRemoteConflictValues($model, $objectType, $hubspotWinsFields, (array) ($remote['properties'] ?? []));
         }
-        if (! $remoteDate->gt($localDate)) return false;
 
         app(CrmObjectMirrorService::class)->storeRemoteObject($objectType, $externalId, $remote);
-        if ($objectType === 'contacts') {
-            app(CrmContactMirrorService::class)->syncContact('hubspot', $externalId);
-        } elseif ($model instanceof Negocio && $model->user_id) {
-            $user = User::query()->find($model->user_id);
-            if ($user) app(HubspotDealLocalSyncService::class)->sync($user, [$remote]);
+
+        return array_diff_key($localProperties, array_fill_keys($hubspotWinsFields, true));
+    }
+
+    private function applyRemoteConflictValues(Model $model, string $objectType, array $fields, array $remoteProperties): void
+    {
+        $values = [];
+        if ($model instanceof User) {
+            $map = ['email' => 'email', 'firstname' => 'nombres', 'lastname' => 'apellidos', 'phone' => 'phone',
+                'numero_de_pasaporte' => 'passport', 'city' => 'city', 'address' => 'address'];
+            foreach ($fields as $field) {
+                if ($field === 'email' && app(HubspotContactLocalSyncService::class)->parkContactEmailConflict(
+                    (string) $model->hs_id,
+                    ['id' => (string) $model->hs_id, 'properties' => $remoteProperties],
+                    (int) $model->getKey(),
+                )) {
+                    continue;
+                }
+                if (isset($map[$field])) $values[$map[$field]] = $remoteProperties[$field] ?? null;
+            }
+        } elseif ($model instanceof Lead) {
+            foreach ($fields as $field) {
+                if ($field === 'email' && ! app(HubspotContactLocalSyncService::class)->parkContactEmailConflict(
+                    (string) $model->hubspot_id,
+                    ['id' => (string) $model->hubspot_id, 'properties' => $remoteProperties],
+                    null,
+                    (int) $model->getKey(),
+                )) $values['email'] = $remoteProperties[$field] ?? null;
+                if ($field === 'phone') $values['telefono'] = $remoteProperties[$field] ?? null;
+                if ($field === 'numero_de_pasaporte') $values['passport'] = $remoteProperties[$field] ?? null;
+            }
+            if (in_array('firstname', $fields, true) || in_array('lastname', $fields, true)) {
+                $nameParts = preg_split('/\s+/', trim((string) $model->nombre), 2) ?: [];
+                $first = in_array('firstname', $fields, true)
+                    ? trim((string) ($remoteProperties['firstname'] ?? ''))
+                    : (string) ($nameParts[0] ?? '');
+                $last = in_array('lastname', $fields, true)
+                    ? trim((string) ($remoteProperties['lastname'] ?? ''))
+                    : (string) ($nameParts[1] ?? '');
+                $values['nombre'] = trim($first.' '.$last);
+            }
+        } elseif ($model instanceof Negocio) {
+            foreach ($fields as $field) {
+                $attribute = $field === 'dealname' ? 'proyecto' : $field;
+                if (Schema::hasColumn($model->getTable(), $attribute)) {
+                    $values[$attribute] = $remoteProperties[$field] ?? null;
+                }
+            }
         }
 
-        return true;
+        if ($values === []) return;
+        HubspotSyncOrigin::fromHubspot(function () use ($model, $values): void {
+            $model->forceFill($values)->save();
+        });
     }
 
     private function storeLink(IntegrationOutbox $entry, Model $model, string $objectType, string $idColumn, string $externalId, mixed $remoteUpdatedAt): void
