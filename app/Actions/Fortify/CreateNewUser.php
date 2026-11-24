@@ -18,6 +18,7 @@ use Laravel\Jetstream\Jetstream;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Support\Facades\DB;
 use App\Models\Servicio;
+use App\Services\LeadConversionService;
 
 class CreateNewUser implements CreatesNewUsers
 {
@@ -139,7 +140,10 @@ class CreateNewUser implements CreatesNewUsers
                 '20053496@bcc.hubspot.com'
             ])->send($mail_sefar);
 
-            return $user->assignRole('Cliente')->givePermissionTo(['pay.services', 'finish.register']);
+            $user->assignRole('Cliente')->givePermissionTo(['pay.services', 'finish.register']);
+            app(LeadConversionService::class)->convertFor($user);
+
+            return $user;
         }else{
             return $user;
         }

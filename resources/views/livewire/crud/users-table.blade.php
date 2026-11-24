@@ -524,9 +524,9 @@
                 <div class="bg-gray-50">
                     <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:py-6 lg:px-8 lg:flex lg:items-center lg:justify-between">
                         <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-                            <span class="ctvSefar block text-indigo-600">{{ __('Users') }}</span>
+                            <span class="ctvSefar block text-indigo-600">{{ $entityType === 'internal' ? 'Usuarios internos' : ($entityType === 'all' ? 'Usuarios y contactos' : 'Contactos y clientes') }}</span>
                         </h2>
-                        @canany(['clients.export', 'crud.users.create'])
+                        @canany(['clients.export', 'crud.users.create', 'administrador'])
                             <div class="mt-4 flex flex-wrap items-center gap-3 lg:mt-0 lg:flex-shrink-0">
                                 @can('clients.export')
                                     <div class="inline-flex rounded-md shadow">
@@ -536,14 +536,15 @@
                                         </a>
                                     </div>
                                 @endcan
-                                @can('crud.users.create')
-                                    <div class="inline-flex rounded-md shadow">
-                                        <a href="{{ route('crud.users.create') }}"
-                                           class="cfrSefar inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                                            {{ __('Create user') }}
-                                        </a>
-                                    </div>
-                                @endcan
+                                @if($entityType === 'internal')
+                                    @can('administrador')
+                                        <div class="inline-flex rounded-md shadow"><a href="{{ route('crm.internal-users.create') }}" class="cfrSefar inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Crear cuenta interna</a></div>
+                                    @endcan
+                                @else
+                                    @can('crud.users.create')
+                                        <div class="inline-flex rounded-md shadow"><a href="{{ route('crud.users.create') }}" class="cfrSefar inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">{{ __('Create user') }}</a></div>
+                                    @endcan
+                                @endif
                             </div>
                         @endcanany
                     </div>
@@ -590,6 +591,26 @@
 
                     <div class="flex bg-white px-4 sm:px-6 pb-2">
                         <small>Para una búsqueda más exacta, busca por <b>correo</b> o <b>número de pasaporte</b></small>
+                    </div>
+
+                    <div class="bg-white px-4 sm:px-6 pb-3">
+                        <div class="inline-flex rounded-md shadow-sm" role="group" aria-label="Tipo de registro">
+                            <button type="button" wire:click="$set('entityType', 'clients')"
+                                    class="px-4 py-2 text-sm font-medium border {{ $entityType === 'clients' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300' }} rounded-l-md">
+                                <i class="fas fa-address-book mr-1"></i> Contactos / clientes
+                            </button>
+                            <button type="button" wire:click="$set('entityType', 'internal')"
+                                    class="px-4 py-2 text-sm font-medium border-t border-b {{ $entityType === 'internal' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300' }}">
+                                <i class="fas fa-user-shield mr-1"></i> Usuarios internos
+                            </button>
+                            <button type="button" wire:click="$set('entityType', 'all')"
+                                    class="px-4 py-2 text-sm font-medium border {{ $entityType === 'all' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300' }} rounded-r-md">
+                                Todos
+                            </button>
+                        </div>
+                        <p class="mt-2 mb-0 text-xs text-gray-500">
+                            Los contactos con rol Cliente se mantienen separados de las cuentas internas y de sus permisos de acceso.
+                        </p>
                     </div>
 
                     <!-- Filtros -->

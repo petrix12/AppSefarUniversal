@@ -209,6 +209,36 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
         });
 
     Route::middleware(['auth', 'can:administrador'])
+        ->prefix('admin/crm/leads')
+        ->name('crm.leads.')
+        ->group(function () {
+            Route::get('/', [\App\Http\Controllers\CrmLeadController::class, 'listing'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\CrmLeadController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\CrmLeadController::class, 'store'])->name('store');
+            Route::get('/{lead}/edit', [\App\Http\Controllers\CrmLeadController::class, 'edit'])->name('edit');
+            Route::put('/{lead}', [\App\Http\Controllers\CrmLeadController::class, 'update'])->name('update');
+        });
+
+    Route::middleware(['auth', 'can:administrador'])
+        ->prefix('admin/crm')
+        ->name('crm.')
+        ->group(function () {
+            Route::get('/contacts/search', \App\Http\Controllers\CrmContactLookupController::class)->name('contacts.search');
+            Route::get('/internal-users/create', [\App\Http\Controllers\CrmInternalUserController::class, 'create'])->name('internal-users.create');
+            Route::post('/internal-users', [\App\Http\Controllers\CrmInternalUserController::class, 'store'])->name('internal-users.store');
+            Route::get('/activities', [\App\Http\Controllers\CrmActivityController::class, 'listing'])->name('activities.index');
+            Route::get('/activities/create', [\App\Http\Controllers\CrmActivityController::class, 'create'])->name('activities.create');
+            Route::post('/activities', [\App\Http\Controllers\CrmActivityController::class, 'store'])->name('activities.store');
+            Route::get('/activities/{activity}/edit', [\App\Http\Controllers\CrmActivityController::class, 'edit'])->name('activities.edit');
+            Route::put('/activities/{activity}', [\App\Http\Controllers\CrmActivityController::class, 'update'])->name('activities.update');
+            Route::get('/quotes', [\App\Http\Controllers\CrmQuoteController::class, 'listing'])->name('quotes.index');
+            Route::get('/quotes/create', [\App\Http\Controllers\CrmQuoteController::class, 'create'])->name('quotes.create');
+            Route::post('/quotes', [\App\Http\Controllers\CrmQuoteController::class, 'store'])->name('quotes.store');
+            Route::get('/quotes/{quote}/edit', [\App\Http\Controllers\CrmQuoteController::class, 'edit'])->name('quotes.edit');
+            Route::put('/quotes/{quote}', [\App\Http\Controllers\CrmQuoteController::class, 'update'])->name('quotes.update');
+        });
+
+    Route::middleware(['auth', 'can:administrador'])
         ->prefix('admin/unification-map')
         ->name('unification-map.')
         ->group(function () {

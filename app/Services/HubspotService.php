@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\HubspotContactUpdateException;
+use App\Exceptions\HubspotApiException;
 use HubSpot\Factory;
 use HubSpot\Client\Crm\Contacts\Model\SimplePublicObjectInput;
 use HubSpot\Client\Crm\Contacts\Model\BatchInputSimplePublicObjectBatchInput as ContactBatchInput;
@@ -994,34 +995,236 @@ class HubspotService
 
     public function webhookObjectExists(string $entity, string $id): bool
     {
-        if (! in_array($entity, ['contacts', 'deals'], true) || ! ctype_digit($id)) throw new \InvalidArgumentException('Invalid CRM object.');
-        $response = $this->makeHttpClient()->request('GET', "https://api.hubapi.com/crm/v3/objects/$entity/$id", [
-            'headers' => ['Authorization' => 'Bearer '.config('services.hubspot.key')],
-            'query' => ['properties' => 'hs_object_id'], 'http_errors' => false,
+        if (! preg_match('/^[a-zA-Z0-9_-]{2,80}$/', $entity) || ! ctype_digit($id) || strlen($id) > 64) {
+            throw new \InvalidArgumentException('Invalid CRM object.');
+        }
+        $token = (string) config('services.hubspot.key');
+        if ($token === '') throw new \RuntimeException('HubSpot credentials are not configured.');
+        $url = "https://api.hubapi.com/crm/v3/objects/$entity/$id";
+        $headers = ['Authorization' => 'Bearer '.$token, 'Accept' => 'application/json'];
+        $this->hubspotThrottle();
+        $response = $this->makeHttpClient()->request('GET', $url, [
+            'headers' => $headers, 'query' => ['properties' => 'hs_object_id'], 'http_errors' => false,
         ]);
         if ($response->getStatusCode() === 404) return false;
-        if ($response->getStatusCode() !== 200) throw new \RuntimeException('CRM availability check failed.');
+        if ($response->getStatusCode() !== 200) throw $this->apiException($response, 'object availability check');
         return true;
+    }
+
+    /** Retrieve a CRM object and every currently defined property for a webhook mirror. */
+    public function webhookObject(string $entity, string $id, ?array $properties = null): ?array
+    {
+        if (! preg_match('/^[a-zA-Z0-9_-]{2,80}$/', $entity) || ! ctype_digit($id) || strlen($id) > 64) {
+            throw new \InvalidArgumentException('Invalid CRM object.');
+        }
+        $token = (string) config('services.hubspot.key');
+        if ($token === '') throw new \RuntimeException('HubSpot credentials are not configured.');
+        $client = $this->makeHttpClient();
+        $headers = ['Authorization' => 'Bearer '.$token, 'Accept' => 'application/json'];
+
+        $propertyNames = $properties ?? $this->webhookObjectPropertyNames($entity, $client, $headers);
+        $propertyNames = array_values(array_unique(array_filter($propertyNames,
+            fn ($property) => is_string($property) && preg_match('/^[a-zA-Z0-9_]{1,191}$/', $property))));
+
+        $query = $propertyNames === [] ? [] : ['properties' => implode(',', $propertyNames)];
+        $url = "https://api.hubapi.com/crm/v3/objects/$entity/$id";
+        $this->hubspotThrottle();
+        $response = $client->request('GET', $url, ['headers' => $headers, 'query' => $query, 'http_errors' => false]);
+        if ($response->getStatusCode() === 404) {
+            // HubSpot separates archived records from active reads; try the archive before writing a tombstone.
+            $this->hubspotThrottle();
+            $response = $client->request('GET', $url, [
+                'headers' => $headers, 'query' => $query + ['archived' => 'true'], 'http_errors' => false,
+            ]);
+            if ($response->getStatusCode() === 404) return null;
+        }
+        if ($response->getStatusCode() !== 200) {
+            throw $this->apiException($response, 'object lookup');
+        }
+
+        $object = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        if (! is_array($object) || (string) ($object['id'] ?? '') !== $id || ! is_array($object['properties'] ?? null)) {
+            throw new \UnexpectedValueException('Invalid HubSpot object response.');
+        }
+        return $object;
+    }
+
+    /** Read one page for an explicit CRM backfill; callers choose dry-run or local persistence. */
+    public function listWebhookObjects(string $entity, ?string $after = null, int $limit = 100, bool $archived = false): array
+    {
+        if (! preg_match('/^[a-zA-Z0-9_-]{2,80}$/', $entity) || $limit < 1 || $limit > 100) {
+            throw new \InvalidArgumentException('Invalid HubSpot object page request.');
+        }
+        $token = (string) config('services.hubspot.key');
+        if ($token === '') throw new \RuntimeException('HubSpot credentials are not configured.');
+        $client = $this->makeHttpClient();
+        $headers = ['Authorization' => 'Bearer '.$token, 'Accept' => 'application/json'];
+        $query = array_filter([
+            'limit' => $limit,
+            'after' => $after,
+            'archived' => $archived ? 'true' : null,
+            'properties' => implode(',', $this->webhookObjectPropertyNames($entity, $client, $headers)),
+        ], fn ($value) => $value !== null && $value !== '');
+        $this->hubspotThrottle();
+        $response = $client->request('GET', "https://api.hubapi.com/crm/v3/objects/$entity", [
+            'headers' => $headers, 'query' => $query, 'http_errors' => false,
+        ]);
+        if ($response->getStatusCode() !== 200) {
+            throw $this->apiException($response, 'object listing');
+        }
+        $body = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        if (! is_array($body['results'] ?? null)) throw new \UnexpectedValueException('Invalid HubSpot object page response.');
+        return [
+            'results' => $body['results'],
+            'next' => data_get($body, 'paging.next.after'),
+        ];
+    }
+
+    /** Search an object by an exact property value without logging response data. */
+    public function searchWebhookObjects(string $entity, string $property, string $value, int $limit = 2): array
+    {
+        if (! preg_match('/^[a-zA-Z0-9_-]{2,80}$/', $entity)
+            || ! preg_match('/^[a-zA-Z0-9_]{2,191}$/', $property)
+            || $limit < 1 || $limit > 10) {
+            throw new \InvalidArgumentException('Invalid HubSpot object search.');
+        }
+        $token = (string) config('services.hubspot.key');
+        if ($token === '') throw new \RuntimeException('HubSpot credentials are not configured.');
+        $this->hubspotThrottle();
+        $response = $this->makeHttpClient()->request('POST', "https://api.hubapi.com/crm/v3/objects/$entity/search", [
+            'headers' => ['Authorization' => 'Bearer '.$token, 'Accept' => 'application/json'],
+            'json' => [
+                'filterGroups' => [['filters' => [['propertyName' => $property, 'operator' => 'EQ', 'value' => $value]]]],
+                'properties' => [$property], 'limit' => $limit,
+            ],
+            'http_errors' => false,
+        ]);
+        if ($response->getStatusCode() !== 200) {
+            throw $this->apiException($response, 'object search');
+        }
+        $body = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        if (! is_array($body['results'] ?? null)) throw new \UnexpectedValueException('Invalid HubSpot search response.');
+        return $body['results'];
+    }
+
+    /** Create or update a CRM object. The caller supplies only allowlisted properties. */
+    public function writeWebhookObject(string $entity, ?string $id, array $properties): array
+    {
+        if (! preg_match('/^[a-zA-Z0-9_-]{2,80}$/', $entity)
+            || ($id !== null && ! ctype_digit($id))
+            || $properties === []) {
+            throw new \InvalidArgumentException('Invalid HubSpot object write.');
+        }
+        foreach (array_keys($properties) as $property) {
+            if (! is_string($property) || ! preg_match('/^[a-zA-Z0-9_]{1,191}$/', $property)) {
+                throw new \InvalidArgumentException('Invalid HubSpot object property.');
+            }
+        }
+        $token = (string) config('services.hubspot.key');
+        if ($token === '') throw new \RuntimeException('HubSpot credentials are not configured.');
+        $this->hubspotThrottle();
+        $url = "https://api.hubapi.com/crm/v3/objects/$entity".($id !== null ? '/'.$id : '');
+        $response = $this->makeHttpClient()->request($id !== null ? 'PATCH' : 'POST', $url, [
+            'headers' => ['Authorization' => 'Bearer '.$token, 'Accept' => 'application/json'],
+            'json' => ['properties' => $properties], 'http_errors' => false,
+        ]);
+        if (! in_array($response->getStatusCode(), $id !== null ? [200] : [200, 201], true)) {
+            throw $this->apiException($response, 'object write');
+        }
+        $object = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        if (! is_array($object) || ! ctype_digit((string) ($object['id'] ?? ''))) {
+            throw new \UnexpectedValueException('Invalid HubSpot object write response.');
+        }
+        return $object;
+    }
+
+    /** Discover custom CRM object schemas so a full backfill can include them. */
+    public function listCustomObjectTypes(): array
+    {
+        $token = (string) config('services.hubspot.key');
+        if ($token === '') throw new \RuntimeException('HubSpot credentials are not configured.');
+        $this->hubspotThrottle();
+        $response = $this->makeHttpClient()->request('GET', 'https://api.hubapi.com/crm/v3/schemas', [
+            'headers' => ['Authorization' => 'Bearer '.$token, 'Accept' => 'application/json'],
+            'http_errors' => false,
+        ]);
+        if ($response->getStatusCode() !== 200) {
+            throw $this->apiException($response, 'custom schema lookup');
+        }
+        $body = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        if (! is_array($body['results'] ?? null)) throw new \UnexpectedValueException('Invalid HubSpot schemas response.');
+
+        return collect($body['results'])->pluck('name')
+            ->filter(fn ($name) => is_string($name) && preg_match('/^[a-zA-Z0-9_-]{2,80}$/', $name))
+            ->values()->all();
+    }
+
+    private function webhookObjectPropertyNames(string $entity, ClientInterface $client, array $headers): array
+    {
+        return Cache::remember('hubspot.webhook-properties.'.strtolower($entity), 3600, function () use ($client, $headers, $entity): array {
+            $this->hubspotThrottle();
+            $response = $client->request('GET', "https://api.hubapi.com/crm/v3/properties/$entity", [
+                'headers' => $headers, 'http_errors' => false,
+            ]);
+            if ($response->getStatusCode() !== 200) {
+                throw $this->apiException($response, 'object property lookup');
+            }
+            $body = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+            if (! is_array($body['results'] ?? null)) throw new \UnexpectedValueException('Invalid HubSpot property catalogue response.');
+            return collect($body['results'])->pluck('name')->filter(fn ($name) => is_string($name) && $name !== '')->unique()->values()->all();
+        });
+    }
+
+    /** Read the cached property keys used by the queued mirror/outbox. */
+    public function webhookPropertyNames(string $entity): array
+    {
+        $token = (string) config('services.hubspot.key');
+        if ($token === '') throw new \RuntimeException('HubSpot credentials are not configured.');
+        return $this->webhookObjectPropertyNames($entity, $this->makeHttpClient(), [
+            'Authorization' => 'Bearer '.$token,
+            'Accept' => 'application/json',
+        ]);
+    }
+
+    private function apiException(\Psr\Http\Message\ResponseInterface $response, string $operation): HubspotApiException
+    {
+        $header = trim($response->getHeaderLine('Retry-After'));
+        $retryAfter = ctype_digit($header)
+            ? (int) $header
+            : ($header !== '' && strtotime($header) !== false ? max(1, strtotime($header) - time()) : null);
+
+        return new HubspotApiException($response->getStatusCode(), $retryAfter, $operation);
     }
 
     /** Current associations, including every page. A failed read is never an empty list. */
     public function webhookAssociations(string $from, string $id, string $to): array
     {
-        if (! in_array([$from, $to], [['contacts', 'deals'], ['deals', 'contacts']], true) || ! ctype_digit($id)) {
+        if (! preg_match('/^[a-zA-Z0-9_-]{2,80}$/', $from)
+            || ! preg_match('/^[a-zA-Z0-9_-]{2,80}$/', $to)
+            || ! ctype_digit($id) || strlen($id) > 64) {
             throw new \InvalidArgumentException('Invalid CRM association.');
         }
+        $token = (string) config('services.hubspot.key');
+        if ($token === '') throw new \RuntimeException('HubSpot credentials are not configured.');
+        $client = $this->makeHttpClient();
+        $headers = ['Authorization' => 'Bearer '.$token, 'Accept' => 'application/json'];
         $ids = [];
         $after = null;
         $seen = [];
         do {
             $this->hubspotThrottle();
-            $response = $this->hubspot->apiRequest([
-                'method' => 'GET', 'path' => "/crm/v4/objects/$from/$id/associations/$to",
-                'qs' => array_filter(['limit' => 500, 'after' => $after], fn ($value) => $value !== null),
+            $response = $client->request('GET', "https://api.hubapi.com/crm/v4/objects/$from/$id/associations/$to", [
+                'headers' => $headers,
+                'query' => array_filter(['limit' => 500, 'after' => $after], fn ($value) => $value !== null),
+                'http_errors' => false,
             ]);
+            if ($response->getStatusCode() !== 200) throw $this->apiException($response, 'association read');
             $body = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
             if (! isset($body['results']) || ! is_array($body['results'])) throw new \UnexpectedValueException('Invalid CRM associations response.');
-            foreach ($body['results'] as $row) $ids[] = (string) $row['toObjectId'];
+            foreach ($body['results'] as $row) {
+                $targetId = (string) ($row['toObjectId'] ?? '');
+                if (ctype_digit($targetId) && strlen($targetId) <= 64) $ids[] = $targetId;
+            }
             $next = $body['paging']['next']['after'] ?? null;
             if ($next !== null && isset($seen[(string) $next])) throw new \UnexpectedValueException('Repeated CRM cursor.');
             if ($next !== null) $seen[(string) $next] = true;
@@ -1033,64 +1236,22 @@ class HubspotService
     /** Obtener un contacto por ID. */
     public function getContactById($id, bool $includeAllProperties = false)
     {
-        try {
-            // Campos adicionales requeridos de HubSpot
-            $requiredHubspotFields = [
-                'fecha_nac',
-                'hs_merged_object_ids',
-                'firstname',
-                'lastmodifieddate',
-                'lastname',
-                'n000__referido_por__clonado_',
-                'numero_de_pasaporte',
-                'servicio_solicitado',
-                'retirado',
-            ];
+        $databaseFields = array_fill_keys(\Schema::getColumnListing('users'), true);
+        $requiredHubspotFields = [
+            'fecha_nac', 'hs_merged_object_ids', 'firstname', 'lastmodifieddate', 'lastname',
+            'n000__referido_por__clonado_', 'numero_de_pasaporte', 'servicio_solicitado', 'retirado',
+        ];
+        $available = $this->webhookPropertyNames('contacts');
+        $requested = $includeAllProperties
+            ? null
+            : array_values(array_intersect(array_unique(array_merge(array_keys($databaseFields), $requiredHubspotFields)), $available));
+        $contact = $this->webhookObject('contacts', (string) $id, $requested);
+        if ($contact === null) throw new \RuntimeException('Contacto no encontrado en HubSpot.');
+        if ($includeAllProperties) return $contact;
 
-            // Obtener todas las propiedades disponibles para contactos desde HubSpot
-            $allPropertiesResponse = $this->hubspot->crm()->properties()->coreApi()->getAll('contacts');
-            $allProperties = $allPropertiesResponse->getResults();
+        $contact['properties'] = (array) ($contact['properties'] ?? []);
 
-            // Extraer los nombres de las propiedades que coinciden con los campos de la base de datos
-            $databaseFields = \Schema::getColumnListing('users'); // Cambia 'users' por el nombre de tu tabla si es diferente
-            $matchingFields = array_filter($allProperties, function ($property) use ($databaseFields) {
-                return in_array($property->getName(), $databaseFields);
-            });
-
-            // Combinar los campos coincidentes con los requeridos
-            $propertyNames = $includeAllProperties
-                ? array_map(fn ($property) => $property->getName(), $allProperties)
-                : array_merge(
-                    array_map(fn ($property) => $property->getName(), $matchingFields),
-                    $requiredHubspotFields
-                );
-
-            // Eliminar duplicados en las propiedades
-            $propertyNames = array_unique($propertyNames);
-
-            // Preparar la solicitud para obtener el contacto con las propiedades seleccionadas
-            $batchReadInputSimplePublicObjectId = new \HubSpot\Client\Crm\Contacts\Model\BatchReadInputSimplePublicObjectId([
-                'properties' => $propertyNames,
-                'inputs' => [
-                    ['id' => $id],
-                ],
-            ]);
-
-            $batchResponse = $this->hubspot->crm()->contacts()->batchApi()->read($batchReadInputSimplePublicObjectId);
-
-            // Procesar el resultado
-            if (count($batchResponse->getResults()) > 0) {
-                $contact = $batchResponse->getResults()[0];
-                return [
-                    'id' => $contact->getId(),
-                    'properties' => $contact->getProperties(),
-                ];
-            } else {
-                throw new \Exception('Contacto no encontrado en HubSpot.');
-            }
-        } catch (\Exception $e) {
-            throw new \Exception('Error al obtener el contacto en HubSpot: ' . $e->getMessage());
-        }
+        return $contact;
     }
 
     /**
@@ -1158,7 +1319,9 @@ class HubspotService
                 'properties' => $properties,
             ]);
 
-            return $this->hubspot->crm()->contacts()->basicApi()->update($hsId, $input);
+            $result = $this->hubspot->crm()->contacts()->basicApi()->update($hsId, $input);
+            $this->markOutboundAsSynced('contacts', (string) $hsId);
+            return $result;
         } catch (ContactException $e) {
             $statusCode   = $e->getCode();
             $responseBody = $e->getResponseBody();
@@ -1203,51 +1366,26 @@ class HubspotService
 
     public function getDealById(string $dealId): ?array
     {
-        try {
-            $properties = $this->getDealProperties();
+        $deal = $this->webhookObject('deals', $dealId);
+        if ($deal === null || ($deal['archived'] ?? false)) return null;
+        $deal['properties'] = array_filter(
+            (array) ($deal['properties'] ?? []),
+            fn ($key) => ! str_starts_with((string) $key, 'hs_'),
+            ARRAY_FILTER_USE_KEY,
+        );
 
-            $batchRequest = new BatchReadInputSimplePublicObjectId([
-                'properties' => $properties,
-                'inputs' => [
-                    ['id' => $dealId],
-                ],
-            ]);
-
-            $response = $this->hubspot->crm()->deals()->batchApi()->read($batchRequest);
-
-            if (count($response->getResults()) > 0) {
-                $deal = $response->getResults()[0];
-                $allProperties = $deal->getProperties();
-
-                // Filtrar propiedades que no comiencen con "hs_"
-                $filteredProperties = array_filter(
-                    $allProperties,
-                    fn($key) => strpos($key, 'hs_') !== 0,
-                    ARRAY_FILTER_USE_KEY
-                );
-
-                return [
-                    'id' => $deal->getId(),
-                    'properties' => $filteredProperties,
-                ];
-            }
-
-            return null;
-
-        } catch (DealException $e) {
-            throw new \Exception("Error al obtener el deal por ID en HubSpot: " . $e->getMessage());
-        } catch (\Exception $e) {
-            throw new \Exception("Error general al obtener el deal por ID: " . $e->getMessage());
-        }
+        return $deal;
     }
 
     public function updateDeals($hsId, $properties)
     {
+        $updated = false;
         try {
             // Primer intento
             $this->hubspot->crm()->deals()->basicApi()->update($hsId, [
                 'properties' => $properties
             ]);
+            $updated = true;
         } catch (DealException $e) {
 
             // ===========================================================
@@ -1285,6 +1423,7 @@ class HubspotService
                         $this->hubspot->crm()->deals()->basicApi()->update($hsId, [
                             'properties' => $properties
                         ]);
+                        $updated = true;
                         \Log::info("✅ HubSpot update successful after cleaning invalid properties.");
                     } catch (DealException $retryException) {
                         $retryRaw = (string) $retryException->getResponseBody();
@@ -1296,27 +1435,40 @@ class HubspotService
                 }
             }
         }
+
+        if ($updated) $this->markOutboundAsSynced('deals', (string) $hsId);
+    }
+
+    private function markOutboundAsSynced(string $objectType, string $externalId): void
+    {
+        if (! config('crm_sync.hubspot.outbound_enabled') || ! ctype_digit($externalId)) return;
+
+        $entityIds = match ($objectType) {
+            'contacts' => [
+                'client' => User::query()->where('hs_id', $externalId)->pluck('id')->all(),
+                'lead' => \App\Models\Lead::query()->where('hubspot_id', $externalId)->pluck('id')->all(),
+            ],
+            'deals' => ['deal' => Negocio::query()->withoutGlobalScope(\App\Models\Scopes\BlockedClientRecordScope::class)
+                ->where('hubspot_id', $externalId)->pluck('id')->all()],
+            default => [],
+        };
+
+        foreach ($entityIds as $entityType => $ids) {
+            if ($ids === []) continue;
+            \App\Models\IntegrationOutbox::query()->where('provider', 'hubspot')
+                ->where('entity_type', $entityType)->whereIn('entity_id', $ids)
+                ->whereIn('status', ['pending', 'processing'])
+                ->update(['status' => 'sent', 'processed_at' => now(), 'last_error' => null]);
+        }
     }
 
     public function getDealProperties(): array
     {
-        try {
-            $allPropertiesResponse = $this->hubspot
-                                        ->crm()
-                                        ->properties()
-                                        ->coreApi()
-                                        ->getAll('deals');
-
-            $allProperties = $allPropertiesResponse->getResults();
-
-            // Extrae solo los nombres de las propiedades
-            return array_map(fn($prop) => $prop->getName(), $allProperties);
-
-        } catch (PropertiesApiException $e) {
-            throw new \Exception('Error al obtener propiedades de negocios (deals): '.$e->getMessage());
-        } catch (\Exception $e) {
-            throw new \Exception('Error general al obtener propiedades de negocios: '.$e->getMessage());
-        }
+        return $this->webhookObjectPropertyNames(
+            'deals',
+            $this->makeHttpClient(),
+            ['Authorization' => 'Bearer '.config('services.hubspot.key'), 'Accept' => 'application/json'],
+        );
     }
 
     public function getDealIdsByContactId(string $contactId): array
@@ -1836,11 +1988,36 @@ class HubspotService
 
     private function hubspotThrottle(): void
     {
-        $milliseconds = (int) config('services.hubspot.tasks_throttle_ms', 250);
+        $configured = (int) config('services.hubspot.tasks_throttle_ms', 250);
+        $outboundRate = (int) config('crm_sync.hubspot.request_rate_per_second', 4);
+        $milliseconds = max($configured, $outboundRate > 0 ? (int) ceil(1000 / $outboundRate) : 0);
+        $dailyBudget = max(0, (int) config('crm_sync.hubspot.daily_request_budget', 10000));
+        if ($milliseconds <= 0 && $dailyBudget <= 0) return;
 
-        if ($milliseconds > 0) {
-            \App\Support\CosPageTiming::external('hubspot_throttle', 'HubSpot: espera local antes de llamar a la API', fn () => usleep($milliseconds * 1000));
-        }
+        // One shared lock spaces requests from all PHP workers on this app.
+        // Keep the lock across the wait so concurrent workers cannot burst together.
+        \App\Support\CosPageTiming::external('hubspot_throttle', 'HubSpot: límite global de solicitudes', function () use ($milliseconds, $dailyBudget): void {
+            \Illuminate\Support\Facades\Cache::lock('hubspot.global-request-throttle', 10)->block(10, function () use ($milliseconds, $dailyBudget): void {
+                $now = now('UTC');
+                $resetAt = $now->copy()->startOfDay()->addDay();
+                $secondsUntilReset = max(1, $resetAt->getTimestamp() - $now->getTimestamp() + 1);
+                $dailyKey = 'hubspot.daily-request-budget.'.$now->format('Ymd');
+                if ($dailyBudget > 0) {
+                    \Illuminate\Support\Facades\Cache::add($dailyKey, 0, $secondsUntilReset);
+                    if ((int) \Illuminate\Support\Facades\Cache::get($dailyKey, 0) >= $dailyBudget) {
+                        throw new \App\Exceptions\HubspotDailyBudgetExceeded($secondsUntilReset);
+                    }
+                }
+
+                $key = 'hubspot.global-request-throttle.last_at';
+                $lastAt = (int) \Illuminate\Support\Facades\Cache::get($key, 0);
+                $now = (int) floor(microtime(true) * 1000);
+                $wait = $milliseconds - ($now - $lastAt);
+                if ($lastAt > 0 && $wait > 0) usleep($wait * 1000);
+                \Illuminate\Support\Facades\Cache::put($key, (int) floor(microtime(true) * 1000), 10);
+                if ($dailyBudget > 0) \Illuminate\Support\Facades\Cache::increment($dailyKey);
+            });
+        });
     }
 
     /**

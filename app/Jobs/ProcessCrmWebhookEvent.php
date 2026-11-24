@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\CrmWebhookEvent;
+use App\Exceptions\HubspotDailyBudgetExceeded;
 use App\Services\CrmContactMirrorService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -40,6 +41,9 @@ class ProcessCrmWebhookEvent implements ShouldQueue
             $event->increment('attempts');
             $mirror->process($event->provider, $event->payload);
             $event->update(['status' => 'completed', 'error_class' => null, 'processed_at' => now()]);
+        } catch (HubspotDailyBudgetExceeded $exception) {
+            $event->update(['status' => 'pending', 'error_class' => 'HubSpotDailyBudget']);
+            $this->release($exception->retryAfterSeconds);
         } catch (\Throwable $exception) {
             $event->update(['status' => 'failed', 'error_class' => $exception::class]);
             throw $exception;

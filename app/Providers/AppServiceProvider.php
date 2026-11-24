@@ -31,6 +31,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         //
+        \App\Models\User::observe(\App\Observers\HubspotOutboundObserver::class);
+        \App\Models\Lead::observe(\App\Observers\HubspotOutboundObserver::class);
+        \App\Models\Negocio::observe(\App\Observers\HubspotOutboundObserver::class);
         Paginator::useBootstrapFour();
         \Illuminate\Support\Facades\DB::listen(static function (\Illuminate\Database\Events\QueryExecuted $query): void {
             \App\Support\CosPageTiming::current()?->query($query->time);

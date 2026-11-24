@@ -35,6 +35,7 @@ class UsersTable extends Component
         'filterChatActivity' => ['except' => ''],
         'filterBlockStatus' => ['except' => 'all'],
         'filterRoles' => ['except' => []], // ✅ multi
+        'entityType' => ['except' => 'clients'],
     ];
 
     public $search = '';
@@ -49,6 +50,7 @@ class UsersTable extends Component
 
     /** ✅ Multi-select roles */
     public array $filterRoles = [];
+    public string $entityType = 'clients';
 
     /** Cacheados */
     public $listaServicios = [];
@@ -132,6 +134,12 @@ class UsersTable extends Component
         }
 
         app(\App\Services\ClientRestrictionService::class)->scopeVisible($query, $authUser);
+
+        // Mantener separados los contactos/clientes de las cuentas internas.
+        // El modo "all" queda disponible para administradores que necesiten
+        // revisar la correspondencia completa.
+        $query->when($this->entityType === 'clients', fn ($q) => $q->clients())
+            ->when($this->entityType === 'internal', fn ($q) => $q->internalUsers());
 
         $isAdmin = in_array(1, $rolesIds);
         $isVentasOrCoord = !empty(array_intersect($rolesIds, [15, 17]));
@@ -496,6 +504,7 @@ class UsersTable extends Component
             'filterProveedor',
             'filterOwner',
             'filterRoles',
+            'entityType',
         ]);
         $this->resetPage();
     }
@@ -506,6 +515,11 @@ class UsersTable extends Component
     }
 
     public function updatedFilterBlockStatus(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedEntityType(): void
     {
         $this->resetPage();
     }

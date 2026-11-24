@@ -9,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Builder;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
@@ -299,6 +300,26 @@ class User extends Authenticatable
         return $this->hasMany(ClientNote::class, 'client_id');
     }
 
+    public function assignedLeads()
+    {
+        return $this->hasMany(Lead::class, 'user_id');
+    }
+
+    public function convertedLeads()
+    {
+        return $this->hasMany(Lead::class, 'converted_user_id');
+    }
+
+    public function crmActivities()
+    {
+        return $this->hasMany(CrmActivity::class, 'client_id');
+    }
+
+    public function crmQuotes()
+    {
+        return $this->hasMany(CrmQuote::class, 'client_id');
+    }
+
     public function listas()
     {
         return $this->belongsToMany(\App\Models\Lista::class, 'list_user', 'user_id', 'list_id')
@@ -351,6 +372,28 @@ class User extends Authenticatable
     public function isCliente(): bool
     {
         return $this->hasRole('Cliente');
+    }
+
+    /**
+     * Contactos/clientes del CRM. Se mantiene como scope de transición para
+     * que las pantallas de clientes no mezclen cuentas internas.
+     */
+    public function scopeClients(Builder $query): Builder
+    {
+        return $query->whereHas('roles', fn (Builder $roles) => $roles->where('name', 'Cliente'));
+    }
+
+    /**
+     * Cuentas internas autenticables que no representan un contacto cliente.
+     */
+    public function scopeInternalUsers(Builder $query): Builder
+    {
+        return $query->whereDoesntHave('roles', fn (Builder $roles) => $roles->where('name', 'Cliente'));
+    }
+
+    public function isInternalUser(): bool
+    {
+        return ! $this->isCliente();
     }
 
     public function canViewSalesProfile(): bool

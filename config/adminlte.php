@@ -262,6 +262,9 @@ return [
                     ],
                 ],
                 ['text' => 'Ventas pendientes', 'icon' => 'fa-fw fas fa-list', 'icon_color' => 'white', 'url' => 'crud/lists', 'can' => 'notCliente'],
+                ['text' => 'Leads CRM', 'icon' => 'fa-fw fas fa-user-plus', 'icon_color' => 'white', 'route' => 'crm.leads.index', 'can' => 'administrador', 'data' => ['search' => 'crm leads prospectos contactos']],
+                ['text' => 'Actividades CRM', 'icon' => 'fa-fw fas fa-history', 'icon_color' => 'white', 'route' => 'crm.activities.index', 'can' => 'administrador', 'data' => ['search' => 'crm actividades llamadas correos whatsapp reuniones']],
+                ['text' => 'Presupuestos CRM', 'icon' => 'fa-fw fas fa-file-invoice-dollar', 'icon_color' => 'white', 'route' => 'crm.quotes.index', 'can' => 'administrador', 'data' => ['search' => 'crm presupuestos cotizaciones propuestas']],
                 [
                     'text' => 'Propuestas y estrategia',
                     'icon' => 'fa-fw fas fa-lightbulb',
@@ -458,6 +461,7 @@ return [
                     'text' => 'Usuarios y permisos',
                     'icon' => 'fas fa-fw fa-users-cog',
                     'submenu' => [
+                        ['text' => 'Usuarios internos', 'icon' => 'fa-fw fas fa-user-tie', 'icon_color' => 'white', 'url' => 'users?entityType=internal', 'can' => 'crud.users.index', 'data' => ['search' => 'usuarios internos personal equipo colaboradores']],
                         ['text' => 'Superadmins', 'icon' => 'fa-fw fas fa-user-shield', 'route' => 'admin.superadmins.index', 'can' => 'superadmin'],
                         ['text' => 'Roles', 'icon' => 'fa-fw fas fa-user-tag', 'icon_color' => 'white', 'url' => 'roles', 'can' => 'crud.roles.index'],
                         ['text' => 'Permisos', 'icon' => 'fa-fw fas fa-universal-access', 'icon_color' => 'white', 'url' => 'permissions', 'can' => 'crud.permissions.index'],

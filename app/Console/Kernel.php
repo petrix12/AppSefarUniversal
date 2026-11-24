@@ -49,8 +49,14 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:actualizar-y-limpiar')->everyMinute()->timezone('UTC');
         $schedule->command('teamleader:refresh-token')->everyMinute()->timezone('UTC');
         $schedule->command('chat:clean-expired')->everyFiveMinutes();
-        $crmEnabled = fn () => config('crm_sync.hubspot.enabled') || config('crm_sync.teamleader.enabled');
+        $crmEnabled = fn () => config('crm_sync.hubspot.enabled') || config('crm_sync.hubspot.outbound_enabled')
+            || config('crm_sync.teamleader.enabled')
+            || (\Illuminate\Support\Facades\Schema::hasTable('jobs')
+                && \Illuminate\Support\Facades\DB::table('jobs')->where('queue', 'crm-sync')->exists());
         $schedule->command('crm:retry-webhooks')->everyFiveMinutes()->when($crmEnabled)->withoutOverlapping();
+        $schedule->command('crm:dispatch-hubspot-outbox --limit=100')->everyMinute()
+            ->when(fn () => (bool) config('crm_sync.hubspot.outbound_enabled'))
+            ->withoutOverlapping(5)->runInBackground();
         $schedule->command('queue:work crm --queue=crm-sync --stop-when-empty --max-time=50 --timeout=300 --tries=5')
             ->everyMinute()->when($crmEnabled)->withoutOverlapping(10)->runInBackground()
             ->appendOutputTo(storage_path('logs/crm-worker.log'));

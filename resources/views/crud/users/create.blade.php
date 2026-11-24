@@ -45,14 +45,8 @@
             <div class="md:col-span-1">
                 <div class="px-4 sm:px-0">
                     <h3 class="text-lg font-medium leading-6 text-gray-900">{{ __('User information') }}</h3>
-                    <p class="mt-1 text-sm text-gray-600">
-                        {{-- {{ __('Administre la información del usuario y asignele sus roles') }} --}}
-                        {{ __('Create a user and assign them their roles') }}
-                    </p>
-                    <p><strong>Nota: </strong>
-                        Al usuario se le asignará la clave inicial de <span style="color:red">sefar2021</span>, 
-                        la cual seberá cambiar a la brevedad posible por medidas de seguridad.
-                    </p>
+                    <p class="mt-1 text-sm text-gray-600">Crea un contacto con acceso de cliente. Para cuentas del equipo, usa el apartado «Usuarios internos».</p>
+                    <p class="mt-2 text-sm text-gray-600">La persona recibirá un enlace seguro para establecer su propia contraseña.</p>
                 </div>
             </div>
             <div class="mt-5 md:mt-0 md:col-span-2">
@@ -110,23 +104,6 @@
                                         <small style="color:red">*{{ $message }}*</small>
                                     </div>
                                 @enderror
-                            </div>
-                            <div class="container my-10">
-                                <p class="my-2 block text-sm font-medium text-gray-700"><strong>Roles del usuario:<strong></p>
-                                <div class="grid grid-cols-1 xl:grid-cols-4">
-                                @foreach ($roles as $role)
-                                    <div class="col-span-2 sm:col-span-2">     
-                                        <div class="flex items-start">
-                                            <div class="flex items-center h-5">
-                                                <input name="{{ "role" . $role->id }}" type="checkbox" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                            </div>
-                                            <div class="ml-3 text-sm">
-                                                <label for="{{ "role" . $role->id }}" class="font-medium text-gray-700">{{ $role->name }}</label>
-                                            </div>
-                                        </div> 
-                                    </div>
-                                @endforeach
-                            </div>
                             </div>
                         </div>
                     <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">

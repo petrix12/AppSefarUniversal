@@ -22,6 +22,7 @@ use App\Mail\ClaveGeneradaMail;
 use Laravel\Jetstream\Jetstream;
 use App\Services\HubspotService;
 use App\Services\MondayRegistrationService;
+use App\Services\LeadConversionService;
 
 class RegisterV2Controller extends Controller
 {
@@ -113,6 +114,7 @@ class RegisterV2Controller extends Controller
 
                     // asigna rol y permisos
                     $userCheck->assignRole('Cliente')->givePermissionTo(['pay.services', 'finish.register']);
+                    app(LeadConversionService::class)->convertFor($userCheck);
 
                     // Siempre redirigir a app.sefaruniversal.com
                     return view('redirect', ['redirect_url' => 'https://app.sefaruniversal.com/login?alert=existe']);
@@ -313,6 +315,7 @@ class RegisterV2Controller extends Controller
 
                 // asigna rol y permisos
                 $user->assignRole('Cliente')->givePermissionTo(['pay.services', 'finish.register']);
+                app(LeadConversionService::class)->convertFor($user);
             }
 
             // -------------------------

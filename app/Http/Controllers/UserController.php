@@ -260,9 +260,7 @@ class UserController extends Controller
      */
     public function create()
     {
-         $roles = Role::all();
-        /* $permissions = Permission::all(); */
-        return view('crud.users.create', compact('roles'));
+        return view('crud.users.create');
     }
 
     /**
@@ -273,36 +271,42 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        // Validación
-        $request->validate([
-            'name' => 'required|max:254',
-            'passport' => 'nullable|unique:users,passport',
-            'email' => 'required|unique:users,email'
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:254'],
+            'passport' => ['nullable', 'string', 'max:170', Rule::unique('users', 'passport')],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
         ]);
 
-        // Creando usuario
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'passport' => $request->passport,
-            'password' => bcrypt('sefar2021'),
-            'password_md5' => md5('sefar2021'),
-            'email_verified_at' => date('Y-m-d H:i:s')
-        ]);
+        $user = DB::transaction(function () use ($data): User {
+            $user = User::create([
+                'name' => trim($data['name']),
+                'email' => strtolower(trim($data['email'])),
+                'passport' => $data['passport'] ?? null,
+                'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(64)),
+                'email_verified_at' => now(),
+            ]);
+            $user->syncRoles(['Cliente']);
+            app(\App\Services\LeadConversionService::class)->convertFor($user);
 
-        // Asignando roles seleccionados
-        $roles = Role::all();
-        foreach($roles as $role){
-            if($request->input("role" . $role->id)){
-                $user->assignRole($role->name);
-            }
+            return $user;
+        });
+
+        try {
+            $status = \Illuminate\Support\Facades\Password::broker()->sendResetLink(['email' => $user->email]);
+        } catch (\Throwable $exception) {
+            Log::warning('CRM: no se pudo enviar el enlace inicial a un cliente creado por administración', [
+                'user_id' => $user->id,
+                'exception_type' => $exception::class,
+            ]);
+            $status = \Illuminate\Support\Facades\Password::RESET_THROTTLED;
         }
 
-        // Mensaje
-        Alert::success('¡Éxito!', 'Se ha creado el usuario: ' . $request->name);
-
-        // Redireccionar a la vista index
-        return redirect()->route('crud.users.index');
+        return redirect()->route('crud.users.index')->with(
+            $status === \Illuminate\Support\Facades\Password::RESET_LINK_SENT ? 'success' : 'warning',
+            $status === \Illuminate\Support\Facades\Password::RESET_LINK_SENT
+                ? 'Contacto/cliente creado. Enviamos un enlace para que establezca su contraseña.'
+                : 'El contacto/cliente se creó, pero no se pudo enviar el enlace. Puede solicitarlo desde «Olvidé mi contraseña».'
+        );
     }
 
     public function mypassword(Request $request)
