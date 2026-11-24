@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -33,9 +32,20 @@ return new class extends Migration
                     $table->unique(['provider', 'external_id']);
                     $table->index(['archived', 'remote_updated_at']);
                 });
+                continue;
             }
 
-            $this->copyExistingSnapshots($objectType, $tableName);
+            // MySQL can leave the table in place if a separate index statement fails.
+            if (! Schema::hasIndex($tableName, ['provider', 'external_id'], 'unique')) {
+                Schema::table($tableName, function (Blueprint $table): void {
+                    $table->unique(['provider', 'external_id']);
+                });
+            }
+            if (! Schema::hasIndex($tableName, ['archived', 'remote_updated_at'])) {
+                Schema::table($tableName, function (Blueprint $table): void {
+                    $table->index(['archived', 'remote_updated_at']);
+                });
+            }
         }
     }
 
@@ -44,38 +54,5 @@ return new class extends Migration
         foreach (array_reverse($this->objectTypes) as $objectType) {
             Schema::dropIfExists('crm_hubspot_'.$objectType);
         }
-    }
-
-    private function copyExistingSnapshots(string $objectType, string $tableName): void
-    {
-        if (! Schema::hasTable('crm_object_mirrors')) {
-            return;
-        }
-
-        DB::table('crm_object_mirrors')
-            ->where('object_type', $objectType)
-            ->orderBy('id')
-            ->chunkById(500, function ($rows) use ($tableName): void {
-                $records = $rows->map(fn ($row) => [
-                    'provider' => $row->provider,
-                    'external_id' => $row->external_id,
-                    'properties' => $row->properties,
-                    'archived' => (bool) $row->archived,
-                    'remote_created_at' => $row->remote_created_at,
-                    'remote_updated_at' => $row->remote_updated_at,
-                    'remote_archived_at' => $row->remote_archived_at,
-                    'content_hash' => $row->content_hash,
-                    'synced_at' => $row->synced_at,
-                    'created_at' => $row->created_at,
-                    'updated_at' => $row->updated_at,
-                ])->all();
-
-                if ($records !== []) {
-                    DB::table($tableName)->upsert($records, ['provider', 'external_id'], [
-                        'properties', 'archived', 'remote_created_at', 'remote_updated_at',
-                        'remote_archived_at', 'content_hash', 'synced_at', 'updated_at',
-                    ]);
-                }
-            });
     }
 };

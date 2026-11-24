@@ -18,7 +18,7 @@ class HubspotAssociationBackfill extends Command
 
     protected $description = 'Backfills HubSpot association IDs, labels, and type metadata into the local CRM mirror.';
 
-    public function handle(): int
+    public function handle(HubspotObjectRecordStore $store): int
     {
         if ($this->option('status')) {
             return $this->showStatus();
@@ -56,6 +56,13 @@ class HubspotAssociationBackfill extends Command
         if ($incomplete !== null) {
             $this->error("Primero completa la carga de objetos activos y archivados; aún falta {$incomplete}.");
             return self::FAILURE;
+        }
+
+        foreach (HubspotMigrationScope::OBJECT_TYPES as $type) {
+            if ($store->missingFromDedicatedTable($type)->exists()) {
+                $this->error("Quedan objetos de {$type} sin copiar. Ejecuta crm:hubspot-sync-object-tables --write primero.");
+                return self::FAILURE;
+            }
         }
 
         $queued = 0;

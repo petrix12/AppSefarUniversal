@@ -14,7 +14,7 @@ class HubspotSyncObjectTables extends Command
 
     protected $description = 'Copies existing HubSpot mirror rows into the dedicated table for each object type.';
 
-    public function handle(): int
+    public function handle(HubspotObjectRecordStore $store): int
     {
         if (! Schema::hasTable('crm_object_mirrors')) {
             $this->error('Falta crm_object_mirrors; aplica las migraciones de CRM primero.');
@@ -25,44 +25,47 @@ class HubspotSyncObjectTables extends Command
             $this->comment('Solo lectura: agrega --write para completar la copia local. No se llama a HubSpot.');
         }
 
+        $tables = [];
         foreach (HubspotMigrationScope::OBJECT_TYPES as $type) {
             $table = HubspotObjectRecordStore::tableFor($type);
-            if ($table === null || ! Schema::hasTable($table)) {
-                $this->error("Falta la tabla específica para {$type}; aplica las migraciones de CRM primero.");
+            if ($table === null || ! Schema::hasIndex($table, ['provider', 'external_id'], 'unique')) {
+                $this->error("Falta la tabla o el índice único para {$type}. Aplica primero la migración de tablas de HubSpot.");
                 return self::FAILURE;
             }
+            $tables[$type] = $table;
+        }
 
-            $query = DB::table('crm_object_mirrors')->where('provider', 'hubspot')->where('object_type', $type);
-            $sourceCount = (clone $query)->count();
-            if ($this->option('write') && $sourceCount > 0) {
-                $query->orderBy('id')->chunkById(500, function ($rows) use ($table): void {
-                    $records = $rows->map(fn ($row) => [
-                        'provider' => $row->provider,
-                        'external_id' => $row->external_id,
-                        'properties' => $row->properties,
-                        'archived' => (bool) $row->archived,
-                        'remote_created_at' => $row->remote_created_at,
-                        'remote_updated_at' => $row->remote_updated_at,
-                        'remote_archived_at' => $row->remote_archived_at,
-                        'content_hash' => $row->content_hash,
-                        'synced_at' => $row->synced_at,
-                        'created_at' => $row->created_at,
-                        'updated_at' => $row->updated_at,
-                    ])->all();
-
-                    if ($records !== []) {
-                        DB::table($table)->upsert($records, ['provider', 'external_id'], [
-                            'properties', 'archived', 'remote_created_at', 'remote_updated_at',
-                            'remote_archived_at', 'content_hash', 'synced_at', 'updated_at',
-                        ]);
-                    }
-                });
+        foreach ($tables as $type => $table) {
+            if ($this->option('write')) {
+                $this->copySnapshots($type, $table);
             }
 
+            $sourceCount = DB::table('crm_object_mirrors')->where('provider', 'hubspot')->where('object_type', $type)->count();
             $tableCount = DB::table($table)->where('provider', 'hubspot')->count();
-            $this->line("{$type}: origen {$sourceCount} · tabla propia {$tableCount}".($this->option('write') ? ' · sincronizada' : ''));
+            $missing = $store->missingFromDedicatedTable($type)->count();
+            $this->line("{$type}: origen {$sourceCount} · tabla propia {$tableCount} · IDs faltantes {$missing}");
         }
 
         return self::SUCCESS;
+    }
+
+    private function copySnapshots(string $type, string $table): void
+    {
+        $columns = [
+            'provider', 'external_id', 'properties', 'archived', 'remote_created_at', 'remote_updated_at',
+            'remote_archived_at', 'content_hash', 'synced_at', 'created_at', 'updated_at',
+        ];
+        $updateColumns = array_values(array_diff($columns, ['provider', 'external_id', 'created_at']));
+        $source = DB::table('crm_object_mirrors')->where('provider', 'hubspot')->where('object_type', $type);
+
+        (clone $source)->select('id')->chunkById(100, function ($page) use ($source, $table, $columns, $updateColumns): void {
+            DB::transaction(function () use ($page, $source, $table, $columns, $updateColumns): void {
+                // Lock the source before copying so a parallel import cannot be overwritten by an older snapshot.
+                $records = (clone $source)->whereIn('id', $page->pluck('id'))->orderBy('id')->lockForUpdate()
+                    ->get($columns)->map(fn (object $row): array => (array) $row)->all();
+
+                DB::table($table)->upsert($records, ['provider', 'external_id'], $updateColumns);
+            }, 3);
+        });
     }
 }

@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\CrmObjectAssociation;
 use App\Models\CrmObjectMirror;
+use App\Models\Negocio;
+use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -81,7 +83,7 @@ class CrmObjectMirrorService
         }
 
         $mirror = DB::transaction(function () use ($objectType, $externalId, $properties, $remote, $archived, $archivedAt, $hash): CrmObjectMirror {
-            $mirror = CrmObjectMirror::query()->firstOrNew([
+            $mirror = CrmObjectMirror::query()->lockForUpdate()->firstOrNew([
                 'provider' => 'hubspot', 'object_type' => $objectType, 'external_id' => $externalId,
             ]);
             if ($mirror->content_hash === $hash) {
@@ -103,7 +105,7 @@ class CrmObjectMirrorService
             $this->storeTypeSpecificRecord($mirror);
 
             return $mirror;
-        });
+        }, 3);
 
         if ($objectType === 'deals' && $remote !== null && ! $archived) {
             app(HubspotDealLocalSyncService::class)->syncUnassigned([[

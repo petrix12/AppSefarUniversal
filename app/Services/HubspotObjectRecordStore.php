@@ -31,16 +31,34 @@ class HubspotObjectRecordStore
     public function find(string $provider, string $objectType, string $externalId): ?object
     {
         $table = self::tableFor($objectType);
-        if ($table === null || ! Schema::hasTable($table)) {
+        if ($table === null) {
             return null;
         }
 
-        $record = DB::table($table)->where('provider', $provider)->where('external_id', $externalId)->first();
+        $identity = ['provider' => $provider, 'external_id' => $externalId];
+        $record = Schema::hasTable($table) ? DB::table($table)->where($identity)->first() : null;
+        if ($record === null && Schema::hasTable('crm_object_mirrors')) {
+            $record = DB::table('crm_object_mirrors')->where($identity)->where('object_type', $objectType)->first();
+        }
         if ($record && is_string($record->properties ?? null)) {
             $record->properties = json_decode($record->properties, true) ?? [];
         }
 
         return $record;
+    }
+
+    public function missingFromDedicatedTable(string $objectType): Builder
+    {
+        $destination = $this->query($objectType);
+        $table = $destination->from;
+        $destination->selectRaw('1')->whereColumn([
+            ["{$table}.provider", 'mirror.provider'],
+            ["{$table}.external_id", 'mirror.external_id'],
+        ]);
+
+        return DB::table('crm_object_mirrors as mirror')
+            ->where('mirror.provider', 'hubspot')->where('mirror.object_type', $objectType)
+            ->whereNotExists($destination);
     }
 
     public function store(
@@ -56,7 +74,8 @@ class HubspotObjectRecordStore
         mixed $syncedAt = null,
     ): bool {
         $table = self::tableFor($objectType);
-        if ($table === null || ! Schema::hasTable($table)) {
+        // For MySQL, the CREATE and unique index are separate DDL statements.
+        if ($table === null || ! Schema::hasIndex($table, ['provider', 'external_id'], 'unique')) {
             return false;
         }
 

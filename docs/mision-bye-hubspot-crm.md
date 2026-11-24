@@ -38,7 +38,7 @@ La migración es una copia bidireccional de los objetos y relaciones de CRM, no 
 - La proyección de contactos confirma estos mapas: `firstname → users.nombres`, `lastname → users.apellidos`, `phone → users.phone`, `numero_de_pasaporte → users.passport`, `firstname + lastname → leads.nombre`, y `email/phone/numero_de_pasaporte → campos equivalentes de Lead`. `email` también se copia a `users.email` únicamente por `hs_id`; si coincide con otro usuario, lead o correo secundario, se deja para Sistemas. La fecha de nacimiento permanece en el snapshot hasta acordar su columna local. Para negocios, `dealname → negocios.proyecto`; una migración añade `amount`, `deal_currency_code`, `pipeline`, `dealstage` y `hubspot_owner_id`, que se copian por su ID exacto.
 - La reconciliación de contactos compara cada campo con el snapshot anterior. Si solo cambió localmente, conserva el valor para el outbox; si cambió en HubSpot, HubSpot prevalece en ese campo. Cuando ambos cambiaron el mismo campo, guarda el par cifrado en `crm_sync_conflicts`. El comando `crm:hubspot-sync-conflicts` lista metadatos sin valores; `--show-values` revela el diff cifrado para revisión autorizada.
 - Los espejos guardan eliminaciones como archivo lógico y conservan las propiedades anteriores. La recepción sigue dependiendo de la firma, el portal configurado, `CRM_EVENT_PROCESSING_ENABLED` y de que HubSpot envíe las suscripciones de cada objeto.
-- Cada tipo acordado tiene una tabla dedicada (`crm_hubspot_contacts`, `crm_hubspot_deals`, `crm_hubspot_invoices`, etc.), con el ID externo, todas las propiedades JSON, estado de archivo y fechas remotas. La migración copia los snapshots que ya estaban en `crm_object_mirrors`; los webhooks y backfills posteriores escriben en su tabla específica. La tabla genérica se conserva temporalmente como compatibilidad para el código anterior y para reversión; el backfill de asociaciones y el informe leen las tablas específicas. No se generan cargos ni números de factura o presupuesto. Facturas, pagos, presupuestos y actividades aún no se proyectan como registros editables de los módulos operativos locales.
+- Cada tipo acordado tiene una tabla dedicada (`crm_hubspot_contacts`, `crm_hubspot_deals`, `crm_hubspot_invoices`, etc.), con el ID externo, todas las propiedades JSON, estado de archivo y fechas remotas. La migración de Laravel crea las tablas y sus índices. El comando `crm:hubspot-sync-object-tables --write` copia el historial desde `crm_object_mirrors`, que sigue disponible durante la transición. Los webhooks y backfills escriben en la tabla específica cuando tiene su índice único. El backfill de asociaciones requiere que la copia de los objetos esté completa. No se generan cargos ni números de factura o presupuesto. Facturas, pagos, presupuestos y actividades aún no se proyectan como registros editables de los módulos operativos locales.
 - Alcance inicial acordado: contactos (clasificados como clientes o leads en la App), negocios, tickets, líneas, presupuestos, facturas, pagos, pedidos, suscripciones y actividad histórica (llamadas, correos registrados, reuniones, notas y tareas). No incluye empresas, productos ni objetos personalizados.
 - La importación inicial tiene el perfil `crm:mirror-hubspot-objects --initial-crm --queue --write`; crea cargas reanudables para registros activos y archivados, sin escribir en HubSpot. `crm:hubspot-migration-report` muestra el avance guardado localmente y no llama a la API. El objeto Leads de HubSpot no se encola; la App clasifica como lead el contacto que no tiene negocios asociados.
 - `crm:hubspot-identity-reviews` muestra los IDs y motivos pendientes sin exponer correos ni pasaportes. Sistemas resuelve cada caso de forma explícita con `--resolve=<contact-id> --as=client|lead|ignore --write`; una asignación a cliente requiere un `users.hs_id` único y al menos un negocio local.
@@ -173,16 +173,23 @@ En esta fase se añadió la cola local `crm_identity_reviews` y el comando `crm:
 
 ## Secuencia inicial de producción
 
-Después de desplegar el código, ejecutar en la carpeta Laravel:
+El esquema de las 14 tablas de HubSpot se instala con la migración de Laravel. Si MySQL devuelve `1142 CREATE command denied`, la conexión necesita permisos de creación de tablas e índices en `appSefar`. En OVH Cloud Databases el nivel Admin permite modificar el esquema. Si habilitas ese nivel temporalmente para la cuenta que usa Artisan, restablece su nivel habitual después de ejecutar la migración. [Permisos de Web Cloud Databases](https://docs.ovhcloud.com/en/guides/web-cloud/databases/db-modify-users-rights)
+
+Aplica solo el archivo de HubSpot desde la carpeta Laravel y confirma el aviso de producción.
 
 ```bash
-php artisan config:clear
-php artisan migrate --force
-php artisan crm:mirror-hubspot-objects --initial-crm --queue --write
-php artisan crm:hubspot-migration-report
+php artisan migrate --path=database/migrations/2026_11_24_180000_create_hubspot_object_tables.php
 ```
 
-La migración crea las tablas específicas y copia en ellas los snapshots existentes. Después ejecuta `php artisan crm:hubspot-sync-object-tables --write` para completar cualquier fila que hubiera entrado al espejo genérico durante el despliegue. Este comando solo copia datos locales, sin llamadas a HubSpot. La carga inicial en cola continúa desde sus cursores guardados; no vuelvas a encolarla si ya aparece en `queued` o `running`.
+Con los permisos habituales de la App, copia el historial local y revisa los resultados. El proceso trabaja por lotes y puede repetirse para completar la copia.
+
+```bash
+php artisan crm:hubspot-sync-object-tables --write
+php artisan crm:hubspot-sync-object-tables
+php artisan crm:mirror-hubspot-objects --status
+```
+
+La copia local no consulta HubSpot. El perfil `crm:mirror-hubspot-objects --initial-crm --queue --write` se usa al iniciar una importación nueva. Una carga que ya está en cola continúa desde sus cursores guardados.
 
 El scheduler de Laravel debe seguir ejecutándose cada minuto para procesar `crm-sync`. Revisar `crm:mirror-hubspot-objects --status` y el informe hasta que cada tipo activo y archivado indique `completed`. Después, iniciar las relaciones:
 

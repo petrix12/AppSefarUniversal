@@ -29,7 +29,7 @@ class BackfillHubspotAssociationPage implements ShouldQueue
         $this->onQueue('crm-sync');
     }
 
-    public function handle(HubspotService $hubspot, HubspotObjectRecordStore $records): void
+    public function handle(HubspotService $hubspot, HubspotObjectRecordStore $store): void
     {
         $backfill = CrmObjectAssociationBackfill::query()->find($this->backfillId);
         if (! $backfill || in_array($backfill->status, ['completed', 'unsupported'], true)) return;
@@ -53,7 +53,7 @@ class BackfillHubspotAssociationPage implements ShouldQueue
                 $backfill->update(['association_labels' => $labels]);
             }
 
-            $sources = $records->query($backfill->from_object_type)->where('provider', 'hubspot')
+            $sources = $store->query($backfill->from_object_type)->where('provider', 'hubspot')
                 ->when($backfill->source_cursor, fn ($query, $cursor) => $query->where('external_id', '>', $cursor))
                 ->orderBy('external_id')->limit(25)->get(['external_id']);
             if ($sources->isEmpty()) {
@@ -74,7 +74,7 @@ class BackfillHubspotAssociationPage implements ShouldQueue
             }
 
             $lastId = (string) $sources->last()->external_id;
-            $hasMore = $records->query($backfill->from_object_type)
+            $hasMore = $store->query($backfill->from_object_type)
                 ->where('provider', 'hubspot')->where('external_id', '>', $lastId)->exists();
             DB::transaction(function () use ($backfill, $sources, $associationCount, $lastId, $hasMore): void {
                 $locked = CrmObjectAssociationBackfill::query()->lockForUpdate()->findOrFail($backfill->id);

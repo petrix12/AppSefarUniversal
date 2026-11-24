@@ -25,12 +25,16 @@ class HubspotMigrationReport extends Command
         }
 
         $mirrors = collect();
+        $usingLegacyMirror = [];
         foreach (HubspotMigrationScope::OBJECT_TYPES as $type) {
             $table = HubspotObjectRecordStore::tableFor($type);
             if ($table === null || ! Schema::hasTable($table)) {
-                continue;
+                $usingLegacyMirror[] = $type;
+                $query = DB::table('crm_object_mirrors')->where('object_type', $type);
+            } else {
+                $query = DB::table($table);
             }
-            DB::table($table)->where('provider', 'hubspot')
+            $query->where('provider', 'hubspot')
                 ->select('archived', DB::raw('COUNT(*) AS total'))
                 ->groupBy('archived')->get()
                 ->each(fn ($row) => $mirrors->put($type.':'.(int) $row->archived, $row));
@@ -61,7 +65,9 @@ class HubspotMigrationReport extends Command
         }
 
         $this->info('Migración inicial HubSpot → App · estado guardado localmente');
-        $this->line('Los conteos de espejo se leen de la tabla específica de cada tipo de objeto.');
+        if ($usingLegacyMirror !== []) {
+            $this->line('Conteos del espejo original hasta crear las tablas de: '.implode(', ', $usingLegacyMirror).'.');
+        }
         $this->table(
             ['Tipo', 'Espejo activo', 'Estado activo', 'Leídos activo', 'Δ activo', 'Error activo', 'Espejo archivado', 'Estado archivado', 'Leídos archivado', 'Δ archivado', 'Error archivado'],
             $rows,
