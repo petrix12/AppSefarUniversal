@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\CrmObjectMirrorBackfill;
+use App\Services\HubspotObjectRecordStore;
 use App\Services\HubspotMigrationScope;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -23,13 +24,17 @@ class HubspotMigrationReport extends Command
             }
         }
 
-        $mirrors = DB::table('crm_object_mirrors')
-            ->where('provider', 'hubspot')
-            ->whereIn('object_type', HubspotMigrationScope::OBJECT_TYPES)
-            ->select('object_type', 'archived', DB::raw('COUNT(*) AS total'))
-            ->groupBy('object_type', 'archived')
-            ->get()
-            ->keyBy(fn ($row) => $row->object_type.':'.(int) $row->archived);
+        $mirrors = collect();
+        foreach (HubspotMigrationScope::OBJECT_TYPES as $type) {
+            $table = HubspotObjectRecordStore::tableFor($type);
+            if ($table === null || ! Schema::hasTable($table)) {
+                continue;
+            }
+            DB::table($table)->where('provider', 'hubspot')
+                ->select('archived', DB::raw('COUNT(*) AS total'))
+                ->groupBy('archived')->get()
+                ->each(fn ($row) => $mirrors->put($type.':'.(int) $row->archived, $row));
+        }
 
         $backfills = CrmObjectMirrorBackfill::query()
             ->where('provider', 'hubspot')
@@ -56,6 +61,7 @@ class HubspotMigrationReport extends Command
         }
 
         $this->info('Migración inicial HubSpot → App · estado guardado localmente');
+        $this->line('Los conteos de espejo se leen de la tabla específica de cada tipo de objeto.');
         $this->table(
             ['Tipo', 'Espejo activo', 'Estado activo', 'Leídos activo', 'Δ activo', 'Error activo', 'Espejo archivado', 'Estado archivado', 'Leídos archivado', 'Δ archivado', 'Error archivado'],
             $rows,

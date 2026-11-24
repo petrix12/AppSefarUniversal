@@ -86,6 +86,7 @@ class CrmObjectMirrorService
             ]);
             if ($mirror->content_hash === $hash) {
                 $mirror->forceFill(['synced_at' => now()])->save();
+                $this->storeTypeSpecificRecord($mirror);
                 return $mirror;
             }
 
@@ -99,6 +100,8 @@ class CrmObjectMirrorService
                 'synced_at' => now(),
             ])->save();
 
+            $this->storeTypeSpecificRecord($mirror);
+
             return $mirror;
         });
 
@@ -110,6 +113,22 @@ class CrmObjectMirrorService
         }
 
         return $mirror;
+    }
+
+    private function storeTypeSpecificRecord(CrmObjectMirror $mirror): void
+    {
+        app(HubspotObjectRecordStore::class)->store(
+            (string) $mirror->provider,
+            (string) $mirror->object_type,
+            (string) $mirror->external_id,
+            (array) $mirror->properties,
+            (bool) $mirror->archived,
+            $mirror->remote_created_at,
+            $mirror->remote_updated_at,
+            $mirror->remote_archived_at,
+            (string) $mirror->content_hash,
+            $mirror->synced_at,
+        );
     }
 
     private function recordInboundFieldConflicts(

@@ -3,11 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Models\CrmIdentityReview;
-use App\Models\CrmObjectMirror;
 use App\Models\Lead;
 use App\Models\Negocio;
 use App\Models\Scopes\BlockedClientRecordScope;
 use App\Models\User;
+use App\Services\HubspotObjectRecordStore;
 use App\Services\HubspotSyncOrigin;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -134,8 +134,7 @@ class HubspotIdentityReviews extends Command
             throw new \InvalidArgumentException('El ID de HubSpot está repetido en varios usuarios; resuelve primero ese cruce.');
         }
 
-        $mirror = CrmObjectMirror::query()->where('provider', 'hubspot')
-            ->where('object_type', 'contacts')->where('external_id', $hubspotId)->first();
+        $mirror = app(HubspotObjectRecordStore::class)->find('hubspot', 'contacts', $hubspotId);
         if (! $mirror) {
             throw new \InvalidArgumentException('Falta el snapshot del contacto HubSpot; no se puede crear el Lead.');
         }

@@ -22,7 +22,7 @@ La migración es una copia bidireccional de los objetos y relaciones de CRM, no 
 | Marketing por correo | Listas, plantillas, campañas SES, seguimiento y bajas | `app/Models/MarketingCampaign.php`, `app/Services/MarketingSesSender.php`, `routes/web.php` | Operativa, separada del CRM comercial |
 | Automatizaciones | Reglas por cambio de campo, transición y fecha; ejecución cada minuto | `app/Services/AutomationEngine.php`, `app/Console/Kernel.php`, `resources/views/automations` | Operativa, falta conectar formularios y más canales |
 | Mensajería | BrightBean para conversaciones y outbox; solicitudes WhatsApp heredadas | `app/Models/BrightbeanMessage.php`, `app/Models/BrightbeanOutboundMessage.php`, `docs/brightbean.md` | Parcial; falta multi-cuenta y una bandeja de canales unificada |
-| Integraciones CRM | Webhooks, espejos y sincronización HubSpot/Teamleader/Monday | `config/crm_sync.php`, `app/Jobs/ProcessCrmWebhookEvent.php`, `docs/sincronizacion-crm-bidireccional.md` | Parcial; nuevo espejo genérico HubSpot por webhook. Aún falta proyección funcional y salida bidireccional completa |
+| Integraciones CRM | Webhooks, espejos y sincronización HubSpot/Teamleader/Monday | `config/crm_sync.php`, `app/Jobs/ProcessCrmWebhookEvent.php`, `docs/sincronizacion-crm-bidireccional.md` | Parcial; snapshots HubSpot en tablas por objeto. Aún falta proyección funcional y salida bidireccional completa |
 | Navegación CRM | Menú por áreas, pero sin un espacio único de CRM con contactos, leads, negocios y actividades | `config/adminlte.php` | Hueco de producto |
 
 ### Primer bloque iniciado
@@ -38,7 +38,7 @@ La migración es una copia bidireccional de los objetos y relaciones de CRM, no 
 - La proyección de contactos confirma estos mapas: `firstname → users.nombres`, `lastname → users.apellidos`, `phone → users.phone`, `numero_de_pasaporte → users.passport`, `firstname + lastname → leads.nombre`, y `email/phone/numero_de_pasaporte → campos equivalentes de Lead`. `email` también se copia a `users.email` únicamente por `hs_id`; si coincide con otro usuario, lead o correo secundario, se deja para Sistemas. La fecha de nacimiento permanece en el snapshot hasta acordar su columna local. Para negocios, `dealname → negocios.proyecto`; una migración añade `amount`, `deal_currency_code`, `pipeline`, `dealstage` y `hubspot_owner_id`, que se copian por su ID exacto.
 - La reconciliación de contactos compara cada campo con el snapshot anterior. Si solo cambió localmente, conserva el valor para el outbox; si cambió en HubSpot, HubSpot prevalece en ese campo. Cuando ambos cambiaron el mismo campo, guarda el par cifrado en `crm_sync_conflicts`. El comando `crm:hubspot-sync-conflicts` lista metadatos sin valores; `--show-values` revela el diff cifrado para revisión autorizada.
 - Los espejos guardan eliminaciones como archivo lógico y conservan las propiedades anteriores. La recepción sigue dependiendo de la firma, el portal configurado, `CRM_EVENT_PROCESSING_ENABLED` y de que HubSpot envíe las suscripciones de cada objeto.
-- Esta copia técnica conserva cada tipo de HubSpot como snapshot con su ID externo y todas sus propiedades. No genera cargos ni números de factura o presupuesto. Todavía no convierte facturas, pagos, presupuestos y actividades en registros editables de sus módulos operativos locales.
+- Cada tipo acordado tiene una tabla dedicada (`crm_hubspot_contacts`, `crm_hubspot_deals`, `crm_hubspot_invoices`, etc.), con el ID externo, todas las propiedades JSON, estado de archivo y fechas remotas. La migración copia los snapshots que ya estaban en `crm_object_mirrors`; los webhooks y backfills posteriores escriben en su tabla específica. La tabla genérica se conserva temporalmente como compatibilidad para el código anterior y para reversión; el backfill de asociaciones y el informe leen las tablas específicas. No se generan cargos ni números de factura o presupuesto. Facturas, pagos, presupuestos y actividades aún no se proyectan como registros editables de los módulos operativos locales.
 - Alcance inicial acordado: contactos (clasificados como clientes o leads en la App), negocios, tickets, líneas, presupuestos, facturas, pagos, pedidos, suscripciones y actividad histórica (llamadas, correos registrados, reuniones, notas y tareas). No incluye empresas, productos ni objetos personalizados.
 - La importación inicial tiene el perfil `crm:mirror-hubspot-objects --initial-crm --queue --write`; crea cargas reanudables para registros activos y archivados, sin escribir en HubSpot. `crm:hubspot-migration-report` muestra el avance guardado localmente y no llama a la API. El objeto Leads de HubSpot no se encola; la App clasifica como lead el contacto que no tiene negocios asociados.
 - `crm:hubspot-identity-reviews` muestra los IDs y motivos pendientes sin exponer correos ni pasaportes. Sistemas resuelve cada caso de forma explícita con `--resolve=<contact-id> --as=client|lead|ignore --write`; una asignación a cliente requiere un `users.hs_id` único y al menos un negocio local.
@@ -105,7 +105,8 @@ La App debe conservar una separación estricta:
 - `negocios`: oportunidades/servicios contratados, con etapas y valores.
 - `crm_activities`: registro inicial de llamadas, correos, mensajes, reuniones y notas.
 - `crm_quotes` y `crm_quote_items`: primera versión de presupuestos con conceptos.
-- `crm_object_mirrors` y `crm_object_associations`: copia íntegra e independiente del modelo operativo de cada objeto y relación de los proveedores.
+- `crm_hubspot_contacts`, `crm_hubspot_deals`, `crm_hubspot_tickets`, `crm_hubspot_line_items`, `crm_hubspot_quotes`, `crm_hubspot_invoices`, `crm_hubspot_commerce_payments`, `crm_hubspot_subscriptions`, `crm_hubspot_orders`, `crm_hubspot_calls`, `crm_hubspot_emails`, `crm_hubspot_meetings`, `crm_hubspot_notes` y `crm_hubspot_tasks`: snapshots completos por tipo de objeto, separados de los módulos operativos.
+- `crm_object_mirrors`: almacén genérico de compatibilidad durante el corte y reversión. `crm_object_associations`: relaciones independientes de los registros.
 - `channel_accounts` y `conversations`: canales de comunicación y sus hilos.
 - `integration_outbox`, `external_entity_links` e historial de sincronización: coordinación con proveedores externos.
 
@@ -180,6 +181,8 @@ php artisan migrate --force
 php artisan crm:mirror-hubspot-objects --initial-crm --queue --write
 php artisan crm:hubspot-migration-report
 ```
+
+La migración crea las tablas específicas y copia en ellas los snapshots existentes. Después ejecuta `php artisan crm:hubspot-sync-object-tables --write` para completar cualquier fila que hubiera entrado al espejo genérico durante el despliegue. Este comando solo copia datos locales, sin llamadas a HubSpot. La carga inicial en cola continúa desde sus cursores guardados; no vuelvas a encolarla si ya aparece en `queued` o `running`.
 
 El scheduler de Laravel debe seguir ejecutándose cada minuto para procesar `crm-sync`. Revisar `crm:mirror-hubspot-objects --status` y el informe hasta que cada tipo activo y archivado indique `completed`. Después, iniciar las relaciones:
 

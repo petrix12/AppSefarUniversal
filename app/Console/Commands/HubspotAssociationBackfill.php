@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Jobs\BackfillHubspotAssociationPage;
 use App\Models\CrmObjectAssociationBackfill;
 use App\Services\HubspotMigrationScope;
+use App\Services\HubspotObjectRecordStore;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Schema;
 
@@ -31,6 +32,14 @@ class HubspotAssociationBackfill extends Command
         foreach (['crm_object_mirrors', 'crm_object_mirror_backfills', 'crm_object_association_backfills'] as $table) {
             if (! Schema::hasTable($table)) {
                 $this->error("Falta la tabla {$table}; aplica las migraciones del espejo CRM primero.");
+                return self::FAILURE;
+            }
+        }
+
+        foreach (HubspotMigrationScope::OBJECT_TYPES as $type) {
+            $table = HubspotObjectRecordStore::tableFor($type);
+            if ($table === null || ! Schema::hasTable($table)) {
+                $this->error("Falta la tabla específica de HubSpot para {$type}; aplica las migraciones primero.");
                 return self::FAILURE;
             }
         }
