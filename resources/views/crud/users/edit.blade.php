@@ -31,8 +31,8 @@
 @unless($cosActualClient)
     @php
         $cosPreviewTargetUrl = request()->fullUrlWithQuery(['vista_cliente' => $cosClientPreview ? 0 : 1]);
-        $cosPreviewButtonLabel = $cosClientPreview ? 'Volver a vista interna' : 'Ver como cliente';
-        $cosPreviewLoadingLabel = $cosClientPreview ? 'Cargando vista interna…' : 'Cargando vista del solicitante…';
+        $cosPreviewButtonLabel = $cosClientPreview ? 'Volver a vista interna' : 'Ver como representado';
+        $cosPreviewLoadingLabel = $cosClientPreview ? 'Cargando vista interna…' : 'Cargando vista del representado…';
     @endphp
 
     <style>
@@ -1550,7 +1550,7 @@
                 </div>
 
                 <div class="tab-pane fade cos-workspace-panel" id="adminchangepassword" role="tabpanel" aria-labelledby="adminchangepassword-tab">
-                    @include('crud.users.partials.workspace-panel-heading', ['title' => 'Contraseña del cliente', 'description' => 'Gestiona la contraseña de acceso de este solicitante.', 'icon' => 'fa-lock'])
+                    @include('crud.users.partials.workspace-panel-heading', ['title' => 'Contraseña del representado', 'description' => 'Gestiona la contraseña de acceso de este representado.', 'icon' => 'fa-lock'])
                     <form id="adminChangePasswordForm">
                         @csrf
                         <input type="hidden" id="admin-password-user-id" name="id" value="{{ $user->id }}">
@@ -2086,7 +2086,7 @@
                                                     <i class="fas fa-magic mr-1"></i>Asociar con IA
                                                 </button>
                                                 <button type="button" class="btn btn-sm btn-outline-primary manual-teamleader-toggle"
-                                                    @if($manualTeamleaderProjects->isEmpty()) disabled title="No hay proyectos de Teamleader disponibles para este cliente" @endif>
+                                                    @if($manualTeamleaderProjects->isEmpty()) disabled title="No hay proyectos de Teamleader disponibles para este representado" @endif>
                                                     <i class="fas fa-hand-pointer mr-1"></i>Asociar manualmente
                                                 </button>
                                             </div>
@@ -2514,7 +2514,7 @@
                 @endif
 
                 <div class="tab-pane fade cos-workspace-panel" id="admin-req" role="tabpanel" aria-labelledby="admin-req-tab">
-                    @include('crud.users.partials.workspace-panel-heading', ['title' => 'Solicitudes de documentos', 'description' => 'Organiza los documentos solicitados y revisa las entregas del cliente.', 'icon' => 'fa-clipboard-list'])
+                    @include('crud.users.partials.workspace-panel-heading', ['title' => 'Solicitudes de documentos', 'description' => 'Organiza los documentos solicitados y revisa las entregas del representado.', 'icon' => 'fa-clipboard-list'])
                     <div class="d-flex justify-content-end mb-3">
                         <button class="cfrSefar inline-flex items-center justify-center px-3 py-2 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700" data-bs-toggle="modal" data-bs-target="#crearSolicitudModal">
                             + Nueva solicitud

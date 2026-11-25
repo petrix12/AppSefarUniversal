@@ -69,7 +69,7 @@ class PersonalDataHubspotUpdateTest extends TestCase
         $this->actingAs($this->administrator())->postJson(route('saveuserdata'), $this->payload($client) + [
             'genealogy_tree_id' => 'NEW-TREE',
         ])->assertUnprocessable()->assertJsonValidationErrors('email')
-            ->assertJsonPath('errors.email.0', 'Este correo ya pertenece a otro contacto en HubSpot. Revisa el correo y la vinculación del cliente antes de guardar. No se guardaron cambios.');
+            ->assertJsonPath('errors.email.0', 'Este correo ya pertenece a otro contacto en HubSpot. Revisa el correo y la vinculación del representado antes de guardar. No se guardaron cambios.');
 
         $this->assertOriginalClient($client);
         $this->assertSame('OLD-TREE', $client->fresh()->genealogy_tree_id);

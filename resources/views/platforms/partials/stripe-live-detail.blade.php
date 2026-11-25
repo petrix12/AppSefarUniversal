@@ -1,15 +1,37 @@
-<h3 class="h5">{{ $row['label'] }}</h3>
-@if(!empty($row['description']))<p class="platform-value">{{ $row['description'] }}</p>@endif
-<dl class="platform-data mb-3">
-    <div><dt>Registro</dt><dd class="platform-value">{{ $row['resource_id'] ?: '—' }}</dd></div>
-    <div><dt>Estado</dt><dd>{{ \App\Services\PlatformPresentation::status($row['status']) }}</dd></div>
-    <div><dt>Importe</dt><dd>{{ $row['amount'] }}</dd></div>
+<div class="stripe-detail">
+    <header class="stripe-detail-summary">
+        <div>
+            <h3>{{ $row['label'] }}</h3>
+            @if($row['resource_id'])<span class="stripe-reference">{{ $row['resource_id'] }}</span>@endif
+            @if(!empty($row['description']))<p class="platform-value mb-0 mt-2">{{ $row['description'] }}</p>@endif
+        </div>
+        <div>
+            @include('platforms.partials.stripe-status', ['payment' => $row])
+            <div class="stripe-detail-amount">{{ $row['amount'] }}</div>
+        </div>
+    </header>
+    @if($row['reason'] !== '—')
+        @php
+            $hasErrorCode = filled($row['decline_code'] ?? null) || filled($row['error_code'] ?? null);
+        @endphp
+        <section class="stripe-detail-diagnosis {{ $hasErrorCode ? 'is-error' : '' }}" aria-labelledby="stripe-diagnosis-title">
+            <span class="stripe-detail-diagnosis-icon"><i class="fas {{ $hasErrorCode ? 'fa-exclamation-circle' : 'fa-info-circle' }}" aria-hidden="true"></i></span>
+            <div>
+                <h4 id="stripe-diagnosis-title">Diagnóstico de Stripe</h4>
+                <p>{{ $row['reason'] }}</p>
+            </div>
+        </section>
+    @endif
+<dl class="stripe-detail-fields">
     <div><dt>Titular</dt><dd class="platform-value">{{ $row['customer_id'] ?: '—' }}</dd></div>
     @if($row['created'])
         <div><dt>Fecha (UTC)</dt><dd>{{ \Carbon\Carbon::createFromTimestampUTC($row['created'])->format('d/m/Y H:i:s') }}</dd></div>
     @endif
     @if($row['event_id'])
         <div><dt>Evento</dt><dd class="platform-value">{{ $row['event_id'] }}<br>{{ $row['type'] }}</dd></div>
+        @if($row['status'] && $row['status'] !== 'failed' && (str_ends_with($row['type'], '.failed') || str_ends_with($row['type'], '.payment_failed')))
+            <div><dt>Estado del registro en el evento</dt><dd>{{ \App\Services\PlatformPresentation::status($row['status']) }}</dd></div>
+        @endif
     @endif
     @if($row['error_code'])
         <div><dt>Código de Stripe</dt><dd class="platform-value">{{ $row['error_code'] }}</dd></div>
@@ -24,10 +46,7 @@
         <div><dt>Resultado del cobro</dt><dd class="platform-value">{{ $row['outcome_type'] }}</dd></div>
     @endif
 </dl>
-@if($row['reason'] !== '—')
-    <p class="platform-value"><strong>Diagnóstico de Stripe</strong><br>{{ $row['reason'] }}</p>
-@endif
-<div class="platform-toolbar">
+<div class="platform-toolbar stripe-detail-actions">
     @php
         $related = [
             'Consultar registro actual' => $row['event_id'] ? $row['resource_id'] : null,
@@ -51,11 +70,12 @@
         <form method="POST" action="{{ route('admin.platforms.lookup', ['stripe', $account, $row['lookup_resource']]) }}" data-platform-lookup>
             @csrf
             <input type="hidden" name="remote_id" value="{{ $row['resource_id'] }}">
-            <button type="submit" class="btn btn-outline-primary">{{ match ($row['operation']) {
+            <button type="submit" class="btn btn-primary">{{ match ($row['operation']) {
                 'refund' => 'Gestionar reembolso',
                 'cancel' => 'Gestionar cancelación',
                 default => 'Revisar operaciones',
             } }}</button>
         </form>
     @endif
+</div>
 </div>

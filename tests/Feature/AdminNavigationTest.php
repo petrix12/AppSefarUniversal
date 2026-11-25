@@ -57,7 +57,7 @@ class AdminNavigationTest extends TestCase
     public function test_the_internal_navigation_has_eight_sections_and_no_duplicate_or_placeholder_destinations(): void
     {
         $menu=config('adminlte.menu');
-        $this->assertSame(['Clientes y COS','Trabajo y ventas','Agenda y consultas','Finanzas','Servicios y difusión',
+        $this->assertSame(['Contactos y representados','Trabajo y ventas','Agenda y consultas','Finanzas','Servicios y difusión',
             'Genealogía y documentos','Integraciones','Configuración'],
             array_values(array_map(fn($i)=>$i['text'],array_filter($menu,fn($i)=>isset($i['key'])))));
         $destinations=$this->destinations($menu);

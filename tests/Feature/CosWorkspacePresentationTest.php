@@ -67,6 +67,7 @@ class CosWorkspacePresentationTest extends TestCase
         $this->assertStringContainsString('María Ejemplo',$html); $this->assertStringNotContainsString('app.hubspot.com',$html);
         $data['cosViewRoleId']=1;
         $internal=view('crud.users.partials.workspace-header',$data)->render();
+        $this->assertStringContainsString('Ficha del representado',$internal);
         $this->assertStringContainsString('https://app.hubspot.com/contacts/20053496/record/0-1/123',$internal);
         $this->assertStringContainsString('https://focus.teamleader.eu/contacts/contact-123',$internal);
         Http::assertNothingSent();
@@ -76,13 +77,14 @@ class CosWorkspacePresentationTest extends TestCase
         foreach ([false,true] as $preview) {
             $html=view('crud.users.partials.preview-control',[
                 'cosClientPreview'=>$preview,'cosPreviewTargetUrl'=>'/users/123/edit?vista_cliente='.($preview?'0':'1'),
-                'cosPreviewButtonLabel'=>$preview?'Volver a vista interna':'Ver como cliente','cosPreviewLoadingLabel'=>'Cargando vista…'
+                'cosPreviewButtonLabel'=>$preview?'Volver a vista interna':'Ver como representado','cosPreviewLoadingLabel'=>'Cargando vista…'
             ])->render();
             $xpath=$this->document($html); $toggle=$xpath->query('//*[@id="cos-preview-toggle"]');
             $this->assertCount(1,$toggle);
             $this->assertSame($preview?'true':'false',$toggle->item(0)->getAttribute('aria-checked'));
             $this->assertStringContainsString($preview?'vista_cliente=0':'vista_cliente=1',$toggle->item(0)->getAttribute('href'));
-            $this->assertStringContainsString($preview?'Volver a vista interna':'Ver como cliente',$html);
+            $this->assertStringContainsString($preview?'Volver a vista interna':'Ver como representado',$html);
+            if ($preview) $this->assertStringContainsString('Vista del representado',$html);
         }
     }
 }

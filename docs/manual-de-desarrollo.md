@@ -10,12 +10,14 @@ Cuando una pantalla necesite estilos nuevos, intégralos en el tema de Sefar y l
 
 ## Terminología de la App
 
-Usa siempre **solicitante** para la persona que solicita un servicio o tiene un expediente. Usa siempre **proceso** para el expediente y su avance.
+Usa **solicitante** para la persona que solicita un servicio. Usa siempre **proceso** para el expediente y su avance.
+
+En la ficha del COS, usa **representado** o **representados** para las personas del expediente. Aplica ese término también al botón de vista previa y a las secciones de la ficha.
 
 | Dónde se usa | Texto recomendado |
 | --- | --- |
 | Listado de personas | Solicitantes |
-| Encabezado de la ficha | Datos del solicitante |
+| Encabezado de la ficha del COS | Datos del representado |
 | Portal de la persona solicitante | Mis procesos |
 | Estado del expediente | Estado del proceso |
 | Acción para comenzar | Iniciar proceso |
@@ -26,4 +28,4 @@ Aplica estos términos en menús, títulos, botones, mensajes de error, correos,
 ## Antes de entregar un cambio
 
 - Comprueba que la pantalla respeta el diseño de Sefar en modo claro y oscuro.
-- Revisa el texto visible y confirma que la persona se llama **solicitante** y su expediente se llama **proceso**.
+- Revisa el texto visible y confirma que la persona del expediente se llama **representado** en el COS y **solicitante** en los demás módulos. Usa **proceso** para su expediente.

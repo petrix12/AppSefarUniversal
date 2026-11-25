@@ -232,12 +232,12 @@ return [
         [
             'key' => 'clients',
             'id' => 'menu-clients',
-            'text' => 'Contactos y clientes',
+            'text' => 'Contactos y representados',
             'icon' => 'fas fa-fw fa-users',
             'submenu' => [
-                ['text' => 'Contactos y expedientes', 'icon' => 'fa-fw fas fa-users-cog', 'icon_color' => 'white', 'url' => 'users', 'can' => 'menu.clients', 'data' => ['search' => 'usuarios clientes cos']],
-                ['text' => 'Exportar clientes', 'icon' => 'fa-fw fas fa-file-export', 'icon_color' => 'white', 'route' => 'admin.client-exports.index', 'can' => 'clients.export'],
-                ['text' => 'Bloqueos de clientes', 'icon' => 'fa-fw fas fa-user-lock', 'route' => 'admin.client-restrictions.index', 'can' => 'clients.blocks.review'],
+                ['text' => 'Contactos y expedientes', 'icon' => 'fa-fw fas fa-users-cog', 'icon_color' => 'white', 'url' => 'users', 'can' => 'menu.clients', 'data' => ['search' => 'usuarios representados clientes cos']],
+                ['text' => 'Exportar representados', 'icon' => 'fa-fw fas fa-file-export', 'icon_color' => 'white', 'route' => 'admin.client-exports.index', 'can' => 'clients.export'],
+                ['text' => 'Bloqueos de representados', 'icon' => 'fa-fw fas fa-user-lock', 'route' => 'admin.client-restrictions.index', 'can' => 'clients.blocks.review'],
                 ['text' => 'Alertas', 'icon' => 'fa-fw fa fa-exclamation-triangle', 'icon_color' => 'white', 'can' => 'alertasapp.index', 'url' => 'alerts'],
             ],
         ],

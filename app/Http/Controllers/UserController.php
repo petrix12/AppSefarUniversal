@@ -167,7 +167,7 @@ class UserController extends Controller
         }
 
         if (! $user->hasRole('Cliente')) {
-            return back()->with('owner_error', 'Solo se puede cambiar owner de contactos/clientes.');
+            return back()->with('owner_error', 'Solo puedes cambiar el responsable de un representado.');
         }
 
         $data = $request->validate([
@@ -1785,7 +1785,7 @@ class UserController extends Controller
         ? Servicio::where('id_hubspot', 'like', $user->servicio . '%')->first()
         : null;
     $cosuserFinal = $pageSnapshot['cos'];
-    $timing?->checkpoint('service', 'Servicio del cliente');
+    $timing?->checkpoint('service', 'Servicio del representado');
 
     // ==========================================
     // DATOS ADICIONALES
@@ -1821,7 +1821,7 @@ class UserController extends Controller
         ->orderByDesc('due_date')
         ->orderByDesc('id')
         ->get();
-    $timing?->checkpoint('tasks', 'Tareas del cliente');
+    $timing?->checkpoint('tasks', 'Tareas del representado');
 
     $clientChatMessages = ClientChatMessage::query()
         ->with(['author:id,name', 'attachments'])
@@ -3155,7 +3155,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
 
         if (blank($user->hs_id)) {
             throw ValidationException::withMessages([
-                'hubspot' => 'Este cliente no tiene un contacto vinculado en HubSpot. Revisa la vinculación antes de guardar.',
+                'hubspot' => 'Este representado no tiene un contacto vinculado en HubSpot. Revisa la vinculación antes de guardar.',
             ]);
         }
 
@@ -3212,7 +3212,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
         } catch (HubspotContactUpdateException $exception) {
             if ($exception->isEmailConflict()) {
                 throw ValidationException::withMessages([
-                    'email' => 'Este correo ya pertenece a otro contacto en HubSpot. Revisa el correo y la vinculación del cliente antes de guardar. No se guardaron cambios.',
+                    'email' => 'Este correo ya pertenece a otro contacto en HubSpot. Revisa el correo y la vinculación del representado antes de guardar. No se guardaron cambios.',
                 ]);
             }
 

@@ -8,7 +8,7 @@
         @if(auth()->id() === $user->id && auth()->user()->hasRole('Cliente'))
             <a href="{{ route('clientes.meetings') }}" class="btn btn-sm btn-outline-primary">Ver mis reuniones</a>
         @elseif(\Illuminate\Support\Facades\Gate::allows('kalendia.manage'))
-            <a href="{{ route('admin.kalendia.appointments', ['client' => $user->id]) }}" class="btn btn-sm btn-outline-primary">Ver reuniones del cliente</a>
+            <a href="{{ route('admin.kalendia.appointments', ['client' => $user->id]) }}" class="btn btn-sm btn-outline-primary">Ver reuniones del representado</a>
         @endif
         <small class="d-block text-muted mt-2">La agenda se actualiza en segundo plano desde Kalendia.</small>
     </div>

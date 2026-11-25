@@ -7,7 +7,7 @@
         <div class="cos-client-identity">
             <span class="cos-client-monogram" aria-hidden="true">{{ $cosInitials }}</span>
             <div class="cos-client-heading">
-                <p class="cos-client-eyebrow">{{ $cosViewRoleId == 5 ? 'Tu expediente' : 'Ficha del cliente' }}</p>
+                <p class="cos-client-eyebrow">{{ $cosViewRoleId == 5 ? 'Tu expediente' : 'Ficha del representado' }}</p>
                 <h1>{{ $cosDisplayName }}</h1>
                 <div class="cos-client-contact">
                     @if($user->email)<span><i class="far fa-envelope" aria-hidden="true"></i>{{ $user->email }}</span>@endif
@@ -18,7 +18,7 @@
         </div>
         @if($cosViewRoleId != 5)
         <div class="cos-client-actions">
-            <a href="{{ route('crud.users.index') }}" class="btn btn-outline-primary"><i class="fas fa-arrow-left mr-1" aria-hidden="true"></i>Volver a clientes</a>
+            <a href="{{ route('crud.users.index') }}" class="btn btn-outline-primary"><i class="fas fa-arrow-left mr-1" aria-hidden="true"></i>Volver a representados</a>
             <details class="cos-external-profiles"><summary class="btn btn-outline-secondary">Contactos vinculados</summary>
                 <div class="cos-external-profile-links">
                 @php

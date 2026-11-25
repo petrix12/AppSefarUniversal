@@ -1,5 +1,5 @@
     <div class="alert d-flex justify-content-between align-items-center" id="cos-preview-control">
-        <span>{{ $cosClientPreview ? 'Vista del solicitante · solo lectura' : 'Vista interna del COS' }}</span>
+        <span>{{ $cosClientPreview ? 'Vista del representado · solo lectura' : 'Vista interna del COS' }}</span>
         <a id="cos-preview-toggle"
             class="cos-preview-toggle {{ $cosClientPreview ? 'cos-preview-toggle--return' : 'cos-preview-toggle--enter' }}"
             href="{{ $cosPreviewTargetUrl }}"

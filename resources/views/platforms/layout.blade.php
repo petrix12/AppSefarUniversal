@@ -1,7 +1,12 @@
 @extends('adminlte::page')
 @section('title', ($singleWorkspace ?? false) ? 'Stripe · Pagos' : $platformName.($readOnly ? ' · Histórico de España' : ' · Administración'))
-@section('content_header')<h1>{{ $platformName }} · @if($readOnly && !($singleWorkspace ?? false))Histórico de España @else @yield('platform_title', 'Administración') @endif</h1>@stop
-@section('css')<link rel="stylesheet" href="{{ asset('css/platform-management.css') }}?v={{ filemtime(public_path('css/platform-management.css')) }}">@stop
+@section('content_header')
+    @unless($singleWorkspace ?? false)<h1>{{ $platformName }} · @if($readOnly)Histórico de España @else @yield('platform_title', 'Administración') @endif</h1>@endunless
+@stop
+@section('css')
+    <link rel="stylesheet" href="{{ asset('css/platform-management.css') }}?v={{ filemtime(public_path('css/platform-management.css')) }}">
+    @yield('platform_css')
+@stop
 @section('content')
 <div class="platform-admin">
     @include('kalendia.partials.messages')
@@ -24,7 +29,7 @@
 </div>
 <div class="modal fade platform-admin" id="platform-record-modal" tabindex="-1" role="dialog" aria-labelledby="platform-modal-title" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document"><div class="modal-content">
-        <div class="modal-header"><h2 class="modal-title h5" id="platform-modal-title">{{ $readOnly ? 'Consultar registro' : 'Gestionar registro' }} · {{ $platformName }}</h2><button class="close" type="button" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button></div>
+        <div class="modal-header"><h2 class="modal-title h5" id="platform-modal-title">{{ ($singleWorkspace ?? false) ? 'Detalle de Stripe' : (($readOnly ? 'Consultar registro' : 'Gestionar registro').' · '.$platformName) }}</h2><button class="close" type="button" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button></div>
         <div class="modal-body"><div id="platform-feedback" role="status" hidden></div><div id="platform-record-content"></div></div>
         <div class="modal-footer"><button class="btn btn-primary" type="button" data-dismiss="modal">Cerrar</button></div>
     </div></div>
