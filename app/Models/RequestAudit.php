@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use LogicException;
 
 class RequestAudit extends Model
 {
@@ -24,4 +25,13 @@ class RequestAudit extends Model
         'is_authenticated' => 'boolean',
         'visited_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(static function (self $audit): void {
+            if ($audit->user_id === null) {
+                throw new LogicException('Una auditoría de solicitudes requiere un usuario.');
+            }
+        });
+    }
 }

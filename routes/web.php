@@ -361,6 +361,11 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
     Route::post('admin/plataformas/importaciones', [\App\Http\Controllers\AdminPlatformImportController::class, 'queue'])
         ->middleware('throttle:6,1')->name('admin.platforms.imports.store');
 
+    Route::get('admin/plataformas/stripe/{account}/auditoria-pagos', [\App\Http\Controllers\StripePaymentAuditController::class, 'index'])
+        ->where('account', 'main|spain_legacy')
+        ->middleware(['auth', 'can:stripe.manage', 'throttle:12,1'])
+        ->name('admin.platforms.audit');
+
     Route::get('admin/finance/paypal-history', [\App\Http\Controllers\AdminPaypalHistoryController::class, 'listing'])
         ->middleware(['auth','can:paypal.history','throttle:30,1'])->name('admin.paypal.history');
 

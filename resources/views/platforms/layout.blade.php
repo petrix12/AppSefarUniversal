@@ -10,6 +10,7 @@
         <a class="btn btn-outline-primary" href="{{ route('admin.platforms.imports.index') }}">Copias de plataformas</a>
         @unless($readOnly)<a class="btn btn-outline-primary" href="{{ route('admin.platforms.monitor', [$provider,$account]) }}">Webhooks y actividad</a>@endunless
         @if($provider==='stripe')
+            <a class="btn {{ request()->routeIs('admin.platforms.audit') ? 'btn-primary' : 'btn-outline-primary' }}" href="{{ route('admin.platforms.audit', [$account, 'category'=>'failures']) }}">Auditoría de pagos</a>
             <a class="btn {{ $account==='main' ? 'btn-primary' : 'btn-outline-secondary' }}" href="{{ route('admin.platforms.index',['stripe','main']) }}">Cuenta principal</a>
             <a class="btn {{ $readOnly ? 'btn-primary' : 'btn-outline-secondary' }}" href="{{ route('admin.platforms.index',['stripe','spain_legacy']) }}">España · Solo consulta</a>
         @else

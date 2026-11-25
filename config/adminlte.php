@@ -304,6 +304,7 @@ return [
                     'icon' => 'fas fa-fw fa-credit-card',
                     'submenu' => [
                         ['text' => 'Administrar Stripe', 'url' => 'admin/plataformas/stripe/main', 'icon' => 'fab fa-fw fa-stripe', 'can' => 'stripe.manage'],
+                        ['text' => 'Auditoría de pagos', 'url' => 'admin/plataformas/stripe/main/auditoria-pagos', 'icon' => 'fas fa-fw fa-clipboard-list', 'can' => 'stripe.manage'],
                         ['text' => 'España · Solo consulta', 'url' => 'admin/plataformas/stripe/spain_legacy', 'icon' => 'fas fa-fw fa-history', 'can' => 'stripe.manage'],
                         ['text' => 'Verificar pagos', 'icon' => 'fa-fw fab fa-cc-stripe', 'icon_color' => 'white', 'url' => 'stripeverify', 'can' => 'menu.stripe-legacy'],
                         ['text' => 'Historial de pagos', 'icon' => 'fa-fw fab fa-cc-stripe', 'icon_color' => 'white', 'url' => 'listLatestStripeData', 'can' => 'menu.stripe-legacy'],

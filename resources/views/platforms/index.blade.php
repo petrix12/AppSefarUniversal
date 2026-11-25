@@ -5,6 +5,7 @@
     <div class="platform-toolbar justify-content-between">
         <div><h2 class="h5 mb-1">Conexión y sincronización</h2><p class="mb-0 text-muted">{{ $configured ? 'Credencial configurada' : 'Falta configurar la credencial' }}@if($provider==='stripe') · {{ $mode===null ? 'Modo sin confirmar' : ($mode ? 'Producción' : 'Pruebas') }}@endif</p></div>
         <div class="platform-toolbar">
+            @if($provider==='stripe')<a class="btn btn-outline-primary" href="{{ route('admin.platforms.audit', [$account, 'category'=>'failures']) }}">Auditoría de pagos</a>@endif
             <form method="POST" action="{{ route('admin.platforms.imports.store') }}">@csrf<input type="hidden" name="provider" value="{{ $provider }}"><input type="hidden" name="account" value="{{ $account }}"><button class="btn btn-primary" type="submit" @disabled(!$configured)>Importar todos los recursos</button></form>
             <form method="POST" action="{{ route('admin.platforms.check', [$provider,$account]) }}">@csrf<button class="btn btn-outline-primary" type="submit">Comprobar conexión</button></form>
         </div>

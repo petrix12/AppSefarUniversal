@@ -24,8 +24,9 @@ class StripeAdminApi
     {
         if ($account === 'spain_legacy' && $method !== 'GET') throw new PlatformApiException('read_only_account', 403);
         if (!$this->configured($account)) throw new PlatformApiException('not_configured');
-        if (!preg_match('~^(account|balance|charges|payment_intents|customers|invoices|refunds|subscriptions|disputes|products|prices|webhook_endpoints)(/[A-Za-z0-9_]+){0,2}$~D', $path)
+        if (!preg_match('~^(account|balance|charges|payment_intents|customers|invoices|refunds|subscriptions|disputes|products|prices|webhook_endpoints|events)(/[A-Za-z0-9_]+){0,2}$~D', $path)
             || !in_array($method, ['GET','POST'], true)) throw new PlatformApiException('invalid_operation');
+        if (str_starts_with($path, 'events') && $method !== 'GET') throw new PlatformApiException('invalid_operation');
         try {
             $request = Http::withToken($this->key($account))->acceptJson()->asForm()->connectTimeout(4)->timeout(20)->withoutRedirecting();
             if ($key) $request = $request->withHeaders(['Idempotency-Key'=>$key]);

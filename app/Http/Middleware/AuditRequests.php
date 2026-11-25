@@ -14,14 +14,15 @@ class AuditRequests
         $response = $next($request);
 
         try {
-            $user = auth()->user();
+            $user = $request->user();
+            $userId = $user?->getAuthIdentifier();
 
-            if (! $user) {
+            if ($userId === null) {
                 return $response;
             }
 
             RequestAudit::create([
-                'user_id'          => $user->id,
+                'user_id'          => $userId,
                 'name'             => $user->name,
                 'email'            => $user->email,
                 'is_authenticated' => true,
