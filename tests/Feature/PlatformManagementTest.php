@@ -57,7 +57,7 @@ class PlatformManagementTest extends TestCase
         $signature='t='.time().',v1='.hash_hmac('sha256',time().'.'.$body,'whsec_admin');
         return $this->call('POST','/api/webhooks/stripe/admin/main',[],[],[],['CONTENT_TYPE'=>'application/json','HTTP_STRIPE_SIGNATURE'=>$signature],$body);
     }
-    public function test_admin_pages_and_modals_use_local_data_without_requesting_the_provider(): void
+    public function test_legacy_records_and_webhooks_keep_using_local_data(): void
     {
         $this->actingAs($this->admin()); $row=$this->record();
         $this->assertTrue(auth()->user()->hasRole('Administrador'));
@@ -65,13 +65,62 @@ class PlatformManagementTest extends TestCase
         $this->assertTrue(auth()->user()->can('admin.payments'));
         $this->assertTrue(auth()->user()->can('crud.stripeverify.index'));
         $this->assertTrue(auth()->user()->can('stripe.manage'));
-        $this->get(self::BASE)->assertOk()->assertSee('Webhooks y actividad')->assertSee('Credencial configurada');
+        $this->get(self::BASE)->assertRedirect(route('admin.stripe.workspace', ['account' => 'main']));
         $this->get(self::BASE.'/datos/charges')->assertOk()->assertSee('Pago de prueba');
         $this->getJson(self::BASE.'/registros/'.$row->id)->assertOk()->assertJsonMissing(['client_secret'=>'do-not-store']);
         $this->get(self::BASE.'/webhooks')->assertOk(); Http::assertNothingSent();
         $stored=DB::table('platform_records')->first();
         $this->assertStringNotContainsString('Pago de prueba',$stored->data);
         $this->assertArrayNotHasKey('client_secret',$row->data); $this->assertArrayNotHasKey('billing_details',$row->data);
+    }
+
+    public function test_live_workspace_keeps_the_decline_diagnosis_and_filters_on_stripe_without_importing(): void
+    {
+        $this->actingAs($this->admin());
+        $event = [
+            'id' => 'evt_declined', 'type' => 'payment_intent.payment_failed', 'created' => 1795482000,
+            'data' => ['object' => [
+                'id' => 'pi_declined', 'object' => 'payment_intent', 'status' => 'requires_payment_method',
+                'amount' => 2500, 'currency' => 'eur', 'client_secret' => 'sensitive-test-value',
+                'last_payment_error' => ['code' => 'card_declined', 'decline_code' => 'insufficient_funds', 'message' => 'Fondos insuficientes'],
+            ]],
+        ];
+        Http::fake([
+            'api.stripe.com/v1/events?*' => Http::response(['data' => [$event], 'has_more' => true]),
+            'api.stripe.com/v1/events/evt_declined' => Http::response($event),
+        ]);
+        $this->get(self::BASE.'/auditoria-pagos')->assertRedirect(route('admin.stripe.workspace', [
+            'account'=>'main', 'dataset'=>'events', 'category'=>'failures',
+        ]));
+        $this->get('/admin/stripe?dataset=events&date_from=2026-11-23')->assertOk()
+            ->assertSee('Fondos insuficientes')->assertSee('25,00 EUR')->assertSee('insufficient_funds')
+            ->assertSee('starting_after=evt_declined')->assertDontSee('sensitive-test-value');
+        $this->getJson('/admin/stripe/main/evt_declined')->assertOk()
+            ->assertSee('card_declined')->assertSee('insufficient_funds')->assertDontSee('sensitive-test-value');
+        Http::assertSent(function ($request) {
+            parse_str(parse_url($request->url(), PHP_URL_QUERY) ?: '', $query);
+            return $request->method() === 'GET' && str_ends_with(parse_url($request->url(), PHP_URL_PATH), '/events')
+                && in_array('payment_intent.payment_failed', $query['types'] ?? [], true)
+                && ($query['created']['gte'] ?? null) === (string) strtotime('2026-11-23T00:00:00Z');
+        });
+        Http::assertSentCount(2);
+        $this->assertDatabaseCount('platform_records', 0);
+        $this->assertDatabaseCount('platform_operations', 0);
+    }
+
+    public function test_live_charge_detail_only_offers_refund_to_superadmins_for_eligible_payments(): void
+    {
+        Http::fake([
+            'api.stripe.com/v1/charges/ch_one' => Http::response($this->charge()),
+            'api.stripe.com/v1/charges/ch_failed' => Http::response($this->charge([
+                'id'=>'ch_failed', 'status'=>'failed', 'paid'=>false, 'captured'=>false, 'failure_code'=>'card_declined',
+            ])),
+        ]);
+        $this->actingAs($this->admin())->getJson('/admin/stripe/main/ch_one')->assertOk()->assertDontSee('Gestionar reembolso');
+        $this->actingAs($this->admin(true))->getJson('/admin/stripe/main/ch_one')->assertOk()->assertSee('Gestionar reembolso');
+        $this->getJson('/admin/stripe/main/ch_failed')->assertOk()->assertSee('card_declined')->assertDontSee('Gestionar reembolso');
+        $this->assertDatabaseCount('platform_records', 0);
+        $this->assertDatabaseCount('platform_operations', 0);
     }
     public function test_an_ordinary_admin_cannot_refund_or_cancel_even_with_the_transactions_permission(): void
     {

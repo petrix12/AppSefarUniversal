@@ -37,6 +37,7 @@ class AuthServiceProvider extends ServiceProvider
         Gate::define('paypal.history', fn ($user) => $user->hasRole('Administrador') && ! $user->hasRole('Cliente'));
         Gate::define('stripe.transactions', fn ($user) => $user->isSuperadmin());
         Gate::define('menu.stripe-legacy', fn ($user) => $user->can('admin.payments') && $user->can('crud.stripeverify.index'));
+        Gate::define('menu.stripe-legacy-only', fn ($user) => $user->can('menu.stripe-legacy') && ! $user->can('stripe.manage'));
         // Combine the existing navigation paths without granting route permissions.
         Gate::define('menu.clients', fn ($user) => $user->can('crud.users.index') || $user->can('users.viewlist')
             || (($user->can('genealogista') || $user->can('produccion')) && $user->can('crud.clients.index')));

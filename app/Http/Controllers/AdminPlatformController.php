@@ -28,6 +28,8 @@ class AdminPlatformController extends Controller
     }
     public function dashboard(string $provider,string $account)
     {
+        if ($provider === 'stripe') return redirect()->route('admin.stripe.workspace', ['account' => $account]);
+
         $counts=PlatformRecord::where(PlatformIdentity::where($provider,$account))->where('remote_id','not like','cus_request_%')->where('remote_id','not like','cli_request_%')->selectRaw('resource, count(*) as total')->groupBy('resource')->pluck('total','resource');
         $states=DB::table('platform_sync_states')->where(PlatformIdentity::where($provider,$account))->get()->keyBy('resource');
         $configured=$provider==='stripe' ? app(StripeAdminApi::class)->configured($account) : app(KalendiaApi::class)->configured();

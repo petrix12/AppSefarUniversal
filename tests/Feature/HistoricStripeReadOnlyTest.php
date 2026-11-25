@@ -55,14 +55,29 @@ class HistoricStripeReadOnlyTest extends TestCase
     public function test_history_is_identified_and_has_no_mutation_controls_even_for_a_superadmin(): void
     {
         $this->actingAs($this->admin());
-        $this->get(self::BASE)->assertOk()->assertSee('Histórico de España')->assertSee('Solo consulta')->assertDontSee('Webhooks y actividad');
+        $this->get(self::BASE)->assertRedirect(route('admin.stripe.workspace', ['account' => 'spain_legacy']));
+        $charge = ['id'=>'ch_same', 'object'=>'charge', 'status'=>'succeeded', 'amount'=>5136,
+            'amount_refunded'=>0, 'currency'=>'eur', 'paid'=>true, 'captured'=>true];
+        Http::fake([
+            'api.stripe.com/v1/charges?*' => Http::response(['data'=>[$charge], 'has_more'=>false]),
+            'api.stripe.com/v1/charges/ch_same' => Http::response($charge),
+        ]);
+        $this->get('/admin/stripe?account=spain_legacy&date_to=2026-11-24')->assertOk()
+            ->assertSee('España · solo consulta')->assertSee('ch_same')->assertDontSee('Webhooks y actividad');
+        $this->getJson('/admin/stripe/spain_legacy/ch_same')->assertOk()->assertDontSee('Gestionar reembolso');
+        $this->assertDatabaseCount('platform_records', 0);
+        Http::assertSentCount(2);
+        foreach (Http::recorded() as [$request]) {
+            $this->assertSame('GET', $request->method());
+            $this->assertSame(['Bearer sk_test_history'], $request->header('Authorization'));
+        }
         foreach(['charges','customers','payment_intents'] as $resource) {
             $row=$this->record($resource);
             $this->getJson(self::BASE.'/registros/'.$row->id)->assertOk()
                 ->assertDontSee('Confirmar reembolso')->assertDontSee('Confirmar cancelación')->assertDontSee('Guardar contacto');
         }
         $this->get(self::BASE.'/datos/customers')->assertOk()->assertDontSee('Crear contacto');
-        Http::assertNothingSent();
+        Http::assertSentCount(2);
     }
 
     public function test_direct_write_routes_cannot_bypass_the_historical_restriction(): void
@@ -118,7 +133,8 @@ class HistoricStripeReadOnlyTest extends TestCase
     public function test_missing_historical_credentials_never_fall_back_to_main_or_retired_keys(): void
     {
         config(['services.stripe.history_es_secret'=>null,'services.stripe.secret_port'=>'sk_test_wrong_account']);
-        $this->actingAs($this->admin())->get(self::BASE)->assertOk()->assertSee('Falta configurar la credencial');
+        $this->actingAs($this->admin())->get('/admin/stripe?account=spain_legacy')->assertOk()
+            ->assertSee('Falta configurar la clave');
         try {
             app(StripeAdminApi::class)->request('spain_legacy','GET','charges');
             $this->fail('A missing historical key must not fall back');
@@ -143,6 +159,8 @@ class HistoricStripeReadOnlyTest extends TestCase
         $user=User::factory()->create(); $user->assignRole('Cliente');
         \Spatie\Permission\Models\Permission::findOrCreate('stripe.manage'); $user->givePermissionTo('stripe.manage');
         $this->actingAs($user)->get(self::BASE)->assertForbidden();
+        $this->get('/admin/stripe?account=spain_legacy')->assertForbidden();
+        $this->getJson('/admin/stripe/spain_legacy/ch_same')->assertForbidden();
         Http::assertNothingSent();
     }
 }

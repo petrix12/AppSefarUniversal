@@ -117,9 +117,14 @@ class AdminNavigationTest extends TestCase
         $agenda=collect($menu)->firstWhere('key','agenda');
         $finance=collect($menu)->firstWhere('key','finance');
         $this->assertContains('admin.kalendia.appointments',$this->destinations([$agenda]));
-        $this->assertNotContains('stripeverify',$this->destinations([$finance]));
+        $this->assertContains('admin.stripe.workspace',$this->destinations([$finance]));
         Permission::findOrCreate('admin.payments'); $user->givePermissionTo('admin.payments');
         $finance=collect($this->menu($user))->firstWhere('key','finance');
+        $this->assertNotContains('stripeverify',$this->destinations([$finance]));
+        $this->assertNotContains('listLatestStripeData',$this->destinations([$finance]));
+
+        $finance=collect($this->menu($this->actor(['admin.payments','crud.stripeverify.index'])))->firstWhere('key','finance');
+        $this->assertNotContains('admin.stripe.workspace',$this->destinations([$finance]));
         $this->assertContains('stripeverify',$this->destinations([$finance]));
         $this->assertContains('listLatestStripeData',$this->destinations([$finance]));
     }

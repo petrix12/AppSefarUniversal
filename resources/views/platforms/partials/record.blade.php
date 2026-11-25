@@ -9,7 +9,8 @@
         <div><dt>{{ \App\Services\PlatformPresentation::label($key) }}</dt><dd class="platform-value" @if($instant=\App\Services\PlatformPresentation::instant($key,$value)) data-kalendia-instant="{{ $instant }}" @endif>{{ \App\Services\PlatformPresentation::value($provider,$key,$value,$data) }}</dd></div>
     @endif
 @endforeach</dl></details>
-@if(!$readOnly && $provider==='stripe' && auth()->user()->isSuperadmin() && $record->resource==='charges' && !($data['refunded']??false))
+@if(!$readOnly && $provider==='stripe' && auth()->user()->isSuperadmin() && $record->resource==='charges'
+    && ($data['paid'] ?? false) && ($data['captured'] ?? false) && ($data['amount'] ?? 0) > ($data['amount_refunded'] ?? 0))
 <details class="mb-3"><summary class="text-danger">Reembolsar este pago <i class="fas fa-crown ml-1" aria-label="Solo superadmins"></i></summary>
     <form action="{{ route('admin.platforms.operate',[$provider,$account,$record]) }}" method="POST" data-platform-form class="mt-3">@csrf
         <input type="hidden" name="operation_id" value="{{ $uuid }}"><input type="hidden" name="action" value="refund">

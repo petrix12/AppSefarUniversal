@@ -2,8 +2,6 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Arr;
-
 class StripePaymentAudit
 {
     private const CATEGORIES = [
@@ -24,7 +22,7 @@ class StripePaymentAudit
     private const LABELS = [
         'payment_intent.payment_failed' => 'Intento de pago fallido',
         'charge.failed' => 'Pago rechazado',
-        'invoice.payment_failed' => 'Factura impaga',
+        'invoice.payment_failed' => 'Falló el pago de la factura',
         'refund.failed' => 'Reembolso fallido',
         'payment_intent.succeeded' => 'Pago confirmado',
         'payment_intent.canceled' => 'Intento cancelado',
@@ -40,7 +38,7 @@ class StripePaymentAudit
 
     public function __construct(private StripeAdminApi $stripe) {}
 
-    public function list(string $account, string $category = 'all', ?string $startingAfter = null): array
+    public function list(string $account, string $category = 'all', ?string $startingAfter = null, array $created = []): array
     {
         $types = $category === 'all'
             ? array_values(array_unique(array_merge(...array_values(self::CATEGORIES))))
@@ -48,6 +46,7 @@ class StripePaymentAudit
 
         $query = ['types' => $types, 'limit' => 100];
         if ($startingAfter !== null) $query['starting_after'] = $startingAfter;
+        if ($created) $query['created'] = $created;
 
         $response = $this->stripe->request($account, 'GET', 'events', $query);
         $items = $response['data'] ?? null;
@@ -55,17 +54,32 @@ class StripePaymentAudit
             throw new PlatformApiException('invalid_page');
         }
 
-        return [
-            'events' => array_map(fn ($event) => $this->present($event), array_filter($items, 'is_array')),
-            'has_more' => $response['has_more'],
-        ];
+        $events = [];
+        foreach ($items as $event) {
+            if (!is_array($event) || !in_array($event['type'] ?? null, $types, true)) {
+                throw new PlatformApiException('invalid_page');
+            }
+            $events[] = $this->present($event);
+        }
+
+        return ['events' => $events, 'has_more' => $response['has_more']];
+    }
+
+    public function retrieve(string $account, string $eventId): array
+    {
+        $event = $this->stripe->request($account, 'GET', 'events/'.$eventId);
+        $types = array_merge(...array_values(self::CATEGORIES));
+        if (($event['id'] ?? null) !== $eventId || !in_array($event['type'] ?? null, $types, true)) {
+            throw new PlatformApiException('resource_mismatch', 404);
+        }
+        return $this->present($event);
     }
 
     private function present(array $event): array
     {
         $object = data_get($event, 'data.object', []);
         $object = is_array($object) ? $object : [];
-        $error = $object['last_payment_error'] ?? $object['last_finalization_error'] ?? [];
+        $error = $object['last_payment_error'] ?? [];
         $error = is_array($error) ? $error : [];
         $outcome = is_array($object['outcome'] ?? null) ? $object['outcome'] : [];
         $type = is_string($event['type'] ?? null) ? $event['type'] : 'unknown';
@@ -87,15 +101,25 @@ class StripePaymentAudit
             'created' => is_numeric($event['created'] ?? null) ? (int) $event['created'] : null,
             'resource_id' => is_string($object['id'] ?? null) ? $object['id'] : '',
             'resource' => is_string($object['object'] ?? null) ? $object['object'] : '',
+            'lookup_resource' => match (true) {
+                str_starts_with($type, 'payment_intent.') => 'payment_intents',
+                str_starts_with($type, 'invoice.') => 'invoices',
+                str_starts_with($type, 'refund.') => 'refunds',
+                str_starts_with($type, 'charge.dispute.') => 'disputes',
+                str_starts_with($type, 'charge.') => 'charges',
+                default => '',
+            },
             'status' => is_string($object['status'] ?? null) ? $object['status'] : (str_contains($type, '.failed') ? 'failed' : ''),
             'customer_id' => is_string($object['customer'] ?? null) ? $object['customer'] : '',
             'amount' => $amount !== null && $currency ? StripeMoney::display($amount, $currency) : '—',
             'currency' => $currency,
-            'error_code' => Arr::first(array_filter([
-                $error['code'] ?? null, $error['decline_code'] ?? null,
-                $object['failure_code'] ?? null, $outcome['reason'] ?? null,
-            ], 'is_string')),
+            'error_code' => $error['code'] ?? $object['failure_code'] ?? null,
+            'decline_code' => $error['decline_code'] ?? $outcome['reason'] ?? null,
             'reason' => mb_substr(trim($reason), 0, 500),
+            'charge_id' => $object['charge'] ?? $object['latest_charge'] ?? $error['charge'] ?? null,
+            'payment_intent_id' => $object['payment_intent'] ?? null,
+            'network_status' => $outcome['network_status'] ?? null,
+            'outcome_type' => $outcome['type'] ?? null,
         ];
     }
 
@@ -104,6 +128,7 @@ class StripePaymentAudit
         $fields = str_starts_with($type, 'invoice.')
             ? ['amount_due', 'amount_paid', 'amount']
             : ['amount', 'amount_received', 'amount_paid', 'amount_refunded', 'amount_due'];
+        if ($type === 'charge.refunded') $fields = ['amount_refunded', 'amount'];
         foreach ($fields as $field) {
             if (is_int($object[$field] ?? null)) return $object[$field];
         }

@@ -361,7 +361,13 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
     Route::post('admin/plataformas/importaciones', [\App\Http\Controllers\AdminPlatformImportController::class, 'queue'])
         ->middleware('throttle:6,1')->name('admin.platforms.imports.store');
 
-    Route::get('admin/plataformas/stripe/{account}/auditoria-pagos', [\App\Http\Controllers\StripePaymentAuditController::class, 'index'])
+    Route::get('admin/stripe', [\App\Http\Controllers\StripeAdminWorkspaceController::class, 'workspace'])
+        ->middleware(['can:stripe.manage', 'throttle:20,1'])->name('admin.stripe.workspace');
+    Route::get('admin/stripe/{account}/{id}', [\App\Http\Controllers\StripeAdminWorkspaceController::class, 'detail'])
+        ->where(['account' => 'main|spain_legacy', 'id' => '(?:evt|ch|pi|in|re|du|dp)_[A-Za-z0-9_-]{1,180}'])
+        ->middleware(['can:stripe.manage', 'throttle:30,1'])->name('admin.stripe.detail');
+
+    Route::get('admin/plataformas/stripe/{account}/auditoria-pagos', [\App\Http\Controllers\StripeAdminWorkspaceController::class, 'legacyAudit'])
         ->where('account', 'main|spain_legacy')
         ->middleware(['auth', 'can:stripe.manage', 'throttle:12,1'])
         ->name('admin.platforms.audit');
