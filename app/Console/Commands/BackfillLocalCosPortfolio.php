@@ -9,7 +9,7 @@ use App\Services\ClientCosSnapshotService;
 use App\Services\CosPortfolioBackfill;
 use App\Services\HubspotCosFieldSyncService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -25,25 +25,29 @@ class BackfillLocalCosPortfolio extends Command
     public function handle(): int
     {
         if ($this->option('status')) {
-            $state = CosPortfolioBackfill::state() ?: ['status' => 'pending'];
-            $state['hubspot_scoped_processing'] = CosPortfolioBackfill::hubspotFieldsOnly()
-                && config('crm_sync.hubspot.enabled') && CosPortfolioBackfill::allowsCrmProcessing('hubspot');
-            $this->line(json_encode($state, JSON_THROW_ON_ERROR));
+            $this->line(json_encode(CosPortfolioBackfill::report(), JSON_THROW_ON_ERROR));
 
             return self::SUCCESS;
         }
 
-        $lock = Cache::lock(CosPortfolioBackfill::PROGRESS_KEY.'.lock', 600);
-        if (! $lock->get()) {
-            $this->info('Ya se está calculando un lote.');
+        $lockPath = CosPortfolioBackfill::progressPath().'.lock';
+        File::ensureDirectoryExists(dirname($lockPath));
+        $lock = fopen($lockPath, 'c');
+        if ($lock === false) {
+            $this->error('No se pudo abrir el bloqueo del cálculo del COS.');
 
-            return self::SUCCESS;
+            return self::FAILURE;
         }
 
         try {
+            if (! flock($lock, LOCK_EX | LOCK_NB)) {
+                $this->info('Ya se está calculando un lote.');
+
+                return self::SUCCESS;
+            }
             return $this->processBatch();
         } finally {
-            $lock->release();
+            fclose($lock);
         }
     }
 
@@ -68,18 +72,23 @@ class BackfillLocalCosPortfolio extends Command
 
         $representados = User::query()->clients();
         if ($state === []) {
+            $maxId = (int) (clone $representados)->max('users.id');
             $state = [
                 'status' => 'running',
                 'started_at' => now()->toIso8601String(),
                 'last_id' => 0,
-                'max_id' => (int) (clone $representados)->max('users.id'),
+                'max_id' => $maxId,
+                'total' => (clone $representados)->where('users.id', '<=', $maxId)->count(),
                 'calculated' => 0,
                 'without_status' => 0,
                 'hubspot_synced' => 0,
                 'without_hubspot_link' => 0,
                 'hubspot_review' => 0,
             ];
-            Cache::forever(CosPortfolioBackfill::PROGRESS_KEY, $state);
+            CosPortfolioBackfill::save($state);
+        } elseif (! isset($state['total'])) {
+            $state['total'] = (clone $representados)->where('users.id', '<=', $state['max_id'])->count();
+            CosPortfolioBackfill::save($state);
         }
 
         $limit = max(1, min(100, (int) $this->option('limit')));
@@ -98,7 +107,7 @@ class BackfillLocalCosPortfolio extends Command
                 };
                 if ($retryDelay !== null) {
                     $state['retry_after'] = now()->addSeconds(max(1, $retryDelay))->timestamp;
-                    Cache::forever(CosPortfolioBackfill::PROGRESS_KEY, $state);
+                    CosPortfolioBackfill::save($state);
                     $this->warn('Se alcanzó el límite de HubSpot. El cálculo se reanudará desde este representado.');
 
                     return self::SUCCESS;
@@ -106,21 +115,21 @@ class BackfillLocalCosPortfolio extends Command
                 if ($exception instanceof HubspotApiException) {
                     $state['error']['http_status'] = $exception->statusCode;
                 }
-                Cache::forever(CosPortfolioBackfill::PROGRESS_KEY, $state);
+                CosPortfolioBackfill::save($state);
                 $this->error("No se pudo calcular el COS del representado {$user->id}. El próximo lote reintentará este ID.");
 
                 return self::FAILURE;
             }
             $state['last_id'] = $user->id;
             unset($state['error'], $state['retry_after']);
-            Cache::forever(CosPortfolioBackfill::PROGRESS_KEY, $state);
+            CosPortfolioBackfill::save($state);
         }
 
         if ($users->count() < $limit || $state['last_id'] >= $state['max_id']) {
             $state['status'] = 'completed';
             $state['completed_at'] = now()->toIso8601String();
             unset($state['error'], $state['retry_after']);
-            Cache::forever(CosPortfolioBackfill::PROGRESS_KEY, $state);
+            CosPortfolioBackfill::save($state);
         }
         $this->line(json_encode($state, JSON_THROW_ON_ERROR));
 

@@ -17,6 +17,8 @@ use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
 use HubSpot\Factory;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Role;
@@ -24,9 +26,13 @@ use Tests\TestCase;
 
 class LocalCosBackfillTest extends TestCase
 {
+    private string $progressDirectory;
+
     protected function setUp(): void
     {
         parent::setUp();
+        $this->progressDirectory = sys_get_temp_dir().'/sefar-cos-'.bin2hex(random_bytes(8));
+        config(['cos_snapshot.backfill_progress_path' => $this->progressDirectory.'/progress.json']);
         $this->artisan('migrate', ['--path' => [
             'database/migrations/2014_10_12_000000_create_users_table.php',
             'database/migrations/2021_03_08_173429_create_permission_tables.php',
@@ -45,6 +51,13 @@ class LocalCosBackfillTest extends TestCase
             $table->string('servicio_solicitado')->nullable();
             $table->timestamps();
         });
+    }
+
+    protected function tearDown(): void
+    {
+        File::deleteDirectory($this->progressDirectory);
+
+        parent::tearDown();
     }
 
     public function test_local_batches_cover_representados_without_payment_and_unlock_only_hubspot_when_done(): void
@@ -69,6 +82,9 @@ class LocalCosBackfillTest extends TestCase
         $this->assertEquals($first->updated_at, $first->fresh()->updated_at);
         $this->assertNull($second->fresh()->arraycos);
 
+        Cache::flush();
+        $this->assertSame(2, CosPortfolioBackfill::state()['total']);
+        $this->assertSame($first->id, CosPortfolioBackfill::state()['last_id']);
         $this->artisan('cos:backfill-local --limit=1')->assertSuccessful();
         $this->assertSame('completed', CosPortfolioBackfill::state()['status']);
         $this->assertSame(2, CosPortfolioBackfill::state()['calculated']);
@@ -78,6 +94,8 @@ class LocalCosBackfillTest extends TestCase
         $this->assertFalse(CosPortfolioBackfill::allowsCrmProcessing('teamleader'));
         $this->assertSame([], $second->fresh()->arraycos);
         $this->assertNull($staff->fresh()->arraycos);
+        Cache::flush();
+        $this->assertTrue(CosPortfolioBackfill::allowsCrmProcessing('hubspot'));
         Http::assertNothingSent();
     }
 

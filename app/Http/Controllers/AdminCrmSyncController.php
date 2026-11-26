@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CrmContactSnapshot;
 use App\Models\CrmWebhookEvent;
+use App\Services\CosPortfolioBackfill;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Cache;
@@ -23,7 +24,16 @@ class AdminCrmSyncController extends Controller
             'Secreto de aplicación' => filled(config('crm_sync.hubspot.client_secret')),
             'Portal autorizado' => filled(config('crm_sync.hubspot.portal_id')),
         ];
-        return response()->view('admin.crm-sync', compact('installed', 'counts', 'events', 'teamleaderMissing', 'hubspotReadiness'))->header('Cache-Control', 'private, no-store');
+        $cosProgress = CosPortfolioBackfill::report();
+        return response()->view('admin.crm-sync', compact('installed', 'counts', 'events', 'teamleaderMissing', 'hubspotReadiness', 'cosProgress'))->header('Cache-Control', 'private, no-store');
+    }
+
+    public function cosProgress(Request $request)
+    {
+        abort_unless($request->user()->hasRole('Administrador') && ! $request->user()->hasRole('Cliente'), 403);
+
+        return response()->view('admin.partials.cos-backfill-progress', ['cosProgress' => CosPortfolioBackfill::report()])
+            ->header('Cache-Control', 'private, no-store');
     }
 
     public function registerTeamleader(Request $request, TeamleaderWebhookSubscriptionService $subscriptions)

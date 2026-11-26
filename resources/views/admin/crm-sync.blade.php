@@ -4,12 +4,26 @@
 @section('content')
     @if(session('crm_success'))<div class="alert alert-success" role="status">{{ session('crm_success') }}</div>@endif
     @if(session('crm_error'))<div class="alert alert-danger" role="alert">{{ session('crm_error') }}</div>@endif
+    <section class="card" aria-labelledby="cos-backfill-title" id="cos-backfill-panel" data-progress-url="{{ route('admin.integrations.crm-sync.cos-progress') }}">
+        <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
+            <h2 class="card-title mb-0" id="cos-backfill-title">Carga inicial del COS</h2>
+            <button type="button" class="btn btn-sm btn-outline-secondary ml-auto" data-progress-refresh>
+                <i class="fas fa-sync-alt mr-1" aria-hidden="true"></i> Actualizar
+            </button>
+        </div>
+        <div class="card-body">
+            <div data-progress-content>
+                @include('admin.partials.cos-backfill-progress')
+            </div>
+            <p class="small text-muted mt-2 mb-0" data-progress-message aria-live="polite" hidden></p>
+        </div>
+    </section>
     <div class="card"><div class="card-body">
         <h2 class="h5">Clientes y leads</h2>
         <p>Se importa el perfil del contacto cuando tiene al menos un negocio en el proveedor correspondiente, incluidos negocios cerrados o perdidos. Un proyecto o una factura por sí solos no lo convierten en cliente. No se crean cuentas de acceso automáticamente.</p>
         <p>Los contactos sin negocios quedan fuera de la actualización de perfiles. Se conserva su historial anterior.</p>
         <p>Tablas: <strong>{{ $installed ? 'Instaladas' : 'Pendiente de migración' }}</strong> · COS desde datos locales: <strong>{{ \App\Services\CrmContactMirrorService::localReadsEnabled() ? 'Activado' : 'Desactivado' }}</strong></p>
-        <p>Procesamiento de eventos: <strong>{{ config('crm_sync.processing_enabled') ? 'Activado' : 'Pausado' }}</strong>. Con el procesamiento pausado se pueden verificar entregas y conservar los eventos sin actualizar perfiles de clientes.</p>
+        <p>Procesamiento general de eventos <strong>{{ config('crm_sync.processing_enabled') ? 'Activado' : 'Pausado' }}</strong>.</p>
         <p class="text-muted">Activar la recepción no confirma que el proveedor esté enviando eventos. Comprueba una entrega real y la carga inicial antes de cambiar el modo de lectura del COS. Los proyectos clásicos de Teamleader se actualizan por eventos; las facturas y la carga inicial conservan su importador independiente.</p>
         <p><strong>Alcance: campos que alimentan el COS.</strong> La recepción actual actualiza los espejos locales. La escritura automática App ↔ HubSpot ↔ Teamleader y la resolución de conflictos por campo siguen pendientes de implementación y validación.</p>
         <details class="mb-3">
@@ -53,4 +67,39 @@
             @empty<tr><td colspan="7" class="text-muted">Todavía no se han recibido eventos.</td></tr>@endforelse
         </tbody></table>
     </div></div>
+@stop
+
+@section('js')
+    <script>
+        (() => {
+            const panel = document.getElementById('cos-backfill-panel');
+            const button = panel.querySelector('[data-progress-refresh]');
+            const content = panel.querySelector('[data-progress-content]');
+            const message = panel.querySelector('[data-progress-message]');
+
+            async function updateProgress(manual = false) {
+                if (button.disabled) return;
+
+                button.disabled = true;
+                try {
+                    const response = await fetch(panel.dataset.progressUrl, { cache: 'no-store' });
+                    if (!response.ok || response.redirected) throw new Error();
+
+                    content.innerHTML = await response.text();
+                    message.hidden = !manual;
+                    message.textContent = manual ? 'Avance actualizado.' : '';
+                } catch {
+                    message.hidden = false;
+                    message.textContent = 'El avance mostrado corresponde a la última consulta disponible.';
+                } finally {
+                    button.disabled = false;
+                }
+            }
+
+            button.addEventListener('click', () => updateProgress(true));
+            window.setInterval(() => {
+                if (!document.hidden) updateProgress();
+            }, 30_000);
+        })();
+    </script>
 @stop

@@ -28,6 +28,7 @@ class CrmWebhooksTest extends TestCase
     {
         parent::setUp();
         config(['cache.default' => 'array', 'crm_sync.processing_enabled' => true, 'crm_sync.hubspot.enabled' => true,
+            'cos_snapshot.backfill_progress_path' => sys_get_temp_dir().'/sefar-cos-'.bin2hex(random_bytes(8)).'/progress.json',
             'crm_sync.hubspot.portal_id' => '123', 'crm_sync.hubspot.client_secret' => 'example-secret',
             'crm_sync.hubspot.signature_version' => 'v3', 'crm_sync.teamleader.enabled' => true,
             'crm_sync.teamleader.account_id' => 'account-1', 'crm_sync.teamleader.secret' => str_repeat('s', 40)]);
@@ -240,6 +241,31 @@ class CrmWebhooksTest extends TestCase
         $admin = User::factory()->create()->syncRoles(['Administrador']);
         $this->actingAs($admin)->get($url)->assertOk()->assertSee('Sincronización CRM')
             ->assertDontSee('example-secret')->assertDontSee(str_repeat('s', 40));
+    }
+
+    public function test_cos_progress_panel_shows_retries_and_is_only_visible_to_internal_admins(): void
+    {
+        config(['crm_sync.hubspot.cos_fields_only' => true]);
+        Cache::forever(CosPortfolioBackfill::PROGRESS_KEY, [
+            'status' => 'running', 'calculated' => 17, 'hubspot_review' => 2, 'total' => 100,
+            'error' => ['user_id' => 65, 'http_status' => 414, 'type' => 'private.details'],
+        ]);
+        $url = route('admin.integrations.crm-sync.cos-progress');
+        $this->get($url)->assertRedirect(route('login'));
+        $mixedRole = User::factory()->create()->assignRole('Administrador');
+        $this->actingAs($mixedRole)->get($url)->assertForbidden();
+
+        $admin = User::factory()->create()->syncRoles(['Administrador']);
+        $this->actingAs($admin)->get(route('admin.integrations.crm-sync'))
+            ->assertOk()->assertSee('Carga inicial del COS')->assertSee($url);
+        $this->get($url)->assertOk()->assertHeader('Cache-Control', 'no-store, private')
+            ->assertSee('aria-valuenow="19"', false)
+            ->assertSee('Reintento pendiente')->assertSee('representado 65')->assertSee('HTTP 414')
+            ->assertSee('En espera de la carga')->assertDontSee('private.details');
+
+        Cache::forever(CosPortfolioBackfill::PROGRESS_KEY, ['status' => 'completed', 'completed_at' => now()->toIso8601String()]);
+        $this->get($url)->assertOk()->assertSee('Completado')->assertSee('Activos');
+        Http::assertNothingSent();
     }
 
     public function test_paused_processing_disables_local_cos_reads_and_initial_reconciliation(): void

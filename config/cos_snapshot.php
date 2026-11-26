@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'backfill_progress_path' => storage_path('app/private/cos-backfill-progress.json'),
+
     // Búsqueda por enlace únicamente cuando el cliente no tiene monday_id.
     // Lista mínima de análisis y producción; los vínculos existentes se consultan por ID.
     'monday_search_boards' => [
