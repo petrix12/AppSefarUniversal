@@ -120,6 +120,8 @@ Consulta el avance en **Integraciones → Sincronización CRM → Carga inicial 
 
 El panel muestra la hora del último lote programado y los reintentos del caso actual. Si HubSpot devuelve un ID de contacto distinto del registrado, el caso pasa a revisión y el lote sigue. El log de Laravel guarda el ID del representado y el tipo de error para que Sistemas pueda revisar el caso.
 
+**Casos en revisión** abre el listado con el motivo, la fecha y el enlace a la ficha del COS para quienes tengan permiso de acceder a ella. El lote recupera los detalles de los casos anteriores desde los logs disponibles. Para recuperarlos en ese momento, incluso si ya terminó la carga, ejecuta `php artisan cos:backfill-local --recover-reviews`.
+
 Al terminar, `hubspot_scoped_processing` pasa a `true`. La cola CRM procesa los webhooks de contactos con `hs_id` y negocios asociados. La primera etapa usa `users`, `negocios` y la cola existente. Las actividades, presupuestos y demás objetos se podrán habilitar en una etapa posterior. En **Contactos y expedientes**, el filtro **Estatus del COS** usa el último cálculo guardado.
 
 Para habilitar la asociación automática con Teamleader, configura `TEAMLEADER_AI_ASSOCIATION_ENABLED=true`. Usa el modelo de IA ya configurado y los proyectos locales, exige confianza estrictamente superior a `TEAMLEADER_AI_ASSOCIATION_MIN_CONFIDENCE` (80 de forma predeterminada), y guarda el vínculo en `negocios`. `php artisan crm:associate-deals-ai --limit=5` muestra el resultado del lote sin guardar asociaciones.

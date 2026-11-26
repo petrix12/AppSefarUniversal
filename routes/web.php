@@ -142,6 +142,8 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
             Route::get('/crm-sync', \App\Http\Controllers\AdminCrmSyncController::class)->name('crm-sync');
             Route::get('/crm-sync/cos-progress', [\App\Http\Controllers\AdminCrmSyncController::class, 'cosProgress'])
                 ->name('crm-sync.cos-progress');
+            Route::get('/crm-sync/cos-reviews', [\App\Http\Controllers\AdminCrmSyncController::class, 'cosReviews'])
+                ->name('crm-sync.cos-reviews');
             Route::post('/crm-sync/teamleader/register', [\App\Http\Controllers\AdminCrmSyncController::class, 'registerTeamleader'])
                 ->middleware('throttle:3,1')->name('crm-sync.teamleader.register');
             Route::get('/brightbean', [\App\Http\Controllers\BrightbeanInboxController::class, 'inbox'])->name('brightbean.index');

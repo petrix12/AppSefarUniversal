@@ -6,6 +6,7 @@ use App\Exceptions\HubspotApiException;
 use App\Exceptions\HubspotDailyBudgetExceeded;
 use App\Models\User;
 use App\Services\ClientCosSnapshotService;
+use App\Services\CosBackfillReviews;
 use App\Services\CosPortfolioBackfill;
 use App\Services\HubspotCosFieldSyncService;
 use Illuminate\Console\Command;
@@ -19,6 +20,7 @@ class BackfillLocalCosPortfolio extends Command
     protected $signature = 'cos:backfill-local
         {--start : Inicia el cálculo de todos los representados}
         {--status : Muestra el progreso sin recalcular}
+        {--recover-reviews : Recupera casos históricos desde la línea exacta del log}
         {--scheduled : Identifica una ejecución del scheduler}
         {--limit=25 : Máximo de representados por lote}';
 
@@ -47,6 +49,9 @@ class BackfillLocalCosPortfolio extends Command
 
                 return self::SUCCESS;
             }
+            if ($this->option('recover-reviews')) {
+                return $this->recoverReviews();
+            }
             return $this->processBatch();
         } finally {
             fclose($lock);
@@ -56,6 +61,13 @@ class BackfillLocalCosPortfolio extends Command
     private function processBatch(): int
     {
         $state = CosPortfolioBackfill::state();
+        if ($state !== [] && (int) ($state['hubspot_review'] ?? 0) > 0
+            && ! isset($state['review_logs_recovered_at'])) {
+            $state['hubspot_review_recovered'] = (int) ($state['hubspot_review_recovered'] ?? 0)
+                + app(CosBackfillReviews::class)->recoverHistorical($state);
+            $state['review_logs_recovered_at'] = now()->toIso8601String();
+            CosPortfolioBackfill::save($state);
+        }
         if ($state === [] && ! $this->option('start')) {
             $this->info('Cálculo pendiente de iniciar.');
 
@@ -86,6 +98,7 @@ class BackfillLocalCosPortfolio extends Command
                 'hubspot_synced' => 0,
                 'without_hubspot_link' => 0,
                 'hubspot_review' => 0,
+                'review_logs_recovered_at' => now()->toIso8601String(),
             ];
         } elseif (! isset($state['total'])) {
             $state['total'] = (clone $representados)->where('users.id', '<=', $state['max_id'])->count();
@@ -177,6 +190,7 @@ class BackfillLocalCosPortfolio extends Command
         } else {
             $result = app(HubspotCosFieldSyncService::class)->syncUser($user);
             if ($result['status'] !== 'synced') {
+                app(CosBackfillReviews::class)->record($state, (int) $user->id, (string) $result['status']);
                 $state['hubspot_review']++;
                 Log::warning('COS: revisión pendiente durante la carga inicial de HubSpot.', [
                     'user_id' => $user->id, 'reason' => $result['status'],
@@ -192,5 +206,26 @@ class BackfillLocalCosPortfolio extends Command
         if (! $ready) {
             $state['without_status']++;
         }
+    }
+
+    private function recoverReviews(): int
+    {
+        $state = CosPortfolioBackfill::state();
+        if ($state === [] || blank($state['started_at'] ?? null)) {
+            $this->info('No hay una ejecución del cálculo COS para recuperar.');
+
+            return self::SUCCESS;
+        }
+
+        $state['hubspot_review_recovered'] = (int) ($state['hubspot_review_recovered'] ?? 0)
+            + app(CosBackfillReviews::class)->recoverHistorical($state);
+        $state['review_logs_recovered_at'] = now()->toIso8601String();
+        CosPortfolioBackfill::save($state);
+        $this->line(json_encode([
+            'recovered' => $state['hubspot_review_recovered'],
+            'last_id' => (int) ($state['last_id'] ?? 0),
+        ], JSON_THROW_ON_ERROR));
+
+        return self::SUCCESS;
     }
 }

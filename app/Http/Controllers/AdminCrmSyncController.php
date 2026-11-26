@@ -4,11 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\CrmContactSnapshot;
 use App\Models\CrmWebhookEvent;
+use App\Models\User;
+use App\Services\CosBackfillReviews;
 use App\Services\CosPortfolioBackfill;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use App\Services\TeamleaderWebhookSubscriptionService;
 
 class AdminCrmSyncController extends Controller
@@ -33,6 +37,41 @@ class AdminCrmSyncController extends Controller
         abort_unless($request->user()->hasRole('Administrador') && ! $request->user()->hasRole('Cliente'), 403);
 
         return response()->view('admin.partials.cos-backfill-progress', ['cosProgress' => CosPortfolioBackfill::report()])
+            ->header('Cache-Control', 'private, no-store');
+    }
+
+    public function cosReviews(Request $request, CosBackfillReviews $reviews)
+    {
+        abort_unless($request->user()->hasRole('Administrador') && ! $request->user()->hasRole('Cliente'), 403);
+
+        $reasons = [
+            'different_contact_id' => 'HubSpot devolvió un ID de contacto distinto',
+            'conflict' => 'Conflicto de identidad',
+            'missing' => 'Contacto ausente o archivado en HubSpot',
+            'missing_deal' => 'Falta un negocio asociado en HubSpot',
+            'unlinked' => 'Identificador de HubSpot inválido',
+        ];
+        $filters = $request->validate([
+            'motivo' => ['nullable', Rule::in(array_keys($reasons))],
+            'representado' => ['nullable', 'integer', 'min:1'],
+        ]);
+        $state = CosPortfolioBackfill::state();
+        $recorded = collect($reviews->forRun($state));
+        $filtered = $recorded->filter(fn (array $case) =>
+            (empty($filters['motivo']) || $case['reason'] === $filters['motivo'])
+            && (empty($filters['representado']) || $case['user_id'] === (int) $filters['representado'])
+        )->sortByDesc('user_id')->values();
+
+        $page = LengthAwarePaginator::resolveCurrentPage();
+        $perPage = 25;
+        $cases = new LengthAwarePaginator($filtered->forPage($page, $perPage), $filtered->count(), $perPage, $page, [
+            'path' => $request->url(),
+            'query' => array_filter($filters),
+        ]);
+        $names = User::query()->clients()->whereIn('id', $cases->pluck('user_id'))->pluck('name', 'id');
+        $undetailed = max(0, (int) ($state['hubspot_review'] ?? 0) - $recorded->count());
+
+        return response()->view('admin.cos-backfill-reviews', compact('cases', 'names', 'reasons', 'filters', 'undetailed'))
             ->header('Cache-Control', 'private, no-store');
     }
 

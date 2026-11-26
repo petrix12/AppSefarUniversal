@@ -7,6 +7,7 @@ use App\Models\CrmContactSnapshot;
 use App\Models\CrmWebhookEvent;
 use App\Models\User;
 use App\Services\ClientRestrictionService;
+use App\Services\CosBackfillReviews;
 use App\Services\CosPortfolioBackfill;
 use App\Services\CrmContactMirrorService;
 use App\Services\CrmMirrorSource;
@@ -17,6 +18,7 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -258,7 +260,8 @@ class CrmWebhooksTest extends TestCase
 
         $admin = User::factory()->create()->syncRoles(['Administrador']);
         $this->actingAs($admin)->get(route('admin.integrations.crm-sync'))
-            ->assertOk()->assertSee('Carga inicial del COS')->assertSee($url);
+            ->assertOk()->assertSee('Carga inicial del COS')->assertSee($url)
+            ->assertSee(route('admin.integrations.crm-sync.cos-reviews'));
         $this->get($url)->assertOk()->assertHeader('Cache-Control', 'no-store, private')
             ->assertSee('aria-valuenow="19"', false)
             ->assertSee('Reintento pendiente')->assertSee('representado 65')->assertSee('HTTP 414')
@@ -267,6 +270,37 @@ class CrmWebhooksTest extends TestCase
 
         Cache::forever(CosPortfolioBackfill::PROGRESS_KEY, ['status' => 'completed', 'completed_at' => now()->toIso8601String()]);
         $this->get($url)->assertOk()->assertSee('Completado')->assertSee('Activos');
+        Http::assertNothingSent();
+    }
+
+    public function test_cos_review_list_filters_cases_and_uses_existing_cos_permissions_for_profile_links(): void
+    {
+        $first = User::factory()->create(['name' => 'Representado con identidad pendiente']);
+        $second = User::factory()->create(['name' => 'Representado con negocio pendiente']);
+        $state = ['status' => 'running', 'last_id' => $second->id, 'hubspot_review' => 3];
+        Cache::forever(CosPortfolioBackfill::PROGRESS_KEY, $state);
+        $this->mock(CosBackfillReviews::class)->shouldReceive('forRun')->twice()->with($state)->andReturn([
+            ['user_id' => $first->id, 'reason' => 'different_contact_id', 'recorded_at' => now()->toIso8601String()],
+            ['user_id' => $second->id, 'reason' => 'missing_deal', 'recorded_at' => now()->toIso8601String()],
+        ]);
+
+        $url = route('admin.integrations.crm-sync.cos-reviews');
+        $this->get($url)->assertRedirect(route('login'));
+        $this->actingAs($first)->get($url)->assertForbidden();
+        $mixedRole = User::factory()->create()->assignRole('Administrador');
+        $this->actingAs($mixedRole)->get($url)->assertForbidden();
+
+        $admin = User::factory()->create()->syncRoles(['Administrador']);
+        $link = route('crud.users.edit', ['user' => $first->id]);
+        $this->actingAs($admin)->get($url)->assertOk()
+            ->assertSee($first->name)->assertSee($second->name)->assertDontSee($link)
+            ->assertSee('Casos contados sin detalle disponible <strong>1</strong>', false);
+
+        $admin->givePermissionTo(Permission::findOrCreate('crud.users.index', 'web'));
+        $this->get(route('admin.integrations.crm-sync.cos-reviews', ['motivo' => 'different_contact_id', 'representado' => $first->id]))
+            ->assertOk()->assertHeader('Cache-Control', 'no-store, private')
+            ->assertSee($first->name)->assertSee('HubSpot devolvió un ID de contacto distinto')->assertSee($link)
+            ->assertDontSee($second->name);
         Http::assertNothingSent();
     }
 

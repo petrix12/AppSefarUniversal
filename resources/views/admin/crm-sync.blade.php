@@ -7,9 +7,14 @@
     <section class="card" aria-labelledby="cos-backfill-title" id="cos-backfill-panel" data-progress-url="{{ route('admin.integrations.crm-sync.cos-progress') }}">
         <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
             <h2 class="card-title mb-0" id="cos-backfill-title">Carga inicial del COS</h2>
-            <button type="button" class="btn btn-sm btn-outline-secondary ml-auto" data-progress-refresh>
-                <i class="fas fa-sync-alt mr-1" aria-hidden="true"></i> Actualizar
-            </button>
+            <div class="d-flex flex-wrap ml-auto">
+                <a href="{{ route('admin.integrations.crm-sync.cos-reviews') }}" class="btn btn-sm btn-outline-primary mr-2">
+                    Casos en revisión
+                </a>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-progress-refresh>
+                    <i class="fas fa-sync-alt mr-1" aria-hidden="true"></i> Actualizar
+                </button>
+            </div>
         </div>
         <div class="card-body">
             <div data-progress-content>
