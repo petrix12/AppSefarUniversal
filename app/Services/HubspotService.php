@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Exceptions\HubspotContactUpdateException;
 use App\Exceptions\HubspotApiException;
+use App\Exceptions\HubspotObjectIdentityMismatch;
 use HubSpot\Factory;
 use HubSpot\Client\Crm\Contacts\Model\SimplePublicObjectInput;
 use HubSpot\Client\Crm\Contacts\Model\BatchInputSimplePublicObjectBatchInput as ContactBatchInput;
@@ -182,7 +183,7 @@ class HubspotService
         );
     }
 
-    private function makeHttpClient(array $options = []): ClientInterface
+    protected function makeHttpClient(array $options = []): ClientInterface
     {
         return new GuzzleClient(array_merge([
             'verify' => $this->hubspotCaBundle(),
@@ -1107,8 +1108,12 @@ class HubspotService
         }
 
         $object = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
-        if (! is_array($object) || (string) ($object['id'] ?? '') !== $id || ! is_array($object['properties'] ?? null)) {
+        if (! is_array($object) || ! is_array($object['properties'] ?? null)
+            || ! is_scalar($object['id'] ?? null) || ! ctype_digit((string) $object['id'])) {
             throw new \UnexpectedValueException('Invalid HubSpot object response.');
+        }
+        if ((string) $object['id'] !== $id) {
+            throw new HubspotObjectIdentityMismatch('HubSpot returned an ID different from the requested object.');
         }
         return $object;
     }

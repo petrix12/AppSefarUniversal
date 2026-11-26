@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\CosIdentityConflictException;
+use App\Exceptions\HubspotObjectIdentityMismatch;
 use App\Models\Negocio;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
@@ -39,12 +40,16 @@ class HubspotCosFieldSyncService
             return ['status' => 'conflict', 'deals' => 0];
         }
 
-        $contact = $this->hubspot->webhookObject('contacts', $user->hs_id, [...array_keys(self::CONTACT_FIELDS), 'hs_merged_object_ids']);
+        try {
+            $contact = $this->hubspot->webhookObject('contacts', $user->hs_id, [...array_keys(self::CONTACT_FIELDS), 'hs_merged_object_ids']);
+        } catch (HubspotObjectIdentityMismatch) {
+            return ['status' => 'different_contact_id', 'deals' => 0];
+        }
         if ($contact === null || ($contact['archived'] ?? false)) {
             return ['status' => 'missing', 'deals' => 0];
         }
         if ((string) ($contact['id'] ?? '') !== $user->hs_id) {
-            throw new \UnexpectedValueException('HubSpot returned a different contact ID.');
+            return ['status' => 'different_contact_id', 'deals' => 0];
         }
 
         try {
@@ -132,7 +137,7 @@ class HubspotCosFieldSyncService
             $includeDeals = $type !== 'contact.propertyChange';
             $result = $this->syncUser($user, $includeDeals, $dealId);
             $synced += $result['status'] === 'synced' ? 1 : 0;
-            $conflicts += in_array($result['status'], ['conflict', 'missing', 'missing_deal'], true) ? 1 : 0;
+            $conflicts += in_array($result['status'], ['conflict', 'different_contact_id', 'missing', 'missing_deal'], true) ? 1 : 0;
         }
 
         return ['status' => $conflicts > 0 ? 'review' : 'processed', 'users' => $synced, 'conflicts' => $conflicts];

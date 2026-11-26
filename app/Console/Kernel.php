@@ -73,7 +73,7 @@ class Kernel extends ConsoleKernel
             ->timezone('America/Caracas')
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/cos-refresh-active-clients.log'));
-        $schedule->command('cos:backfill-local')->everyFiveMinutes()
+        $schedule->command('cos:backfill-local --scheduled')->everyFiveMinutes()
             ->when(fn () => (\App\Services\CosPortfolioBackfill::state()['status'] ?? null) === 'running')
             ->withoutOverlapping(10)->runInBackground()
             ->appendOutputTo(storage_path('logs/cos-backfill-local.log'));

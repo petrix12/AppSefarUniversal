@@ -9,6 +9,7 @@ use App\Services\ClientCosSnapshotService;
 use App\Services\CosPortfolioBackfill;
 use App\Services\HubspotCosFieldSyncService;
 use Illuminate\Console\Command;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -18,6 +19,7 @@ class BackfillLocalCosPortfolio extends Command
     protected $signature = 'cos:backfill-local
         {--start : Inicia el cálculo de todos los representados}
         {--status : Muestra el progreso sin recalcular}
+        {--scheduled : Identifica una ejecución del scheduler}
         {--limit=25 : Máximo de representados por lote}';
 
     protected $description = 'Completa los datos del COS desde HubSpot y calcula el estatus por lotes reanudables.';
@@ -85,11 +87,14 @@ class BackfillLocalCosPortfolio extends Command
                 'without_hubspot_link' => 0,
                 'hubspot_review' => 0,
             ];
-            CosPortfolioBackfill::save($state);
         } elseif (! isset($state['total'])) {
             $state['total'] = (clone $representados)->where('users.id', '<=', $state['max_id'])->count();
-            CosPortfolioBackfill::save($state);
         }
+        $state['last_attempt_at'] = now()->toIso8601String();
+        if ($this->option('scheduled')) {
+            $state['last_scheduled_at'] = $state['last_attempt_at'];
+        }
+        CosPortfolioBackfill::save($state);
 
         $limit = max(1, min(100, (int) $this->option('limit')));
         $users = $representados->where('users.id', '>', $state['last_id'])
@@ -99,28 +104,10 @@ class BackfillLocalCosPortfolio extends Command
             try {
                 $this->calculateUser($user, $state);
             } catch (Throwable $exception) {
-                $state['error'] = ['user_id' => $user->id, 'type' => $exception::class];
-                $retryDelay = match (true) {
-                    $exception instanceof HubspotDailyBudgetExceeded => $exception->retryAfterSeconds,
-                    $exception instanceof HubspotApiException && $exception->statusCode === 429 => $exception->retryAfterSeconds ?? 300,
-                    default => null,
-                };
-                if ($retryDelay !== null) {
-                    $state['retry_after'] = now()->addSeconds(max(1, $retryDelay))->timestamp;
-                    CosPortfolioBackfill::save($state);
-                    $this->warn('Se alcanzó el límite de HubSpot. El cálculo se reanudará desde este representado.');
-
-                    return self::SUCCESS;
-                }
-                if ($exception instanceof HubspotApiException) {
-                    $state['error']['http_status'] = $exception->statusCode;
-                }
-                CosPortfolioBackfill::save($state);
-                $this->error("No se pudo calcular el COS del representado {$user->id}. El próximo lote reintentará este ID.");
-
-                return self::FAILURE;
+                return $this->handleUserFailure($user, $exception, $state);
             }
             $state['last_id'] = $user->id;
+            $state['last_progress_at'] = now()->toIso8601String();
             unset($state['error'], $state['retry_after']);
             CosPortfolioBackfill::save($state);
         }
@@ -134,6 +121,52 @@ class BackfillLocalCosPortfolio extends Command
         $this->line(json_encode($state, JSON_THROW_ON_ERROR));
 
         return self::SUCCESS;
+    }
+
+    private function handleUserFailure(User $user, Throwable $exception, array $state): int
+    {
+        $previous = $state['error'] ?? [];
+        $error = [
+            'user_id' => $user->id,
+            'type' => $exception::class,
+            'location' => basename($exception->getFile()).':'.$exception->getLine(),
+            'attempted_at' => now()->toIso8601String(),
+        ];
+        if ($exception instanceof QueryException) {
+            $error['sqlstate'] = (string) ($exception->errorInfo[0] ?? $exception->getCode());
+            $error['database_code'] = (int) ($exception->errorInfo[1] ?? 0);
+        }
+        if ($exception instanceof HubspotApiException) {
+            $error['http_status'] = $exception->statusCode;
+        }
+        $sameError = ($previous['user_id'] ?? null) === $error['user_id']
+            && ($previous['type'] ?? null) === $error['type']
+            && ($previous['location'] ?? null) === $error['location']
+            && ($previous['sqlstate'] ?? null) === ($error['sqlstate'] ?? null)
+            && ($previous['http_status'] ?? null) === ($error['http_status'] ?? null);
+        $error['attempts'] = $sameError ? (int) ($previous['attempts'] ?? 0) + 1 : 1;
+
+        $retryDelay = match (true) {
+            $exception instanceof HubspotDailyBudgetExceeded => $exception->retryAfterSeconds,
+            $exception instanceof HubspotApiException && $exception->statusCode === 429 => $exception->retryAfterSeconds ?? 300,
+            default => null,
+        };
+        if ($retryDelay !== null) {
+            $state['error'] = $error;
+            $state['retry_after'] = now()->addSeconds(max(1, $retryDelay))->timestamp;
+            CosPortfolioBackfill::save($state);
+            $this->warn('Se alcanzó el límite de HubSpot. El cálculo se reanudará desde este representado.');
+
+            return self::SUCCESS;
+        }
+
+        $state['error'] = $error;
+        unset($state['retry_after']);
+        CosPortfolioBackfill::save($state);
+        Log::warning('COS: lote detenido en un representado.', $error);
+        $this->error("No se pudo calcular el COS del representado {$user->id}. El próximo lote reintentará este ID.");
+
+        return self::FAILURE;
     }
 
     private function calculateUser(User $user, array &$state): void

@@ -5,12 +5,14 @@ namespace Tests\Feature;
 use App\Exceptions\HubspotApiException;
 use App\Models\Negocio;
 use App\Models\User;
+use App\Services\ClientCosSnapshotService;
 use App\Services\CosHelperService;
 use App\Services\CosPortfolioBackfill;
 use App\Services\HubspotCosFieldSyncService;
 use App\Services\HubspotService;
 use App\Services\TeamleaderService;
 use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
@@ -182,6 +184,63 @@ class LocalCosBackfillTest extends TestCase
         $this->artisan('cos:backfill-local')->assertSuccessful();
         $this->assertSame(1, CosPortfolioBackfill::state()['hubspot_synced']);
         $this->assertTrue(CosPortfolioBackfill::allowsCrmProcessing('hubspot'));
+    }
+
+    public function test_unclassified_failure_keeps_the_cursor_and_records_attempts(): void
+    {
+        Role::findOrCreate('Cliente', 'web');
+        User::factory()->create();
+        User::factory()->create();
+        $this->mock(ClientCosSnapshotService::class)->shouldReceive('rebuildLocal')->times(3)
+            ->andThrow(new \UnexpectedValueException('Detalle sin publicar'));
+
+        $this->artisan('cos:backfill-local --start')->assertFailed();
+        $this->artisan('cos:backfill-local --scheduled')->assertFailed();
+        $this->artisan('cos:backfill-local --scheduled')->assertFailed();
+
+        $state = CosPortfolioBackfill::state();
+        $this->assertSame(0, $state['last_id']);
+        $this->assertSame(3, $state['error']['attempts']);
+        $this->assertArrayHasKey('last_scheduled_at', $state);
+        $this->assertStringNotContainsString('Detalle sin publicar', json_encode($state, JSON_THROW_ON_ERROR));
+    }
+
+    public function test_hubspot_contact_returned_with_another_id_is_held_for_review_without_stopping_the_batch(): void
+    {
+        Role::findOrCreate('Cliente', 'web');
+        config(['services.hubspot.key' => 'test-token']);
+        $previousCos = [['currentStepName' => 'Formalizado']];
+        $differentContact = User::factory()->create(['hs_id' => '123', 'arraycos' => $previousCos]);
+        $next = User::factory()->create();
+
+        $requests = [];
+        $handler = HandlerStack::create(new MockHandler([
+            new Response(200, [], '{"id":"456","properties":{"phone":"+580000000000"}}'),
+        ]));
+        $handler->push(Middleware::history($requests));
+        $hubspot = new class(new Client(['handler' => $handler])) extends HubspotService {
+            public function __construct(private ClientInterface $transport)
+            {
+                parent::__construct();
+            }
+
+            protected function makeHttpClient(array $options = []): ClientInterface
+            {
+                return $this->transport;
+            }
+        };
+        $this->instance(HubspotService::class, $hubspot);
+        $this->mock(ClientCosSnapshotService::class)->shouldReceive('rebuildLocal')
+            ->with(\Mockery::on(fn (User $user) => $user->is($next)))->once()->andReturnTrue();
+
+        $this->artisan('cos:backfill-local --start')->assertSuccessful();
+        $this->assertCount(1, $requests);
+        $this->assertSame(1, CosPortfolioBackfill::state()['hubspot_review']);
+        $this->assertSame(1, CosPortfolioBackfill::state()['calculated']);
+        $this->assertSame($next->id, CosPortfolioBackfill::state()['last_id']);
+        $this->assertSame('123', $differentContact->fresh()->hs_id);
+        $this->assertSame($previousCos, $differentContact->fresh()->arraycos);
+        $this->assertNull($differentContact->fresh()->phone);
     }
 
     public function test_filter_matches_any_process_in_the_latest_snapshot_even_if_it_expired(): void

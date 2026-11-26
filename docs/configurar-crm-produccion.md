@@ -118,6 +118,8 @@ El scheduler continúa cada cinco minutos en lotes de 25. En la carga inicial, l
 
 Consulta el avance en **Integraciones → Sincronización CRM → Carga inicial del COS**. El panel separa los representados sincronizados con HubSpot, los calculados con datos locales, los que quedaron sin estatus y los casos apartados para revisión. El cursor se guarda en el almacenamiento privado de Laravel y se conserva al desplegar o limpiar la caché. Si el estado quedó en «Pendiente de iniciar» porque el despliegue anterior limpió la caché, ejecuta `cos:backfill-local --start` después de desplegar esta versión. Los registros ya importados se reutilizan por ID.
 
+El panel muestra la hora del último lote programado y los reintentos del caso actual. Si HubSpot devuelve un ID de contacto distinto del registrado, el caso pasa a revisión y el lote sigue. El log de Laravel guarda el ID del representado y el tipo de error para que Sistemas pueda revisar el caso.
+
 Al terminar, `hubspot_scoped_processing` pasa a `true`. La cola CRM procesa los webhooks de contactos con `hs_id` y negocios asociados. La primera etapa usa `users`, `negocios` y la cola existente. Las actividades, presupuestos y demás objetos se podrán habilitar en una etapa posterior. En **Contactos y expedientes**, el filtro **Estatus del COS** usa el último cálculo guardado.
 
 Para habilitar la asociación automática con Teamleader, configura `TEAMLEADER_AI_ASSOCIATION_ENABLED=true`. Usa el modelo de IA ya configurado y los proyectos locales, exige confianza estrictamente superior a `TEAMLEADER_AI_ASSOCIATION_MIN_CONFIDENCE` (80 de forma predeterminada), y guarda el vínculo en `negocios`. `php artisan crm:associate-deals-ai --limit=5` muestra el resultado del lote sin guardar asociaciones.

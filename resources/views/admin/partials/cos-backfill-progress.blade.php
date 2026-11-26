@@ -59,10 +59,20 @@
     <div class="alert alert-warning py-2 mb-2" role="status">
         El cron reintentará el representado {{ $error['user_id'] }}.
         @if(isset($error['http_status'])) HubSpot devolvió HTTP {{ $error['http_status'] }}. @endif
+        @if(isset($error['sqlstate'])) Código de base de datos {{ $error['sqlstate'] }}. @endif
+        @if(isset($error['attempts'])) Intentos con este error {{ $error['attempts'] }}. @endif
     </div>
 @elseif(! $running && ! $done)
     <p class="text-muted small mb-2">El avance aparecerá aquí cuando inicie el primer lote.</p>
 @endif
+
+@foreach(['last_scheduled_at' => 'Último lote programado', 'last_progress_at' => 'Último avance'] as $key => $label)
+    @if(isset($cosProgress[$key]))
+        <p class="small text-muted mb-1">{{ $label }}
+            <time datetime="{{ $cosProgress[$key] }}">{{ \Illuminate\Support\Carbon::parse($cosProgress[$key])->setTimezone(config('app.timezone'))->format('d/m/Y H:i T') }}</time>
+        </p>
+    @endif
+@endforeach
 
 <p class="small mb-0">Webhooks de contactos y negocios en HubSpot
     <strong>{{ $cosProgress['hubspot_scoped_processing'] ? 'Activos' : ($done ? 'Pendientes de configuración' : 'En espera de la carga') }}</strong>

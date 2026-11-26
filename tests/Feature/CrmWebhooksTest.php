@@ -248,7 +248,8 @@ class CrmWebhooksTest extends TestCase
         config(['crm_sync.hubspot.cos_fields_only' => true]);
         Cache::forever(CosPortfolioBackfill::PROGRESS_KEY, [
             'status' => 'running', 'calculated' => 17, 'hubspot_review' => 2, 'total' => 100,
-            'error' => ['user_id' => 65, 'http_status' => 414, 'type' => 'private.details'],
+            'last_scheduled_at' => now()->toIso8601String(), 'last_progress_at' => now()->subMinutes(5)->toIso8601String(),
+            'error' => ['user_id' => 65, 'http_status' => 414, 'type' => 'private.details', 'attempts' => 4],
         ]);
         $url = route('admin.integrations.crm-sync.cos-progress');
         $this->get($url)->assertRedirect(route('login'));
@@ -261,6 +262,7 @@ class CrmWebhooksTest extends TestCase
         $this->get($url)->assertOk()->assertHeader('Cache-Control', 'no-store, private')
             ->assertSee('aria-valuenow="19"', false)
             ->assertSee('Reintento pendiente')->assertSee('representado 65')->assertSee('HTTP 414')
+            ->assertSee('Último lote programado')->assertSee('Último avance')->assertSee('Intentos con este error 4')
             ->assertSee('En espera de la carga')->assertDontSee('private.details');
 
         Cache::forever(CosPortfolioBackfill::PROGRESS_KEY, ['status' => 'completed', 'completed_at' => now()->toIso8601String()]);
