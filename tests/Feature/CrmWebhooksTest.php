@@ -7,11 +7,14 @@ use App\Models\CrmContactSnapshot;
 use App\Models\CrmWebhookEvent;
 use App\Models\User;
 use App\Services\ClientRestrictionService;
+use App\Services\CosPortfolioBackfill;
 use App\Services\CrmContactMirrorService;
 use App\Services\CrmMirrorSource;
 use App\Services\HubspotDealLocalSyncService;
+use App\Services\HubspotCosFieldSyncService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Role;
@@ -86,6 +89,28 @@ class CrmWebhooksTest extends TestCase
         $this->send([$this->event(), $this->event(['portalId' => 999])])->assertUnauthorized();
         $this->assertDatabaseCount('crm_webhook_events', 0);
         Bus::assertNothingDispatched();
+    }
+
+    public function test_cos_fields_mode_filters_events_and_waits_for_local_backfill(): void
+    {
+        config(['crm_sync.processing_enabled' => false, 'crm_sync.hubspot.cos_fields_only' => true]);
+        $this->send([
+            $this->event(),
+            $this->event(['eventId' => 5, 'subscriptionType' => 'quote.creation']),
+        ])->assertStatus(202);
+        $this->assertDatabaseCount('crm_webhook_events', 1);
+        Bus::assertNothingDispatched();
+
+        $this->travel(6)->minutes();
+        Cache::forever(CosPortfolioBackfill::PROGRESS_KEY, ['status' => 'completed', 'completed_at' => now()->toIso8601String()]);
+        $this->artisan('crm:retry-webhooks')->assertSuccessful();
+        Bus::assertDispatched(ProcessCrmWebhookEvent::class);
+        $event = CrmWebhookEvent::first();
+        $this->mock(HubspotCosFieldSyncService::class)->shouldReceive('ingestEvent')->once()->with($event->payload)
+            ->andReturn(['status' => 'processed', 'users' => 1]);
+        $this->mock(CrmContactMirrorService::class)->shouldNotReceive('process');
+        (new ProcessCrmWebhookEvent($event->id))->handle(app(CrmContactMirrorService::class));
+        $this->assertSame('completed', $event->fresh()->status);
     }
 
     public function test_paused_processing_retains_authenticated_events_and_their_source_time_without_profile_writes(): void

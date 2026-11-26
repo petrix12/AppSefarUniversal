@@ -1812,6 +1812,7 @@ class HubspotService
 
                     $deals[] = [
                         'id' => $deal->getId(),
+                        'updatedAt' => $deal->getUpdatedAt()?->format('Y-m-d\TH:i:s.vP'),
                         'properties' => $filteredProperties,
                     ];
                 }

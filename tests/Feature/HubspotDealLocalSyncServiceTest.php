@@ -11,6 +11,10 @@ use App\Services\CosHelperService;
 use App\Services\HubspotDealLocalSyncService;
 use App\Services\HubspotService;
 use App\Services\TeamleaderService;
+use GuzzleHttp\Client;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\Psr7\Response;
+use HubSpot\Factory;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
@@ -50,6 +54,8 @@ class HubspotDealLocalSyncServiceTest extends TestCase
             $table->string('dealname')->nullable();
             $table->string('codigo_de_proceso')->nullable();
             $table->text('documentos')->nullable();
+            $table->string('carta_nat_preestab')->nullable();
+            $table->string('carta_nat_pagado')->nullable();
             $table->timestamps();
         });
 
@@ -123,6 +129,7 @@ class HubspotDealLocalSyncServiceTest extends TestCase
 
         app(HubspotDealLocalSyncService::class)->sync($user, [[
             'id' => 'hs-linked',
+            'updatedAt' => now()->addMinute()->toIso8601String(),
             'properties' => [
                 'dealname' => 'Nombre actualizado',
                 'teamleader_id' => null,
@@ -159,6 +166,7 @@ class HubspotDealLocalSyncServiceTest extends TestCase
         $first = $service->sync($user, [$deal, $duplicate]);
         $record = Negocio::query()->sole();
         $record->update(['teamleader_id' => 'tl-project']);
+        $deal['updatedAt'] = now()->addMinute()->toIso8601String();
         $deal['properties']['dealname'] = 'Trato actualizado';
 
         $second = $service->sync($user, [$deal, $deal]);
@@ -186,7 +194,8 @@ class HubspotDealLocalSyncServiceTest extends TestCase
         $service = app(HubspotDealLocalSyncService::class);
         $service->sync($user, []);
         $result = $service->sync($user, [[
-            'id' => 'hs-linked', 'properties' => ['dealname' => 'Trato actualizado'],
+            'id' => 'hs-linked', 'updatedAt' => now()->addMinute()->toIso8601String(),
+            'properties' => ['dealname' => 'Trato actualizado'],
         ]]);
 
         $this->assertSame(0, $result['inserted']);
@@ -211,7 +220,7 @@ class HubspotDealLocalSyncServiceTest extends TestCase
         $otherAttributes = $other->fresh()->getAttributes();
 
         app(HubspotDealLocalSyncService::class)->sync($user, [
-            ['id' => 'hs-linked', 'properties' => ['documentos' => null]],
+            ['id' => 'hs-linked', 'updatedAt' => now()->addMinute()->toIso8601String(), 'properties' => ['documentos' => null]],
             ['properties' => ['dealname' => 'Sin identificador']],
         ]);
 
@@ -275,7 +284,7 @@ class HubspotDealLocalSyncServiceTest extends TestCase
                 'id' => 'hs-contact', 'properties' => ['lastmodifieddate' => '2020-01-01T00:00:00Z'],
             ]);
             $mock->shouldReceive('getContactFileFields')->with('hs-contact')->twice()->andReturn([]);
-            $deal = ['id' => 'hs-linked', 'properties' => ['dealname' => 'Trato actualizado']];
+            $deal = ['id' => 'hs-linked', 'updatedAt' => now()->addMinute()->toIso8601String(), 'properties' => ['dealname' => 'Trato actualizado']];
             $mock->shouldReceive('getDealsByContactId')->with('hs-contact')->twice()->andReturn([
                 $deal, $deal, ['id' => 'hs-unlinked', 'properties' => ['dealname' => 'Otro trato existente']],
             ]);
@@ -309,6 +318,62 @@ class HubspotDealLocalSyncServiceTest extends TestCase
         ]);
         $this->assertDatabaseHas('negocios', ['hubspot_id' => 'hs-unlinked', 'teamleader_id' => null]);
         Http::assertNothingSent();
+    }
+
+    public function test_refresh_clears_duplicate_deal_amounts_and_keeps_the_valid_deal_without_a_mirror_table(): void
+    {
+        $user = $this->client();
+        $paid = 'Abonó 1500 USD 12/03/2020 + 1273 EUR 31/03/2021';
+        $data = ['user_id' => $user->id, 'updated_at' => '2026-11-26 10:22:45',
+            'carta_nat_preestab' => '3000 USD', 'carta_nat_pagado' => $paid];
+        $extra = Negocio::create($data + ['hubspot_id' => 'extra', 'dealname' => 'Consulta de estatus']);
+        $valid = Negocio::create($data + ['hubspot_id' => 'valid', 'dealname' => 'Carta de Naturaleza']);
+        $service = app(HubspotDealLocalSyncService::class);
+
+        $clear = [
+            'id' => 'extra', 'updatedAt' => '2026-11-26T15:28:27.770Z',
+            'properties' => ['carta_nat_preestab' => null, 'carta_nat_pagado' => ''],
+        ];
+        $this->assertSame(1, $service->sync($user, [$clear])['updated']);
+        $this->assertDatabaseHas('negocios', ['id' => $extra->id, 'carta_nat_preestab' => null,
+            'carta_nat_pagado' => '', 'updated_at' => '2026-11-26 10:28:27']);
+        $this->assertSame($paid, $valid->fresh()->carta_nat_pagado);
+        $this->assertSame(0, $service->sync($user, [$clear])['updated']);
+        $this->assertSame(0, $service->sync($user, [[
+            'id' => 'extra', 'updatedAt' => '2026-11-26T15:22:45.801Z',
+            'properties' => ['carta_nat_preestab' => '3000 USD', 'carta_nat_pagado' => $paid],
+        ]])['updated']);
+        $this->assertSame('', $extra->fresh()->carta_nat_pagado);
+    }
+
+    public function test_hubspot_batch_read_keeps_the_version_and_explicitly_cleared_fields(): void
+    {
+        $http = new Client(['handler' => new MockHandler([
+            new Response(200, [], json_encode(['status' => 'COMPLETE', 'results' => [
+                ['from' => ['id' => '100'], 'to' => [['id' => '101', 'type' => 'contact_to_deal']]],
+            ]])),
+            new Response(200, [], json_encode(['status' => 'COMPLETE', 'results' => [[
+                'id' => '101', 'createdAt' => '2026-01-01T00:00:00.000Z', 'updatedAt' => '2026-11-26T15:28:27.770Z',
+                'properties' => ['carta_nat_pagado' => null],
+            ]]])),
+        ])]);
+        $hubspot = new class($http) extends HubspotService {
+            public function __construct(Client $http)
+            {
+                $this->hubspot = Factory::createWithAccessToken('test-token', $http);
+            }
+
+            public function getDealProperties(): array
+            {
+                return ['carta_nat_pagado'];
+            }
+        };
+
+        $this->assertSame([[
+            'id' => '101',
+            'updatedAt' => '2026-11-26T15:28:27.770+00:00',
+            'properties' => ['carta_nat_pagado' => null],
+        ]], $hubspot->getDealsByContactId('100'));
     }
 
     private function client(): User

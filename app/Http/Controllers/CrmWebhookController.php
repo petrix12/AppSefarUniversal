@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Jobs\ProcessCrmWebhookEvent;
 use App\Models\CrmWebhookEvent;
+use App\Services\CosPortfolioBackfill;
 use App\Services\CrmWebhookSignature;
+use App\Services\HubspotCosFieldSyncService;
 use App\Services\HubspotWebhookEventNormalizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -63,7 +65,11 @@ class CrmWebhookController extends Controller
             }
         }
         unset($event);
-        DB::transaction(function () use ($batch, $provider) {
+        if ($provider === 'hubspot' && CosPortfolioBackfill::hubspotFieldsOnly()) {
+            $batch = array_filter($batch, HubspotCosFieldSyncService::supportsEvent(...));
+        }
+        $process = CosPortfolioBackfill::allowsCrmProcessing($provider);
+        DB::transaction(function () use ($batch, $provider, $process) {
             foreach ($batch as $event) {
                 unset($event['attemptNumber']);
                 ksort($event);
@@ -73,7 +79,7 @@ class CrmWebhookController extends Controller
                     : Arr::only($event, ['type', 'timestamp', 'event_id', 'id']) + ['subject' => Arr::only($event['subject'], ['id', 'type'])];
                 $delivery = CrmWebhookEvent::firstOrCreate(['provider' => $provider, 'event_key' => $key], ['payload' => $payload]);
                 // Retrying a failed delivery also repairs a queue insertion failure.
-                if ($delivery->status !== 'completed' && config('crm_sync.processing_enabled')) {
+                if ($process && ! in_array($delivery->status, ['completed', 'review'], true)) {
                     ProcessCrmWebhookEvent::dispatch($delivery->id)->afterCommit();
                 }
             }

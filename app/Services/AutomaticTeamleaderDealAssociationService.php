@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Models\Negocio;
+use App\Models\TlProject;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -315,6 +317,151 @@ class AutomaticTeamleaderDealAssociationService
         }
 
         return ['linked' => $linked];
+    }
+
+    /**
+     * Process a bounded, resumable batch using only the App's local snapshots.
+     * This path only links negocios.teamleader_id; it never calls either CRM.
+     *
+     * @return array{processed:int,linked:int,proposed:int,skipped:int,failed:int,last_id:int}
+     */
+    public function associateLocalBatch(int $afterId = 0, int $limit = 25, bool $write = false): array
+    {
+        $limit = max(1, min(100, $limit));
+        $minimumConfidence = max(80, (int) config('services.openrouter.local_association_min_confidence', 80));
+        $minimumMargin = max(15, (int) config('services.openrouter.auto_association_min_margin', 15));
+        $deals = Negocio::query()
+            ->where('id', '>', max(0, $afterId))
+            ->whereNotNull('hubspot_id')->where('hubspot_id', '!=', '')
+            ->where(function ($query) { $query->whereNull('teamleader_id')->orWhere('teamleader_id', ''); })
+            ->orderBy('id')->limit($limit)->get();
+        $result = ['processed' => 0, 'linked' => 0, 'proposed' => 0, 'skipped' => 0, 'failed' => 0, 'last_id' => $afterId];
+
+        foreach ($deals as $deal) {
+            $result['processed']++;
+            $result['last_id'] = (int) $deal->id;
+            try {
+                $user = User::find($deal->user_id);
+                if (! $user || blank($user->tl_id)) {
+                    $result['skipped']++;
+                    continue;
+                }
+
+                // Teamleader data is read only from the local sync snapshot.
+                $projects = TlProject::query()->forCos()->where('customer_id', (string) $user->tl_id)
+                    ->where('customer_type', 'contact')
+                    ->whereNotIn('id', Negocio::query()->select('teamleader_id')->whereNotNull('teamleader_id'))
+                    ->get();
+                $candidates = $projects
+                    ->map(function (TlProject $project): array {
+                        $candidate = $this->candidate($project->toArray());
+                        $candidate['estimated_value'] = ['amount' => $project->budget_amount, 'currency' => $project->budget_currency];
+                        $candidate['phase_fields'] = collect($candidate['phase_fields'] ?? [])->map(fn ($fields) => [
+                            'preestab' => $fields['preestab'] ?? null,
+                            'paid' => $fields['paid'] ?? null,
+                        ])->all();
+                        return $candidate;
+                    })->values()->all();
+                if ($candidates === [] || ! $this->ai->available()) {
+                    $result['skipped']++;
+                    continue;
+                }
+
+                $properties = $deal->getAttributes();
+                $ranked = collect($candidates)->map(function (array $candidate) use ($properties): array {
+                    $evidence = $this->compareFields($properties, $candidate);
+                    return [...$candidate, '_field_confidence' => $evidence['_field_confidence'],
+                        '_field_signal_count' => $evidence['_field_signal_count'],
+                        '_field_match_reason' => $evidence['_field_match_reason']];
+                })->filter(fn (array $candidate) => $candidate['_field_signal_count'] >= 2)
+                    ->sortByDesc('_field_confidence')->take(40)->values();
+                if ($ranked->isEmpty()) {
+                    $result['skipped']++;
+                    continue;
+                }
+                $fieldMargin = (int) $ranked->first()['_field_confidence'] - (int) ($ranked->get(1)['_field_confidence'] ?? 0);
+                if ((int) $ranked->first()['_field_confidence'] < 80 || ($ranked->count() > 1 && $fieldMargin < $minimumMargin)) {
+                    $result['skipped']++;
+                    continue;
+                }
+
+                $suggestion = $this->ai->suggestDealAssociations($properties, $ranked->map(fn ($item) => collect($item)->except(['_field_confidence', '_field_signal_count', '_field_match_reason'])->all())->all());
+                $rankedSuggestions = collect($suggestion['suggestions'] ?? [])->sortByDesc('confidence')->values();
+                $best = $rankedSuggestions->first();
+                $runnerUp = $rankedSuggestions->get(1);
+                $confidence = (int) ($best['confidence'] ?? 0);
+                if (! $best || $confidence <= $minimumConfidence
+                    || ($runnerUp && $confidence - (int) $runnerUp['confidence'] < $minimumMargin)) {
+                    $result['skipped']++;
+                    continue;
+                }
+
+                $projectId = (string) ($best['id'] ?? '');
+                $matchedCandidate = $ranked->first(fn (array $candidate) => (string) $candidate['id'] === $projectId);
+                if ($projectId === '' || ! $matchedCandidate || Negocio::where('teamleader_id', $projectId)->exists()) {
+                    $result['skipped']++;
+                    continue;
+                }
+
+                // Reject a project that fits another unlinked deal in this same account as well.
+                $otherDeals = Negocio::query()->where('user_id', $user->id)->where('id', '!=', $deal->id)
+                    ->whereNotNull('hubspot_id')->where('hubspot_id', '!=', '')
+                    ->where(function ($query) { $query->whereNull('teamleader_id')->orWhere('teamleader_id', ''); })->get();
+                $reverse = $otherDeals->map(fn (Negocio $other) => [
+                    'id' => (int) $other->id,
+                    'score' => $this->compareFields($other->getAttributes(), $matchedCandidate)['_field_confidence'],
+                ])->sortByDesc('score')->values();
+                $ourScore = $this->compareFields($properties, $matchedCandidate)['_field_confidence'];
+                $reverseRunner = $reverse->first();
+                if ($ourScore < 80 || ($reverseRunner && (int) $reverseRunner['score'] >= $ourScore - $minimumMargin)) {
+                    $result['skipped']++;
+                    continue;
+                }
+
+                if (! $write) {
+                    $result['proposed']++;
+                    Log::info('Vista previa de asociación local HubSpot/Teamleader', [
+                        'negocio_id' => $deal->id, 'teamleader_id' => $projectId, 'confidence' => $confidence,
+                        'reason' => Str::limit((string) ($best['reason'] ?? ''), 300, ''),
+                    ]);
+                    continue;
+                }
+
+                $saved = DB::transaction(function () use ($deal, $user, $projectId, $confidence, $best, $matchedCandidate): bool {
+                    $project = TlProject::query()->forCos()->where('customer_id', (string) $user->tl_id)
+                        ->where('customer_type', 'contact')->lockForUpdate()->find($projectId);
+                    $locked = Negocio::query()->lockForUpdate()->find($deal->id);
+                    if (! $project || ! $locked || filled($locked->teamleader_id) || $locked->getAttributes() !== $deal->getAttributes()
+                        || (string) User::whereKey($user->id)->value('tl_id') !== (string) $user->tl_id
+                        || Negocio::query()->where('teamleader_id', $projectId)->lockForUpdate()->exists()) {
+                        return false;
+                    }
+                    $locked->teamleader_id = $projectId;
+                    if (\Illuminate\Support\Facades\Schema::hasColumn($locked->getTable(), 'teamleader_match_confidence')) {
+                        $locked->teamleader_match_confidence = $confidence;
+                        $locked->teamleader_match_reason = Str::limit((string) ($best['reason'] ?? $matchedCandidate['_field_match_reason']), 500, '');
+                        $locked->teamleader_matched_at = now();
+                    }
+                    return Negocio::withoutTimestamps(fn () => $locked->saveQuietly());
+                });
+                if ($saved) {
+                    $result['linked']++;
+                    Log::info('Asociación local HubSpot/Teamleader guardada por IA', [
+                        'negocio_id' => $deal->id, 'hubspot_id' => $deal->hubspot_id,
+                        'teamleader_id' => $projectId, 'confidence' => $confidence,
+                    ]);
+                } else {
+                    $result['skipped']++;
+                }
+            } catch (\Throwable $exception) {
+                $result['failed']++;
+                Log::warning('Falló la asociación local HubSpot/Teamleader', [
+                    'negocio_id' => $deal->id, 'exception_type' => $exception::class,
+                ]);
+            }
+        }
+
+        return $result;
     }
 
     private function candidate(array $project): array

@@ -4,7 +4,9 @@ namespace App\Jobs;
 
 use App\Models\CrmWebhookEvent;
 use App\Exceptions\HubspotDailyBudgetExceeded;
+use App\Services\CosPortfolioBackfill;
 use App\Services\CrmContactMirrorService;
+use App\Services\HubspotCosFieldSyncService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -29,18 +31,24 @@ class ProcessCrmWebhookEvent implements ShouldQueue
     public function handle(CrmContactMirrorService $mirror): void
     {
         $event = CrmWebhookEvent::find($this->eventId);
-        if (! $event || $event->status === 'completed') return;
+        if (! $event || in_array($event->status, ['completed', 'review'], true)) return;
         if (! config('crm_sync.'.$event->provider.'.enabled')) return;
-        if (! config('crm_sync.processing_enabled')) return;
+        if (! CosPortfolioBackfill::allowsCrmProcessing($event->provider)) return;
         // Serialize provider events; reread current remote state instead of applying old deltas.
         $lock = Cache::lock('crm.webhooks.'.$event->provider, 330);
         if (! $lock->get()) { $this->release(10); return; }
         try {
             $event->refresh();
-            if ($event->status === 'completed') return;
+            if (in_array($event->status, ['completed', 'review'], true)) return;
             $event->increment('attempts');
-            $mirror->process($event->provider, $event->payload);
-            $event->update(['status' => 'completed', 'error_class' => null, 'processed_at' => now()]);
+            $status = 'completed';
+            if ($event->provider === 'hubspot' && CosPortfolioBackfill::hubspotFieldsOnly()) {
+                $result = app(HubspotCosFieldSyncService::class)->ingestEvent($event->payload);
+                $status = $result['status'] === 'review' ? 'review' : 'completed';
+            } else {
+                $mirror->process($event->provider, $event->payload);
+            }
+            $event->update(['status' => $status, 'error_class' => null, 'processed_at' => now()]);
         } catch (HubspotDailyBudgetExceeded $exception) {
             $event->update(['status' => 'pending', 'error_class' => 'HubSpotDailyBudget']);
             $this->release($exception->retryAfterSeconds);

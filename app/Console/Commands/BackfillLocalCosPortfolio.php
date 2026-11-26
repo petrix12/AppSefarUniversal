@@ -1,0 +1,154 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Exceptions\HubspotApiException;
+use App\Exceptions\HubspotDailyBudgetExceeded;
+use App\Models\User;
+use App\Services\ClientCosSnapshotService;
+use App\Services\CosPortfolioBackfill;
+use App\Services\HubspotCosFieldSyncService;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Throwable;
+
+class BackfillLocalCosPortfolio extends Command
+{
+    protected $signature = 'cos:backfill-local
+        {--start : Inicia el cálculo de todos los representados}
+        {--status : Muestra el progreso sin recalcular}
+        {--limit=25 : Máximo de representados por lote}';
+
+    protected $description = 'Completa los datos del COS desde HubSpot y calcula el estatus por lotes reanudables.';
+
+    public function handle(): int
+    {
+        if ($this->option('status')) {
+            $state = CosPortfolioBackfill::state() ?: ['status' => 'pending'];
+            $state['hubspot_scoped_processing'] = CosPortfolioBackfill::hubspotFieldsOnly()
+                && config('crm_sync.hubspot.enabled') && CosPortfolioBackfill::allowsCrmProcessing('hubspot');
+            $this->line(json_encode($state, JSON_THROW_ON_ERROR));
+
+            return self::SUCCESS;
+        }
+
+        $lock = Cache::lock(CosPortfolioBackfill::PROGRESS_KEY.'.lock', 600);
+        if (! $lock->get()) {
+            $this->info('Ya se está calculando un lote.');
+
+            return self::SUCCESS;
+        }
+
+        try {
+            return $this->processBatch();
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function processBatch(): int
+    {
+        $state = CosPortfolioBackfill::state();
+        if ($state === [] && ! $this->option('start')) {
+            $this->info('Cálculo pendiente de iniciar.');
+
+            return self::SUCCESS;
+        }
+        if (isset($state['completed_at'])) {
+            $this->info('El cálculo inicial ya terminó.');
+
+            return self::SUCCESS;
+        }
+        if (($state['retry_after'] ?? 0) > now()->timestamp) {
+            $this->info('El lote está pausado hasta que pueda reanudar las consultas a HubSpot.');
+
+            return self::SUCCESS;
+        }
+
+        $representados = User::query()->clients();
+        if ($state === []) {
+            $state = [
+                'status' => 'running',
+                'started_at' => now()->toIso8601String(),
+                'last_id' => 0,
+                'max_id' => (int) (clone $representados)->max('users.id'),
+                'calculated' => 0,
+                'without_status' => 0,
+                'hubspot_synced' => 0,
+                'without_hubspot_link' => 0,
+                'hubspot_review' => 0,
+            ];
+            Cache::forever(CosPortfolioBackfill::PROGRESS_KEY, $state);
+        }
+
+        $limit = max(1, min(100, (int) $this->option('limit')));
+        $users = $representados->where('users.id', '>', $state['last_id'])
+            ->where('users.id', '<=', $state['max_id'])->orderBy('users.id')->limit($limit)->get();
+
+        foreach ($users as $user) {
+            try {
+                $this->calculateUser($user, $state);
+            } catch (Throwable $exception) {
+                $state['error'] = ['user_id' => $user->id, 'type' => $exception::class];
+                $retryDelay = match (true) {
+                    $exception instanceof HubspotDailyBudgetExceeded => $exception->retryAfterSeconds,
+                    $exception instanceof HubspotApiException && $exception->statusCode === 429 => $exception->retryAfterSeconds ?? 300,
+                    default => null,
+                };
+                if ($retryDelay !== null) {
+                    $state['retry_after'] = now()->addSeconds(max(1, $retryDelay))->timestamp;
+                    Cache::forever(CosPortfolioBackfill::PROGRESS_KEY, $state);
+                    $this->warn('Se alcanzó el límite de HubSpot. El cálculo se reanudará desde este representado.');
+
+                    return self::SUCCESS;
+                }
+                if ($exception instanceof HubspotApiException) {
+                    $state['error']['http_status'] = $exception->statusCode;
+                }
+                Cache::forever(CosPortfolioBackfill::PROGRESS_KEY, $state);
+                $this->error("No se pudo calcular el COS del representado {$user->id}. El próximo lote reintentará este ID.");
+
+                return self::FAILURE;
+            }
+            $state['last_id'] = $user->id;
+            unset($state['error'], $state['retry_after']);
+            Cache::forever(CosPortfolioBackfill::PROGRESS_KEY, $state);
+        }
+
+        if ($users->count() < $limit || $state['last_id'] >= $state['max_id']) {
+            $state['status'] = 'completed';
+            $state['completed_at'] = now()->toIso8601String();
+            unset($state['error'], $state['retry_after']);
+            Cache::forever(CosPortfolioBackfill::PROGRESS_KEY, $state);
+        }
+        $this->line(json_encode($state, JSON_THROW_ON_ERROR));
+
+        return self::SUCCESS;
+    }
+
+    private function calculateUser(User $user, array &$state): void
+    {
+        if (blank($user->hs_id)) {
+            $ready = app(ClientCosSnapshotService::class)->rebuildLocal($user);
+            $state['without_hubspot_link']++;
+        } else {
+            $result = app(HubspotCosFieldSyncService::class)->syncUser($user);
+            if ($result['status'] !== 'synced') {
+                $state['hubspot_review']++;
+                Log::warning('COS: revisión pendiente durante la carga inicial de HubSpot.', [
+                    'user_id' => $user->id, 'reason' => $result['status'],
+                ]);
+
+                return;
+            }
+            $ready = $result['cosready'];
+            $state['hubspot_synced']++;
+        }
+
+        $state['calculated']++;
+        if (! $ready) {
+            $state['without_status']++;
+        }
+    }
+}

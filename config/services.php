@@ -103,6 +103,8 @@ return [
         'unification_max_batch_candidates' => env('OPENROUTER_UNIFICATION_MAX_BATCH_CANDIDATES', 200),
         'unification_response_format' => env('OPENROUTER_UNIFICATION_RESPONSE_FORMAT', 'json_object'),
         'auto_association_min_confidence' => env('OPENROUTER_AUTO_ASSOCIATION_MIN_CONFIDENCE', 95),
+        'local_association_min_confidence' => env('TEAMLEADER_AI_ASSOCIATION_MIN_CONFIDENCE', 80),
+        'local_association_enabled' => env('TEAMLEADER_AI_ASSOCIATION_ENABLED', false),
         'auto_association_min_field_confidence' => env('TEAMLEADER_AUTO_ASSOCIATION_MIN_FIELD_CONFIDENCE', 80),
         'auto_association_min_field_signals' => env('TEAMLEADER_AUTO_ASSOCIATION_MIN_FIELD_SIGNALS', 2),
         'auto_association_min_margin' => env('OPENROUTER_AUTO_ASSOCIATION_MIN_MARGIN', 15),

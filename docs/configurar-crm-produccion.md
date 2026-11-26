@@ -98,6 +98,30 @@ php artisan config:clear
 
 Abre [Integraciones → Sincronización CRM](https://app.sefaruniversal.com/admin/integrations/crm-sync). Debe mostrar ambas recepciones habilitadas, los datos de configuración presentes y el procesamiento pausado. Entonces podrá usarse **Registrar webhooks de Teamleader** y comprobar entregas sin modificar perfiles.
 
+## Cálculo inicial del COS y webhooks acotados
+
+Para calcular el COS de todos los representados que ya están en la App y habilitar después las actualizaciones de sus contactos y negocios desde HubSpot, conserva la configuración de firma y añade:
+
+```dotenv
+CRM_HUBSPOT_WEBHOOKS_ENABLED=true
+CRM_HUBSPOT_COS_FIELDS_ONLY=true
+CRM_EVENT_PROCESSING_ENABLED=false
+```
+
+```bash
+php artisan config:clear
+php artisan cos:backfill-local --start
+php artisan cos:backfill-local --status
+```
+
+El scheduler continúa cada cinco minutos en lotes de 25. En la carga inicial, la App verifica en HubSpot el contacto y los negocios de cada representado identificado por `hs_id` antes de calcular el COS. Los registros locales existentes se actualizan por ID. Los representados sin `hs_id` se calculan con la información local. La App usa el límite compartido de HubSpot y reanuda desde el último ID si llega al límite de solicitudes.
+
+El estado separa los representados sincronizados con HubSpot, los calculados con datos locales, los que quedaron sin estatus y los casos apartados para revisión. El cursor queda en la caché de Laravel, que el scheduler y la aplicación deben compartir. Si ejecutaste el cálculo local anterior, vuelve a ejecutar `cos:backfill-local --start` después de desplegar esta versión.
+
+Al terminar, `hubspot_scoped_processing` pasa a `true`. La cola CRM procesa los webhooks de contactos con `hs_id` y negocios asociados. La primera etapa usa `users`, `negocios` y la cola existente. Las actividades, presupuestos y demás objetos se podrán habilitar en una etapa posterior. En **Contactos y expedientes**, el filtro **Estatus del COS** usa el último cálculo guardado.
+
+Para habilitar la asociación automática con Teamleader, configura `TEAMLEADER_AI_ASSOCIATION_ENABLED=true`. Usa el modelo de IA ya configurado y los proyectos locales, exige confianza estrictamente superior a `TEAMLEADER_AI_ASSOCIATION_MIN_CONFIDENCE` (80 de forma predeterminada), y guarda el vínculo en `negocios`. `php artisan crm:associate-deals-ai --limit=5` muestra el resultado del lote sin guardar asociaciones.
+
 Si los secretos e identificadores ya figuran configurados pero la recepción sigue deshabilitada, verifica los dos interruptores. Este bloque, ejecutado en la carpeta Laravel del servidor, actualiza todas sus entradas existentes o las añade si faltan, sin imprimir ni cambiar secretos:
 
 ```bash

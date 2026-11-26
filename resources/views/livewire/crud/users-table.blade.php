@@ -674,6 +674,20 @@
                                     </select>
                                 </div>
 
+                                @if ($entityType === 'clients')
+                                    <div>
+                                        <label for="filterCosStatus" class="block text-xs font-medium text-gray-700 mb-1">Estatus del COS</label>
+                                        <select wire:model.live="filterCosStatus" id="filterCosStatus"
+                                                class="block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                            <option value="">Todos</option>
+                                            <option value="__without_status">Sin estatus disponible</option>
+                                            @foreach ($cosStatusOptions as $status)
+                                                <option value="{{ $status }}">{{ $status }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                @endif
+
                                 <div>
                                     <label for="filterBlockStatus" class="block text-xs font-medium text-gray-700 mb-1">Estado de acceso</label>
                                     <select wire:model.live="filterBlockStatus" id="filterBlockStatus"
@@ -716,6 +730,7 @@
                                     ($filterServicio !== '')
                                     || ($filterContrato !== '')
                                     || ($filterPago !== '')
+                                    || ($entityType === 'clients' && $filterCosStatus !== '')
                                     || ($filterChatActivity !== '')
                                     || ($filterBlockStatus !== 'all')
                                     || ($filterProveedor !== '')

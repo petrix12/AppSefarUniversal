@@ -46,14 +46,9 @@ class ClientCosSnapshotService
     {
         $localReads = CrmContactMirrorService::localReadsEnabled();
         $negocios = Negocio::where('user_id', $user->id)->get();
-        $stored = MondayData::where('user_id', $user->id)->value('data');
-        $details = is_array($stored) ? $stored : json_decode($stored ?: 'null', true);
-        $details = is_array($details) ? $details : null;
-        $localMonday = app(CosMondayLookup::class)->localFor($user);
-        $monday = $localMonday !== null
-            ? $this->mondayCalculationData($localMonday['item'], 'local_mirror', $localMonday['synced_at'])
-            : $this->mondayCalculationData($details, 'stored_snapshot');
-        $mondayChanged = $monday['mondaydataforAI'] !== $this->mondayCalculationData($details, 'stored_snapshot')['mondaydataforAI'];
+        $storedMonday = $this->storedMondayData($user);
+        $monday = $this->localMondayData($user, $storedMonday);
+        $mondayChanged = $monday['mondaydataforAI'] !== $storedMonday['mondaydataforAI'];
 
         if (! $localReads && $this->hasFreshCachedCos($user)) {
             $statuses = is_array($user->arraycos) ? $user->arraycos : [];
@@ -140,42 +135,10 @@ class ClientCosSnapshotService
         } catch (\Throwable $exception) {
             throw new CosSourceRefreshException('monday', $exception);
         }
-        $servicename = $user->servicio
-            ? Servicio::where('id_hubspot', 'like', $user->servicio . '%')->first()
-            : null;
-
-        $cosuser = [];
-
-        if ($negocios->isNotEmpty()) {
-            foreach ($negocios as $negocio) {
-                $statusService = new CosService(
-                    $negocio,
-                    $user,
-                    $negocios,
-                    $mondayData['mondaydataforAI'] ?? [],
-                    forceRefresh: $forceExternalRefresh,
-                    allowRemoteAI: ! CrmContactMirrorService::localReadsEnabled(),
-                    cos: $forceExternalRefresh ? $cos : null,
-                );
-
-                $status = $statusService->calculateStatus();
-                $cosuser[] = $statusService->calculateProgress($status);
-            }
-        } else {
-            $cosuser[] = $this->handleNoNegocios($servicename, $cos);
-        }
-
-        $cosuserFinal = $this->removeDuplicatesAndSort($cosuser);
-        $cosuserFinal = array_filter($cosuserFinal, function ($proceso) use ($cos) {
-            return ! empty($proceso['servicio']) && array_key_exists($proceso['servicio'], $cos);
-        });
-
-        $user->arraycos = array_values($cosuserFinal);
-        $user->arraycos_expire = $mondayData['fallback']
-            ? Carbon::now()->addMinutes(5)
-            : Carbon::now()->addDays($this->cacheTtlDays());
-        $user->cosready = $this->checkCosReady($cosuserFinal, $cos);
-        $user->save();
+        $cosuserFinal = $this->calculateStatuses(
+            $user, $negocios, $mondayData, $cos, ! CrmContactMirrorService::localReadsEnabled(), $forceExternalRefresh,
+        );
+        $this->persistStatuses($user, $cosuserFinal, $cos, $mondayData['fallback']);
 
         Log::info('COS/MCP snapshot actualizado', [
             'user_id' => $user->id,
@@ -186,7 +149,7 @@ class ClientCosSnapshotService
 
         return [
             'client' => $user->fresh(),
-            'cos' => array_values($cosuserFinal),
+            'cos' => $cosuserFinal,
             'cosready' => (bool) $user->cosready,
             'arraycos_expire' => optional($user->arraycos_expire)->toIso8601String(),
             'negocios_count' => $negocios->count(),
@@ -202,6 +165,88 @@ class ClientCosSnapshotService
             'generated_at' => Carbon::now()->toIso8601String(),
             'duration_ms' => (int) round((microtime(true) - $startedAt) * 1000),
         ];
+    }
+
+    public function rebuildLocal(User $user): bool
+    {
+        $user = $user->fresh() ?? $user;
+        $negocios = Negocio::where('user_id', $user->id)->get();
+        $monday = $this->localMondayData($user, $this->storedMondayData($user));
+        $cos = $this->cosHelper->get();
+        $statuses = $this->calculateStatuses($user, $negocios, $monday, $cos, false);
+
+        User::withoutEvents(fn () => User::withoutTimestamps(fn () => $this->persistStatuses($user, $statuses, $cos, false)));
+        Cache::put('cos.page_refreshed.'.$user->id, true, $user->arraycos_expire);
+
+        return (bool) $user->cosready;
+    }
+
+    private function calculateStatuses(
+        User $user,
+        \Illuminate\Database\Eloquent\Collection $negocios,
+        array $mondayData,
+        array $cos,
+        bool $allowRemoteAI,
+        bool $forceExternalRefresh = false,
+    ): array {
+        $servicename = $negocios->isEmpty() && $user->servicio
+            ? Servicio::where('id_hubspot', 'like', $user->servicio . '%')->first()
+            : null;
+
+        $cosuser = [];
+
+        if ($negocios->isNotEmpty()) {
+            foreach ($negocios as $negocio) {
+                $statusService = new CosService(
+                    $negocio,
+                    $user,
+                    $negocios,
+                    $mondayData['mondaydataforAI'] ?? [],
+                    forceRefresh: $forceExternalRefresh,
+                    allowRemoteAI: $allowRemoteAI,
+                    cos: $forceExternalRefresh ? $cos : null,
+                );
+
+                $status = $statusService->calculateStatus();
+                $cosuser[] = $statusService->calculateProgress($status);
+            }
+        } else {
+            $cosuser[] = $this->handleNoNegocios($servicename, $cos);
+        }
+
+        $cosuserFinal = $this->removeDuplicatesAndSort($cosuser);
+        return array_values(array_filter($cosuserFinal, function ($proceso) use ($cos) {
+            return ! empty($proceso['servicio']) && array_key_exists($proceso['servicio'], $cos);
+        }));
+    }
+
+    private function persistStatuses(User $user, array $statuses, array $cos, bool $mondayFallback): void
+    {
+        $user->arraycos = $statuses;
+        $user->arraycos_expire = $mondayFallback
+            ? Carbon::now()->addMinutes(5)
+            : Carbon::now()->addDays($this->cacheTtlDays());
+        $user->cosready = $this->checkCosReady($statuses, $cos);
+        $user->save();
+    }
+
+    private function storedMondayData(User $user): array
+    {
+        $stored = Schema::hasTable((new MondayData)->getTable())
+            ? MondayData::where('user_id', $user->id)->value('data')
+            : null;
+        $details = is_array($stored) ? $stored : json_decode($stored ?: 'null', true);
+
+        return $this->mondayCalculationData(is_array($details) ? $details : null, 'stored_snapshot');
+    }
+
+    private function localMondayData(User $user, array $storedMonday): array
+    {
+        $local = app(CosMondayLookup::class)->localFor($user);
+
+        return $local === null
+            ? $storedMonday
+            : $this->mondayCalculationData($local['item'], 'local_mirror', $local['synced_at']);
     }
 
     private function hasFreshCachedCos(User $user): bool

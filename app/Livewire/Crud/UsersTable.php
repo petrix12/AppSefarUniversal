@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Servicio;
 use App\Models\ClientChatMessage;
 use App\Services\TeamleaderPhasePaymentService;
+use App\Services\CosHelperService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -32,6 +33,7 @@ class UsersTable extends Component
         'filterServicio' => ['except' => ''],
         'filterContrato' => ['except' => ''],
         'filterPago' => ['except' => ''],
+        'filterCosStatus' => ['except' => ''],
         'filterChatActivity' => ['except' => ''],
         'filterBlockStatus' => ['except' => 'all'],
         'filterRoles' => ['except' => []], // ✅ multi
@@ -41,6 +43,7 @@ class UsersTable extends Component
     public $filterServicio = '';
     public $filterContrato = '';
     public $filterPago = '';
+    public string $filterCosStatus = '';
     public $filterChatActivity = '';
     public $filterBlockStatus = 'all';
     public $perPage = 10;
@@ -149,6 +152,9 @@ class UsersTable extends Component
         // Mantener separados los contactos/clientes de las cuentas internas.
         $query->when($this->entityType === 'clients', fn ($q) => $q->clients())
             ->when($this->entityType === 'internal', fn ($q) => $q->internalUsers());
+        if ($this->entityType === 'clients' && $this->filterCosStatus !== '') {
+            $query->withCosStatus($this->filterCosStatus);
+        }
 
         $isAdmin = in_array(1, $rolesIds);
         $isVentasOrCoord = !empty(array_intersect($rolesIds, [15, 17]));
@@ -254,7 +260,29 @@ class UsersTable extends Component
             'owners' => $this->owners,
             'phasePaymentSources' => self::PHASE_PAYMENT_SOURCES,
             'clientBlockReasons' => User::CLIENT_BLOCK_REASONS,
+            'cosStatusOptions' => $this->entityType === 'clients' ? $this->cosStatusOptions() : [],
         ]);
+    }
+
+    private function cosStatusOptions(): array
+    {
+        return Cache::remember('cos.directory.status-options.v1', 600, function () {
+            $labels = ['No iniciado'];
+            foreach ([app(CosHelperService::class)->get(), array_cos()] as $definitions) {
+                foreach ($definitions as $phases) {
+                    foreach ($phases as $steps) {
+                        foreach ($steps as $index => $step) {
+                            $labels[] = $step['nombre_corto'] ?? null;
+                            if ($index === 0) {
+                                $labels[] = $step['nombre_largo'] ?? null;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return collect($labels)->filter()->unique()->sort(SORT_NATURAL | SORT_FLAG_CASE)->values()->all();
+        });
     }
 
     public function openBlockModal(int $userId): void
@@ -511,6 +539,7 @@ class UsersTable extends Component
             'filterServicio',
             'filterContrato',
             'filterPago',
+            'filterCosStatus',
             'filterChatActivity',
             'filterBlockStatus',
             'filterProveedor',
@@ -526,6 +555,11 @@ class UsersTable extends Component
     }
 
     public function updatedFilterBlockStatus(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilterCosStatus(): void
     {
         $this->resetPage();
     }

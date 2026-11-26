@@ -6,6 +6,7 @@ return [
     // Enable reception separately from switching the COS to local reads.
     'hubspot' => [
         'enabled' => env('CRM_HUBSPOT_WEBHOOKS_ENABLED', false),
+        'cos_fields_only' => env('CRM_HUBSPOT_COS_FIELDS_ONLY', false),
         'outbound_enabled' => env('CRM_HUBSPOT_OUTBOUND_ENABLED', false),
         // App ceiling; HubSpot response headers may tighten it to half the detected burst quota.
         'request_rate_per_second' => max(1, (int) env('CRM_HUBSPOT_REQUEST_RATE_PER_SECOND', 4)),

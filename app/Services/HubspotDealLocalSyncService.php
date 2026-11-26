@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Negocio;
-use App\Models\CrmObjectMirror;
 use App\Models\User;
 use App\Models\Scopes\BlockedClientRecordScope;
 use Illuminate\Support\Facades\DB;
@@ -35,7 +34,7 @@ class HubspotDealLocalSyncService
             $updates = [];
             foreach ($dealsById as $id => $deal) {
                 $data = $this->processDealData($deal, $fillableColumns);
-                $remoteUpdatedAt = $this->remoteUpdatedAt($id, $deal);
+                $remoteUpdatedAt = $this->remoteUpdatedAt($deal);
                 if ($existing->has($id)) {
                     foreach ($existing->get($id)->whereNull('user_id') as $row) {
                         if ($this->remoteWins($remoteUpdatedAt, $row->updated_at)) {
@@ -55,9 +54,11 @@ class HubspotDealLocalSyncService
         }, 3));
     }
 
-    public function sync(User $user, array $deals): array
+    public function sync(User $user, array $deals, bool $hubspotPriority = false): array
     {
-        app(ClientRestrictionService::class)->detectHubspotRetirement($user, [], $deals);
+        if (! $hubspotPriority) {
+            app(ClientRestrictionService::class)->detectHubspotRetirement($user, [], $deals);
+        }
         $columns = Schema::getColumnListing((new Negocio)->getTable());
         $excludedColumns = [
             'id',
@@ -86,7 +87,7 @@ class HubspotDealLocalSyncService
             $dealsById[$id] = $deal;
         }
 
-        $result = HubspotSyncOrigin::fromHubspot(fn () => DB::transaction(function () use ($user, $deals, $dealsById, $fillableColumns): array {
+        $result = HubspotSyncOrigin::fromHubspot(fn () => DB::transaction(function () use ($user, $deals, $dealsById, $fillableColumns, $hubspotPriority): array {
             // All local deal syncs share this lock, including the legacy job.
             // Serialize the lookup + insert when refreshes overlap for a user.
             User::whereKey($user->id)->lockForUpdate()->firstOrFail();
@@ -100,7 +101,7 @@ class HubspotDealLocalSyncService
             $dealsToUpdate = [];
             foreach ($dealsById as $hubspotId => $deal) {
                 $data = $this->processDealData($deal, $fillableColumns);
-                $remoteUpdatedAt = $this->remoteUpdatedAt($hubspotId, $deal);
+                $remoteUpdatedAt = $this->remoteUpdatedAt($deal);
 
                 if ($existingDeals->has($hubspotId)) {
                     $clientDeals = $existingDeals->get($hubspotId)->where('user_id', $user->id);
@@ -108,7 +109,7 @@ class HubspotDealLocalSyncService
                         $unassignedDeals = $existingDeals->get($hubspotId)->whereNull('user_id');
                         if ($unassignedDeals->isNotEmpty()) {
                             foreach ($unassignedDeals as $existingDeal) {
-                                $dealData = $this->remoteWins($remoteUpdatedAt, $existingDeal->updated_at)
+                                $dealData = ($hubspotPriority || $this->remoteWins($remoteUpdatedAt, $existingDeal->updated_at))
                                     ? array_merge($data, ['updated_at' => $remoteUpdatedAt ?? now()])
                                     : [];
                                 $this->queueUpdateWhenChanged($existingDeal, array_merge($dealData, ['user_id' => $user->id]), $dealsToUpdate);
@@ -126,7 +127,7 @@ class HubspotDealLocalSyncService
                     // Preserve every existing association if legacy duplicate
                     // rows already exist; refresh is not a deduplication tool.
                     foreach ($clientDeals as $existingDeal) {
-                        if ($this->remoteWins($remoteUpdatedAt, $existingDeal->updated_at)) {
+                        if ($hubspotPriority || $this->remoteWins($remoteUpdatedAt, $existingDeal->updated_at)) {
                             $this->queueUpdateWhenChanged($existingDeal, $data + ['updated_at' => $remoteUpdatedAt ?? now()], $dealsToUpdate);
                         }
                     }
@@ -215,6 +216,10 @@ class HubspotDealLocalSyncService
     private function queueUpdateWhenChanged(Negocio $existingDeal, array $data, array &$dealsToUpdate): void
     {
         foreach ($data as $key => $value) {
+            if ($key === 'updated_at' && $value instanceof \DateTimeInterface
+                && $existingDeal->updated_at?->getTimestamp() === $value->getTimestamp()) {
+                continue;
+            }
             if ($existingDeal->{$key} != $value) {
                 $dealsToUpdate[] = [
                     'id' => $existingDeal->id,
@@ -226,15 +231,19 @@ class HubspotDealLocalSyncService
         }
     }
 
-    private function remoteUpdatedAt(string $hubspotId, array $deal): ?\Illuminate\Support\Carbon
+    private function remoteUpdatedAt(array $deal): ?\Illuminate\Support\Carbon
     {
-        $value = $deal['updatedAt'] ?? null;
-        if ($value === null || $value === '') {
-            $value = CrmObjectMirror::query()->where('provider', 'hubspot')
-                ->where('object_type', 'deals')->where('external_id', $hubspotId)->value('remote_updated_at');
-        }
+        // The version must belong to the same payload. A newer mirror
+        // timestamp cannot make a cached response safe to apply.
+        $value = $deal['updatedAt'] ?? data_get($deal, 'properties.hs_lastmodifieddate');
         if (! is_string($value) && ! $value instanceof \DateTimeInterface) return null;
-        try { return \Illuminate\Support\Carbon::parse($value); } catch (\Throwable) { return null; }
+        if (is_string($value) && trim($value) === '') return null;
+
+        try {
+            return \Illuminate\Support\Carbon::parse($value)->setTimezone(config('app.timezone'));
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     private function remoteWins(?\Illuminate\Support\Carbon $remoteUpdatedAt, mixed $localUpdatedAt): bool

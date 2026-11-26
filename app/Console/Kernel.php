@@ -73,6 +73,14 @@ class Kernel extends ConsoleKernel
             ->timezone('America/Caracas')
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/cos-refresh-active-clients.log'));
+        $schedule->command('cos:backfill-local')->everyFiveMinutes()
+            ->when(fn () => (\App\Services\CosPortfolioBackfill::state()['status'] ?? null) === 'running')
+            ->withoutOverlapping(10)->runInBackground()
+            ->appendOutputTo(storage_path('logs/cos-backfill-local.log'));
+        $schedule->command('crm:associate-deals-ai --write --scheduled --limit=5')->everyTenMinutes()
+            ->when(fn () => config('services.openrouter.local_association_enabled') && filled(config('services.openrouter.key')))
+            ->withoutOverlapping(15)->runInBackground()
+            ->appendOutputTo(storage_path('logs/crm-deal-ai-association.log'));
         $schedule->command('monday:sync --queue')
             ->everySixHours()
             ->when(fn () => (bool) config('services.monday.mirror_enabled'))

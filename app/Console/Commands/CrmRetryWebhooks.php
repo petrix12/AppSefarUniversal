@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Jobs\ProcessCrmWebhookEvent;
 use App\Models\CrmWebhookEvent;
+use App\Services\CosPortfolioBackfill;
 use Illuminate\Console\Command;
 
 class CrmRetryWebhooks extends Command
@@ -13,10 +14,16 @@ class CrmRetryWebhooks extends Command
 
     public function handle(): int
     {
-        if (! config('crm_sync.processing_enabled')) return self::SUCCESS;
-        $providers = array_values(array_filter(['hubspot', 'teamleader'], fn ($provider) => config("crm_sync.$provider.enabled")));
+        $providers = array_values(array_filter(['hubspot', 'teamleader'], fn ($provider) =>
+            config("crm_sync.$provider.enabled") && CosPortfolioBackfill::allowsCrmProcessing($provider)
+        ));
+        if ($providers === []) return self::SUCCESS;
         CrmWebhookEvent::whereIn('status', ['pending', 'failed'])->where('attempts', '<', 5)
             ->whereIn('provider', $providers)
+            ->when(CosPortfolioBackfill::hubspotFieldsOnly(), fn ($query) => $query->where(fn ($scope) => $scope
+                ->where('provider', '!=', 'hubspot')
+                ->orWhere('payload->subscriptionType', 'like', 'contact.%')
+                ->orWhere('payload->subscriptionType', 'like', 'deal.%')))
             ->where('updated_at', '<', now()->subMinutes(5))->orderBy('id')
             ->limit(max(1, min(100, (int) $this->option('limit'))))->get()->each(function ($event) {
                 ProcessCrmWebhookEvent::dispatch($event->id);

@@ -383,6 +383,20 @@ class User extends Authenticatable
         return $query->whereHas('roles', fn (Builder $roles) => $roles->where('name', 'Cliente'));
     }
 
+    public function scopeWithCosStatus(Builder $query, string $status): Builder
+    {
+        if ($status === '__without_status') {
+            return $query->where(fn (Builder $users) => $users->whereNull('users.arraycos')
+                ->orWhereJsonLength('users.arraycos', 0));
+        }
+
+        if ($query->getConnection()->getDriverName() === 'sqlite') {
+            return $query->whereRaw("exists (select 1 from json_each(users.arraycos) as process where json_extract(process.value, '$.currentStepName') = ?)", [$status]);
+        }
+
+        return $query->whereJsonContains('users.arraycos', [['currentStepName' => $status]]);
+    }
+
     /**
      * Cuentas internas autenticables que no representan un contacto cliente.
      */
