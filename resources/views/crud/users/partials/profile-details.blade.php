@@ -44,22 +44,6 @@
             </div>
         </div>
         <div class="cos-profile-grid">
-            @php
-                $fechaNacimiento = '';
-                if ($user->date_of_birth) {
-                    try {
-                        // Intenta primero el formato europeo
-                        $fechaNacimiento = \Carbon\Carbon::createFromFormat('d/m/Y', $user->date_of_birth)->format('Y-m-d');
-                    } catch (\Exception $e) {
-                        try {
-                            // Si falla, intenta parseo genérico (Y-m-d, etc.)
-                            $fechaNacimiento = \Carbon\Carbon::parse($user->date_of_birth)->format('Y-m-d');
-                        } catch (\Exception $e2) {
-                            $fechaNacimiento = '';
-                        }
-                    }
-                }
-            @endphp
             <div class="cos-profile-field">
                 <label for="date_of_birth" class="block text-sm font-medium text-gray-700">Fecha de Nacimiento</label>
                 <input
@@ -67,7 +51,7 @@
                     class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     id="date_of_birth"
                     name="date_of_birth"
-                    value="{{ old('date_of_birth', $fechaNacimiento) }}"
+                    value="{{ \App\Services\CosPresentation::dateInput(old('date_of_birth', $user->date_of_birth)) }}"
                     placeholder="Ingrese fecha de nacimiento"
                 >
             </div>
@@ -330,7 +314,7 @@
                     class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     id="fecha_de_caducidad_del_pasaporte"
                     name="fecha_de_caducidad_del_pasaporte"
-                    value="{{ old('fecha_de_caducidad_del_pasaporte', \Carbon\Carbon::parse($user->fecha_de_caducidad_del_pasaporte ?? now())->format('Y-m-d')) }}"
+                    value="{{ \App\Services\CosPresentation::dateInput(old('fecha_de_caducidad_del_pasaporte', $user->fecha_de_caducidad_del_pasaporte)) }}"
                     placeholder="Ingrese la fecha de caducidad del pasaporte">
             </div>
         </div>
@@ -516,7 +500,7 @@
             <div class="cos-profile-grid">
                 <div class="cos-profile-field">
                     <label for="n6__aiv_recibido_en_espana" class="block text-sm font-medium text-gray-700">Fecha AIV recibido en España</label>
-                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n6__aiv_recibido_en_espana" name="n6__aiv_recibido_en_espana" value="{{ old('n6__aiv_recibido_en_espana', $user->n6__aiv_recibido_en_espana) }}" placeholder="Fecha AIV Recibido en España">
+                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n6__aiv_recibido_en_espana" name="n6__aiv_recibido_en_espana" value="{{ \App\Services\CosPresentation::dateInput(old('n6__aiv_recibido_en_espana', $user->n6__aiv_recibido_en_espana)) }}" placeholder="Fecha AIV Recibido en España">
                 </div>
                 <div class="cos-profile-field">
                     <label for="n2__aiv_notificacion_aprobado" class="block text-sm font-medium text-gray-700">AIV Notificación Aprobado</label>
@@ -540,7 +524,7 @@
                 </div>
                 <div class="cos-profile-field">
                     <label for="n2__fecha_aacs_notificacion_aprobado" class="block text-sm font-medium text-gray-700">Fecha AACS Notificacion Aprobado</label>
-                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n2__fecha_aacs_notificacion_aprobado" name="n2__fecha_aacs_notificacion_aprobado" value="{{ old('n2__fecha_aacs_notificacion_aprobado', $user->n2__fecha_aacs_notificacion_aprobado) }}" placeholder="Ingrese Fecha AACS Notificacion Aprobado">
+                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n2__fecha_aacs_notificacion_aprobado" name="n2__fecha_aacs_notificacion_aprobado" value="{{ \App\Services\CosPresentation::dateInput(old('n2__fecha_aacs_notificacion_aprobado', $user->n2__fecha_aacs_notificacion_aprobado)) }}" placeholder="Ingrese Fecha AACS Notificacion Aprobado">
                 </div>
             </div>
             <div class="cos-profile-grid">
@@ -588,22 +572,22 @@
                 </div>
                 <div class="cos-profile-field">
                     <label for="n1__f__peticion_por_genealogia" class="block text-sm font-medium text-gray-700">Fecha Petición por Genealogía</label>
-                    <input type="date" value="{{ old('n1__f__peticion_por_genealogia', $user->n1__f__peticion_por_genealogia) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n1__f__peticion_por_genealogia" name="n1__f__peticion_por_genealogia">
+                    <input type="date" value="{{ \App\Services\CosPresentation::dateInput(old('n1__f__peticion_por_genealogia', $user->n1__f__peticion_por_genealogia)) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n1__f__peticion_por_genealogia" name="n1__f__peticion_por_genealogia">
                 </div>
                 <div class="cos-profile-field">
                     <label for="n1__f__solicitado_por_genealogia" class="block text-sm font-medium text-gray-700">Fecha Solicitado por Genealogía</label>
-                    <input type="date" value="{{ old('n1__f__solicitado_por_genealogia', $user->n1__f__solicitado_por_genealogia) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n1__f__solicitado_por_genealogia" name="n1__f__solicitado_por_genealogia">
+                    <input type="date" value="{{ \App\Services\CosPresentation::dateInput(old('n1__f__solicitado_por_genealogia', $user->n1__f__solicitado_por_genealogia)) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n1__f__solicitado_por_genealogia" name="n1__f__solicitado_por_genealogia">
                 </div>
             </div>
 
             <div class="cos-profile-grid">
                 <div class="cos-profile-field">
                     <label for="n2__f_solicitud_mayor_info" class="block text-sm font-medium text-gray-700">Fecha Solicitud Mayor Información</label>
-                    <input type="date" value="{{ old('n2__f_solicitud_mayor_info', $user->n2__f_solicitud_mayor_info) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n2__f_solicitud_mayor_info" name="n2__f_solicitud_mayor_info">
+                    <input type="date" value="{{ \App\Services\CosPresentation::dateInput(old('n2__f_solicitud_mayor_info', $user->n2__f_solicitud_mayor_info)) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n2__f_solicitud_mayor_info" name="n2__f_solicitud_mayor_info">
                 </div>
                 <div class="cos-profile-field">
                     <label for="n2__f__de_solicitud_al_cliente" class="block text-sm font-medium text-gray-700">Fecha de solicitud al solicitante</label>
-                    <input type="date" value="{{ old('n2__f__de_solicitud_al_cliente', $user->n2__f__de_solicitud_al_cliente) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n2__f__de_solicitud_al_cliente" name="n2__f__de_solicitud_al_cliente">
+                    <input type="date" value="{{ \App\Services\CosPresentation::dateInput(old('n2__f__de_solicitud_al_cliente', $user->n2__f__de_solicitud_al_cliente)) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n2__f__de_solicitud_al_cliente" name="n2__f__de_solicitud_al_cliente">
                 </div>
                 <div class="cos-profile-field">
                     <label for="n3__estatus_de_nacionalidad" class="block text-sm font-medium text-gray-700">Estatus de Nacionalidad</label>
@@ -618,15 +602,15 @@
             <div class="cos-profile-grid">
                 <div class="cos-profile-field">
                     <label for="n3__f___recordatorio_filiacion" class="block text-sm font-medium text-gray-700">Fecha Recordatorio Filiación</label>
-                    <input type="date" value="{{ old('n3__f___recordatorio_filiacion', $user->n3__f___recordatorio_filiacion) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n3__f___recordatorio_filiacion" name="n3__f___recordatorio_filiacion">
+                    <input type="date" value="{{ \App\Services\CosPresentation::dateInput(old('n3__f___recordatorio_filiacion', $user->n3__f___recordatorio_filiacion)) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n3__f___recordatorio_filiacion" name="n3__f___recordatorio_filiacion">
                 </div>
                 <div class="cos-profile-field">
                     <label for="n3__fcje_registro" class="block text-sm font-medium text-gray-700">FCJE Registro</label>
-                    <input type="date" value="{{ old('n3__fcje_registro', $user->n3__fcje_registro) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n3__fcje_registro" name="n3__fcje_registro">
+                    <input type="date" value="{{ \App\Services\CosPresentation::dateInput(old('n3__fcje_registro', $user->n3__fcje_registro)) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n3__fcje_registro" name="n3__fcje_registro">
                 </div>
                 <div class="cos-profile-field">
                     <label for="n3__fecha_de_recordatorio" class="block text-sm font-medium text-gray-700">Fecha de Recordatorio</label>
-                    <input type="date" value="{{ old('n3__fecha_de_recordatorio', $user->n3__fecha_de_recordatorio) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n3__fecha_de_recordatorio" name="n3__fecha_de_recordatorio">
+                    <input type="date" value="{{ \App\Services\CosPresentation::dateInput(old('n3__fecha_de_recordatorio', $user->n3__fecha_de_recordatorio)) }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n3__fecha_de_recordatorio" name="n3__fecha_de_recordatorio">
                 </div>
             </div>
 
@@ -637,18 +621,18 @@
                 </div>
                 <div class="cos-profile-field">
                     <label for="n4__f__entregado_genealogia" class="block text-sm font-medium text-gray-700">Fecha Entregado Genealogía</label>
-                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__f__entregado_genealogia" name="n4__f__entregado_genealogia" value="{{ old('n4__f__entregado_genealogia', $user->n4__f__entregado_genealogia ?? '') }}">
+                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__f__entregado_genealogia" name="n4__f__entregado_genealogia" value="{{ \App\Services\CosPresentation::dateInput(old('n4__f__entregado_genealogia', $user->n4__f__entregado_genealogia ?? '')) }}">
                 </div>
                 <div class="cos-profile-field">
                     <label for="n4__f__enviada_a_genealogia" class="block text-sm font-medium text-gray-700">Fecha Enviada a Genealogía</label>
-                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__f__enviada_a_genealogia" name="n4__f__enviada_a_genealogia" value="{{ old('n4__f__enviada_a_genealogia', $user->n4__f__enviada_a_genealogia ?? '') }}">
+                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__f__enviada_a_genealogia" name="n4__f__enviada_a_genealogia" value="{{ \App\Services\CosPresentation::dateInput(old('n4__f__enviada_a_genealogia', $user->n4__f__enviada_a_genealogia ?? '')) }}">
                 </div>
             </div>
 
             <div class="cos-profile-grid">
                 <div class="cos-profile-field">
                     <label for="n4__fcje_certifi__descargado" class="block text-sm font-medium text-gray-700">FCJE Certificado Descargado</label>
-                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__fcje_certifi__descargado" name="n4__fcje_certifi__descargado" value="{{ old('n4__fcje_certifi__descargado', $user->n4__fcje_certifi__descargado ?? '') }}">
+                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n4__fcje_certifi__descargado" name="n4__fcje_certifi__descargado" value="{{ \App\Services\CosPresentation::dateInput(old('n4__fcje_certifi__descargado', $user->n4__fcje_certifi__descargado ?? '')) }}">
                 </div>
                 <div class="cos-profile-field">
                     <label for="n4__otros_nombres" class="block text-sm font-medium text-gray-700">Otros Nombres</label>
@@ -656,7 +640,7 @@
                 </div>
                 <div class="cos-profile-field">
                     <label for="n5__fecha_de_registro" class="block text-sm font-medium text-gray-700">Fecha de Registro</label>
-                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n5__fecha_de_registro" name="n5__fecha_de_registro" value="{{ old('n5__fecha_de_registro', $user->n5__fecha_de_registro ?? '') }}">
+                    <input type="date" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" id="n5__fecha_de_registro" name="n5__fecha_de_registro" value="{{ \App\Services\CosPresentation::dateInput(old('n5__fecha_de_registro', $user->n5__fecha_de_registro ?? '')) }}">
                 </div>
             </div>
 

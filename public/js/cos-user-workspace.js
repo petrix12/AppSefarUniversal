@@ -1,6 +1,34 @@
 (() => {
   'use strict';
+  const watchSnapshot = () => {
+    const notice = document.querySelector('[data-cos-refresh-status-url]');
+    if (!notice) return;
+
+    notice.querySelector('[data-cos-refresh-reload]').addEventListener('click', () => window.location.reload());
+
+    let attempts = 0;
+    const check = async () => {
+      attempts++;
+      try {
+        const response = await fetch(notice.dataset.cosRefreshStatusUrl, {
+          headers: { Accept: 'application/json' },
+          cache: 'no-store',
+        });
+        if (response.ok && (await response.json()).pending === false) {
+          notice.hidden = false;
+          document.dispatchEvent(new CustomEvent('cos:refresh-ready', { detail: { observed_ms: performance.now() } }));
+          return;
+        }
+      } catch {
+        // A failed check can be retried without interrupting the open form.
+      }
+      if (attempts < 36) window.setTimeout(check, 5000);
+    };
+    window.setTimeout(check, 5000);
+  };
+
   const init = () => {
+    watchSnapshot();
     const workspace = document.querySelector('[data-cos-workspace]');
     const tabs = workspace?.querySelector('#formTabs');
     const Tab = window.bootstrap?.Tab;

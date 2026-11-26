@@ -114,6 +114,9 @@
                             $type = $type ?: 'text';
                             $storedValue = ($teamleaderProfileCustomValues ?? [])[$name] ?? data_get($user, $name);
                             $value = old($name, $storedValue);
+                            if ($type === 'date') {
+                                $value = \App\Services\CosPresentation::dateInput($value);
+                            }
                             $inputId = 'tl-custom-' . $name;
                         @endphp
                         <div class="col-md-6 col-xl-4 mb-3">

@@ -2,10 +2,11 @@
 
 @section('title', $user->name)
 
-@section('content_header')
-    <!-- Bootstrap 5 CSS -->
+@section('adminlte_theme_pre')
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
+    @unless(config('adminlte.enabled_laravel_mix'))
+        <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}">
+    @endunless
 @stop
 
 @section('content')
@@ -227,7 +228,9 @@
     ];
 @endphp
 
-<x-app-layout>
+<div class="min-h-screen bg-gray-100">
+    <x-banner />
+    @include('sweetalert::alert', ['cdn' => 'https://cdn.jsdelivr.net/npm/sweetalert2@9'])
     @include('crud.users.partials.restriction-notice')
     @include('crud.users.partials.load-timing')
     <div>
@@ -353,6 +356,13 @@
                         </button>
                         @endif
                     </div>
+
+                    @if($cosAutoRefreshPending ?? false)
+                        <div class="alert alert-info mb-3" data-cos-refresh-status-url="{{ route('crud.users.cos-refresh-status', $user, false) }}" hidden>
+                            <span role="status">Puedes recargar la ficha para consultar el estatus más reciente.</span>
+                            <button type="button" class="btn btn-sm btn-outline-primary ml-2" data-cos-refresh-reload>Recargar ficha</button>
+                        </div>
+                    @endif
 
                     {{-- Flash de éxito --}}
                     @if(session('sync_success'))
@@ -1909,7 +1919,7 @@
                                                     class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                                     id="{{ $field['column_id'] }}"
                                                     name="{{ $field['column_id'] }}"
-                                                    value="{{ old($field['column_id'], $dataMonday[$field['column_id']] ?? '') }}"
+                                                    value="{{ \App\Services\CosPresentation::dateInput(old($field['column_id'], $dataMonday[$field['column_id']] ?? null)) }}"
                                                 >
                                                 @break
 
@@ -2629,6 +2639,7 @@
                     </table></div>
                 </div>
 
+                @push('cos-document-scripts')
                 <script>
                     $(document).ready(function () {
                         // Configuración de DataTables
@@ -2977,6 +2988,7 @@
                         });
                     });
                 </script>
+                @endpush
 
                 <div class="tab-pane fade cos-workspace-panel" id="client-req" role="tabpanel" aria-labelledby="client-req-tab">
                     @include('crud.users.partials.workspace-panel-heading', ['title' => 'Mis solicitudes de documentos', 'description' => 'Consulta qué documentos necesita el equipo y el estado de cada entrega.', 'icon' => 'fa-clipboard-list'])
@@ -3019,11 +3031,14 @@
             </div>
         </div>
     </div>
-</x-app-layout>
+</div>
+@stack('modals')
+@unless(auth()->user()->hasRole('Cliente'))
+    <x-chat-bubble />
+@endunless
 @stop
 
 @section('css')
-    <link rel="stylesheet" href="{{ asset('css/sefar.css') }}">
 <link rel="stylesheet" href="{{ asset('css/cos-user-profile.css') }}?v={{ filemtime(public_path('css/cos-user-profile.css')) }}">
 <link rel="stylesheet" href="{{ asset('css/cos-user-workspace.css') }}?v={{ filemtime(public_path('css/cos-user-workspace.css')) }}">
 
@@ -3093,38 +3108,11 @@
 @stop
 
 @section('js')
+@unless(config('adminlte.enabled_laravel_mix'))
+    <script src="{{ asset('js/app.js') }}?v={{ filemtime(public_path('js/app.js')) }}" defer></script>
+@endunless
 <script src="{{ asset('js/cos-user-profile.js') }}?v={{ filemtime(public_path('js/cos-user-profile.js')) }}" defer></script>
 <script src="{{ asset('js/cos-user-workspace.js') }}?v={{ filemtime(public_path('js/cos-user-workspace.js')) }}" defer></script>
-    @if($cosAutoRefreshPending ?? false)
-        <script>
-            (function () {
-                const statusUrl = @json(route('crud.users.cos-refresh-status', $user));
-                const keepTimingReport = @json(\App\Support\CosPageTiming::authorized(request()) && request()->boolean('cos_timing'));
-                let attempts = 0;
-                const maxAttempts = 36;
-                const timer = window.setInterval(async function () {
-                    attempts++;
-                    try {
-                        const response = await fetch(statusUrl, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
-                        if (!response.ok) throw new Error('No se pudo consultar la actualización del COS');
-                        const status = await response.json();
-                        if (status.pending === false) {
-                            window.clearInterval(timer);
-                            if (keepTimingReport) {
-                                document.dispatchEvent(new CustomEvent('cos:refresh-ready', { detail: { observed_ms: performance.now() } }));
-                                return;
-                            }
-                            window.location.reload();
-                            return;
-                        }
-                    } catch (error) {
-                        // A temporary status check failure should not disrupt the COS page.
-                    }
-                    if (attempts >= maxAttempts) window.clearInterval(timer);
-                }, 5000);
-            })();
-        </script>
-    @endif
     @if($cosClientPreview)
         <script>
             // Preview keeps the authenticated staff identity; customer actions are read-only.
@@ -3136,13 +3124,13 @@
     @endif
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
 <!-- DataTables CSS para Bootstrap 4 -->
-<script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cleave.js/1.6.0/cleave.min.js"></script>
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <!-- DataTables CSS para Bootstrap 4 -->
 
 <script type="text/javascript" src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/1.13.1/js/dataTables.bootstrap5.min.js"></script>
+@stack('cos-document-scripts')
 
 <script>
     $(document).ready(function () {

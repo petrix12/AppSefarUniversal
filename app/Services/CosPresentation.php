@@ -4,6 +4,29 @@ namespace App\Services;
 
 class CosPresentation
 {
+    public static function dateInput(mixed $value): string
+    {
+        if ($value instanceof \DateTimeInterface) {
+            $value = $value->format('Y-m-d');
+        }
+        if (! is_string($value)) {
+            return '';
+        }
+
+        $value = trim($value);
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})(?:[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?$/D', $value, $parts)) {
+            [, $year, $month, $day] = $parts;
+        } elseif (preg_match('~^(\d{1,2})/(\d{1,2})/(\d{4})$~D', $value, $parts)) {
+            [, $day, $month, $year] = $parts;
+        } else {
+            return '';
+        }
+
+        return checkdate((int) $month, (int) $day, (int) $year)
+            ? sprintf('%04d-%02d-%02d', $year, $month, $day)
+            : '';
+    }
+
     public static function portugueseLabels(mixed $value): mixed
     {
         if (is_array($value)) {

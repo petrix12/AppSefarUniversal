@@ -39,13 +39,13 @@
         @include('adminlte::plugins', ['type' => 'css'])
 
         <link rel="stylesheet" href="{{ asset('vendor/adminlte/dist/css/adminlte.min.css') }}">
-        <link rel="stylesheet" href="{{ asset('css/sefar.css') }}?v={{ filemtime(public_path('css/sefar.css')) }}">
-        <link rel="stylesheet" href="{{ asset('css/darkmode.css') }}?v={{ filemtime(public_path('css/darkmode.css')) }}">
     @else
         <link rel="stylesheet" href="{{ mix(config('adminlte.laravel_mix_css_path', 'css/app.css')) }}">
-        <link rel="stylesheet" href="{{ asset('css/sefar.css') }}?v={{ filemtime(public_path('css/sefar.css')) }}">
-        <link rel="stylesheet" href="{{ asset('css/darkmode.css') }}?v={{ filemtime(public_path('css/darkmode.css')) }}">
     @endif
+
+    @yield('adminlte_theme_pre')
+    <link rel="stylesheet" href="{{ asset('css/sefar.css') }}?v={{ filemtime(public_path('css/sefar.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/darkmode.css') }}?v={{ filemtime(public_path('css/darkmode.css')) }}">
 
     {{-- Livewire Styles --}}
     @if(config('adminlte.livewire'))
@@ -138,7 +138,7 @@
     {{-- Base Scripts --}}
     @if(!config('adminlte.enabled_laravel_mix'))
 
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js" integrity="sha512-pumBsjNRGGqkPzKHndZMaAG+bir374sORyzM3uulLV14lN5LyykqNk8eEeUlUkB3U0M4FApyaHraT65ihJhDpQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script src="{{ asset('vendor/jquery/jquery-3.6.4.min.js') }}" integrity="sha512-pumBsjNRGGqkPzKHndZMaAG+bir374sORyzM3uulLV14lN5LyykqNk8eEeUlUkB3U0M4FApyaHraT65ihJhDpQ==" crossorigin="anonymous"></script>
         <script src="{{ asset('vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
         <script src="{{ asset('vendor/overlayScrollbars/js/jquery.overlayScrollbars.min.js') }}"></script>
 

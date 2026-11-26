@@ -72,6 +72,25 @@ class CosWorkspacePresentationTest extends TestCase
         $this->assertStringContainsString('https://focus.teamleader.eu/contacts/contact-123',$internal);
         Http::assertNothingSent();
     }
+    public function test_profile_leaves_invalid_dates_empty_and_keeps_valid_legacy_dates(): void
+    {
+        $data = $this->data(true);
+        $data['user']->forceFill([
+            'date_of_birth' => '29/02/2000',
+            'fecha_de_caducidad_del_pasaporte' => '-0001-11-30',
+            'n2__fecha_aacs_notificacion_aprobado' => '0000-00-00',
+            'n3__fcje_registro' => '2026-02-30',
+            'n3__fecha_de_recordatorio' => '2026-11-26 00:00:00',
+        ]);
+        $page = $this->document(view('crud.users.partials.profile-details', $data)->render());
+        $this->assertSame('2000-02-29', $page->evaluate('string(//*[@id="date_of_birth"]/@value)'));
+        $this->assertSame('2026-11-26', $page->evaluate('string(//*[@id="n3__fecha_de_recordatorio"]/@value)'));
+        foreach (['fecha_de_caducidad_del_pasaporte', 'tl-custom-fecha_de_caducidad_del_pasaporte', 'n2__fecha_aacs_notificacion_aprobado', 'n3__fcje_registro'] as $field) {
+            $input = $page->query('//*[@id="'.$field.'"]')->item(0);
+            $this->assertNotNull($input);
+            $this->assertSame('', $input->getAttribute('value'));
+        }
+    }
     public function test_the_client_preview_button_and_return_control_are_preserved(): void
     {
         foreach ([false,true] as $preview) {
