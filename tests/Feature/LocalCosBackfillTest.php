@@ -10,6 +10,12 @@ use App\Services\CosPortfolioBackfill;
 use App\Services\HubspotCosFieldSyncService;
 use App\Services\HubspotService;
 use App\Services\TeamleaderService;
+use GuzzleHttp\Client;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
+use GuzzleHttp\Psr7\Response;
+use HubSpot\Factory;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
@@ -75,26 +81,64 @@ class LocalCosBackfillTest extends TestCase
         Http::assertNothingSent();
     }
 
-    public function test_backfill_reads_and_projects_missing_hubspot_deals_before_calculating(): void
+    public function test_backfill_resumes_and_reads_missing_deals_in_the_body_without_a_long_url(): void
     {
         Role::findOrCreate('Cliente', 'web');
+        $alreadyCalculated = User::factory()->create();
         $user = User::factory()->create(['hs_id' => '123']);
-        $hubspot = $this->mock(HubspotService::class);
-        $hubspot->shouldReceive('webhookObject')->once()->with('contacts', '123', \Mockery::type('array'))
-            ->andReturn(['id' => '123', 'properties' => ['phone' => '+582125550100']]);
-        $hubspot->shouldReceive('webhookAssociations')->once()->with('contacts', '123', 'deals')->andReturn(['321']);
-        $hubspot->shouldReceive('getDealById')->once()->with('321')->andReturn([
-            'id' => '321', 'properties' => ['servicio_solicitado' => 'Española Sefardi'],
-        ]);
+        $requests = [];
+        $handler = HandlerStack::create(new MockHandler([
+            new Response(200, [], json_encode(['status' => 'COMPLETE', 'results' => [[
+                'id' => '321', 'updatedAt' => '2026-11-26T16:00:00.000Z',
+                'properties' => ['servicio_solicitado' => 'Española Sefardi'],
+            ]]], JSON_THROW_ON_ERROR)),
+        ]));
+        $handler->push(Middleware::history($requests));
+        $hubspot = new class(new Client(['handler' => $handler])) extends HubspotService {
+            public function __construct(Client $client)
+            {
+                $this->hubspot = Factory::createWithAccessToken('test-token', $client);
+            }
+
+            public function webhookObject(string $entity, string $id, ?array $properties = null): ?array
+            {
+                if ($entity === 'deals') {
+                    throw new HubspotApiException(414, operation: 'object lookup');
+                }
+
+                return ['id' => $id, 'properties' => ['phone' => '+582125550100']];
+            }
+
+            public function webhookAssociations(string $from, string $id, string $to): array
+            {
+                return ['321'];
+            }
+
+            public function getDealProperties(): array
+            {
+                return ['servicio_solicitado', ...array_map(fn ($i) => str_repeat('campo_', 12).$i, range(1, 200))];
+            }
+        };
+        $this->instance(HubspotService::class, $hubspot);
         $this->mock(TeamleaderService::class);
         $this->mock(CosHelperService::class)->shouldReceive('get')->andReturn(['Española Sefardi' => []]);
 
-        $this->artisan('cos:backfill-local --start')->assertSuccessful();
+        $this->artisan('cos:backfill-local --start --limit=1')->assertSuccessful();
+        $this->assertSame($alreadyCalculated->id, CosPortfolioBackfill::state()['last_id']);
         $this->artisan('cos:backfill-local')->assertSuccessful();
+        $this->assertCount(1, $requests);
+        $request = $requests[0]['request'];
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertSame('/crm/v3/objects/deals/batch/read', $request->getUri()->getPath());
+        $this->assertSame('', $request->getUri()->getQuery());
+        $body = json_decode((string) $request->getBody(), true, flags: JSON_THROW_ON_ERROR);
+        $this->assertSame(['servicio_solicitado'], $body['properties']);
+        $this->assertSame([['id' => '321']], $body['inputs']);
         $this->assertDatabaseHas('negocios', ['user_id' => $user->id, 'hubspot_id' => '321']);
         $this->assertSame('+582125550100', $user->fresh()->phone);
         $this->assertSame('Española Sefardi', $user->fresh()->arraycos[0]['servicio']);
         $this->assertSame(1, CosPortfolioBackfill::state()['hubspot_synced']);
+        $this->assertSame(2, CosPortfolioBackfill::state()['calculated']);
     }
 
     public function test_backfill_waits_for_hubspot_retry_after_and_preserves_the_existing_cos_in_the_meantime(): void

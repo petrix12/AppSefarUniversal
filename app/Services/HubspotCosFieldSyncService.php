@@ -63,12 +63,11 @@ class HubspotCosFieldSyncService
         $deals = [];
         if ($includeDeals) {
             $dealIds = $dealId !== null ? [$dealId] : $this->hubspot->webhookAssociations('contacts', $user->hs_id, 'deals');
-            foreach ($dealIds as $id) {
-                $deal = $this->hubspot->getDealById((string) $id);
-                if ($deal === null || ($deal['archived'] ?? false)) {
-                    return ['status' => 'missing_deal', 'deals' => 0];
-                }
-                $deals[] = $deal;
+            if ($dealIds !== []) {
+                $deals = $this->hubspot->getDealsByIds($dealIds, [...self::localDealColumns(), 'dealname']);
+            }
+            if (count($deals) !== count($dealIds)) {
+                return ['status' => 'missing_deal', 'deals' => 0];
             }
         }
 

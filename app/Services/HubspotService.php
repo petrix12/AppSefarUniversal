@@ -1521,6 +1521,61 @@ class HubspotService
         return $deal;
     }
 
+    public function getDealsByIds(array $dealIds, array $fields): array
+    {
+        $dealIds = array_values(array_unique(array_map('strval', $dealIds)));
+        if ($dealIds === []) {
+            return [];
+        }
+        foreach ($dealIds as $id) {
+            if (! ctype_digit($id) || strlen($id) > 64) {
+                throw new \InvalidArgumentException('Invalid HubSpot deal ID.');
+            }
+        }
+
+        $properties = array_values(array_intersect($fields, $this->getDealProperties()));
+        $deals = [];
+        foreach (array_chunk($dealIds, 100) as $ids) {
+            $this->hubspotThrottle();
+            try {
+                $response = $this->hubspot->apiRequest([
+                    'method' => 'POST',
+                    'path' => '/crm/v3/objects/deals/batch/read',
+                    'body' => [
+                        'properties' => $properties,
+                        'inputs' => array_map(fn (string $id) => ['id' => $id], $ids),
+                    ],
+                ]);
+            } catch (RequestException $exception) {
+                if ($exception->getResponse() === null) {
+                    throw $exception;
+                }
+                throw $this->apiException($exception->getResponse(), 'deal batch read');
+            }
+
+            $body = json_decode((string) $response->getBody(), true, flags: JSON_THROW_ON_ERROR);
+            if (($body['status'] ?? null) !== 'COMPLETE' || ! is_array($body['results'] ?? null)) {
+                throw new \UnexpectedValueException('HubSpot deal batch read did not complete.');
+            }
+            foreach ($body['errors'] ?? [] as $error) {
+                if (! in_array($error['category'] ?? '', ['OBJECT_NOT_FOUND', 'NOT_FOUND'], true)) {
+                    throw new \UnexpectedValueException('HubSpot reported a deal batch read error.');
+                }
+            }
+            foreach ($body['results'] as $deal) {
+                $id = (string) ($deal['id'] ?? '');
+                if (! in_array($id, $ids, true) || isset($deals[$id]) || ! is_array($deal['properties'] ?? null)) {
+                    throw new \UnexpectedValueException('Invalid HubSpot deal batch result.');
+                }
+                if (! ($deal['archived'] ?? false)) {
+                    $deals[$id] = $deal;
+                }
+            }
+        }
+
+        return array_values($deals);
+    }
+
     public function updateDeals($hsId, $properties)
     {
         $updated = false;
