@@ -22,6 +22,13 @@
                         Datos personales
                     </button>
                 </li>
+                @if($canEditCos && !empty($basicCosEditor))
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="basic-edit-tab" data-bs-toggle="tab" data-bs-target="#basic-edit" type="button" role="tab" aria-controls="basic-edit" aria-selected="false">
+                        Edición básica
+                    </button>
+                </li>
+                @endif
                 @if($canEditCos)
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="change-history-tab" data-bs-toggle="tab" data-bs-target="#change-history" type="button" role="tab" aria-controls="change-history" aria-selected="false">

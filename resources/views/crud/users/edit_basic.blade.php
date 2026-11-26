@@ -1,45 +1,11 @@
 @extends('adminlte::page')
 
 @section('content')
-@if(session('success'))
-  <div class="alert alert-success">{{ session('success') }}</div>
-@endif
-
-@if(session('sync_conflict'))
-  @php($conflict = session('sync_conflict'))
-  <div class="alert alert-warning">
-    <strong>Conflicto de sincronizacion.</strong>
-    <div>{{ $conflict['message'] ?? 'Revisa los datos antes de continuar.' }}</div>
-
-    @if(!empty($conflict['conflicting_user']))
-      <div class="mt-2">
-        El dato en conflicto ya esta asociado a:
-        <a href="{{ route('crud.users.editBasic', $conflict['conflicting_user']['id']) }}">
-          #{{ $conflict['conflicting_user']['id'] }}
-          {{ $conflict['conflicting_user']['nombres'] ?? '' }}
-          {{ $conflict['conflicting_user']['apellidos'] ?? '' }}
-        </a>
-        ({{ $conflict['conflicting_user']['email'] ?? 'sin email' }}).
-      </div>
-    @endif
-
-    @if(!empty($conflict['updates_to_db']))
-      <div class="mt-2 small">
-        Valores sugeridos por HubSpot:
-        @foreach($conflict['updates_to_db'] as $field => $value)
-          <span class="badge badge-light border mr-1">{{ $field }}: {{ is_scalar($value) ? $value : json_encode($value) }}</span>
-        @endforeach
-      </div>
-    @endif
-  </div>
-@endif
-
 <div class="card">
   <div class="card-header">
     <div class="d-flex justify-content-between align-items-center">
-      <h3 class="card-title mb-0">Edición básica (Admin) — {{ $user->nombres }} {{ $user->apellidos }}</h3>
+      <h3 class="card-title mb-0">Edición básica del representado — {{ $user->nombres }} {{ $user->apellidos }}</h3>
 
-      {{-- Link al edit "full" (el que llama Cos) --}}
       <a class="btn btn-outline-secondary btn-sm" href="{{ route('crud.users.edit', $user->id) }}">
         Ir a edición completa
       </a>
@@ -47,150 +13,14 @@
   </div>
 
   <div class="card-body">
-    <form method="POST" action="{{ route('crud.users.updateBasic', $user->id) }}">
-      @csrf
-      @method('PUT')
-
-      {{-- =======================
-           DATOS BÁSICOS
-      ======================== --}}
-      <h5 class="mb-3">Datos básicos</h5>
-
-      <div class="row">
-        <div class="col-md-12">
-          <label>Nombre visible (name)</label>
-          <input class="form-control" name="name" value="{{ old('name', $user->name) }}" required>
-          @error('name') <small class="text-danger">{{ $message }}</small> @enderror
-        </div>
-
-        <div class="col-md-6">
-          <label>Nombres</label>
-          <input class="form-control" name="nombres" value="{{ old('nombres', $user->nombres) }}" required>
-          @error('nombres') <small class="text-danger">{{ $message }}</small> @enderror
-        </div>
-
-        <div class="col-md-6">
-          <label>Apellidos</label>
-          <input class="form-control" name="apellidos" value="{{ old('apellidos', $user->apellidos) }}" required>
-          @error('apellidos') <small class="text-danger">{{ $message }}</small> @enderror
-        </div>
-
-        <div class="col-md-6 mt-3">
-          <label>Correo</label>
-          <input class="form-control" type="email" name="email" value="{{ old('email', $user->email) }}" required>
-          @error('email') <small class="text-danger">{{ $message }}</small> @enderror
-        </div>
-
-        <div class="col-md-6 mt-3">
-          <label>Teléfono</label>
-          <input class="form-control" name="phone" value="{{ old('phone', $user->phone) }}" required>
-          @error('phone') <small class="text-danger">{{ $message }}</small> @enderror
-        </div>
-
-        <div class="col-md-6 mt-3">
-            <label>Passport</label>
-            <input
-                class="form-control"
-                name="passport"
-                value="{{ old('passport', $user->passport) }}"
-            >
-            @error('passport')
-                <small class="text-danger">{{ $message }}</small>
-            @enderror
-        </div>
-
-        <div class="col-md-6 mt-3">
-          <label for="genealogy_tree_id">ID secundario del árbol</label>
-          <input
-              id="genealogy_tree_id"
-              class="form-control"
-              name="genealogy_tree_id"
-              value="{{ old('genealogy_tree_id', $user->genealogy_tree_id) }}"
-              placeholder="IDCliente del árbol, si es distinto al pasaporte"
-          >
-          <small class="form-text text-muted">Solo se usa si no existe un árbol con el número de pasaporte del cliente.</small>
-          @error('genealogy_tree_id') <small class="text-danger">{{ $message }}</small> @enderror
-        </div>
-
-        <div class="col-md-6 mt-3">
-          <label>HubSpot ID</label>
-          <input class="form-control" name="hs_id" value="{{ old('hs_id', $user->hs_id) }}">
-          @error('hs_id') <small class="text-danger">{{ $message }}</small> @enderror
-        </div>
-
-        <div class="col-md-6 mt-3">
-          <label>Teamleader ID</label>
-          <input class="form-control" name="tl_id" value="{{ old('tl_id', $user->tl_id) }}">
-          @error('tl_id') <small class="text-danger">{{ $message }}</small> @enderror
-        </div>
-
-        <div class="col-md-6 mt-3">
-          <label>Nueva contraseña (opcional)</label>
-          <input class="form-control" type="password" name="password" autocomplete="new-password">
-          @error('password') <small class="text-danger">{{ $message }}</small> @enderror
-        </div>
-
-        <div class="col-md-6 mt-3">
-          <label>Confirmar contraseña</label>
-          <input class="form-control" type="password" name="password_confirmation" autocomplete="new-password">
-        </div>
-      </div>
-
-      <hr class="my-4">
-
-      {{-- =======================
-           ROLES
-      ======================== --}}
-      <h5 class="mb-3">Roles</h5>
-      <div class="row">
-        @foreach($roles as $role)
-          <div class="col-md-4">
-            <label class="d-flex align-items-center">
-              <input
-                type="checkbox"
-                name="roles[]"
-                value="{{ $role->name }}"
-                class="mr-2"
-                {{ in_array($role->name, old('roles', $userRoleNames)) ? 'checked' : '' }}
-              >
-              <span>{{ $role->name }}</span>
-            </label>
-          </div>
-        @endforeach
-      </div>
-
-      <hr class="my-4">
-
-      {{-- =======================
-           PERMISOS DIRECTOS
-      ======================== --}}
-      <h5 class="mb-2">Permisos directos</h5>
-      <small class="text-muted d-block mb-3">
-        Estos permisos se asignan directamente al usuario (además de los que herede por roles).
-      </small>
-
-      <div class="row">
-        @foreach($permissions as $perm)
-          <div class="col-md-4">
-            <label class="d-flex align-items-center">
-              <input
-                type="checkbox"
-                name="permissions[]"
-                value="{{ $perm->name }}"
-                class="mr-2"
-                {{ in_array($perm->name, old('permissions', $userPermissionNames)) ? 'checked' : '' }}
-              >
-              <span>{{ $perm->name }}</span>
-            </label>
-          </div>
-        @endforeach
-      </div>
-
-      <div class="mt-4">
-        <button class="btn btn-primary">Guardar</button>
-        <a class="btn btn-secondary" href="{{ route('crud.users.index') }}">Volver</a>
-      </div>
-    </form>
+    @include('crud.users.partials.basic-editor', [
+      'user' => $user,
+      'roles' => $roles,
+      'permissions' => $permissions,
+      'userRoleNames' => $userRoleNames,
+      'userPermissionNames' => $userPermissionNames,
+      'embeddedInCos' => false,
+    ])
   </div>
 </div>
 @endsection

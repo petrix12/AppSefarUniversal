@@ -68,6 +68,7 @@ use App\Services\UnifiedClientProfileService;
 use App\Jobs\SyncUserDealsJob;         // ← AGREGAR ESTE
 use App\Jobs\UpdateHubspotContactJob;  // ← AGREGAR ESTE
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
@@ -2109,8 +2110,9 @@ class UserController extends Controller
     // ==========================================
     $timing?->checkpoint('reconciliation', 'Relectura y conciliación final de compras');
     $usuariosMonday = Cache::get('cos.monday_users', []);
-    $roles = Role::all();
-    $permissions = Permission::all();
+    $basicCosEditor = ! request()->boolean('vista_cliente') && $this->canEditBasicFromCos($user)
+        ? $this->basicUserEditorData($user)
+        : null;
     $servicios = Servicio::all();
     $ownerOptions = $this->ownerOptionsForCos();
     $user->loadMissing('owner:id,name,email');
@@ -2251,8 +2253,7 @@ class UserController extends Controller
         'boardName',
         'archivos',
         'user',
-        'roles',
-        'permissions',
+        'basicCosEditor',
         'facturas',
         'clientTasks',
         'clientChatMessages',
@@ -3517,23 +3518,27 @@ private function removeDuplicatesAndSort(array $cosuser): array
         $this->authorizeBasicUserAccess($user);
         $this->authorizeInternalUserManagement($user);
 
-        // Roles/Permisos disponibles
-        $roles = Role::orderBy('name')->get();
-        $permissions = Permission::orderBy('name')->get();
+        return view('crud.users.edit_basic', $this->basicUserEditorData($user));
+    }
 
-        // Roles/Permisos del usuario actual
-        $userRoleNames = $user->getRoleNames()->toArray();           // ['Admin', ...]
-        $userPermissionNames = $user->getAllPermissions()
-            ->pluck('name')
-            ->toArray();                                            // ['users.edit', ...]
+    private function basicUserEditorData(User $user): array
+    {
+        return [
+            'user' => $user,
+            'roles' => Role::orderBy('name')->get(),
+            'permissions' => Permission::orderBy('name')->get(),
+            'userRoleNames' => $user->getRoleNames()->all(),
+            'userPermissionNames' => $user->permissions->pluck('name')->all(),
+        ];
+    }
 
-        return view('crud.users.edit_basic', compact(
-            'user',
-            'roles',
-            'permissions',
-            'userRoleNames',
-            'userPermissionNames'
-        ));
+    private function canEditBasicFromCos(User $user): bool
+    {
+        return $user->isCliente()
+            && $this->isAdminUser()
+            && $this->canEditCosUserData()
+            && auth()->user()->can('crud.users.index')
+            && (! $user->is_superadmin || auth()->user()->isSuperadmin());
     }
 
     public function updateBasic(Request $request, User $user)
@@ -3542,8 +3547,11 @@ private function removeDuplicatesAndSort(array $cosuser): array
         $this->authorizeInternalUserManagement($user);
         $this->protectSuperadminAccount($user);
         $wasInternalUser = $user->isInternalUser();
+        $cosUrl = $request->boolean('return_to_cos') && $this->canEditBasicFromCos($user)
+            ? route('crud.users.edit', $user).'#basic-edit'
+            : null;
 
-        $request->validate([
+        $validation = Validator::make($request->all(), [
             'name'      => 'required|string|max:255',
             'nombres'   => 'required|string|max:255',
             'apellidos' => 'required|string|max:255',
@@ -3564,6 +3572,12 @@ private function removeDuplicatesAndSort(array $cosuser): array
             'permissions'   => 'array',
             'permissions.*' => 'string',
         ]);
+        if ($cosUrl === null) {
+            $validation->validate();
+        } elseif ($validation->fails()) {
+            return redirect()->to($cosUrl)->withErrors($validation, 'cosBasic')
+                ->withInput($request->except(['password', 'password_confirmation']));
+        }
         $willBeClient = in_array('Cliente', $request->input('roles', []), true);
         abort_if($user->isCliente() !== $willBeClient && ! auth()->user()?->isSuperadmin(), 403,
             'Solo un superadmin puede cambiar una cuenta entre contacto y usuario interno.');
@@ -3596,6 +3610,10 @@ private function removeDuplicatesAndSort(array $cosuser): array
         // ✅ Permisos directos: sync (independiente de roles)
         $permissions = $request->input('permissions', []);
         $user->syncPermissions($permissions);
+
+        if ($cosUrl !== null && $user->isCliente()) {
+            return redirect()->to($cosUrl)->with('success', 'Datos básicos actualizados.');
+        }
 
         return redirect($wasInternalUser || $user->isInternalUser()
             ? route('crm.internal-users.index')

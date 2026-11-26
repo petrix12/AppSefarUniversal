@@ -2,7 +2,10 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\{Http, Mail};
+use Illuminate\Support\Facades\Schema;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -39,13 +42,78 @@ class CosWorkspacePresentationTest extends TestCase
     }
     public function test_clients_only_receive_their_original_options_without_internal_controls(): void
     {
-        $html=view('crud.users.partials.workspace-navigation',$this->data(false))->render(); $xpath=$this->document($html);
+        $html=view('crud.users.partials.workspace-navigation',$this->data(false) + ['basicCosEditor' => ['roles' => []]])->render(); $xpath=$this->document($html);
         foreach (['mystatus','personal_data','mypassword','familiars','payments','paymentspen','client-req','documents'] as $target) {
             $this->assertCount(1,$xpath->query('//*[@data-bs-target="#'.$target.'"]'));
         }
-        foreach (['teamleader-migration-tab','client-tasks-tab','client-chat-tab','change-history-tab','formulario-001-tab','admin-req-tab'] as $id) {
+        foreach (['teamleader-migration-tab','client-tasks-tab','client-chat-tab','change-history-tab','formulario-001-tab','admin-req-tab','basic-edit-tab'] as $id) {
             $this->assertCount(0,$xpath->query('//*[@id="'.$id.'"]'));
         }
+    }
+
+    public function test_basic_editor_reuses_the_update_route_and_direct_permissions_inside_profile(): void
+    {
+        $this->basicEditorSchema();
+        $data = $this->data(true);
+        $user = $data['user'];
+        $inherited = Permission::findOrCreate('sample.inherited');
+        $direct = Permission::findOrCreate('sample.direct');
+        Role::findByName('Cliente')->givePermissionTo($inherited);
+        $user->givePermissionTo($direct);
+        auth()->user()->givePermissionTo(Permission::findOrCreate('crud.users.index'));
+
+        $standalone = $this->get(route('crud.users.editBasic', $user))->assertOk();
+        $editor = $standalone->viewData('userPermissionNames');
+        $this->assertSame([$direct->name], $editor);
+        $formData = $standalone->original->getData();
+        $navigation = $this->document(view('crud.users.partials.workspace-navigation', $data + ['basicCosEditor' => $formData])->render());
+        $this->assertCount(1, $navigation->query('//*[@id="basic-edit-tab" and @data-bs-target="#basic-edit" and @aria-selected="false"]'));
+        $form = $this->document(view('crud.users.partials.basic-editor', $formData + ['embeddedInCos' => true])->render());
+        $this->assertSame(route('crud.users.updateBasic', $user), $form->evaluate('string(//form/@action)'));
+        $this->assertCount(1, $form->query('//form//input[@name="return_to_cos" and @value="1"]'));
+        $this->assertCount(1, $form->query('//input[@name="permissions[]" and @value="sample.direct" and @checked]'));
+        $this->assertCount(0, $form->query('//input[@name="permissions[]" and @value="sample.inherited" and @checked]'));
+
+        $this->put(route('crud.users.updateBasic', $user), [
+            'return_to_cos' => 1, 'name' => $user->name, 'nombres' => $user->nombres,
+            'apellidos' => $user->apellidos, 'email' => $user->email, 'phone' => $user->phone, 'passport' => $user->passport,
+            'hs_id' => '19232', 'tl_id' => 'teamleader-contact', 'roles' => ['Cliente'], 'permissions' => [$direct->name],
+        ])->assertRedirect(route('crud.users.edit', $user).'#basic-edit');
+        $user->refresh();
+        $this->assertSame('19232', $user->hs_id);
+        $this->assertSame('teamleader-contact', $user->tl_id);
+        $this->assertSame([$direct->name], $user->permissions->pluck('name')->all());
+        Http::assertNothingSent();
+    }
+
+    public function test_basic_editor_validation_returns_to_the_same_cos_tab_without_retaining_passwords(): void
+    {
+        $this->basicEditorSchema();
+        $user = $this->data(true)['user'];
+        auth()->user()->givePermissionTo(Permission::findOrCreate('crud.users.index'));
+
+        $this->put(route('crud.users.updateBasic', $user), [
+            'return_to_cos' => 1, 'hs_id' => '19232', 'password' => 'temporary-password',
+        ])->assertRedirect(route('crud.users.edit', $user).'#basic-edit')
+            ->assertSessionHasErrorsIn('cosBasic', ['name', 'password'])->assertSessionHasInput('hs_id', '19232')
+            ->assertSessionMissing('_old_input.password');
+    }
+
+    public function test_regular_staff_cannot_open_or_submit_the_basic_editor(): void
+    {
+        $user = $this->data(false)['user'];
+        $staffRole = Role::findOrCreate('Ventas');
+        $staff = User::factory()->create()->syncRoles([$staffRole]);
+        $staff->givePermissionTo(Permission::findOrCreate('crud.users.index'));
+
+        $this->actingAs($staff)->get(route('crud.users.editBasic', $user))->assertForbidden();
+        $this->put(route('crud.users.updateBasic', $user), ['return_to_cos' => 1])->assertForbidden();
+    }
+
+    private function basicEditorSchema(): void
+    {
+        Schema::table('users', fn (Blueprint $table) => $table->string('tl_id')->nullable());
+        $this->artisan('migrate', ['--path' => 'database/migrations/2026_09_28_120000_add_genealogy_tree_id_to_users_table.php'])->assertSuccessful();
     }
     public function test_profile_preserves_enabled_edit_fields_for_internal_staff_and_is_read_only_for_clients(): void
     {

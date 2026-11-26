@@ -1511,6 +1511,12 @@
 
                 @include('crud.users.partials.profile-details')
 
+                @if($canEditCos && !empty($basicCosEditor))
+                    <div class="tab-pane fade cos-workspace-panel" id="basic-edit" role="tabpanel" aria-labelledby="basic-edit-tab">
+                        @include('crud.users.partials.basic-editor', $basicCosEditor + ['embeddedInCos' => true])
+                    </div>
+                @endif
+
                 @if($canEditCos)
                 <div class="tab-pane fade cos-workspace-panel" id="change-history" role="tabpanel" aria-labelledby="change-history-tab">
                     <h3 class="h5 mb-3">Historial de cambios del usuario</h3>

@@ -37,7 +37,7 @@
     const label = workspace.querySelector('[data-cos-area-label]');
     const groups = {
       overview: ['mystatus-tab'],
-      profile: ['personal-data-tab','formulario-001-tab','adminchangepassword-tab','mypassword-tab','change-history-tab'],
+      profile: ['personal-data-tab','basic-edit-tab','formulario-001-tab','adminchangepassword-tab','mypassword-tab','change-history-tab'],
       case: ['familiars-tab','documents-tab','client-req-tab','admin-req-tab','etiquetado-tab'],
       finance: ['payments-tab','paymentspen-tab','negocios-tab'],
       internal: ['teamleader-migration-tab','client-tasks-tab','client-chat-tab','client-notes-link']
