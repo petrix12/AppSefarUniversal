@@ -40,6 +40,7 @@
       profile: ['personal-data-tab','basic-edit-tab','formulario-001-tab','adminchangepassword-tab','mypassword-tab','change-history-tab'],
       case: ['familiars-tab','documents-tab','client-req-tab','admin-req-tab','etiquetado-tab'],
       finance: ['payments-tab','paymentspen-tab','negocios-tab'],
+      meetings: ['meetings-tab'],
       internal: ['teamleader-migration-tab','client-tasks-tab','client-chat-tab','client-notes-link']
     };
     const labels = {profile: 'Información personal y cuenta', case: 'Documentos y familia', finance: 'Pagos y negocios', internal: 'Trabajo del equipo'};
@@ -56,8 +57,9 @@
     const display = (name) => {
       group = name;
       buttons.forEach((button) => { button.closest('li').hidden = !groups[name].includes(button.id); });
-      tabs.hidden = name === 'overview';
-      label.hidden = name === 'overview'; label.textContent = labels[name] || '';
+      const singlePane = name === 'overview' || name === 'meetings';
+      tabs.hidden = singlePane;
+      label.hidden = singlePane; label.textContent = labels[name] || '';
       areas.querySelectorAll('[data-cos-area]').forEach((button) => { button.setAttribute('aria-pressed', String(button.dataset.cosArea === name)); });
     };
     areas.querySelectorAll('[data-cos-area]').forEach((button) => {

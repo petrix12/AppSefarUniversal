@@ -250,7 +250,6 @@
                 @php $rolId = $cosViewRoleId; @endphp
 
                 <div class="tab-pane fade show active" id="mystatus" role="tabpanel" aria-labelledby="mystatus-tab">
-                    @include('kalendia.partials.cos')
                     @if($canEditCos && isset($processGrouping))
                         @include('crud.users.partials.process-groups')
                     @endif
@@ -1424,7 +1423,7 @@
                         @endforeach
 
                         <!-- Modal Resumen de Paso -->
-                        <div class="modal fade" id="modalResumenPaso" tabindex="-1" aria-hidden="true">
+                        <div class="modal fade" id="modalResumenPaso" tabindex="-1" aria-labelledby="tituloPaso" aria-describedby="descripcionPaso" aria-hidden="true">
                             <div class="modal-dialog modal-dialog-centered">
                                 <div class="modal-content">
 
@@ -1455,24 +1454,22 @@
                                 .forEach(step => {
 
                                     step.addEventListener("click", function () {
-                                        modalEl.dataset.titulo = `${this.dataset.nombre}`;
-                                        modalEl.dataset.descripcion = this.dataset.descripcion;
-
+                                        document.getElementById("tituloPaso").textContent = this.dataset.nombre;
+                                        document.getElementById("descripcionPaso").innerHTML = this.dataset.descripcion;
                                         modal.show();
                                     });
 
                                 });
-
-                            modalEl.addEventListener("shown.bs.modal", function () {
-                                document.getElementById("tituloPaso").innerHTML = modalEl.dataset.titulo;
-                                document.getElementById("descripcionPaso").innerHTML = modalEl.dataset.descripcion;
-                            });
 
                         });
                         </script>
                     @else
                         @include('crud.users.partials.no-status-available')
                     @endif
+                </div>
+
+                <div class="tab-pane fade cos-workspace-panel" id="meetings" role="tabpanel" aria-labelledby="meetings-tab">
+                    @include('kalendia.partials.cos')
                 </div>
 
                 @push('scripts')

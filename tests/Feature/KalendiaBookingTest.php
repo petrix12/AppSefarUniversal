@@ -569,11 +569,13 @@ class KalendiaBookingTest extends TestCase
         Http::assertNothingSent();
     }
 
-    public function test_the_four_services_open_the_agenda_after_the_contract_instead_of_a_genealogy_tree(): void
+    #[DataProvider('meetingServices')]
+    public function test_clients_land_on_their_status_and_can_open_the_agenda_separately(string $name): void
     {
-        [$user] = $this->customer();
+        [$user] = $this->customer($name);
         $user->forceFill(['contrato' => 1])->save();
-        $this->actingAs($user)->get('/')->assertRedirect(route('clientes.meeting'));
+        $this->actingAs($user)->get('/')->assertRedirect(route('clientes.status'));
+        $this->get('/mi-reunion')->assertOk();
     }
 
     public function test_the_initial_agenda_does_not_reappear_after_booking_even_when_the_appointment_is_cancelled(): void

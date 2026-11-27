@@ -34,7 +34,7 @@ class CosWorkspacePresentationTest extends TestCase
         $html=view('crud.users.partials.workspace-navigation',$this->data(true))->render(); $xpath=$this->document($html);
         $active=$xpath->query('//*[@role="tab" and @aria-selected="true"]');
         $this->assertCount(1,$active); $this->assertSame('mystatus-tab',$active->item(0)->getAttribute('id'));
-        foreach (['mystatus','personal_data','change-history','formulario-001','adminchangepassword','familiars','payments',
+        foreach (['mystatus','meetings','personal_data','change-history','formulario-001','adminchangepassword','familiars','payments',
             'paymentspen','admin-req','documents','etiquetado','negocios','teamleader-migration','client-tasks','client-chat'] as $target) {
             $this->assertCount(1,$xpath->query('//*[@data-bs-target="#'.$target.'"]'),$target);
         }
@@ -43,7 +43,7 @@ class CosWorkspacePresentationTest extends TestCase
     public function test_clients_only_receive_their_original_options_without_internal_controls(): void
     {
         $html=view('crud.users.partials.workspace-navigation',$this->data(false) + ['basicCosEditor' => ['roles' => []]])->render(); $xpath=$this->document($html);
-        foreach (['mystatus','personal_data','mypassword','familiars','payments','paymentspen','client-req','documents'] as $target) {
+        foreach (['mystatus','meetings','personal_data','mypassword','familiars','payments','paymentspen','client-req','documents'] as $target) {
             $this->assertCount(1,$xpath->query('//*[@data-bs-target="#'.$target.'"]'));
         }
         foreach (['teamleader-migration-tab','client-tasks-tab','client-chat-tab','change-history-tab','formulario-001-tab','admin-req-tab','basic-edit-tab'] as $id) {

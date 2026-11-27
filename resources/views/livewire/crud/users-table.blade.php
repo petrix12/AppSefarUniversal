@@ -564,7 +564,7 @@
                         <input
                             wire:model.live="search"
                             type="text"
-                            placeholder="Buscar por nombre, correo o pasaporte..."
+                            placeholder="Nombre, correo o pasaporte actual o anterior..."
                             class="flex-1 mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                         />
                         <div class="w-full sm:w-auto">
@@ -801,6 +801,7 @@
                                                     <i class="fas fa-passport mr-1"></i> {{ $user->passport }}
                                                 </p>
                                             @endif
+                                            @include('livewire.crud.partials.user-passport-history')
 
                                             @if($user->latest_internal_chat_at)
                                                 <a href="{{ route('crud.users.edit', $user) }}#client-chat"
@@ -997,6 +998,7 @@
                                                 <p class="user-name">{{ \Illuminate\Support\Str::limit($user->name, 25) }} <x-superadmin-indicator :user="$user" /></p>
                                                 <p class="user-info">{{ $user->email }}</p>
                                                 <p class="user-info">{{ $user->passport }}</p>
+                                                @include('livewire.crud.partials.user-passport-history')
                                                 @if($user->isClientAppAccessBlocked())
                                                     <p class="user-info text-danger"><strong>Motivo del bloqueo:</strong> {{ $user->clientBlockReasonDescription() }}</p>
                                                 @endif

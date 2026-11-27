@@ -106,6 +106,7 @@ class UsersTable extends Component
         $rolesIds = $authUser->roles->pluck('id')->toArray();
 
         $hasAccessBlockTable = Schema::hasTable('user_access_blocks');
+        $hasPassportHistoryTable = Schema::hasTable('user_passport_histories');
 
         $query = User::query()
             ->select([
@@ -146,6 +147,9 @@ class UsersTable extends Component
         if ($hasAccessBlockTable) {
             $query->with('accessBlock');
         }
+        if ($hasPassportHistoryTable) {
+            $query->with('passportHistories:id,user_id,passport,created_at');
+        }
 
         app(\App\Services\ClientRestrictionService::class)->scopeVisible($query, $authUser);
 
@@ -172,12 +176,19 @@ class UsersTable extends Component
         );
 
         /** 🔍 búsqueda multi-campo */
-        $query->when($this->search, function ($query) {
+        $query->when($this->search, function ($query) use ($hasPassportHistoryTable) {
             $terms = preg_split('/\s+/', trim($this->search));
             foreach ($terms as $term) {
-                $query->where(function ($q) use ($term) {
+                $query->where(function ($q) use ($term, $hasPassportHistoryTable) {
                     $like = "%{$term}%";
-                    $q->whereRaw("CONCAT_WS(' ', name, nombres, apellidos, email, passport) LIKE ?", [$like]);
+                    $q->where('name', 'like', $like)
+                        ->orWhere('nombres', 'like', $like)
+                        ->orWhere('apellidos', 'like', $like)
+                        ->orWhere('email', 'like', $like)
+                        ->orWhere('passport', 'like', $like);
+                    if ($hasPassportHistoryTable) {
+                        $q->orWhereHas('passportHistories', fn ($history) => $history->where('passport', 'like', $like));
+                    }
                 });
             }
         });

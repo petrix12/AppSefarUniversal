@@ -514,7 +514,7 @@ class HubspotFixAndImport extends Command
             }
 
             if ($correctPassport) {
-                User::where('id', $masterId)->update(['passport' => $correctPassport]);
+                User::findOrFail($masterId)->update(['passport' => $correctPassport]);
                 $this->line("   ✅ Pasaporte actualizado en maestro: {$correctPassport}");
             }
         });

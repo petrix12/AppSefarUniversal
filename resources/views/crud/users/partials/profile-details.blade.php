@@ -9,6 +9,10 @@
             {{ $canEditCos ? 'Edición interna' : 'Solo consulta' }}
         </span>
     </header>
+    @include('crud.users.partials.passport-history')
+    @if(!$canEditCos && auth()->id() === $user->id)
+        <p class="mb-4"><a class="btn btn-outline-primary" href="{{ route('profile.show') }}">Actualizar mi pasaporte en mi perfil</a></p>
+    @endif
     <section class="cos-profile-search" data-profile-search hidden aria-label="Buscar campos del perfil">
         <label for="cos-profile-search-input">Buscar un dato</label>
         <div class="cos-profile-search__controls">

@@ -158,6 +158,34 @@ class User extends Authenticatable
         });
     }
 
+    protected function performUpdate(Builder $query)
+    {
+        if (! $this->isDirty('passport') || ! $this->getConnection()->getSchemaBuilder()->hasTable('user_passport_histories')) {
+            return parent::performUpdate($query);
+        }
+
+        // Read the stored value under a lock so even a stale model preserves
+        // the passport it actually replaces. Save both records atomically.
+        return $this->getConnection()->transaction(function () use ($query) {
+            $passport = trim((string) $this->newModelQuery()->whereKey($this->getKey())->lockForUpdate()->value('passport'));
+            $saved = parent::performUpdate($query);
+            $replacement = trim((string) $this->passport);
+
+            if ($saved && $this->wasChanged('passport') && $passport !== '' && strcasecmp($passport, $replacement) !== 0) {
+                $request = app()->bound('request') ? app('request') : null;
+                $this->passportHistories()->create([
+                    'passport' => $passport,
+                    'replacement_passport' => $replacement !== '' ? $replacement : null,
+                    'changed_by_user_id' => Auth::id(),
+                    'source' => $request?->route()?->getName() ?? (app()->runningInConsole() ? 'console' : 'system'),
+                ]);
+                $this->unsetRelation('passportHistories');
+            }
+
+            return $saved;
+        });
+    }
+
     public const SALES_PROFILE_ROLES = [
         'Coord. de Nacionalidad y Genealogía',
         'Ventas',
@@ -242,6 +270,11 @@ class User extends Authenticatable
     public function changeAudits()
     {
         return $this->hasMany(UserChangeAudit::class);
+    }
+
+    public function passportHistories()
+    {
+        return $this->hasMany(UserPassportHistory::class)->latest('created_at')->latest('id');
     }
 
     public static function recordChangeAudit(self $user, array $oldValues, array $newValues): void

@@ -68,6 +68,15 @@
             <x-input-error for="name" class="mt-2" />
         </div>
 
+        @if($this->user->isCliente())
+            <div class="col-span-6 sm:col-span-4">
+                <x-label for="profile-passport" value="Número de pasaporte" />
+                <x-input id="profile-passport" type="text" maxlength="20" class="mt-1 block w-full" wire:model="state.passport" aria-describedby="profile-passport-help" />
+                <p id="profile-passport-help" class="mt-2 text-sm text-gray-600">Al actualizarlo, tu pasaporte anterior se guardará en el histórico de tu expediente.</p>
+                <x-input-error for="passport" class="mt-2" />
+            </div>
+        @endif
+
         <!-- Email -->
         <div class="col-span-6 sm:col-span-4">
             <x-label for="email" value="{{ __('Email') }}" />

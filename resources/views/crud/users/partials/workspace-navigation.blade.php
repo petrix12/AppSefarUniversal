@@ -1,9 +1,10 @@
 <div class="cos-workspace-navigation" data-cos-workspace>
     <nav class="cos-workspace-areas" aria-label="Áreas del expediente" data-cos-areas hidden>
-        <button type="button" class="cos-area-button" data-cos-area="overview" aria-pressed="true"><i class="fas fa-stream" aria-hidden="true"></i><span>{{ $cosViewRoleId == 5 ? 'Mi estatus' : 'Estatus del solicitante' }}</span></button>
+        <button type="button" class="cos-area-button" data-cos-area="overview" aria-pressed="true"><i class="fas fa-stream" aria-hidden="true"></i><span>{{ $cosViewRoleId == 5 ? 'Estatus de mi expediente' : 'Estatus del solicitante' }}</span></button>
         <button type="button" class="cos-area-button" data-cos-area="profile" aria-pressed="false"><i class="far fa-user" aria-hidden="true"></i><span>Perfil</span></button>
         <button type="button" class="cos-area-button" data-cos-area="case" aria-pressed="false"><i class="far fa-folder-open" aria-hidden="true"></i><span>Expediente</span></button>
         <button type="button" class="cos-area-button" data-cos-area="finance" aria-pressed="false"><i class="fas fa-receipt" aria-hidden="true"></i><span>Finanzas</span></button>
+        <button type="button" class="cos-area-button" data-cos-area="meetings" aria-pressed="false"><i class="far fa-calendar-alt" aria-hidden="true"></i><span>Reuniones y consultas</span></button>
         <button type="button" class="cos-area-button" data-cos-area="internal" aria-pressed="false"><i class="fas fa-briefcase" aria-hidden="true"></i><span>Gestión interna</span></button>
     </nav>
     <p class="cos-workspace-area-label" data-cos-area-label hidden></p>
@@ -11,7 +12,7 @@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="mystatus-tab" data-bs-toggle="tab" data-bs-target="#mystatus" type="button" role="tab" aria-controls="mystatus" aria-selected="true">
                         @if($cosViewRoleId == 5)
-                        Mi Estatus
+                        Estatus de mi expediente
                         @else
                         Estatus de Solicitante
                         @endif
@@ -69,6 +70,11 @@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="paymentspen-tab" data-bs-toggle="tab" data-bs-target="#paymentspen" type="button" role="tab" aria-controls="paymentspen" aria-selected="false">
                         Deuda pendiente
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="meetings-tab" data-bs-toggle="tab" data-bs-target="#meetings" type="button" role="tab" aria-controls="meetings" aria-selected="false">
+                        Reuniones y consultas
                     </button>
                 </li>
                 @if($cosViewRoleId == 5)

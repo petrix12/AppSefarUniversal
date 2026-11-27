@@ -7,6 +7,10 @@
         @if($meetingSummary['next'])<p class="mb-2">{{ $meetingSummary['next']->service_name }} · <time data-kalendia-instant="{{ $meetingSummary['next']->starts_at->toIso8601String() }}">{{ $meetingSummary['next']->starts_at->timezone(\App\Services\KalendiaTimezone::preferred())->format('d/m/Y H:i') }}</time></p>@endif
         @if(auth()->id() === $user->id && auth()->user()->hasRole('Cliente'))
             <a href="{{ route('clientes.meetings') }}" class="btn btn-sm btn-outline-primary">Ver mis reuniones</a>
+            @can('registration.meeting')
+                <a href="{{ route('clientes.meeting') }}" class="btn btn-sm btn-outline-primary">Agendar reunión inicial</a>
+            @endcan
+            <a href="{{ route('clientes.consultations') }}" class="btn btn-sm btn-outline-primary">Contratar consulta</a>
         @elseif(\Illuminate\Support\Facades\Gate::allows('kalendia.manage'))
             <a href="{{ route('admin.kalendia.appointments', ['client' => $user->id]) }}" class="btn btn-sm btn-outline-primary">Ver reuniones del representado</a>
         @endif

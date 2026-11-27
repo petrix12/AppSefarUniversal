@@ -134,6 +134,7 @@ class AdminNavigationTest extends TestCase
         $menu=$this->menu($this->actor([],'Cliente'));
         $this->assertSame([],array_values(array_filter($menu,fn($i)=>isset($i['key']))));
         $destinations=$this->destinations($menu);
+        $this->assertSame(['/status','clientes.tree'],array_slice($destinations,0,2));
         foreach(['clientes.meetings','clientes.consultations','clientes.support-ticket.create','service-store.index','user/profile','clientes.salir'] as $route) {
             $this->assertContains($route,$destinations);
         }

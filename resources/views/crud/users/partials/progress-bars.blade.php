@@ -78,6 +78,11 @@
     $pintarEn = ($currentJur >= 0) ? 'jur' : 'gen';
 @endphp
 
+<p class="progress-help" id="progress-help-{{ $index }}">
+    <i class="fas fa-hand-pointer" aria-hidden="true"></i>
+    <span>Haz clic o toca las fases en verde o naranja para ver sus detalles y conocer qué puedes hacer.</span>
+</p>
+
 {{-- Progreso Genealógico --}}
 <h4 class="mb-4 mt-4"><b>Progreso Genealógico</b></h4>
 <div class="progress-scroll-container mb-4">
@@ -111,24 +116,28 @@
                     : 'check-circle';
             @endphp
 
-            <div class="progress-step {{ $claseEsfera }}"
+            <button type="button" class="progress-step {{ $claseEsfera }}"
                 data-step="{{ $step['paso'] }}"
-
-                @if($isActive && $claseEsfera != 'warningesfera')
-                    data-nombre="{{ $step['nombre_corto'] }}"
-                    data-descripcion="{{ $step['promesa_pasado'] ?? $step['promesa'] ?? '' }}"
-                    title="Haz clic para ver resumen de esta fase"
-                    data-bs-toggle="tooltip"
+                data-nombre="{{ $step['nombre_corto'] }}"
+                data-descripcion="{{ $isActive && !$esUltimoActivoNaranja ? ($step['promesa_pasado'] ?? $step['promesa'] ?? '') : ($step['promesa'] ?? '') }}"
+                @if($isActive)
+                    aria-label="Ver detalles de {{ $step['nombre_corto'] }}"
+                    aria-describedby="progress-help-{{ $index }}"
+                    aria-haspopup="dialog"
+                    aria-controls="modalResumenPaso"
                 @else
-                    data-nombre="{{ $step['nombre_corto'] }}"
-                    data-descripcion="{{ $step['promesa'] ?? $step['promesa'] ?? '' }}"
-                    title="Haz clic para ver resumen de esta fase"
-                    data-bs-toggle="tooltip"
+                    disabled
+                    aria-label="{{ $step['nombre_corto'] }}: fase pendiente"
                 @endif
             >
-                <i class="fas fa-{{ $iconoEsfera }}"></i>
-                <span class="step-label">{{ $step['nombre_corto'] }}</span>
-            </div>
+                <i class="fas fa-{{ $iconoEsfera }}" aria-hidden="true"></i>
+                <span class="step-label">
+                    {{ $step['nombre_corto'] }}
+                    @if($isActive)
+                        <span class="step-action">Ver detalles <i class="fas fa-chevron-right" aria-hidden="true"></i></span>
+                    @endif
+                </span>
+            </button>
         @endforeach
     </div>
 </div>
@@ -172,24 +181,28 @@
                     : 'check-circle';
             @endphp
 
-            <div class="progress-step {{ $claseEsfera }}"
+            <button type="button" class="progress-step {{ $claseEsfera }}"
                 data-step="{{ $step['paso'] }}"
-
-                @if($isActive && $claseEsfera != 'warningesfera')
-                    data-nombre="{{ $step['nombre_corto'] }}"
-                    data-descripcion="{{ $step['promesa_pasado'] ?? $step['promesa'] ?? '' }}"
-                    title="Haz clic para ver resumen de esta fase"
-                    data-bs-toggle="tooltip"
+                data-nombre="{{ $step['nombre_corto'] }}"
+                data-descripcion="{{ $isActive && !$esUltimoActivoNaranja ? ($step['promesa_pasado'] ?? $step['promesa'] ?? '') : ($step['promesa'] ?? '') }}"
+                @if($isActive)
+                    aria-label="Ver detalles de {{ $step['nombre_corto'] }}"
+                    aria-describedby="progress-help-{{ $index }}"
+                    aria-haspopup="dialog"
+                    aria-controls="modalResumenPaso"
                 @else
-                    data-nombre="{{ $step['nombre_corto'] }}"
-                    data-descripcion="{{ $step['promesa'] ?? $step['promesa'] ?? '' }}"
-                    title="Haz clic para ver resumen de esta fase"
-                    data-bs-toggle="tooltip"
+                    disabled
+                    aria-label="{{ $step['nombre_corto'] }}: fase pendiente"
                 @endif
             >
-                <i class="fas fa-{{ $iconoEsfera }}"></i>
-                <span class="step-label">{{ $step['nombre_corto'] }}</span>
-            </div>
+                <i class="fas fa-{{ $iconoEsfera }}" aria-hidden="true"></i>
+                <span class="step-label">
+                    {{ $step['nombre_corto'] }}
+                    @if($isActive)
+                        <span class="step-action">Ver detalles <i class="fas fa-chevron-right" aria-hidden="true"></i></span>
+                    @endif
+                </span>
+            </button>
         @endforeach
     </div>
 </div>
@@ -236,6 +249,21 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 <style>
+.progress-help{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:.65rem;
+    padding:.8rem 1rem;
+    border:1px solid #b8d4df;
+    border-radius:.6rem;
+    background:#eef6fa;
+    color:#123f50;
+    font-size:.9rem;
+    line-height:1.5;
+    text-align:left;
+}
+
 /* =========================
    CONTENEDOR SCROLL
    ========================= */
@@ -245,7 +273,7 @@ document.addEventListener("DOMContentLoaded", function () {
     width:100%;
     padding-bottom:12px;
     -webkit-overflow-scrolling:touch;
-    height:150px;
+    height:190px;
 
     /* fade lateral sutil para look premium */
     mask-image: linear-gradient(to right, transparent 0, black 20px, black calc(100% - 20px), transparent 100%);
@@ -261,7 +289,7 @@ document.addEventListener("DOMContentLoaded", function () {
     align-items:center;
     min-width:100%;
     position:relative;
-    padding:0 20px 54px 20px;
+    padding:12px 20px 108px 20px;
     box-sizing:border-box;
 }
 
@@ -339,6 +367,9 @@ document.addEventListener("DOMContentLoaded", function () {
    PASOS (CÍRCULOS)
    ========================= */
 .progress-step{
+    border:0;
+    padding:0;
+    line-height:1;
     width:52px;
     height:52px;
     border-radius:50%;
@@ -381,12 +412,21 @@ document.addEventListener("DOMContentLoaded", function () {
 }
 
 /* Hover lift */
-.progress-step:hover{
+.progress-step:enabled:hover{
     transform: translateY(2px);
     box-shadow:
         0 12px 26px rgba(0,0,0,.18),
         inset 0 1px 0 rgba(255,255,255,.78);
     filter: saturate(1.05);
+}
+
+.progress-step:focus-visible{
+    outline:3px solid #123f50;
+    outline-offset:5px;
+}
+
+.progress-step:disabled{
+    cursor:default;
 }
 
 /* Activo (verde) */
@@ -520,6 +560,30 @@ document.addEventListener("DOMContentLoaded", function () {
     text-align:center;
     white-space:normal;
     text-shadow: 0 1px 0 rgba(255,255,255,.70);
+}
+
+.progress-step .step-action{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:.35rem;
+    width:max-content;
+    margin:.35rem auto 0;
+    padding:.25rem .45rem;
+    border:1px solid #b8d4df;
+    border-radius:.35rem;
+    background:#fff;
+    color:#0f5e78;
+    font-size:11px;
+    line-height:1.25;
+    text-shadow:none;
+}
+
+.progress-step:hover .step-action,
+.progress-step:focus-visible .step-action{
+    background:#0f5e78;
+    border-color:#0f5e78;
+    color:#fff;
 }
 
 /* =========================

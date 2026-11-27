@@ -139,6 +139,10 @@ class Controller extends BaseController
     private function clientHome()
     {
         if ($destination = $this->clientOnboardingRoute(Auth::user())) {
+            if (in_array($destination, [ClientOnboardingFlow::TREE, 'clientes.meeting'], true)) {
+                $destination = 'clientes.status';
+            }
+
             return redirect()->route($destination);
         }
 
