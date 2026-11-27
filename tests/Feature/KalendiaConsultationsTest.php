@@ -19,11 +19,14 @@ class KalendiaConsultationsTest extends TestCase
     private bool $failChange = false;
     private bool $failRead = false;
     private array $remoteAppointments = [];
+    private array $remoteServices = [['id'=>'svc_consultation','name'=>'Consulta jurídica','price'=>0,'duration_minutes'=>45]];
+    private bool $failServices = false;
+    private bool $malformedServices = false;
 
     protected function setUp(): void
     {
         parent::setUp();
-        config(['cache.default'=>'array','session.driver'=>'array','kalendia.token'=>'fake-token', 'kalendia.prepaid_payment_method'=>null,
+        config(['cache.default'=>'array','session.driver'=>'array','kalendia.token'=>'fake-token',
             'services.stripe.key'=>'pk_test_fake', 'services.stripe.secret'=>'sk_test_fake', 'kalendia.stripe_webhook_secret'=>'whsec_fake',
             'app.key'=>'base64:'.base64_encode(str_repeat('s',32))]);
         Carbon::setTestNow(Carbon::parse('2026-11-20T15:00:00Z'));
@@ -33,12 +36,16 @@ class KalendiaConsultationsTest extends TestCase
         $this->artisan('migrate', ['--path'=>['database/migrations/2026_11_20_180000_create_kalendia_bookings_table.php',
             'database/migrations/2026_11_20_190000_create_kalendia_consultation_management_tables.php']])->assertExitCode(0);
         $this->artisan('migrate', ['--path'=>'database/migrations/2026_11_23_190000_create_kalendia_booking_requests_table.php'])->assertExitCode(0);
+        $this->artisan('migrate', ['--path'=>'database/migrations/2026_11_27_130000_add_kalendia_catalog_to_consultation_offers.php'])->assertExitCode(0);
         Role::findOrCreate('Administrador'); Permission::findOrCreate('cliente'); Role::findByName('Cliente')->givePermissionTo('cliente');
         $this->stripe = new FakeKalendiaStripeGateway;
         $this->app->instance(KalendiaStripeGateway::class, $this->stripe);
         Http::fake(function ($request) {
             $path = parse_url($request->url(), PHP_URL_PATH);
-            if (str_ends_with($path,'/services')) return Http::response(['data'=>['items'=>[['id'=>'svc_consultation','name'=>'Consulta jurídica','price'=>0,'duration_minutes'=>45]]]]);
+            if (str_ends_with($path,'/services')) {
+                if ($this->failServices) return Http::response([], 503);
+                return Http::response(['data'=>$this->malformedServices ? ['unexpected'=>true] : ['items'=>$this->remoteServices]]);
+            }
             if (str_ends_with($path,'/availability')) return Http::response(['data'=>['date'=>$request['date'],'timezone'=>'America/Bogota','slots'=>[['time'=>'10:00','staff_id'=>'stf_alex']]]]);
             if ($request->method()==='GET' && str_ends_with($path,'/appointments')) return $this->failRead ? Http::response([],503) : Http::response(['data'=>['items'=>$this->remoteAppointments]]);
             $this->mutations[] = ['method'=>$request->method(),'path'=>$path,'body'=>$request->data(),'key'=>$request->header('Idempotency-Key')];
@@ -219,11 +226,136 @@ class KalendiaConsultationsTest extends TestCase
         $this->assertFalse(KalendiaConsultationOffer::where('name','Estándar')->first()->hasPrice());
         $this->assertSame('175.25',KalendiaConsultationOffer::where('name','Extendida')->first()->price);
     }
+
+    public function test_admin_imports_the_priced_kalendia_services_without_creating_included_meetings_as_products(): void
+    {
+        $this->remoteServices = [
+            ['id'=>'svc_genealogy','name'=>'Consulta Genealógica','price'=>'375.00','currency'=>'EUR'],
+            ['id'=>'svc_legal','name'=>'Consulta Jurídica','price'=>375,'currency'=>'EUR'],
+            ['id'=>'svc_law','name'=>'Consulta de Derecho Genealogista','price'=>475,'currency'=>'EUR'],
+            ['id'=>'svc_strategy','name'=>'Análisis Estratégico','price'=>375,'currency'=>'EUR'],
+            ['id'=>'svc_initial','name'=>'Reunión inicial','price'=>0,'currency'=>'EUR'],
+        ];
+        $this->actingAs($this->admin())->get('/admin/kalendia/consultas')->assertOk()
+            ->assertSee('Actualizar servicios y precios de Kalendia')->assertSee('Consulta Genealógica');
+        $this->post(route('admin.kalendia.offers.sync'))->assertRedirect();
+        $this->assertDatabaseCount('kalendia_consultation_offers', 4);
+        $this->assertSame('475.00', KalendiaConsultationOffer::where('catalog_service_id','svc_law')->sole()->price);
+        $this->assertSame([], $this->stripe->creates);
+        $this->assertSame([], $this->mutations);
+    }
+
+    public function test_catalog_refresh_updates_prices_preserves_manual_variants_and_respects_hidden_services(): void
+    {
+        $manual = $this->offer(99);
+        $this->remoteServices[0]['price'] = 375;
+        $catalog = app(\App\Services\KalendiaConsultationCatalog::class);
+        $catalog->sync(true);
+        $imported = KalendiaConsultationOffer::whereNotNull('catalog_service_id')->sole();
+        $this->actingAs($this->admin())->put(route('admin.kalendia.offers.update',$imported), [
+            'type'=>'Genealógica','active'=>0,'price'=>1,'remote_service_id'=>'svc_forged','name'=>'Falso',
+        ])->assertRedirect();
+        $this->remoteServices[0]['price'] = '425.50';
+        $catalog->sync(true);
+        $imported->refresh();
+        $this->assertSame('425.50',$imported->price);
+        $this->assertSame('svc_consultation',$imported->remote_service_id);
+        $this->assertSame('Consulta jurídica',$imported->name);
+        $this->assertSame('Genealógica',$imported->type);
+        $this->assertFalse($imported->active);
+        $this->assertSame('99.00',$manual->fresh()->price);
+        $this->assertDatabaseCount('kalendia_consultation_offers',2);
+    }
+
+    public function test_a_missing_service_is_disabled_but_an_api_failure_does_not_erase_the_last_catalog(): void
+    {
+        $this->remoteServices[0]['price'] = 375;
+        $catalog = app(\App\Services\KalendiaConsultationCatalog::class);
+        $catalog->sync(true);
+        $imported = KalendiaConsultationOffer::whereNotNull('catalog_service_id')->sole();
+        foreach (['failServices','malformedServices'] as $failure) {
+            $this->{$failure} = true;
+            try { $catalog->sync(true); $this->fail('An incomplete catalog must fail.'); }
+            catch (\App\Services\KalendiaApiException) {}
+            $this->assertTrue($imported->fresh()->catalog_available);
+            $this->assertSame('375.00',$imported->fresh()->price);
+            $this->{$failure} = false;
+        }
+        $this->remoteServices = [];
+        $catalog->sync(true);
+        $this->assertFalse($imported->fresh()->hasPrice());
+        $this->assertDatabaseCount('kalendia_consultation_offers',1);
+    }
+
+    public function test_invalid_prices_and_other_currencies_are_not_published_as_euro_consultations(): void
+    {
+        $this->remoteServices = [
+            ['id'=>'svc_missing','name'=>'Sin precio','price'=>null],
+            ['id'=>'svc_decimal','name'=>'Decimales incorrectos','price'=>'375.123'],
+            ['id'=>'svc_usd','name'=>'Consulta USD','price'=>375,'currency'=>'USD'],
+            ['id'=>'svc_negative','name'=>'Precio negativo','price'=>-10],
+        ];
+        app(\App\Services\KalendiaConsultationCatalog::class)->sync(true);
+        $this->assertDatabaseCount('kalendia_consultation_offers',0);
+    }
+
+    public function test_a_failure_on_the_second_catalog_page_cannot_replace_the_complete_saved_prices(): void
+    {
+        $this->remoteServices[0]['price'] = 375;
+        app(\App\Services\KalendiaConsultationCatalog::class)->sync(true);
+        $api = \Mockery::mock(\App\Services\KalendiaApi::class)->makePartial();
+        $api->shouldReceive('request')->once()->with('GET','services',['page'=>1,'per_page'=>100])->andReturn([
+            'items'=>[['id'=>'svc_consultation','name'=>'Consulta jurídica','price'=>500]], 'pagination'=>['pages'=>2],
+        ]);
+        $api->shouldReceive('request')->once()->with('GET','services',['page'=>2,'per_page'=>100])->andThrow(new \App\Services\KalendiaApiException(503));
+        try { (new \App\Services\KalendiaConsultationCatalog($api))->sync(true); $this->fail('A partial catalog must not be saved.'); }
+        catch (\App\Services\KalendiaApiException) {}
+        $offer = KalendiaConsultationOffer::whereNotNull('catalog_service_id')->sole();
+        $this->assertSame('375.00',$offer->price);
+        $this->assertTrue($offer->catalog_available);
+    }
+
+    public function test_imported_consultation_uses_the_latest_price_charges_once_in_the_app_and_omits_payment_method_when_booking(): void
+    {
+        $this->remoteServices[0]['price'] = 375;
+        $user = $this->client();
+        $this->actingAs($user)->get('/consultas')->assertOk()->assertSee('Contratar consulta');
+        $offer = KalendiaConsultationOffer::whereNotNull('catalog_service_id')->sole();
+        $this->remoteServices[0]['price'] = '425.50';
+        $key = (string) Str::uuid();
+        $this->post(route('clientes.consultations.purchase',$offer),['checkout_key'=>$key,'price'=>1])->assertRedirect();
+        $order = KalendiaConsultationOrder::sole();
+        $this->assertSame('425.50',$order->amount);
+        $this->remoteServices[0]['price'] = 500;
+        $this->post(route('clientes.consultations.purchase',$offer),['checkout_key'=>$key])->assertRedirect();
+        $this->postJson(route('clientes.consultations.intent',$order))->assertOk();
+        $this->postJson(route('clientes.consultations.intent',$order))->assertOk();
+        $this->assertCount(1,$this->stripe->creates);
+        $this->assertSame(42550,$this->stripe->creates[0]['payload']['amount']);
+        $this->stripe->intents['pi_fake']['status']='succeeded';
+        $this->stripe->intents['pi_fake']['amount_received']=42550;
+        app(KalendiaConsultationCheckout::class)->verify($order->fresh());
+        $purchase = $order->fresh()->purchase;
+        $this->get(route('clientes.consultations.reserve',$purchase->id))->assertOk();
+        $slots = app(\App\Services\KalendiaRegistrationBookingService::class)->availableSlots($purchase,'2027-03-19');
+        $this->post(route('clientes.meeting.book',$purchase->id),['date'=>'2027-03-19','slot'=>$slots[0]['key']])->assertRedirect();
+        $this->artisan('kalendia:process-bookings')->assertSuccessful();
+        $appointment = collect($this->mutations)->first(fn ($mutation) => str_ends_with($mutation['path'],'/appointments'));
+        $this->assertNotNull($appointment);
+        $this->assertArrayNotHasKey('payment_method',$appointment['body']);
+        $this->assertStringContainsString('425.50 EUR',$appointment['body']['notes']);
+        $this->assertStringContainsString('Factura App #',$appointment['body']['notes']);
+        $this->assertDatabaseCount('compras',1);
+        $this->assertDatabaseCount('facturas',1);
+        $this->assertDatabaseCount('kalendia_bookings',1);
+        $this->assertSame(2,(int)$user->fresh()->pay);
+    }
     public function test_client_cannot_enter_admin_kalendia_even_with_extra_permissions(): void
     {
         $user=$this->client();$user->assignRole('Administrador');
         $this->actingAs($user)->get('/admin/kalendia/consultas')->assertForbidden();
-        $this->post('/admin/kalendia/sincronizar')->assertForbidden();Http::assertNothingSent();
+        $this->post('/admin/kalendia/sincronizar')->assertForbidden();
+        $this->post(route('admin.kalendia.offers.sync'))->assertForbidden();Http::assertNothingSent();
     }
     public function test_sync_and_cancel_update_the_cos_and_client_history_without_refunding_or_reopening_initial_booking(): void
     {

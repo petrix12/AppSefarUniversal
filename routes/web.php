@@ -400,6 +400,7 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
 
     Route::middleware(['auth', 'can:kalendia.manage'])->prefix('admin/kalendia')->name('admin.kalendia.')->group(function () {
         Route::get('consultas', [\App\Http\Controllers\AdminKalendiaController::class, 'offers'])->name('offers');
+        Route::post('consultas/sincronizar', [\App\Http\Controllers\AdminKalendiaController::class, 'syncOffers'])->middleware('throttle:6,1')->name('offers.sync');
         Route::post('consultas', [\App\Http\Controllers\AdminKalendiaController::class, 'saveOffer'])->name('offers.store');
         Route::put('consultas/{offer}', [\App\Http\Controllers\AdminKalendiaController::class, 'saveOffer'])->name('offers.update');
         Route::get('citas', [\App\Http\Controllers\AdminKalendiaController::class, 'appointments'])->name('appointments');

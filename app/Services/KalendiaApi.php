@@ -34,21 +34,36 @@ class KalendiaApi
         return array_replace($response->json('data'), ['_http_status' => $response->status()]);
     }
 
-    public function services(): array
+    public function services(bool $refresh = false): array
     {
-        return Cache::remember('kalendia.services.'.hash('sha256', (string) config('kalendia.token')), 60, function () {
+        $cacheKey = 'kalendia.services.'.hash('sha256', (string) config('kalendia.token'));
+        if ($refresh) Cache::forget($cacheKey);
+        return Cache::remember($cacheKey, 60, function () {
             $items = [];
-            for ($page = 1; $page <= 10; $page++) {
+            $seen = [];
+            $expectedPages = null;
+            for ($page = 1; $page <= 100; $page++) {
                 $result = $this->request('GET', 'services', ['page' => $page, 'per_page' => 100]);
-                foreach ($result['items'] ?? [] as $service) {
-                    if (is_array($service) && is_string($service['id'] ?? null) && is_string($service['name'] ?? null)) {
-                        $items[] = ['id' => $service['id'], 'name' => $service['name'], 'duration_minutes' => $service['duration_minutes'] ?? null,
-                            'price' => $service['price'] ?? null];
-                    }
+                $pages = filter_var(data_get($result, 'pagination.pages', 1), FILTER_VALIDATE_INT,
+                    ['options' => ['min_range' => 1, 'max_range' => 100]]);
+                if (! is_array($result['items'] ?? null) || ! array_is_list($result['items']) || $pages === false
+                    || ($expectedPages !== null && $expectedPages !== $pages)) throw new KalendiaApiException();
+                $expectedPages = $pages;
+                foreach ($result['items'] as $service) {
+                    if (! is_array($service) || ! is_string($service['id'] ?? null)
+                        || ! preg_match('/^svc_[A-Za-z0-9_-]+$/D', $service['id'])
+                        || ! is_string($service['name'] ?? null) || trim($service['name']) === ''
+                        || isset($seen[$service['id']])) throw new KalendiaApiException();
+                    $seen[$service['id']] = true;
+                    $items[] = ['id' => $service['id'], 'name' => $service['name'], 'duration_minutes' => $service['duration_minutes'] ?? null,
+                        'price' => $service['price'] ?? null,
+                        'currency' => $service['currency'] ?? $result['currency'] ?? config('kalendia.currency'),
+                        'description' => is_string($service['description'] ?? null) ? $service['description'] : null,
+                        'active' => filter_var($service['active'] ?? $service['is_active'] ?? true, FILTER_VALIDATE_BOOLEAN)];
                 }
-                if ($page >= (int) data_get($result, 'pagination.pages', 1)) break;
+                if ($page >= $pages) return $items;
             }
-            return $items;
+            throw new KalendiaApiException();
         });
     }
 
@@ -70,6 +85,13 @@ class KalendiaApi
         // Missing or malformed prices are never treated as a free booking.
         $price = $service['price'] ?? null;
         return is_numeric($price) && is_finite((float) $price) && (float) $price === 0.0;
+    }
+
+    public function canReservePaidService(?array $service): bool
+    {
+        $price = $service['price'] ?? null;
+        return $service !== null && ($service['active'] ?? true)
+            && is_numeric($price) && is_finite((float) $price) && (float) $price >= 0;
     }
 
     public function staffForName(string $name): ?string

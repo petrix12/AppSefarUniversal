@@ -113,7 +113,7 @@ class KalendiaRegistrationBookingService
 
     public function bookingReady(?array $service = null): bool
     {
-        return $this->api->configured() && ($this->api->isFreeService($service) || filled(config('kalendia.prepaid_payment_method')));
+        return $this->api->configured() && $this->api->canReservePaidService($service);
     }
 
     public function book(User $user, int $purchaseId, array $input): KalendiaBooking
@@ -151,7 +151,6 @@ class KalendiaRegistrationBookingService
                     .'. Comprobante: '.url('/viewcomprobante/'.$purchase->factura->id)
                     .'. Horario del cliente: '.$data['date'].' '.$slot['display_time'].' ('.$timezone.').',
             ]];
-            if (! $this->api->isFreeService($service)) $payload['appointment']['payment_method'] = (string) config('kalendia.prepaid_payment_method');
             if ($slot['staff_id']) $payload['appointment']['staff_id'] = $slot['staff_id'];
         }
 

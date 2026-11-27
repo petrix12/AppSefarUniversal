@@ -24,15 +24,14 @@ class CheckKalendia extends Command
                 $ok = $ok && $present;
                 $this->line($scope.': '.($present ? 'disponible' : 'falta'));
             }
-            $prepaid = filled(config('kalendia.prepaid_payment_method'));
             foreach (['Nacionalidad portuguesa por cónyuge', 'Nacionalidad portuguesa para familiares',
                 'Nacionalidad española por cónyuge', 'Nacionalidad española para familiares'] as $name) {
                 $service = $api->serviceFor($name);
-                $free = $api->isFreeService($service);
-                $ok = $ok && $service !== null && ($free || $prepaid);
-                $this->line($name.': '.($service ? $service['id'].($free ? ' · sin cobro en Kalendia' : ($prepaid ? ' · método externo configurado' : ' · falta método para pago externo')) : 'pendiente de habilitar'));
+                $ready = $api->canReservePaidService($service);
+                $ok = $ok && $ready;
+                $this->line($name.': '.($ready ? $service['id'].' · reserva con pago confirmado en App Sefar' : 'servicio o precio pendiente de confirmar'));
             }
-            $this->line('Método confirmado para servicios con precio en Kalendia: '.($prepaid ? 'configurado' : 'sin configurar; esos servicios permanecen protegidos'));
+            $this->line('Las reservas pagadas en App Sefar omiten payment_method y conservan el comprobante en las notas.');
             $this->line('Webhook de Kalendia: '.(filled(config('kalendia.webhook_secret')) ? 'secreto configurado' : 'pendiente de configurar KALENDIA_WEBHOOK_SECRET'));
             $this->line('Receptor de citas: '.rtrim(config('app.url'), '/').'/api/webhooks/kalendia');
             $this->line('Restricción adicional de negocio: '.(config('kalendia.webhook_business_id') ?: 'firma propia del webhook y API aislada al negocio'));

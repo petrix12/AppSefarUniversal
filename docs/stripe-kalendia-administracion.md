@@ -34,7 +34,7 @@ Configurar mediante el mecanismo seguro del entorno, sin incluir valores en este
 | Stripe de Banca Online existente | Conservar `STRIPE_BANCA_ONLINE_WEBHOOK_SECRET` y su configuración actual | Conservar el endpoint existente |
 | Kalendia API y webhook nativo | Conservar `KALENDIA_TOKEN`, `KALENDIA_WEBHOOK_SECRET` y `KALENDIA_WEBHOOK_BUSINESS_ID` si está configurado | `/api/webhooks/kalendia` |
 
-Todos los cobros, países y servicios utilizan exclusivamente `STRIPE_KEY` y `STRIPE_SECRET`, de la cuenta principal. Los secretos de firma pertenecen a sus respectivos endpoints; el administrativo no sustituye los secretos de consultas o Banca Online, que también deben recibir eventos de la cuenta principal. `KALENDIA_TOKEN` es la credencial de API, no el secreto de firma. Mantener también la configuración previa de consultas, incluido `KALENDIA_PREPAID_PAYMENT_METHOD`.
+Todos los cobros, países y servicios utilizan exclusivamente `STRIPE_KEY` y `STRIPE_SECRET`, de la cuenta principal. Los secretos de firma pertenecen a sus respectivos endpoints; el administrativo no sustituye los secretos de consultas o Banca Online, que también deben recibir eventos de la cuenta principal. `KALENDIA_TOKEN` es la credencial de API, no el secreto de firma. Las reservas de compras ya pagadas omiten `payment_method`; no hace falta configurar `KALENDIA_PREPAID_PAYMENT_METHOD`.
 
 ## Históricos de España
 

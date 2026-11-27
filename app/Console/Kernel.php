@@ -33,6 +33,7 @@ class Kernel extends ConsoleKernel
             ->when(fn () => filled(config('kalendia.token')) && filled(config('kalendia.webhook_secret')))
             ->withoutOverlapping(5)->runInBackground();
         $schedule->command('kalendia:sync-appointments')->everyFiveMinutes()->when(fn () => filled(config('kalendia.token')))->withoutOverlapping(5)->runInBackground();
+        $schedule->command('kalendia:sync-consultations')->everyFiveMinutes()->when(fn () => filled(config('kalendia.token')))->withoutOverlapping(5)->runInBackground();
         $schedule->command('kalendia:reconcile-payments')->everyFiveMinutes()->when(fn () => filled(config('services.stripe.secret')))->withoutOverlapping(5)->runInBackground();
         $schedule->command('registration:deliver-meeting-webhooks --limit=4')
             ->everyMinute()->when(fn () => (bool) config('registration_meetings.enabled'))

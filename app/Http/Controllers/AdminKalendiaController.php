@@ -1,22 +1,33 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\{KalendiaAppointment, KalendiaAppointmentAction, KalendiaConsultationOffer, User};
-use App\Services\{KalendiaApi, KalendiaApiException, KalendiaAppointmentService};
+use App\Services\{KalendiaApi, KalendiaApiException, KalendiaAppointmentService, KalendiaConsultationCatalog};
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 class AdminKalendiaController extends Controller
 {
-    public function offers(KalendiaApi $api)
+    public function offers(KalendiaConsultationCatalog $catalog)
     {
         $services = []; $apiUnavailable = false;
-        try { $services = $api->services(); } catch (KalendiaApiException) { $apiUnavailable = true; }
+        try { $services = $catalog->sync()['services']; } catch (KalendiaApiException) { $apiUnavailable = true; }
         $offers = KalendiaConsultationOffer::orderBy('type')->orderBy('name')->get();
         return view('kalendia.admin.offers', compact('offers', 'services', 'apiUnavailable'));
     }
+    public function syncOffers(KalendiaConsultationCatalog $catalog)
+    {
+        try { $result = $catalog->sync(true); }
+        catch (KalendiaApiException) { return back()->withErrors(['kalendia' => 'No se pudo actualizar el catálogo de Kalendia. Se conservan los precios guardados.']); }
+        return redirect()->route('admin.kalendia.offers')->with('success', $result['available'].' servicios con precio sincronizados desde Kalendia.');
+    }
     public function saveOffer(Request $request, KalendiaApi $api, ?KalendiaConsultationOffer $offer = null)
     {
+        if ($offer?->catalog_service_id) {
+            $data = $request->validate(['type' => ['required','string','max:100'], 'active' => ['required','boolean']]);
+            $offer->update($data);
+            return redirect()->route('admin.kalendia.offers')->with('success', 'Visibilidad de la consulta actualizada. El nombre y el precio se mantienen sincronizados con Kalendia.');
+        }
         $data = $request->validate(['name' => ['required','string','max:255'], 'type' => ['required','string','max:100'],
             'description' => ['nullable','string','max:3000'], 'remote_service_id' => ['required','regex:/^svc_[A-Za-z0-9_-]+$/D'],
             'price' => ['nullable','numeric','min:0','max:99999999.99','decimal:0,2'], 'active' => ['nullable','boolean']]);

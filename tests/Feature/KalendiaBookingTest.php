@@ -30,7 +30,7 @@ class KalendiaBookingTest extends TestCase
     private bool $availabilityFailure = false;
     private string $remoteTimezone = 'America/Bogota';
     private bool $rejectFirstAppointment = false;
-    private mixed $remotePrice = null;
+    private mixed $remotePrice = 375;
     private bool $liveSlotShape = false;
     private bool $ambiguousStaff = false;
     private bool $postOmitsMeetingLink = false;
@@ -42,7 +42,6 @@ class KalendiaBookingTest extends TestCase
     {
         parent::setUp();
         config(['cache.default' => 'array', 'session.driver' => 'array', 'kalendia.token' => 'fake-test-token',
-            'kalendia.prepaid_payment_method' => 'provider-confirmed-test-method',
             'app.key' => 'base64:'.base64_encode(str_repeat('t', 32))]);
         Carbon::setTestNow(Carbon::parse('2026-11-20T15:30:45Z'));
         $this->withoutMiddleware(AuditRequests::class);
@@ -310,7 +309,7 @@ class KalendiaBookingTest extends TestCase
         $body = $this->writes[1]['body'];
         $this->assertSame('persona@example.test', $body['customer']['email']);
         $this->assertSame('stf_lawyer', $body['staff_id']);
-        $this->assertSame('provider-confirmed-test-method', $body['payment_method']);
+        $this->assertArrayNotHasKey('payment_method', $body);
         $this->assertStringContainsString('299.35 EUR', $body['notes']);
         $this->assertStringContainsString('Factura App #'.$invoice->id, $body['notes']);
         $this->assertDatabaseCount('compras', 1);
@@ -345,25 +344,23 @@ class KalendiaBookingTest extends TestCase
     }
 
     #[DataProvider('nonFreePrices')]
-    public function test_payment_method_must_be_confirmed_for_a_nonzero_or_unknown_remote_price(mixed $price): void
+    public function test_unknown_or_negative_remote_prices_remain_unavailable(mixed $price): void
     {
         [$user, $purchase] = $this->customer();
         $this->remotePrice = $price;
-        config(['kalendia.prepaid_payment_method' => null]);
         $this->bookDirectly($user, $purchase, ['date' => '2026-11-23', 'slot' => str_repeat('a', 64)]);
         Http::assertNotSent(fn ($request) => $request->method() === 'POST');
         $this->assertSame([], $this->writes);
     }
 
-    public static function nonFreePrices(): array { return [[null], [''], ['not-a-price'], [-1], [375]]; }
+    public static function nonFreePrices(): array { return [[null], [''], ['not-a-price'], [-1]]; }
 
     #[DataProvider('freePrices')]
-    public function test_included_meetings_omit_remote_payment_and_use_the_staff_id_from_the_real_catalog(mixed $price): void
+    public function test_paid_purchases_omit_remote_payment_and_use_the_staff_id_from_the_real_catalog(mixed $price): void
     {
         [$user, $purchase] = $this->customer();
         $this->remotePrice = $price;
         $this->liveSlotShape = true;
-        config(['kalendia.prepaid_payment_method' => null]);
         $this->actingAs($user)->get('/mi-reunion')->assertOk()->assertSee('data-booking-ready="1"', false);
         $this->bookDirectly($user, $purchase, $this->choice($purchase));
         $this->assertCount(2, $this->writes);
@@ -376,7 +373,7 @@ class KalendiaBookingTest extends TestCase
         $this->assertDatabaseCount('facturas', 1);
     }
 
-    public static function freePrices(): array { return [[0], ['0.00']]; }
+    public static function freePrices(): array { return [[0], ['0.00'], [375], ['375.25']]; }
 
     public function test_ambiguous_staff_names_are_not_guessed_from_numeric_identifiers(): void
     {
@@ -436,7 +433,6 @@ class KalendiaBookingTest extends TestCase
     {
         [$user, $purchase] = $this->customer();
         $this->remotePrice = 0;
-        config(['kalendia.prepaid_payment_method' => null]);
         $this->failFirstAppointment = true;
         $this->bookDirectly($user, $purchase, $this->choice($purchase));
         $this->remotePrice = 375;

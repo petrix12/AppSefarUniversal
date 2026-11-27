@@ -3,7 +3,8 @@
 @section('content_header')<h1>Consultas disponibles</h1>@stop
 @section('content')
     @include('kalendia.partials.messages')
-    <p>Elige el tipo de consulta, realiza el pago en la App y después selecciona un horario disponible.</p>
+    <p>Elige una consulta para ver su precio y continuar con la reserva y el pago seguro.</p>
+    @if($apiUnavailable ?? false)<div class="alert alert-warning">No pudimos confirmar los precios y horarios de las consultas. Inténtalo de nuevo en unos minutos.</div>@endif
     @unless($ready)<div class="alert alert-info">La contratación se habilitará cuando completes tu registro y estén configurados los pagos.</div>@endunless
     <div class="row">
     @forelse($offers as $offer)<div class="col-md-6 col-xl-4 mb-3"><div class="card h-100"><div class="card-body d-flex flex-column">

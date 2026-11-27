@@ -60,7 +60,7 @@ La conexión requiere `business.read`, `services.read`, `staff.read`, `availabil
 
 Para servicios con precio remoto distinto de cero o desconocido, la documentación no define un método para «pago externo ya recibido». La conexión ofrece `payments.read`, sin una operación documentada para registrar pagos externos. Una nota con comprobante deja constancia; no equivale a una factura o pago saldado en Kalendia.
 
-`KALENDIA_PREPAID_PAYMENT_METHOD` permanece sin valor predeterminado y no hace falta para las modalidades configuradas a cero. Solo debe configurarse para servicios con precio en Kalendia, con un identificador confirmado por el proveedor para pagos externos. No se usa `cash` como sustituto automático. Sin ese método, un precio no nulo o desconocido mantiene la creación protegida. No se inserta el iframe de venta. Los reintentos de una creación incierta conservan su cuerpo original, aunque cambie después el precio del catálogo.
+Las reservas de compras confirmadas en App Sefar omiten `payment_method`, también cuando el servicio tiene precio en Kalendia. No hace falta configurar `KALENDIA_PREPAID_PAYMENT_METHOD`: el cobro lo confirma Stripe en la App y la referencia del comprobante queda en las notas de la cita. Los precios desconocidos o inválidos mantienen la creación protegida. No se inserta el iframe de venta. Los reintentos de una creación incierta conservan su cuerpo original, aunque cambie después el precio del catálogo.
 
 Los cuatro servicios deben existir, estar activos y tener agenda y profesionales disponibles en Kalendia. El diagnóstico no los crea ni cambia su configuración:
 

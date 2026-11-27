@@ -22,11 +22,20 @@ class KalendiaConsultationCheckout
     public function canReserve(string $remoteId): bool
     {
         $service = $this->api->serviceById($remoteId);
-        return $service && ($this->api->isFreeService($service) || filled(config('kalendia.prepaid_payment_method')));
+        return $this->api->canReservePaidService($service);
     }
     public function order(User $user, KalendiaConsultationOffer $offer, string $key): KalendiaConsultationOrder
     {
         $this->assertClient($user);
+        $existing = KalendiaConsultationOrder::where('checkout_key', $key)->first();
+        if ($existing) {
+            abort_unless((int) $existing->user_id === (int) $user->id && (int) $existing->offer_id === (int) $offer->id, 409);
+            return $existing;
+        }
+        if ($offer->catalog_service_id) {
+            app(KalendiaConsultationCatalog::class)->sync(true);
+            $offer->refresh();
+        }
         if (! $this->configured() || ! $offer->hasPrice() || ! $this->canReserve($offer->remote_service_id)) {
             throw ValidationException::withMessages(['consultation' => 'Esta consulta todavía no está habilitada para contratar.']);
         }

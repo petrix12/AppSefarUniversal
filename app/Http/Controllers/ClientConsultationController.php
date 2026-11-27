@@ -2,7 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\{KalendiaBooking, KalendiaBookingRequest, KalendiaConsultationOffer, KalendiaConsultationOrder};
-use App\Services\{KalendiaApiException, KalendiaAppointmentService, KalendiaConsultationCheckout, KalendiaRegistrationBookingService};
+use App\Services\{KalendiaApiException, KalendiaAppointmentService, KalendiaConsultationCheckout, KalendiaConsultationCatalog, KalendiaRegistrationBookingService};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
@@ -20,17 +20,23 @@ class ClientConsultationController extends Controller
             ->whereIn('status', ['queued', 'processing', 'needs_slot', 'review'])->with('purchase.servicio')->latest()->get() : collect();
         return response()->view('kalendia.client.meetings', compact('summary', 'orders', 'bookingRequests'))->header('Cache-Control', 'private, no-store');
     }
-    public function catalog(Request $request, KalendiaConsultationCheckout $checkout)
+    public function catalog(Request $request, KalendiaConsultationCheckout $checkout, KalendiaConsultationCatalog $catalog)
     {
         abort_unless($request->user()->hasRole('Cliente'), 403);
-        $offers = Schema::hasTable('kalendia_consultation_offers') ? KalendiaConsultationOffer::where('active', true)->orderBy('type')->orderBy('name')->get() : collect();
-        $ready = $checkout->configured() && (int) $request->user()->pay === 2 && (int) $request->user()->contrato === 1;
+        $apiUnavailable = false;
+        if ($checkout->configured() && Schema::hasTable('kalendia_consultation_offers')) {
+            try { $catalog->sync(); } catch (KalendiaApiException) { $apiUnavailable = true; }
+        }
+        $offers = Schema::hasTable('kalendia_consultation_offers') ? KalendiaConsultationOffer::where('active', true)
+            ->where(fn ($query) => $query->whereNull('catalog_service_id')->orWhere('catalog_available', true))
+            ->orderBy('type')->orderBy('name')->get() : collect();
+        $ready = ! $apiUnavailable && $checkout->configured() && (int) $request->user()->pay === 2 && (int) $request->user()->contrato === 1;
         $offerReady = [];
         foreach ($offers as $offer) {
             try { $offerReady[$offer->id] = $ready && $offer->hasPrice() && $checkout->canReserve($offer->remote_service_id); }
             catch (KalendiaApiException) { $offerReady[$offer->id] = false; }
         }
-        return view('kalendia.client.catalog', compact('offers', 'ready', 'offerReady'));
+        return view('kalendia.client.catalog', compact('offers', 'ready', 'offerReady', 'apiUnavailable'));
     }
     public function purchase(Request $request, KalendiaConsultationOffer $offer, KalendiaConsultationCheckout $checkout)
     {
