@@ -45,6 +45,7 @@ class User extends Authenticatable
         'two_factor_recovery_codes',
         'two_factor_secret',
         'google_id',
+        'googleIdentity',
     ];
 
     protected $casts = [
@@ -266,6 +267,11 @@ class User extends Authenticatable
     public function genealogyTreeLink()
     {
         return $this->hasOne(UserGenealogyTreeLink::class);
+    }
+
+    public function googleIdentity()
+    {
+        return $this->hasOne(UserGoogleIdentity::class);
     }
 
     public function changeAudits()

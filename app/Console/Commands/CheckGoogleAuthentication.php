@@ -23,9 +23,9 @@ class CheckGoogleAuthentication extends Command
         $ready = $ready && $matches;
         $this->line('Retorno OAuth: '.$callback);
         $this->line('Coincide con esta instalación: '.($matches ? 'sí' : 'no; revisar APP_URL y GOOGLE_REDIRECT_URI'));
-        $schema = Schema::hasColumn('users', 'google_id');
+        $schema = Schema::hasTable('user_google_identities');
         $ready = $ready && $schema;
-        $this->line('Vinculación de cuentas: '.($schema ? 'migración aplicada' : 'falta la migración de google_id'));
+        $this->line('Vinculación de cuentas: '.($schema ? 'migración aplicada' : 'falta la tabla user_google_identities; ejecutar php artisan migrate'));
         $this->line('Permisos solicitados: openid profile email. El acceso real debe comprobarse en el navegador.');
         return $ready ? self::SUCCESS : self::FAILURE;
     }

@@ -61,7 +61,7 @@ class GoogleAuthenticationController extends Controller
             $profile = $this->google->profile(Socialite::driver('google')->user());
             $existingUser = $this->google->existingUser($profile);
             if ($existingUser) {
-                if (! $existingUser->google_id && ! $profile['authoritative_email']) {
+                if (! $existingUser->googleIdentity && ! $profile['authoritative_email']) {
                     $request->session()->forget('google_oauth_flow');
                     $request->session()->put(GoogleAuthenticationService::PENDING_LINK, $profile + ['user_id' => $existingUser->id]);
                     return redirect()->route('login')->withInput(['email' => $profile['email']])

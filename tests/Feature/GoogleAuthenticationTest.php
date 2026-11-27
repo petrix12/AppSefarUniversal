@@ -111,10 +111,13 @@ class GoogleAuthenticationTest extends TestCase
         $oldSessionId = session()->getId();
         $this->googleCallback()->assertRedirect('/');
         $this->assertAuthenticatedAs($user); $this->assertNotSame($oldSessionId, session()->getId());
-        $this->assertSame('123456789', $user->fresh()->google_id);
+        $this->assertSame('123456789', $user->fresh()->googleIdentity->google_id);
         $this->assertSame($roles, $user->fresh()->getRoleNames()->all()); $this->assertSame(2, (int) $user->fresh()->pay);
         $this->assertDatabaseCount('users', 1); $this->assertDatabaseCount('compras', 0);
         $this->assertArrayNotHasKey('google_id', $user->fresh()->toArray());
+        $this->assertArrayNotHasKey('google_identity', $user->fresh()->load('googleIdentity')->toArray());
+        $this->assertFalse(Schema::hasColumn('users', 'google_id'));
+        $this->assertDatabaseHas('user_google_identities', ['user_id' => $user->id, 'google_id' => '123456789']);
     }
 
     public function test_workspace_email_can_link_an_existing_account_without_creating_a_duplicate(): void
@@ -122,13 +125,13 @@ class GoogleAuthenticationTest extends TestCase
         $user = User::factory()->create(['email' => 'person@example.test']);
         $this->get(route('login.google.redirect'));
         $this->googleCallback(['email' => $user->email, 'hd' => 'example.test'])->assertRedirect('/');
-        $this->assertAuthenticatedAs($user); $this->assertSame('123456789', $user->fresh()->google_id);
+        $this->assertAuthenticatedAs($user); $this->assertSame('123456789', $user->fresh()->googleIdentity->google_id);
         $this->assertDatabaseCount('users', 1);
     }
 
     public function test_a_linked_google_subject_keeps_the_same_account_even_if_google_changes_its_email(): void
     {
-        $user = User::factory()->create(['email' => 'old@example.test']); $user->forceFill(['google_id' => '123456789'])->save();
+        $user = User::factory()->create(['email' => 'old@example.test']); $user->googleIdentity()->create(['google_id' => '123456789']);
         $this->get(route('login.google.redirect'));
         $this->googleCallback(['email' => 'new@gmail.com'])->assertRedirect('/');
         $this->assertAuthenticatedAs($user); $this->assertSame('old@example.test', $user->fresh()->email);
@@ -137,10 +140,10 @@ class GoogleAuthenticationTest extends TestCase
 
     public function test_a_different_google_subject_cannot_take_an_account_with_the_same_email(): void
     {
-        $user = User::factory()->create(['email' => 'person@gmail.com']); $user->forceFill(['google_id' => 'different-subject'])->save();
+        $user = User::factory()->create(['email' => 'person@gmail.com']); $user->googleIdentity()->create(['google_id' => 'different-subject']);
         $this->get(route('login.google.redirect'));
         $this->googleCallback()->assertRedirect(route('login'))->assertSessionHasErrors('google');
-        $this->assertGuest(); $this->assertSame('different-subject', $user->fresh()->google_id);
+        $this->assertGuest(); $this->assertSame('different-subject', $user->fresh()->googleIdentity->google_id);
     }
 
     #[DataProvider('invalidProfiles')]
@@ -205,7 +208,7 @@ class GoogleAuthenticationTest extends TestCase
             ->assertRedirect(route('inicio'));
         $user = User::sole(); $this->assertAuthenticatedAs($user);
         $this->assertTrue($user->hasRole('Cliente')); $this->assertFalse($user->hasRole('Administrador'));
-        $this->assertSame('123456789', $user->google_id); $this->assertSame(0, (int) $user->pay);
+        $this->assertSame('123456789', $user->googleIdentity->google_id); $this->assertSame(0, (int) $user->pay);
         $this->assertSame(49.0, Compras::sole()->monto); $this->assertSame(0, Compras::sole()->pagado);
         $this->assertDatabaseCount('facturas', 0); $this->assertNull(session(GoogleAuthenticationService::REGISTRATION));
         Mail::assertNotSent(ClaveGeneradaMail::class); Http::assertNothingSent();
@@ -235,7 +238,7 @@ class GoogleAuthenticationTest extends TestCase
         $this->get(route('register.v2.google.redirect')); $this->googleCallback();
         $this->post('/registerv2', $this->registrationInput())->assertSessionHasErrors('passport');
         $this->assertSame('Portuguesa Sefardi', $owner->fresh()->servicio); $this->assertSame(2, (int) $owner->fresh()->pay);
-        $this->assertNull($owner->fresh()->google_id); $this->assertGuest(); $this->assertDatabaseCount('users', 1);
+        $this->assertNull($owner->fresh()->googleIdentity); $this->assertGuest(); $this->assertDatabaseCount('users', 1);
     }
 
     public function test_existing_third_party_email_requires_the_app_password_before_linking_google(): void
@@ -243,11 +246,11 @@ class GoogleAuthenticationTest extends TestCase
         $user = User::factory()->create(['email' => 'person@example.test']);
         $this->get(route('login.google.redirect'));
         $this->googleCallback(['email' => $user->email])->assertRedirect(route('login'));
-        $this->assertGuest(); $this->assertNull($user->fresh()->google_id);
+        $this->assertGuest(); $this->assertNull($user->fresh()->googleIdentity);
         $this->post('/login', ['email' => $user->email, 'password' => 'wrong-password'])->assertSessionHasErrors('email');
-        $this->assertNull($user->fresh()->google_id);
+        $this->assertNull($user->fresh()->googleIdentity);
         $this->post('/login', ['email' => $user->email, 'password' => 'password'])->assertRedirect('/');
-        $this->assertAuthenticatedAs($user); $this->assertSame('123456789', $user->fresh()->google_id);
+        $this->assertAuthenticatedAs($user); $this->assertSame('123456789', $user->fresh()->googleIdentity->google_id);
     }
 
     public function test_google_login_requires_the_existing_second_factor_before_authenticating(): void
@@ -267,9 +270,9 @@ class GoogleAuthenticationTest extends TestCase
             'two_factor_confirmed_at' => now(), 'two_factor_recovery_codes' => encrypt(json_encode(['link-recovery']))]);
         $this->get(route('login.google.redirect')); $this->googleCallback(['email' => $user->email]);
         $this->post('/login', ['email' => $user->email, 'password' => 'password'])->assertRedirect(route('two-factor.login'));
-        $this->assertGuest(); $this->assertNull($user->fresh()->google_id);
+        $this->assertGuest(); $this->assertNull($user->fresh()->googleIdentity);
         $this->post('/two-factor-challenge', ['recovery_code' => 'link-recovery'])->assertRedirect('/');
-        $this->assertAuthenticatedAs($user); $this->assertSame('123456789', $user->fresh()->google_id);
+        $this->assertAuthenticatedAs($user); $this->assertSame('123456789', $user->fresh()->googleIdentity->google_id);
     }
 
     public function test_a_linking_failure_does_not_leave_an_unlinked_google_registration_or_purchase(): void
@@ -280,6 +283,20 @@ class GoogleAuthenticationTest extends TestCase
         $this->post('/registerv2', $this->registrationInput())->assertSessionHasErrors('google');
         $this->assertDatabaseCount('users', 0); $this->assertDatabaseCount('compras', 0);
         $this->assertNotNull(session(GoogleAuthenticationService::REGISTRATION));
+    }
+
+    public function test_a_purchase_failure_rolls_back_the_google_identity_together_with_the_new_user(): void
+    {
+        $this->registrationService(); $this->get(route('register.v2.google.redirect')); $this->googleCallback();
+        \Illuminate\Support\Facades\Event::listen('eloquent.creating: '.Compras::class,
+            fn () => throw \Illuminate\Validation\ValidationException::withMessages(['google' => 'No se pudo crear la compra.']));
+
+        $this->post('/registerv2', $this->registrationInput())->assertSessionHasErrors('google');
+
+        $this->assertDatabaseCount('users', 0);
+        $this->assertDatabaseCount('user_google_identities', 0);
+        $this->assertDatabaseCount('compras', 0);
+        $this->assertGuest();
     }
 
     public function test_oauth_codes_and_state_are_not_saved_in_the_authenticated_request_audit(): void

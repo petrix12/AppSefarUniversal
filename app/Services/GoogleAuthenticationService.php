@@ -42,15 +42,16 @@ class GoogleAuthenticationService
 
     public function existingUser(array $profile): ?User
     {
-        $linked = User::where('google_id', $profile['subject'])->first();
+        $linked = User::with('googleIdentity')->whereHas('googleIdentity',
+            fn ($query) => $query->where('google_id', $profile['subject']))->first();
         if ($linked) {
-            if (! hash_equals((string) $linked->google_id, $profile['subject'])) $this->conflict();
+            if (! hash_equals($linked->googleIdentity->google_id, $profile['subject'])) $this->conflict();
             return $linked;
         }
-        $users = User::whereRaw('LOWER(email) = ?', [$profile['email']])->limit(2)->get();
+        $users = User::with('googleIdentity')->whereRaw('LOWER(email) = ?', [$profile['email']])->limit(2)->get();
         if ($users->count() > 1) $this->conflict();
         $user = $users->first();
-        if ($user?->google_id && ! hash_equals((string) $user->google_id, $profile['subject'])) $this->conflict();
+        if ($user?->googleIdentity && ! hash_equals($user->googleIdentity->google_id, $profile['subject'])) $this->conflict();
         return $user;
     }
 
@@ -58,13 +59,17 @@ class GoogleAuthenticationService
     {
         DB::transaction(function () use ($user, $profile) {
             $owner = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
-            if (($owner->google_id && ! hash_equals((string) $owner->google_id, $profile['subject']))
-                || (! $owner->google_id && Str::lower($owner->email) !== $profile['email'])
-                || User::where('google_id', $profile['subject'])->whereKeyNot($owner->id)->exists()) $this->conflict();
-            $values = ['google_id' => $profile['subject']];
-            if (! $owner->email_verified_at && Str::lower($owner->email) === $profile['email']) $values['email_verified_at'] = now();
-            $owner->forceFill($values)->save();
-            $user->forceFill($values);
+            $identity = $owner->googleIdentity;
+            if (($identity && ! hash_equals($identity->google_id, $profile['subject']))
+                || (! $identity && Str::lower($owner->email) !== $profile['email'])
+                || User::whereKeyNot($owner->id)->whereHas('googleIdentity',
+                    fn ($query) => $query->where('google_id', $profile['subject']))->exists()) $this->conflict();
+            $identity ??= $owner->googleIdentity()->create(['google_id' => $profile['subject']]);
+            if (! $owner->email_verified_at && Str::lower($owner->email) === $profile['email']) {
+                $owner->forceFill(['email_verified_at' => now()])->save();
+                $user->email_verified_at = $owner->email_verified_at;
+            }
+            $user->setRelation('googleIdentity', $identity);
         });
     }
 
