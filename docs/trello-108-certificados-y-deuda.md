@@ -13,7 +13,7 @@ Tarea: [Revisar si desde el COS se puede obtener los clientes que tienen el cert
 
 Se implementó **Cartera y certificados**, un listado global de clientes con filtros por certificado, saldo, revisión y búsqueda, disponible en `/cos/cartera`. Su exportación CSV incluye todos los resultados filtrados, aunque la pantalla muestre 50 por página.
 
-El listado debe cruzar expedientes y finanzas. El JSON `users.arraycos` por sí solo no permite determinar de forma fiable quién tiene certificado y cuánto debe: no guarda el detalle de deuda, puede estar vencido y agrupa resultados por servicio, perdiendo el vínculo individual con cada negocio.
+El listado debe cruzar expedientes y finanzas. El JSON `users.arraycos` por sí solo no permite determinar de forma fiable quién tiene certificado y cuánto tiene pendiente de pago: no guarda el detalle de los pagos pendientes, puede estar vencido y agrupa resultados por servicio, perdiendo el vínculo individual con cada negocio.
 
 El listado consulta directamente los proyectos Teamleader importados. Por eso puede obtener clientes con certificado y saldo aunque sus proyectos todavía no estén asociados a HubSpot. Para combinar las dos fuentes sin duplicar saldos, también calcula asociaciones inequívocas sin IA. Las asociaciones se revisan y guardan desde **Procesos del solicitante**, en la ventana **Estatus de Solicitante** de cada cliente.
 
@@ -38,7 +38,7 @@ El panel **Procesos del solicitante** muestra juntos el negocio HubSpot y el pro
 
 La conciliación utiliza proceso, fase y moneda, tanto en el estatus interno como en el del cliente y en los pagos pendientes. Una obligación de 2.000 en HubSpot y su saldo de fase de 2.000 en Teamleader se muestran como **2.000**, conservando el ID del registro realmente cobrable. Dos procesos distintos o dos fases diferentes de 2.000 mantienen su total de 4.000. Los cargos genéricos sin fase o sin proceso no se agrupan por importe.
 
-Los saldos de fase conciliados incorporan los abonos históricos y los pagos recientes del portal. Los campos antiguos del CRM no vuelven a sumar deuda sobre ese saldo, y una fase pagada no reaparece por su copia pendiente antigua. Los enlaces y formularios de cobro antiguos rechazan el registro sustituido y remiten al saldo actualizado.
+Los saldos de fase conciliados incorporan los abonos históricos y los pagos recientes del portal. Los campos antiguos del CRM no vuelven a sumar pagos pendientes sobre ese saldo, y una fase pagada no reaparece por su copia pendiente antigua. Los enlaces y formularios de cobro antiguos rechazan el registro sustituido y remiten al saldo actualizado.
 
 Los abonos y comprobantes reales permanecen en la base. La vista elimina la repetición entre el resumen importado y los recibos que representa, preserva los abonos individuales aunque tengan el mismo importe y muestra cualquier importe histórico restante. No se borran compras ni facturas. Se mantienen las reglas existentes de fases ocultas, revisión y orden de pago.
 
@@ -71,7 +71,7 @@ El listado distingue estos estados:
 | Requiere revisión | Hay importes ambiguos, conversión pendiente, sobrepagos u otra incidencia que impide confirmar la cifra. |
 | Sin datos suficientes | Falta el proyecto, la vinculación o la información de importes. |
 
-Además, debe distinguirse **saldo financiero** de **saldo cobrable en el portal**. El código actual trata los diferenciales inferiores a 50 EUR como no cobrables cuando cumplen sus condiciones; una fase oculta al cliente conserva su registro financiero interno. La siguiente fase habilitada para pagar tampoco representa necesariamente toda la deuda del cliente.
+Además, debe distinguirse **saldo financiero** de **saldo cobrable en el portal**. El código actual trata los diferenciales inferiores a 50 EUR como no cobrables cuando cumplen sus condiciones; una fase oculta al cliente conserva su registro financiero interno. La siguiente fase habilitada para pagar tampoco representa necesariamente todos los pagos pendientes del cliente.
 
 No deben usarse `users.pay`, el porcentaje de avance del COS o la mera presencia de una fecha de pago para afirmar que un cliente está al día. Tampoco basta con sumar indiscriminadamente `compras.monto`: contiene saldos, pagos e importes pendientes de revisión.
 
@@ -118,6 +118,6 @@ El directorio de salida debe existir. `--owner=ID` limita el informe. Solo `--ap
 - Cobertura de múltiples clientes, exportación completa de más de una página, roles y owner, coincidencias ambiguas en ambas direcciones, monedas distintas, importes cero, recibos históricos, abonos recientes, fases ocultas, duplicados e idempotencia del guardado. Las pruebas impiden peticiones HTTP y verifican que no se envían correos ni se crean compras.
 - Comprobación retrospectiva sobre 210 enlaces existentes, ocultando su enlace al comparador: recuperó 67, dejó 143 sin resolver automáticamente y no propuso un enlace distinto para ninguno. Esta comprobación no garantiza la corrección de todas las propuestas nuevas.
 - Generación real del informe completo y de los CSV con los datos locales, sin aplicar asociaciones.
-- Regresiones de deuda 2.000 + 2.000, fases y procesos distintos, pagos reales de igual importe, saldos antiguos frente a fases pagadas, historial parcialmente reflejado en recibos y rechazo del cobro de copias antiguas.
+- Regresiones de pagos pendientes de 2.000 + 2.000, fases y procesos distintos, pagos reales de igual importe, saldos antiguos frente a fases pagadas, historial parcialmente reflejado en recibos y rechazo del cobro de copias antiguas.
 - Sintaxis PHP y compilación de las tres plantillas Blade modificadas verificadas; revisión de espacios con `git diff --check`.
 - PHPUnit también advierte sobre una configuración obsoleta existente.

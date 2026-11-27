@@ -594,7 +594,7 @@ return [
                     'can' => 'cliente',
                 ],
                 [
-                    'text' => 'Deuda pendiente',
+                    'text' => 'Pagos pendientes',
                     'classes' => 'btn_pending_payments',
                     'icon' => 'fa-fw fas fa-credit-card',
                     'icon_color' => 'rgba(255,255,255,0.8)',

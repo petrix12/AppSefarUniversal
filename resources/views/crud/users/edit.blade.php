@@ -497,11 +497,11 @@
                                     </div>
                                     <div class="col-md-6">
                                         <div class="border rounded p-3 h-100 bg-light">
-                                            <div class="small text-muted">Deuda pendiente</div>
+                                            <div class="small text-muted">Pagos pendientes</div>
                                             @if($amount['debt'] > 0)
                                                 <div class="h4 fw-bold mb-0 text-danger">{{ format_money((float) $amount['debt'], 2, ',', '.') }} {{ $amount['currency'] }}</div>
                                             @else
-                                                <div class="fw-bold text-success">No hay deudas pendientes.</div>
+                                                <div class="fw-bold text-success">No hay pagos pendientes.</div>
                                                 <div class="small text-muted">{{ format_money(0, 2, ',', '.') }} {{ $amount['currency'] }}</div>
                                             @endif
                                         </div>
@@ -1773,7 +1773,7 @@
                 </div>
 
                 <div class="tab-pane fade cos-workspace-panel" id="paymentspen" role="tabpanel" aria-labelledby="paymentspen-tab">
-                    @include('crud.users.partials.workspace-panel-heading', ['title' => 'Deuda pendiente', 'description' => 'Revisa los importes pendientes y las opciones de pago disponibles.', 'icon' => 'fa-wallet'])
+                    @include('crud.users.partials.workspace-panel-heading', ['title' => 'Pagos pendientes', 'description' => 'Revisa los importes pendientes y las opciones de pago disponibles.', 'icon' => 'fa-wallet'])
                     @php
                         $allPendingPurchasesForCos = $comprasSinDealNoPagadas->merge($comprasConDealNoPagadas);
                         $paymentPhasePaymentService = app(\App\Services\TeamleaderPhasePaymentService::class);
@@ -1850,7 +1850,7 @@
                     @else
                         <div class="alert alert-success mb-0">
                             <i class="fas fa-check-circle me-1"></i>
-                            No tienes deudas pendientes.
+                            No tienes pagos pendientes.
                         </div>
                     @endif
                 </div>

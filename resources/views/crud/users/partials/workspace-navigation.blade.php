@@ -69,7 +69,7 @@
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="paymentspen-tab" data-bs-toggle="tab" data-bs-target="#paymentspen" type="button" role="tab" aria-controls="paymentspen" aria-selected="false">
-                        Deuda pendiente
+                        Pagos pendientes
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">

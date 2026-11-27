@@ -22,7 +22,7 @@
         @endforeach
     </div>
     <div class="alert alert-info">
-        El saldo conocido suma únicamente fases con importes legibles en EUR. Las fases con monedas pendientes de conversión u otras incidencias quedan para revisión. Sin datos no significa sin deuda. El certificado se identifica por su fecha registrada.
+        El saldo conocido suma únicamente fases con importes legibles en EUR. Las fases con monedas pendientes de conversión u otras incidencias quedan para revisión. Sin datos, no se puede confirmar que no haya pagos pendientes. El certificado se identifica por su fecha registrada.
     </div>
     <div class="card"><div class="card-body">
         <form method="GET" class="row align-items-end">

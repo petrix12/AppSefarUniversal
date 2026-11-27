@@ -120,7 +120,7 @@
     </div>
     <p class="text-muted small mt-n2 mb-3">
         Totales de las {{ $paymentTotals['rows'] }} fases filtradas en {{ $paymentTotals['projects'] }} proyectos.
-        Un pago superior al monto preestablecido se marca como inconsistencia; nunca como deuda de la empresa con el cliente.
+        Un pago superior al monto preestablecido se marca como inconsistencia; nunca como pagos pendientes de la empresa al cliente.
     </p>
 
     {{-- TABLA --}}

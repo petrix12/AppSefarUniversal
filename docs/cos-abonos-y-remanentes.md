@@ -19,7 +19,7 @@ Por tanto, el total confirmado es **3.500 EUR y el saldo pendiente es cero**. La
 - Los registros calculados de saldo y los espejos históricos no se tratan como nuevos cobros.
 - Se reutilizan las conversiones BCE guardadas al cobrar, comprobando moneda, fecha, importe, tasa y resultado. Si no existen, la primera consulta permite hasta 15 segundos y las tasas correctas mantienen la caché de 90 días.
 - Una respuesta CSV se ordena por la fecha de observación y nunca se toma una tasa posterior al pago.
-- Si falta una conversión sin evidencia de liquidación completa, el resumen muestra el importe parcial y `Pendiente de cálculo`, sin publicar la diferencia como deuda definitiva. Un recibo que acredita la liquidación completa impide que una caída del BCE recree esa deuda.
+- Si falta una conversión sin evidencia de liquidación completa, el resumen muestra el importe parcial y `Pendiente de cálculo`, sin publicar la diferencia como un importe definitivo de pagos pendientes. Un recibo que acredita la liquidación completa impide que una caída del BCE vuelva a generar esos pagos pendientes.
 - La tabla de pagos y el comprobante muestran los céntimos. Los pagos por fase muestran su descripción en lugar del identificador técnico del servicio.
 
 No se cambian recibos cobrados ni se ejecutan cobros, devoluciones, escrituras en CRM o cambios de S3 como parte del diagnóstico. El recibo confirmado permanece con su importe original.
