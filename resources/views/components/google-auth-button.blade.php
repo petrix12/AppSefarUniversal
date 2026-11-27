@@ -8,7 +8,9 @@
     .sefar-google-divider::before,.sefar-google-divider::after { content:'';height:1px;flex:1;background:#e5e7eb; }
 </style>
 @endonce
-<a href="{{ $href }}" {{ $attributes->merge(['class' => 'sefar-google-auth-button']) }}>
+{{-- Google authorization must leave an embedded registration frame. Starting
+     at the app in the top window also establishes the OAuth session there. --}}
+<a href="{{ $href }}" {{ $attributes->merge(['class' => 'sefar-google-auth-button', 'target' => '_top']) }}>
     <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.55-.21-2.27H12v4.3h6.44a5.5 5.5 0 0 1-2.39 3.61v2.79h3.88c2.27-2.09 3.56-5.17 3.56-8.43Z"/>
         <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.94-2.91l-3.88-2.79c-1.07.72-2.45 1.14-4.06 1.14-3.12 0-5.76-2.11-6.7-4.94H1.3v2.88A12 12 0 0 0 12 24Z"/>

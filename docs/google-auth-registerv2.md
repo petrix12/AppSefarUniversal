@@ -10,7 +10,7 @@ Las credenciales ya están presentes en producción, aunque no aparecen en los a
 
 En **Acceso a los datos** se seleccionaron únicamente los permisos básicos `openid`, `userinfo.email` y `userinfo.profile`; falta confirmar su persistencia después de guardar. En **Información de la marca**, el campo **Condiciones del servicio** se guardó con `https://sefaruniversal.com/politica-de-privacidad/`, que contiene el aviso legal y las condiciones de uso publicadas, en lugar de `/asistencia-legal/`.
 
-El enlace corregido quedó en una versión de marca pendiente de publicación. Google rechazó la nueva verificación porque no pudo acceder a la página principal configurada, `https://app.sefaruniversal.com/`. La marca previamente verificada sigue mostrándose a los usuarios. Hay que resolver ese acceso o configurar una página principal pública apropiada y completar la verificación/publicación; guardar el formulario no publica el enlace por sí solo. [Documentación oficial de marca](https://developers.google.com/identity/protocols/oauth2/production-readiness/brand-verification).
+Al guardar el enlace, Google rechazó inicialmente la nueva verificación porque no pudo acceder a la página principal configurada, `https://app.sefaruniversal.com/`. En la comprobación posterior del acceso real, la pantalla de Google ya muestra las **Condiciones del Servicio** con el enlace corregido a la página de privacidad y aviso legal. Guardar el formulario y publicar la marca son pasos diferentes; la pantalla de consentimiento permite comprobar el enlace que efectivamente ven los usuarios. [Documentación oficial de marca](https://developers.google.com/identity/protocols/oauth2/production-readiness/brand-verification).
 
 ## Comportamiento de la app
 
@@ -23,6 +23,12 @@ Si la cuenta es nueva, el retorno de Google conserva el servicio y presenta el f
 Al completar el formulario se crean juntos el cliente, su vinculación con Google y la compra pendiente con el precio vigente, incluidas promociones. El navegador no puede asignar un rol interno ni declarar el registro pagado. No se envía una contraseña generada a quien usa Google. El cliente entra a la App y continúa su registro, pago o expediente según su estado habitual. Los usuarios existentes conservan sus roles y pagos. El acceso de quienes tienen segundo factor sigue pasando por el desafío de la App.
 
 Se mantiene la validación de `state` de Socialite y no se usa `stateless()`. No se guardan tokens de Google en la cuenta o en la sesión del formulario. Los códigos y el estado OAuth se excluyen de la auditoría de URL. [Socialite](https://laravel.com/docs/12.x/socialite).
+
+### Registro incrustado en las landings
+
+La landing `https://sefaruniversal.com/landing-registro-nacionalidad-espanola-sefardi/` carga `https://app.sefaruniversal.com/registerv2?servicio=Espa%C3%B1ola%20Sefardi` dentro de `iframe#registroIframe`, sin `sandbox`. Se comprobó que navegar a Google dentro de ese marco devuelve un error 403, mientras que el mismo inicio de acceso en la ventana principal muestra el selector de cuentas de Google.
+
+El componente compartido del botón usa `target="_top"`: **Continuar con Google** abre el endpoint de la app en la pestaña principal y desde ahí inicia OAuth. Al regresar, el cliente completa el registro en la app, con el servicio conservado. El formulario habitual continúa incrustado hasta que se elige Google. El botón de `/login` tiene el mismo comportamiento si se incrusta esa pantalla. No requiere cambiar el iframe de esta landing ni configurar otra URL de retorno.
 
 ## Instalación y verificación
 
