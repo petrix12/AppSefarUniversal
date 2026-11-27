@@ -1925,41 +1925,8 @@ class ClienteController extends Controller
         $cps = json_decode(json_encode($compras),true);
 
         if (count($cps)==0){
-            $hss = json_decode(json_encode($servicio),true);
-
-            if(auth()->user()->servicio == "Recurso de Alzada"){
-                $monto = $hss[0]["precio"] * auth()->user()->cantidad_alzada;
-            } else {
-                $monto = $hss[0]["precio"];
-            }
-
-            if( auth()->user()->servicio == "Española LMD" || auth()->user()->servicio == "Italiana" ) {
-                $desc = "Pago Fase Inicial: Investigación Preliminar y Preparatoria: " . $hss[0]["nombre"];
-                if (auth()->user()->servicio == "Española LMD"){
-                    if (auth()->user()->antepasados==0){
-                        $monto = 299;
-                    }
-                }
-                if (auth()->user()->servicio == "Italiana"){
-                    if (auth()->user()->antepasados==1){
-                        $desc = $desc . " + (Consulta Gratuita)";
-                    }
-                }
-            } elseif ( auth()->user()->servicio == "Gestión Documental" || $this->isAuditoriaProcedimientos(auth()->user()->servicio) ) {
-                $desc = $hss[0]["nombre"];
-            } elseif ($servicio[0]['tipov'] == 1) {
-                $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
-            } else {
-                $desc = "Análisis genealógico: " . $hss[0]["nombre"];
-            }
-
-            Compras::create([
-                'id_user' => auth()->user()->id,
-                'servicio_hs_id' => auth()->user()->servicio,
-                'descripcion' => $desc,
-                'pagado' => 0,
-                'monto' => $monto
-            ]);
+            abort_unless($servicio->first(), 404);
+            Compras::create(app(\App\Services\RegistrationPurchaseService::class)->data(auth()->user(), $servicio->first()));
 
             $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->get();
         }
@@ -2003,41 +1970,8 @@ class ClienteController extends Controller
         $cps = json_decode(json_encode($compras),true);
 
         if (count($cps)==0){
-            $hss = json_decode(json_encode($servicio),true);
-
-            if(auth()->user()->servicio == "Recurso de Alzada"){
-                $monto = $hss[0]["precio"] * auth()->user()->cantidad_alzada;
-            } else {
-                $monto = $hss[0]["precio"];
-            }
-
-            if( auth()->user()->servicio == "Española LMD" || auth()->user()->servicio == "Italiana" ) {
-                $desc = "Pago Fase Inicial: Investigación Preliminar y Preparatoria: " . $hss[0]["nombre"];
-                if (auth()->user()->servicio == "Española LMD"){
-                    if (auth()->user()->antepasados==0){
-                        $monto = 299;
-                    }
-                }
-                if (auth()->user()->servicio == "Italiana"){
-                    if (auth()->user()->antepasados==1){
-                        $desc = $desc . " + (Consulta Gratuita)";
-                    }
-                }
-            } elseif ( auth()->user()->servicio == "Gestión Documental" || $this->isAuditoriaProcedimientos(auth()->user()->servicio) ) {
-                $desc = $hss[0]["nombre"];
-            } elseif ($servicio[0]['tipov'] == 1) {
-                $desc = "Servicios para Vinculaciones: " . $hss[0]["nombre"];
-            } else {
-                $desc = "Análisis genealógico: " . $hss[0]["nombre"];
-            }
-
-            Compras::create([
-                'id_user' => auth()->user()->id,
-                'servicio_hs_id' => auth()->user()->servicio,
-                'descripcion' => $desc,
-                'pagado' => 0,
-                'monto' => $monto
-            ]);
+            abort_unless($servicio->first(), 404);
+            Compras::create(app(\App\Services\RegistrationPurchaseService::class)->data(auth()->user(), $servicio->first()));
 
             $compras = Compras::where('id_user', auth()->user()->id)->where('pagado', 0)->get();
         }
@@ -2518,7 +2452,7 @@ class ClienteController extends Controller
             DB::table('users')->where('id', auth()->user()->id)->update(['hs_id' => $idcontact]);
 
             $properties1 = [
-                'registro_pago' => $servicio[0]["precio"],
+                'registro_pago' => $monto,
                 'registro_cupon' => $cupones,
                 'transaction_id' => $cargos,
                 'hist_pago_registro' => $pago_registro
@@ -3232,7 +3166,7 @@ class ClienteController extends Controller
                     DB::table('users')->where('id', auth()->user()->id)->update(['hs_id' => $idcontact]);
 
                     $properties1 = [
-                        'registro_pago' => $servicio[0]["precio"],
+                        'registro_pago' => $monto,
                         'registro_cupon' => $cupones,
                         'transaction_id' => $cargos,
                         'hist_pago_registro' => $pago_registro
@@ -4096,11 +4030,8 @@ class ClienteController extends Controller
                             ->where('id', auth()->user()->id)
                             ->update(['hs_id' => $idcontact]);
 
-                        // Obtener el servicio correctamente (como en la función vieja)
-                        $servicioHS = Servicio::where('id_hubspot', auth()->user()->servicio)->first();
-
                         $properties1 = [
-                            'registro_pago' => $servicioHS ? $servicioHS->precio : $monto, // 👈 IGUAL que la función vieja
+                            'registro_pago' => $monto,
                             'registro_cupon' => $cupones,
                             'transaction_id' => $cargos,
                             'hist_pago_registro' => $pago_registro

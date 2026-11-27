@@ -28,15 +28,18 @@ class RegisterV2Controller extends Controller
 {
     public function index()
     {
+        $request = request();
         if (Auth::check()) {
             Auth::logout();
         }
 
-        return view('auth.registerv2', [
+        return response()->view('auth.registerv2', [
+            'registrationService' => $request->query('pay') !== '1'
+                ? $this->resolveServicioSolicitado((string) $request->query('servicio', '')) : null,
             'googleLoginEnabled' => filled(config('services.google.client_id'))
                 && filled(config('services.google.client_secret'))
                 && filled(config('services.google.redirect')),
-        ]);
+        ])->header('Cache-Control', 'private, no-store');
     }
 
     public function store(
@@ -201,7 +204,7 @@ class RegisterV2Controller extends Controller
                 'contrato'   => 0,
                 'cosready'  => 1,
             ]);
-            if ($meeting) {
+            if ($rol === 'cliente' && (int) $user->pay === 0) {
                 Compras::create($this->initialPurchaseData($user, $servicio, $input));
             }
 
@@ -356,42 +359,8 @@ class RegisterV2Controller extends Controller
 
     private function initialPurchaseData(User $user, Servicio $servicio, array $input): array
     {
-        $serviceCode = $servicio->id_hubspot;
-        $monto = (float) $servicio->precio;
-
-        if ($serviceCode === 'Recurso de Alzada') {
-            $cantidadAlzada = (int) ($input['cantidad_alzada'] ?? $user->cantidad_alzada ?? 1);
-            $monto = $monto * max(1, $cantidadAlzada);
-        }
-
-        if ($serviceCode === 'Española LMD' || $serviceCode === 'Italiana') {
-            $desc = 'Pago Fase Inicial: Investigación Preliminar y Preparatoria: ' . $servicio->nombre;
-
-            if ($serviceCode === 'Española LMD' && (int) $user->antepasados === 0) {
-                $monto = 99;
-            }
-
-            if ($serviceCode === 'Italiana' && (int) $user->antepasados === 1) {
-                $desc .= ' + (Consulta Gratuita)';
-            }
-        } elseif ($serviceCode === 'Gestión Documental' || $this->isAuditoriaProcedimientos($serviceCode)) {
-            $desc = $servicio->nombre;
-        } elseif ((int) $servicio->tipov === 1) {
-            $desc = 'Servicios para Vinculaciones: ' . $servicio->nombre;
-        } else {
-            $desc = 'Análisis genealógico: ' . $servicio->nombre;
-        }
-
-        return [
-            'id_user' => $user->id,
-            'servicio_id' => $servicio->id,
-            'servicio_hs_id' => $serviceCode,
-            'descripcion' => $desc,
-            'pagado' => 0,
-            'monto' => $monto,
-            'metadata' => isset($input['registration_contact'])
-                ? ['registration_contact' => $input['registration_contact']] : null,
-        ];
+        return app(\App\Services\RegistrationPurchaseService::class)->data($user, $servicio,
+            isset($input['registration_contact']) ? ['registration_contact' => $input['registration_contact']] : []);
     }
 
     private function isAuditoriaProcedimientos(?string $servicio): bool

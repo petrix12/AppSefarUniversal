@@ -154,17 +154,25 @@ class ServicioController extends Controller
         $precio = [];
 
         if ($resultados) {
-            $precio["precio"] = $resultados->precio;
+            $precio["precio"] = $resultados->currentPrice();
         } else {
             $precio["precio"] = 0;
         }
 
-        return response()->json($precio);
+        return response()->json($precio)->header('Cache-Control', 'private, no-store');
     }
 
     private function validatedData(Request $request, ?Servicio $servicio = null): array
     {
         $id = $servicio?->id;
+
+        if ($request->hasAny(['precio_temporal', 'precio_temporal_desde', 'precio_temporal_hasta'])) {
+            $request->merge([
+                'precio_temporal' => $request->filled('precio_temporal') ? $request->input('precio_temporal') : null,
+                'precio_temporal_desde' => $request->filled('precio_temporal_desde') ? $request->input('precio_temporal_desde') : null,
+                'precio_temporal_hasta' => $request->filled('precio_temporal_hasta') ? $request->input('precio_temporal_hasta') : null,
+            ]);
+        }
 
         $request->merge([
             'tipo' => $request->filled('tipo') ? $request->input('tipo') : 'servicio',
@@ -191,6 +199,10 @@ class ServicioController extends Controller
             ],
             'nombre' => ['required', 'string', 'max:255'],
             'precio' => ['required', 'integer', 'min:0'],
+            'precio_temporal' => ['nullable', 'required_with:precio_temporal_desde,precio_temporal_hasta', 'integer', 'min:1', 'lte:precio',
+                Rule::prohibitedIf($request->input('tipo') !== 'servicio' || $request->input('moneda') !== 'EUR')],
+            'precio_temporal_desde' => ['nullable', 'required_with:precio_temporal,precio_temporal_hasta', 'date_format:Y-m-d'],
+            'precio_temporal_hasta' => ['nullable', 'required_with:precio_temporal,precio_temporal_desde', 'date_format:Y-m-d', 'after_or_equal:precio_temporal_desde'],
             'tipov' => ['nullable', 'integer', 'in:0,1'],
             'categoria' => ['nullable', 'string', 'max:255'],
             'tipo' => ['required', 'string', Rule::in(['servicio', 'cos_fase', 'consulta', 'miscelaneo'])],
@@ -217,10 +229,19 @@ class ServicioController extends Controller
             'size' => 'El campo :attribute debe tener exactamente :size caracteres.',
             'in' => 'El valor seleccionado para :attribute no es válido.',
             'regex' => 'El Board ID de Monday debe contener solamente números.',
+            'precio_temporal.required_with' => 'Indica el precio temporal y las dos fechas, o deja los tres campos vacíos para quitarlo.',
+            'precio_temporal_desde.required_with' => 'Indica la fecha de inicio del precio temporal.',
+            'precio_temporal_hasta.required_with' => 'Indica el último día del precio temporal.',
+            'precio_temporal.lte' => 'El precio temporal no puede superar el precio habitual.',
+            'precio_temporal.prohibited' => 'Los precios temporales se aplican a servicios de registro en EUR.',
+            'precio_temporal_hasta.after_or_equal' => 'El último día debe ser igual o posterior a la fecha de inicio.',
         ], [
             'id_hubspot' => 'ID de HubSpot',
             'nombre' => 'nombre del servicio',
             'precio' => 'precio',
+            'precio_temporal' => 'precio temporal',
+            'precio_temporal_desde' => 'fecha de inicio',
+            'precio_temporal_hasta' => 'último día',
             'tipov' => 'servicio de vinculación',
             'categoria' => 'categoría',
             'tipo' => 'tipo',

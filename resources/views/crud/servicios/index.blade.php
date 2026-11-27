@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'Cupones')
+@section('title', 'Servicios')
 
 @section('content_header')
 
@@ -117,6 +117,9 @@
         </div>
     </div>
     <div class="card p-6">
+    @can('crud.servicios.edit')
+        <p><a href="{{ route('crud.servicios.promotions.index') }}" class="btn btn-primary">Programar precios temporales</a></p>
+    @endcan
     @if (!is_null($servicios))
         <table class="min-w-full divide-y divide-gray-200 w-100" id="example">
             <thead class="bg-gray-50">
@@ -181,6 +184,9 @@
                 </td>
                 <td class="">
                     {{ format_money($servicio->precio) }} {{ $servicio->moneda ?? 'EUR' }}
+                    @if($servicio->precio_temporal !== null)
+                        <small class="d-block {{ $servicio->hasTemporaryPrice() ? 'text-success' : 'text-muted' }}">Temporal: {{ format_money($servicio->precio_temporal) }} EUR · {{ $servicio->precio_temporal_desde?->format('d/m/Y') }}–{{ $servicio->precio_temporal_hasta?->format('d/m/Y') }}</small>
+                    @endif
                 </td>
                 <td class="text-center">
                     @if($servicio->visible_cliente)

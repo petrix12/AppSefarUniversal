@@ -699,6 +699,10 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
         Route::get('servicios/monday/groups', [ServicioController::class, 'mondayGroups'])
                 ->name('servicios.monday.groups')
                 ->middleware('can:crud.servicios.index');
+        Route::get('servicios/promociones', [\App\Http\Controllers\ServicioPromotionController::class, 'index'])
+                ->name('servicios.promotions.index')->middleware(['can:crud.servicios.index', 'can:crud.servicios.edit']);
+        Route::post('servicios/promociones', [\App\Http\Controllers\ServicioPromotionController::class, 'store'])
+                ->name('servicios.promotions.store')->middleware(['can:crud.servicios.index', 'can:crud.servicios.edit']);
         Route::resource('servicios', ServicioController::class)->names('servicios')
                 ->middleware('can:crud.servicios.index');
         Route::resource('reports', ReportController::class)->names('reports')

@@ -116,8 +116,11 @@ class ClientRouteAccessTest extends TestCase
             }
 
             Cache::flush();
+            // Provider detail routes need a valid ID to reach the permission check.
+            $parameters = ['provider' => 'stripe', 'account' => 'main'];
+            if ($route->getName() === 'admin.stripe.detail') $parameters['id'] = 'pi_test';
             $uri = '/'.preg_replace_callback('/\{([^}]+)\}/',
-                fn ($parameter) => ['provider'=>'stripe','account'=>'main'][$parameter[1]] ?? '999999', $route->uri());
+                fn ($parameter) => $parameters[$parameter[1]] ?? '999999', $route->uri());
             $response = $this->json($route->methods()[0], $uri);
             $this->assertSame(403, $response->status(), $route->methods()[0].' '.$uri);
             $denied++;

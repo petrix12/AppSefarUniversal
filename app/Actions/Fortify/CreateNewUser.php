@@ -98,6 +98,10 @@ class CreateNewUser implements CreatesNewUsers
             'cosready' => 1
         ]);
 
+        if ($rol === 'cliente' && (int) $user->pay === 0) {
+            Compras::create(app(\App\Services\RegistrationPurchaseService::class)->data($user, $servicio));
+        }
+
         if($input['pay']==='1'){
 
             $compra = Compras::create([

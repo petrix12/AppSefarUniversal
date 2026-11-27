@@ -2,6 +2,8 @@
     $current = $servicio ?? null;
 @endphp
 
+@include('crud.servicios.partials.temporary-price', ['servicio' => $current])
+
 <div class="row">
     <div class="col-md-3 py-2">
         <label class="block text-sm font-medium text-gray-700">Tipo</label>

@@ -21,7 +21,7 @@ class ServiceStoreController extends Controller
             ->reject(fn (Servicio $servicio) => $servicio->tipo === 'consulta')
             ->groupBy(fn (Servicio $servicio) => $servicio->categoria ?: 'general');
 
-        return view('services.store.index', compact('services'));
+        return response()->view('services.store.index', compact('services'))->header('Cache-Control', 'private, no-store');
     }
 
     public function show(Servicio $servicio)
@@ -33,7 +33,7 @@ class ServiceStoreController extends Controller
             ? $this->availableSlots($servicio)
             : [];
 
-        return view('services.store.show', compact('servicio', 'slotsByCalendar'));
+        return response()->view('services.store.show', compact('servicio', 'slotsByCalendar'))->header('Cache-Control', 'private, no-store');
     }
 
     public function purchase(Request $request, Servicio $servicio)
@@ -59,6 +59,7 @@ class ServiceStoreController extends Controller
         DB::transaction(function () use ($servicio, $slot) {
             $description = $this->purchaseDescription($servicio, $slot);
 
+            $price = $servicio->priceSnapshot();
             $compra = Compras::create([
                 'id_user' => auth()->id(),
                 'servicio_id' => $servicio->id,
@@ -66,10 +67,11 @@ class ServiceStoreController extends Controller
                 'servicio_hs_id' => $servicio->id_hubspot,
                 'descripcion' => $description,
                 'pagado' => 0,
-                'monto' => $servicio->precio,
+                'monto' => $price['unit_price'],
                 'metadata' => [
                     'service_type' => $servicio->tipo,
                     'category' => $servicio->categoria,
+                    'pricing' => $price + ['quantity' => 1],
                 ],
             ]);
 

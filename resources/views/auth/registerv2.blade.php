@@ -96,6 +96,13 @@
             @endif
         </h2>
 
+        @if($registrationService ?? null)
+            <div class="google-auth-notice">
+                <p class="mb-1">Registro · {{ $registrationService->nombre }}</p>
+                @include('services.partials.price', ['servicio' => $registrationService])
+            </div>
+        @endif
+
         @if(session('status'))
             <div class="google-auth-notice">{{ session('status') }}</div>
         @endif
