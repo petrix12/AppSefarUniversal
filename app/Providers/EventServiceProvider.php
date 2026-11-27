@@ -20,6 +20,7 @@ class EventServiceProvider extends ServiceProvider
      * @var array
      */
     protected $listen = [
+        \Illuminate\Auth\Events\Login::class => [\App\Listeners\CompleteGoogleAccountLink::class],
         \Illuminate\Mail\Events\MessageSending::class => [\App\Listeners\PreventBlockedClientDelivery::class.'@mail'],
         \Illuminate\Notifications\Events\NotificationSending::class => [\App\Listeners\PreventBlockedClientDelivery::class.'@notification'],
         Registered::class => [

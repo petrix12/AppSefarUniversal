@@ -10,12 +10,16 @@ use Illuminate\Support\Facades\Route;
 // Explicit public entry points. Internal application routes belong in web.php.
 Route::get('/registerv2', [RegisterV2Controller::class, 'index'])->name('register.v2.form');
 Route::post('/registerv2', [RegisterV2Controller::class, 'store'])->name('register.v2');
+Route::get('/auth/google', [GoogleAuthenticationController::class, 'loginRedirect'])
+    ->middleware(['guest', 'throttle:10,1'])->name('login.google.redirect');
 Route::get('/registerv2/google', [GoogleAuthenticationController::class, 'redirect'])
     ->middleware(['guest', 'throttle:10,1'])
     ->name('register.v2.google.redirect');
 Route::get('/registerv2/google/callback', [GoogleAuthenticationController::class, 'callback'])
     ->middleware(['guest', 'throttle:10,1'])
     ->name('register.v2.google.callback');
+Route::get('/registerv2/google/cancelar', [GoogleAuthenticationController::class, 'cancel'])
+    ->middleware('guest')->name('register.v2.google.cancel');
 
 Route::get('/registro-coordinador', [ProveedorRegisterController::class, 'create'])->name('proveedor.register');
 Route::post('/registro-coordinador', [ProveedorRegisterController::class, 'store'])->name('proveedor.register.store');

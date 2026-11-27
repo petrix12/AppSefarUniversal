@@ -36,7 +36,7 @@ class User extends Authenticatable
         'other' => 'Otro',
     ];
 
-    protected $guarded = ['is_superadmin'];
+    protected $guarded = ['is_superadmin', 'google_id'];
 
     protected $hidden = [
         'password',
@@ -44,6 +44,7 @@ class User extends Authenticatable
         'remember_token',
         'two_factor_recovery_codes',
         'two_factor_secret',
+        'google_id',
     ];
 
     protected $casts = [

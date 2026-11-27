@@ -35,6 +35,11 @@
             </script>
         @endif
 
+        @if(app(\App\Services\GoogleAuthenticationService::class)->configured())
+            <x-google-auth-button :href="route('login.google.redirect')" label="Entrar con Google" />
+            <div class="sefar-google-divider">o entra con tu correo</div>
+        @endif
+
         <form class="sefar-login-form" method="POST" action="{{ route('login') }}">
             @csrf
 

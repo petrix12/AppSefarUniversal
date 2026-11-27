@@ -43,7 +43,7 @@ class RouteAuthenticationCoverageTest extends TestCase
         $public = [
             'login', 'forgot-password', 'reset-password', 'reset-password/{token}',
             'two-factor-challenge', 'sanctum/csrf-cookie', 'terms-of-service', 'privacy-policy',
-            'registerv2', 'registerv2/google', 'registerv2/google/callback', 'registro-coordinador',
+            'registerv2', 'registerv2/google', 'registerv2/google/callback', 'registerv2/google/cancelar', 'auth/google', 'registro-coordinador',
             'api/user/check-email', 'gracias', 'noservices',
             'banca-online-2026', 'banca-online-2026/cliente', 'banca-online-2026/pago/{token}',
             'banca-online-2026/pago/{token}/stripe', 'banca-online-2026/gracias/{token}',
@@ -54,6 +54,7 @@ class RouteAuthenticationCoverageTest extends TestCase
         // These handlers verify provider signatures or existing integration tokens.
         $providerAuthenticated = [
             'api/marketing/ses-events', 'api/stripe/banca-online/webhook', 'api/webhooks/monday', 'api/webhooks/kalendia/stripe', 'api/webhooks/kalendia',
+            'api/webhooks/{provider}', 'api/webhooks/stripe/admin/{account}',
         ];
         $unprotected = [];
 

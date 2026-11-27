@@ -23,6 +23,7 @@ use Laravel\Jetstream\Jetstream;
 use App\Services\HubspotService;
 use App\Services\MondayRegistrationService;
 use App\Services\LeadConversionService;
+use App\Services\GoogleAuthenticationService;
 
 class RegisterV2Controller extends Controller
 {
@@ -33,12 +34,16 @@ class RegisterV2Controller extends Controller
             Auth::logout();
         }
 
+        $google = app(GoogleAuthenticationService::class);
+        $registrationServices = ! $request->filled('servicio') && \Illuminate\Support\Facades\Schema::hasTable('servicios')
+            ? Servicio::orderBy('nombre')->get()->filter(fn ($service) => ($service->tipo ?? 'servicio') === 'servicio'
+                && ($service->activo ?? true) && ($service->moneda ?? 'EUR') === 'EUR' && $service->precio > 0)->values() : collect();
         return response()->view('auth.registerv2', [
+            'googleRegistration' => $google->pendingRegistration($request) ?? [],
+            'registrationServices' => $registrationServices,
             'registrationService' => $request->query('pay') !== '1'
                 ? $this->resolveServicioSolicitado((string) $request->query('servicio', '')) : null,
-            'googleLoginEnabled' => filled(config('services.google.client_id'))
-                && filled(config('services.google.client_secret'))
-                && filled(config('services.google.redirect')),
+            'googleLoginEnabled' => $google->configured(),
         ])->header('Cache-Control', 'private, no-store');
     }
 
@@ -53,7 +58,17 @@ class RegisterV2Controller extends Controller
         $passport = $input['passport'] ?? null;
 
         try {
+            $google = app(GoogleAuthenticationService::class);
+            $googleProfile = $google->registrationForSubmission($request);
+            if ($googleProfile) {
+                $input['pay'] = '0'; $input['rol'] = $rol = 'cliente';
+                $input['email'] = $googleProfile['email'];
+            }
             $selectedService = $this->resolveServicioSolicitado((string) ($input['servicio'] ?? ''));
+            if ($googleProfile && (! $selectedService || ($selectedService->tipo ?? 'servicio') !== 'servicio'
+                || ! ($selectedService->activo ?? true) || ($selectedService->moneda ?? 'EUR') !== 'EUR' || $selectedService->precio <= 0)) {
+                throw ValidationException::withMessages(['servicio' => 'Selecciona un servicio de registro disponible.']);
+            }
             $meeting = $selectedService
                 ? app(\App\Services\RegistrationMeetingService::class)->contextForService($selectedService) : null;
             if ($meeting) {
@@ -73,6 +88,9 @@ class RegisterV2Controller extends Controller
                     ->first();
 
                 if ($userCheck) {
+                    if ($googleProfile) {
+                        throw ValidationException::withMessages(['passport' => 'Ya existe una cuenta con estos datos. Inicia sesión en esa cuenta para continuar.']);
+                    }
                     // Never replace another account's appointment or service
                     // through the public form; existing clients must sign in.
                     if ($meeting) {
@@ -176,7 +194,7 @@ class RegisterV2Controller extends Controller
                 ]);
             }
 
-            $user = User::create([
+            $userAttributes = [
                 // básicos
                 'name'       => $input['nombres'] . ' ' . $input['apellidos'],
                 'email'      => $input['email'],
@@ -203,10 +221,16 @@ class RegisterV2Controller extends Controller
                 // contrato
                 'contrato'   => 0,
                 'cosready'  => 1,
-            ]);
-            if ($rol === 'cliente' && (int) $user->pay === 0) {
-                Compras::create($this->initialPurchaseData($user, $servicio, $input));
-            }
+            ];
+            $user = DB::transaction(function () use ($userAttributes, $googleProfile, $google, $rol, $servicio, $input) {
+                $user = User::create($userAttributes);
+                if ($googleProfile) $google->attach($user, $googleProfile);
+                if ($rol === 'cliente' && (int) $user->pay === 0) {
+                    Compras::create($this->initialPurchaseData($user, $servicio, $input));
+                }
+                return $user;
+            });
+            if ($googleProfile) $request->session()->forget(GoogleAuthenticationService::REGISTRATION);
 
             if (!empty($input['tiene_antepasados_espanoles'])) {
                 $userData['tiene_antepasados_espanoles'] = $input['tiene_antepasados_espanoles'] == '1' ? 'Si' : 'No';
@@ -301,7 +325,7 @@ class RegisterV2Controller extends Controller
             // -------------------------
             // NOTIFICACIONES
             // -------------------------
-            Mail::to($user->email)->send(new ClaveGeneradaMail($user, $password));
+            if (! $googleProfile) Mail::to($user->email)->send(new ClaveGeneradaMail($user, $password));
 
             if ($rol === 'cliente') {
                 //Mail::to($user->email)->send(new RegistroCliente($user));
@@ -325,11 +349,12 @@ class RegisterV2Controller extends Controller
             // AUTOLOGIN
             // -------------------------
             Auth::login($user);
+            $request->session()->regenerate();
 
             // -------------------------
             // REDIRECCIÓN
             // -------------------------
-            return view('redirect', ['redirect_url' => 'https://app.sefaruniversal.com/']);
+            return $googleProfile ? redirect()->route('inicio') : view('redirect', ['redirect_url' => 'https://app.sefaruniversal.com/']);
 
         } catch (ValidationException $e) {
             // Depuración: ver errores exactos
