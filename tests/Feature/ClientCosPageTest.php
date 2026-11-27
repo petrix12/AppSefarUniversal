@@ -26,7 +26,7 @@ class ClientCosPageTest extends TestCase
         $this->mock(HubspotService::class);
         $this->mock(TeamleaderService::class);
         $this->mock(CosHelperService::class, function ($mock) {
-            $mock->shouldReceive('get')->andReturn(['Española Sefardi' => []]);
+            $mock->shouldReceive('get')->andReturn(['Española Sefardi' => [], 'Portuguesa Sefardi' => []]);
         });
         Schema::create('negocios', function (Blueprint $table) {
             $table->id();
@@ -51,6 +51,25 @@ class ClientCosPageTest extends TestCase
         $page = app(ClientCosSnapshotService::class)->forPage($user);
 
         $this->assertSame($user->arraycos, $page['cos']);
+        $this->assertSame(0, DB::table('jobs')->count());
+        Http::assertNothingSent();
+    }
+
+    public function test_a_cached_pending_process_is_presented_first_without_syncing_or_rewriting_the_snapshot(): void
+    {
+        $user = $this->client();
+        $saved = [
+            ['servicio' => 'Española Sefardi', 'warning' => null, 'currentStepName' => '¡Nacionalidad concedida!'],
+            ['servicio' => 'Portuguesa Sefardi', 'warning' => 'Solicita tu Auditoría de Expedientes'],
+        ];
+        $user->arraycos = $saved;
+        $user->arraycos_expire = now()->addDay();
+        Cache::put('cos.page_refreshed.' . $user->id, true, 300);
+
+        $page = app(ClientCosSnapshotService::class)->forPage($user);
+
+        $this->assertSame([$saved[1], $saved[0]], $page['cos']);
+        $this->assertSame($saved, $user->arraycos);
         $this->assertSame(0, DB::table('jobs')->count());
         Http::assertNothingSent();
     }

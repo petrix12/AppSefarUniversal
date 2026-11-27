@@ -1,6 +1,6 @@
 @php($meetingSummary = app(\App\Services\KalendiaAppointmentService::class)->summary($user))
 <section class="card mb-4" aria-labelledby="cos-meetings-title">
-    <div class="card-header"><h2 id="cos-meetings-title" class="h5 mb-0">Reuniones y consultas</h2></div>
+    <div class="card-header"><h2 id="cos-meetings-title" class="h5 mb-0">Mi agenda</h2></div>
     <div class="card-body">
         @include('kalendia.partials.timezone')
         <strong>{{ $meetingSummary['status'] }}</strong>

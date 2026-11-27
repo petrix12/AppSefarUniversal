@@ -45,10 +45,24 @@ class CosPresentation
 
     public static function statuses(array $statuses): array
     {
-        return array_map(function ($status) {
+        $statuses = array_map(function ($status) {
             return is_array($status) && str_starts_with(mb_strtolower(trim($status['servicio'] ?? '')), 'portuguesa sefardi')
                 ? self::portugueseLabels($status)
                 : $status;
         }, $statuses);
+
+        // Apply this when presenting cached or newly calculated statuses alike.
+        // Generic service offers also appear on completed cases; only the COS
+        // warning indicates that this process currently needs client attention.
+        usort($statuses, fn ($a, $b) => self::hasPendingAction($b) <=> self::hasPendingAction($a));
+
+        return $statuses;
+    }
+
+    private static function hasPendingAction(mixed $status): bool
+    {
+        return is_array($status)
+            && is_string($status['warning'] ?? null)
+            && trim(strip_tags($status['warning'])) !== '';
     }
 }

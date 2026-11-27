@@ -4,7 +4,7 @@
         <button type="button" class="cos-area-button" data-cos-area="profile" aria-pressed="false"><i class="far fa-user" aria-hidden="true"></i><span>Perfil</span></button>
         <button type="button" class="cos-area-button" data-cos-area="case" aria-pressed="false"><i class="far fa-folder-open" aria-hidden="true"></i><span>Expediente</span></button>
         <button type="button" class="cos-area-button" data-cos-area="finance" aria-pressed="false"><i class="fas fa-receipt" aria-hidden="true"></i><span>Finanzas</span></button>
-        <button type="button" class="cos-area-button" data-cos-area="meetings" aria-pressed="false"><i class="far fa-calendar-alt" aria-hidden="true"></i><span>Reuniones y consultas</span></button>
+        <button type="button" class="cos-area-button" data-cos-area="meetings" aria-pressed="false"><i class="far fa-calendar-alt" aria-hidden="true"></i><span>Mi agenda</span></button>
         <button type="button" class="cos-area-button" data-cos-area="internal" aria-pressed="false"><i class="fas fa-briefcase" aria-hidden="true"></i><span>Gestión interna</span></button>
     </nav>
     <p class="cos-workspace-area-label" data-cos-area-label hidden></p>
@@ -74,7 +74,7 @@
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="meetings-tab" data-bs-toggle="tab" data-bs-target="#meetings" type="button" role="tab" aria-controls="meetings" aria-selected="false">
-                        Reuniones y consultas
+                        Mi agenda
                     </button>
                 </li>
                 @if($cosViewRoleId == 5)
