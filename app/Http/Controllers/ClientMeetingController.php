@@ -79,6 +79,12 @@ class ClientMeetingController extends Controller
     {
         abort_unless($request->user()->hasRole('Cliente'), 403);
         $result = $queue->enqueue($request->user(), $purchase, $request->only(['date', 'slot', 'timezone']));
+        if ($request->expectsJson()) return response()->json([
+            'message' => $result === null ? 'Esta consulta ya tiene una reserva registrada.'
+                : ($result->status === KalendiaBookingRequest::REVIEW ? 'Tu solicitud está registrada y requiere revisión del equipo.'
+                    : 'Recibimos tu solicitud de fecha y hora. Puedes consultar su estado en Mi agenda.'),
+            'next_url' => route('clientes.meetings'),
+        ], $result === null ? 200 : 202)->header('Cache-Control', 'private, no-store');
         $redirect = redirect()->route('clientes.meetings', [], 303);
         if ($result === null) {
             return $redirect->with('info', 'Esta reunión ya está reservada.');

@@ -1,12 +1,14 @@
 (function () {
     'use strict';
-    document.addEventListener('DOMContentLoaded', function () {
-        const form = document.querySelector('[data-registration-agenda]');
-        if (!form) return;
+    function init(root = document) {
+        const form = root.querySelector('[data-registration-agenda]');
+        if (!form || form.dataset.agendaInitialized) return () => {};
+        form.dataset.agendaInitialized = '1';
         const date = form.querySelector('[name="date"]');
         const slot = form.querySelector('[name="slot"]');
         const status = form.querySelector('[data-agenda-status]');
         const submit = form.querySelector('[data-agenda-submit]');
+        submit.dataset.idleLabel = submit.textContent;
         let pending;
         let sequence = 0;
         let picker;
@@ -69,24 +71,39 @@
                     day.setAttribute('aria-disabled', day.classList.contains('flatpickr-disabled') ? 'true' : 'false');
                 },
                 onOpen: function () { picker.set('minDate', today()); },
-                onChange: load
+                onChange: load,
+                appendTo: form.closest('.modal') || undefined
             });
             picker.altInput.id = 'meeting-date-display';
             picker.altInput.setAttribute('aria-describedby', 'meeting-date-help');
             form.querySelector('label[for="meeting-date"]').htmlFor = picker.altInput.id;
         } else date.addEventListener('change', load);
-        slot.addEventListener('change', function () { submit.disabled = !slot.value || form.dataset.bookingReady !== '1'; });
-        document.addEventListener('sefar:meeting-timezone', function () {
+        const onSlot = () => { submit.disabled = !slot.value || form.dataset.bookingReady !== '1'; };
+        slot.addEventListener('change', onSlot);
+        const onTimezone = function () {
             pending?.abort(); sequence++;
             form.querySelector('[name="timezone"]').value = timezone();
             date.min = today(); if (picker) picker.set('minDate', today());
             if (date.value) load(); else reset('Selecciona primero una fecha');
-        });
-        form.addEventListener('submit', function (event) {
+        };
+        document.addEventListener('sefar:meeting-timezone', onTimezone);
+        const onSubmit = function (event) {
             if (!slot.value || slot.disabled || form.dataset.bookingReady !== '1') { event.preventDefault(); return; }
             submit.disabled = true;
             submit.textContent = 'Enviando solicitud…';
-        });
+        };
+        form.addEventListener('submit', onSubmit);
         if (date.value) load();
-    });
+        return () => {
+            pending?.abort(); sequence++;
+            document.removeEventListener('sefar:meeting-timezone', onTimezone);
+            date.removeEventListener('change', load);
+            slot.removeEventListener('change', onSlot);
+            form.removeEventListener('submit', onSubmit);
+            if (picker) picker.destroy();
+            delete form.dataset.agendaInitialized;
+        };
+    }
+    window.SefarInitRegistrationAgenda = init;
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => init()); else init();
 })();

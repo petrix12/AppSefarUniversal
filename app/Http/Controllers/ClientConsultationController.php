@@ -42,12 +42,17 @@ class ClientConsultationController extends Controller
     {
         $data = $request->validate(['checkout_key' => ['required', 'uuid']]);
         try { $order = $checkout->order($request->user(), $offer, $data['checkout_key']); }
-        catch (KalendiaApiException) { return back()->withErrors(['consultation' => 'No podemos comprobar la agenda en este momento. Tu tarjeta no se ha cobrado.']); }
+        catch (KalendiaApiException) {
+            if ($request->expectsJson()) return response()->json(['message' => 'No podemos comprobar la agenda en este momento. Tu tarjeta no se ha cobrado.'], 503);
+            return back()->withErrors(['consultation' => 'No podemos comprobar la agenda en este momento. Tu tarjeta no se ha cobrado.']);
+        }
+        if ($request->expectsJson()) return response()->json($this->checkoutData($order))->header('Cache-Control', 'private, no-store');
         return redirect()->route('clientes.consultations.checkout', $order);
     }
     public function checkout(Request $request, KalendiaConsultationOrder $order, KalendiaConsultationCheckout $checkout)
     {
         $this->own($request, $order, $checkout);
+        if ($request->expectsJson()) return response()->json($this->checkoutData($order))->header('Cache-Control', 'private, no-store');
         if ($order->status === 'paid') return redirect()->route('clientes.consultations.reserve', $order->compra_id);
         return response()->view('kalendia.client.checkout', compact('order'))->header('Cache-Control', 'private, no-store')->header('Referrer-Policy', 'no-referrer');
     }
@@ -60,8 +65,16 @@ class ClientConsultationController extends Controller
     {
         $this->own($request, $order, $checkout);
         try { $checkout->verify($order); }
-        catch (\Throwable) { return redirect()->route('clientes.consultations.checkout', $order)->withErrors(['payment' => 'Estamos comprobando el pago. Puedes consultar esta misma compra sin volver a pagar.']); }
+        catch (\Throwable) {
+            if ($request->expectsJson()) return response()->json(['paid' => false, 'message' => 'Estamos comprobando el pago. Puedes consultar esta misma compra sin volver a pagar.'], 503)->header('Cache-Control', 'private, no-store');
+            return redirect()->route('clientes.consultations.checkout', $order)->withErrors(['payment' => 'Estamos comprobando el pago. Puedes consultar esta misma compra sin volver a pagar.']);
+        }
         $order->refresh();
+        if ($request->expectsJson()) return response()->json([
+            'paid' => $order->status === 'paid',
+            'next_url' => $order->status === 'paid' ? route('clientes.consultations.reserve', $order->compra_id) : null,
+            'message' => $order->status === 'paid' ? 'Pago confirmado. Elige la fecha y la hora.' : 'El pago todavía no está confirmado. Comprueba esta misma compra antes de volver a pagar.',
+        ])->header('Cache-Control', 'private, no-store');
         return $order->status === 'paid' ? redirect()->route('clientes.consultations.reserve', $order->compra_id)
             : redirect()->route('clientes.consultations.checkout', $order)->with('success', 'El pago todavía no está confirmado.');
     }
@@ -70,6 +83,13 @@ class ClientConsultationController extends Controller
         $checkout->assertClient($request->user());
         abort_unless((int) $order->user_id === (int) $request->user()->id, 404);
     }
+    private function checkoutData(KalendiaConsultationOrder $order): array
+    {
+        return ['paid' => $order->status === 'paid', 'checkout_url' => route('clientes.consultations.checkout', $order),
+            'complete_url' => route('clientes.consultations.complete', $order),
+            'next_url' => $order->status === 'paid' ? route('clientes.consultations.reserve', $order->compra_id) : null,
+            'html' => $order->status === 'paid' ? null : view('kalendia.client.partials.payment-form', compact('order'))->render()];
+    }
     public function reserve(Request $request, int $purchase, KalendiaRegistrationBookingService $service)
     {
         $purchase = $service->purchase($request->user(), $purchase);
@@ -77,11 +97,15 @@ class ClientConsultationController extends Controller
         $schemaReady = Schema::hasTable('kalendia_bookings');
         $queueReady = Schema::hasTable('kalendia_booking_requests');
         $booking = $schemaReady ? KalendiaBooking::where('compra_id', $purchase->id)->first() : null;
-        if ($booking?->remote_id) return redirect()->route('clientes.meetings');
+        if ($booking?->remote_id) {
+            if ($request->expectsJson()) return response()->json(['stage' => 'complete', 'message' => 'Tu consulta ya tiene una reserva registrada.', 'next_url' => route('clientes.meetings')])->header('Cache-Control', 'private, no-store');
+            return redirect()->route('clientes.meetings');
+        }
         $queuedRequest = $queueReady ? KalendiaBookingRequest::where('user_id', $request->user()->id)
             ->where('compra_id', $purchase->id)->first() : null;
         if ($queuedRequest && in_array($queuedRequest->status, KalendiaBookingRequest::ACTIVE_STATUSES, true)) {
-            return redirect()->route('clientes.meetings')->with('info', 'Tu solicitud de consulta está en curso. Puedes consultar su estado en Mis reuniones.');
+            if ($request->expectsJson()) return response()->json(['stage' => 'complete', 'message' => 'Tu solicitud está registrada. Puedes seguir su estado en Mi agenda.', 'next_url' => route('clientes.meetings')])->header('Cache-Control', 'private, no-store');
+            return redirect()->route('clientes.meetings')->with('info', 'Tu solicitud de consulta está en curso. Puedes consultar su estado en Mi agenda.');
         }
         $purchases = collect([$purchase]); $remoteService = null; $agendaUnavailable = ! $schemaReady || ! $queueReady;
         try {
@@ -91,7 +115,9 @@ class ClientConsultationController extends Controller
         if ($booking && in_array($booking->status, ['processing','uncertain'], true)) {
             $bookingReady = $queueReady && app(\App\Services\KalendiaApi::class)->configured();
         }
-        $continueUrl = route('clientes.meetings'); $continueLabel = 'Volver a mis reuniones'; $today = now('America/Bogota')->format('Y-m-d');
-        return response()->view('clientes.meeting', compact('purchase', 'purchases', 'booking', 'queuedRequest', 'remoteService', 'agendaUnavailable', 'bookingReady', 'continueUrl', 'continueLabel', 'today'))->header('Cache-Control', 'private, no-store');
+        $continueUrl = route('clientes.meetings'); $continueLabel = 'Volver a Mi agenda'; $today = now('America/Bogota')->format('Y-m-d');
+        $data = compact('purchase', 'purchases', 'booking', 'queuedRequest', 'remoteService', 'agendaUnavailable', 'bookingReady', 'continueUrl', 'continueLabel', 'today');
+        if ($request->expectsJson()) return response()->json(['stage' => 'schedule', 'html' => view('kalendia.client.partials.consultation-agenda', $data)->render()])->header('Cache-Control', 'private, no-store');
+        return response()->view('clientes.meeting', $data)->header('Cache-Control', 'private, no-store');
     }
 }

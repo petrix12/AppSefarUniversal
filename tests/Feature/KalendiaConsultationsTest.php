@@ -524,6 +524,109 @@ class KalendiaConsultationsTest extends TestCase
             ->assertDontSee('sk_test_fake')->assertDontSee('fake-token')->assertDontSee('whsec_fake');
         $this->assertSame([],$this->stripe->creates);
     }
+    public function test_catalog_opens_an_escaped_payment_fragment_and_reopening_reuses_the_order(): void
+    {
+        $user = $this->client(); $offer = $this->offer(); $key = (string) Str::uuid();
+        $offer->update(['name' => 'Consulta <script>alert(1)</script>']);
+        $this->actingAs($user)->get(route('clientes.consultations'))->assertOk()
+            ->assertSee('consultation-payment-modal')->assertSee('2. Elegir fecha y hora');
+        $response = $this->postJson(route('clientes.consultations.purchase', $offer), ['checkout_key' => $key])
+            ->assertOk()->assertJsonPath('paid', false)->assertJsonPath('next_url', null);
+        $html = $response->json('html');
+        $this->assertStringContainsString('data-consultation-payment', $html);
+        $this->assertStringContainsString('Después de confirmar el pago elegirás la fecha y la hora', $html);
+        $this->assertStringContainsString('&lt;script&gt;alert(1)&lt;/script&gt;', $html);
+        foreach (['<!DOCTYPE', '<script>alert(1)</script>', 'name="date"', 'sk_test_fake', 'fake-token', 'whsec_fake'] as $private) {
+            $this->assertStringNotContainsString($private, $html);
+        }
+        $this->postJson(route('clientes.consultations.purchase', $offer), ['checkout_key' => $key])->assertOk()
+            ->assertJsonPath('checkout_url', $response->json('checkout_url'));
+        $this->getJson($response->json('checkout_url'))->assertOk()->assertJsonPath('paid', false);
+        $this->assertDatabaseCount('kalendia_consultation_orders', 1);
+        $this->assertDatabaseCount('compras', 0); $this->assertSame([], $this->stripe->creates);
+    }
+    public function test_modal_does_not_offer_dates_based_on_a_browser_payment_claim(): void
+    {
+        $user = $this->client(); $order = $this->order($user);
+        $this->actingAs($user)->getJson(route('clientes.consultations.complete', $order).'?paid=true&redirect_status=succeeded')
+            ->assertOk()->assertJsonPath('paid', false)->assertJsonPath('next_url', null);
+        $this->postJson(route('clientes.consultations.intent', $order))->assertOk();
+        $this->getJson(route('clientes.consultations.complete', $order))->assertOk()
+            ->assertJsonPath('paid', false)->assertJsonPath('next_url', null);
+        $this->getJson(route('clientes.consultations.reserve', 999))->assertNotFound();
+        $this->assertDatabaseCount('compras', 0); $this->assertDatabaseCount('facturas', 0);
+        $this->assertCount(1, $this->stripe->creates);
+    }
+    public function test_modal_payment_then_date_and_time_creates_one_receipt_and_one_booking_request(): void
+    {
+        $user = $this->client(); $offer = $this->offer(); $key = (string) Str::uuid();
+        $this->actingAs($user)->postJson(route('clientes.consultations.purchase', $offer), ['checkout_key' => $key])->assertOk();
+        $order = KalendiaConsultationOrder::firstOrFail();
+        $this->postJson(route('clientes.consultations.intent', $order))->assertOk();
+        $this->stripe->intents['pi_fake']['status'] = 'succeeded';
+        $this->stripe->intents['pi_fake']['amount_received'] = 12550;
+        $complete = $this->getJson(route('clientes.consultations.complete', $order))->assertOk()->assertJsonPath('paid', true);
+        $purchase = Compras::firstOrFail(); $invoice = Factura::firstOrFail();
+        $agenda = $this->getJson($complete->json('next_url'))->assertOk()->assertJsonPath('stage', 'schedule');
+        foreach (['name="date"', 'name="slot"', 'name="timezone"', 'Pago confirmado', route('viewcomprobantecliente', $invoice)] as $text) {
+            $this->assertStringContainsString($text, $agenda->json('html'));
+        }
+        $this->assertStringNotContainsString('data-consultation-payment', $agenda->json('html'));
+        $this->get(route('clientes.consultations.complete', $order))->assertRedirect($complete->json('next_url'));
+        $this->get($complete->json('next_url'))->assertOk()->assertSee('Tu consulta ya está pagada')
+            ->assertDontSee('Esta reunión está incluida');
+        $this->postJson(route('clientes.consultations.purchase', $offer), ['checkout_key' => $key])->assertOk()
+            ->assertJsonPath('paid', true)->assertJsonPath('html', null)->assertJsonPath('next_url', $complete->json('next_url'));
+        $availability = $this->getJson(route('clientes.meeting.availability', [
+            'purchase' => $purchase->id, 'date' => '2027-03-19', 'timezone' => 'America/Bogota',
+        ]))->assertOk()->assertJsonPath('slots.0.display_time', '10:00');
+        $choice = ['date' => '2027-03-19', 'slot' => $availability->json('slots.0.key'), 'timezone' => 'America/Bogota'];
+        for ($i = 0; $i < 2; $i++) {
+            $this->postJson(route('clientes.meeting.book', $purchase), $choice)->assertStatus(202)
+                ->assertJsonPath('next_url', route('clientes.meetings'));
+        }
+        $this->getJson($complete->json('next_url'))->assertOk()->assertJsonPath('stage', 'complete')
+            ->assertJsonPath('message', 'Tu solicitud está registrada. Puedes seguir su estado en Mi agenda.');
+        $this->assertDatabaseCount('kalendia_booking_requests', 1);
+        $this->assertDatabaseCount('kalendia_bookings', 0);
+        $this->assertDatabaseCount('compras', 1); $this->assertDatabaseCount('facturas', 1);
+        $this->assertCount(1, $this->stripe->creates); $this->assertSame([], $this->mutations);
+    }
+    public function test_modal_fragments_and_booking_remain_private_to_the_paying_client(): void
+    {
+        $order = $this->order($this->client()); $this->pay($order);
+        $other = User::factory()->create(['pay' => 2, 'contrato' => 1]);
+        $this->actingAs($other)->getJson(route('clientes.consultations.checkout', $order))->assertNotFound();
+        $this->getJson(route('clientes.consultations.complete', $order))->assertNotFound();
+        $this->getJson(route('clientes.consultations.reserve', $order->fresh()->compra_id))->assertNotFound();
+        $this->postJson(route('clientes.meeting.book', $order->fresh()->compra_id), [
+            'date' => '2027-03-19', 'slot' => str_repeat('a', 64),
+        ])->assertNotFound();
+        $this->assertDatabaseCount('kalendia_booking_requests', 0);
+        $this->assertDatabaseCount('compras', 1); $this->assertCount(1, $this->stripe->creates);
+    }
+    public function test_unavailable_agenda_after_payment_keeps_the_receipt_without_requesting_another_charge(): void
+    {
+        $user = $this->client(); $order = $this->order($user); $this->pay($order);
+        $this->failServices = true; cache()->flush();
+        $response = $this->actingAs($user)->getJson(route('clientes.consultations.reserve', $order->fresh()->compra_id))
+            ->assertOk()->assertJsonPath('stage', 'schedule');
+        $this->assertStringContainsString('Tu pago está confirmado. La agenda no está disponible ahora', $response->json('html'));
+        $this->assertStringContainsString(route('viewcomprobantecliente', Factura::first()), $response->json('html'));
+        $this->assertStringNotContainsString('data-consultation-payment', $response->json('html'));
+        $this->assertDatabaseCount('compras', 1); $this->assertDatabaseCount('facturas', 1);
+        $this->assertCount(1, $this->stripe->creates);
+    }
+    public function test_modal_cannot_advance_to_dates_when_stripe_reports_a_different_amount(): void
+    {
+        $user = $this->client(); $order = $this->order($user);
+        $this->actingAs($user)->postJson(route('clientes.consultations.intent', $order))->assertOk();
+        $this->stripe->intents['pi_fake']['status'] = 'succeeded';
+        $this->stripe->intents['pi_fake']['amount_received'] = 1;
+        $this->getJson(route('clientes.consultations.complete', $order))->assertStatus(503)->assertJsonPath('paid', false);
+        $this->assertDatabaseCount('compras', 0); $this->assertDatabaseCount('facturas', 0);
+        $this->assertCount(1, $this->stripe->creates);
+    }
     public function test_legacy_consultation_links_use_the_new_catalog_and_other_products_remain_available(): void
     {
         Schema::table('servicios', function($t) {

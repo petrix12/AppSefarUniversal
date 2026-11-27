@@ -1,7 +1,8 @@
 @extends('adminlte::page')
-@section('title', 'Mi reunión')
+@php($isConsultation = $purchase->source === \App\Models\KalendiaConsultationOrder::SOURCE)
+@section('title', $isConsultation ? 'Agendar consulta' : 'Mi reunión')
 @section('content_header')
-    <h1>Mi reunión</h1>
+    <h1>{{ $isConsultation ? 'Agendar consulta' : 'Mi reunión' }}</h1>
 @stop
 @section('content')
     @if(session('success'))<div class="alert alert-success" role="status">{{ session('success') }}</div>@endif
@@ -9,9 +10,9 @@
         <div class="alert alert-danger" role="alert">@foreach($errors->all() as $message)<p class="mb-0">{{ $message }}</p>@endforeach</div>
     @endif
     <div class="card card-outline card-primary">
-        <div class="card-header"><h2 class="card-title">Agenda la reunión incluida en tu servicio</h2></div>
+        <div class="card-header"><h2 class="card-title">{{ $isConsultation ? 'Elige la fecha y la hora de tu consulta' : 'Agenda la reunión incluida en tu servicio' }}</h2></div>
         <div class="card-body">
-            <p>Ya completaste el pago, el formulario 001 y el contrato. Selecciona un horario disponible para reunirte con nuestro equipo.</p>
+            <p>{{ $isConsultation ? 'Tu consulta ya está pagada. Selecciona una fecha y un horario disponible para reunirte con nuestro equipo.' : 'Ya completaste el pago, el formulario 001 y el contrato. Selecciona un horario disponible para reunirte con nuestro equipo.' }}</p>
             @include('kalendia.partials.timezone')
             @if($purchases->count() > 1)
                 <form method="GET" class="mb-3">
@@ -26,7 +27,8 @@
             <div class="p-3 mb-4 rounded border bg-light">
                 <i class="fas fa-check-circle text-success mr-1" aria-hidden="true"></i><strong>Pago verificado en la App</strong>
                 <span class="d-block small text-muted mt-1">Comprobante #{{ $purchase->factura->id }} · {{ format_money($purchase->monto, 2) }} {{ data_get($purchase->metadata, 'display_currency', 'EUR') }}</span>
-                <span class="d-block small mt-1">Esta reunión está incluida. No tienes que realizar otro pago.</span>
+                <span class="d-block small mt-1">{{ $isConsultation ? 'Consulta pagada. No tienes que realizar otro pago.' : 'Esta reunión está incluida. No tienes que realizar otro pago.' }}</span>
+                @if($isConsultation)<a class="d-block small mt-1" href="{{ route('viewcomprobantecliente', $purchase->factura->id) }}" target="_blank" rel="noopener">Ver comprobante</a>@endif
             </div>
 
             @if($booking?->remote_id)
@@ -55,26 +57,7 @@
                 @unless($bookingReady)
                     <div class="alert alert-info">Estamos habilitando las reservas con el pago que ya realizaste. Puedes consultar los horarios disponibles; no se solicitará un nuevo pago.</div>
                 @endunless
-                <form method="POST" action="{{ route('clientes.meeting.book', $purchase->id) }}" data-registration-agenda
-                      data-availability-url="{{ route('clientes.meeting.availability') }}" data-purchase="{{ $purchase->id }}"
-                      data-today="{{ $today }}" data-booking-ready="{{ $bookingReady ? '1' : '0' }}">
-                    @csrf
-                    <input type="hidden" name="timezone" value="{{ \App\Services\KalendiaTimezone::preferred() }}" data-kalendia-timezone-input>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="meeting-date">Fecha de la reunión</label>
-                            <input id="meeting-date" name="date" type="date" class="form-control" min="{{ $today }}" value="{{ old('date') }}" aria-describedby="meeting-date-help" required>
-                            <small id="meeting-date-help" class="form-text text-muted">De lunes a viernes, en una fecha que no haya pasado.</small>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="meeting-slot">Horario disponible</label>
-                            <select id="meeting-slot" name="slot" class="form-control" required disabled><option value="">Selecciona primero una fecha</option></select>
-                            <small class="form-text text-muted">Hora local: <span data-kalendia-timezone-label>{{ \App\Services\KalendiaTimezone::preferred() }}</span>.</small>
-                        </div>
-                    </div>
-                    <p data-agenda-status role="status" aria-live="polite" class="text-muted"></p>
-                    <button class="btn btn-primary" type="submit" data-agenda-submit disabled>Enviar solicitud de reunión</button>
-                </form>
+                @include('clientes.partials.meeting-form')
             @endif
         </div>
         <div class="card-footer text-right"><a class="btn btn-outline-secondary" href="{{ $continueUrl }}">{{ $continueLabel ?? 'Consultar mi expediente' }}</a></div>
